@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
+import 'dart:io';
 
 void main() {
   runApp(const MyApp());
@@ -50,6 +51,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  bool _onAndroid = Platform.isAndroid;
 
   Commmodule chameleon = Commmodule();
 
@@ -61,7 +63,6 @@ class _MyHomePageState extends State<MyHomePage> {
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
       _counter++;
-      print(chameleon.availableDevices());
     });
   }
 
@@ -100,8 +101,8 @@ class _MyHomePageState extends State<MyHomePage> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have clicked the button this many times:',
+            Text(
+              'Android: $_onAndroid',
             ),
             Text(
               '$_counter',
@@ -150,4 +151,6 @@ class Commmodule {
     print(command);
     print(port);
   }
-} //https://pub.dev/packages/flutter_libserialport/example
+} 
+//h ttps://pub.dev/packages/flutter_libserialport/example
+// https://github.com/altera2015/usbserial
