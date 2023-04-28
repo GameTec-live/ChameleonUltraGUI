@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
         title: 'Chameleon Unltra GUI',
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         ),
         home: const MyHomePage(),
       ),
@@ -92,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.wifi),
-                      label: Text('Live R/W'),
+                      label: Text('Live Read/Write'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.shield),
@@ -121,6 +121,41 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         );
       }
+    );
+  }
+}
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Chameleon Ultra GUI'),
+          Text('Platform: ${Platform.operatingSystem}'),
+          Text('Android: ${appState.onandroid}'),
+          Text('Chameleon: ${appState.chameleon}'),
+          Text('Serial Ports: ${appState.chameleon.availableDevices()}'),
+          Text('Serial Port: ${appState.chameleon.port}'),
+          Text('Device: ${appState.chameleon.device}'),
+          //ElevatedButton(
+          //  onPressed: () {
+          //    appState.chameleon.connectDevice("/dev/ttyUSB0");
+          //  },
+          //  child: const Text('Connect'),
+          //),
+          ElevatedButton(
+            onPressed: () {
+              appState.chameleon.sendcommand("test");
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
     );
   }
 }
