@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   bool onandroid = Platform.isAndroid;
-
+  var chameleon;
 }
 
 class MyHomePage extends StatefulWidget {
@@ -44,13 +44,31 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    if (appState.onandroid) {
+      appState.chameleon = CommmoduleAndroid();
+    } else {
+      appState.chameleon = CommmodulePC();
+    }
     Widget page;
     switch (selectedIndex) {
       case 0:
-        page = const GeneratorPage();
+        page = const HomePage();
         break;
       case 1:
-        page = const FavoritesPage();
+        page = const Placeholder();
+        break;
+      case 2:
+        page = const Placeholder();
+        break;
+      case 3:
+        page = const Placeholder();
+        break;
+      case 4:
+        page = const Placeholder();
+        break;
+      case 5:
+        page = const Placeholder();
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
@@ -69,8 +87,20 @@ class _MyHomePageState extends State<MyHomePage> {
                       label: Text('Home'),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.favorite),
-                      label: Text('Favorites'),
+                      icon: Icon(Icons.widgets),
+                      label: Text('Slot Manager'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.wifi),
+                      label: Text('Live R/W'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.shield),
+                      label: Text('Attacks'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.settings),
+                      label: Text('Settings'),
                     ),
                   ],
                   selectedIndex: selectedIndex,
@@ -95,7 +125,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-
+/*
 class GeneratorPage extends StatelessWidget {
   const GeneratorPage({super.key});
 
@@ -181,7 +211,7 @@ class FavoritesPage extends StatelessWidget {
       ],
     );
   }
-}
+}*/
 
 class CommmodulePC {
   SerialPort ?port;
