@@ -8,7 +8,7 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatelessWidget { // Root Widget
   const MyApp({super.key});
 
   @override
@@ -16,10 +16,10 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => MyAppState(),
       child: MaterialApp(
-        title: 'Chameleon Unltra GUI',
+        title: 'Chameleon Unltra GUI', // App Name
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange), // Color Scheme
         ),
         home: const MyHomePage(),
       ),
@@ -27,31 +27,31 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyAppState extends ChangeNotifier {
-  bool onandroid = Platform.isAndroid;
-  var chameleon;
+class MyAppState extends ChangeNotifier { // State
+  bool onandroid = Platform.isAndroid; // Are we on android? (mostly for serial port)
+  var chameleon; // Chameleon Object, connected Chameleon
 }
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends StatefulWidget { // Main Page
   const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> { // Main Page State, Sidebar visible, Navigation
   var selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
-    if (appState.onandroid) {
+    var appState = context.watch<MyAppState>(); // Get State
+    if (appState.onandroid) { // Set Chameleon Object
       appState.chameleon = CommmoduleAndroid();
     } else {
       appState.chameleon = CommmodulePC();
     }
-    Widget page;
-    switch (selectedIndex) {
+    Widget page; // Set Page
+    switch (selectedIndex) { // Sidebar Navigation
       case 0:
         page = const HomePage();
         break;
@@ -73,15 +73,15 @@ class _MyHomePageState extends State<MyHomePage> {
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
-    return LayoutBuilder(
+    return LayoutBuilder( // Build Page
       builder: (context, constraints) {
         return Scaffold(
           body: Row(
             children: [
               SafeArea(
-                child: NavigationRail(
-                  extended: constraints.maxWidth >= 600,
-                  destinations: const [
+                child: NavigationRail( // Sidebar
+                  extended: constraints.maxWidth >= 600, // Hide Sidebar on small screens (Below 600px)
+                  destinations: const [ // Sidebar Items
                     NavigationRailDestination(
                       icon: Icon(Icons.home),
                       label: Text('Home'),
@@ -125,30 +125,30 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatelessWidget { // Home Page
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<MyAppState>(); // Get State
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center, // Center
         children: [
-          Text('Chameleon Ultra GUI'),
+          Text('Chameleon Ultra GUI'), // Display dummy / debug info
           Text('Platform: ${Platform.operatingSystem}'),
           Text('Android: ${appState.onandroid}'),
           Text('Chameleon: ${appState.chameleon}'),
           Text('Serial Ports: ${appState.chameleon.availableDevices()}'),
           Text('Serial Port: ${appState.chameleon.port}'),
           Text('Device: ${appState.chameleon.device}'),
-          //ElevatedButton(
-          //  onPressed: () {
-          //    appState.chameleon.connectDevice("/dev/ttyUSB0");
-          //  },
-          //  child: const Text('Connect'),
-          //),
-          ElevatedButton(
+          ElevatedButton( // Connect Button
+            onPressed: () {
+              appState.chameleon.connectDevice(appState.chameleon.availableDevices()[0]);
+            },
+            child: const Text('Connect'),
+          ),
+          ElevatedButton( // Send Button
             onPressed: () {
               appState.chameleon.sendcommand("test");
             },
@@ -160,6 +160,7 @@ class HomePage extends StatelessWidget {
   }
 }
 
+// For reference left in
 /*
 class GeneratorPage extends StatelessWidget {
   const GeneratorPage({super.key});
@@ -248,7 +249,7 @@ class FavoritesPage extends StatelessWidget {
   }
 }*/
 
-class CommmodulePC {
+class CommmodulePC { // Class for PC Serial Communication
   SerialPort ?port;
   String ?device;
   List availableDevices() {
@@ -265,9 +266,15 @@ class CommmodulePC {
   }
 } 
 
-class CommmoduleAndroid {
+class CommmoduleAndroid { // Class for Android Serial Communication
+  SerialPort ?port;
+  String ?device;
   
 }
 
-// https://pub.dev/packages/flutter_libserialport/example
-// https://github.com/altera2015/usbserial
+class CommmoduleBLE {
+  
+}
+
+// https://pub.dev/packages/flutter_libserialport/example <- PC Serial Library
+// https://github.com/altera2015/usbserial <- Android Serial Library
