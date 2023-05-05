@@ -43,10 +43,11 @@ class MyAppState extends ChangeNotifier {
   }
   // This doesn't work because we aren't working stateful
   */
-  bool _isExpanded =
+  var _isExpanded =
       true; // I am planning to use this to control the navigation rail expansion.
+  bool automaticExpansion = true;
   // maybe via this: https://www.woolha.com/tutorials/flutter-switch-input-widget-example or this https://dev.to/naidanut/adding-expandable-side-bar-using-navigationrail-in-flutter-5ai8
-  int? expandedIndex = 0;
+  int? expandedIndex = 1;
   void changesMade() {
     notifyListeners();
   }
@@ -72,6 +73,14 @@ class _MyHomePageState extends State<MyHomePage> {
       appState.chameleon = CommmoduleAndroid();
     } else {
       appState.chameleon = CommmodulePC();
+    }
+    if (appState.automaticExpansion) {
+      double width = MediaQuery.of(context).size.width;
+      if (width >= 600) {
+        appState._isExpanded = true;
+      } else {
+        appState._isExpanded = false;
+      }
     }
 
     Widget page; // Set Page
@@ -106,9 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
             SafeArea(
               child: NavigationRail(
                 // Sidebar
-                extended: appState._isExpanded, //constraints.maxWidth >=
-                //600, // Hide Sidebar on small screens (Below 600px) // I would prefer to have the option to also manually shrink the bar.
-                // We can probably use a bool to do this. I need to figure out how to properly do this in Flutter though.
+                extended: appState._isExpanded,
                 destinations: const [
                   // Sidebar Items
                   NavigationRailDestination(
@@ -301,22 +308,22 @@ class SettingsMainPage extends StatelessWidget {
             ToggleSwitch(
               minWidth: 90.0,
               cornerRadius: 20.0,
-              activeBgColors: [
-                [Colors.green[800]!],
-                [Colors.red[800]!]
-              ],
               activeFgColor: Colors.white,
               inactiveBgColor: Colors.grey,
               inactiveFgColor: Colors.white,
               initialLabelIndex: appState.expandedIndex,
-              totalSwitches: 2,
-              labels: ['Expand', 'retract'],
+              totalSwitches: 3,
+              labels: ['Expand', 'automatic', 'retract'],
               radiusStyle: true,
               onToggle: (index) {
                 if (index == 0) {
                   appState._isExpanded = true;
-                } else {
+                  appState.automaticExpansion = false;
+                } else if (index == 2) {
                   appState._isExpanded = false;
+                  appState.automaticExpansion = false;
+                } else {
+                  appState.automaticExpansion = true;
                 }
                 appState.expandedIndex = index;
                 appState.changesMade();
