@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:serial_communication/serial_communication.dart'; // Android
 import 'package:flutter_libserialport/flutter_libserialport.dart'; // Everyone Else
 import 'package:toggle_switch/toggle_switch.dart';
+import 'serialcomPC.dart';
+import 'serialcomMobile.dart';
+import 'serialcomBLE.dart';
 
 void main() {
   runApp(const MyApp());
@@ -467,43 +470,3 @@ class FavoritesPage extends StatelessWidget {
     );
   }
 }*/
-
-class CommmodulePC {
-  // Class for PC Serial Communication
-  SerialPort? port;
-  String? device;
-
-  List availableDevices() {
-    return SerialPort.availablePorts;
-  }
-
-  void connectDevice(String adress) {
-    port = SerialPort(adress);
-    port!.openReadWrite();
-    port!.config.baudRate = 115200;
-    port!.config.dtr = 1;
-  }
-
-  void sendcommand(String command) {
-    print(command);
-    print(port);
-  }
-
-  List createDataFrame() {
-    List dataFrame = [];
-    dataFrame.add(0x11);
-
-    return dataFrame;
-  }
-}
-
-class CommmoduleAndroid {
-  // Class for Android Serial Communication
-  SerialPort? port;
-  String? device;
-}
-
-class CommmoduleBLE {}
-
-// https://pub.dev/packages/flutter_libserialport/example <- PC Serial Library
-// https://github.com/altera2015/usbserial <- Android Serial Library
