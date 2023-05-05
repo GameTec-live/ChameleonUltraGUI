@@ -34,7 +34,7 @@ class MyAppState extends ChangeNotifier {
   // State
   bool onandroid =
       Platform.isAndroid; // Are we on android? (mostly for serial port)
-  var chameleon; // Chameleon Object, connected Chameleon
+  dynamic chameleon; // Chameleon Object, connected Chameleon
   bool switchOn = true;
   /*void toggleswitch() {
     setState(() {
@@ -201,6 +201,7 @@ class SavedKeysPage extends StatelessWidget {
   create dynamic list from database.
   2 columns. 1 for description, one for UID?
   Write key to slot upon clicking
+  Maybe add Import and Export buttons so one can Im and Export .bin dumps
   */
   const SavedKeysPage({super.key});
 
@@ -464,17 +465,28 @@ class CommmodulePC {
   // Class for PC Serial Communication
   SerialPort? port;
   String? device;
+
   List availableDevices() {
     return SerialPort.availablePorts;
   }
 
   void connectDevice(String adress) {
     port = SerialPort(adress);
+    port!.openReadWrite();
+    port!.config.baudRate = 115200;
+    port!.config.dtr = 1;
   }
 
   void sendcommand(String command) {
     print(command);
     print(port);
+  }
+
+  List createDataFrame() {
+    List dataFrame = [];
+    dataFrame.add(0x11);
+
+    return dataFrame;
   }
 }
 
