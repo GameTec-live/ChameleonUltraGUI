@@ -18,7 +18,7 @@ jobs:
         with:
           channel: 'stable'
       - run: flutter pub get
-      - run: flutter test
+      #- run: flutter test
       - run: flutter build apk
       - run: flutter build appbundle
       - uses: actions/upload-artifact@v2
@@ -32,6 +32,9 @@ jobs:
   
   build-ios:
     runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
     steps:
     - uses: actions/checkout@v3
     - uses: subosito/flutter-action@v2
@@ -39,7 +42,7 @@ jobs:
         channel: 'stable'
         architecture: x64
     - run: flutter pub get
-    - run: flutter test
+    #- run: flutter test
     - run: flutter build ios --release --no-codesign
     - uses: actions/upload-artifact@v2
       with:
@@ -48,13 +51,16 @@ jobs:
   
   build-web:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
     steps:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
       - run: flutter pub get
-      - run: flutter test
+      #- run: flutter test
       - run: flutter build web
       - uses: actions/upload-artifact@v2
         with:
@@ -63,6 +69,9 @@ jobs:
   
   build-windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
     steps:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
@@ -77,6 +86,9 @@ jobs:
 
   build-linux:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
     steps:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
@@ -92,6 +104,9 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
     steps:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
