@@ -1,18 +1,15 @@
 import 'dart:io';
+import 'package:chameleonultragui/comms/serial_abstract.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // Com Imports
-import 'comms/serialcomPC.dart';
-import 'comms/serialcomMobile.dart';
-import 'comms/serialcomBLE.dart';
+import 'comms/serial_native.dart';
+import 'comms/serial_mobile.dart';
 
 // GUI Imports
 import 'gui/homepage.dart';
-import 'gui/slotmanagerpage.dart';
 import 'gui/savedkeyspage.dart';
-import 'gui/livereadwritepage.dart';
-import 'gui/attackspage.dart';
 import 'gui/settingspage.dart';
 
 void main() {
@@ -42,9 +39,9 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   // State
-  bool onandroid =
+  bool onAndroid =
       Platform.isAndroid; // Are we on android? (mostly for serial port)
-  dynamic chameleon; // Chameleon Object, connected Chameleon
+  AbstractSerial chameleon = AbstractSerial(); // Chameleon Object, connected Chameleon
   bool switchOn = true;
   /*void toggleswitch() {
     setState(() {
@@ -78,11 +75,11 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-    if (appState.onandroid) {
+    if (appState.onAndroid) {
       // Set Chameleon Object
-      appState.chameleon = CommmoduleAndroid();
+      appState.chameleon = MobileSerial();
     } else {
-      appState.chameleon = CommmodulePC();
+      appState.chameleon = NativeSerial();
     }
     if (appState.automaticExpansion) {
       double width = MediaQuery.of(context).size.width;
@@ -112,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
         page = const Placeholder();
         break;
       case 5:
-        page = SettingsMainPage();
+        page = const SettingsMainPage();
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');

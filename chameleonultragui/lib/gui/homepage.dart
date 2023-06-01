@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../comms/serial_abstract.dart';
 import '../main.dart';
 
 class HomePage extends StatelessWidget {
@@ -14,25 +15,24 @@ class HomePage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center, // Center
         children: [
-          Text('Chameleon Ultra GUI'), // Display dummy / debug info
+          const Text('Chameleon Ultra GUI'), // Display dummy / debug info
           Text('Platform: ${Platform.operatingSystem}'),
-          Text('Android: ${appState.onandroid}'),
-          Text('Chameleon: ${appState.chameleon}'),
-          Text('Serial Ports: ${appState.chameleon.availableDevices()}'),
-          Text('Serial Port: ${appState.chameleon.port}'),
-          Text('Device: ${appState.chameleon.device}'),
+          Text('Android: ${appState.onAndroid}'),
+          Text('Serial protocol : ${appState.chameleon}'),
+          Text('Serial devices: ${appState.chameleon.availableDevices()}'),
+          Text('Chameleon connected: ${appState.chameleon.device != ChameleonDevice.none ? 'Yes' : 'No'}'),
+          Text('Chameleon device type: ${appState.chameleon.device}'),
           ElevatedButton(
             // Connect Button
             onPressed: () {
-              appState.chameleon
-                  .connectDevice(appState.chameleon.availableDevices()[0]);
+              appState.chameleon.preformConnection();
             },
             child: const Text('Connect'),
           ),
           ElevatedButton(
             // Send Button
             onPressed: () {
-              appState.chameleon.sendcommand("test");
+              appState.chameleon.sendCommand("test");
             },
             child: const Text('Send'),
           ),
@@ -41,3 +41,4 @@ class HomePage extends StatelessWidget {
     );
   }
 }
+

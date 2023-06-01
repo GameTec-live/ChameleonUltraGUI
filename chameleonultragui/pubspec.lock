@@ -69,10 +69,10 @@ packages:
     dependency: transitive
     description:
       name: ffi
-      sha256: "13a6ccf6a459a125b3fcdb6ec73bd5ff90822e071207c663bfd1f70062d51d18"
+      sha256: ed5337a5660c506388a9f012be0288fb38b49020ce2b45fe1f8b8323fe429f99
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.1"
+    version: "2.0.2"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -82,10 +82,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_libserialport
-      sha256: f3404f5ff4dfe714dedc41003323be662eeca542ff05495118f8d3fcb58e68f9
+      sha256: "34cc4909eaa5b1502b9e1ad5a7dc597542f009d9adfa37c9a86ae0fb0d3b13fa"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.3"
+    version: "0.3.0"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -111,18 +111,26 @@ packages:
     dependency: transitive
     description:
       name: libserialport
-      sha256: eddc9e648270ba47ab71e5551b63e40f1d7e157d88c7e95ed67474453f85dfe0
+      sha256: "392e1592def65282429832ec66fa25e9e163d3b37716b97691482e2406720727"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.0+3"
+    version: "0.3.0+1"
   lints:
     dependency: transitive
     description:
       name: lints
-      sha256: "5e4a9cd06d447758280a8ac2405101e0e2094d2a1dbdd3756aec3fe7775ba593"
+      sha256: "6b0206b0bf4f04961fc5438198ccb3a885685cd67d4d4a32cc20ad7f8adbe015"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.1"
+    version: "2.1.0"
+  logger:
+    dependency: "direct main"
+    description:
+      name: logger
+      sha256: db2ff852ed77090ba9f62d3611e4208a3d11dfa35991a81ae724c113fcb3e3f7
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.0"
   matcher:
     dependency: transitive
     description:
@@ -135,10 +143,10 @@ packages:
     dependency: transitive
     description:
       name: material_color_utilities
-      sha256: d92141dc6fe1dad30722f9aa826c7fbc896d021d792f80678280601aff8cf724
+      sha256: "586678f20e112219ed0f73215f01bcdf1d769824ba2ebae45ad918a9bfde9bdb"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.0"
+    version: "0.3.0"
   meta:
     dependency: transitive
     description:
@@ -204,10 +212,10 @@ packages:
     dependency: transitive
     description:
       name: source_span
-      sha256: dd904f795d4b4f3b870833847c461801f6750a9fa8e61ea5ac53f9422b31f250
+      sha256: "53e943d4206a5e30df338fd4c6e7a077e02254531b138a15aec3bd143c1a8b3c"
       url: "https://pub.dev"
     source: hosted
-    version: "1.9.1"
+    version: "1.10.0"
   stack_trace:
     dependency: transitive
     description:
@@ -244,10 +252,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: eb6ac1540b26de412b3403a163d919ba86f6a973fe6cc50ae3541b80092fdcfb
+      sha256: daadc9baabec998b062c9091525aa95786508b1c48e9c30f1f891b8bf6ff2e64
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.1"
+    version: "0.5.2"
   toggle_switch:
     dependency: "direct main"
     description:
@@ -265,5 +273,5 @@ packages:
     source: hosted
     version: "2.1.4"
 sdks:
-  dart: ">=3.0.0-0 <4.0.0"
-  flutter: ">=2.5.0"
+  dart: ">=3.0.0-417 <4.0.0"
+  flutter: ">=3.0.0"

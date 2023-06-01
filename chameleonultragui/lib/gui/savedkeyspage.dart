@@ -1,7 +1,4 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../main.dart';
 
 class SavedKeysPage extends StatelessWidget {
   /* Todo list:
@@ -16,7 +13,7 @@ class SavedKeysPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Saved Keys'),
+        title: const Text('Saved Keys'),
       ),
       body: Center(
         child: Column(

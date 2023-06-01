@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:toggle_switch/toggle_switch.dart';
@@ -9,14 +8,14 @@ class SettingsMainPage extends StatelessWidget {
   Think of useful settings that users might want to change
   Make sure we fix (context as Element).reassemble(); under the switch. It's terrible. 
   */
-  SettingsMainPage({super.key});
+  const SettingsMainPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings'),
+        title: const Text('Settings'),
       ),
       body: Center(
         child: Column(
@@ -45,7 +44,7 @@ class SettingsMainPage extends StatelessWidget {
               inactiveFgColor: Colors.white,
               initialLabelIndex: appState.expandedIndex,
               totalSwitches: 3,
-              labels: ['Expand', 'automatic', 'retract'],
+              labels: const ['Expand', 'automatic', 'retract'],
               radiusStyle: true,
               onToggle: (index) {
                 if (index == 0) {
@@ -76,7 +75,7 @@ class SettingsMainPage extends StatelessWidget {
                         Text('UNRELEASED', style: TextStyle(fontWeight: FontWeight.bold)),
                         SizedBox(height: 10),
                         Text('Developed by:'),
-                        Text('Akisame and GameTec_live', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text('Foxushka, Akisame and GameTec_live', style: TextStyle(fontWeight: FontWeight.bold)),
                         SizedBox(height: 10),
                         Text('License:'),
                         Text('GPLV3', style: TextStyle(fontWeight: FontWeight.bold)),
