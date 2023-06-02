@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:logger/logger.dart';
 import '../main.dart';
 
 class ConnectPage extends StatelessWidget {
@@ -28,9 +27,10 @@ class ConnectPage extends StatelessWidget {
                   ),
                   scrollDirection: Axis.vertical,
                   children: [
-                    /* "Add" Button for Bluetooth
+                    // "Add" Button for Bluetooth
                     ElevatedButton(
                       onPressed: () {
+                        print(appState.chameleon.availableDevices());
                         appState.changesMade();
                       },
                       style: ButtonStyle(
@@ -42,11 +42,10 @@ class ConnectPage extends StatelessWidget {
                       ),
                       child: const Icon(Icons.add),
                     ),
-                    */
-                    for (var i = 0; i < 10; i++)
+                    for (var i = 0; i < appState.chameleon.availableDevices().length; i++)
                       ElevatedButton(
                         onPressed: () {
-                          appState.chameleon.connected = true;
+                          // Connect here
                           appState.changesMade();
                         },
                         style: ButtonStyle(
