@@ -3,10 +3,6 @@ import 'package:chameleonultragui/comms/serial_abstract.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// Com Imports
-import 'comms/serial_native.dart';
-import 'comms/serial_mobile.dart';
-
 // GUI Imports
 import 'gui/homepage.dart';
 import 'gui/savedkeyspage.dart';
@@ -76,12 +72,12 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-    if (appState.onAndroid) {
+    /*if (appState.onAndroid) { // Redefining the Chameleon clears everything, it is also already defined as AbstractSerial on line 45
       // Set Chameleon Object
       appState.chameleon = MobileSerial();
     } else {
       appState.chameleon = NativeSerial();
-    }
+    }*/
     if (appState.automaticExpansion) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {
