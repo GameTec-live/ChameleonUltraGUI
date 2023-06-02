@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:toggle_switch/toggle_switch.dart';
+import 'package:logger/logger.dart';
 import '../main.dart';
 
 class SettingsMainPage extends StatelessWidget {
@@ -29,7 +30,8 @@ class SettingsMainPage extends StatelessWidget {
               inactiveTrackColor: Colors.red,
               onChanged: (bool value) {
                 // This is called when the user toggles the switch.
-                print('test');
+                Logger log = Logger();
+                log.d('Switch toggled');
                 //appState.toggleswitch();
                 appState.switchOn = !appState.switchOn;
                 //(context as Element).reassemble();
