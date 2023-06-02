@@ -11,6 +11,7 @@ import 'comms/serial_mobile.dart';
 import 'gui/homepage.dart';
 import 'gui/savedkeyspage.dart';
 import 'gui/settingspage.dart';
+import 'gui/connectpage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -94,7 +95,11 @@ class _MyHomePageState extends State<MyHomePage> {
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
-        page = const HomePage();
+        if (appState.chameleon.connected == true) {
+          page = const HomePage();
+        } else {
+          page = const ConnectPage();
+        }
         break;
       case 1:
         page = const Placeholder();
