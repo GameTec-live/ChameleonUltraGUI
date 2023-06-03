@@ -30,8 +30,8 @@ class ConnectPage extends StatelessWidget {
                     // "Add" Button for Bluetooth
                     ElevatedButton(
                       onPressed: () {
-                        print(appState.chameleon.availableDevices());
-                        appState.chameleon.connected = true;
+                        // Connect via BLE here
+                        appState.chameleon.connected = true; // Bypass / Dummy for testing
                         appState.changesMade();
                       },
                       style: ButtonStyle(

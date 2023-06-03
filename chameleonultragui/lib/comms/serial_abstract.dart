@@ -15,6 +15,14 @@ class AbstractSerial {
     return [];
   }
 
+  bool connectSpecific(port) {
+    return false;
+  }
+
+  List availableChameleons() {
+    return [];
+  }
+
   void sendCommand(String command) {
     log.d("Sending: $command");
   }
