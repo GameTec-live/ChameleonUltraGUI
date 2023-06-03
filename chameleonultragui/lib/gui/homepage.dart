@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../comms/serial_abstract.dart';
 import '../main.dart';
 
 class HomePage extends StatelessWidget {
@@ -20,12 +19,13 @@ class HomePage extends StatelessWidget {
           Text('Android: ${appState.onAndroid}'),
           Text('Serial protocol : ${appState.chameleon}'),
           Text('Serial devices: ${appState.chameleon.availableDevices()}'),
-          Text('Chameleon connected: ${appState.chameleon.device != ChameleonDevice.none ? 'Yes' : 'No'}'),
+          Text('Chameleon connected: ${appState.chameleon.connected}'),
           Text('Chameleon device type: ${appState.chameleon.device}'),
           ElevatedButton(
             // Connect Button
             onPressed: () {
               appState.chameleon.preformConnection();
+              appState.changesMade();
             },
             child: const Text('Connect'),
           ),

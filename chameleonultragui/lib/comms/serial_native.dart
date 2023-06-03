@@ -14,11 +14,30 @@ class NativeSerial extends AbstractSerial {
   bool preformConnection() {
     for(final port in availableDevices()){
       if (connectDevice(port)) {
+        connected = true;
         return true;
       }
     }
-
     return false;
+  }
+
+  @override
+  List availableChameleons() {
+    List chamList = [];
+    for (final port in availableDevices()) {
+      if (connectDevice(port)) {
+        chamList.add(port); // Port
+        chamList.add(device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'); // Add "Metadata" Info
+      }
+    }
+    device = ChameleonDevice.none;
+    port!.close();
+    return chamList;
+  }
+
+  @override
+  bool connectSpecific(port) {
+    return connectDevice(port);
   }
 
   bool connectDevice(String address) {
