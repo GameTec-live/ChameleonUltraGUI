@@ -3,6 +3,10 @@ import 'package:chameleonultragui/comms/serial_abstract.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Comms Imports
+import 'comms/serial_mobile.dart';
+import 'comms/serial_native.dart';
+
 // GUI Imports
 import 'gui/homepage.dart';
 import 'gui/savedkeyspage.dart';
@@ -38,7 +42,7 @@ class MyAppState extends ChangeNotifier {
   // State
   bool onAndroid =
       Platform.isAndroid; // Are we on android? (mostly for serial port)
-  AbstractSerial chameleon = AbstractSerial(); // Chameleon Object, connected Chameleon
+  AbstractSerial chameleon = AbstractSerial();//Platform.isAndroid ? MobileSerial() : NativeSerial(); // Chameleon Object, connected Chameleon
   bool switchOn = true;
   /*void toggleswitch() {
     setState(() {
@@ -72,12 +76,12 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-    /*if (appState.onAndroid) { // Redefining the Chameleon clears everything, it is also already defined as AbstractSerial on line 45
+    if (appState.onAndroid && appState.chameleon is AbstractSerial) { // Redefining the Chameleon clears everything, it is also already defined as AbstractSerial on line 45
       // Set Chameleon Object
       appState.chameleon = MobileSerial();
-    } else {
+    } else if (!appState.onAndroid && appState.chameleon is AbstractSerial){
       appState.chameleon = NativeSerial();
-    }*/
+    }
     if (appState.automaticExpansion) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {
