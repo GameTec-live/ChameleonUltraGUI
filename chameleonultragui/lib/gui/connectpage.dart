@@ -16,6 +16,16 @@ class ConnectPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center, // Center
           children: [
+            Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                onPressed: () {
+                  // Refresh
+                  appState.changesMade();
+                },
+                icon: const Icon(Icons.refresh),
+              ),
+            ),
             Expanded(
               child: GridView(
                   padding: const EdgeInsets.all(20),
@@ -30,6 +40,7 @@ class ConnectPage extends StatelessWidget {
                     // "Add" Button for Bluetooth
                     ElevatedButton(
                       onPressed: () {
+                        showDialog<String>(context: context, builder: (BuildContext context) => const AlertDialog(content: Text('Identifies as BLE Dialog'),),);
                         // Connect via BLE here
                         appState.chameleon.connected = true; // Bypass / Dummy for testing
                         appState.changesMade();
@@ -56,7 +67,33 @@ class ConnectPage extends StatelessWidget {
                             ),
                           ),
                         ),
-                        child: const Icon(Icons.add),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  const Icon(Icons.usb),
+                                  Text(appState.chameleon.availableDevices()[i]),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Text("Chameleon Ultra", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                              ],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: FractionallySizedBox(
+                                widthFactor: 0.4,
+                                child: Image.asset('assets/black-ultra-standing-front.png', fit: BoxFit.contain,),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                   ]
               ),
