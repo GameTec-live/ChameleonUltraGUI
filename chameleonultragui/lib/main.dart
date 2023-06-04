@@ -142,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   NavigationRailDestination(
                     icon: Icon(Icons.shield),
-                    label: Text('Attacks'),
+                    label: Text('Key Recovery'),
                   ),
                   NavigationRailDestination(
                     icon: Icon(Icons.settings),
