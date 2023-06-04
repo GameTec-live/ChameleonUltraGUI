@@ -37,7 +37,7 @@ class NativeSerial extends AbstractSerial {
     List chamList = [];
     for (final port in availableDevices()) {
       if (connectDevice(port)) {
-        chamList.add({'port': port, 'device': device});
+        chamList.add({'port': port, 'device': device}); 
       }
     }
     device = ChameleonDevice.none;
