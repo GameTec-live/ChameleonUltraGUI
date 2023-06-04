@@ -58,7 +58,7 @@ class ConnectPage extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () {
                           // Connect here
-                          appState.changesMade();
+                          appState.changesMade(); // TODO: Connect to device
                         },
                         style: ButtonStyle(
                           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -82,14 +82,14 @@ class ConnectPage extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
-                                Text("Chameleon Ultra", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                                Text("Chameleon Ultra", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)), // TODO: Get name from device
                               ],
                             ),
                             Padding(
                               padding: const EdgeInsets.only(top: 8.0),
                               child: FractionallySizedBox(
                                 widthFactor: 0.4,
-                                child: Image.asset('assets/black-ultra-standing-front.png', fit: BoxFit.contain,),
+                                child: Image.asset('assets/black-ultra-standing-front.png', fit: BoxFit.contain,), // TODO: Get image from device
                               ),
                             ),
                           ],
