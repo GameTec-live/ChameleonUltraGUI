@@ -80,10 +80,10 @@ class ConnectPage extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            Row(
+                            const Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
-                                Text("Chameleon Ultra", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)), // TODO: Get name from device
+                                Text("Chameleon Ultra", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)), // TODO: Get name from device
                               ],
                             ),
                             Padding(
