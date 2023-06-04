@@ -47,7 +47,11 @@ class NativeSerial extends AbstractSerial {
 
   @override
   bool connectSpecific(port) {
-    return connectDevice(port);
+    if (connectDevice(port)) {
+      connected = true;
+      return true;
+    }
+    return false;
   }
 
   bool connectDevice(String address) {

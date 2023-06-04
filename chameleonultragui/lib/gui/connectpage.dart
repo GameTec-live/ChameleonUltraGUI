@@ -58,7 +58,8 @@ class ConnectPage extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () {
                           // Connect here
-                          appState.changesMade(); // TODO: Connect to device
+                          appState.chameleon.connectSpecific(appState.chameleon.availableDevices()[i]);
+                          appState.changesMade();
                         },
                         style: ButtonStyle(
                           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
