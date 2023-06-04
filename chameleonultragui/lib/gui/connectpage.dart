@@ -77,7 +77,7 @@ class ConnectPage extends StatelessWidget {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   const Icon(Icons.usb),
-                                  Text(appState.chameleon.availableDevices()[i]),
+                                  Text(appState.chameleon.availableChameleons()[i]['port']),
                                 ],
                               ),
                             ),
