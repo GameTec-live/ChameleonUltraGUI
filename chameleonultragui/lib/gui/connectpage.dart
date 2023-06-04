@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../comms/serial_abstract.dart';
 import '../main.dart';
 
 class ConnectPage extends StatelessWidget {
@@ -54,11 +55,11 @@ class ConnectPage extends StatelessWidget {
                       ),
                       child: const Icon(Icons.add),
                     ),
-                    for (var i = 0; i < appState.chameleon.availableDevices().length; i++)
+                    for (var i = 0; i < appState.chameleon.availableChameleons().length; i++)
                       ElevatedButton(
                         onPressed: () {
                           // Connect here
-                          appState.chameleon.connectSpecific(appState.chameleon.availableDevices()[i]);
+                          appState.chameleon.connectSpecific(appState.chameleon.availableChameleons()[i]['port']);
                           appState.changesMade();
                         },
                         style: ButtonStyle(
@@ -80,17 +81,17 @@ class ConnectPage extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const Row(
+                            Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
-                                Text("Chameleon Ultra", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)), // TODO: Get name from device
+                                Text("Chameleon ${(appState.chameleon.availableChameleons()[i]['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                               ],
                             ),
                             Padding(
                               padding: const EdgeInsets.only(top: 8.0),
                               child: FractionallySizedBox(
                                 widthFactor: 0.4,
-                                child: Image.asset('assets/black-ultra-standing-front.png', fit: BoxFit.contain,), // TODO: Get image from device
+                                child: Image.asset(appState.chameleon.availableChameleons()[i]['device'] == ChameleonDevice.ultra ? 'assets/black-ultra-standing-front.png' : 'assets/black-lite-standing-front.png', fit: BoxFit.contain,),
                               ),
                             ),
                           ],
