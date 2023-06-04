@@ -41,7 +41,8 @@ class NativeSerial extends AbstractSerial {
       }
     }
     device = ChameleonDevice.none;
-    port!.close();
+    port?.close();
+
     return chamList;
   }
 
