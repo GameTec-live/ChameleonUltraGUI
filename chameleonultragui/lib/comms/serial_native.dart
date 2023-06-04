@@ -22,6 +22,17 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
+  bool performDisconnect() {
+    if (port != null) {
+      port!.close();
+      connected = false;
+      return true;
+    }
+    connected = false; // For debug button
+    return false;
+  }
+
+  @override
   List availableChameleons() {
     List chamList = [];
     for (final port in availableDevices()) {

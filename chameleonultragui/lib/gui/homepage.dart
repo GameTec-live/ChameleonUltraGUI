@@ -14,6 +14,17 @@ class HomePage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center, // Center
         children: [
+          Align(
+            alignment: Alignment.topRight,
+            child: IconButton(
+              onPressed: () {
+                // Disconnect
+                appState.chameleon.performDisconnect();
+                appState.changesMade();
+              },
+              icon: const Icon(Icons.close),
+            ),
+          ),
           const Text('Chameleon Ultra GUI'), // Display dummy / debug info
           Text('Platform: ${Platform.operatingSystem}'),
           Text('Android: ${appState.onAndroid}'),

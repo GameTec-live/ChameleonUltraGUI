@@ -11,6 +11,10 @@ class AbstractSerial {
     return false;
   }
 
+  bool performDisconnect() {
+    return false;
+  }
+
   List availableDevices() {
     return [];
   }
