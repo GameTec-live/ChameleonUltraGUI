@@ -9,6 +9,51 @@ class ConnectPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
+
+    List<Widget> chameleonButtons = 
+      appState.chameleon.availableChameleons().map<Widget>((chameleonDevice) {
+      return ElevatedButton(
+        onPressed: () {
+          appState.chameleon.connectSpecific(chameleonDevice['port']);
+          appState.changesMade();
+        },
+        style: ButtonStyle(
+          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18.0),
+            ),
+          ),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Icon(Icons.usb),
+                  Text(chameleonDevice['port']),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text("Chameleon ${(chameleonDevice['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: FractionallySizedBox(
+                widthFactor: 0.4,
+                child: Image.asset(chameleonDevice['device'] == ChameleonDevice.ultra ? 'assets/black-ultra-standing-front.png' : 'assets/black-lite-standing-front.png', fit: BoxFit.contain,),
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Connect'),
@@ -55,49 +100,8 @@ class ConnectPage extends StatelessWidget {
                       ),
                       child: const Icon(Icons.add),
                     ),
-                    for (var i = 0; i < appState.chameleon.availableChameleons().length; i++)
-                      ElevatedButton(
-                        onPressed: () {
-                          // Connect here
-                          appState.chameleon.connectSpecific(appState.chameleon.availableChameleons()[i]['port']);
-                          appState.changesMade();
-                        },
-                        style: ButtonStyle(
-                          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18.0),
-                            ),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  const Icon(Icons.usb),
-                                  Text(appState.chameleon.availableChameleons()[i]['port']),
-                                ],
-                              ),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Text("Chameleon ${appState.chameleon.availableChameleons()[i]['device'] == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                              ],
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: FractionallySizedBox(
-                                widthFactor: 0.4,
-                                child: Image.asset(appState.chameleon.availableChameleons()[i]['device'] == ChameleonDevice.ultra ? 'assets/black-ultra-standing-front.png' : 'assets/black-lite-standing-front.png', fit: BoxFit.contain,),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ]
+                    ...chameleonButtons,
+                  ] 
               ),
             ),
           ],
