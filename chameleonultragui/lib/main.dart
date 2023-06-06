@@ -31,7 +31,14 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.deepOrange), // Color Scheme
+          brightness: Brightness.light, // Light Theme
         ),
+        darkTheme: ThemeData.dark().copyWith(
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.deepOrange, brightness: Brightness.dark), // Color Scheme
+          brightness: Brightness.dark, // Dark Theme
+        ),
+        themeMode: ThemeMode.system, // Dark Theme
         home: const MyHomePage(),
       ),
     );

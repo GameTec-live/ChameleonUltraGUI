@@ -30,16 +30,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  toggle_switch: ^2.1.0
-
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.2
-  flutter_libserialport: ^0.3.0
-  provider: ^6.0.0
-  serial_communication: ^0.0.2
-  logger: ^1.3.0
+  toggle_switch: ^2.1.0 # Toggle Switches
+  cupertino_icons: ^1.0.2 # Cupertino Icons, IOS
+  flutter_libserialport: ^0.3.0 # Serial PC
+  provider: ^6.0.0 # State Management
+  serial_communication: ^0.0.2 # Serial Mobile
+  logger: ^1.3.0 # Logging
+  shared_preferences: ^2.1.1 # Persistent Storage
 
 dev_dependencies:
   flutter_test:
