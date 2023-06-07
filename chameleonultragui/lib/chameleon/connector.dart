@@ -91,6 +91,8 @@ class ChameleonMessage {
   ChameleonMessage({required this.status, required this.data});
 }
 
+enum ChameleonNTLevel { weak, static, hard, unknown }
+
 enum ChameleonDarksideResult {
   vurnerable,
   fixed,
@@ -357,13 +359,19 @@ class ChameleonCom {
         0;
   }
 
-  Future<int?> getMf1NTLevel() async {
-    // Get level of nt (weak/hard) in Mifare Classic
-    // 0x00 - weak
-    // 0x01 - other
-    // 0x24 - static
-    // 0x25 - hard
-    return (await sendCmdSync(ChameleonCommand.mf1NTLevelDetect, 0x00))!.status;
+  Future<ChameleonNTLevel?> getMf1NTLevel() async {
+    // Get level of nt (weak/static/hard) in Mifare Classic
+    var resp =
+        (await sendCmdSync(ChameleonCommand.mf1NTLevelDetect, 0x00))!.status;
+    if (resp == 0x00) {
+      return ChameleonNTLevel.weak;
+    } else if (resp == 0x24) {
+      return ChameleonNTLevel.static;
+    } else if (resp == 0x25) {
+      return ChameleonNTLevel.hard;
+    } else {
+      return ChameleonNTLevel.unknown;
+    }
   }
 
   Future<ChameleonDarksideResult?> checkMf1Darkside() async {
