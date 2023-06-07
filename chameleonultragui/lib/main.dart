@@ -16,6 +16,9 @@ import 'gui/connectpage.dart';
 // Shared Preferences Provider
 import 'sharedprefsprovider.dart';
 
+// Logger
+import 'package:logger/logger.dart';
+
 Future<void> main() async {
   final sharedPreferencesProvider = SharedPreferencesProvider();
   await sharedPreferencesProvider.load();
@@ -80,6 +83,7 @@ class MyAppState extends ChangeNotifier {
   // This doesn't work because we aren't working stateful
   */
   // maybe via this: https://www.woolha.com/tutorials/flutter-switch-input-widget-example or this https://dev.to/naidanut/adding-expandable-side-bar-using-navigationrail-in-flutter-5ai8
+  Logger log = Logger(); // Logger, App wide logger
   void changesMade() {
     notifyListeners();
   }

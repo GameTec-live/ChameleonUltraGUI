@@ -56,12 +56,12 @@ class HomePage extends StatelessWidget {
             // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
-              print(
+              appState.log.d(
                   "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
               var card = await cml.scan14443aTag();
-              print('Card UID: ${card!.UID}');
-              print('SAK: ${card.SAK}');
-              print('ATQA: ${card.ATQA}');
+              appState.log.d('Card UID: ${card!.UID}');
+              appState.log.d('SAK: ${card.SAK}');
+              appState.log.d('ATQA: ${card.ATQA}');
             },
             child: const Column(children: [
               Text('Read card'),
@@ -71,7 +71,7 @@ class HomePage extends StatelessWidget {
             // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
-              print(await cml.detectMf1Support());
+              appState.log.d(await cml.detectMf1Support());
             },
             child: const Column(children: [
               Text('Is MFC?'),
@@ -81,7 +81,7 @@ class HomePage extends StatelessWidget {
             // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
-              print(await cml.getMf1NTLevel());
+              appState.log.d(await cml.getMf1NTLevel());
             },
             child: const Column(children: [
               Text('Get NT level'),
@@ -91,7 +91,7 @@ class HomePage extends StatelessWidget {
             // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
-              print(await cml.checkMf1Darkside());
+              appState.log.d(await cml.checkMf1Darkside());
             },
             child: const Column(children: [
               Text('Check darkside'),
@@ -103,8 +103,8 @@ class HomePage extends StatelessWidget {
               await cml.setReaderDeviceMode(true);
               var distance = await cml.getMf1NTDistance(0, 0x60,
                   Uint8List.fromList([0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]));
-              print("UID: ${distance!.UID}");
-              print("Distance ${distance.distance}");
+              appState.log.d("UID: ${distance!.UID}");
+              appState.log.d("Distance ${distance.distance}");
             },
             child: const Column(children: [
               Text('Get distance'),
@@ -147,10 +147,10 @@ class HomePage extends StatelessWidget {
               await cml.setReaderDeviceMode(true);
               var data = await cml.mf1Auth(0x03, 0x60,
                   Uint8List.fromList([0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]));
-              print(data);
+              appState.log.d(data);
               var block = await cml.mf1ReadBlock(0x02, 0x60,
                   Uint8List.fromList([0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]));
-              print(block);
+              appState.log.d(block);
               block![0] = 0xFF;
               await cml.mf1WriteBlock(
                   0x02,
@@ -159,7 +159,7 @@ class HomePage extends StatelessWidget {
                   block);
               block = await cml.mf1ReadBlock(0x02, 0x60,
                   Uint8List.fromList([0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]));
-              print(block);
+              appState.log.d(block);
             },
             child: const Column(children: [
               Text('Auth/read/write'),
@@ -169,12 +169,12 @@ class HomePage extends StatelessWidget {
             // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
-              print(
+              appState.log.d(
                   "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
               var card = await cml.scan14443aTag();
-              print('Card UID: ${card!.UID}');
-              print('SAK: ${card.SAK}');
-              print('ATQA: ${card.ATQA}');
+              appState.log.d('Card UID: ${card!.UID}');
+              appState.log.d('SAK: ${card.SAK}');
+              appState.log.d('ATQA: ${card.ATQA}');
               await cml.setReaderDeviceMode(false);
               await cml.setMf1AntiCollision(card);
             },
@@ -186,11 +186,11 @@ class HomePage extends StatelessWidget {
             // Send Button
             onPressed: () async {
               var name = await cml.getSlotTagName(1, ChameleonTagFrequiency.hf);
-              print(name);
+              appState.log.d(name);
               await cml.setSlotTagName(
                   1, "Hello 变色龙!", ChameleonTagFrequiency.hf);
               name = await cml.getSlotTagName(1, ChameleonTagFrequiency.hf);
-              print(name);
+              appState.log.d(name);
             },
             child: const Column(children: [
               Text('Test naming'),
