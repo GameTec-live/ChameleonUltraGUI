@@ -38,28 +38,66 @@ class SettingsMainPage extends StatelessWidget {
                 appState.changesMade();
               },
             ),
+            const SizedBox(height: 10),
+            const Text("Sidebar Expansion:"),
             ToggleSwitch(
               minWidth: 90.0,
               cornerRadius: 20.0,
               activeFgColor: Colors.white,
               inactiveBgColor: Colors.grey,
               inactiveFgColor: Colors.white,
-              initialLabelIndex: appState.expandedIndex,
+              initialLabelIndex: appState.sharedPreferencesProvider.getSideBarExpandedIndex(),
               totalSwitches: 3,
               labels: const ['Expand', 'automatic', 'retract'],
               radiusStyle: true,
               onToggle: (index) {
                 if (index == 0) {
-                  appState.isExpanded = true;
-                  appState.automaticExpansion = false;
+                  appState.sharedPreferencesProvider.setSideBarExpanded(true);
+                  appState.sharedPreferencesProvider.setSideBarAutoExpansion(false);
                 } else if (index == 2) {
-                  appState.isExpanded = false;
-                  appState.automaticExpansion = false;
+                  appState.sharedPreferencesProvider.setSideBarExpanded(false);
+                  appState.sharedPreferencesProvider.setSideBarAutoExpansion(false);
                 } else {
-                  appState.automaticExpansion = true;
+                  appState.sharedPreferencesProvider.setSideBarAutoExpansion(true);
                 }
-                appState.expandedIndex = index;
+                appState.sharedPreferencesProvider.setSideBarExpandedIndex(index ?? 1);
                 appState.changesMade();
+              },
+            ),
+            const SizedBox(height: 10),
+            const Text("Theme:"),
+            ToggleSwitch(
+              minWidth: 90.0,
+              cornerRadius: 20.0,
+              activeFgColor: Colors.white,
+              inactiveBgColor: Colors.grey,
+              inactiveFgColor: Colors.white,
+              initialLabelIndex: appState.sharedPreferencesProvider.getTheme() == ThemeMode.system ? 0 : appState.sharedPreferencesProvider.getTheme() == ThemeMode.dark ? 2 : 1,
+              totalSwitches: 3,
+              labels: const ['System', 'Light', 'Dark'],
+              radiusStyle: true,
+              onToggle: (index) {
+                if (index == 0) {
+                  appState.sharedPreferencesProvider.setTheme(ThemeMode.system);
+                } else if (index == 2) {
+                  appState.sharedPreferencesProvider.setTheme(ThemeMode.dark);
+                } else {
+                  appState.sharedPreferencesProvider.setTheme(ThemeMode.light);
+                }
+                appState.changesMade();
+                showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: const Text('Restart Required'),
+                    content: const Center(child:  Text('Changes will take effect after a restart', style: TextStyle(fontWeight: FontWeight.bold)),),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, 'OK'),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
             TextButton(
