@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:logger/logger.dart';
 
 enum ChameleonDevice { none, ultra, lite }
@@ -19,7 +20,7 @@ class AbstractSerial {
     return [];
   }
 
-  bool connectSpecific(port) {
+  bool connectSpecific(device) {
     return false;
   }
 
@@ -27,7 +28,13 @@ class AbstractSerial {
     return [];
   }
 
-  void sendCommand(String command) {
-    log.d("Sending: $command");
+  int write(Uint8List command) {
+    return 0;
   }
+
+  Uint8List read(int length) {
+    return Uint8List(0);
+  }
+
+  void finishRead() {}
 }

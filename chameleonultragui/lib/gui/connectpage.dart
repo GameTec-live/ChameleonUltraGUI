@@ -9,9 +9,8 @@ class ConnectPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-
-    List<Widget> chameleonButtons = 
-      appState.chameleon.availableChameleons().map<Widget>((chameleonDevice) {
+    List<Widget> chameleonButtons =
+        appState.chameleon.availableChameleons().map<Widget>((chameleonDevice) {
       return ElevatedButton(
         onPressed: () {
           appState.chameleon.connectSpecific(chameleonDevice['port']);
@@ -39,14 +38,22 @@ class ConnectPage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text("Chameleon ${(chameleonDevice['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                Text(
+                    "Chameleon ${(chameleonDevice['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 20)),
               ],
             ),
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: FractionallySizedBox(
                 widthFactor: 0.4,
-                child: Image.asset(chameleonDevice['device'] == ChameleonDevice.ultra ? 'assets/black-ultra-standing-front.png' : 'assets/black-lite-standing-front.png', fit: BoxFit.contain,),
+                child: Image.asset(
+                  chameleonDevice['device'] == ChameleonDevice.ultra
+                      ? 'assets/black-ultra-standing-front.png'
+                      : 'assets/black-lite-standing-front.png',
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           ],
@@ -86,13 +93,20 @@ class ConnectPage extends StatelessWidget {
                     // "Add" Button for Bluetooth
                     ElevatedButton(
                       onPressed: () {
-                        showDialog<String>(context: context, builder: (BuildContext context) => const AlertDialog(content: Text('Identifies as BLE Dialog'),),);
+                        showDialog<String>(
+                          context: context,
+                          builder: (BuildContext context) => const AlertDialog(
+                            content: Text('Identifies as BLE Dialog'),
+                          ),
+                        );
                         // Connect via BLE here
-                        appState.chameleon.connected = true; // Bypass / Dummy for testing
+                        appState.chameleon.connected =
+                            true; // Bypass / Dummy for testing
                         appState.changesMade();
                       },
                       style: ButtonStyle(
-                        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape:
+                            MaterialStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -101,8 +115,7 @@ class ConnectPage extends StatelessWidget {
                       child: const Icon(Icons.add),
                     ),
                     ...chameleonButtons,
-                  ] 
-              ),
+                  ]),
             ),
           ],
         ),

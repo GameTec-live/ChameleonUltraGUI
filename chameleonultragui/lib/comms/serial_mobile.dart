@@ -1,4 +1,3 @@
-
 import 'package:chameleonultragui/comms/serial_abstract.dart';
 
 class MobileSerial extends AbstractSerial {
