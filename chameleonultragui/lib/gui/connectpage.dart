@@ -10,29 +10,12 @@ class ConnectPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-
     List<Widget> chameleonButtons =
         appState.chameleon.availableChameleons().map<Widget>((chameleonDevice) {
       return ElevatedButton(
-        onPressed: () async {
+        onPressed: () {
           appState.chameleon.connectSpecific(chameleonDevice['port']);
-          if (appState.chameleon.connected) {
-            var cml = ChameleonCom(port: appState.chameleon);
-            print("Firmware version: ${await cml.getFirmwareVersion()}");
-            print("Chip ID: ${await cml.getDeviceChipID()}");
-            print("Reader mode: ${await cml.isReaderDeviceMode()}");
-            await cml.setReaderDeviceMode(true);
-            print(
-                "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
-            // await cml.setReaderDeviceMode(false);
-            // print(
-            //     "Reader mode (should be false): ${await cml.isReaderDeviceMode()}");
-            // var card = await cml.scan14443aTag();
-            // print('Card UID: ${card!.UID}');
-            // print('SAK: ${card.SAK}');
-            // print('ATQA: ${card.ATQA}');
-            appState.changesMade();
-          }
+          appState.changesMade();
         },
         style: ButtonStyle(
           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -132,7 +115,7 @@ class ConnectPage extends StatelessWidget {
                       ),
                       child: const Icon(Icons.add),
                     ),
-                    ...chameleonButtons
+                    ...chameleonButtons,
                   ]),
             ),
           ],

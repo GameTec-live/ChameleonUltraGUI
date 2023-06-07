@@ -13,32 +13,56 @@ import 'gui/savedkeyspage.dart';
 import 'gui/settingspage.dart';
 import 'gui/connectpage.dart';
 
-void main() {
-  runApp(const MyApp());
+// Shared Preferences Provider
+import 'sharedprefsprovider.dart';
+
+Future<void> main() async {
+  final sharedPreferencesProvider = SharedPreferencesProvider();
+  await sharedPreferencesProvider.load();
+  runApp(MyApp(sharedPreferencesProvider));
 }
 
 class MyApp extends StatelessWidget {
   // Root Widget
-  const MyApp({super.key});
+  final SharedPreferencesProvider _sharedPreferencesProvider;
+  const MyApp(this._sharedPreferencesProvider, {Key? key}): super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => MyAppState(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _sharedPreferencesProvider),
+        ChangeNotifierProvider(create: (context) => MyAppState(_sharedPreferencesProvider),),
+      ],
       child: MaterialApp(
         title: 'Chameleon Ultra GUI', // App Name
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.deepOrange), // Color Scheme
+          brightness: Brightness.light, // Light Theme
         ),
+        darkTheme: ThemeData.dark().copyWith(
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.deepOrange, brightness: Brightness.dark), // Color Scheme
+          brightness: Brightness.dark, // Dark Theme
+        ),
+        themeMode: _sharedPreferencesProvider.getTheme(), // Dark Theme
         home: const MyHomePage(),
       ),
     );
+    
+    
+    //return ChangeNotifierProvider(
+    //  create: (context) => MyAppState(),
+    //  child: 
+    //);
   }
 }
 
 class MyAppState extends ChangeNotifier {
+  final SharedPreferencesProvider sharedPreferencesProvider;
+  MyAppState(this.sharedPreferencesProvider);
   // State
   bool onAndroid =
       Platform.isAndroid; // Are we on android? (mostly for serial port)
@@ -53,11 +77,7 @@ class MyAppState extends ChangeNotifier {
   }
   // This doesn't work because we aren't working stateful
   */
-  var isExpanded =
-      true; // I am planning to use this to control the navigation rail expansion.
-  bool automaticExpansion = true;
   // maybe via this: https://www.woolha.com/tutorials/flutter-switch-input-widget-example or this https://dev.to/naidanut/adding-expandable-side-bar-using-navigationrail-in-flutter-5ai8
-  int? expandedIndex = 1;
   void changesMade() {
     notifyListeners();
   }
@@ -78,12 +98,12 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-    if (appState.automaticExpansion) {
+    if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {
-        appState.isExpanded = true;
+        appState.sharedPreferencesProvider.setSideBarExpanded(true);
       } else {
-        appState.isExpanded = false;
+        appState.sharedPreferencesProvider.setSideBarExpanded(false);
       }
     }
 
@@ -123,7 +143,7 @@ class _MyHomePageState extends State<MyHomePage> {
             SafeArea(
               child: NavigationRail(
                 // Sidebar
-                extended: appState.isExpanded,
+                extended: appState.sharedPreferencesProvider.getSideBarExpanded(),
                 destinations: const [
                   // Sidebar Items
                   NavigationRailDestination(
