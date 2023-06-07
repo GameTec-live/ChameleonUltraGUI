@@ -1,4 +1,3 @@
-import 'package:chameleonultragui/chameleon/connector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../comms/serial_abstract.dart';

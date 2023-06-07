@@ -1,6 +1,4 @@
 import 'dart:typed_data';
-
-import 'package:flutter_libserialport/flutter_libserialport.dart';
 import 'package:logger/logger.dart';
 
 enum ChameleonDevice { none, ultra, lite }
@@ -9,7 +7,6 @@ class AbstractSerial {
   Logger log = Logger();
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
-  SerialPort? port;
 
   bool preformConnection() {
     return false;

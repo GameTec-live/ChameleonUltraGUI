@@ -4,7 +4,6 @@ import 'serial_abstract.dart';
 
 class NativeSerial extends AbstractSerial {
   // Class for PC Serial Communication
-  @override
   SerialPort? port;
 
   @override

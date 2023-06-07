@@ -25,14 +25,16 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   // Root Widget
   final SharedPreferencesProvider _sharedPreferencesProvider;
-  const MyApp(this._sharedPreferencesProvider, {Key? key}): super(key: key);
+  const MyApp(this._sharedPreferencesProvider, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _sharedPreferencesProvider),
-        ChangeNotifierProvider(create: (context) => MyAppState(_sharedPreferencesProvider),),
+        ChangeNotifierProvider(
+          create: (context) => MyAppState(_sharedPreferencesProvider),
+        ),
       ],
       child: MaterialApp(
         title: 'Chameleon Ultra GUI', // App Name
@@ -44,18 +46,18 @@ class MyApp extends StatelessWidget {
         ),
         darkTheme: ThemeData.dark().copyWith(
           colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.deepOrange, brightness: Brightness.dark), // Color Scheme
+              seedColor: Colors.deepOrange,
+              brightness: Brightness.dark), // Color Scheme
           brightness: Brightness.dark, // Dark Theme
         ),
         themeMode: _sharedPreferencesProvider.getTheme(), // Dark Theme
         home: const MyHomePage(),
       ),
     );
-    
-    
+
     //return ChangeNotifierProvider(
     //  create: (context) => MyAppState(),
-    //  child: 
+    //  child:
     //);
   }
 }
@@ -143,7 +145,8 @@ class _MyHomePageState extends State<MyHomePage> {
             SafeArea(
               child: NavigationRail(
                 // Sidebar
-                extended: appState.sharedPreferencesProvider.getSideBarExpanded(),
+                extended:
+                    appState.sharedPreferencesProvider.getSideBarExpanded(),
                 destinations: const [
                   // Sidebar Items
                   NavigationRailDestination(

@@ -46,21 +46,26 @@ class SettingsMainPage extends StatelessWidget {
               activeFgColor: Colors.white,
               inactiveBgColor: Colors.grey,
               inactiveFgColor: Colors.white,
-              initialLabelIndex: appState.sharedPreferencesProvider.getSideBarExpandedIndex(),
+              initialLabelIndex:
+                  appState.sharedPreferencesProvider.getSideBarExpandedIndex(),
               totalSwitches: 3,
               labels: const ['Expand', 'automatic', 'retract'],
               radiusStyle: true,
               onToggle: (index) {
                 if (index == 0) {
                   appState.sharedPreferencesProvider.setSideBarExpanded(true);
-                  appState.sharedPreferencesProvider.setSideBarAutoExpansion(false);
+                  appState.sharedPreferencesProvider
+                      .setSideBarAutoExpansion(false);
                 } else if (index == 2) {
                   appState.sharedPreferencesProvider.setSideBarExpanded(false);
-                  appState.sharedPreferencesProvider.setSideBarAutoExpansion(false);
+                  appState.sharedPreferencesProvider
+                      .setSideBarAutoExpansion(false);
                 } else {
-                  appState.sharedPreferencesProvider.setSideBarAutoExpansion(true);
+                  appState.sharedPreferencesProvider
+                      .setSideBarAutoExpansion(true);
                 }
-                appState.sharedPreferencesProvider.setSideBarExpandedIndex(index ?? 1);
+                appState.sharedPreferencesProvider
+                    .setSideBarExpandedIndex(index ?? 1);
                 appState.changesMade();
               },
             ),
@@ -72,7 +77,14 @@ class SettingsMainPage extends StatelessWidget {
               activeFgColor: Colors.white,
               inactiveBgColor: Colors.grey,
               inactiveFgColor: Colors.white,
-              initialLabelIndex: appState.sharedPreferencesProvider.getTheme() == ThemeMode.system ? 0 : appState.sharedPreferencesProvider.getTheme() == ThemeMode.dark ? 2 : 1,
+              initialLabelIndex:
+                  appState.sharedPreferencesProvider.getTheme() ==
+                          ThemeMode.system
+                      ? 0
+                      : appState.sharedPreferencesProvider.getTheme() ==
+                              ThemeMode.dark
+                          ? 2
+                          : 1,
               totalSwitches: 3,
               labels: const ['System', 'Light', 'Dark'],
               radiusStyle: true,
@@ -89,7 +101,10 @@ class SettingsMainPage extends StatelessWidget {
                   context: context,
                   builder: (BuildContext context) => AlertDialog(
                     title: const Text('Restart Required'),
-                    content: const Center(child:  Text('Changes will take effect after a restart', style: TextStyle(fontWeight: FontWeight.bold)),),
+                    content: const Center(
+                      child: Text('Changes will take effect after a restart',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
                     actions: <Widget>[
                       TextButton(
                         onPressed: () => Navigator.pop(context, 'OK'),
