@@ -42,7 +42,9 @@ class MyAppState extends ChangeNotifier {
   // State
   bool onAndroid =
       Platform.isAndroid; // Are we on android? (mostly for serial port)
-  AbstractSerial chameleon = Platform.isAndroid ? MobileSerial() : NativeSerial(); // Chameleon Object, connected Chameleon
+  AbstractSerial chameleon = Platform.isAndroid
+      ? MobileSerial()
+      : NativeSerial(); // Chameleon Object, connected Chameleon
   bool switchOn = true;
   /*void toggleswitch() {
     setState(() {

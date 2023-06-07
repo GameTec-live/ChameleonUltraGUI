@@ -68,21 +68,27 @@ class SettingsMainPage extends StatelessWidget {
                 builder: (BuildContext context) => AlertDialog(
                   title: const Text('About'),
                   content: const Center(
-                    child:  Column(
+                    child: Column(
                       children: [
-                        Text('Chameleon Ultra GUI', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text('A Tool to graphically manage and configure your Chameleon Ultra, written in Flutter and running on Desktop and Mobile.'),
+                        Text('Chameleon Ultra GUI',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text(
+                            'A Tool to graphically manage and configure your Chameleon Ultra, written in Flutter and running on Desktop and Mobile.'),
                         SizedBox(height: 10),
                         Text('Version:'),
-                        Text('UNRELEASED', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text('UNRELEASED',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                         SizedBox(height: 10),
                         Text('Developed by:'),
-                        Text('Foxushka, Akisame and GameTec_live', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text('Foxushka, Akisame and GameTec_live',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                         SizedBox(height: 10),
                         Text('License:'),
-                        Text('GPLV3', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text('GPLV3',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                         SizedBox(height: 10),
-                        Text('https://github.com/GameTec-live/ChameleonUltraGUI'),
+                        Text(
+                            'https://github.com/GameTec-live/ChameleonUltraGUI'),
                       ],
                     ),
                   ),
