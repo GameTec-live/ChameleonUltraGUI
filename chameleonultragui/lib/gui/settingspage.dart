@@ -115,6 +115,40 @@ class SettingsMainPage extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 10),
+            const Text("Colorscheme:"),
+            ToggleSwitch( // TODO: Change to a dropdown menu
+              minWidth: 90.0,
+              cornerRadius: 20.0,
+              activeFgColor: Colors.white,
+              inactiveBgColor: Colors.grey,
+              inactiveFgColor: Colors.white,
+              initialLabelIndex: appState.sharedPreferencesProvider.sharedPreferences.getInt('app_theme_color') ?? 0,
+              totalSwitches: 8,
+              labels: const ['Default', 'Purple', 'Blue', 'Green','Indigo', 'Lime', 'Red', 'Yellow'],
+              radiusStyle: true,
+              onToggle: (index) {
+                appState.sharedPreferencesProvider.setThemeColor(index ?? 0);
+                appState.changesMade();
+                showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: const Text('Restart Required'),
+                    content: const Center(
+                      child: Text('Changes will take effect after a restart',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, 'OK'),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
                 context: context,
@@ -159,6 +193,7 @@ class SettingsMainPage extends StatelessWidget {
               ),
               child: const Text('About'),
             ),
+            const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
                 context: context,

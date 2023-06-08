@@ -44,12 +44,12 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.deepOrange), // Color Scheme
+              seedColor: _sharedPreferencesProvider.getThemeColor()), // Color Scheme
           brightness: Brightness.light, // Light Theme
         ),
         darkTheme: ThemeData.dark().copyWith(
           colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.deepOrange,
+              seedColor: _sharedPreferencesProvider.getThemeColor(),
               brightness: Brightness.dark), // Color Scheme
           brightness: Brightness.dark, // Dark Theme
         ),
