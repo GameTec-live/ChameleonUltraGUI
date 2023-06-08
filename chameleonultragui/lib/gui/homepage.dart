@@ -15,12 +15,24 @@ class HomePage extends StatelessWidget {
     var appState = context.watch<MyAppState>(); // Get State
     var cml = ChameleonCom(port: appState.chameleon);
 
-    return const Center( // Todo: Implement Homepage
-      child: SizedBox(
-        width: 30,
-        height: 30,
-        child: CircularProgressIndicator()
-        )
+    return Center( // Todo: Implement Homepage
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center, // Center
+        children: [
+          Align(
+            alignment: Alignment.topRight,
+            child: IconButton(
+              onPressed: () {
+                // Disconnect
+                appState.chameleon.performDisconnect();
+                appState.changesMade();
+              },
+              icon: const Icon(Icons.close),
+            ),
+          ),
+          const CircularProgressIndicator.adaptive(),
+        ]
+      ),
     );
   }
 }
