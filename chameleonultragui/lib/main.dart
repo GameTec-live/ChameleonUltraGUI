@@ -12,6 +12,7 @@ import 'gui/homepage.dart';
 import 'gui/savedkeyspage.dart';
 import 'gui/settingspage.dart';
 import 'gui/connectpage.dart';
+import 'gui/devpage.dart';
 
 // Shared Preferences Provider
 import 'sharedprefsprovider.dart';
@@ -75,6 +76,7 @@ class MyAppState extends ChangeNotifier {
       ? MobileSerial()
       : NativeSerial(); // Chameleon Object, connected Chameleon
   bool switchOn = true;
+  bool devMode = false;
   /*void toggleswitch() {
     setState(() {
       switchOn = !switchOn;
@@ -138,6 +140,9 @@ class _MyHomePageState extends State<MyHomePage> {
       case 5:
         page = const SettingsMainPage();
         break;
+      case 6:
+        page = const DevPage();
+        break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -151,32 +156,37 @@ class _MyHomePageState extends State<MyHomePage> {
                 // Sidebar
                 extended:
                     appState.sharedPreferencesProvider.getSideBarExpanded(),
-                destinations: const [
+                destinations:  [
                   // Sidebar Items
-                  NavigationRailDestination(
+                  const NavigationRailDestination(
                     icon: Icon(Icons.home),
                     label: Text('Home'),
                   ),
-                  NavigationRailDestination(
+                  const NavigationRailDestination(
                     icon: Icon(Icons.widgets),
                     label: Text('Slot Manager'),
                   ),
-                  NavigationRailDestination(
+                  const NavigationRailDestination(
                     icon: Icon(Icons.auto_awesome_motion_outlined),
                     label: Text('Saved keys'),
                   ),
-                  NavigationRailDestination(
+                  const NavigationRailDestination(
                     icon: Icon(Icons.wifi),
                     label: Text('Live Read/Write'),
                   ),
-                  NavigationRailDestination(
+                  const NavigationRailDestination(
                     icon: Icon(Icons.shield),
                     label: Text('Key Recovery'),
                   ),
-                  NavigationRailDestination(
+                  const NavigationRailDestination(
                     icon: Icon(Icons.settings),
                     label: Text('Settings'),
                   ),
+                  if (appState.devMode)
+                    const NavigationRailDestination(
+                      icon: Icon(Icons.developer_mode),
+                      label: Text('Dev'),
+                    ),
                 ],
                 selectedIndex: selectedIndex,
                 onDestinationSelected: (value) {

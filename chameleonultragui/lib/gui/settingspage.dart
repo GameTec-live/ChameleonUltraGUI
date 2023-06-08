@@ -235,9 +235,12 @@ class SettingsMainPage extends StatelessWidget {
                       child: const Text('Cancel'),
                     ),
                     TextButton(
-                      onPressed: () => Navigator.pop(context, 'OK'),
+                      onPressed: () {
+                        appState.devMode = true;
+                        appState.changesMade();
+                        Navigator.pop(context, 'OK');
+                      },
                       child: const Text('OK'),
-                      // Never gonna give you up! Never gonna let you down!
                     ),
                   ],
                 ),
