@@ -1,38 +1,74 @@
 import 'dart:async';
 import 'dart:core';
+import 'dart:ffi';
 import 'dart:isolate';
 import 'package:dylib/dylib.dart';
 import 'bindings.dart';
+import 'package:ffi/ffi.dart';
 import 'dart:ffi' as ffi;
 
-/// A very short-lived native function.
-///
-/// For very short-lived functions, it is fine to call them on the main isolate.
-/// They will block the Dart execution while running the native function, so
-/// only do this for native functions which are guaranteed to be short-lived.
-int sum(int a, int b) => _bindings.sum(a, b);
+class DarksideItemDart {
+  int nt1;
+  int ks1;
+  int par;
+  int nr;
+  int ar;
 
-/// A longer lived native function, which occupies the thread calling it.
-///
-/// Do not call these kind of native functions in the main isolate. They will
-/// block Dart execution. This will cause dropped frames in Flutter applications.
-/// Instead, call these native functions on a separate isolate.
-///
-/// Modify this to suit your own use case. Example use cases:
-///
-/// 1. Reuse a single isolate for various different kinds of requests.
-/// 2. Use multiple helper isolates for parallel execution.
-Future<int> sumAsync(int a, int b) async {
+  DarksideItemDart(
+      {required this.nt1,
+      required this.ks1,
+      required this.par,
+      required this.nr,
+      required this.ar});
+}
+
+class DarksideDart {
+  int uid;
+  List<DarksideItemDart> items;
+
+  DarksideDart({required this.uid, required this.items});
+}
+
+class NestedDart {
+  int uid;
+  int distance;
+  int nt0;
+  int nt0Enc;
+  int par0;
+  int nt1;
+  int nt1Enc;
+  int par1;
+
+  NestedDart(
+      {required this.uid,
+      required this.distance,
+      required this.nt0,
+      required this.nt0Enc,
+      required this.par0,
+      required this.nt1,
+      required this.nt1Enc,
+      required this.par1});
+}
+
+Future<List<int>> darkside(DarksideDart darkside) async {
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
-  final _SumRequest request = _SumRequest(requestId, a, b);
-  final Completer<int> completer = Completer<int>();
-  _sumRequests[requestId] = completer;
+  final DarksideRequest request = DarksideRequest(requestId, darkside);
+  final Completer<List<int>> completer = Completer<List<int>>();
+  requests[requestId] = completer;
   helperIsolateSendPort.send(request);
   return completer.future;
 }
 
-const String _libName = 'recovery';
+Future<List<int>> nested(NestedDart nested) async {
+  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
+  final int requestId = _nextSumRequestId++;
+  final NestedRequest request = NestedRequest(requestId, nested);
+  final Completer<List<int>> completer = Completer<List<int>>();
+  requests[requestId] = completer;
+  helperIsolateSendPort.send(request);
+  return completer.future;
+}
 
 /// The bindings to the native functions in [_dylib].
 final Recovery _bindings = Recovery(ffi.DynamicLibrary.open(
@@ -43,32 +79,35 @@ final Recovery _bindings = Recovery(ffi.DynamicLibrary.open(
   ),
 ));
 
-/// A request to compute `sum`.
-///
-/// Typically sent from one isolate to another.
-class _SumRequest {
+class DarksideRequest {
   final int id;
-  final int a;
-  final int b;
+  final DarksideDart darkside;
 
-  const _SumRequest(this.id, this.a, this.b);
+  const DarksideRequest(this.id, this.darkside);
+}
+
+class NestedRequest {
+  final int id;
+  final NestedDart nested;
+
+  const NestedRequest(this.id, this.nested);
 }
 
 /// A response with the result of `sum`.
 ///
 /// Typically sent from one isolate to another.
-class _SumResponse {
+class KeyResponse {
   final int id;
-  final int result;
+  final List<int> result;
 
-  const _SumResponse(this.id, this.result);
+  const KeyResponse(this.id, this.result);
 }
 
-/// Counter to identify [_SumRequest]s and [_SumResponse]s.
+/// Counter to identify requests and [Response]s.
 int _nextSumRequestId = 0;
 
-/// Mapping from [_SumRequest] `id`s to the completers corresponding to the correct future of the pending request.
-final Map<int, Completer<int>> _sumRequests = <int, Completer<int>>{};
+/// Mapping from request `id`s to the completers corresponding to the correct future of the pending request.
+final Map<int, Completer<List<int>>> requests = <int, Completer<List<int>>>{};
 
 /// The SendPort belonging to the helper isolate.
 Future<SendPort> _helperIsolateSendPort = () async {
@@ -87,10 +126,10 @@ Future<SendPort> _helperIsolateSendPort = () async {
         completer.complete(data);
         return;
       }
-      if (data is _SumResponse) {
+      if (data is KeyResponse) {
         // The helper isolate sent us a response to a request we sent.
-        final Completer<int> completer = _sumRequests[data.id]!;
-        _sumRequests.remove(data.id);
+        final Completer<List<int>> completer = requests[data.id]!;
+        requests.remove(data.id);
         completer.complete(data.result);
         return;
       }
@@ -102,9 +141,52 @@ Future<SendPort> _helperIsolateSendPort = () async {
     final ReceivePort helperReceivePort = ReceivePort()
       ..listen((dynamic data) {
         // On the helper isolate listen to requests and respond to them.
-        if (data is _SumRequest) {
-          final int result = _bindings.sum_long_running(data.a, data.b);
-          final _SumResponse response = _SumResponse(data.id, result);
+        if (data is DarksideRequest) {
+          Pointer<Darkside> pointer = calloc();
+          final itemPointer = calloc<DarksideItem>(256);
+          pointer.ref.uid = data.darkside.uid;
+          var i = 0;
+          for (var item in data.darkside.items) {
+            var value = itemPointer.elementAt(i);
+            value.ref.ar = item.ar;
+            value.ref.ks1 = item.ks1;
+            value.ref.nr = item.nr;
+            value.ref.nt1 = item.nt1;
+            value.ref.par = item.par;
+            i++;
+          }
+          pointer.ref.items = itemPointer;
+          pointer.ref.count = i;
+
+          Pointer<Uint32> count = calloc();
+          count.value = 0;
+          List<int> keys = [];
+          final Pointer<Uint64> result = _bindings.darkside(pointer, count);
+          for (var i = 0; i < count.value; i++) {
+            keys.add(result.elementAt(i).value);
+          }
+          final KeyResponse response = KeyResponse(data.id, keys);
+          sendPort.send(response);
+          return;
+        } else if (data is NestedRequest) {
+          Pointer<Nested> pointer = calloc();
+          pointer.ref.uid = data.nested.uid;
+          pointer.ref.dist = data.nested.distance;
+          pointer.ref.nt0 = data.nested.nt0;
+          pointer.ref.nt0_enc = data.nested.nt0Enc;
+          pointer.ref.par0 = data.nested.par0;
+          pointer.ref.nt1 = data.nested.nt1;
+          pointer.ref.nt1_enc = data.nested.nt1Enc;
+          pointer.ref.par1 = data.nested.par1;
+
+          Pointer<Uint32> count = calloc();
+          count.value = 0;
+          List<int> keys = [];
+          final Pointer<Uint64> result = _bindings.nested(pointer, count);
+          for (var i = 0; i < count.value; i++) {
+            keys.add(result.elementAt(i).value);
+          }
+          final KeyResponse response = KeyResponse(data.id, keys);
           sendPort.send(response);
           return;
         }

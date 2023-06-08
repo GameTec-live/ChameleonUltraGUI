@@ -2,9 +2,12 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
+// Recovery
+import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
 class DevPage extends StatelessWidget {
   // Home Page
@@ -13,6 +16,7 @@ class DevPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
+    appState.chameleon.finishRead();
     var cml = ChameleonCom(port: appState.chameleon);
 
     return Center(
@@ -46,14 +50,12 @@ class DevPage extends StatelessWidget {
             child: const Text('Connect'),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () {
               // appState.chameleon.sendCommand("test");
             },
             child: const Text('Send'),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               appState.log.d(
@@ -68,7 +70,6 @@ class DevPage extends StatelessWidget {
             ]),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               appState.log.d(await cml.detectMf1Support());
@@ -78,7 +79,6 @@ class DevPage extends StatelessWidget {
             ]),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               appState.log.d(await cml.getMf1NTLevel());
@@ -88,7 +88,6 @@ class DevPage extends StatelessWidget {
             ]),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               appState.log.d(await cml.checkMf1Darkside());
@@ -98,11 +97,10 @@ class DevPage extends StatelessWidget {
             ]),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               var distance = await cml.getMf1NTDistance(0, 0x60,
-                  Uint8List.fromList([0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]));
+                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
               appState.log.d("UID: ${distance!.UID}");
               appState.log.d("Distance ${distance.distance}");
             },
@@ -111,54 +109,104 @@ class DevPage extends StatelessWidget {
             ]),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
-              var nonces = await cml.getMf1NestedNonces(
-                  0,
-                  0x60,
-                  Uint8List.fromList([0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]),
-                  0,
-                  0x61);
-              inspect(nonces);
-              // print("UID: ${distance!.UID}");
-              // print("Distance ${distance.distance}");
+              var distance = await cml.getMf1NTDistance(0, 0x60,
+                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
+              bool found = false;
+              for (var i = 0; i < 0xFF && !found; i++) {
+                var nonces = await cml.getMf1NestedNonces(
+                    0,
+                    0x60,
+                    Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
+                    0,
+                    0x61);
+                var nested = NestedDart(
+                    uid: distance!.UID,
+                    distance: distance.distance,
+                    nt0: nonces!.nonces[0].nt,
+                    nt0Enc: nonces.nonces[0].ntEnc,
+                    par0: nonces.nonces[0].parity,
+                    nt1: nonces.nonces[1].nt,
+                    nt1Enc: nonces.nonces[1].ntEnc,
+                    par1: nonces.nonces[1].parity);
+
+                var keys = await recovery.nested(nested);
+                if (keys.isNotEmpty) {
+                  appState.log.d("Found keys: $keys. Checking them...");
+                  for (var key in keys) {
+                    var keyBytes = u64ToBytes(key);
+                    if ((await cml.mf1Auth(
+                            0x03, 0x60, keyBytes.sublist(2, 8))) ==
+                        true) {
+                      appState.log.i(
+                          "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
+                      found = true;
+                      break;
+                    }
+                  }
+                }
+                appState.log.d("Can't find keys, retrying...");
+              }
             },
             child: const Column(children: [
-              Text('Run nested attack'),
+              Text('Run nested attack on card'),
             ]),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               var data = await cml.getMf1Darkside(0x03, 0x60, true, 15);
-              inspect(data);
-              data = await cml.getMf1Darkside(0x03, 0x60, false, 15);
-              inspect(data);
+              var darkside = DarksideDart(uid: data!.UID, items: []);
+              bool found = false;
+
+              for (var tries = 0; tries < 0xFF && !found; tries++) {
+                darkside.items.add(DarksideItemDart(
+                    nt1: data!.nt1,
+                    ks1: data.ks1,
+                    par: data.par,
+                    nr: data.nr,
+                    ar: data.ar));
+                var keys = await recovery.darkside(darkside);
+                if (keys.isNotEmpty) {
+                  appState.log.d("Found keys: $keys. Checking them...");
+                  for (var key in keys) {
+                    var keyBytes = u64ToBytes(key);
+                    if ((await cml.mf1Auth(
+                            0x03, 0x60, keyBytes.sublist(2, 8))) ==
+                        true) {
+                      appState.log.i(
+                          "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
+                      found = true;
+                      break;
+                    }
+                  }
+                }
+                appState.log.d("Can't find keys, retrying...");
+                data = await cml.getMf1Darkside(0x03, 0x60, false, 15);
+              }
             },
             child: const Column(children: [
-              Text('Run darkside attack'),
+              Text('Run darkside attack on card'),
             ]),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               var data = await cml.mf1Auth(0x03, 0x60,
-                  Uint8List.fromList([0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]));
+                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
               appState.log.d(data);
               var block = await cml.mf1ReadBlock(0x02, 0x60,
-                  Uint8List.fromList([0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]));
+                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
               appState.log.d(block);
               block![0] = 0xFF;
               await cml.mf1WriteBlock(
                   0x02,
                   0x60,
-                  Uint8List.fromList([0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]),
+                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
                   block);
               block = await cml.mf1ReadBlock(0x02, 0x60,
-                  Uint8List.fromList([0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]));
+                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
               appState.log.d(block);
             },
             child: const Column(children: [
@@ -166,7 +214,6 @@ class DevPage extends StatelessWidget {
             ]),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               appState.log.d(
@@ -183,7 +230,6 @@ class DevPage extends StatelessWidget {
             ]),
           ),
           ElevatedButton(
-            // Send Button
             onPressed: () async {
               var name = await cml.getSlotTagName(1, ChameleonTagFrequiency.hf);
               appState.log.d(name);
@@ -194,6 +240,50 @@ class DevPage extends StatelessWidget {
             },
             child: const Column(children: [
               Text('Test naming'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              var darkside = DarksideDart(uid: 2374329723, items: []);
+              darkside.items.add(DarksideItemDart(
+                  nt1: 913032415,
+                  ks1: 216745674933338888,
+                  par: 0,
+                  nr: 0,
+                  ar: 0));
+              darkside.items.add(DarksideItemDart(
+                  nt1: 913032415,
+                  ks1: 1010230244403446283,
+                  par: 0,
+                  nr: 1,
+                  ar: 0));
+              var keys = await recovery.darkside(darkside);
+              appState.log.d("Darkside output: $keys");
+              appState.log.d(
+                  "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
+            },
+            child: const Column(children: [
+              Text('Test darkside library'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              var nested = NestedDart(
+                  uid: 2374329723,
+                  distance: 613,
+                  nt0: 1999585272,
+                  nt0Enc: 3173333529,
+                  par0: 3,
+                  nt1: 128306861,
+                  nt1Enc: 2363514210,
+                  par1: 7);
+              var keys = await recovery.nested(nested);
+              appState.log.d("Nested output: $keys");
+              appState.log.d(
+                  "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
+            },
+            child: const Column(children: [
+              Text('Test nested library'),
             ]),
           ),
         ],

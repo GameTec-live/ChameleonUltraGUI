@@ -17,9 +17,6 @@ import 'gui/devpage.dart';
 // Shared Preferences Provider
 import 'sharedprefsprovider.dart';
 
-// Recovery
-import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
-
 // Logger
 import 'package:logger/logger.dart';
 
@@ -109,7 +106,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    print(recovery.sum(1, 2));
     var appState = context.watch<MyAppState>(); // Get State
     if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;

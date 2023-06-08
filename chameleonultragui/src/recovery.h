@@ -15,16 +15,34 @@
 #define FFI_PLUGIN_EXPORT
 #endif
 
-// A very short-lived native function.
-//
-// For very short-lived functions, it is fine to call them on the main isolate.
-// They will block the Dart execution while running the native function, so
-// only do this for native functions which are guaranteed to be short-lived.
-FFI_PLUGIN_EXPORT intptr_t sum(intptr_t a, intptr_t b);
+typedef struct
+{
+    uint32_t nt1;
+    uint64_t ks1;
+    uint64_t par;
+    uint32_t nr;
+    uint32_t ar;
+} DarksideItem;
 
-// A longer lived native function, which occupies the thread calling it.
-//
-// Do not call these kind of native functions in the main isolate. They will
-// block Dart execution. This will cause dropped frames in Flutter applications.
-// Instead, call these native functions on a separate isolate.
-FFI_PLUGIN_EXPORT intptr_t sum_long_running(intptr_t a, intptr_t b);
+typedef struct
+{
+    uint32_t uid;
+    DarksideItem *items;
+    uint32_t count;
+} Darkside;
+
+typedef struct
+{
+    uint32_t uid;
+    uint32_t dist;
+    uint32_t nt0;
+    uint32_t nt0_enc;
+    uint32_t par0;
+    uint32_t nt1;
+    uint32_t nt1_enc;
+    uint32_t par1;
+} Nested;
+
+FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint32_t *keyCount);
+
+FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *keyCount);

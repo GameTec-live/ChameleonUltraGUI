@@ -28,44 +28,92 @@ class Recovery {
           lookup)
       : _lookup = lookup;
 
-  /// A very short-lived native function.
-  ///
-  /// For very short-lived functions, it is fine to call them on the main isolate.
-  /// They will block the Dart execution while running the native function, so
-  /// only do this for native functions which are guaranteed to be short-lived.
-  int sum(
-    int a,
-    int b,
+  ffi.Pointer<ffi.Uint64> darkside(
+    ffi.Pointer<Darkside> data,
+    ffi.Pointer<ffi.Uint32> keyCount,
   ) {
-    return _sum(
-      a,
-      b,
+    return _darkside(
+      data,
+      keyCount,
     );
   }
 
-  late final _sumPtr =
-      _lookup<ffi.NativeFunction<ffi.IntPtr Function(ffi.IntPtr, ffi.IntPtr)>>(
-          'sum');
-  late final _sum = _sumPtr.asFunction<int Function(int, int)>();
+  late final _darksidePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Uint64> Function(
+              ffi.Pointer<Darkside>, ffi.Pointer<ffi.Uint32>)>>('darkside');
+  late final _darkside = _darksidePtr.asFunction<
+      ffi.Pointer<ffi.Uint64> Function(
+          ffi.Pointer<Darkside>, ffi.Pointer<ffi.Uint32>)>();
 
-  /// A longer lived native function, which occupies the thread calling it.
-  ///
-  /// Do not call these kind of native functions in the main isolate. They will
-  /// block Dart execution. This will cause dropped frames in Flutter applications.
-  /// Instead, call these native functions on a separate isolate.
-  int sum_long_running(
-    int a,
-    int b,
+  ffi.Pointer<ffi.Uint64> nested(
+    ffi.Pointer<Nested> data,
+    ffi.Pointer<ffi.Uint32> keyCount,
   ) {
-    return _sum_long_running(
-      a,
-      b,
+    return _nested(
+      data,
+      keyCount,
     );
   }
 
-  late final _sum_long_runningPtr =
-      _lookup<ffi.NativeFunction<ffi.IntPtr Function(ffi.IntPtr, ffi.IntPtr)>>(
-          'sum_long_running');
-  late final _sum_long_running =
-      _sum_long_runningPtr.asFunction<int Function(int, int)>();
+  late final _nestedPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Uint64> Function(
+              ffi.Pointer<Nested>, ffi.Pointer<ffi.Uint32>)>>('nested');
+  late final _nested = _nestedPtr.asFunction<
+      ffi.Pointer<ffi.Uint64> Function(
+          ffi.Pointer<Nested>, ffi.Pointer<ffi.Uint32>)>();
+}
+
+class DarksideItem extends ffi.Struct {
+  @ffi.Uint32()
+  external int nt1;
+
+  @ffi.Uint64()
+  external int ks1;
+
+  @ffi.Uint64()
+  external int par;
+
+  @ffi.Uint32()
+  external int nr;
+
+  @ffi.Uint32()
+  external int ar;
+}
+
+class Darkside extends ffi.Struct {
+  @ffi.Uint32()
+  external int uid;
+
+  external ffi.Pointer<DarksideItem> items;
+
+  @ffi.Uint32()
+  external int count;
+}
+
+class Nested extends ffi.Struct {
+  @ffi.Uint32()
+  external int uid;
+
+  @ffi.Uint32()
+  external int dist;
+
+  @ffi.Uint32()
+  external int nt0;
+
+  @ffi.Uint32()
+  external int nt0_enc;
+
+  @ffi.Uint32()
+  external int par0;
+
+  @ffi.Uint32()
+  external int nt1;
+
+  @ffi.Uint32()
+  external int nt1_enc;
+
+  @ffi.Uint32()
+  external int par1;
 }
