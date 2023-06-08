@@ -145,8 +145,9 @@ class DevPage extends StatelessWidget {
                       break;
                     }
                   }
+                } else {
+                  appState.log.d("Can't find keys, retrying...");
                 }
-                appState.log.d("Can't find keys, retrying...");
               }
             },
             child: const Column(children: [
@@ -181,9 +182,10 @@ class DevPage extends StatelessWidget {
                       break;
                     }
                   }
+                } else {
+                  appState.log.d("Can't find keys, retrying...");
+                  data = await cml.getMf1Darkside(0x03, 0x60, false, 15);
                 }
-                appState.log.d("Can't find keys, retrying...");
-                data = await cml.getMf1Darkside(0x03, 0x60, false, 15);
               }
             },
             child: const Column(children: [
