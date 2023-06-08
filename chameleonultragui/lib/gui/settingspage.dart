@@ -117,18 +117,12 @@ class SettingsMainPage extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             const Text("Colorscheme:"),
-            ToggleSwitch( // TODO: Change to a dropdown menu
-              minWidth: 90.0,
-              cornerRadius: 20.0,
-              activeFgColor: Colors.white,
-              inactiveBgColor: Colors.grey,
-              inactiveFgColor: Colors.white,
-              initialLabelIndex: appState.sharedPreferencesProvider.sharedPreferences.getInt('app_theme_color') ?? 0,
-              totalSwitches: 8,
-              labels: const ['Default', 'Purple', 'Blue', 'Green','Indigo', 'Lime', 'Red', 'Yellow'],
-              radiusStyle: true,
-              onToggle: (index) {
-                appState.sharedPreferencesProvider.setThemeColor(index ?? 0);
+            DropdownButton(
+              value: appState.sharedPreferencesProvider.sharedPreferences.getInt('app_theme_color') ?? 0,
+              icon: const Icon(Icons.arrow_downward),
+              elevation: 16,
+              onChanged: (value) {
+                appState.sharedPreferencesProvider.setThemeColor(value ?? 0);
                 appState.changesMade();
                 showDialog<String>(
                   context: context,
@@ -147,6 +141,40 @@ class SettingsMainPage extends StatelessWidget {
                   ),
                 );
               },
+              items: const [
+                DropdownMenuItem(
+                  value: 0,
+                  child: Text("Default"),
+                ),
+                DropdownMenuItem(
+                  value: 1,
+                  child: Text("Purple"),
+                ),
+                DropdownMenuItem(
+                  value: 2,
+                  child: Text("Blue"),
+                ),
+                DropdownMenuItem(
+                  value: 3,
+                  child: Text("Green"),
+                ),
+                DropdownMenuItem(
+                  value: 4,
+                  child: Text("Indigo"),
+                ),
+                DropdownMenuItem(
+                  value: 5,
+                  child: Text("Lime"),
+                ),
+                DropdownMenuItem(
+                  value: 6,
+                  child: Text("Red"),
+                ),
+                DropdownMenuItem(
+                  value: 7,
+                  child: Text("Yellow"),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             TextButton(
