@@ -115,6 +115,68 @@ class SettingsMainPage extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 10),
+            const Text("Colorscheme:"),
+            DropdownButton(
+              value: appState.sharedPreferencesProvider.sharedPreferences.getInt('app_theme_color') ?? 0,
+              icon: const Icon(Icons.arrow_downward),
+              elevation: 16,
+              onChanged: (value) {
+                appState.sharedPreferencesProvider.setThemeColor(value ?? 0);
+                appState.changesMade();
+                showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: const Text('Restart Required'),
+                    content: const Center(
+                      child: Text('Changes will take effect after a restart',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, 'OK'),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              items: const [
+                DropdownMenuItem(
+                  value: 0,
+                  child: Text("Default"),
+                ),
+                DropdownMenuItem(
+                  value: 1,
+                  child: Text("Purple"),
+                ),
+                DropdownMenuItem(
+                  value: 2,
+                  child: Text("Blue"),
+                ),
+                DropdownMenuItem(
+                  value: 3,
+                  child: Text("Green"),
+                ),
+                DropdownMenuItem(
+                  value: 4,
+                  child: Text("Indigo"),
+                ),
+                DropdownMenuItem(
+                  value: 5,
+                  child: Text("Lime"),
+                ),
+                DropdownMenuItem(
+                  value: 6,
+                  child: Text("Red"),
+                ),
+                DropdownMenuItem(
+                  value: 7,
+                  child: Text("Yellow"),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
                 context: context,
@@ -159,6 +221,7 @@ class SettingsMainPage extends StatelessWidget {
               ),
               child: const Text('About'),
             ),
+            const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
                 context: context,
@@ -172,9 +235,12 @@ class SettingsMainPage extends StatelessWidget {
                       child: const Text('Cancel'),
                     ),
                     TextButton(
-                      onPressed: () => Navigator.pop(context, 'OK'),
+                      onPressed: () {
+                        appState.devMode = true;
+                        appState.changesMade();
+                        Navigator.pop(context, 'OK');
+                      },
                       child: const Text('OK'),
-                      // Never gonna give you up! Never gonna let you down!
                     ),
                   ],
                 ),

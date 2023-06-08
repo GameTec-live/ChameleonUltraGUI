@@ -67,4 +67,30 @@ class SharedPreferencesProvider extends ChangeNotifier {
   void setSideBarExpandedIndex(int index) {
     _sharedPreferences.setInt('sidebar_expandedindex', index);
   }
+
+  MaterialColor getThemeColor() {
+    final themeValue = _sharedPreferences.getInt('app_theme_color') ?? 0;
+    switch (themeValue) {
+      case 1:
+        return Colors.deepPurple;
+      case 2:
+        return Colors.blue;
+      case 3:
+        return Colors.green;
+      case 4:
+        return Colors.indigo;
+      case 5:
+        return Colors.lime;
+      case 6:
+        return Colors.red;
+      case 7:
+        return Colors.yellow;
+      default:
+        return Colors.deepOrange;
+    }
+  }
+
+  void setThemeColor(int color) {
+    _sharedPreferences.setInt('app_theme_color', color);
+  }
 }

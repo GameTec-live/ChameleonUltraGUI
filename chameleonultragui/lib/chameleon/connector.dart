@@ -4,6 +4,9 @@ import 'package:chameleonultragui/comms/serial_abstract.dart';
 import 'package:logger/logger.dart';
 import 'package:enough_convert/enough_convert.dart';
 
+// TODO: Decide if we want to change variable names to camelCase or not
+// ignore_for_file: constant_identifier_names, non_constant_identifier_names
+
 enum ChameleonCommand {
   // basic commands
   getAppVersion(1000),
@@ -239,7 +242,6 @@ class ChameleonCom {
     var dataCmd = 0x0000;
     var dataStatus = 0x0000;
     var dataLength = 0x0000;
-    bool hotFix = false;
     var startTime = DateTime.now();
     Uint8List readBuffer;
 
