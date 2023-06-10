@@ -25,6 +25,8 @@ add_library(recovery SHARED
   "parity.c"
 )
 
+add_compile_options(-O3 -Ofast)
+
 set_target_properties(recovery PROPERTIES
   PUBLIC_HEADER recovery.h
   OUTPUT_NAME "recovery"

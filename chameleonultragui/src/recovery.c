@@ -32,12 +32,6 @@ typedef struct
 
 typedef struct
 {
-  uint64_t key;
-  int count;
-} countKeys;
-
-typedef struct
-{
   uint32_t ntp;
   uint32_t ks1;
 } NtpKs1;
@@ -141,49 +135,61 @@ FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint32_t *outputKeyCount)
   return malloc(1);
 }
 
-int compar_int(const void *a, const void *b)
+int uint64_compare(const void *a, const void *b)
 {
-  return (*(uint64_t *)b - *(uint64_t *)a);
+  return (*(uint64_t *)a > *(uint64_t *)b) - (*(uint64_t *)a < *(uint64_t *)b);
 }
 
-// Compare countKeys structure
-int compar_special_int(const void *a, const void *b)
+uint64_t *most_frequent_uint64(uint64_t *keys, uint32_t size, uint32_t *outputKeyCount)
 {
-  return (((countKeys *)b)->count - ((countKeys *)a)->count);
-}
+  uint64_t i, maxFreq = 1, currentFreq = 1, currentItem = keys[0];
+  uint64_t *output = calloc(size, sizeof(uint64_t));
+  qsort(keys, size, sizeof(uint64_t), uint64_compare);
 
-// keys qsort and unique.
-countKeys *uniqsort(uint64_t *possibleKeys, uint32_t size)
-{
-  unsigned int i, j = 0;
-  int count = 0;
-  countKeys *our_counts;
-
-  qsort(possibleKeys, size, sizeof(uint64_t), compar_int);
-
-  our_counts = calloc(size, sizeof(countKeys));
-  if (our_counts == NULL)
+  for (i = 1; i < size; i++)
   {
-    printf("Memory allocation error for our_counts");
-    exit(EXIT_FAILURE);
-  }
-
-  for (i = 0; i < size; i++)
-  {
-    if (possibleKeys[i + 1] == possibleKeys[i])
+    if (keys[i] == keys[i - 1])
     {
-      count++;
+      currentFreq++;
     }
     else
     {
-      our_counts[j].key = possibleKeys[i];
-      our_counts[j].count = count;
-      j++;
-      count = 0;
+      if (currentFreq > maxFreq)
+      {
+        maxFreq = currentFreq;
+      }
+      currentFreq = 1;
     }
   }
-  qsort(our_counts, j, sizeof(countKeys), compar_special_int);
-  return (our_counts);
+  if (currentFreq > maxFreq)
+  {
+    maxFreq = currentFreq;
+  }
+
+  currentItem = keys[0];
+  currentFreq = 1;
+  for (i = 1; i <= size; i++)
+  {
+    if (i < size && keys[i] == keys[i - 1])
+    {
+      currentFreq++;
+    }
+    else
+    {
+      if (currentFreq == maxFreq)
+      {
+        output[*outputKeyCount] = currentItem;
+        *outputKeyCount += 1;
+      }
+      if (i < size)
+      {
+        currentItem = keys[i];
+        currentFreq = 1;
+      }
+    }
+  }
+
+  return output;
 }
 
 // nested decrypt
@@ -251,7 +257,7 @@ static void nested_revover(RecPar *rp)
   return;
 }
 
-uint64_t *nested_run(NtpKs1 *pNK, uint32_t sizePNK, uint32_t authuid, uint32_t *keyCount)
+uint64_t *nested_run(NtpKs1 *pNK, uint32_t sizePNK, uint32_t authuid, uint32_t *keyCount, uint32_t *outputKeyCount)
 {
   *keyCount = 0;
   uint32_t i;
@@ -283,39 +289,8 @@ uint64_t *nested_run(NtpKs1 *pNK, uint32_t sizePNK, uint32_t authuid, uint32_t *
   }
   free(pRPs);
 
-  countKeys *ck = uniqsort(keys, *keyCount);
-  free(keys);
-  keys = (uint64_t *)NULL;
-  *keyCount = 0;
+  keys = most_frequent_uint64(keys, *keyCount, outputKeyCount);
 
-  if (ck != NULL)
-  {
-    for (i = 0; i < TRY_KEYS; i++)
-    {
-      // We don't known this key, try to break it
-      // This key can be found here two or more times
-      if (ck[i].count > 0)
-      {
-        *keyCount += 1;
-        void *tmp = realloc(keys, sizeof(uint64_t) * (*keyCount));
-        if (tmp != NULL)
-        {
-          keys = tmp;
-          keys[*keyCount - 1] = ck[i].key;
-        }
-        else
-        {
-          printf("Cannot allocate memory for keys on merge.");
-          free(keys);
-          break;
-        }
-      }
-    }
-  }
-  else
-  {
-    printf("Cannot allocate memory for ck on uniqsort.");
-  }
   return keys;
 }
 
@@ -380,7 +355,7 @@ FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *outputKeyCount)
   }
 
   uint32_t keyCount = 0;
-  uint64_t *keys = nested_run(pNK, j, authuid, &keyCount);
-  *outputKeyCount = MIN(256, keyCount);
+  uint64_t *keys = nested_run(pNK, j, authuid, &keyCount, outputKeyCount);
+  *outputKeyCount = MIN(256, *outputKeyCount);
   return keys;
 }
