@@ -40,8 +40,8 @@ class ConnectPage extends StatelessWidget {
               children: [
                 Text(
                     "Chameleon ${(chameleonDevice['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 20)),
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: MediaQuery.of(context).size.width / 35)),
               ],
             ),
             Padding(
