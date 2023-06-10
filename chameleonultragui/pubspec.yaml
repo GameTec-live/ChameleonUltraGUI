@@ -46,6 +46,7 @@ dependencies:
   ffigen: ^8.0.2
   dylib: ^0.3.3
   ffi: ^2.0.2
+  flutter_serial_communication: ^0.2.3
 
 dev_dependencies:
   flutter_test:

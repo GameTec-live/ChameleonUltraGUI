@@ -21,6 +21,7 @@ import 'sharedprefsprovider.dart';
 import 'package:logger/logger.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferencesProvider = SharedPreferencesProvider();
   await sharedPreferencesProvider.load();
   runApp(MyApp(sharedPreferencesProvider));

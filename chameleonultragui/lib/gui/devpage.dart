@@ -99,7 +99,7 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
-              var distance = await cml.getMf1NTDistance(0, 0x60,
+              var distance = await cml.getMf1NTDistance(40, 0x60,
                   Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
               appState.log.d("UID: ${distance!.UID}");
               appState.log.d("Distance ${distance.distance}");
@@ -157,7 +157,7 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
-              var data = await cml.getMf1Darkside(0x03, 0x60, true, 15);
+              var data = await cml.getMf1Darkside(0x03, 0x61, true, 15);
               var darkside = DarksideDart(uid: data!.UID, items: []);
               bool found = false;
 
@@ -174,7 +174,7 @@ class DevPage extends StatelessWidget {
                   for (var key in keys) {
                     var keyBytes = u64ToBytes(key);
                     if ((await cml.mf1Auth(
-                            0x03, 0x60, keyBytes.sublist(2, 8))) ==
+                            0x03, 0x61, keyBytes.sublist(2, 8))) ==
                         true) {
                       appState.log.i(
                           "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
@@ -184,7 +184,7 @@ class DevPage extends StatelessWidget {
                   }
                 } else {
                   appState.log.d("Can't find keys, retrying...");
-                  data = await cml.getMf1Darkside(0x03, 0x60, false, 15);
+                  data = await cml.getMf1Darkside(0x03, 0x61, false, 15);
                 }
               }
             },

@@ -7,6 +7,7 @@ class AbstractSerial {
   Logger log = Logger();
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
+  bool async = false;
 
   bool preformConnection() {
     return false;
