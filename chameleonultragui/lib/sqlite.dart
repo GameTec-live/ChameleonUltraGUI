@@ -2,6 +2,10 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:logger/logger.dart';
+
+// TODO: Decide if we want to change variable names to camelCase or not
+// ignore_for_file: constant_identifier_names, non_constant_identifier_names
 
 class Keytag {
   final int id;
@@ -76,6 +80,7 @@ class Setting {
 }
 
 void main() async {
+  Logger log = Logger();
   // Avoid errors caused by flutter upgrade.
   // Importing 'package:flutter/widgets.dart' is required.
   WidgetsFlutterBinding.ensureInitialized();
@@ -231,7 +236,7 @@ void main() async {
 
   await insertkeytag(key);
 
-  print(await keytags());
+  log.d(await keytags());
 
   key = const Keytag(
     id: 0,
@@ -244,9 +249,9 @@ void main() async {
   );
   await updateKeytag(key);
 
-  print(await keytags());
+  log.d(await keytags());
 
   await deleteKeytag(key.id);
 
-  print(await keytags());
+  log.d(await keytags());
 }
