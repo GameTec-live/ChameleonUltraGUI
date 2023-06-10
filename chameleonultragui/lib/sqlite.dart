@@ -233,7 +233,7 @@ void main() async {
 
   print(await keytags());
 
-  key = Keytag(
+  key = const Keytag(
     id: 0,
     name: 'work',
     description: '',
