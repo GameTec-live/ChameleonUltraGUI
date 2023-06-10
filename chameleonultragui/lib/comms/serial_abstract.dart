@@ -7,35 +7,34 @@ class AbstractSerial {
   Logger log = Logger();
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
-  bool async = false;
 
-  bool preformConnection() {
+  Future<bool> preformConnection() async {
     return false;
   }
 
-  bool performDisconnect() {
+  Future<bool> performDisconnect() async {
     return false;
   }
 
-  List availableDevices() {
+  Future<List> availableDevices() async {
     return [];
   }
 
-  bool connectSpecific(device) {
+  Future<bool> connectSpecific(device) async {
     return false;
   }
 
-  List availableChameleons() {
+  Future<List> availableChameleons() async {
     return [];
   }
 
-  int write(Uint8List command) {
+  Future<int> write(Uint8List command) async {
     return 0;
   }
 
-  Uint8List read(int length) {
+  Future<Uint8List> read(int length) async {
     return Uint8List(0);
   }
 
-  void finishRead() {}
+  Future<void> finishRead() async {}
 }

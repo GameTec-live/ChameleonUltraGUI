@@ -16,7 +16,6 @@ class DevPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-    appState.chameleon.finishRead();
     var cml = ChameleonCom(port: appState.chameleon);
 
     return Center(

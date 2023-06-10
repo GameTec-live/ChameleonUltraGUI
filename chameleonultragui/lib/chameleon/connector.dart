@@ -244,8 +244,8 @@ class ChameleonCom {
       {Uint8List? data, Duration timeout = const Duration(seconds: 3)}) async {
     var dataFrame = makeDataFrameBytes(cmd, status, data);
     log.d("Sending: ${bytesToHex(dataFrame)}");
-    _serialInstance!.finishRead();
-    _serialInstance!.write(Uint8List.fromList(dataFrame));
+    await _serialInstance!.finishRead();
+    await _serialInstance!.write(Uint8List.fromList(dataFrame));
 
     List<int> dataBuffer = [];
     var dataPosition = 0;
@@ -256,7 +256,7 @@ class ChameleonCom {
 
     while (true) {
       // TODO: return timeout
-      readBuffer = _serialInstance!.read(16384);
+      readBuffer = await _serialInstance!.read(16384);
       if (readBuffer.isNotEmpty) {
         log.d("Received: ${bytesToHex(readBuffer)}");
         break;
@@ -301,7 +301,7 @@ class ChameleonCom {
           if (dataBuffer[dataPosition] ==
               lrcCalc(dataBuffer.sublist(0, dataBuffer.length - 1))) {
             var dataResponse = dataBuffer.sublist(9, 9 + dataLength);
-            _serialInstance!.finishRead();
+            await _serialInstance!.finishRead();
             return ChameleonMessage(
                 status: dataStatus, data: Uint8List.fromList(dataResponse));
           } else {
@@ -315,7 +315,7 @@ class ChameleonCom {
       }
     }
 
-    _serialInstance!.finishRead();
+    await _serialInstance!.finishRead();
     return null;
   }
 
