@@ -9,7 +9,7 @@ import 'comms/serial_native.dart';
 
 // GUI Imports
 import 'gui/homepage.dart';
-import 'gui/savedkeyspage.dart';
+import 'gui/savedcardspage.dart';
 import 'gui/settingspage.dart';
 import 'gui/connectpage.dart';
 import 'gui/devpage.dart';
@@ -129,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
         page = const Placeholder();
         break;
       case 2:
-        page = const SavedKeysPage();
+        page = const SavedCardsPage();
         break;
       case 3:
         page = const Placeholder();
@@ -168,7 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.auto_awesome_motion_outlined),
-                    label: Text('Saved keys'),
+                    label: Text('Saved Cards'),
                   ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.wifi),

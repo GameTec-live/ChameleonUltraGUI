@@ -44,8 +44,8 @@ class HomePage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text("COM11",style: TextStyle(fontSize: 20)),
-                        const Icon(Icons.usb),
-                        const Icon(Icons.battery_3_bar_rounded),
+                        Icon(Icons.usb),
+                        Icon(Icons.battery_3_bar_rounded),
                       ],
                     ),
 
