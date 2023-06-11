@@ -110,12 +110,12 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
-              var distance = await cml.getMf1NTDistance(0, 0x60,
+              var distance = await cml.getMf1NTDistance(50, 0x60,
                   Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
               bool found = false;
               for (var i = 0; i < 0xFF && !found; i++) {
                 var nonces = await cml.getMf1NestedNonces(
-                    0,
+                    50,
                     0x60,
                     Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
                     0,

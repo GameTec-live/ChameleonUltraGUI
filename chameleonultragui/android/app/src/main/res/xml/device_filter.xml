@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 0x6868 / 0x8686: Chameleon Ultra -->
+    <usb-device vendor-id="6868" product-id="8686" />
+</resources>

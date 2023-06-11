@@ -142,14 +142,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
-  flutter_serial_communication:
-    dependency: "direct main"
-    description:
-      name: flutter_serial_communication
-      sha256: "54dde73cfa98dbbd4ee79025d0176874ecd051a53e61f228bc9ff33b61a6c606"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.3"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -453,6 +445,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.2"
+  usb_serial:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: fixes
+      resolved-ref: b314a80d7c30fa9bb847d8018c1318e21e9c3e2f
+      url: "https://github.com/Foxushka/usbserial.git"
+    source: git
+    version: "0.4.0"
   vector_math:
     dependency: transitive
     description:

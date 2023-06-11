@@ -28,8 +28,8 @@ class AbstractSerial {
     return [];
   }
 
-  Future<int> write(Uint8List command) async {
-    return 0;
+  Future<bool> write(Uint8List command) async {
+    return false;
   }
 
   Future<Uint8List> read(int length) async {

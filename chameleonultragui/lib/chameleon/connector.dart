@@ -243,16 +243,16 @@ class ChameleonCom {
   Future<ChameleonMessage?> sendCmdSync(ChameleonCommand cmd, int status,
       {Uint8List? data, Duration timeout = const Duration(seconds: 3)}) async {
     var dataFrame = makeDataFrameBytes(cmd, status, data);
-    log.d("Sending: ${bytesToHex(dataFrame)}");
-    await _serialInstance!.finishRead();
-    await _serialInstance!.write(Uint8List.fromList(dataFrame));
-
     List<int> dataBuffer = [];
     var dataPosition = 0;
     var dataStatus = 0x0000;
     var dataLength = 0x0000;
     var startTime = DateTime.now();
     Uint8List readBuffer;
+
+    log.d("Sending: ${bytesToHex(dataFrame)}");
+    await _serialInstance!.finishRead();
+    await _serialInstance!.write(Uint8List.fromList(dataFrame));
 
     while (true) {
       // TODO: return timeout
@@ -316,6 +316,7 @@ class ChameleonCom {
     }
 
     await _serialInstance!.finishRead();
+    log.e('Failed to read any data');
     return null;
   }
 
