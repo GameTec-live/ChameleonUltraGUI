@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/gui/readcardpage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -139,7 +140,7 @@ class _MyHomePageState extends State<MyHomePage> {
         page = const Placeholder();
         break;
       case 4:
-        page = const Placeholder();
+        page = const ReadCardPage();
         break;
       case 5:
         page = const SettingsMainPage();
@@ -179,8 +180,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     label: Text('Live Read/Write'),
                   ),
                   const NavigationRailDestination(
-                    icon: Icon(Icons.shield),
-                    label: Text('Key Recovery'),
+                    icon: Icon(Icons.credit_card),
+                    label: Text('Read Card'),
                   ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.settings),

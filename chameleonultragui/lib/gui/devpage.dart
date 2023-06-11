@@ -58,7 +58,7 @@ class DevPage extends StatelessWidget {
               appState.log.d(
                   "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
               var card = await cml.scan14443aTag();
-              appState.log.d('Card UID: ${card!.UID}');
+              appState.log.d('Card UID: ${card.UID}');
               appState.log.d('SAK: ${card.SAK}');
               appState.log.d('ATQA: ${card.ATQA}');
             },
@@ -98,7 +98,7 @@ class DevPage extends StatelessWidget {
               await cml.setReaderDeviceMode(true);
               var distance = await cml.getMf1NTDistance(40, 0x60,
                   Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
-              appState.log.d("UID: ${distance!.UID}");
+              appState.log.d("UID: ${distance.UID}");
               appState.log.d("Distance ${distance.distance}");
             },
             child: const Column(children: [
@@ -119,9 +119,9 @@ class DevPage extends StatelessWidget {
                     0,
                     0x61);
                 var nested = NestedDart(
-                    uid: distance!.UID,
+                    uid: distance.UID,
                     distance: distance.distance,
-                    nt0: nonces!.nonces[0].nt,
+                    nt0: nonces.nonces[0].nt,
                     nt0Enc: nonces.nonces[0].ntEnc,
                     par0: nonces.nonces[0].parity,
                     nt1: nonces.nonces[1].nt,
@@ -155,7 +155,7 @@ class DevPage extends StatelessWidget {
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               var data = await cml.getMf1Darkside(0x03, 0x61, true, 15);
-              var darkside = DarksideDart(uid: data!.UID, items: []);
+              var darkside = DarksideDart(uid: data.UID, items: []);
               bool found = false;
 
               for (var tries = 0; tries < 0xFF && !found; tries++) {
@@ -218,7 +218,7 @@ class DevPage extends StatelessWidget {
               appState.log.d(
                   "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
               var card = await cml.scan14443aTag();
-              appState.log.d('Card UID: ${card!.UID}');
+              appState.log.d('Card UID: ${card.UID}');
               appState.log.d('SAK: ${card.SAK}');
               appState.log.d('ATQA: ${card.ATQA}');
               await cml.setReaderDeviceMode(false);

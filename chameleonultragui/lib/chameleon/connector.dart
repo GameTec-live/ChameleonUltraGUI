@@ -81,8 +81,8 @@ enum ChameleonTagFrequiency {
 
 class ChameleonCard {
   Uint8List UID;
-  String SAK;
-  String ATQA;
+  int SAK;
+  Uint8List ATQA;
 
   ChameleonCard({required this.UID, required this.SAK, required this.ATQA});
 }
@@ -167,6 +167,13 @@ String bytesToHex(Uint8List bytes) {
   return bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join('');
 }
 
+String bytesToHexSpace(Uint8List bytes) {
+  return bytes
+      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+      .join(' ')
+      .toUpperCase();
+}
+
 Uint8List hexToBytes(String hex) {
   List<int> bytes = [];
   for (int i = 0; i < hex.length; i += 2) {
@@ -247,7 +254,7 @@ class ChameleonCom {
     var dataPosition = 0;
     var dataStatus = 0x0000;
     var dataLength = 0x0000;
-    var startTime = DateTime.now();
+    // var startTime = DateTime.now();
     Uint8List readBuffer;
 
     log.d("Sending: ${bytesToHex(dataFrame)}");
@@ -355,9 +362,9 @@ class ChameleonCom {
     if (resp!.data.isNotEmpty) {
       return ChameleonCard(
           UID: resp.data.sublist(0, resp.data[10]),
-          SAK: bytesToHex(Uint8List.fromList([resp.data[12]])),
-          ATQA: bytesToHex(
-              Uint8List.fromList(resp.data.sublist(13, 15).reversed.toList())));
+          SAK: resp.data[12],
+          ATQA:
+              Uint8List.fromList(resp.data.sublist(13, 15).reversed.toList()));
     } else {
       throw ("Invalid data length");
     }
@@ -579,11 +586,8 @@ class ChameleonCom {
 
   Future<void> setMf1AntiCollision(ChameleonCard card) async {
     await sendCmdSync(ChameleonCommand.mf1SetAntiCollision, 0x00,
-        data: Uint8List.fromList([
-          ...hexToBytes(card.SAK),
-          ...hexToBytes(card.ATQA).reversed,
-          ...card.UID
-        ]));
+        data:
+            Uint8List.fromList([card.SAK, ...card.ATQA.reversed, ...card.UID]));
   }
 
   Future<String> readEM410X() async {
