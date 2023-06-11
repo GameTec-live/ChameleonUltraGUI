@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/comms/serial_abstract.dart';
 import 'package:flutter/services.dart';
