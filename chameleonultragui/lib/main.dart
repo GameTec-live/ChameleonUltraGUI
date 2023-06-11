@@ -21,6 +21,7 @@ import 'sharedprefsprovider.dart';
 import 'package:logger/logger.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferencesProvider = SharedPreferencesProvider();
   await sharedPreferencesProvider.load();
   runApp(MyApp(sharedPreferencesProvider));
@@ -45,7 +46,8 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-              seedColor: _sharedPreferencesProvider.getThemeColor()), // Color Scheme
+              seedColor:
+                  _sharedPreferencesProvider.getThemeColor()), // Color Scheme
           brightness: Brightness.light, // Light Theme
         ),
         darkTheme: ThemeData.dark().copyWith(
@@ -156,7 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 // Sidebar
                 extended:
                     appState.sharedPreferencesProvider.getSideBarExpanded(),
-                destinations:  [
+                destinations: [
                   // Sidebar Items
                   const NavigationRailDestination(
                     icon: Icon(Icons.home),

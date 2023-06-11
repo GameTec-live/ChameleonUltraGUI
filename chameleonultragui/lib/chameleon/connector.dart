@@ -106,7 +106,7 @@ enum ChameleonDarksideResult {
 }
 
 class ChameleonNTDistance {
-  Uint8List UID;
+  int UID;
   int distance;
 
   ChameleonNTDistance({required this.UID, required this.distance});
@@ -180,6 +180,15 @@ int bytesToU32(Uint8List byteArray) {
   return byteArray.buffer.asByteData().getUint32(0, Endian.big);
 }
 
+int bytesToU64(Uint8List byteArray) {
+  return byteArray.buffer.asByteData().getUint64(0, Endian.big);
+}
+
+Uint8List u64ToBytes(int u64) {
+  final ByteData byteData = ByteData(8)..setUint64(0, u64, Endian.big);
+  return byteData.buffer.asUint8List();
+}
+
 // Some ChatGPT magic
 // Nobody knows how it works
 // TODO: Handle error in messages
@@ -234,20 +243,20 @@ class ChameleonCom {
   Future<ChameleonMessage?> sendCmdSync(ChameleonCommand cmd, int status,
       {Uint8List? data, Duration timeout = const Duration(seconds: 3)}) async {
     var dataFrame = makeDataFrameBytes(cmd, status, data);
-    log.d("Sending: ${bytesToHex(dataFrame)}");
-    _serialInstance!.write(Uint8List.fromList(dataFrame));
-
     List<int> dataBuffer = [];
     var dataPosition = 0;
-    var dataCmd = 0x0000;
     var dataStatus = 0x0000;
     var dataLength = 0x0000;
     var startTime = DateTime.now();
     Uint8List readBuffer;
 
+    log.d("Sending: ${bytesToHex(dataFrame)}");
+    await _serialInstance!.finishRead();
+    await _serialInstance!.write(Uint8List.fromList(dataFrame));
+
     while (true) {
       // TODO: return timeout
-      readBuffer = _serialInstance!.read(16384);
+      readBuffer = await _serialInstance!.read(16384);
       if (readBuffer.isNotEmpty) {
         log.d("Received: ${bytesToHex(readBuffer)}");
         break;
@@ -281,7 +290,7 @@ class ChameleonCom {
             break;
           }
           // frame head complete, cache info
-          dataCmd = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(2, 4)));
+          //dataCmd = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(2, 4)));
           dataStatus = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(4, 6)));
           dataLength = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(6, 8)));
           if (dataLength > dataMaxLength) {
@@ -292,7 +301,7 @@ class ChameleonCom {
           if (dataBuffer[dataPosition] ==
               lrcCalc(dataBuffer.sublist(0, dataBuffer.length - 1))) {
             var dataResponse = dataBuffer.sublist(9, 9 + dataLength);
-            _serialInstance!.finishRead();
+            await _serialInstance!.finishRead();
             return ChameleonMessage(
                 status: dataStatus, data: Uint8List.fromList(dataResponse));
           } else {
@@ -306,7 +315,8 @@ class ChameleonCom {
       }
     }
 
-    _serialInstance!.finishRead();
+    await _serialInstance!.finishRead();
+    log.e('Failed to read any data');
     return null;
   }
 
@@ -405,7 +415,7 @@ class ChameleonCom {
     var resp = await sendCmdSync(ChameleonCommand.mf1NTDistanceDetect, 0x00,
         data: Uint8List.fromList([keyType, block, ...keyKnown]));
     return ChameleonNTDistance(
-        UID: resp!.data.sublist(0, 4),
+        UID: bytesToU32(resp!.data.sublist(0, 4)),
         distance: bytesToU32(resp.data.sublist(4, 8)));
   }
 
@@ -442,8 +452,8 @@ class ChameleonCom {
     return ChameleonDarkside(
         UID: bytesToU32(resp!.data.sublist(0, 4)),
         nt1: bytesToU32(resp.data.sublist(4, 8)),
-        par: bytesToU32(resp.data.sublist(8, 16)),
-        ks1: bytesToU32(resp.data.sublist(16, 24)),
+        par: bytesToU64(resp.data.sublist(8, 16)),
+        ks1: bytesToU64(resp.data.sublist(16, 24)),
         nr: bytesToU32(resp.data.sublist(24, 28)),
         ar: bytesToU32(resp.data.sublist(28, 32)));
   }

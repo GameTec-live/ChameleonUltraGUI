@@ -10,7 +10,6 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-    var cml = ChameleonCom(port: appState.chameleon);
 
     return Scaffold(
       appBar: AppBar(

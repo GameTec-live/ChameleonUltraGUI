@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "cstdint": "c",
+        "hash_map": "c",
+        "algorithm": "c",
+        "format": "c"
+    }
+}

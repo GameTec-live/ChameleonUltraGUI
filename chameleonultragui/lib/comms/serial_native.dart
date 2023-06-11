@@ -7,14 +7,14 @@ class NativeSerial extends AbstractSerial {
   SerialPort? port;
 
   @override
-  List availableDevices() {
+  Future<List> availableDevices() async {
     return SerialPort.availablePorts;
   }
 
   @override
-  bool preformConnection() {
-    for (final port in availableDevices()) {
-      if (connectDevice(port)) {
+  Future<bool> preformConnection() async {
+    for (final port in await availableDevices()) {
+      if (await connectDevice(port)) {
         connected = true;
         return true;
       }
@@ -23,7 +23,7 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  bool performDisconnect() {
+  Future<bool> performDisconnect() async {
     if (port != null) {
       port?.close();
       connected = false;
@@ -34,10 +34,10 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  List availableChameleons() {
+  Future<List> availableChameleons() async {
     List chamList = [];
-    for (final port in availableDevices()) {
-      if (connectDevice(port)) {
+    for (final port in await availableDevices()) {
+      if (await connectDevice(port)) {
         chamList.add({'port': port, 'device': device});
       }
     }
@@ -48,15 +48,15 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  bool connectSpecific(device) {
-    if (connectDevice(device)) {
+  Future<bool> connectSpecific(device) async {
+    if (await connectDevice(device)) {
       connected = true;
       return true;
     }
     return false;
   }
 
-  bool connectDevice(String address) {
+  Future<bool> connectDevice(String address) async {
     log.d("Connecting to $address");
     try {
       port = SerialPort(address);
@@ -84,20 +84,19 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  int write(Uint8List command) {
+  Future<bool> write(Uint8List command) async {
     port!.openReadWrite();
-    int output = port!.write(command);
-    return output;
+    return port!.write(command) > 1;
   }
 
   @override
-  Uint8List read(int length) {
+  Future<Uint8List> read(int length) async {
     Uint8List output = port!.read(length);
     return output;
   }
 
   @override
-  void finishRead() {
+  Future<void> finishRead() async {
     port!.close();
   }
 }

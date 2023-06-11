@@ -45,6 +45,13 @@ dependencies:
   convert: ^3.1.1
   enough_convert: ^1.6.0
   shared_preferences: ^2.1.1
+  ffigen: ^8.0.2
+  dylib: ^0.3.3
+  ffi: ^2.0.2
+  usb_serial:
+    git:
+      url: https://github.com/Foxushka/usbserial.git
+      ref: fixes
 
 dev_dependencies:
   flutter_test:
