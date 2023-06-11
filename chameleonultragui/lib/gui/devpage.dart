@@ -36,7 +36,6 @@ class DevPage extends StatelessWidget {
           Text('Platform: ${Platform.operatingSystem}'),
           Text('Android: ${appState.onAndroid}'),
           Text('Serial protocol : ${appState.chameleon}'),
-          Text('Serial devices: ${appState.chameleon.availableDevices()}'),
           Text('Chameleon connected: ${appState.chameleon.connected}'),
           Text('Chameleon device type: ${appState.chameleon.device}'),
           ElevatedButton(
@@ -161,7 +160,7 @@ class DevPage extends StatelessWidget {
 
               for (var tries = 0; tries < 0xFF && !found; tries++) {
                 darkside.items.add(DarksideItemDart(
-                    nt1: data!.nt1,
+                    nt1: data.nt1,
                     ks1: data.ks1,
                     par: data.par,
                     nr: data.nr,
@@ -199,7 +198,7 @@ class DevPage extends StatelessWidget {
               var block = await cml.mf1ReadBlock(0x02, 0x60,
                   Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
               appState.log.d(block);
-              block![0] = 0xFF;
+              block[0] = 0xFF;
               await cml.mf1WriteBlock(
                   0x02,
                   0x60,
@@ -231,6 +230,7 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
+              await cml.setSlotTagName(1, "test", ChameleonTagFrequiency.hf);
               var name = await cml.getSlotTagName(1, ChameleonTagFrequiency.hf);
               appState.log.d(name);
               await cml.setSlotTagName(

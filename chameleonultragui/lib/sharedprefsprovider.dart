@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SharedPreferencesProvider extends ChangeNotifier {
   SharedPreferencesProvider._privateConstructor();
 
-  static final SharedPreferencesProvider _instance = SharedPreferencesProvider._privateConstructor();
+  static final SharedPreferencesProvider _instance =
+      SharedPreferencesProvider._privateConstructor();
 
   factory SharedPreferencesProvider() {
     return _instance;
@@ -92,5 +93,13 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setThemeColor(int color) {
     _sharedPreferences.setInt('app_theme_color', color);
+  }
+
+  bool getDeveloperMode() {
+    return _sharedPreferences.getBool('developer_mode') ?? false;
+  }
+
+  void setDeveloperMode(bool value) {
+    _sharedPreferences.setBool('developer_mode', value);
   }
 }

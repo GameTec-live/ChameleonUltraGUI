@@ -117,6 +117,8 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
+    appState.devMode = appState.sharedPreferencesProvider.getDeveloperMode();
+
     Widget page; // Set Page
     switch (selectedIndex) {
       // Sidebar Navigation
@@ -187,7 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   if (appState.devMode)
                     const NavigationRailDestination(
                       icon: Icon(Icons.developer_mode),
-                      label: Text('Dev'),
+                      label: Text('🐞 Debug 🐞'),
                     ),
                 ],
                 selectedIndex: selectedIndex,

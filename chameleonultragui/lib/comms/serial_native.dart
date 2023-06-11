@@ -61,6 +61,16 @@ class NativeSerial extends AbstractSerial {
     try {
       port = SerialPort(address);
       port!.openReadWrite();
+      port!.config = SerialPortConfig()
+        ..baudRate = 115200
+        ..bits = 8
+        ..stopBits = 1
+        ..parity = SerialPortParity.none
+        ..rts = SerialPortRts.flowControl
+        ..cts = SerialPortCts.flowControl
+        ..dsr = SerialPortDsr.flowControl
+        ..dtr = SerialPortDtr.flowControl
+        ..setFlowControl(SerialPortFlowControl.rtsCts);
       log.d("Connected to $address");
       log.d("Manufacturer: ${port!.manufacturer}");
       log.d("Product: ${port!.productName}");

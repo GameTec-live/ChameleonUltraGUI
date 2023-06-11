@@ -118,7 +118,9 @@ class SettingsMainPage extends StatelessWidget {
             const SizedBox(height: 10),
             const Text("Colorscheme:"),
             DropdownButton(
-              value: appState.sharedPreferencesProvider.sharedPreferences.getInt('app_theme_color') ?? 0,
+              value: appState.sharedPreferencesProvider.sharedPreferences
+                      .getInt('app_theme_color') ??
+                  0,
               icon: const Icon(Icons.arrow_downward),
               elevation: 16,
               onChanged: (value) {
@@ -237,6 +239,8 @@ class SettingsMainPage extends StatelessWidget {
                     TextButton(
                       onPressed: () {
                         appState.devMode = true;
+                        appState.sharedPreferencesProvider
+                            .setDeveloperMode(true);
                         appState.changesMade();
                         Navigator.pop(context, 'OK');
                       },

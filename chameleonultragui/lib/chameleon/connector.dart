@@ -316,8 +316,7 @@ class ChameleonCom {
     }
 
     await _serialInstance!.finishRead();
-    log.e('Failed to read any data');
-    return null;
+    throw ("Failed to read data");
   }
 
   Uint8List _fromInt16BE(int value) {
@@ -330,7 +329,8 @@ class ChameleonCom {
 
   Future<int> getFirmwareVersion() async {
     var resp = await sendCmdSync(ChameleonCommand.getAppVersion, 0x00);
-    return (resp!.data[1] << 8) | resp.data[0];
+    if (resp!.data.length != 2) throw ("Invalid data length");
+    return (resp.data[1] << 8) | resp.data[0];
   }
 
   Future<String> getDeviceChipID() async {
@@ -340,7 +340,8 @@ class ChameleonCom {
 
   Future<bool> isReaderDeviceMode() async {
     var resp = await sendCmdSync(ChameleonCommand.getDeviceMode, 0x00);
-    return resp!.data[0] == 1;
+    if (resp!.data.length != 1) throw ("Invalid data length");
+    return resp.data[0] == 1;
   }
 
   Future<void> setReaderDeviceMode(bool readerMode) async {
@@ -348,7 +349,7 @@ class ChameleonCom {
         data: Uint8List.fromList([readerMode ? 1 : 0]));
   }
 
-  Future<ChameleonCard?> scan14443aTag() async {
+  Future<ChameleonCard> scan14443aTag() async {
     var resp = await sendCmdSync(ChameleonCommand.scan14ATag, 0x00);
 
     if (resp!.data.isNotEmpty) {
@@ -358,11 +359,11 @@ class ChameleonCom {
           ATQA: bytesToHex(
               Uint8List.fromList(resp.data.sublist(13, 15).reversed.toList())));
     } else {
-      return null;
+      throw ("Invalid data length");
     }
   }
 
-  Future<bool?> detectMf1Support() async {
+  Future<bool> detectMf1Support() async {
     // Detects if it is a Mifare Classic tag
     // true - Mifare Classic
     // flase - any other card
@@ -371,7 +372,7 @@ class ChameleonCom {
         0;
   }
 
-  Future<ChameleonNTLevel?> getMf1NTLevel() async {
+  Future<ChameleonNTLevel> getMf1NTLevel() async {
     // Get level of nt (weak/static/hard) in Mifare Classic
     var resp =
         (await sendCmdSync(ChameleonCommand.mf1NTLevelDetect, 0x00))!.status;
@@ -386,7 +387,7 @@ class ChameleonCom {
     }
   }
 
-  Future<ChameleonDarksideResult?> checkMf1Darkside() async {
+  Future<ChameleonDarksideResult> checkMf1Darkside() async {
     // Check card vulnerability to Mifare Classic darkside attack
     int status =
         (await sendCmdSync(ChameleonCommand.mf1DarksideDetect, 0x00))!.status;
@@ -405,7 +406,7 @@ class ChameleonCom {
     }
   }
 
-  Future<ChameleonNTDistance?> getMf1NTDistance(
+  Future<ChameleonNTDistance> getMf1NTDistance(
     int block,
     int keyType,
     Uint8List keyKnown,
@@ -414,12 +415,17 @@ class ChameleonCom {
     // keyType 0x60 if A key, 0x61 B key
     var resp = await sendCmdSync(ChameleonCommand.mf1NTDistanceDetect, 0x00,
         data: Uint8List.fromList([keyType, block, ...keyKnown]));
+
+    if (resp!.data.length != 8) {
+      throw ("Invalid data length");
+    }
+
     return ChameleonNTDistance(
-        UID: bytesToU32(resp!.data.sublist(0, 4)),
+        UID: bytesToU32(resp.data.sublist(0, 4)),
         distance: bytesToU32(resp.data.sublist(4, 8)));
   }
 
-  Future<ChameleonNestedNonces?> getMf1NestedNonces(int block, int keyType,
+  Future<ChameleonNestedNonces> getMf1NestedNonces(int block, int keyType,
       Uint8List keyKnown, int targetBlock, int targetKeyType) async {
     // Collect nonces for nested attack
     // keyType 0x60 if A key, 0x61 B key
@@ -441,7 +447,7 @@ class ChameleonCom {
     return nonces;
   }
 
-  Future<ChameleonDarkside?> getMf1Darkside(int targetBlock, int targetKeyType,
+  Future<ChameleonDarkside> getMf1Darkside(int targetBlock, int targetKeyType,
       bool firstRecover, int syncMax) async {
     // Collect parameters for darkside attack
     // keyType 0x60 if A key, 0x61 B key
@@ -449,8 +455,12 @@ class ChameleonCom {
         data: Uint8List.fromList(
             [targetKeyType, targetBlock, firstRecover ? 1 : 0, syncMax]));
 
+    if (resp!.data.length != 32) {
+      throw ("Invalid data length");
+    }
+
     return ChameleonDarkside(
-        UID: bytesToU32(resp!.data.sublist(0, 4)),
+        UID: bytesToU32(resp.data.sublist(0, 4)),
         nt1: bytesToU32(resp.data.sublist(4, 8)),
         par: bytesToU64(resp.data.sublist(8, 16)),
         ks1: bytesToU64(resp.data.sublist(16, 24)),
@@ -458,7 +468,7 @@ class ChameleonCom {
         ar: bytesToU32(resp.data.sublist(28, 32)));
   }
 
-  Future<bool?> mf1Auth(int block, int keyType, Uint8List key) async {
+  Future<bool> mf1Auth(int block, int keyType, Uint8List key) async {
     // Check if key is valid for block
     // keyType 0x60 if A key, 0x61 B key
     return (await sendCmdSync(ChameleonCommand.mf1CheckKey, 0x00,
@@ -467,7 +477,7 @@ class ChameleonCom {
         0;
   }
 
-  Future<Uint8List?> mf1ReadBlock(int block, int keyType, Uint8List key) async {
+  Future<Uint8List> mf1ReadBlock(int block, int keyType, Uint8List key) async {
     // Read block
     // keyType 0x60 if A key, 0x61 B key
     return (await sendCmdSync(ChameleonCommand.mf1ReadBlock, 0x00,
@@ -509,7 +519,7 @@ class ChameleonCom {
         data: Uint8List.fromList([status ? 1 : 0]));
   }
 
-  Future<int?> getMf1DetectionCount() async {
+  Future<int> getMf1DetectionCount() async {
     var resp = await sendCmdSync(ChameleonCommand.mf1GetDetectionCount, 0x00,
         data: Uint8List(0));
     return resp!.data.buffer.asByteData().getInt16(0, Endian.little);
@@ -603,7 +613,7 @@ class ChameleonCom {
             [index, frequiency.value, ...codec.encode(name)]));
   }
 
-  Future<String?> getSlotTagName(
+  Future<String> getSlotTagName(
       int index, ChameleonTagFrequiency frequiency) async {
     var resp = await sendCmdSync(ChameleonCommand.getSlotTagNick, 0x00,
         data: Uint8List.fromList([index, frequiency.value]));
