@@ -95,4 +95,9 @@ class MobileSerial extends AbstractSerial {
 
     return completer.future;
   }
+
+  @override
+  Future<void> finishRead() async {
+    messagePool = [];
+  }
 }

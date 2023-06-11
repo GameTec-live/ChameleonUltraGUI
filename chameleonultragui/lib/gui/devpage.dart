@@ -135,7 +135,7 @@ class DevPage extends StatelessWidget {
                   for (var key in keys) {
                     var keyBytes = u64ToBytes(key);
                     if ((await cml.mf1Auth(
-                            0x03, 0x60, keyBytes.sublist(2, 8))) ==
+                            0x03, 0x61, keyBytes.sublist(2, 8))) ==
                         true) {
                       appState.log.i(
                           "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
