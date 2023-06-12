@@ -49,9 +49,9 @@ jobs:
         with:
           name: windows
           path: chameleonultragui/build/windows/runner/Release/runner.exe
-      #- name: Debug with tmate on failure
-      #  if: ${{ failure() }}
-      #  uses: mxschmitt/action-tmate@v3
+      - name: Debug with tmate on failure
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
 
   build-linux:
     runs-on: ubuntu-latest
