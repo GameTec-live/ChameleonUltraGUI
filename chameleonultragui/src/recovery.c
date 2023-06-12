@@ -13,8 +13,10 @@
 
 #if WIN32
 #include "windows.h"
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #else
 #include "unistd.h"
+#include <sys/param.h>
 #endif
 
 #define MEM_CHUNK 10000
