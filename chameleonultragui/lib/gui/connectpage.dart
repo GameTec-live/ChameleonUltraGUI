@@ -80,7 +80,7 @@ class ConnectPage extends StatelessWidget {
                               onPressed: () {
                                 appState.chameleon
                                     .connectSpecific(chameleonDevice['port']);
-                                appState.changesMade();
+                                //appState.changesMade();
                               },
                               style: ButtonStyle(
                                 shape: MaterialStateProperty.all<
