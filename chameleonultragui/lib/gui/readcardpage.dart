@@ -13,6 +13,37 @@ import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
 enum ChameleonKeyCheckmark { none, found, checking }
 
+class ChameleonReadCardStatus {
+  String UID;
+  String SAK;
+  String ATQA;
+  String ATS;
+  String tech;
+  bool allKeysExists;
+  MifareClassicType type;
+  List<ChameleonKeyCheckmark> checkMarks;
+  List<Uint8List> validKeys;
+  List<Uint8List> cardData;
+  double dumpProgress;
+
+  ChameleonReadCardStatus(
+      {this.UID = '',
+      this.SAK = '',
+      this.ATQA = '',
+      this.ATS = '',
+      this.tech = '',
+      this.allKeysExists = false,
+      this.type = MifareClassicType.none,
+      List<ChameleonKeyCheckmark>? checkMarks,
+      List<Uint8List>? validKeys,
+      List<Uint8List>? cardData,
+      this.dumpProgress = 0})
+      : validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
+        checkMarks =
+            checkMarks ?? List.generate(80, (_) => ChameleonKeyCheckmark.none),
+        cardData = cardData ?? List.generate(0xFF, (_) => Uint8List(0));
+}
+
 class ReadCardPage extends StatefulWidget {
   const ReadCardPage({super.key});
 
@@ -21,21 +52,11 @@ class ReadCardPage extends StatefulWidget {
 }
 
 class _ReadCardPageState extends State<ReadCardPage> {
-  String uid = '';
-  String sak = '';
-  String atqa = '';
-  String ats = '';
-  String tech = '';
-  bool allKeysExists = false;
-  MifareClassicType type = MifareClassicType.none;
-
-  List<ChameleonKeyCheckmark> checkMarks =
-      List.generate(80, (_) => ChameleonKeyCheckmark.none);
-
-  List<Uint8List> validKeys = List.generate(80, (_) => Uint8List(0));
+  ChameleonReadCardStatus status = ChameleonReadCardStatus();
 
   Future<void> readCardDetails(ChameleonCom connection) async {
-    validKeys = List.generate(80, (_) => Uint8List(0));
+    status.validKeys = List.generate(80, (_) => Uint8List(0));
+    status.checkMarks = List.generate(80, (_) => ChameleonKeyCheckmark.none);
 
     try {
       if (!await connection.isReaderDeviceMode()) {
@@ -49,13 +70,16 @@ class _ReadCardPageState extends State<ReadCardPage> {
         mf1Type = mfClassicGetType(card.ATQA, card.SAK);
       }
       setState(() {
-        uid = bytesToHexSpace(card.UID);
-        sak = card.SAK.toRadixString(16).padLeft(2, '0').toUpperCase();
-        atqa = bytesToHexSpace(card.ATQA);
-        ats = "Unavailable";
-        tech = mifare ? "Mifare Classic ${mfClassicGetName(mf1Type)}" : "Other";
-        checkMarks = List.generate(80, (_) => ChameleonKeyCheckmark.none);
-        type = mf1Type;
+        status.UID = bytesToHexSpace(card.UID);
+        status.SAK = card.SAK.toRadixString(16).padLeft(2, '0').toUpperCase();
+        status.ATQA = bytesToHexSpace(card.ATQA);
+        status.ATS = "Unavailable";
+        status.tech =
+            mifare ? "Mifare Classic ${mfClassicGetName(mf1Type)}" : "Other";
+        status.checkMarks =
+            List.generate(80, (_) => ChameleonKeyCheckmark.none);
+        status.type = mf1Type;
+        status.allKeysExists = false;
       });
     } on Exception catch (_) {
       // TODO: catch error
@@ -78,19 +102,19 @@ class _ReadCardPageState extends State<ReadCardPage> {
         return;
       }
 
-      validKeys = List.generate(80, (_) => Uint8List(0));
+      status.validKeys = List.generate(80, (_) => Uint8List(0));
       if (mifare) {
         for (var sector = 0;
             sector < mfClassicGetSectorCount(mf1Type);
             sector++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            if (checkMarks[sector + (keyType * 40)] ==
+            if (status.checkMarks[sector + (keyType * 40)] ==
                 ChameleonKeyCheckmark.none) {
               // We are missing key, check from dictionary
-              checkMarks[sector + (keyType * 40)] =
+              status.checkMarks[sector + (keyType * 40)] =
                   ChameleonKeyCheckmark.checking;
               setState(() {
-                checkMarks = checkMarks;
+                status.checkMarks = status.checkMarks;
               });
               for (var key in gMifareClassicKeys) {
                 await asyncSleep(1); // Let GUI update
@@ -99,21 +123,21 @@ class _ReadCardPageState extends State<ReadCardPage> {
                     0x60 + keyType,
                     key)) {
                   // Found valid key
-                  validKeys[sector + (keyType * 40)] = key;
-                  checkMarks[sector + (keyType * 40)] =
+                  status.validKeys[sector + (keyType * 40)] = key;
+                  status.checkMarks[sector + (keyType * 40)] =
                       ChameleonKeyCheckmark.found;
                   setState(() {
-                    checkMarks = checkMarks;
+                    status.checkMarks = status.checkMarks;
                   });
                   break;
                 }
               }
-              if (checkMarks[sector + (keyType * 40)] ==
+              if (status.checkMarks[sector + (keyType * 40)] ==
                   ChameleonKeyCheckmark.checking) {
-                checkMarks[sector + (keyType * 40)] =
+                status.checkMarks[sector + (keyType * 40)] =
                     ChameleonKeyCheckmark.none;
                 setState(() {
-                  checkMarks = checkMarks;
+                  status.checkMarks = status.checkMarks;
                 });
               }
             }
@@ -122,15 +146,15 @@ class _ReadCardPageState extends State<ReadCardPage> {
         // Key check part competed, checking found keys
         bool hasKey = false;
         bool hasAllKeys = true;
-        for (var sector = 0; sector < mfClassicGetSectorCount(type); sector++) {
+        for (var sector = 0;
+            sector < mfClassicGetSectorCount(status.type);
+            sector++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            print(checkMarks[sector + (keyType * 40)]);
-            print(hasKey);
-            if (checkMarks[sector + (keyType * 40)] ==
+            if (status.checkMarks[sector + (keyType * 40)] ==
                 ChameleonKeyCheckmark.found) {
               hasKey = true;
             }
-            if (checkMarks[sector + (keyType * 40)] !=
+            if (status.checkMarks[sector + (keyType * 40)] !=
                 ChameleonKeyCheckmark.found) {
               hasAllKeys = false;
             }
@@ -140,7 +164,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
         if (hasAllKeys) {
           // all keys exists
           setState(() {
-            allKeysExists = true;
+            status.allKeysExists = true;
           });
           return;
         }
@@ -151,7 +175,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
             // recover with darkside
             var data = await connection.getMf1Darkside(0x03, 0x61, true, 15);
             var darkside = DarksideDart(uid: data.UID, items: []);
-            checkMarks[40] = ChameleonKeyCheckmark.checking;
+            status.checkMarks[40] = ChameleonKeyCheckmark.checking;
             bool found = false;
 
             for (var tries = 0; tries < 0xFF && !found; tries++) {
@@ -166,13 +190,14 @@ class _ReadCardPageState extends State<ReadCardPage> {
                 print("Darkside: Found keys: $keys. Checking them...");
                 for (var key in keys) {
                   var keyBytes = u64ToBytes(key);
+                  await asyncSleep(1); // Let GUI update
                   if ((await connection.mf1Auth(
                           0x03, 0x61, keyBytes.sublist(2, 8))) ==
                       true) {
                     print(
                         "Darkside: Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
-                    validKeys[40] = keyBytes.sublist(2, 8);
-                    checkMarks[40] = ChameleonKeyCheckmark.found;
+                    status.validKeys[40] = keyBytes.sublist(2, 8);
+                    status.checkMarks[40] = ChameleonKeyCheckmark.found;
                     found = true;
                     break;
                   }
@@ -189,7 +214,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
         }
 
         setState(() {
-          checkMarks = checkMarks;
+          status.checkMarks = status.checkMarks;
         });
 
         var prng = await connection.getMf1NTLevel();
@@ -202,11 +227,13 @@ class _ReadCardPageState extends State<ReadCardPage> {
         var validKeyBlock = 0;
         var validKeyType = 0;
 
-        for (var sector = 0; sector < mfClassicGetSectorCount(type); sector++) {
+        for (var sector = 0;
+            sector < mfClassicGetSectorCount(status.type);
+            sector++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            if (checkMarks[sector + (keyType * 40)] ==
+            if (status.checkMarks[sector + (keyType * 40)] ==
                 ChameleonKeyCheckmark.found) {
-              validKey = validKeys[sector + (keyType * 40)];
+              validKey = status.validKeys[sector + (keyType * 40)];
               validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
               validKeyType = keyType;
               break;
@@ -214,15 +241,17 @@ class _ReadCardPageState extends State<ReadCardPage> {
           }
         }
 
-        for (var sector = 0; sector < mfClassicGetSectorCount(type); sector++) {
+        for (var sector = 0;
+            sector < mfClassicGetSectorCount(status.type);
+            sector++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            if (checkMarks[sector + (keyType * 40)] ==
+            if (status.checkMarks[sector + (keyType * 40)] ==
                 ChameleonKeyCheckmark.none) {
-              checkMarks[sector + (keyType * 40)] =
+              status.checkMarks[sector + (keyType * 40)] =
                   ChameleonKeyCheckmark.checking;
               await asyncSleep(1); // Let GUI update
               setState(() {
-                checkMarks = checkMarks;
+                status.checkMarks = status.checkMarks;
               });
               var distance = await connection.getMf1NTDistance(
                   validKeyBlock, 0x60 + validKeyType, validKey);
@@ -249,6 +278,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
                   print("Found keys: $keys. Checking them...");
                   for (var key in keys) {
                     var keyBytes = u64ToBytes(key);
+                    await asyncSleep(1); // Let GUI update
                     if ((await connection.mf1Auth(
                             mfClassicGetSectorTrailerBlockBySector(sector),
                             0x60 + keyType,
@@ -257,9 +287,9 @@ class _ReadCardPageState extends State<ReadCardPage> {
                       print(
                           "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                       found = true;
-                      validKeys[sector + (keyType * 40)] =
+                      status.validKeys[sector + (keyType * 40)] =
                           keyBytes.sublist(2, 8);
-                      checkMarks[sector + (keyType * 40)] =
+                      status.checkMarks[sector + (keyType * 40)] =
                           ChameleonKeyCheckmark.found;
                       await asyncSleep(1); // Let GUI update
                       break;
@@ -273,7 +303,8 @@ class _ReadCardPageState extends State<ReadCardPage> {
           }
         }
         setState(() {
-          checkMarks = checkMarks;
+          status.checkMarks = status.checkMarks;
+          status.allKeysExists = true;
         });
       }
     } on Exception catch (_) {
@@ -281,7 +312,46 @@ class _ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> dumpData(ChameleonCom connection) async {}
+  Future<void> dumpData(ChameleonCom connection) async {
+    status.cardData = List.generate(0xFF, (_) => Uint8List(0));
+    for (var sector = 0;
+        sector < mfClassicGetSectorCount(status.type);
+        sector++) {
+      for (var block = 0;
+          block < mfClassicGetBlockCountBySector(sector);
+          block++) {
+        for (var keyType = 0; keyType < 2; keyType++) {
+          var blockData = await connection.mf1ReadBlock(
+              block + mfClassicGetFirstBlockCountBySector(sector),
+              0x60 + keyType,
+              status.validKeys[sector + (keyType * 40)]);
+          if (blockData.isEmpty) {
+            continue;
+          }
+          if (mfClassicGetSectorTrailerBlockBySector(sector) ==
+              block + mfClassicGetFirstBlockCountBySector(sector)) {
+            // set keys in sector trailer
+            blockData.setRange(0, 6, status.validKeys[sector]);
+            blockData.setRange(10, 16, status.validKeys[sector + 40]);
+          }
+          status.cardData[block + mfClassicGetFirstBlockCountBySector(sector)] =
+              blockData;
+          setState(() {
+            status.dumpProgress =
+                (block + mfClassicGetFirstBlockCountBySector(sector)) /
+                    (mfClassicGetSectorCount(status.type) *
+                        mfClassicGetBlockCountBySector(sector));
+          });
+          await asyncSleep(1); // Let GUI update
+          break;
+        }
+      }
+    }
+    setState(() {
+      status.dumpProgress = 0;
+    });
+    print(status.cardData);
+  }
 
   Widget buildFieldRow(String label, String value, double fontSize) {
     return Padding(
@@ -343,13 +413,13 @@ class _ReadCardPageState extends State<ReadCardPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  buildFieldRow('UID', uid, fieldFontSize),
-                  buildFieldRow('SAK', sak, fieldFontSize),
-                  buildFieldRow('ATQA', atqa, fieldFontSize),
-                  buildFieldRow('ATS', ats, fieldFontSize),
+                  buildFieldRow('UID', status.UID, fieldFontSize),
+                  buildFieldRow('SAK', status.SAK, fieldFontSize),
+                  buildFieldRow('ATQA', status.ATQA, fieldFontSize),
+                  buildFieldRow('ATS', status.ATS, fieldFontSize),
                   const SizedBox(height: 16),
                   Text(
-                    'Tech: $tech',
+                    'Tech: ${status.tech}',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: fieldFontSize),
                   ),
@@ -380,7 +450,9 @@ class _ReadCardPageState extends State<ReadCardPage> {
                             children: [
                               const Text("     "),
                               ...List.generate(
-                                (type == MifareClassicType.mini) ? 5 : 16,
+                                (status.type == MifareClassicType.mini)
+                                    ? 5
+                                    : 16,
                                 (index) => Padding(
                                   padding: const EdgeInsets.all(2),
                                   child: SizedBox(
@@ -397,13 +469,16 @@ class _ReadCardPageState extends State<ReadCardPage> {
                             children: [
                               const Text("A "),
                               ...List.generate(
-                                (type == MifareClassicType.mini) ? 5 : 16,
+                                (status.type == MifareClassicType.mini)
+                                    ? 5
+                                    : 16,
                                 (index) => Padding(
                                   padding: const EdgeInsets.all(2),
                                   child: SizedBox(
                                     width: checkmarkSize,
                                     height: checkmarkSize,
-                                    child: buildCheckmark(checkMarks[index]),
+                                    child: buildCheckmark(
+                                        status.checkMarks[index]),
                                   ),
                                 ),
                               )
@@ -414,21 +489,23 @@ class _ReadCardPageState extends State<ReadCardPage> {
                             children: [
                               const Text("B "),
                               ...List.generate(
-                                (type == MifareClassicType.mini) ? 5 : 16,
+                                (status.type == MifareClassicType.mini)
+                                    ? 5
+                                    : 16,
                                 (index) => Padding(
                                   padding: const EdgeInsets.all(2),
                                   child: SizedBox(
                                     width: checkmarkSize,
                                     height: checkmarkSize,
-                                    child:
-                                        buildCheckmark(checkMarks[40 + index]),
+                                    child: buildCheckmark(
+                                        status.checkMarks[40 + index]),
                                   ),
                                 ),
                               )
                             ],
                           ),
-                          ...(type == MifareClassicType.m2k ||
-                                  type == MifareClassicType.m4k)
+                          ...(status.type == MifareClassicType.m2k ||
+                                  status.type == MifareClassicType.m4k)
                               ? [
                                   const SizedBox(height: 8),
                                   Row(
@@ -459,7 +536,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                             width: checkmarkSize,
                                             height: checkmarkSize,
                                             child: buildCheckmark(
-                                                checkMarks[index + 16]),
+                                                status.checkMarks[index + 16]),
                                           ),
                                         ),
                                       )
@@ -476,8 +553,8 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                           child: SizedBox(
                                             width: checkmarkSize,
                                             height: checkmarkSize,
-                                            child: buildCheckmark(
-                                                checkMarks[40 + index + 16]),
+                                            child: buildCheckmark(status
+                                                .checkMarks[40 + index + 16]),
                                           ),
                                         ),
                                       )
@@ -485,7 +562,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                   ),
                                 ]
                               : [],
-                          ...(type == MifareClassicType.m4k)
+                          ...(status.type == MifareClassicType.m4k)
                               ? [
                                   Center(
                                       child: Column(
@@ -524,8 +601,8 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                                 child: SizedBox(
                                                   width: checkmarkSize,
                                                   height: checkmarkSize,
-                                                  child: buildCheckmark(
-                                                      checkMarks[index + 32]),
+                                                  child: buildCheckmark(status
+                                                      .checkMarks[index + 32]),
                                                 ),
                                               ),
                                             )
@@ -544,7 +621,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                                   width: checkmarkSize,
                                                   height: checkmarkSize,
                                                   child: buildCheckmark(
-                                                      checkMarks[
+                                                      status.checkMarks[
                                                           40 + index + 32]),
                                                 ),
                                               ),
@@ -560,7 +637,13 @@ class _ReadCardPageState extends State<ReadCardPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  (!allKeysExists)
+                  ...(status.dumpProgress != 0)
+                      ? [
+                          LinearProgressIndicator(value: status.dumpProgress),
+                          const SizedBox(height: 8)
+                        ]
+                      : [],
+                  (!status.allKeysExists)
                       ? ElevatedButton(
                           onPressed: () async {
                             await recoverKeys(connection);
