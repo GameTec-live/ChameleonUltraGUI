@@ -17,6 +17,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // plugins.
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
+  std::wstring lib_recovery_path = L"../../shared/Debug/recovery.dll";
+  _wputenv_s(L"LIBRECOVERY_PATH", lib_recovery_path.c_str());
+
   flutter::DartProject project(L"data");
 
   std::vector<std::string> command_line_arguments =

@@ -141,6 +141,15 @@ int uint64_compare(const void *a, const void *b)
   return (*(uint64_t *)a > *(uint64_t *)b) - (*(uint64_t *)a < *(uint64_t *)b);
 }
 
+int inline compare_uint64(const void *a, const void *b)
+{
+    if (*(uint64_t *)b == *(uint64_t *)a)
+        return 0;
+    if (*(uint64_t *)b < *(uint64_t *)a)
+        return 1;
+    return -1;
+}
+
 uint64_t *most_frequent_uint64(uint64_t *keys, uint32_t size, uint32_t *outputKeyCount)
 {
   uint64_t i, maxFreq = 1, currentFreq = 1, currentItem = keys[0];
