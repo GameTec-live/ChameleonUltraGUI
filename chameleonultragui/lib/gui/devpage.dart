@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/chameleon/connector.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:flutter/material.dart';

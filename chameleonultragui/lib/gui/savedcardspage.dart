@@ -33,7 +33,7 @@ class SavedCardsPage extends StatelessWidget {
                   IconButton(
                     onPressed: () {
                       // Export card or cards to file
-                    }, 
+                    },
                     icon: const Icon(Icons.upload_rounded),
                   ),
                 ],
@@ -41,7 +41,10 @@ class SavedCardsPage extends StatelessWidget {
             ),
             const Row(
               children: [
-                Text("Device: ", style: TextStyle(fontSize: 20),),
+                Text(
+                  "Device: ",
+                  style: TextStyle(fontSize: 20),
+                ),
               ],
             ),
             Expanded(
@@ -58,8 +61,7 @@ class SavedCardsPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {},
                     style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),
@@ -70,7 +72,10 @@ class SavedCardsPage extends StatelessWidget {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Icon(Icons.nfc_rounded, color: Colors.red,),
+                            Icon(
+                              Icons.nfc_rounded,
+                              color: Colors.red,
+                            ),
                           ],
                         ),
                         Expanded(
@@ -80,8 +85,18 @@ class SavedCardsPage extends StatelessWidget {
                             children: [
                               Column(
                                 children: [
-                                  Text("Apartment", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                  Text("MFC 1k", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
+                                  Text("Apartment",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
+                                  Text("MFC 1k",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
                                 ],
                               ),
                             ],
@@ -93,8 +108,7 @@ class SavedCardsPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {},
                     style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),
@@ -105,7 +119,10 @@ class SavedCardsPage extends StatelessWidget {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Icon(Icons.nfc_rounded, color: Colors.blue,),
+                            Icon(
+                              Icons.nfc_rounded,
+                              color: Colors.blue,
+                            ),
                           ],
                         ),
                         Expanded(
@@ -115,8 +132,18 @@ class SavedCardsPage extends StatelessWidget {
                             children: [
                               Column(
                                 children: [
-                                  Text("Shop", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                  Text("MDES 4k", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
+                                  Text("Shop",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
+                                  Text("MDES 4k",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
                                 ],
                               ),
                             ],
@@ -128,8 +155,7 @@ class SavedCardsPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {},
                     style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),
@@ -140,7 +166,10 @@ class SavedCardsPage extends StatelessWidget {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Icon(Icons.nfc_rounded, color: Colors.green,),
+                            Icon(
+                              Icons.nfc_rounded,
+                              color: Colors.green,
+                            ),
                           ],
                         ),
                         Expanded(
@@ -150,8 +179,18 @@ class SavedCardsPage extends StatelessWidget {
                             children: [
                               Column(
                                 children: [
-                                  Text("Unused", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                  Text("None", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
+                                  Text("Unused",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
+                                  Text("None",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
                                 ],
                               ),
                             ],
@@ -163,8 +202,7 @@ class SavedCardsPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {},
                     style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),
@@ -175,7 +213,10 @@ class SavedCardsPage extends StatelessWidget {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Icon(Icons.nfc_rounded, color: Colors.purple,),
+                            Icon(
+                              Icons.nfc_rounded,
+                              color: Colors.purple,
+                            ),
                           ],
                         ),
                         Expanded(
@@ -185,8 +226,18 @@ class SavedCardsPage extends StatelessWidget {
                             children: [
                               Column(
                                 children: [
-                                  Text("Alarm", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                  Text("T55xx", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
+                                  Text("Alarm",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
+                                  Text("T55xx",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
                                 ],
                               ),
                             ],
@@ -198,8 +249,7 @@ class SavedCardsPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {},
                     style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),
@@ -210,7 +260,10 @@ class SavedCardsPage extends StatelessWidget {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Icon(Icons.nfc_rounded, color: Colors.lime,),
+                            Icon(
+                              Icons.nfc_rounded,
+                              color: Colors.lime,
+                            ),
                           ],
                         ),
                         Expanded(
@@ -220,8 +273,18 @@ class SavedCardsPage extends StatelessWidget {
                             children: [
                               Column(
                                 children: [
-                                  Text("Unused", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                  Text("None", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
+                                  Text("Unused",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
+                                  Text("None",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
                                 ],
                               ),
                             ],
@@ -233,8 +296,7 @@ class SavedCardsPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {},
                     style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),
@@ -245,7 +307,10 @@ class SavedCardsPage extends StatelessWidget {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Icon(Icons.nfc_rounded, color: Colors.black,),
+                            Icon(
+                              Icons.nfc_rounded,
+                              color: Colors.black,
+                            ),
                           ],
                         ),
                         Expanded(
@@ -255,8 +320,18 @@ class SavedCardsPage extends StatelessWidget {
                             children: [
                               Column(
                                 children: [
-                                  Text("Unnamed", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                  Text("MFC 1k", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
+                                  Text("Unnamed",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
+                                  Text("MFC 1k",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
                                 ],
                               ),
                             ],
@@ -268,8 +343,7 @@ class SavedCardsPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {},
                     style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),
@@ -280,7 +354,10 @@ class SavedCardsPage extends StatelessWidget {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Icon(Icons.nfc_rounded, color: Colors.grey,),
+                            Icon(
+                              Icons.nfc_rounded,
+                              color: Colors.grey,
+                            ),
                           ],
                         ),
                         Expanded(
@@ -290,8 +367,18 @@ class SavedCardsPage extends StatelessWidget {
                             children: [
                               Column(
                                 children: [
-                                  Text("Work", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                  Text("MDES 1k", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
+                                  Text("Work",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
+                                  Text("MDES 1k",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
                                 ],
                               ),
                             ],
@@ -303,8 +390,7 @@ class SavedCardsPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {},
                     style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),
@@ -315,7 +401,10 @@ class SavedCardsPage extends StatelessWidget {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Icon(Icons.nfc_rounded, color: Colors.indigo,),
+                            Icon(
+                              Icons.nfc_rounded,
+                              color: Colors.indigo,
+                            ),
                           ],
                         ),
                         Expanded(
@@ -325,8 +414,18 @@ class SavedCardsPage extends StatelessWidget {
                             children: [
                               Column(
                                 children: [
-                                  Text("Unused", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                  Text("Free", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
+                                  Text("Unused",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
+                                  Text("Free",
+                                      style: TextStyle(
+                                          fontSize: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              40)),
                                 ],
                               ),
                             ],
@@ -340,141 +439,171 @@ class SavedCardsPage extends StatelessWidget {
             ),
             Row(
               children: [
-                const Text("Locally saved cards: ", style: TextStyle(fontSize: 20),),
+                const Text(
+                  "Locally saved cards: ",
+                  style: TextStyle(fontSize: 20),
+                ),
                 IconButton(
                   onPressed: () {
                     // Sync cards / Download device cards to local storage
-                  }, 
+                  },
                   icon: const Icon(Icons.sync_rounded),
                 ),
               ],
             ),
             Expanded(
               child: GridView(
-                padding: const EdgeInsets.all(20),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 3.5,
-                ),
-                scrollDirection: Axis.vertical,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: const Icon(Icons.add),
+                  padding: const EdgeInsets.all(20),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 3.5,
                   ),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
+                  scrollDirection: Axis.vertical,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ButtonStyle(
+                        shape:
+                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                          ),
                         ),
                       ),
+                      child: const Icon(Icons.add),
                     ),
-                    child: Row(
-                      children: [
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Icon(Icons.nfc_rounded, color: Colors.red,),
-                          ],
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ButtonStyle(
+                        shape:
+                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                          ),
                         ),
-                        Expanded(
-                          flex: 1,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
+                      ),
+                      child: Row(
+                        children: [
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Column(
-                                children: [
-                                  Text("Testcard", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                  Text("MFC 1k", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                ],
+                              Icon(
+                                Icons.nfc_rounded,
+                                color: Colors.red,
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          Expanded(
+                            flex: 1,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Column(
+                                  children: [
+                                    Text("Testcard",
+                                        style: TextStyle(
+                                            fontSize: MediaQuery.of(context)
+                                                    .size
+                                                    .width /
+                                                40)),
+                                    Text("MFC 1k",
+                                        style: TextStyle(
+                                            fontSize: MediaQuery.of(context)
+                                                    .size
+                                                    .width /
+                                                40)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ]
-              ),
+                  ]),
             ),
             const Row(
               children: [
-                Text("Locally saved keys: ", style: TextStyle(fontSize: 20),)
+                Text(
+                  "Locally saved keys: ",
+                  style: TextStyle(fontSize: 20),
+                )
               ],
             ),
             Expanded(
               child: GridView(
-                padding: const EdgeInsets.all(20),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 3.5,
-                ),
-                scrollDirection: Axis.vertical,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: const Icon(Icons.add),
+                  padding: const EdgeInsets.all(20),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 3.5,
                   ),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ButtonStyle(
-                      shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
+                  scrollDirection: Axis.vertical,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ButtonStyle(
+                        shape:
+                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                          ),
                         ),
                       ),
+                      child: const Icon(Icons.add),
                     ),
-                    child: Row(
-                      children: [
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Icon(Icons.key_rounded, color: Colors.blue,),
-                          ],
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ButtonStyle(
+                        shape:
+                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                          ),
                         ),
-                        Expanded(
-                          flex: 1,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
+                      ),
+                      child: Row(
+                        children: [
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Column(
-                                children: [
-                                  Text("Wifi Card Key", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                  Text("0x2353as87", style: TextStyle(fontSize: MediaQuery.of(context).size.width / 40)),
-                                ],
+                              Icon(
+                                Icons.key_rounded,
+                                color: Colors.blue,
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          Expanded(
+                            flex: 1,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Column(
+                                  children: [
+                                    Text("Wifi Card Key",
+                                        style: TextStyle(
+                                            fontSize: MediaQuery.of(context)
+                                                    .size
+                                                    .width /
+                                                40)),
+                                    Text("0x2353as87",
+                                        style: TextStyle(
+                                            fontSize: MediaQuery.of(context)
+                                                    .size
+                                                    .width /
+                                                40)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ]
-              ),
+                  ]),
             ),
           ],
         ),
