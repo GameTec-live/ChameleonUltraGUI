@@ -2,7 +2,7 @@
 name: Build APP
 
 # manual and on push
-on: [workflow_dispatch]
+on: [workflow_dispatch, push]
 
 jobs:
   build-android:
@@ -49,9 +49,6 @@ jobs:
         with:
           name: windows
           path: chameleonultragui/build/windows/runner/Release/
-      - name: Debug with tmate on failure
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
 
   build-linux:
     runs-on: ubuntu-latest
