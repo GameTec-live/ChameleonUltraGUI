@@ -351,7 +351,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
       status.state = ChameleonMifareClassicState.dumpOngoing;
     });
 
-    status.cardData = List.generate(0xFF, (_) => Uint8List(0));
+    status.cardData = List.generate(256, (_) => Uint8List(0));
     for (var sector = 0;
         sector < mfClassicGetSectorCount(status.type);
         sector++) {
@@ -382,8 +382,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
           setState(() {
             status.dumpProgress =
                 (block + mfClassicGetFirstBlockCountBySector(sector)) /
-                    (mfClassicGetSectorCount(status.type) *
-                        mfClassicGetBlockCountBySector(sector));
+                    (mfClassicGetBlockCount(status.type));
           });
 
           await asyncSleep(1); // Let GUI update

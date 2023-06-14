@@ -123,6 +123,20 @@ int mfClassicGetSectorCount(MifareClassicType type) {
   }
 }
 
+int mfClassicGetBlockCount(MifareClassicType type) {
+  if (type == MifareClassicType.m1k) {
+    return 64;
+  } else if (type == MifareClassicType.m2k) {
+    return 128;
+  } else if (type == MifareClassicType.m4k) {
+    return 256;
+  } else if (type == MifareClassicType.mini) {
+    return 20;
+  } else {
+    return 0;
+  }
+}
+
 int mfClassicGetSectorTrailerBlockBySector(int sector) {
   if (sector < 32) {
     return sector * 4 + 3;
