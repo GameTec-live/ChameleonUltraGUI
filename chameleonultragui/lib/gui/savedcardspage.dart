@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +17,7 @@ class SavedCardsPage extends StatelessWidget {
     var appState = context.watch<MyAppState>();
     var dictionaries =
         appState.sharedPreferencesProvider.getChameleonDictionaries();
+    var tags = appState.sharedPreferencesProvider.getChameleonTags();
 
     return Scaffold(
       appBar: AppBar(
@@ -446,7 +448,7 @@ class SavedCardsPage extends StatelessWidget {
             Row(
               children: [
                 const Text(
-                  "Locally saved cards: ",
+                  "Saved tags:",
                   style: TextStyle(fontSize: 20),
                 ),
                 IconButton(
@@ -469,7 +471,10 @@ class SavedCardsPage extends StatelessWidget {
                   scrollDirection: Axis.vertical,
                   children: [
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () async {
+                        // TODO: load from .bin
+                        // Somehow ask or parse SAK/ATQA
+                      },
                       style: ButtonStyle(
                         shape:
                             MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -480,54 +485,56 @@ class SavedCardsPage extends StatelessWidget {
                       ),
                       child: const Icon(Icons.add),
                     ),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
+                    ...tags.map<Widget>((tag) {
+                      return ElevatedButton(
+                        onPressed: () {},
+                        style: ButtonStyle(
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18.0),
+                            ),
                           ),
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.nfc_rounded,
-                                color: Colors.red,
-                              ),
-                            ],
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                        child: Row(
+                          children: [
+                            const Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
                               children: [
-                                Column(
-                                  children: [
-                                    Text("Testcard",
-                                        style: TextStyle(
-                                            fontSize: MediaQuery.of(context)
-                                                    .size
-                                                    .width /
-                                                40)),
-                                    Text("MFC 1k",
-                                        style: TextStyle(
-                                            fontSize: MediaQuery.of(context)
-                                                    .size
-                                                    .width /
-                                                40)),
-                                  ],
+                                Icon(
+                                  Icons.nfc_rounded,
+                                  color: Colors.red,
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                            Expanded(
+                              flex: 1,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Column(
+                                    children: [
+                                      Text(tag.name,
+                                          style: TextStyle(
+                                              fontSize: MediaQuery.of(context)
+                                                      .size
+                                                      .width /
+                                                  40)),
+                                      Text(chameleonTagToString(tag.tag),
+                                          style: TextStyle(
+                                              fontSize: MediaQuery.of(context)
+                                                      .size
+                                                      .width /
+                                                  40)),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                   ]),
             ),
             const Row(

@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:chameleonultragui/chameleon/connector.dart';
+
 // Mifare Classic keys from Proxmark3
 final gMifareClassicKeysList = {
   0xFFFFFFFFFFFF, // DEFAULT KEY (FIRST KEY USED BY PROGRAM IF NO USER DEFINED KEY)
@@ -138,5 +140,19 @@ int mfClassicGetFirstBlockCountBySector(int sector) {
     return sector * 4;
   } else {
     return 32 * 4 + (sector - 32) * 16;
+  }
+}
+
+ChameleonTag mfClassicGetChameleonTagType(MifareClassicType type) {
+  if (type == MifareClassicType.m1k) {
+    return ChameleonTag.mifare1K;
+  } else if (type == MifareClassicType.m2k) {
+    return ChameleonTag.mifare2K;
+  } else if (type == MifareClassicType.m4k) {
+    return ChameleonTag.mifare4K;
+  } else if (type == MifareClassicType.mini) {
+    return ChameleonTag.mifareMini;
+  } else {
+    return ChameleonTag.unknown;
   }
 }

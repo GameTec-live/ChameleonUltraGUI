@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,6 +31,42 @@ class ChameleonDictionary {
   }
 
   ChameleonDictionary({this.id = 0, this.name = "", this.keys = const []});
+}
+
+class ChameleonTagSave {
+  int id;
+  String name;
+  ChameleonTag tag;
+  List<Uint8List> data;
+
+  factory ChameleonTagSave.fromJson(String json) {
+    Map<String, dynamic> data = jsonDecode(json);
+    final id = data['id'] as int;
+    final name = data['name'] as String;
+    print(data['tag']);
+    final tag = getTagTypeByValue(data['tag']);
+    final encodedData = data['data'] as List<dynamic>;
+    List<Uint8List> tagData = [];
+    for (var block in encodedData) {
+      tagData.add(Uint8List.fromList(List<int>.from(block)));
+    }
+    return ChameleonTagSave(id: id, name: name, tag: tag, data: tagData);
+  }
+
+  String toJson() {
+    return jsonEncode({
+      'id': id,
+      'name': name,
+      'tag': tag.value,
+      'data': data.map((data) => data.toList()).toList()
+    });
+  }
+
+  ChameleonTagSave(
+      {this.id = 0,
+      this.name = "",
+      this.tag = ChameleonTag.unknown,
+      this.data = const []});
 }
 
 class SharedPreferencesProvider extends ChangeNotifier {
@@ -151,5 +189,22 @@ class SharedPreferencesProvider extends ChangeNotifier {
       }
     }
     _sharedPreferences.setStringList('dictionaries', output);
+  }
+
+  List<ChameleonTagSave> getChameleonTags() {
+    List<ChameleonTagSave> output = [];
+    final data = _sharedPreferences.getStringList('cards') ?? [];
+    for (var tag in data) {
+      output.add(ChameleonTagSave.fromJson(tag));
+    }
+    return output;
+  }
+
+  void setChameleonTags(List<ChameleonTagSave> tags) {
+    List<String> output = [];
+    for (var tag in tags) {
+      output.add(tag.toJson());
+    }
+    _sharedPreferences.setStringList('cards', output);
   }
 }

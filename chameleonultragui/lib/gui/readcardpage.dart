@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/chameleon/connector.dart';
@@ -26,7 +27,7 @@ enum ChameleonMifareClassicState {
   save
 }
 
-class ChameleonReadCardStatus {
+class ChameleonReadTagStatus {
   String UID;
   String SAK;
   String ATQA;
@@ -42,7 +43,7 @@ class ChameleonReadCardStatus {
   ChameleonDictionary? selectedDictionary;
   ChameleonMifareClassicState state;
 
-  ChameleonReadCardStatus(
+  ChameleonReadTagStatus(
       {this.UID = '',
       this.SAK = '',
       this.ATQA = '',
@@ -71,7 +72,7 @@ class ReadCardPage extends StatefulWidget {
 }
 
 class _ReadCardPageState extends State<ReadCardPage> {
-  ChameleonReadCardStatus status = ChameleonReadCardStatus();
+  ChameleonReadTagStatus status = ChameleonReadTagStatus();
 
   Future<void> readCardDetails(ChameleonCom connection) async {
     status.validKeys = List.generate(80, (_) => Uint8List(0));
@@ -394,7 +395,8 @@ class _ReadCardPageState extends State<ReadCardPage> {
     });
   }
 
-  Future<void> saveCard(ChameleonCom connection, bool bin) async {
+  Future<void> saveCard(
+      ChameleonCom connection, MyAppState appState, bool bin) async {
     var card = await connection.scan14443aTag();
 
     List<int> cardDump = [];
@@ -428,7 +430,13 @@ class _ReadCardPageState extends State<ReadCardPage> {
         }
       }
     } else {
-      // TODO: save to DB
+      var tags = appState.sharedPreferencesProvider.getChameleonTags();
+      tags.add(ChameleonTagSave(
+          id: Random().nextInt(100000),
+          name: "test",
+          tag: mfClassicGetChameleonTagType(status.type),
+          data: status.cardData));
+      appState.sharedPreferencesProvider.setChameleonTags(tags);
     }
   }
 
@@ -814,14 +822,16 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                       children: [
                                       ElevatedButton(
                                         onPressed: () async {
-                                          await saveCard(connection, false);
+                                          await saveCard(
+                                              connection, appState, false);
                                         },
                                         child: const Text('Save'),
                                       ),
                                       const SizedBox(width: 8),
                                       ElevatedButton(
                                         onPressed: () async {
-                                          await saveCard(connection, true);
+                                          await saveCard(
+                                              connection, appState, true);
                                         },
                                         child: const Text('Save as .bin'),
                                       ),

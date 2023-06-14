@@ -50,12 +50,6 @@ class DevPage extends StatelessWidget {
             child: const Text('Connect'),
           ),
           ElevatedButton(
-            onPressed: () {
-              // appState.chameleon.sendCommand("test");
-            },
-            child: const Text('Send'),
-          ),
-          ElevatedButton(
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               appState.log.d(
@@ -69,45 +63,45 @@ class DevPage extends StatelessWidget {
               Text('Read card'),
             ]),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              appState.log.d(await cml.detectMf1Support());
-            },
-            child: const Column(children: [
-              Text('Is MFC?'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              appState.log.d(await cml.getMf1NTLevel());
-            },
-            child: const Column(children: [
-              Text('Get NT level'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              appState.log.d(await cml.checkMf1Darkside());
-            },
-            child: const Column(children: [
-              Text('Check darkside'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              var distance = await cml.getMf1NTDistance(40, 0x60,
-                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
-              appState.log.d("UID: ${distance.UID}");
-              appState.log.d("Distance ${distance.distance}");
-            },
-            child: const Column(children: [
-              Text('Get distance'),
-            ]),
-          ),
+          // ElevatedButton(
+          //   onPressed: () async {
+          //     await cml.setReaderDeviceMode(true);
+          //     appState.log.d(await cml.detectMf1Support());
+          //   },
+          //   child: const Column(children: [
+          //     Text('Is MFC?'),
+          //   ]),
+          // ),
+          // ElevatedButton(
+          //   onPressed: () async {
+          //     await cml.setReaderDeviceMode(true);
+          //     appState.log.d(await cml.getMf1NTLevel());
+          //   },
+          //   child: const Column(children: [
+          //     Text('Get NT level'),
+          //   ]),
+          // ),
+          // ElevatedButton(
+          //   onPressed: () async {
+          //     await cml.setReaderDeviceMode(true);
+          //     appState.log.d(await cml.checkMf1Darkside());
+          //   },
+          //   child: const Column(children: [
+          //     Text('Check darkside'),
+          //   ]),
+          // ),
+          // ElevatedButton(
+          //   onPressed: () async {
+          //     await cml.setReaderDeviceMode(true);
+          //     var distance = await cml.getMf1NTDistance(40, 0x60,
+          //         Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
+          //     appState.log.d("UID: ${distance.UID}");
+          //     appState.log.d("Distance ${distance.distance}");
+          //   },
+          //   child: const Column(children: [
+          //     Text('Get distance'),
+          //   ]),
+          // ),
           ElevatedButton(
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
@@ -324,6 +318,14 @@ class DevPage extends StatelessWidget {
             },
             child: const Column(children: [
               Text('Wipe dictionaries'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              appState.sharedPreferencesProvider.setChameleonTags([]);
+            },
+            child: const Column(children: [
+              Text('Wipe cards'),
             ]),
           ),
         ],
