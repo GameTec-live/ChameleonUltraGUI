@@ -48,7 +48,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: windows
-          path: chameleonultragui/build/windows/runner/Release/runner.exe
+          path: chameleonultragui/build/windows/runner/Release/
       - name: Debug with tmate on failure
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
