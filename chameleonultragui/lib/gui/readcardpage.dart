@@ -17,6 +17,15 @@ import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
 enum ChameleonKeyCheckmark { none, found, checking }
 
+enum ChameleonMifareClassicState {
+  none,
+  recovery,
+  recoveryOngoing,
+  dump,
+  dumpOngoing,
+  save
+}
+
 class ChameleonReadCardStatus {
   String UID;
   String SAK;
@@ -31,6 +40,7 @@ class ChameleonReadCardStatus {
   double dumpProgress;
   List<ChameleonDictionary> dictionaries;
   ChameleonDictionary? selectedDictionary;
+  ChameleonMifareClassicState state;
 
   ChameleonReadCardStatus(
       {this.UID = '',
@@ -45,7 +55,8 @@ class ChameleonReadCardStatus {
       List<ChameleonKeyCheckmark>? checkMarks,
       List<Uint8List>? validKeys,
       List<Uint8List>? cardData,
-      this.dumpProgress = 0})
+      this.dumpProgress = 0,
+      this.state = ChameleonMifareClassicState.none})
       : validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
         checkMarks =
             checkMarks ?? List.generate(80, (_) => ChameleonKeyCheckmark.none),
@@ -87,6 +98,9 @@ class _ReadCardPageState extends State<ReadCardPage> {
         status.checkMarks =
             List.generate(80, (_) => ChameleonKeyCheckmark.none);
         status.type = mf1Type;
+        status.state = (mf1Type != MifareClassicType.none)
+            ? ChameleonMifareClassicState.recovery
+            : ChameleonMifareClassicState.none;
         status.allKeysExists = false;
       });
     } on Exception catch (_) {
@@ -95,6 +109,9 @@ class _ReadCardPageState extends State<ReadCardPage> {
   }
 
   Future<void> recoverKeys(ChameleonCom connection) async {
+    setState(() {
+      status.state = ChameleonMifareClassicState.recoveryOngoing;
+    });
     try {
       if (!await connection.isReaderDeviceMode()) {
         await connection.setReaderDeviceMode(true);
@@ -176,6 +193,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
           // all keys exists
           setState(() {
             status.allKeysExists = true;
+            status.state = ChameleonMifareClassicState.dump;
           });
           return;
         }
@@ -316,6 +334,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
         setState(() {
           status.checkMarks = status.checkMarks;
           status.allKeysExists = true;
+          status.state = ChameleonMifareClassicState.dump;
         });
       }
     } on Exception catch (_) {
@@ -326,8 +345,10 @@ class _ReadCardPageState extends State<ReadCardPage> {
   Future<void> dumpData(ChameleonCom connection) async {
     var card = await connection.scan14443aTag();
     // TODO: check if card changed
+    setState(() {
+      status.state = ChameleonMifareClassicState.dumpOngoing;
+    });
 
-    List<int> cardDump = [];
     status.cardData = List.generate(0xFF, (_) => Uint8List(0));
     for (var sector = 0;
         sector < mfClassicGetSectorCount(status.type);
@@ -342,9 +363,10 @@ class _ReadCardPageState extends State<ReadCardPage> {
               status.validKeys[sector + (keyType * 40)]);
           if (blockData.isEmpty) {
             if (keyType == 1) {
-              cardDump.addAll([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+              blockData = Uint8List(16);
+            } else {
+              continue;
             }
-            continue;
           }
           if (mfClassicGetSectorTrailerBlockBySector(sector) ==
               block + mfClassicGetFirstBlockCountBySector(sector)) {
@@ -354,7 +376,6 @@ class _ReadCardPageState extends State<ReadCardPage> {
           }
           status.cardData[block + mfClassicGetFirstBlockCountBySector(sector)] =
               blockData;
-          cardDump.addAll(blockData.toList());
           setState(() {
             status.dumpProgress =
                 (block + mfClassicGetFirstBlockCountBySector(sector)) /
@@ -369,24 +390,45 @@ class _ReadCardPageState extends State<ReadCardPage> {
 
     setState(() {
       status.dumpProgress = 0;
+      status.state = ChameleonMifareClassicState.save;
     });
+  }
 
-    try {
-      await FileSaver.instance.saveAs(
-          name: bytesToHex(card.UID),
-          bytes: Uint8List.fromList(cardDump),
-          ext: 'bin',
-          mimeType: MimeType.other);
-    } on UnimplementedError catch (_) {
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Please select an output file:',
-        fileName: '${bytesToHex(card.UID)}.bin',
-      );
+  Future<void> saveCard(ChameleonCom connection, bool bin) async {
+    var card = await connection.scan14443aTag();
 
-      if (outputFile != null) {
-        var file = File(outputFile);
-        await file.writeAsBytes(Uint8List.fromList(cardDump));
+    List<int> cardDump = [];
+    for (var sector = 0;
+        sector < mfClassicGetSectorCount(status.type);
+        sector++) {
+      for (var block = 0;
+          block < mfClassicGetBlockCountBySector(sector);
+          block++) {
+        cardDump.addAll(status
+            .cardData[block + mfClassicGetFirstBlockCountBySector(sector)]);
       }
+    }
+
+    if (bin) {
+      try {
+        await FileSaver.instance.saveAs(
+            name: bytesToHex(card.UID),
+            bytes: Uint8List.fromList(cardDump),
+            ext: 'bin',
+            mimeType: MimeType.other);
+      } on UnimplementedError catch (_) {
+        String? outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Please select an output file:',
+          fileName: '${bytesToHex(card.UID)}.bin',
+        );
+
+        if (outputFile != null) {
+          var file = File(outputFile);
+          await file.writeAsBytes(Uint8List.fromList(cardDump));
+        }
+      }
+    } else {
+      // TODO: save to DB
     }
   }
 
@@ -701,7 +743,11 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                   const SizedBox(height: 8)
                                 ]
                               : [],
-                          (!status.allKeysExists)
+                          (status.state ==
+                                      ChameleonMifareClassicState.recovery ||
+                                  status.state ==
+                                      ChameleonMifareClassicState
+                                          .recoveryOngoing)
                               ? Column(children: [
                                   const Text("Key dictionary"),
                                   const SizedBox(height: 4),
@@ -732,20 +778,55 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                   ),
                                   const SizedBox(height: 8),
                                   ElevatedButton(
-                                    onPressed: () async {
-                                      await recoverKeys(connection);
-                                    },
+                                    onPressed: (status.state ==
+                                            ChameleonMifareClassicState
+                                                .recovery)
+                                        ? () async {
+                                            await recoverKeys(connection);
+                                          }
+                                        : null,
                                     child: const Text('Recover keys'),
                                   )
                                 ])
-                              : (Column(children: [
+                              : (const Column(children: [])),
+                          (status.state == ChameleonMifareClassicState.dump ||
+                                  status.state ==
+                                      ChameleonMifareClassicState.dumpOngoing)
+                              ? (Column(children: [
                                   ElevatedButton(
-                                    onPressed: () async {
-                                      await dumpData(connection);
-                                    },
+                                    onPressed: (status.state ==
+                                            ChameleonMifareClassicState.dump)
+                                        ? () async {
+                                            await dumpData(connection);
+                                          }
+                                        : null,
                                     child: const Text('Dump card'),
                                   ),
-                                ])),
+                                ]))
+                              : (const Column(children: [])),
+                          (status.state == ChameleonMifareClassicState.save)
+                              ? (Center(
+                                  child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          await saveCard(connection, false);
+                                        },
+                                        child: const Text('Save'),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          await saveCard(connection, true);
+                                        },
+                                        child: const Text('Save as .bin'),
+                                      ),
+                                    ])))
+                              : (const Column(children: []))
                         ]
                       : []
                 ],
