@@ -443,95 +443,37 @@ class _ReadCardPageState extends State<ReadCardPage> {
                     },
                     child: const Text('Read'),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Keys',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      const Spacer(),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 8),
+                  ...(status.type != MifareClassicType.none)
+                      ? [
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Keys',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           Row(
                             children: [
-                              const Text("     "),
-                              ...List.generate(
-                                (status.type == MifareClassicType.mini)
-                                    ? 5
-                                    : 16,
-                                (index) => Padding(
-                                  padding: const EdgeInsets.all(2),
-                                  child: SizedBox(
-                                    width: checkmarkSize,
-                                    height: checkmarkSize,
-                                    child: Text("$index"),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Text("A "),
-                              ...List.generate(
-                                (status.type == MifareClassicType.mini)
-                                    ? 5
-                                    : 16,
-                                (index) => Padding(
-                                  padding: const EdgeInsets.all(2),
-                                  child: SizedBox(
-                                    width: checkmarkSize,
-                                    height: checkmarkSize,
-                                    child: buildCheckmark(
-                                        status.checkMarks[index]),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Text("B "),
-                              ...List.generate(
-                                (status.type == MifareClassicType.mini)
-                                    ? 5
-                                    : 16,
-                                (index) => Padding(
-                                  padding: const EdgeInsets.all(2),
-                                  child: SizedBox(
-                                    width: checkmarkSize,
-                                    height: checkmarkSize,
-                                    child: buildCheckmark(
-                                        status.checkMarks[40 + index]),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                          ...(status.type == MifareClassicType.m2k ||
-                                  status.type == MifareClassicType.m4k)
-                              ? [
+                              const Spacer(),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
                                       const Text("     "),
                                       ...List.generate(
-                                        16,
+                                        (status.type == MifareClassicType.mini)
+                                            ? 5
+                                            : 16,
                                         (index) => Padding(
                                           padding: const EdgeInsets.all(2),
                                           child: SizedBox(
                                             width: checkmarkSize,
                                             height: checkmarkSize,
-                                            child: Text("${index + 16}"),
+                                            child: Text("$index"),
                                           ),
                                         ),
                                       )
@@ -542,14 +484,16 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                     children: [
                                       const Text("A "),
                                       ...List.generate(
-                                        16,
+                                        (status.type == MifareClassicType.mini)
+                                            ? 5
+                                            : 16,
                                         (index) => Padding(
                                           padding: const EdgeInsets.all(2),
                                           child: SizedBox(
                                             width: checkmarkSize,
                                             height: checkmarkSize,
                                             child: buildCheckmark(
-                                                status.checkMarks[index + 16]),
+                                                status.checkMarks[index]),
                                           ),
                                         ),
                                       )
@@ -560,145 +504,221 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                     children: [
                                       const Text("B "),
                                       ...List.generate(
-                                        16,
+                                        (status.type == MifareClassicType.mini)
+                                            ? 5
+                                            : 16,
                                         (index) => Padding(
                                           padding: const EdgeInsets.all(2),
                                           child: SizedBox(
                                             width: checkmarkSize,
                                             height: checkmarkSize,
-                                            child: buildCheckmark(status
-                                                .checkMarks[40 + index + 16]),
+                                            child: buildCheckmark(
+                                                status.checkMarks[40 + index]),
                                           ),
                                         ),
                                       )
                                     ],
                                   ),
+                                  ...(status.type == MifareClassicType.m2k ||
+                                          status.type == MifareClassicType.m4k)
+                                      ? [
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Text("     "),
+                                              ...List.generate(
+                                                16,
+                                                (index) => Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(2),
+                                                  child: SizedBox(
+                                                    width: checkmarkSize,
+                                                    height: checkmarkSize,
+                                                    child:
+                                                        Text("${index + 16}"),
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Text("A "),
+                                              ...List.generate(
+                                                16,
+                                                (index) => Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(2),
+                                                  child: SizedBox(
+                                                    width: checkmarkSize,
+                                                    height: checkmarkSize,
+                                                    child: buildCheckmark(
+                                                        status.checkMarks[
+                                                            index + 16]),
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Text("B "),
+                                              ...List.generate(
+                                                16,
+                                                (index) => Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(2),
+                                                  child: SizedBox(
+                                                    width: checkmarkSize,
+                                                    height: checkmarkSize,
+                                                    child: buildCheckmark(
+                                                        status.checkMarks[
+                                                            40 + index + 16]),
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                        ]
+                                      : [],
+                                  ...(status.type == MifareClassicType.m4k)
+                                      ? [
+                                          Center(
+                                              child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
+                                                  children: [
+                                                const SizedBox(height: 8),
+                                                Row(
+                                                  children: [
+                                                    const Text("     "),
+                                                    ...List.generate(
+                                                      8,
+                                                      (index) => Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(2),
+                                                        child: SizedBox(
+                                                          width: checkmarkSize,
+                                                          height: checkmarkSize,
+                                                          child: Text(
+                                                              "${index + 32}"),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Row(
+                                                  children: [
+                                                    const Text("A "),
+                                                    ...List.generate(
+                                                      8,
+                                                      (index) => Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(2),
+                                                        child: SizedBox(
+                                                          width: checkmarkSize,
+                                                          height: checkmarkSize,
+                                                          child: buildCheckmark(
+                                                              status.checkMarks[
+                                                                  index + 32]),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Row(
+                                                  children: [
+                                                    const Text("B "),
+                                                    ...List.generate(
+                                                      8,
+                                                      (index) => Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(2),
+                                                        child: SizedBox(
+                                                          width: checkmarkSize,
+                                                          height: checkmarkSize,
+                                                          child: buildCheckmark(
+                                                              status.checkMarks[
+                                                                  40 +
+                                                                      index +
+                                                                      32]),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ]))
+                                        ]
+                                      : []
+                                ],
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ...(status.dumpProgress != 0)
+                              ? [
+                                  LinearProgressIndicator(
+                                      value: status.dumpProgress),
+                                  const SizedBox(height: 8)
                                 ]
                               : [],
-                          ...(status.type == MifareClassicType.m4k)
-                              ? [
-                                  Center(
-                                      child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            const Text("     "),
-                                            ...List.generate(
-                                              8,
-                                              (index) => Padding(
-                                                padding:
-                                                    const EdgeInsets.all(2),
-                                                child: SizedBox(
-                                                  width: checkmarkSize,
-                                                  height: checkmarkSize,
-                                                  child: Text("${index + 32}"),
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            const Text("A "),
-                                            ...List.generate(
-                                              8,
-                                              (index) => Padding(
-                                                padding:
-                                                    const EdgeInsets.all(2),
-                                                child: SizedBox(
-                                                  width: checkmarkSize,
-                                                  height: checkmarkSize,
-                                                  child: buildCheckmark(status
-                                                      .checkMarks[index + 32]),
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            const Text("B "),
-                                            ...List.generate(
-                                              8,
-                                              (index) => Padding(
-                                                padding:
-                                                    const EdgeInsets.all(2),
-                                                child: SizedBox(
-                                                  width: checkmarkSize,
-                                                  height: checkmarkSize,
-                                                  child: buildCheckmark(
-                                                      status.checkMarks[
-                                                          40 + index + 32]),
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                      ]))
-                                ]
-                              : []
-                        ],
-                      ),
-                      const Spacer(),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ...(status.dumpProgress != 0)
-                      ? [
-                          LinearProgressIndicator(value: status.dumpProgress),
-                          const SizedBox(height: 8)
+                          (!status.allKeysExists)
+                              ? Column(children: [
+                                  const Text("Key dictionary"),
+                                  const SizedBox(height: 4),
+                                  DropdownButton<int>(
+                                    value: status.selectedDictionary!.id,
+                                    items: status.dictionaries
+                                        .map<DropdownMenuItem<int>>(
+                                            (ChameleonDictionary dictionary) {
+                                      return DropdownMenuItem<int>(
+                                        value: dictionary.id,
+                                        child: Text(
+                                            "${dictionary.name} (${dictionary.keys.length} keys)"),
+                                      );
+                                    }).toList(),
+                                    onChanged: (int? newValue) {
+                                      for (var dictionary
+                                          in status.dictionaries) {
+                                        if (dictionary.id == newValue) {
+                                          setState(() {
+                                            status.selectedDictionary =
+                                                dictionary;
+                                          });
+                                          print(status.selectedDictionary!.id);
+                                          break;
+                                        }
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      await recoverKeys(connection);
+                                    },
+                                    child: const Text('Recover keys'),
+                                  )
+                                ])
+                              : (Column(children: [
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      await dumpData(connection);
+                                    },
+                                    child: const Text('Dump card'),
+                                  ),
+                                ])),
                         ]
-                      : [],
-                  (!status.allKeysExists)
-                      ? Column(children: [
-                          const Text("Key dictionary"),
-                          const SizedBox(height: 4),
-                          DropdownButton<int>(
-                            value: status.selectedDictionary!.id,
-                            items: status.dictionaries
-                                .map<DropdownMenuItem<int>>(
-                                    (ChameleonDictionary dictionary) {
-                              return DropdownMenuItem<int>(
-                                value: dictionary.id,
-                                child: Text(
-                                    "${dictionary.name} (${dictionary.keys.length} keys)"),
-                              );
-                            }).toList(),
-                            onChanged: (int? newValue) {
-                              for (var dictionary in status.dictionaries) {
-                                if (dictionary.id == newValue) {
-                                  setState(() {
-                                    status.selectedDictionary = dictionary;
-                                  });
-                                  print(status.selectedDictionary!.id);
-                                  break;
-                                }
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () async {
-                              await recoverKeys(connection);
-                            },
-                            child: const Text('Recover keys'),
-                          )
-                        ])
-                      : (Column(children: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              await dumpData(connection);
-                            },
-                            child: const Text('Dump card'),
-                          ),
-                        ])),
+                      : []
                 ],
               ),
             ),
