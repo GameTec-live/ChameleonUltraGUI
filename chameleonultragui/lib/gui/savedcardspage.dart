@@ -1,4 +1,6 @@
+import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class SavedCardsPage extends StatelessWidget {
   /* Todo list:
@@ -11,6 +13,10 @@ class SavedCardsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    var dictionaries =
+        appState.sharedPreferencesProvider.getChameleonDictionaries();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Saved Cards'),
@@ -527,7 +533,7 @@ class SavedCardsPage extends StatelessWidget {
             const Row(
               children: [
                 Text(
-                  "Locally saved keys: ",
+                  "Dictionaries:",
                   style: TextStyle(fontSize: 20),
                 )
               ],
@@ -555,54 +561,56 @@ class SavedCardsPage extends StatelessWidget {
                       ),
                       child: const Icon(Icons.add),
                     ),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.key_rounded,
-                                color: Colors.blue,
+                    ...dictionaries.map<Widget>((dictionary) {
+                      return ElevatedButton(
+                          onPressed: () {},
+                          style: ButtonStyle(
+                            shape: MaterialStateProperty.all<
+                                RoundedRectangleBorder>(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18.0),
                               ),
-                            ],
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Column(
-                                  children: [
-                                    Text("Wifi Card Key",
-                                        style: TextStyle(
-                                            fontSize: MediaQuery.of(context)
-                                                    .size
-                                                    .width /
-                                                40)),
-                                    Text("0x2353as87",
-                                        style: TextStyle(
-                                            fontSize: MediaQuery.of(context)
-                                                    .size
-                                                    .width /
-                                                40)),
-                                  ],
-                                ),
-                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
+                          child: Row(
+                            children: [
+                              const Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.key_rounded,
+                                    color: Colors.blue,
+                                  ),
+                                ],
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Column(
+                                      children: [
+                                        Text(dictionary.name,
+                                            style: TextStyle(
+                                                fontSize: MediaQuery.of(context)
+                                                        .size
+                                                        .width /
+                                                    40)),
+                                        Text(
+                                            "Key count: ${dictionary.keys.length}",
+                                            style: TextStyle(
+                                                fontSize: MediaQuery.of(context)
+                                                        .size
+                                                        .width /
+                                                    40)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ));
+                    })
                   ]),
             ),
           ],

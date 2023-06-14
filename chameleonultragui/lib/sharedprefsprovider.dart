@@ -1,5 +1,35 @@
+import 'dart:typed_data';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class ChameleonDictionary {
+  int id;
+  String name;
+  List<Uint8List> keys;
+
+  factory ChameleonDictionary.fromJson(String json) {
+    Map<String, dynamic> data = jsonDecode(json);
+    final id = data['id'] as int;
+    final name = data['name'] as String;
+    final encodedKeys = data['keys'] as List<dynamic>;
+    List<Uint8List> keys = [];
+    for (var key in encodedKeys) {
+      keys.add(Uint8List.fromList(List<int>.from(key)));
+    }
+    return ChameleonDictionary(id: id, name: name, keys: keys);
+  }
+
+  String toJson() {
+    return jsonEncode({
+      'id': id,
+      'name': name,
+      'keys': keys.map((key) => key.toList()).toList()
+    });
+  }
+
+  ChameleonDictionary({this.id = 0, this.name = "", this.keys = const []});
+}
 
 class SharedPreferencesProvider extends ChangeNotifier {
   SharedPreferencesProvider._privateConstructor();
@@ -101,5 +131,25 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setDeveloperMode(bool value) {
     _sharedPreferences.setBool('developer_mode', value);
+  }
+
+  List<ChameleonDictionary> getChameleonDictionaries() {
+    List<ChameleonDictionary> output = [];
+    final data = _sharedPreferences.getStringList('dictionaries') ?? [];
+    for (var dictionary in data) {
+      output.add(ChameleonDictionary.fromJson(dictionary));
+    }
+    return output;
+  }
+
+  void setChameleonDictionaries(List<ChameleonDictionary> dictionaries) {
+    List<String> output = [];
+    for (var dictionary in dictionaries) {
+      if (dictionary.id != 0) {
+        // 0 is system empty dictionary, never save it
+        output.add(dictionary.toJson());
+      }
+    }
+    _sharedPreferences.setStringList('dictionaries', output);
   }
 }

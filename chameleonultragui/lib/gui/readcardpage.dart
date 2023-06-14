@@ -5,6 +5,7 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,6 +26,8 @@ class ChameleonReadCardStatus {
   List<Uint8List> validKeys;
   List<Uint8List> cardData;
   double dumpProgress;
+  List<ChameleonDictionary> dictionaries;
+  ChameleonDictionary? selectedDictionary;
 
   ChameleonReadCardStatus(
       {this.UID = '',
@@ -34,6 +37,8 @@ class ChameleonReadCardStatus {
       this.tech = '',
       this.allKeysExists = false,
       this.type = MifareClassicType.none,
+      this.dictionaries = const [],
+      this.selectedDictionary,
       List<ChameleonKeyCheckmark>? checkMarks,
       List<Uint8List>? validKeys,
       List<Uint8List>? cardData,
@@ -116,7 +121,10 @@ class _ReadCardPageState extends State<ReadCardPage> {
               setState(() {
                 status.checkMarks = status.checkMarks;
               });
-              for (var key in gMifareClassicKeys) {
+              for (var key in [
+                ...status.selectedDictionary!.keys,
+                ...gMifareClassicKeys
+              ]) {
                 await asyncSleep(1); // Let GUI update
                 if (await connection.mf1Auth(
                     mfClassicGetSectorTrailerBlockBySector(sector),
@@ -391,6 +399,11 @@ class _ReadCardPageState extends State<ReadCardPage> {
 
     var appState = context.watch<MyAppState>();
     var connection = ChameleonCom(port: appState.chameleon);
+    status.dictionaries =
+        appState.sharedPreferencesProvider.getChameleonDictionaries();
+    status.dictionaries
+        .insert(0, ChameleonDictionary(id: 0, name: "Empty", keys: []));
+    status.selectedDictionary ??= status.dictionaries[0];
 
     return Scaffold(
       appBar: AppBar(
@@ -432,7 +445,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Found keys',
+                    'Keys',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 24,
@@ -644,18 +657,48 @@ class _ReadCardPageState extends State<ReadCardPage> {
                         ]
                       : [],
                   (!status.allKeysExists)
-                      ? ElevatedButton(
-                          onPressed: () async {
-                            await recoverKeys(connection);
-                          },
-                          child: const Text('Recover keys'),
-                        )
-                      : ElevatedButton(
-                          onPressed: () async {
-                            await dumpData(connection);
-                          },
-                          child: const Text('Dump card'),
-                        ),
+                      ? Column(children: [
+                          const Text("Key dictionary"),
+                          const SizedBox(height: 4),
+                          DropdownButton<int>(
+                            value: status.selectedDictionary!.id,
+                            items: status.dictionaries
+                                .map<DropdownMenuItem<int>>(
+                                    (ChameleonDictionary dictionary) {
+                              return DropdownMenuItem<int>(
+                                value: dictionary.id,
+                                child: Text(
+                                    "${dictionary.name} (${dictionary.keys.length} keys)"),
+                              );
+                            }).toList(),
+                            onChanged: (int? newValue) {
+                              for (var dictionary in status.dictionaries) {
+                                if (dictionary.id == newValue) {
+                                  setState(() {
+                                    status.selectedDictionary = dictionary;
+                                  });
+                                  print(status.selectedDictionary!.id);
+                                  break;
+                                }
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () async {
+                              await recoverKeys(connection);
+                            },
+                            child: const Text('Recover keys'),
+                          )
+                        ])
+                      : (Column(children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              await dumpData(connection);
+                            },
+                            child: const Text('Dump card'),
+                          ),
+                        ])),
                 ],
               ),
             ),

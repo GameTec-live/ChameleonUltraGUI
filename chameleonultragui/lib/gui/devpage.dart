@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/chameleon/connector.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
@@ -285,6 +287,43 @@ class DevPage extends StatelessWidget {
             },
             child: const Column(children: [
               Text('Test nested library'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              var dict = ChameleonDictionary(id: 0, name: "test", keys: [
+                Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
+              ]);
+              var newDict = ChameleonDictionary.fromJson(dict.toJson());
+              appState.log.d(newDict.keys);
+            },
+            child: const Column(children: [
+              Text('Test JSON dictionary coding'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              var dictionaries =
+                  appState.sharedPreferencesProvider.getChameleonDictionaries();
+              dictionaries.add(ChameleonDictionary(
+                  id: Random().nextInt(100000),
+                  name: "test",
+                  keys: [
+                    Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
+                  ]));
+              appState.sharedPreferencesProvider
+                  .setChameleonDictionaries(dictionaries);
+            },
+            child: const Column(children: [
+              Text('Add fake dictionary'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              appState.sharedPreferencesProvider.setChameleonDictionaries([]);
+            },
+            child: const Column(children: [
+              Text('Wipe dictionaries'),
             ]),
           ),
         ],
