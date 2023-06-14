@@ -52,6 +52,8 @@ dependencies:
     git:
       url: https://github.com/Foxushka/usbserial.git
       ref: fixes
+  file_saver: ^0.2.4
+  file_picker: ^5.3.2
 
 dev_dependencies:
   flutter_test:

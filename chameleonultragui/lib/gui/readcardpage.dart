@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/chameleon/connector.dart';
@@ -6,8 +7,10 @@ import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:file_saver/file_saver.dart';
 
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
@@ -321,6 +324,10 @@ class _ReadCardPageState extends State<ReadCardPage> {
   }
 
   Future<void> dumpData(ChameleonCom connection) async {
+    var card = await connection.scan14443aTag();
+    // TODO: check if card changed
+
+    List<int> cardDump = [];
     status.cardData = List.generate(0xFF, (_) => Uint8List(0));
     for (var sector = 0;
         sector < mfClassicGetSectorCount(status.type);
@@ -334,6 +341,9 @@ class _ReadCardPageState extends State<ReadCardPage> {
               0x60 + keyType,
               status.validKeys[sector + (keyType * 40)]);
           if (blockData.isEmpty) {
+            if (keyType == 1) {
+              cardDump.addAll([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            }
             continue;
           }
           if (mfClassicGetSectorTrailerBlockBySector(sector) ==
@@ -344,6 +354,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
           }
           status.cardData[block + mfClassicGetFirstBlockCountBySector(sector)] =
               blockData;
+          cardDump.addAll(blockData.toList());
           setState(() {
             status.dumpProgress =
                 (block + mfClassicGetFirstBlockCountBySector(sector)) /
@@ -355,10 +366,28 @@ class _ReadCardPageState extends State<ReadCardPage> {
         }
       }
     }
+
     setState(() {
       status.dumpProgress = 0;
     });
-    print(status.cardData);
+
+    try {
+      await FileSaver.instance.saveAs(
+          name: bytesToHex(card.UID),
+          bytes: Uint8List.fromList(cardDump),
+          ext: 'bin',
+          mimeType: MimeType.other);
+    } on UnimplementedError catch (_) {
+      String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Please select an output file:',
+        fileName: '${bytesToHex(card.UID)}.bin',
+      );
+
+      if (outputFile != null) {
+        var file = File(outputFile);
+        await file.writeAsBytes(Uint8List.fromList(cardDump));
+      }
+    }
   }
 
   Widget buildFieldRow(String label, String value, double fontSize) {

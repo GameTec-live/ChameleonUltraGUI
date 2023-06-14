@@ -36,3 +36,15 @@ Uint8List u64ToBytes(int u64) {
   final ByteData byteData = ByteData(8)..setUint64(0, u64, Endian.big);
   return byteData.buffer.asUint8List();
 }
+
+List<String> rsplit(String string, String separator, int maxsplit) {
+  List<String> splitted = string.split(separator);
+  if (maxsplit > 0) {
+    int index = splitted.length - maxsplit;
+    splitted = [
+      splitted.sublist(0, index).join(separator),
+      ...splitted.sublist(index),
+    ];
+  }
+  return splitted;
+}
