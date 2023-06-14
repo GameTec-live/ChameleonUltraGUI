@@ -109,7 +109,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> recoverKeys(ChameleonCom connection) async {
+  Future<void> recoverKeys(ChameleonCom connection, MyAppState appState) async {
     setState(() {
       status.state = ChameleonMifareClassicState.recoveryOngoing;
     });
@@ -124,7 +124,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
       if (mifare) {
         mf1Type = mfClassicGetType(card.ATQA, card.SAK);
       } else {
-        print("Not mifare tag!");
+        appState.log.e("Not mifare tag!");
         return;
       }
 
@@ -217,14 +217,14 @@ class _ReadCardPageState extends State<ReadCardPage> {
                   ar: data.ar));
               var keys = await recovery.darkside(darkside);
               if (keys.isNotEmpty) {
-                print("Darkside: Found keys: $keys. Checking them...");
+                appState.log.d("Darkside: Found keys: $keys. Checking them...");
                 for (var key in keys) {
                   var keyBytes = u64ToBytes(key);
                   await asyncSleep(1); // Let GUI update
                   if ((await connection.mf1Auth(
                           0x03, 0x61, keyBytes.sublist(2, 8))) ==
                       true) {
-                    print(
+                    appState.log.i(
                         "Darkside: Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                     status.validKeys[40] = keyBytes.sublist(2, 8);
                     status.checkMarks[40] = ChameleonKeyCheckmark.found;
@@ -233,12 +233,12 @@ class _ReadCardPageState extends State<ReadCardPage> {
                   }
                 }
               } else {
-                print("Can't find keys, retrying...");
+                appState.log.d("Can't find keys, retrying...");
                 data = await connection.getMf1Darkside(0x03, 0x61, false, 15);
               }
             }
           } else {
-            print("No keys and not vurnerable to darkside");
+            appState.log.e("No keys and not vurnerable to darkside");
             return;
           }
         }
@@ -305,7 +305,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
 
                 var keys = await recovery.nested(nested);
                 if (keys.isNotEmpty) {
-                  print("Found keys: $keys. Checking them...");
+                  appState.log.d("Found keys: $keys. Checking them...");
                   for (var key in keys) {
                     var keyBytes = u64ToBytes(key);
                     await asyncSleep(1); // Let GUI update
@@ -314,7 +314,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
                             0x60 + keyType,
                             keyBytes.sublist(2, 8))) ==
                         true) {
-                      print(
+                      appState.log.i(
                           "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                       found = true;
                       status.validKeys[sector + (keyType * 40)] =
@@ -326,12 +326,13 @@ class _ReadCardPageState extends State<ReadCardPage> {
                     }
                   }
                 } else {
-                  print("Can't find keys, retrying...");
+                  appState.log.e("Can't find keys, retrying...");
                 }
               }
             }
           }
         }
+
         setState(() {
           status.checkMarks = status.checkMarks;
           status.allKeysExists = true;
@@ -377,12 +378,14 @@ class _ReadCardPageState extends State<ReadCardPage> {
           }
           status.cardData[block + mfClassicGetFirstBlockCountBySector(sector)] =
               blockData;
+
           setState(() {
             status.dumpProgress =
                 (block + mfClassicGetFirstBlockCountBySector(sector)) /
                     (mfClassicGetSectorCount(status.type) *
                         mfClassicGetBlockCountBySector(sector));
           });
+
           await asyncSleep(1); // Let GUI update
           break;
         }
@@ -778,7 +781,6 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                             status.selectedDictionary =
                                                 dictionary;
                                           });
-                                          print(status.selectedDictionary!.id);
                                           break;
                                         }
                                       }
@@ -790,7 +792,8 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                             ChameleonMifareClassicState
                                                 .recovery)
                                         ? () async {
-                                            await recoverKeys(connection);
+                                            await recoverKeys(
+                                                connection, appState);
                                           }
                                         : null,
                                     child: const Text('Recover keys'),
