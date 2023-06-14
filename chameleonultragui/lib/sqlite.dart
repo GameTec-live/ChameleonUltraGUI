@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:chameleonultragui/chameleon/connector.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -12,18 +14,16 @@ class Keytag {
   final String name;
   final String description;
   final String UID;
-  final String Type;
-  final int Memory;
-  final String Data;
+  final ChameleonTag type;
+  final List<Uint8List> data;
 
   const Keytag({
     required this.id,
     required this.name,
     required this.description,
     required this.UID,
-    required this.Type,
-    required this.Memory,
-    required this.Data,
+    required this.type,
+    required this.data,
   });
 
   // Convert a keytag into a Map. The keys must correspond to the names of the
@@ -34,9 +34,8 @@ class Keytag {
       'name': name,
       'description': description,
       'UID': UID,
-      'Type': Type,
-      'Memory': Memory,
-      'Data': Data,
+      'type': type,
+      'data': data,
     };
   }
 
@@ -44,7 +43,7 @@ class Keytag {
   // each dog when using the print statement.
   @override
   String toString() {
-    return 'keytags{id: $id, name: $name, description: $description, UID: $UID, Type: $Type, Memory: $Memory, Data: $Data}';
+    return 'keytag{id: $id, name: $name, description: $description, UID: $UID, Type: $type}';
   }
 }
 
@@ -95,12 +94,9 @@ void main() async {
     onCreate: (db, version) {
       // Run the CREATE TABLE statement on the database.
       db.execute(
-        'CREATE TABLE keytags(id INTEGER PRIMARY KEY, name TEXT, description TEXT, UID TEXT, Type TEXT, Memory INTEGER, Data TEXT)'
-      );
+          'CREATE TABLE keytags(id INTEGER PRIMARY KEY, name TEXT, description TEXT, UID TEXT, type TEXT, data BLOB)');
       return db.execute(
-        'CREATE TABLE settings(id INTEGER PRIMARY KEY, name TEXT, value INTEGER, SValue TEXT)'
-      );
-
+          'CREATE TABLE settings(id INTEGER PRIMARY KEY, name TEXT, value INTEGER, SValue TEXT)');
     },
     // Set the version. This executes the onCreate function and provides a
     // path to perform database upgrades and downgrades.
@@ -152,9 +148,8 @@ void main() async {
         name: maps[i]['name'],
         description: maps[i]['description'],
         UID: maps[i]['UID'],
-        Type: maps[i]['Type'],
-        Memory: maps[i]['Memory'],
-        Data: maps[i]['Data'],
+        type: maps[i]['type'],
+        data: maps[i]['data'],
       );
     });
   }
@@ -220,8 +215,8 @@ void main() async {
       // Pass the keytag's id as a whereArg to prevent SQL injection.
       whereArgs: [id],
     );
-  } 
-  
+  }
+
   //Everything past this point is for testing and can be removed once we know it works properly.
 
   var key = const Keytag(
@@ -229,9 +224,8 @@ void main() async {
     name: 'home',
     description: '',
     UID: 'FFFFFFFF',
-    Type: 'Mifare Classic 1K',
-    Memory: 1024,
-    Data: '',
+    type: ChameleonTag.mifare1K,
+    data: [],
   );
 
   await insertkeytag(key);
@@ -243,9 +237,8 @@ void main() async {
     name: 'work',
     description: '',
     UID: 'FFFFFFFF',
-    Type: 'Mifare Classic 1K',
-    Memory: 1024,
-    Data: '',
+    type: ChameleonTag.mifare1K,
+    data: [],
   );
   await updateKeytag(key);
 
