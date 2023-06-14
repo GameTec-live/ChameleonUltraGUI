@@ -64,7 +64,6 @@ jobs:
       - run: flutter config --enable-linux-desktop
       #- run: flutter test
       - run: flutter build linux
-      - run: pwd
       - uses: actions/upload-artifact@v3
         with:
           name: linux
