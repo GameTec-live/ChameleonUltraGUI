@@ -2,6 +2,7 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class SavedCardsPage extends StatelessWidget {
   /* Todo list:
@@ -445,48 +446,26 @@ class SavedCardsPage extends StatelessWidget {
                 ],
               ),
             ),
-            Row(
+            const Row(
               children: [
-                const Text(
+                Text(
                   "Saved tags:",
                   style: TextStyle(fontSize: 20),
-                ),
-                IconButton(
-                  onPressed: () {
-                    // Sync cards / Download device cards to local storage
-                  },
-                  icon: const Icon(Icons.sync_rounded),
                 ),
               ],
             ),
             Expanded(
-              child: GridView(
-                  padding: const EdgeInsets.all(20),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 3.5,
-                  ),
-                  scrollDirection: Axis.vertical,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () async {
-                        // TODO: load from .bin
-                        // Somehow ask or parse SAK/ATQA
-                      },
-                      style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                        ),
-                      ),
-                      child: const Icon(Icons.add),
-                    ),
-                    ...tags.map<Widget>((tag) {
-                      return ElevatedButton(
+              child: StaggeredGridView.countBuilder(
+                padding: const EdgeInsets.all(20),
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                itemCount: tags.length + 1,
+                itemBuilder: (BuildContext context, int index) {
+                  if (index == 0) {
+                    return Container(
+                      constraints: const BoxConstraints(maxHeight: 100),
+                      child: ElevatedButton(
                         onPressed: () {},
                         style: ButtonStyle(
                           shape:
@@ -496,46 +475,92 @@ class SavedCardsPage extends StatelessWidget {
                             ),
                           ),
                         ),
-                        child: Row(
+                        child: const Icon(Icons.add),
+                      ),
+                    );
+                  } else {
+                    final tag = tags[index - 1];
+                    return Container(
+                      constraints: const BoxConstraints(maxHeight: 100),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ButtonStyle(
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18.0),
+                            ),
+                          ),
+                        ),
+                        child: Stack(
                           children: [
-                            const Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
+                            Row(
                               children: [
-                                Icon(
-                                  Icons.nfc_rounded,
-                                  color: Colors.red,
+                                const Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.key_rounded,
+                                      color: Colors.blue,
+                                    ),
+                                  ],
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Column(
+                                        children: [
+                                          Text(
+                                            tag.name,
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                            ),
+                                          ),
+                                          Text(
+                                            chameleonTagToString(tag.tag),
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
-                            Expanded(
-                              flex: 1,
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Column(
-                                    children: [
-                                      Text(tag.name,
-                                          style: TextStyle(
-                                              fontSize: MediaQuery.of(context)
-                                                      .size
-                                                      .width /
-                                                  40)),
-                                      Text(chameleonTagToString(tag.tag),
-                                          style: TextStyle(
-                                              fontSize: MediaQuery.of(context)
-                                                      .size
-                                                      .width /
-                                                  40)),
-                                    ],
+                                  IconButton(
+                                    onPressed: () {},
+                                    icon: const Icon(Icons.edit),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {},
+                                    icon: const Icon(Icons.download_rounded),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {},
+                                    icon: const Icon(Icons.delete_outline),
                                   ),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                      );
-                    }),
-                  ]),
+                      ),
+                    );
+                  }
+                },
+                staggeredTileBuilder: (int index) => StaggeredTile.fit(
+                    index == 0 ? 2 : 1), // 2 for the "Add" button, 1 for others
+              ),
             ),
             const Row(
               children: [
@@ -546,79 +571,112 @@ class SavedCardsPage extends StatelessWidget {
               ],
             ),
             Expanded(
-              child: GridView(
-                  padding: const EdgeInsets.all(20),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 3.5,
-                  ),
-                  scrollDirection: Axis.vertical,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                        ),
-                      ),
-                      child: const Icon(Icons.add),
-                    ),
-                    ...dictionaries.map<Widget>((dictionary) {
-                      return ElevatedButton(
-                          onPressed: () {},
-                          style: ButtonStyle(
-                            shape: MaterialStateProperty.all<
-                                RoundedRectangleBorder>(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18.0),
-                              ),
+              child: StaggeredGridView.countBuilder(
+                padding: const EdgeInsets.all(20),
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                itemCount: dictionaries.length + 1,
+                itemBuilder: (BuildContext context, int index) {
+                  if (index == 0) {
+                    return Container(
+                      constraints: const BoxConstraints(maxHeight: 100),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ButtonStyle(
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18.0),
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              const Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.key_rounded,
-                                    color: Colors.blue,
-                                  ),
-                                ],
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                        ),
+                        child: const Icon(Icons.add),
+                      ),
+                    );
+                  } else {
+                    final dictionary = dictionaries[index - 1];
+                    return Container(
+                      constraints: const BoxConstraints(maxHeight: 100),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ButtonStyle(
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18.0),
+                            ),
+                          ),
+                        ),
+                        child: Stack(
+                          children: [
+                            Row(
+                              children: [
+                                const Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
-                                    Column(
-                                      children: [
-                                        Text(dictionary.name,
-                                            style: TextStyle(
-                                                fontSize: MediaQuery.of(context)
-                                                        .size
-                                                        .width /
-                                                    40)),
-                                        Text(
-                                            "Key count: ${dictionary.keys.length}",
-                                            style: TextStyle(
-                                                fontSize: MediaQuery.of(context)
-                                                        .size
-                                                        .width /
-                                                    40)),
-                                      ],
+                                    Icon(
+                                      Icons.key_rounded,
+                                      color: Colors.blue,
                                     ),
                                   ],
                                 ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Column(
+                                        children: [
+                                          Text(
+                                            dictionary.name,
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                            ),
+                                          ),
+                                          Text(
+                                            "Key count: ${dictionary.keys.length}",
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  IconButton(
+                                    onPressed: () {},
+                                    icon: const Icon(Icons.edit),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {},
+                                    icon: const Icon(Icons.download_rounded),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {},
+                                    icon: const Icon(Icons.delete_outline),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ));
-                    })
-                  ]),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                },
+                staggeredTileBuilder: (int index) => StaggeredTile.fit(
+                    index == 0 ? 2 : 1), // 2 for the "Add" button, 1 for others
+              ),
             ),
           ],
         ),

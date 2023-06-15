@@ -43,7 +43,6 @@ class ChameleonTagSave {
     Map<String, dynamic> data = jsonDecode(json);
     final id = data['id'] as int;
     final name = data['name'] as String;
-    print(data['tag']);
     final tag = getTagTypeByValue(data['tag']);
     final encodedData = data['data'] as List<dynamic>;
     List<Uint8List> tagData = [];
