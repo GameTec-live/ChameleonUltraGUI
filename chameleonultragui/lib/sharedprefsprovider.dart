@@ -54,6 +54,9 @@ class ChameleonDictionary {
 
 class ChameleonTagSave {
   int id;
+  String uid;
+  int sak;
+  Uint8List atqa;
   String name;
   ChameleonTag tag;
   List<Uint8List> data;
@@ -61,6 +64,9 @@ class ChameleonTagSave {
   factory ChameleonTagSave.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
     final id = data['id'] as int;
+    final uid = data['uid'] as String;
+    final sak = data['sak'] as int;
+    final atqa = List<int>.from(data['atqa'] as List<dynamic>);
     final name = data['name'] as String;
     final tag = getTagTypeByValue(data['tag']);
     final encodedData = data['data'] as List<dynamic>;
@@ -68,12 +74,22 @@ class ChameleonTagSave {
     for (var block in encodedData) {
       tagData.add(Uint8List.fromList(List<int>.from(block)));
     }
-    return ChameleonTagSave(id: id, name: name, tag: tag, data: tagData);
+    return ChameleonTagSave(
+        id: id,
+        uid: uid,
+        sak: sak,
+        name: name,
+        tag: tag,
+        data: tagData,
+        atqa: Uint8List.fromList(atqa));
   }
 
   String toJson() {
     return jsonEncode({
       'id': id,
+      'uid': uid,
+      'sak': sak,
+      'atqa': atqa.toList(),
       'name': name,
       'tag': tag.value,
       'data': data.map((data) => data.toList()).toList()
@@ -81,9 +97,12 @@ class ChameleonTagSave {
   }
 
   ChameleonTagSave(
-      {this.id = 0,
-      this.name = "",
-      this.tag = ChameleonTag.unknown,
+      {required this.id,
+      required this.uid,
+      required this.name,
+      required this.sak,
+      required this.atqa,
+      required this.tag,
       this.data = const []});
 }
 

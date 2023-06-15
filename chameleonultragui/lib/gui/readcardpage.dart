@@ -437,6 +437,9 @@ class _ReadCardPageState extends State<ReadCardPage> {
       var tags = appState.sharedPreferencesProvider.getChameleonTags();
       tags.add(ChameleonTagSave(
           id: Random().nextInt(100000),
+          uid: status.UID,
+          sak: hexToBytes(status.SAK)[0],
+          atqa: hexToBytes(status.ATQA.replaceAll(" ", "")),
           name: status.dumpName,
           tag: mfClassicGetChameleonTagType(status.type),
           data: status.cardData));
