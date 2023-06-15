@@ -630,7 +630,20 @@ class SavedCardsPage extends StatelessWidget {
                                     icon: const Icon(Icons.download_rounded),
                                   ),
                                   IconButton(
-                                    onPressed: () {},
+                                    onPressed: () async {
+                                      var tags = appState
+                                          .sharedPreferencesProvider
+                                          .getChameleonTags();
+                                      List<ChameleonTagSave> output = [];
+                                      for (var tagTest in tags) {
+                                        if (tagTest.id != tag.id) {
+                                          output.add(tagTest);
+                                        }
+                                      }
+                                      appState.sharedPreferencesProvider
+                                          .setChameleonTags(output);
+                                      appState.changesMade();
+                                    },
                                     icon: const Icon(Icons.delete_outline),
                                   ),
                                 ],
