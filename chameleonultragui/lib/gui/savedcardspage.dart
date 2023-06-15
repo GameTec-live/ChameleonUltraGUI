@@ -13,14 +13,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
-class SavedCardsPage extends StatelessWidget {
-  /* Todo list:
-  create dynamic list from database.
-  2 columns. 1 for description, one for UID?
-  Write key to slot upon clicking
-  Maybe add Import and Export buttons so one can Im and Export .bin dumps
-  */
+class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
+
+  @override
+  _SavedCardsPageState createState() => _SavedCardsPageState();
+}
+
+class _SavedCardsPageState extends State<SavedCardsPage> {
+  MifareClassicType selectedType = MifareClassicType.m1k;
 
   Future<void> saveTag(
       ChameleonTagSave tag, MyAppState appState, bool bin) async {
@@ -539,8 +540,200 @@ class SavedCardsPage extends StatelessWidget {
                                   .setChameleonTags(tags);
                               appState.changesMade();
                             } on Exception catch (_) {
-                              // No parsing .bin yet
-                              // TODO: modal, preparse UID/SAK/ATQA
+                              var uid4 = contents.sublist(0, 4);
+                              var uid7 = contents.sublist(0, 7);
+                              var uid4sak = contents[5];
+                              var uid4atqa = Uint8List.fromList(
+                                  [contents[7], contents[6]]);
+
+                              final uid4Controller = TextEditingController(
+                                  text: bytesToHexSpace(uid4));
+                              final sak4Controller = TextEditingController(
+                                  text: bytesToHex(
+                                      Uint8List.fromList([uid4sak])));
+                              final atqa4Controller = TextEditingController(
+                                  text: bytesToHexSpace(uid4atqa));
+                              final uid7Controller = TextEditingController(
+                                  text: bytesToHexSpace(uid7));
+                              final sak7Controller =
+                                  TextEditingController(text: "");
+                              final atqa7Controller =
+                                  TextEditingController(text: "");
+                              final nameController =
+                                  TextEditingController(text: "");
+
+                              // ignore: use_build_context_synchronously
+                              await showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Correct tag details'),
+                                    content: Column(children: [
+                                      Column(children: [
+                                        const SizedBox(height: 20),
+                                        const Text('UID 4 byte length'),
+                                        const SizedBox(height: 10),
+                                        TextFormField(
+                                          controller: uid4Controller,
+                                          decoration: const InputDecoration(
+                                              labelText: 'UID',
+                                              hintText: 'Enter UID'),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        TextFormField(
+                                          controller: sak4Controller,
+                                          decoration: const InputDecoration(
+                                              labelText: 'SAK',
+                                              hintText: 'Enter SAK'),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        TextFormField(
+                                          controller: atqa4Controller,
+                                          decoration: const InputDecoration(
+                                              labelText: 'ATQA',
+                                              hintText: 'Enter ATQA'),
+                                        ),
+                                        const SizedBox(height: 40),
+                                      ]),
+                                      Column(children: [
+                                        const Text('UID 7 byte length'),
+                                        const SizedBox(height: 10),
+                                        TextFormField(
+                                          controller: uid7Controller,
+                                          decoration: const InputDecoration(
+                                              labelText: 'UID',
+                                              hintText: 'Enter UID'),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        TextFormField(
+                                          controller: sak7Controller,
+                                          decoration: const InputDecoration(
+                                              labelText: 'SAK',
+                                              hintText: 'Enter SAK (08)'),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        TextFormField(
+                                          controller: atqa7Controller,
+                                          decoration: const InputDecoration(
+                                              labelText: 'ATQA',
+                                              hintText: 'Enter ATQA (00 44)'),
+                                        ),
+                                        const SizedBox(height: 40)
+                                      ]),
+                                      TextFormField(
+                                        controller: nameController,
+                                        decoration: const InputDecoration(
+                                            labelText: 'Name',
+                                            hintText: 'Enter name of card'),
+                                      ),
+                                      DropdownButton<MifareClassicType>(
+                                        value:
+                                            selectedType, // TODO: Fix value change
+                                        items: [
+                                          MifareClassicType.m1k,
+                                          MifareClassicType.m2k,
+                                          MifareClassicType.m4k,
+                                          MifareClassicType.mini
+                                        ].map<
+                                                DropdownMenuItem<
+                                                    MifareClassicType>>(
+                                            (MifareClassicType type) {
+                                          return DropdownMenuItem<
+                                              MifareClassicType>(
+                                            value: type,
+                                            child: Text(
+                                                "Mifare Classic ${mfClassicGetName(type)}"),
+                                          );
+                                        }).toList(),
+                                        onChanged:
+                                            (MifareClassicType? newValue) {
+                                          setState(() {
+                                            selectedType = newValue!;
+                                          });
+                                          appState.changesMade();
+                                        },
+                                      )
+                                    ]),
+                                    actions: [
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          List<Uint8List> blocks = [];
+                                          for (var i = 0;
+                                              i < contents.length;
+                                              i += 16) {
+                                            blocks.add(
+                                                contents.sublist(i, i + 16));
+                                          }
+                                          var tags = appState
+                                              .sharedPreferencesProvider
+                                              .getChameleonTags();
+                                          var tag = ChameleonTagSave(
+                                            id: Random().nextInt(10000),
+                                            name: nameController.text,
+                                            sak: hexToBytes(sak4Controller.text
+                                                .replaceAll(" ", ""))[0],
+                                            atqa: hexToBytes(atqa4Controller
+                                                .text
+                                                .replaceAll(" ", "")),
+                                            uid: uid4Controller.text,
+                                            tag: mfClassicGetChameleonTagType(
+                                                selectedType),
+                                            data: blocks,
+                                          );
+                                          tags.add(tag);
+                                          appState.sharedPreferencesProvider
+                                              .setChameleonTags(tags);
+                                          appState.changesMade();
+                                          Navigator.pop(context);
+                                        },
+                                        child: const Text('Save as 4 byte UID'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          List<Uint8List> blocks = [];
+                                          for (var i = 0;
+                                              i < contents.length;
+                                              i += 16) {
+                                            blocks.add(
+                                                contents.sublist(i, i + 16));
+                                          }
+                                          var tags = appState
+                                              .sharedPreferencesProvider
+                                              .getChameleonTags();
+                                          var tag = ChameleonTagSave(
+                                            id: Random().nextInt(10000),
+                                            name: nameController.text,
+                                            sak: hexToBytes(sak7Controller.text
+                                                .replaceAll(" ", ""))[0],
+                                            atqa: hexToBytes(atqa7Controller
+                                                .text
+                                                .replaceAll(" ", "")),
+                                            uid: uid7Controller.text,
+                                            tag: mfClassicGetChameleonTagType(
+                                                selectedType),
+                                            data: blocks,
+                                          );
+                                          tags.add(tag);
+                                          appState.sharedPreferencesProvider
+                                              .setChameleonTags(tags);
+                                          appState.changesMade();
+                                          Navigator.pop(context);
+                                          Navigator.pop(
+                                              context); // Close the modal after saving
+                                        },
+                                        child: const Text('Save as 7 byte UID'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(
+                                              context); // Close the modal without saving
+                                        },
+                                        child: const Text('Cancel'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
                             }
                           }
                         },
