@@ -39,6 +39,11 @@ Uint8List u64ToBytes(int u64) {
   return byteData.buffer.asUint8List();
 }
 
+bool isValidHexString(String hexString) {
+  final hexPattern = RegExp(r'^[A-Fa-f0-9]+$');
+  return hexPattern.hasMatch(hexString);
+}
+
 String chameleonTagToString(ChameleonTag tag) {
   if (tag == ChameleonTag.mifareMini) {
     return "Mifare Mini";

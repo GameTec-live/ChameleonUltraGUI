@@ -1,5 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -582,7 +590,38 @@ class SavedCardsPage extends StatelessWidget {
                     return Container(
                       constraints: const BoxConstraints(maxHeight: 100),
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          FilePickerResult? result =
+                              await FilePicker.platform.pickFiles();
+
+                          if (result != null) {
+                            File file = File(result.files.single.path!);
+                            var contents = const Utf8Decoder()
+                                .convert(await file.readAsBytes());
+
+                            List<Uint8List> keys = [];
+                            for (var key in contents.split("\n")) {
+                              if (key.length == 12 && isValidHexString(key)) {
+                                keys.add(hexToBytes(key));
+                              }
+                            }
+
+                            if (keys.isEmpty) {
+                              return;
+                            }
+
+                            var dictionaries = appState
+                                .sharedPreferencesProvider
+                                .getChameleonDictionaries();
+                            dictionaries.add(ChameleonDictionary(
+                                id: Random().nextInt(100000),
+                                name: result.files.single.name.split(".")[0],
+                                keys: keys));
+                            appState.sharedPreferencesProvider
+                                .setChameleonDictionaries(dictionaries);
+                            appState.changesMade();
+                          }
+                        },
                         style: ButtonStyle(
                           shape:
                               MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -658,11 +697,45 @@ class SavedCardsPage extends StatelessWidget {
                                     icon: const Icon(Icons.edit),
                                   ),
                                   IconButton(
-                                    onPressed: () {},
+                                    onPressed: () async {
+                                      try {
+                                        await FileSaver.instance.saveAs(
+                                            name: '${dictionary.name}.dic',
+                                            bytes: dictionary.toFile(),
+                                            ext: 'bin',
+                                            mimeType: MimeType.other);
+                                      } on UnimplementedError catch (_) {
+                                        String? outputFile =
+                                            await FilePicker.platform.saveFile(
+                                          dialogTitle:
+                                              'Please select an output file:',
+                                          fileName: '${dictionary.name}.dic',
+                                        );
+
+                                        if (outputFile != null) {
+                                          var file = File(outputFile);
+                                          await file.writeAsBytes(
+                                              dictionary.toFile());
+                                        }
+                                      }
+                                    },
                                     icon: const Icon(Icons.download_rounded),
                                   ),
                                   IconButton(
-                                    onPressed: () {},
+                                    onPressed: () async {
+                                      var dictionaries = appState
+                                          .sharedPreferencesProvider
+                                          .getChameleonDictionaries();
+                                      List<ChameleonDictionary> output = [];
+                                      for (var dict in dictionaries) {
+                                        if (dict.id != dictionary.id) {
+                                          output.add(dict);
+                                        }
+                                      }
+                                      appState.sharedPreferencesProvider
+                                          .setChameleonDictionaries(output);
+                                      appState.changesMade();
+                                    },
                                     icon: const Icon(Icons.delete_outline),
                                   ),
                                 ],

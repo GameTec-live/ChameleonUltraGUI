@@ -1,7 +1,9 @@
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:chameleonultragui/chameleon/connector.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,6 +30,24 @@ class ChameleonDictionary {
       'name': name,
       'keys': keys.map((key) => key.toList()).toList()
     });
+  }
+
+  factory ChameleonDictionary.fromFile(String file, String name) {
+    final id = Random().nextInt(100000);
+    final lines = file.split("\n");
+    List<Uint8List> keys = [];
+    for (var key in lines) {
+      keys.add(hexToBytes(key));
+    }
+    return ChameleonDictionary(id: id, name: name, keys: keys);
+  }
+
+  Uint8List toFile() {
+    String output = "";
+    for (var key in keys) {
+      output += "${bytesToHex(key).toUpperCase()}\n";
+    }
+    return const Utf8Encoder().convert(output);
   }
 
   ChameleonDictionary({this.id = 0, this.name = "", this.keys = const []});

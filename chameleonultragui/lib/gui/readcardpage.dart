@@ -830,7 +830,8 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                             context: context,
                                             builder: (BuildContext context) {
                                               return AlertDialog(
-                                                title: const Text('Enter Text'),
+                                                title: const Text(
+                                                    'Enter card name'),
                                                 content: TextField(
                                                   onChanged: (value) {
                                                     setState(() {
