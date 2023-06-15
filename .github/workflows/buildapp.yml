@@ -43,8 +43,8 @@ jobs:
         with:
           channel: 'stable'
       - run: flutter config --enable-windows-desktop
-      - run: flutter test
       - run: flutter build windows
+      - run: flutter test
       - uses: actions/upload-artifact@v3
         with:
           name: windows
@@ -62,8 +62,8 @@ jobs:
           channel: 'stable'
       - run: sudo apt-get update -y && sudo apt-get install -y ninja-build libgtk-3-dev clang
       - run: flutter config --enable-linux-desktop
-      - run: flutter test
       - run: flutter build linux
+      - run: flutter test
       - uses: actions/upload-artifact@v3
         with:
           name: linux
