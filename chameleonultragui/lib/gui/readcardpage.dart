@@ -33,6 +33,7 @@ class ChameleonReadTagStatus {
   String ATQA;
   String ATS;
   String tech;
+  String dumpName;
   bool allKeysExists;
   MifareClassicType type;
   List<ChameleonKeyCheckmark> checkMarks;
@@ -49,6 +50,7 @@ class ChameleonReadTagStatus {
       this.ATQA = '',
       this.ATS = '',
       this.tech = '',
+      this.dumpName = '',
       this.allKeysExists = false,
       this.type = MifareClassicType.none,
       this.dictionaries = const [],
@@ -435,7 +437,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
       var tags = appState.sharedPreferencesProvider.getChameleonTags();
       tags.add(ChameleonTagSave(
           id: Random().nextInt(100000),
-          name: "test",
+          name: status.dumpName,
           tag: mfClassicGetChameleonTagType(status.type),
           data: status.cardData));
       appState.sharedPreferencesProvider.setChameleonTags(tags);
@@ -824,8 +826,39 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                       children: [
                                       ElevatedButton(
                                         onPressed: () async {
-                                          await saveCard(
-                                              connection, appState, false);
+                                          await showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: const Text('Enter Text'),
+                                                content: TextField(
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      status.dumpName = value;
+                                                    });
+                                                  },
+                                                ),
+                                                actions: [
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      await saveCard(connection,
+                                                          appState, false);
+                                                      Navigator.pop(
+                                                          context); // Close the modal after saving
+                                                    },
+                                                    child: const Text('OK'),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(
+                                                          context); // Close the modal without saving
+                                                    },
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
                                         },
                                         child: const Text('Save'),
                                       ),
