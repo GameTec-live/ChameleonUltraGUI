@@ -520,7 +520,30 @@ class SavedCardsPage extends StatelessWidget {
                     return Container(
                       constraints: const BoxConstraints(maxHeight: 100),
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          FilePickerResult? result =
+                              await FilePicker.platform.pickFiles();
+
+                          if (result != null) {
+                            File file = File(result.files.single.path!);
+                            var contents = await file.readAsBytes();
+                            try {
+                              var string =
+                                  const Utf8Decoder().convert(contents);
+                              var tags = appState.sharedPreferencesProvider
+                                  .getChameleonTags();
+                              var tag = ChameleonTagSave.fromJson(string);
+                              tag.id = Random().nextInt(10000);
+                              tags.add(tag);
+                              appState.sharedPreferencesProvider
+                                  .setChameleonTags(tags);
+                              appState.changesMade();
+                            } on Exception catch (_) {
+                              // No parsing .bin yet
+                              // TODO: modal, preparse UID/SAK/ATQA
+                            }
+                          }
+                        },
                         style: ButtonStyle(
                           shape:
                               MaterialStateProperty.all<RoundedRectangleBorder>(
