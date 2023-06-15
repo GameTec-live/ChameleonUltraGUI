@@ -170,3 +170,17 @@ ChameleonTag mfClassicGetChameleonTagType(MifareClassicType type) {
     return ChameleonTag.unknown;
   }
 }
+
+MifareClassicType chameleonTagTypeGetMfClassicType(ChameleonTag type) {
+  if (type == ChameleonTag.mifare1K) {
+    return MifareClassicType.m1k;
+  } else if (type == ChameleonTag.mifare2K) {
+    return MifareClassicType.m2k;
+  } else if (type == ChameleonTag.mifare4K) {
+    return MifareClassicType.m4k;
+  } else if (type == ChameleonTag.mifareMini) {
+    return MifareClassicType.mini;
+  } else {
+    return MifareClassicType.none;
+  }
+}

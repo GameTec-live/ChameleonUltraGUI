@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:chameleonultragui/chameleon/connector.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
