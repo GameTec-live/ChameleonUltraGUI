@@ -230,68 +230,70 @@ class ChameleonCom {
     await _serialInstance!.write(Uint8List.fromList(dataFrame));
 
     while (true) {
-      // TODO: return timeout
-      readBuffer = await _serialInstance!.read(16384);
-      if (readBuffer.isNotEmpty) {
-        log.d("Received: ${bytesToHex(readBuffer)}");
-        break;
-      }
-    }
-
-    while (readBuffer.length > dataPosition) {
-      Uint8List dataBytes = Uint8List.fromList([readBuffer[dataPosition]]);
-
-      if (dataBytes.isNotEmpty) {
-        var dataByte = dataBytes[0];
-        dataBuffer.add(dataByte);
-        if (dataPosition < 2) {
-          // start of frame
-          if (dataPosition == 0) {
-            if (dataBuffer[dataPosition] != dataFrameSof) {
-              log.e('Data frame no sof byte.');
-              break;
-            }
-          }
-          if (dataPosition == 1) {
-            if (dataBuffer[dataPosition] != lrcCalc(dataBuffer.sublist(0, 1))) {
-              log.e('Data frame sof lrc error.');
-              break;
-            }
-          }
-        } else if (dataPosition == 8) {
-          // frame head lrc
-          if (dataBuffer[dataPosition] != lrcCalc(dataBuffer.sublist(0, 8))) {
-            log.e('Data frame head lrc error.');
-            break;
-          }
-          // frame head complete, cache info
-          //dataCmd = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(2, 4)));
-          dataStatus = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(4, 6)));
-          dataLength = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(6, 8)));
-          if (dataLength > dataMaxLength) {
-            log.e('Data frame data length too than of max.');
-            break;
-          }
-        } else if (dataPosition == (8 + dataLength + 1)) {
-          if (dataBuffer[dataPosition] ==
-              lrcCalc(dataBuffer.sublist(0, dataBuffer.length - 1))) {
-            var dataResponse = dataBuffer.sublist(9, 9 + dataLength);
-            await _serialInstance!.finishRead();
-            return ChameleonMessage(
-                status: dataStatus, data: Uint8List.fromList(dataResponse));
-          } else {
-            log.e('Data frame finally lrc error.');
-          }
+      while (true) {
+        // TODO: return timeout
+        readBuffer = await _serialInstance!.read(16384);
+        if (readBuffer.isNotEmpty) {
+          log.d("Received: ${bytesToHex(readBuffer)}");
+          break;
         }
+      }
 
-        dataPosition += 1;
-      } else {
-        await Future.delayed(const Duration(milliseconds: 1));
+      while (readBuffer.length > dataPosition) {
+        Uint8List dataBytes = Uint8List.fromList([readBuffer[dataPosition]]);
+
+        if (dataBytes.isNotEmpty) {
+          var dataByte = dataBytes[0];
+          dataBuffer.add(dataByte);
+          if (dataPosition < 2) {
+            // start of frame
+            if (dataPosition == 0) {
+              if (dataBuffer[dataPosition] != dataFrameSof) {
+                log.e('Data frame no sof byte.');
+                break;
+              }
+            }
+            if (dataPosition == 1) {
+              if (dataBuffer[dataPosition] !=
+                  lrcCalc(dataBuffer.sublist(0, 1))) {
+                log.e('Data frame sof lrc error.');
+                break;
+              }
+            }
+          } else if (dataPosition == 8) {
+            // frame head lrc
+            if (dataBuffer[dataPosition] != lrcCalc(dataBuffer.sublist(0, 8))) {
+              log.e('Data frame head lrc error.');
+              break;
+            }
+            // frame head complete, cache info
+            //dataCmd = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(2, 4)));
+            dataStatus =
+                _toInt16BE(Uint8List.fromList(dataBuffer.sublist(4, 6)));
+            dataLength =
+                _toInt16BE(Uint8List.fromList(dataBuffer.sublist(6, 8)));
+            if (dataLength > dataMaxLength) {
+              log.e('Data frame data length too than of max.');
+              break;
+            }
+          } else if (dataPosition == (8 + dataLength + 1)) {
+            if (dataBuffer[dataPosition] ==
+                lrcCalc(dataBuffer.sublist(0, dataBuffer.length - 1))) {
+              var dataResponse = dataBuffer.sublist(9, 9 + dataLength);
+              await _serialInstance!.finishRead();
+              return ChameleonMessage(
+                  status: dataStatus, data: Uint8List.fromList(dataResponse));
+            } else {
+              log.e('Data frame finally lrc error.');
+            }
+          }
+
+          dataPosition += 1;
+        } else {
+          await Future.delayed(const Duration(milliseconds: 1));
+        }
       }
     }
-
-    await _serialInstance!.finishRead();
-    throw ("Failed to read data");
   }
 
   Uint8List _fromInt16BE(int value) {

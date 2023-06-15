@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -237,6 +238,39 @@ class DevPage extends StatelessWidget {
             },
             child: const Column(children: [
               Text('Test naming'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              var detections = await cml.getMf1DetectionResult(0);
+              for (var item in detections.entries) {
+                var uid = item.key;
+                for (var item in item.value.entries) {
+                  var block = item.key;
+                  for (var item in item.value.entries) {
+                    var key = item.key;
+                    for (var i = 0; i < item.value.length; i++) {
+                      for (var j = i + 1; j < item.value.length; j++) {
+                        var item0 = item.value[i];
+                        var item1 = item.value[j];
+                        var mfkey = Mfkey32Dart(
+                            uid: uid,
+                            nt0: item0.nt,
+                            nt1: item1.nt,
+                            nr0Enc: item0.nr,
+                            ar0Enc: item0.ar,
+                            nr1Enc: item1.nr,
+                            ar1Enc: item1.ar);
+                        appState.log.i(
+                            "Mfkey32 recovered key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8))}");
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            child: const Column(children: [
+              Text('Mfkey32 decrypt'),
             ]),
           ),
           ElevatedButton(
