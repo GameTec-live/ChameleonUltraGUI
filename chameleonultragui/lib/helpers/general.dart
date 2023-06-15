@@ -1,5 +1,6 @@
+import 'dart:io';
 import 'dart:typed_data';
-
+import 'dart:io' show Platform;
 import 'package:chameleonultragui/chameleon/connector.dart';
 
 Future<void> asyncSleep(int milliseconds) async {
@@ -69,4 +70,20 @@ String chameleonTagToString(ChameleonTag tag) {
 ChameleonTag getTagTypeByValue(int value) {
   return ChameleonTag.values.firstWhere((element) => element.value == value,
       orElse: () => ChameleonTag.unknown);
+}
+
+String platformToPath() {
+  if (Platform.isAndroid) {
+    return "android";
+  } else if (Platform.isIOS) {
+    return "ios";
+  } else if (Platform.isLinux) {
+    return "linux";
+  } else if (Platform.isMacOS) {
+    return "macos";
+  } else if (Platform.isWindows) {
+    return "windows";
+  } else {
+    return "../";
+  }
 }

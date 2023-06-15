@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:core';
 import 'dart:ffi';
+import 'dart:io' as io;
+import 'dart:io';
 import 'dart:isolate';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:dylib/dylib.dart';
 import 'bindings.dart';
 import 'package:ffi/ffi.dart';
@@ -70,14 +73,32 @@ Future<List<int>> nested(NestedDart nested) async {
   return completer.future;
 }
 
-/// The bindings to the native functions in [_dylib].
-final Recovery _bindings = Recovery(ffi.DynamicLibrary.open(
-  resolveDylibPath(
+String resolvePath() {
+  String path = resolveDylibPath(
     'recovery',
     dartDefine: 'LIBRECOVERY_PATH',
     environmentVariable: 'LIBRECOVERY_PATH',
-  ),
-));
+  );
+  if (!io.File(path).existsSync() &&
+      Platform.environment.containsKey('FLUTTER_TEST')) {
+    print("Library test hotfix: Library not exists");
+    Directory dir = Directory('build/${platformToPath()}');
+    for (var f in dir.listSync(recursive: true).toList()) {
+      if (f.path.endsWith(path)) {
+        print(
+            "THIS HOTFIX IS ONLY FOR TESTS. IF YOU SEE THIS LINE ON DEBUG/RELEASE BUILDS REPORT IT IMMEDIATELY.");
+        print("THIS WILL LEAD TO HIGH SECURITY VURNERABILITY.");
+        print("Library test hotfix: found at ${f.path}");
+        path = f.path;
+        break;
+      }
+    }
+  }
+  return path;
+}
+
+/// The bindings to the native functions in [_dylib].
+final Recovery _bindings = Recovery(ffi.DynamicLibrary.open(resolvePath()));
 
 class DarksideRequest {
   final int id;
