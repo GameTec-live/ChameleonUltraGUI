@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/chameleon/connector.dart';
@@ -6,20 +8,32 @@ import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:file_saver/file_saver.dart';
 
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
 enum ChameleonKeyCheckmark { none, found, checking }
 
-class ChameleonReadCardStatus {
+enum ChameleonMifareClassicState {
+  none,
+  recovery,
+  recoveryOngoing,
+  dump,
+  dumpOngoing,
+  save
+}
+
+class ChameleonReadTagStatus {
   String UID;
   String SAK;
   String ATQA;
   String ATS;
   String tech;
+  String dumpName;
   bool allKeysExists;
   MifareClassicType type;
   List<ChameleonKeyCheckmark> checkMarks;
@@ -28,13 +42,15 @@ class ChameleonReadCardStatus {
   double dumpProgress;
   List<ChameleonDictionary> dictionaries;
   ChameleonDictionary? selectedDictionary;
+  ChameleonMifareClassicState state;
 
-  ChameleonReadCardStatus(
+  ChameleonReadTagStatus(
       {this.UID = '',
       this.SAK = '',
       this.ATQA = '',
       this.ATS = '',
       this.tech = '',
+      this.dumpName = '',
       this.allKeysExists = false,
       this.type = MifareClassicType.none,
       this.dictionaries = const [],
@@ -42,7 +58,8 @@ class ChameleonReadCardStatus {
       List<ChameleonKeyCheckmark>? checkMarks,
       List<Uint8List>? validKeys,
       List<Uint8List>? cardData,
-      this.dumpProgress = 0})
+      this.dumpProgress = 0,
+      this.state = ChameleonMifareClassicState.none})
       : validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
         checkMarks =
             checkMarks ?? List.generate(80, (_) => ChameleonKeyCheckmark.none),
@@ -57,7 +74,7 @@ class ReadCardPage extends StatefulWidget {
 }
 
 class _ReadCardPageState extends State<ReadCardPage> {
-  ChameleonReadCardStatus status = ChameleonReadCardStatus();
+  ChameleonReadTagStatus status = ChameleonReadTagStatus();
 
   Future<void> readCardDetails(ChameleonCom connection) async {
     status.validKeys = List.generate(80, (_) => Uint8List(0));
@@ -84,6 +101,9 @@ class _ReadCardPageState extends State<ReadCardPage> {
         status.checkMarks =
             List.generate(80, (_) => ChameleonKeyCheckmark.none);
         status.type = mf1Type;
+        status.state = (mf1Type != MifareClassicType.none)
+            ? ChameleonMifareClassicState.recovery
+            : ChameleonMifareClassicState.none;
         status.allKeysExists = false;
       });
     } on Exception catch (_) {
@@ -91,7 +111,10 @@ class _ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> recoverKeys(ChameleonCom connection) async {
+  Future<void> recoverKeys(ChameleonCom connection, MyAppState appState) async {
+    setState(() {
+      status.state = ChameleonMifareClassicState.recoveryOngoing;
+    });
     try {
       if (!await connection.isReaderDeviceMode()) {
         await connection.setReaderDeviceMode(true);
@@ -103,7 +126,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
       if (mifare) {
         mf1Type = mfClassicGetType(card.ATQA, card.SAK);
       } else {
-        print("Not mifare tag!");
+        appState.log.e("Not mifare tag!");
         return;
       }
 
@@ -173,6 +196,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
           // all keys exists
           setState(() {
             status.allKeysExists = true;
+            status.state = ChameleonMifareClassicState.dump;
           });
           return;
         }
@@ -195,14 +219,14 @@ class _ReadCardPageState extends State<ReadCardPage> {
                   ar: data.ar));
               var keys = await recovery.darkside(darkside);
               if (keys.isNotEmpty) {
-                print("Darkside: Found keys: $keys. Checking them...");
+                appState.log.d("Darkside: Found keys: $keys. Checking them...");
                 for (var key in keys) {
                   var keyBytes = u64ToBytes(key);
                   await asyncSleep(1); // Let GUI update
                   if ((await connection.mf1Auth(
                           0x03, 0x61, keyBytes.sublist(2, 8))) ==
                       true) {
-                    print(
+                    appState.log.i(
                         "Darkside: Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                     status.validKeys[40] = keyBytes.sublist(2, 8);
                     status.checkMarks[40] = ChameleonKeyCheckmark.found;
@@ -211,12 +235,12 @@ class _ReadCardPageState extends State<ReadCardPage> {
                   }
                 }
               } else {
-                print("Can't find keys, retrying...");
+                appState.log.d("Can't find keys, retrying...");
                 data = await connection.getMf1Darkside(0x03, 0x61, false, 15);
               }
             }
           } else {
-            print("No keys and not vurnerable to darkside");
+            appState.log.e("No keys and not vurnerable to darkside");
             return;
           }
         }
@@ -283,7 +307,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
 
                 var keys = await recovery.nested(nested);
                 if (keys.isNotEmpty) {
-                  print("Found keys: $keys. Checking them...");
+                  appState.log.d("Found keys: $keys. Checking them...");
                   for (var key in keys) {
                     var keyBytes = u64ToBytes(key);
                     await asyncSleep(1); // Let GUI update
@@ -292,7 +316,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
                             0x60 + keyType,
                             keyBytes.sublist(2, 8))) ==
                         true) {
-                      print(
+                      appState.log.i(
                           "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                       found = true;
                       status.validKeys[sector + (keyType * 40)] =
@@ -304,15 +328,17 @@ class _ReadCardPageState extends State<ReadCardPage> {
                     }
                   }
                 } else {
-                  print("Can't find keys, retrying...");
+                  appState.log.e("Can't find keys, retrying...");
                 }
               }
             }
           }
         }
+
         setState(() {
           status.checkMarks = status.checkMarks;
           status.allKeysExists = true;
+          status.state = ChameleonMifareClassicState.dump;
         });
       }
     } on Exception catch (_) {
@@ -321,7 +347,13 @@ class _ReadCardPageState extends State<ReadCardPage> {
   }
 
   Future<void> dumpData(ChameleonCom connection) async {
-    status.cardData = List.generate(0xFF, (_) => Uint8List(0));
+    var card = await connection.scan14443aTag();
+    // TODO: check if card changed
+    setState(() {
+      status.state = ChameleonMifareClassicState.dumpOngoing;
+    });
+
+    status.cardData = List.generate(256, (_) => Uint8List(0));
     for (var sector = 0;
         sector < mfClassicGetSectorCount(status.type);
         sector++) {
@@ -334,7 +366,11 @@ class _ReadCardPageState extends State<ReadCardPage> {
               0x60 + keyType,
               status.validKeys[sector + (keyType * 40)]);
           if (blockData.isEmpty) {
-            continue;
+            if (keyType == 1) {
+              blockData = Uint8List(16);
+            } else {
+              continue;
+            }
           }
           if (mfClassicGetSectorTrailerBlockBySector(sector) ==
               block + mfClassicGetFirstBlockCountBySector(sector)) {
@@ -344,21 +380,71 @@ class _ReadCardPageState extends State<ReadCardPage> {
           }
           status.cardData[block + mfClassicGetFirstBlockCountBySector(sector)] =
               blockData;
+
           setState(() {
             status.dumpProgress =
                 (block + mfClassicGetFirstBlockCountBySector(sector)) /
-                    (mfClassicGetSectorCount(status.type) *
-                        mfClassicGetBlockCountBySector(sector));
+                    (mfClassicGetBlockCount(status.type));
           });
+
           await asyncSleep(1); // Let GUI update
           break;
         }
       }
     }
+
     setState(() {
       status.dumpProgress = 0;
+      status.state = ChameleonMifareClassicState.save;
     });
-    print(status.cardData);
+  }
+
+  Future<void> saveCard(
+      ChameleonCom connection, MyAppState appState, bool bin) async {
+    var card = await connection.scan14443aTag();
+
+    List<int> cardDump = [];
+    for (var sector = 0;
+        sector < mfClassicGetSectorCount(status.type);
+        sector++) {
+      for (var block = 0;
+          block < mfClassicGetBlockCountBySector(sector);
+          block++) {
+        cardDump.addAll(status
+            .cardData[block + mfClassicGetFirstBlockCountBySector(sector)]);
+      }
+    }
+
+    if (bin) {
+      try {
+        await FileSaver.instance.saveAs(
+            name: bytesToHex(card.UID),
+            bytes: Uint8List.fromList(cardDump),
+            ext: 'bin',
+            mimeType: MimeType.other);
+      } on UnimplementedError catch (_) {
+        String? outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Please select an output file:',
+          fileName: '${bytesToHex(card.UID)}.bin',
+        );
+
+        if (outputFile != null) {
+          var file = File(outputFile);
+          await file.writeAsBytes(Uint8List.fromList(cardDump));
+        }
+      }
+    } else {
+      var tags = appState.sharedPreferencesProvider.getChameleonTags();
+      tags.add(ChameleonTagSave(
+          id: Random().nextInt(100000),
+          uid: status.UID,
+          sak: hexToBytes(status.SAK)[0],
+          atqa: hexToBytes(status.ATQA.replaceAll(" ", "")),
+          name: status.dumpName,
+          tag: mfClassicGetChameleonTagType(status.type),
+          data: status.cardData));
+      appState.sharedPreferencesProvider.setChameleonTags(tags);
+    }
   }
 
   Widget buildFieldRow(String label, String value, double fontSize) {
@@ -443,95 +529,37 @@ class _ReadCardPageState extends State<ReadCardPage> {
                     },
                     child: const Text('Read'),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Keys',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      const Spacer(),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 8),
+                  ...(status.type != MifareClassicType.none)
+                      ? [
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Keys',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           Row(
                             children: [
-                              const Text("     "),
-                              ...List.generate(
-                                (status.type == MifareClassicType.mini)
-                                    ? 5
-                                    : 16,
-                                (index) => Padding(
-                                  padding: const EdgeInsets.all(2),
-                                  child: SizedBox(
-                                    width: checkmarkSize,
-                                    height: checkmarkSize,
-                                    child: Text("$index"),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Text("A "),
-                              ...List.generate(
-                                (status.type == MifareClassicType.mini)
-                                    ? 5
-                                    : 16,
-                                (index) => Padding(
-                                  padding: const EdgeInsets.all(2),
-                                  child: SizedBox(
-                                    width: checkmarkSize,
-                                    height: checkmarkSize,
-                                    child: buildCheckmark(
-                                        status.checkMarks[index]),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Text("B "),
-                              ...List.generate(
-                                (status.type == MifareClassicType.mini)
-                                    ? 5
-                                    : 16,
-                                (index) => Padding(
-                                  padding: const EdgeInsets.all(2),
-                                  child: SizedBox(
-                                    width: checkmarkSize,
-                                    height: checkmarkSize,
-                                    child: buildCheckmark(
-                                        status.checkMarks[40 + index]),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                          ...(status.type == MifareClassicType.m2k ||
-                                  status.type == MifareClassicType.m4k)
-                              ? [
+                              const Spacer(),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
                                       const Text("     "),
                                       ...List.generate(
-                                        16,
+                                        (status.type == MifareClassicType.mini)
+                                            ? 5
+                                            : 16,
                                         (index) => Padding(
                                           padding: const EdgeInsets.all(2),
                                           child: SizedBox(
                                             width: checkmarkSize,
                                             height: checkmarkSize,
-                                            child: Text("${index + 16}"),
+                                            child: Text("$index"),
                                           ),
                                         ),
                                       )
@@ -542,14 +570,16 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                     children: [
                                       const Text("A "),
                                       ...List.generate(
-                                        16,
+                                        (status.type == MifareClassicType.mini)
+                                            ? 5
+                                            : 16,
                                         (index) => Padding(
                                           padding: const EdgeInsets.all(2),
                                           child: SizedBox(
                                             width: checkmarkSize,
                                             height: checkmarkSize,
                                             child: buildCheckmark(
-                                                status.checkMarks[index + 16]),
+                                                status.checkMarks[index]),
                                           ),
                                         ),
                                       )
@@ -560,145 +590,294 @@ class _ReadCardPageState extends State<ReadCardPage> {
                                     children: [
                                       const Text("B "),
                                       ...List.generate(
-                                        16,
+                                        (status.type == MifareClassicType.mini)
+                                            ? 5
+                                            : 16,
                                         (index) => Padding(
                                           padding: const EdgeInsets.all(2),
                                           child: SizedBox(
                                             width: checkmarkSize,
                                             height: checkmarkSize,
-                                            child: buildCheckmark(status
-                                                .checkMarks[40 + index + 16]),
+                                            child: buildCheckmark(
+                                                status.checkMarks[40 + index]),
                                           ),
                                         ),
                                       )
                                     ],
                                   ),
+                                  ...(status.type == MifareClassicType.m2k ||
+                                          status.type == MifareClassicType.m4k)
+                                      ? [
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Text("     "),
+                                              ...List.generate(
+                                                16,
+                                                (index) => Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(2),
+                                                  child: SizedBox(
+                                                    width: checkmarkSize,
+                                                    height: checkmarkSize,
+                                                    child:
+                                                        Text("${index + 16}"),
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Text("A "),
+                                              ...List.generate(
+                                                16,
+                                                (index) => Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(2),
+                                                  child: SizedBox(
+                                                    width: checkmarkSize,
+                                                    height: checkmarkSize,
+                                                    child: buildCheckmark(
+                                                        status.checkMarks[
+                                                            index + 16]),
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Text("B "),
+                                              ...List.generate(
+                                                16,
+                                                (index) => Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(2),
+                                                  child: SizedBox(
+                                                    width: checkmarkSize,
+                                                    height: checkmarkSize,
+                                                    child: buildCheckmark(
+                                                        status.checkMarks[
+                                                            40 + index + 16]),
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                        ]
+                                      : [],
+                                  ...(status.type == MifareClassicType.m4k)
+                                      ? [
+                                          Center(
+                                              child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
+                                                  children: [
+                                                const SizedBox(height: 8),
+                                                Row(
+                                                  children: [
+                                                    const Text("     "),
+                                                    ...List.generate(
+                                                      8,
+                                                      (index) => Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(2),
+                                                        child: SizedBox(
+                                                          width: checkmarkSize,
+                                                          height: checkmarkSize,
+                                                          child: Text(
+                                                              "${index + 32}"),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Row(
+                                                  children: [
+                                                    const Text("A "),
+                                                    ...List.generate(
+                                                      8,
+                                                      (index) => Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(2),
+                                                        child: SizedBox(
+                                                          width: checkmarkSize,
+                                                          height: checkmarkSize,
+                                                          child: buildCheckmark(
+                                                              status.checkMarks[
+                                                                  index + 32]),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Row(
+                                                  children: [
+                                                    const Text("B "),
+                                                    ...List.generate(
+                                                      8,
+                                                      (index) => Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(2),
+                                                        child: SizedBox(
+                                                          width: checkmarkSize,
+                                                          height: checkmarkSize,
+                                                          child: buildCheckmark(
+                                                              status.checkMarks[
+                                                                  40 +
+                                                                      index +
+                                                                      32]),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ]))
+                                        ]
+                                      : []
+                                ],
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ...(status.dumpProgress != 0)
+                              ? [
+                                  LinearProgressIndicator(
+                                      value: status.dumpProgress),
+                                  const SizedBox(height: 8)
                                 ]
                               : [],
-                          ...(status.type == MifareClassicType.m4k)
-                              ? [
-                                  Center(
-                                      child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            const Text("     "),
-                                            ...List.generate(
-                                              8,
-                                              (index) => Padding(
-                                                padding:
-                                                    const EdgeInsets.all(2),
-                                                child: SizedBox(
-                                                  width: checkmarkSize,
-                                                  height: checkmarkSize,
-                                                  child: Text("${index + 32}"),
+                          (status.state ==
+                                      ChameleonMifareClassicState.recovery ||
+                                  status.state ==
+                                      ChameleonMifareClassicState
+                                          .recoveryOngoing)
+                              ? Column(children: [
+                                  const Text("Key dictionary"),
+                                  const SizedBox(height: 4),
+                                  DropdownButton<int>(
+                                    value: status.selectedDictionary!.id,
+                                    items: status.dictionaries
+                                        .map<DropdownMenuItem<int>>(
+                                            (ChameleonDictionary dictionary) {
+                                      return DropdownMenuItem<int>(
+                                        value: dictionary.id,
+                                        child: Text(
+                                            "${dictionary.name} (${dictionary.keys.length} keys)"),
+                                      );
+                                    }).toList(),
+                                    onChanged: (int? newValue) {
+                                      for (var dictionary
+                                          in status.dictionaries) {
+                                        if (dictionary.id == newValue) {
+                                          setState(() {
+                                            status.selectedDictionary =
+                                                dictionary;
+                                          });
+                                          break;
+                                        }
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ElevatedButton(
+                                    onPressed: (status.state ==
+                                            ChameleonMifareClassicState
+                                                .recovery)
+                                        ? () async {
+                                            await recoverKeys(
+                                                connection, appState);
+                                          }
+                                        : null,
+                                    child: const Text('Recover keys'),
+                                  )
+                                ])
+                              : (const Column(children: [])),
+                          (status.state == ChameleonMifareClassicState.dump ||
+                                  status.state ==
+                                      ChameleonMifareClassicState.dumpOngoing)
+                              ? (Column(children: [
+                                  ElevatedButton(
+                                    onPressed: (status.state ==
+                                            ChameleonMifareClassicState.dump)
+                                        ? () async {
+                                            await dumpData(connection);
+                                          }
+                                        : null,
+                                    child: const Text('Dump card'),
+                                  ),
+                                ]))
+                              : (const Column(children: [])),
+                          (status.state == ChameleonMifareClassicState.save)
+                              ? (Center(
+                                  child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          await showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: const Text(
+                                                    'Enter card name'),
+                                                content: TextField(
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      status.dumpName = value;
+                                                    });
+                                                  },
                                                 ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            const Text("A "),
-                                            ...List.generate(
-                                              8,
-                                              (index) => Padding(
-                                                padding:
-                                                    const EdgeInsets.all(2),
-                                                child: SizedBox(
-                                                  width: checkmarkSize,
-                                                  height: checkmarkSize,
-                                                  child: buildCheckmark(status
-                                                      .checkMarks[index + 32]),
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            const Text("B "),
-                                            ...List.generate(
-                                              8,
-                                              (index) => Padding(
-                                                padding:
-                                                    const EdgeInsets.all(2),
-                                                child: SizedBox(
-                                                  width: checkmarkSize,
-                                                  height: checkmarkSize,
-                                                  child: buildCheckmark(
-                                                      status.checkMarks[
-                                                          40 + index + 32]),
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                      ]))
-                                ]
-                              : []
-                        ],
-                      ),
-                      const Spacer(),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ...(status.dumpProgress != 0)
-                      ? [
-                          LinearProgressIndicator(value: status.dumpProgress),
-                          const SizedBox(height: 8)
+                                                actions: [
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      await saveCard(connection,
+                                                          appState, false);
+                                                      Navigator.pop(
+                                                          context); // Close the modal after saving
+                                                    },
+                                                    child: const Text('OK'),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(
+                                                          context); // Close the modal without saving
+                                                    },
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
+                                        child: const Text('Save'),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          await saveCard(
+                                              connection, appState, true);
+                                        },
+                                        child: const Text('Save as .bin'),
+                                      ),
+                                    ])))
+                              : (const Column(children: []))
                         ]
-                      : [],
-                  (!status.allKeysExists)
-                      ? Column(children: [
-                          const Text("Key dictionary"),
-                          const SizedBox(height: 4),
-                          DropdownButton<int>(
-                            value: status.selectedDictionary!.id,
-                            items: status.dictionaries
-                                .map<DropdownMenuItem<int>>(
-                                    (ChameleonDictionary dictionary) {
-                              return DropdownMenuItem<int>(
-                                value: dictionary.id,
-                                child: Text(
-                                    "${dictionary.name} (${dictionary.keys.length} keys)"),
-                              );
-                            }).toList(),
-                            onChanged: (int? newValue) {
-                              for (var dictionary in status.dictionaries) {
-                                if (dictionary.id == newValue) {
-                                  setState(() {
-                                    status.selectedDictionary = dictionary;
-                                  });
-                                  print(status.selectedDictionary!.id);
-                                  break;
-                                }
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () async {
-                              await recoverKeys(connection);
-                            },
-                            child: const Text('Recover keys'),
-                          )
-                        ])
-                      : (Column(children: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              await dumpData(connection);
-                            },
-                            child: const Text('Dump card'),
-                          ),
-                        ])),
+                      : []
                 ],
               ),
             ),

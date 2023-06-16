@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:chameleonultragui/chameleon/connector.dart';
+
 // Mifare Classic keys from Proxmark3
 final gMifareClassicKeysList = {
   0xFFFFFFFFFFFF, // DEFAULT KEY (FIRST KEY USED BY PROGRAM IF NO USER DEFINED KEY)
@@ -121,6 +123,20 @@ int mfClassicGetSectorCount(MifareClassicType type) {
   }
 }
 
+int mfClassicGetBlockCount(MifareClassicType type) {
+  if (type == MifareClassicType.m1k) {
+    return 64;
+  } else if (type == MifareClassicType.m2k) {
+    return 128;
+  } else if (type == MifareClassicType.m4k) {
+    return 256;
+  } else if (type == MifareClassicType.mini) {
+    return 20;
+  } else {
+    return 0;
+  }
+}
+
 int mfClassicGetSectorTrailerBlockBySector(int sector) {
   if (sector < 32) {
     return sector * 4 + 3;
@@ -138,5 +154,33 @@ int mfClassicGetFirstBlockCountBySector(int sector) {
     return sector * 4;
   } else {
     return 32 * 4 + (sector - 32) * 16;
+  }
+}
+
+ChameleonTag mfClassicGetChameleonTagType(MifareClassicType type) {
+  if (type == MifareClassicType.m1k) {
+    return ChameleonTag.mifare1K;
+  } else if (type == MifareClassicType.m2k) {
+    return ChameleonTag.mifare2K;
+  } else if (type == MifareClassicType.m4k) {
+    return ChameleonTag.mifare4K;
+  } else if (type == MifareClassicType.mini) {
+    return ChameleonTag.mifareMini;
+  } else {
+    return ChameleonTag.unknown;
+  }
+}
+
+MifareClassicType chameleonTagTypeGetMfClassicType(ChameleonTag type) {
+  if (type == ChameleonTag.mifare1K) {
+    return MifareClassicType.m1k;
+  } else if (type == ChameleonTag.mifare2K) {
+    return MifareClassicType.m2k;
+  } else if (type == ChameleonTag.mifare4K) {
+    return MifareClassicType.m4k;
+  } else if (type == ChameleonTag.mifareMini) {
+    return MifareClassicType.mini;
+  } else {
+    return MifareClassicType.none;
   }
 }

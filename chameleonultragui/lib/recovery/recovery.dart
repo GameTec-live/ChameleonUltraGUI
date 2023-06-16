@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:core';
 import 'dart:ffi';
+import 'dart:io' as io;
+import 'dart:io';
 import 'dart:isolate';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:dylib/dylib.dart';
 import 'bindings.dart';
 import 'package:ffi/ffi.dart';
@@ -50,6 +53,25 @@ class NestedDart {
       required this.par1});
 }
 
+class Mfkey32Dart {
+  int uid;
+  int nt0;
+  int nt1;
+  int nr0Enc;
+  int ar0Enc;
+  int nr1Enc;
+  int ar1Enc;
+
+  Mfkey32Dart(
+      {required this.uid,
+      required this.nt0,
+      required this.nt1,
+      required this.nr0Enc,
+      required this.ar0Enc,
+      required this.nr1Enc,
+      required this.ar1Enc});
+}
+
 Future<List<int>> darkside(DarksideDart darkside) async {
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
@@ -70,14 +92,42 @@ Future<List<int>> nested(NestedDart nested) async {
   return completer.future;
 }
 
-/// The bindings to the native functions in [_dylib].
-final Recovery _bindings = Recovery(ffi.DynamicLibrary.open(
-  resolveDylibPath(
+Future<List<int>> mfkey32(Mfkey32Dart mfkey) async {
+  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
+  final int requestId = _nextSumRequestId++;
+  final Mfkey32Request request = Mfkey32Request(requestId, mfkey);
+  final Completer<List<int>> completer = Completer<List<int>>();
+  requests[requestId] = completer;
+  helperIsolateSendPort.send(request);
+  return completer.future;
+}
+
+String resolvePath() {
+  String path = resolveDylibPath(
     'recovery',
     dartDefine: 'LIBRECOVERY_PATH',
     environmentVariable: 'LIBRECOVERY_PATH',
-  ),
-));
+  );
+  if (!io.File(path).existsSync() &&
+      Platform.environment.containsKey('FLUTTER_TEST')) {
+    print("Library test hotfix: Library not exists");
+    Directory dir = Directory('build/${platformToPath()}');
+    for (var f in dir.listSync(recursive: true).toList()) {
+      if (f.path.endsWith(path)) {
+        print(
+            "THIS HOTFIX IS ONLY FOR TESTS. IF YOU SEE THIS LINE ON DEBUG/RELEASE BUILDS REPORT IT IMMEDIATELY.");
+        print("THIS WILL LEAD TO HIGH SECURITY VURNERABILITY.");
+        print("Library test hotfix: found at ${f.path}");
+        path = f.path;
+        break;
+      }
+    }
+  }
+  return path;
+}
+
+/// The bindings to the native functions in [_dylib].
+final Recovery _bindings = Recovery(ffi.DynamicLibrary.open(resolvePath()));
 
 class DarksideRequest {
   final int id;
@@ -91,6 +141,13 @@ class NestedRequest {
   final NestedDart nested;
 
   const NestedRequest(this.id, this.nested);
+}
+
+class Mfkey32Request {
+  final int id;
+  final Mfkey32Dart mfkey32;
+
+  const Mfkey32Request(this.id, this.mfkey32);
 }
 
 /// A response with the result of `sum`.
@@ -187,6 +244,20 @@ Future<SendPort> _helperIsolateSendPort = () async {
             keys.add(result.elementAt(i).value);
           }
           final KeyResponse response = KeyResponse(data.id, keys);
+          sendPort.send(response);
+          return;
+        } else if (data is Mfkey32Request) {
+          Pointer<Mfkey32> pointer = calloc();
+          pointer.ref.uid = data.mfkey32.uid;
+          pointer.ref.nt0 = data.mfkey32.nt0;
+          pointer.ref.nt1 = data.mfkey32.nt1;
+          pointer.ref.nr0_enc = data.mfkey32.nr0Enc;
+          pointer.ref.ar0_enc = data.mfkey32.ar0Enc;
+          pointer.ref.nr1_enc = data.mfkey32.nr1Enc;
+          pointer.ref.ar1_enc = data.mfkey32.ar1Enc;
+
+          final int result = _bindings.mfkey32(pointer);
+          final KeyResponse response = KeyResponse(data.id, [result]);
           sendPort.send(response);
           return;
         }

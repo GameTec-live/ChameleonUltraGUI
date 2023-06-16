@@ -360,3 +360,37 @@ FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *outputKeyCount)
   *outputKeyCount = MIN(256, *outputKeyCount);
   return keys;
 }
+
+FFI_PLUGIN_EXPORT uint64_t mfkey32(Mfkey32 *data)
+{
+  struct Crypto1State *s, *t;
+  uint64_t key; // recovered key
+  uint64_t ks2;
+
+  // Generate lfsr successors of the tag challenge
+  uint32_t p64 = prng_successor(data->nt0, 64);
+  uint32_t p64b = prng_successor(data->nt1, 64);
+
+  ks2 = data->ar0_enc ^ p64;
+
+  s = lfsr_recovery32(data->ar0_enc ^ p64, 0);
+
+  for (t = s; t->odd | t->even; ++t)
+  {
+    lfsr_rollback_word(t, 0, 0);
+    lfsr_rollback_word(t, data->nr0_enc, 1);
+    lfsr_rollback_word(t, data->uid ^ data->nt0, 0);
+    crypto1_get_lfsr(t, &key);
+
+    crypto1_word(t, data->uid ^ data->nt1, 0);
+    crypto1_word(t, data->nr1_enc, 1);
+    if (data->ar1_enc == (crypto1_word(t, 0, 0) ^ p64b))
+    {
+      free(s);
+      return key;
+    }
+  }
+
+  free(s);
+  return UINT64_MAX;
+}

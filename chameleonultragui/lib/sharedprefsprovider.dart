@@ -1,5 +1,8 @@
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,7 +31,79 @@ class ChameleonDictionary {
     });
   }
 
+  factory ChameleonDictionary.fromFile(String file, String name) {
+    final id = Random().nextInt(100000);
+    final lines = file.split("\n");
+    List<Uint8List> keys = [];
+    for (var key in lines) {
+      keys.add(hexToBytes(key));
+    }
+    return ChameleonDictionary(id: id, name: name, keys: keys);
+  }
+
+  Uint8List toFile() {
+    String output = "";
+    for (var key in keys) {
+      output += "${bytesToHex(key).toUpperCase()}\n";
+    }
+    return const Utf8Encoder().convert(output);
+  }
+
   ChameleonDictionary({this.id = 0, this.name = "", this.keys = const []});
+}
+
+class ChameleonTagSave {
+  int id;
+  String uid;
+  int sak;
+  Uint8List atqa;
+  String name;
+  ChameleonTag tag;
+  List<Uint8List> data;
+
+  factory ChameleonTagSave.fromJson(String json) {
+    Map<String, dynamic> data = jsonDecode(json);
+    final id = data['id'] as int;
+    final uid = data['uid'] as String;
+    final sak = data['sak'] as int;
+    final atqa = List<int>.from(data['atqa'] as List<dynamic>);
+    final name = data['name'] as String;
+    final tag = getTagTypeByValue(data['tag']);
+    final encodedData = data['data'] as List<dynamic>;
+    List<Uint8List> tagData = [];
+    for (var block in encodedData) {
+      tagData.add(Uint8List.fromList(List<int>.from(block)));
+    }
+    return ChameleonTagSave(
+        id: id,
+        uid: uid,
+        sak: sak,
+        name: name,
+        tag: tag,
+        data: tagData,
+        atqa: Uint8List.fromList(atqa));
+  }
+
+  String toJson() {
+    return jsonEncode({
+      'id': id,
+      'uid': uid,
+      'sak': sak,
+      'atqa': atqa.toList(),
+      'name': name,
+      'tag': tag.value,
+      'data': data.map((data) => data.toList()).toList()
+    });
+  }
+
+  ChameleonTagSave(
+      {required this.id,
+      required this.uid,
+      required this.name,
+      required this.sak,
+      required this.atqa,
+      required this.tag,
+      this.data = const []});
 }
 
 class SharedPreferencesProvider extends ChangeNotifier {
@@ -151,5 +226,22 @@ class SharedPreferencesProvider extends ChangeNotifier {
       }
     }
     _sharedPreferences.setStringList('dictionaries', output);
+  }
+
+  List<ChameleonTagSave> getChameleonTags() {
+    List<ChameleonTagSave> output = [];
+    final data = _sharedPreferences.getStringList('cards') ?? [];
+    for (var tag in data) {
+      output.add(ChameleonTagSave.fromJson(tag));
+    }
+    return output;
+  }
+
+  void setChameleonTags(List<ChameleonTagSave> tags) {
+    List<String> output = [];
+    for (var tag in tags) {
+      output.add(tag.toJson());
+    }
+    _sharedPreferences.setStringList('cards', output);
   }
 }
