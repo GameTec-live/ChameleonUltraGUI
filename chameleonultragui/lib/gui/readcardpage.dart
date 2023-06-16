@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/chameleon/connector.dart';
@@ -15,6 +14,7 @@ import 'package:file_saver/file_saver.dart';
 
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
+import 'package:uuid/uuid.dart';
 
 enum ChameleonKeyCheckmark { none, found, checking }
 
@@ -436,7 +436,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
     } else {
       var tags = appState.sharedPreferencesProvider.getChameleonTags();
       tags.add(ChameleonTagSave(
-          id: Random().nextInt(100000),
+          id: const Uuid().v4(),
           uid: status.UID,
           sak: hexToBytes(status.SAK)[0],
           atqa: hexToBytes(status.ATQA.replaceAll(" ", "")),
@@ -488,7 +488,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
     status.dictionaries =
         appState.sharedPreferencesProvider.getChameleonDictionaries();
     status.dictionaries
-        .insert(0, ChameleonDictionary(id: 0, name: "Empty", keys: []));
+        .insert(0, ChameleonDictionary(id: "", name: "Empty", keys: []));
     status.selectedDictionary ??= status.dictionaries[0];
 
     return Scaffold(
@@ -766,18 +766,18 @@ class _ReadCardPageState extends State<ReadCardPage> {
                               ? Column(children: [
                                   const Text("Key dictionary"),
                                   const SizedBox(height: 4),
-                                  DropdownButton<int>(
+                                  DropdownButton<String>(
                                     value: status.selectedDictionary!.id,
                                     items: status.dictionaries
-                                        .map<DropdownMenuItem<int>>(
+                                        .map<DropdownMenuItem<String>>(
                                             (ChameleonDictionary dictionary) {
-                                      return DropdownMenuItem<int>(
+                                      return DropdownMenuItem<String>(
                                         value: dictionary.id,
                                         child: Text(
                                             "${dictionary.name} (${dictionary.keys.length} keys)"),
                                       );
                                     }).toList(),
-                                    onChanged: (int? newValue) {
+                                    onChanged: (String? newValue) {
                                       for (var dictionary
                                           in status.dictionaries) {
                                         if (dictionary.id == newValue) {

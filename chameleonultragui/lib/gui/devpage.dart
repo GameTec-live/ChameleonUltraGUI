@@ -1,6 +1,4 @@
-import 'dart:developer';
 import 'dart:io';
-import 'dart:math';
 import 'dart:typed_data';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/chameleon/connector.dart';
@@ -8,6 +6,7 @@ import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import '../main.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
@@ -319,9 +318,12 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              var dict = ChameleonDictionary(id: 0, name: "test", keys: [
-                Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
-              ]);
+              var dict = ChameleonDictionary(
+                  id: const Uuid().v4(),
+                  name: "test",
+                  keys: [
+                    Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
+                  ]);
               var newDict = ChameleonDictionary.fromJson(dict.toJson());
               appState.log.d(newDict.keys);
             },
@@ -334,7 +336,7 @@ class DevPage extends StatelessWidget {
               var dictionaries =
                   appState.sharedPreferencesProvider.getChameleonDictionaries();
               dictionaries.add(ChameleonDictionary(
-                  id: Random().nextInt(100000),
+                  id: const Uuid().v4(),
                   name: "test",
                   keys: [
                     Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
