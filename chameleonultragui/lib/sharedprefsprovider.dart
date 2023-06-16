@@ -1,19 +1,19 @@
-import 'dart:math';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:chameleonultragui/chameleon/connector.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class ChameleonDictionary {
-  int id;
+  String id;
   String name;
   List<Uint8List> keys;
 
   factory ChameleonDictionary.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
-    final id = data['id'] as int;
+    final id = data['id'] as String;
     final name = data['name'] as String;
     final encodedKeys = data['keys'] as List<dynamic>;
     List<Uint8List> keys = [];
@@ -32,7 +32,7 @@ class ChameleonDictionary {
   }
 
   factory ChameleonDictionary.fromFile(String file, String name) {
-    final id = Random().nextInt(100000);
+    final id = const Uuid().v4();
     final lines = file.split("\n");
     List<Uint8List> keys = [];
     for (var key in lines) {
@@ -49,11 +49,11 @@ class ChameleonDictionary {
     return const Utf8Encoder().convert(output);
   }
 
-  ChameleonDictionary({this.id = 0, this.name = "", this.keys = const []});
+  ChameleonDictionary({this.id = "", this.name = "", this.keys = const []});
 }
 
 class ChameleonTagSave {
-  int id;
+  String id;
   String uid;
   int sak;
   Uint8List atqa;
@@ -63,7 +63,7 @@ class ChameleonTagSave {
 
   factory ChameleonTagSave.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
-    final id = data['id'] as int;
+    final id = data['id'] as String;
     final uid = data['uid'] as String;
     final sak = data['sak'] as int;
     final atqa = List<int>.from(data['atqa'] as List<dynamic>);
@@ -220,8 +220,8 @@ class SharedPreferencesProvider extends ChangeNotifier {
   void setChameleonDictionaries(List<ChameleonDictionary> dictionaries) {
     List<String> output = [];
     for (var dictionary in dictionaries) {
-      if (dictionary.id != 0) {
-        // 0 is system empty dictionary, never save it
+      if (dictionary.id != "") {
+        // system empty dictionary, never save it
         output.add(dictionary.toJson());
       }
     }
