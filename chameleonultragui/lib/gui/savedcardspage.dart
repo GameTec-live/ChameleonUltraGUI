@@ -83,26 +83,26 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center, // Center
           children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      // Import card or cards from file
-                    },
-                    icon: const Icon(Icons.download_rounded),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      // Export card or cards to file
-                    },
-                    icon: const Icon(Icons.upload_rounded),
-                  ),
-                ],
-              ),
-            ),
+            // Align(
+            //   alignment: Alignment.topRight,
+            //   child: Row(
+            //     mainAxisAlignment: MainAxisAlignment.end,
+            //     children: [
+            //       IconButton(
+            //         onPressed: () {
+            //           // Import card or cards from file
+            //         },
+            //         icon: const Icon(Icons.download_rounded),
+            //       ),
+            //       IconButton(
+            //         onPressed: () {
+            //           // Export card or cards to file
+            //         },
+            //         icon: const Icon(Icons.upload_rounded),
+            //       ),
+            //     ],
+            //   ),
+            // ),
             const Row(
               children: [
                 Text(

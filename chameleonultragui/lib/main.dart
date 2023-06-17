@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/gui/mfkey32page.dart';
 import 'package:chameleonultragui/gui/readcardpage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -137,10 +138,10 @@ class _MyHomePageState extends State<MyHomePage> {
         page = const SavedCardsPage();
         break;
       case 3:
-        page = const Placeholder();
+        page = const ReadCardPage();
         break;
       case 4:
-        page = const ReadCardPage();
+        page = const Mfkey32Page();
         break;
       case 5:
         page = const SettingsMainPage();
@@ -177,11 +178,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.wifi),
-                    label: Text('Mfkey32'),
+                    label: Text('Read Card'),
                   ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.credit_card),
-                    label: Text('Read Card'),
+                    label: Text('Mfkey32'),
                   ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.settings),
