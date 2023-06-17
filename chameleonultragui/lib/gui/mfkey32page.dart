@@ -10,10 +10,10 @@ class Mfkey32Page extends StatefulWidget {
   const Mfkey32Page({Key? key}) : super(key: key);
 
   @override
-  _Mfkey32PageState createState() => _Mfkey32PageState();
+  Mfkey32PageState createState() => Mfkey32PageState();
 }
 
-class _Mfkey32PageState extends State<Mfkey32Page> {
+class Mfkey32PageState extends State<Mfkey32Page> {
   final TextEditingController controller = TextEditingController();
   late Future<(bool, int)> detectionStatusFuture;
   bool isDetectionMode = false;
@@ -119,7 +119,8 @@ class _Mfkey32PageState extends State<Mfkey32Page> {
                           var appState = context.read<MyAppState>();
                           var connection =
                               ChameleonCom(port: appState.chameleon);
-                          await connection.enableMf1Detection(!isDetectionMode);
+                          await connection
+                              .setMf1DetectionStatus(!isDetectionMode);
                           await updateDetectionStatus();
                           appState.changesMade();
                         },

@@ -17,10 +17,10 @@ class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
 
   @override
-  _SavedCardsPageState createState() => _SavedCardsPageState();
+  SavedCardsPageState createState() => SavedCardsPageState();
 }
 
-class _SavedCardsPageState extends State<SavedCardsPage> {
+class SavedCardsPageState extends State<SavedCardsPage> {
   MifareClassicType selectedType = MifareClassicType.m1k;
 
   Future<void> saveTag(

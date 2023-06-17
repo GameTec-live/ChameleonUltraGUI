@@ -54,13 +54,13 @@ String chameleonTagToString(ChameleonTag tag) {
     return "Mifare Classic 2K";
   } else if (tag == ChameleonTag.mifare4K) {
     return "Mifare Classic 4K";
-  } else if (tag == ChameleonTag.EM410X) {
+  } else if (tag == ChameleonTag.em410X) {
     return "EM410X";
-  } else if (tag == ChameleonTag.NTAG213) {
+  } else if (tag == ChameleonTag.ntag213) {
     return "NTAG213";
-  } else if (tag == ChameleonTag.NTAG215) {
+  } else if (tag == ChameleonTag.ntag215) {
     return "NTAG215";
-  } else if (tag == ChameleonTag.NTAG216) {
+  } else if (tag == ChameleonTag.ntag216) {
     return "NTAG216";
   } else {
     return "Unknown";

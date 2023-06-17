@@ -55,9 +55,9 @@ class DevPage extends StatelessWidget {
               appState.log.d(
                   "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
               var card = await cml.scan14443aTag();
-              appState.log.d('Card UID: ${card.UID}');
-              appState.log.d('SAK: ${card.SAK}');
-              appState.log.d('ATQA: ${card.ATQA}');
+              appState.log.d('Card uid: ${card.uid}');
+              appState.log.d('sak: ${card.sak}');
+              appState.log.d('atqa: ${card.atqa}');
             },
             child: const Column(children: [
               Text('Read card'),
@@ -95,7 +95,7 @@ class DevPage extends StatelessWidget {
           //     await cml.setReaderDeviceMode(true);
           //     var distance = await cml.getMf1NTDistance(40, 0x60,
           //         Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
-          //     appState.log.d("UID: ${distance.UID}");
+          //     appState.log.d("uid: ${distance.uid}");
           //     appState.log.d("Distance ${distance.distance}");
           //   },
           //   child: const Column(children: [
@@ -116,7 +116,7 @@ class DevPage extends StatelessWidget {
                     0,
                     0x61);
                 var nested = NestedDart(
-                    uid: distance.UID,
+                    uid: distance.uid,
                     distance: distance.distance,
                     nt0: nonces.nonces[0].nt,
                     nt0Enc: nonces.nonces[0].ntEnc,
@@ -152,7 +152,7 @@ class DevPage extends StatelessWidget {
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               var data = await cml.getMf1Darkside(0x03, 0x61, true, 15);
-              var darkside = DarksideDart(uid: data.UID, items: []);
+              var darkside = DarksideDart(uid: data.uid, items: []);
               bool found = false;
 
               for (var tries = 0; tries < 0xFF && !found; tries++) {
@@ -215,14 +215,14 @@ class DevPage extends StatelessWidget {
               appState.log.d(
                   "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
               var card = await cml.scan14443aTag();
-              appState.log.d('Card UID: ${card.UID}');
-              appState.log.d('SAK: ${card.SAK}');
-              appState.log.d('ATQA: ${card.ATQA}');
+              appState.log.d('Card uid: ${card.uid}');
+              appState.log.d('sak: ${card.sak}');
+              appState.log.d('atqa: ${card.atqa}');
               await cml.setReaderDeviceMode(false);
               await cml.setMf1AntiCollision(card);
             },
             child: const Column(children: [
-              Text('Copy card UID to emulator'),
+              Text('Copy card uid to emulator'),
             ]),
           ),
           ElevatedButton(
@@ -245,9 +245,7 @@ class DevPage extends StatelessWidget {
               for (var item in detections.entries) {
                 var uid = item.key;
                 for (var item in item.value.entries) {
-                  var block = item.key;
                   for (var item in item.value.entries) {
-                    var key = item.key;
                     for (var i = 0; i < item.value.length; i++) {
                       for (var j = i + 1; j < item.value.length; j++) {
                         var item0 = item.value[i];
@@ -384,10 +382,10 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               appState.log.d("Current ${await cml.isMf1DetectionMode()}");
-              await cml.enableMf1Detection(true);
+              await cml.setMf1DetectionStatus(true);
               appState.log
                   .d("Test ${await cml.isMf1DetectionMode()} should be true");
-              await cml.enableMf1Detection(false);
+              await cml.setMf1DetectionStatus(false);
               appState.log
                   .d("Test ${await cml.isMf1DetectionMode()} should be false");
             },
