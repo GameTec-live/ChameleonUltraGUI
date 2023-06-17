@@ -1,0 +1,14 @@
+flutter_app: 
+  command: chameleonultragui
+  arch: x64
+  parent: /usr/local/lib
+
+control:
+  Package: chameleonultragui
+  Version: 1.0.0
+  Architecture: amd64
+  Essential: no
+  Priority: optional
+  Depends: zenity
+  Maintainer: Foxushka
+  Description: GUI app for Chameleon Ultra and Lite

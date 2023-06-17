@@ -5,9 +5,6 @@ import 'package:chameleonultragui/comms/serial_abstract.dart';
 import 'package:logger/logger.dart';
 import 'package:enough_convert/enough_convert.dart';
 
-// TODO: Decide if we want to change variable names to camelCase or not
-// ignore_for_file: constant_identifier_names, non_constant_identifier_names
-
 enum ChameleonCommand {
   // basic commands
   getAppVersion(1000),
@@ -59,14 +56,14 @@ enum ChameleonCommand {
 
 enum ChameleonTag {
   unknown(0),
-  EM410X(1),
+  em410X(1),
   mifareMini(2),
   mifare1K(3),
   mifare2K(4),
   mifare4K(5),
-  NTAG213(6),
-  NTAG215(7),
-  NTAG216(8);
+  ntag213(6),
+  ntag215(7),
+  ntag216(8);
 
   const ChameleonTag(this.value);
   final int value;
@@ -82,11 +79,11 @@ enum ChameleonTagFrequiency {
 }
 
 class ChameleonCard {
-  Uint8List UID;
-  int SAK;
-  Uint8List ATQA;
+  Uint8List uid;
+  int sak;
+  Uint8List atqa;
 
-  ChameleonCard({required this.UID, required this.SAK, required this.ATQA});
+  ChameleonCard({required this.uid, required this.sak, required this.atqa});
 }
 
 class ChameleonMessage {
@@ -108,10 +105,10 @@ enum ChameleonDarksideResult {
 }
 
 class ChameleonNTDistance {
-  int UID;
+  int uid;
   int distance;
 
-  ChameleonNTDistance({required this.UID, required this.distance});
+  ChameleonNTDistance({required this.uid, required this.distance});
 }
 
 class ChameleonNestedNonce {
@@ -130,7 +127,7 @@ class ChameleonNestedNonces {
 }
 
 class ChameleonDarkside {
-  int UID;
+  int uid;
   int nt1;
   int par;
   int ks1;
@@ -138,7 +135,7 @@ class ChameleonDarkside {
   int ar;
 
   ChameleonDarkside(
-      {required this.UID,
+      {required this.uid,
       required this.nt1,
       required this.par,
       required this.ks1,
@@ -337,9 +334,9 @@ class ChameleonCom {
 
     if (resp!.data.isNotEmpty) {
       return ChameleonCard(
-          UID: resp.data.sublist(0, resp.data[10]),
-          SAK: resp.data[12],
-          ATQA:
+          uid: resp.data.sublist(0, resp.data[10]),
+          sak: resp.data[12],
+          atqa:
               Uint8List.fromList(resp.data.sublist(13, 15).reversed.toList()));
     } else {
       throw ("Invalid data length");
@@ -404,7 +401,7 @@ class ChameleonCom {
     }
 
     return ChameleonNTDistance(
-        UID: bytesToU32(resp.data.sublist(0, 4)),
+        uid: bytesToU32(resp.data.sublist(0, 4)),
         distance: bytesToU32(resp.data.sublist(4, 8)));
   }
 
@@ -443,7 +440,7 @@ class ChameleonCom {
     }
 
     return ChameleonDarkside(
-        UID: bytesToU32(resp.data.sublist(0, 4)),
+        uid: bytesToU32(resp.data.sublist(0, 4)),
         nt1: bytesToU32(resp.data.sublist(4, 8)),
         par: bytesToU64(resp.data.sublist(8, 16)),
         ks1: bytesToU64(resp.data.sublist(16, 24)),
@@ -503,7 +500,7 @@ class ChameleonCom {
     return resp.data[0] == 1;
   }
 
-  Future<void> enableMf1Detection(bool status) async {
+  Future<void> setMf1DetectionStatus(bool status) async {
     await sendCmdSync(ChameleonCommand.mf1SetDetectionEnable, 0x00,
         data: Uint8List.fromList([status ? 1 : 0]));
   }
@@ -569,7 +566,7 @@ class ChameleonCom {
   Future<void> setMf1AntiCollision(ChameleonCard card) async {
     await sendCmdSync(ChameleonCommand.mf1SetAntiCollision, 0x00,
         data:
-            Uint8List.fromList([card.SAK, ...card.ATQA.reversed, ...card.UID]));
+            Uint8List.fromList([card.sak, ...card.atqa.reversed, ...card.uid]));
   }
 
   Future<String> readEM410X() async {
@@ -578,12 +575,12 @@ class ChameleonCom {
     return bytesToHex(resp!.data);
   }
 
-  Future<void> setEM410XEmulatorID(Uint8List UID) async {
-    await sendCmdSync(ChameleonCommand.setEM410XemulatorID, 0x00, data: UID);
+  Future<void> setEM410XEmulatorID(Uint8List uid) async {
+    await sendCmdSync(ChameleonCommand.setEM410XemulatorID, 0x00, data: uid);
   }
 
   Future<void> writeEM410XtoT55XX(
-      Uint8List UID, Uint8List key, List<Uint8List> oldKeys) async {
+      Uint8List uid, Uint8List key, List<Uint8List> oldKeys) async {
     List<int> keys = [];
     for (var oldKey in oldKeys) {
       keys.addAll(oldKey);

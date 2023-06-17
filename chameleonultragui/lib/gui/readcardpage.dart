@@ -28,10 +28,10 @@ enum ChameleonMifareClassicState {
 }
 
 class ChameleonReadTagStatus {
-  String UID;
-  String SAK;
-  String ATQA;
-  String ATS;
+  String uid;
+  String sak;
+  String atqa;
+  String ats;
   String tech;
   String dumpName;
   bool allKeysExists;
@@ -45,10 +45,10 @@ class ChameleonReadTagStatus {
   ChameleonMifareClassicState state;
 
   ChameleonReadTagStatus(
-      {this.UID = '',
-      this.SAK = '',
-      this.ATQA = '',
-      this.ATS = '',
+      {this.uid = '',
+      this.sak = '',
+      this.atqa = '',
+      this.ats = '',
       this.tech = '',
       this.dumpName = '',
       this.allKeysExists = false,
@@ -70,10 +70,10 @@ class ReadCardPage extends StatefulWidget {
   const ReadCardPage({super.key});
 
   @override
-  _ReadCardPageState createState() => _ReadCardPageState();
+  ReadCardPageState createState() => ReadCardPageState();
 }
 
-class _ReadCardPageState extends State<ReadCardPage> {
+class ReadCardPageState extends State<ReadCardPage> {
   ChameleonReadTagStatus status = ChameleonReadTagStatus();
 
   Future<void> readCardDetails(ChameleonCom connection) async {
@@ -89,13 +89,13 @@ class _ReadCardPageState extends State<ReadCardPage> {
       var mifare = await connection.detectMf1Support();
       var mf1Type = MifareClassicType.none;
       if (mifare) {
-        mf1Type = mfClassicGetType(card.ATQA, card.SAK);
+        mf1Type = mfClassicGetType(card.atqa, card.sak);
       }
       setState(() {
-        status.UID = bytesToHexSpace(card.UID);
-        status.SAK = card.SAK.toRadixString(16).padLeft(2, '0').toUpperCase();
-        status.ATQA = bytesToHexSpace(card.ATQA);
-        status.ATS = "Unavailable";
+        status.uid = bytesToHexSpace(card.uid);
+        status.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
+        status.atqa = bytesToHexSpace(card.atqa);
+        status.ats = "Unavailable";
         status.tech =
             mifare ? "Mifare Classic ${mfClassicGetName(mf1Type)}" : "Other";
         status.checkMarks =
@@ -124,7 +124,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
       var mifare = await connection.detectMf1Support();
       var mf1Type = MifareClassicType.none;
       if (mifare) {
-        mf1Type = mfClassicGetType(card.ATQA, card.SAK);
+        mf1Type = mfClassicGetType(card.atqa, card.sak);
       } else {
         appState.log.e("Not mifare tag!");
         return;
@@ -206,7 +206,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
               ChameleonDarksideResult.vurnerable) {
             // recover with darkside
             var data = await connection.getMf1Darkside(0x03, 0x61, true, 15);
-            var darkside = DarksideDart(uid: data.UID, items: []);
+            var darkside = DarksideDart(uid: data.uid, items: []);
             status.checkMarks[40] = ChameleonKeyCheckmark.checking;
             bool found = false;
 
@@ -296,7 +296,7 @@ class _ReadCardPageState extends State<ReadCardPage> {
                     mfClassicGetSectorTrailerBlockBySector(sector),
                     0x60 + keyType);
                 var nested = NestedDart(
-                    uid: distance.UID,
+                    uid: distance.uid,
                     distance: distance.distance,
                     nt0: nonces.nonces[0].nt,
                     nt0Enc: nonces.nonces[0].ntEnc,
@@ -347,8 +347,6 @@ class _ReadCardPageState extends State<ReadCardPage> {
   }
 
   Future<void> dumpData(ChameleonCom connection) async {
-    var card = await connection.scan14443aTag();
-    // TODO: check if card changed
     setState(() {
       status.state = ChameleonMifareClassicState.dumpOngoing;
     });
@@ -418,14 +416,14 @@ class _ReadCardPageState extends State<ReadCardPage> {
     if (bin) {
       try {
         await FileSaver.instance.saveAs(
-            name: bytesToHex(card.UID),
+            name: bytesToHex(card.uid),
             bytes: Uint8List.fromList(cardDump),
             ext: 'bin',
             mimeType: MimeType.other);
       } on UnimplementedError catch (_) {
         String? outputFile = await FilePicker.platform.saveFile(
           dialogTitle: 'Please select an output file:',
-          fileName: '${bytesToHex(card.UID)}.bin',
+          fileName: '${bytesToHex(card.uid)}.bin',
         );
 
         if (outputFile != null) {
@@ -437,9 +435,9 @@ class _ReadCardPageState extends State<ReadCardPage> {
       var tags = appState.sharedPreferencesProvider.getChameleonTags();
       tags.add(ChameleonTagSave(
           id: const Uuid().v4(),
-          uid: status.UID,
-          sak: hexToBytes(status.SAK)[0],
-          atqa: hexToBytes(status.ATQA.replaceAll(" ", "")),
+          uid: status.uid,
+          sak: hexToBytes(status.sak)[0],
+          atqa: hexToBytes(status.atqa.replaceAll(" ", "")),
           name: status.dumpName,
           tag: mfClassicGetChameleonTagType(status.type),
           data: status.cardData));
@@ -511,10 +509,10 @@ class _ReadCardPageState extends State<ReadCardPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  buildFieldRow('UID', status.UID, fieldFontSize),
-                  buildFieldRow('SAK', status.SAK, fieldFontSize),
-                  buildFieldRow('ATQA', status.ATQA, fieldFontSize),
-                  buildFieldRow('ATS', status.ATS, fieldFontSize),
+                  buildFieldRow('UID', status.uid, fieldFontSize),
+                  buildFieldRow('SAK', status.sak, fieldFontSize),
+                  buildFieldRow('ATQA', status.atqa, fieldFontSize),
+                  buildFieldRow('ATS', status.ats, fieldFontSize),
                   const SizedBox(height: 16),
                   Text(
                     'Tech: ${status.tech}',

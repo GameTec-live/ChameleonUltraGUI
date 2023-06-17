@@ -76,3 +76,9 @@ jobs:
         with:
           name: linux
           path: chameleonultragui/build/linux/x64/release
+      - run: dart pub global activate flutter_to_debian
+      - run: flutter_to_debian
+      - uses: actions/upload-artifact@v3
+        with:
+          name: linux-debian
+          path: chameleonultragui/debian/packages
