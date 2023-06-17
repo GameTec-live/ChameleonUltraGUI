@@ -4,7 +4,7 @@ flutter_app:
   parent: /usr/local/lib
 
 control:
-  Package: Chameleon Ultra GUI
+  Package: chameleonultragui
   Version: 1.0.0
   Architecture: amd64
   Essential: no
