@@ -386,6 +386,7 @@ class DevPage extends StatelessWidget {
               appState.log
                   .d("Test ${await cml.isMf1DetectionMode()} should be true");
               await cml.setMf1DetectionStatus(false);
+
               appState.log
                   .d("Test ${await cml.isMf1DetectionMode()} should be false");
             },
