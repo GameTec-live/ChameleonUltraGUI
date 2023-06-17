@@ -50,7 +50,8 @@ enum ChameleonCommand {
   // mfkey32
   mf1SetDetectionEnable(5003),
   mf1GetDetectionCount(5004),
-  mf1GetDetectionResult(5005);
+  mf1GetDetectionResult(5005),
+  mf1GetDetectionStatus(5006);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -494,6 +495,12 @@ class ChameleonCom {
   Future<void> enableSlot(int slot, bool status) async {
     await sendCmdSync(ChameleonCommand.setSlotEnable, 0x00,
         data: Uint8List.fromList([slot - 1, status ? 1 : 0]));
+  }
+
+  Future<bool> isMf1DetectionMode() async {
+    var resp = await sendCmdSync(ChameleonCommand.mf1GetDetectionStatus, 0x00);
+    if (resp!.data.length != 1) throw ("Invalid data length");
+    return resp.data[0] == 1;
   }
 
   Future<void> enableMf1Detection(bool status) async {
