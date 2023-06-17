@@ -358,10 +358,41 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
+              var tags = appState.sharedPreferencesProvider.getChameleonTags();
+              tags.add(ChameleonTagSave(
+                  id: const Uuid().v4(),
+                  name: "test",
+                  data: [],
+                  atqa: Uint8List.fromList([0, 0]),
+                  uid: "",
+                  sak: 0,
+                  tag: ChameleonTag.mifare2K));
+              appState.sharedPreferencesProvider.setChameleonTags(tags);
+            },
+            child: const Column(children: [
+              Text('Add fake tag'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
               appState.sharedPreferencesProvider.setChameleonTags([]);
             },
             child: const Column(children: [
               Text('Wipe cards'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              appState.log.d("Current ${await cml.isMf1DetectionMode()}");
+              await cml.enableMf1Detection(true);
+              appState.log
+                  .d("Test ${await cml.isMf1DetectionMode()} should be true");
+              await cml.enableMf1Detection(false);
+              appState.log
+                  .d("Test ${await cml.isMf1DetectionMode()} should be false");
+            },
+            child: const Column(children: [
+              Text('Mf1 detection test'),
             ]),
           ),
         ],

@@ -79,7 +79,7 @@ class Recovery {
       _mfkey32Ptr.asFunction<int Function(ffi.Pointer<Mfkey32>)>();
 }
 
-class DarksideItem extends ffi.Struct {
+final class DarksideItem extends ffi.Struct {
   @ffi.Uint32()
   external int nt1;
 
@@ -96,7 +96,7 @@ class DarksideItem extends ffi.Struct {
   external int ar;
 }
 
-class Darkside extends ffi.Struct {
+final class Darkside extends ffi.Struct {
   @ffi.Uint32()
   external int uid;
 
@@ -106,7 +106,7 @@ class Darkside extends ffi.Struct {
   external int count;
 }
 
-class Nested extends ffi.Struct {
+final class Nested extends ffi.Struct {
   @ffi.Uint32()
   external int uid;
 
@@ -132,7 +132,7 @@ class Nested extends ffi.Struct {
   external int par1;
 }
 
-class Mfkey32 extends ffi.Struct {
+final class Mfkey32 extends ffi.Struct {
   /// serial number
   @ffi.Uint32()
   external int uid;

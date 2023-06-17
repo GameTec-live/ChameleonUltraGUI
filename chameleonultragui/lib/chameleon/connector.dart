@@ -50,7 +50,8 @@ enum ChameleonCommand {
   // mfkey32
   mf1SetDetectionEnable(5003),
   mf1GetDetectionCount(5004),
-  mf1GetDetectionResult(5005);
+  mf1GetDetectionResult(5005),
+  mf1GetDetectionStatus(5006);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -223,7 +224,7 @@ class ChameleonCom {
     var dataStatus = 0x0000;
     var dataLength = 0x0000;
     // var startTime = DateTime.now();
-    Uint8List readBuffer;
+    List<int> readBuffer = [];
 
     log.d("Sending: ${bytesToHex(dataFrame)}");
     await _serialInstance!.finishRead();
@@ -232,11 +233,16 @@ class ChameleonCom {
     while (true) {
       while (true) {
         // TODO: return timeout
-        readBuffer = await _serialInstance!.read(16384);
+        readBuffer.addAll(await _serialInstance!.read(16384));
         if (readBuffer.isNotEmpty) {
-          log.d("Received: ${bytesToHex(readBuffer)}");
+          log.d("Received: ${bytesToHex(Uint8List.fromList(readBuffer))}");
           break;
         }
+      }
+
+      if (readBuffer.isEmpty) {
+        await asyncSleep(10);
+        continue;
       }
 
       while (readBuffer.length > dataPosition) {
@@ -489,6 +495,12 @@ class ChameleonCom {
   Future<void> enableSlot(int slot, bool status) async {
     await sendCmdSync(ChameleonCommand.setSlotEnable, 0x00,
         data: Uint8List.fromList([slot - 1, status ? 1 : 0]));
+  }
+
+  Future<bool> isMf1DetectionMode() async {
+    var resp = await sendCmdSync(ChameleonCommand.mf1GetDetectionStatus, 0x00);
+    if (resp!.data.length != 1) throw ("Invalid data length");
+    return resp.data[0] == 1;
   }
 
   Future<void> enableMf1Detection(bool status) async {

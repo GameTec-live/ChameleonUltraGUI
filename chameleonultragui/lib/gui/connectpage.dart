@@ -14,7 +14,11 @@ class ConnectPage extends StatelessWidget {
       future: appState.chameleon.availableChameleons(),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
+          return Scaffold(
+              appBar: AppBar(
+                title: const Text('Connect'),
+              ),
+              body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else {
