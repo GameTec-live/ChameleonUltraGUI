@@ -239,6 +239,11 @@ class ChameleonCom {
         }
       }
 
+      if (readBuffer.isEmpty) {
+        await asyncSleep(10);
+        continue;
+      }
+
       while (readBuffer.length > dataPosition) {
         Uint8List dataBytes = Uint8List.fromList([readBuffer[dataPosition]]);
 
