@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/chameleon/connector.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import '../main.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
@@ -47,12 +50,6 @@ class DevPage extends StatelessWidget {
             child: const Text('Connect'),
           ),
           ElevatedButton(
-            onPressed: () {
-              // appState.chameleon.sendCommand("test");
-            },
-            child: const Text('Send'),
-          ),
-          ElevatedButton(
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
               appState.log.d(
@@ -66,45 +63,45 @@ class DevPage extends StatelessWidget {
               Text('Read card'),
             ]),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              appState.log.d(await cml.detectMf1Support());
-            },
-            child: const Column(children: [
-              Text('Is MFC?'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              appState.log.d(await cml.getMf1NTLevel());
-            },
-            child: const Column(children: [
-              Text('Get NT level'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              appState.log.d(await cml.checkMf1Darkside());
-            },
-            child: const Column(children: [
-              Text('Check darkside'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              var distance = await cml.getMf1NTDistance(40, 0x60,
-                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
-              appState.log.d("UID: ${distance.UID}");
-              appState.log.d("Distance ${distance.distance}");
-            },
-            child: const Column(children: [
-              Text('Get distance'),
-            ]),
-          ),
+          // ElevatedButton(
+          //   onPressed: () async {
+          //     await cml.setReaderDeviceMode(true);
+          //     appState.log.d(await cml.detectMf1Support());
+          //   },
+          //   child: const Column(children: [
+          //     Text('Is MFC?'),
+          //   ]),
+          // ),
+          // ElevatedButton(
+          //   onPressed: () async {
+          //     await cml.setReaderDeviceMode(true);
+          //     appState.log.d(await cml.getMf1NTLevel());
+          //   },
+          //   child: const Column(children: [
+          //     Text('Get NT level'),
+          //   ]),
+          // ),
+          // ElevatedButton(
+          //   onPressed: () async {
+          //     await cml.setReaderDeviceMode(true);
+          //     appState.log.d(await cml.checkMf1Darkside());
+          //   },
+          //   child: const Column(children: [
+          //     Text('Check darkside'),
+          //   ]),
+          // ),
+          // ElevatedButton(
+          //   onPressed: () async {
+          //     await cml.setReaderDeviceMode(true);
+          //     var distance = await cml.getMf1NTDistance(40, 0x60,
+          //         Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
+          //     appState.log.d("UID: ${distance.UID}");
+          //     appState.log.d("Distance ${distance.distance}");
+          //   },
+          //   child: const Column(children: [
+          //     Text('Get distance'),
+          //   ]),
+          // ),
           ElevatedButton(
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
@@ -244,6 +241,39 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
+              var detections = await cml.getMf1DetectionResult(0);
+              for (var item in detections.entries) {
+                var uid = item.key;
+                for (var item in item.value.entries) {
+                  var block = item.key;
+                  for (var item in item.value.entries) {
+                    var key = item.key;
+                    for (var i = 0; i < item.value.length; i++) {
+                      for (var j = i + 1; j < item.value.length; j++) {
+                        var item0 = item.value[i];
+                        var item1 = item.value[j];
+                        var mfkey = Mfkey32Dart(
+                            uid: uid,
+                            nt0: item0.nt,
+                            nt1: item1.nt,
+                            nr0Enc: item0.nr,
+                            ar0Enc: item0.ar,
+                            nr1Enc: item1.nr,
+                            ar1Enc: item1.ar);
+                        appState.log.i(
+                            "Mfkey32 recovered key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8))}");
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            child: const Column(children: [
+              Text('Mfkey32 decrypt'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
               var darkside = DarksideDart(uid: 2374329723, items: []);
               darkside.items.add(DarksideItemDart(
                   nt1: 913032415,
@@ -284,6 +314,54 @@ class DevPage extends StatelessWidget {
             },
             child: const Column(children: [
               Text('Test nested library'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              var dict = ChameleonDictionary(
+                  id: const Uuid().v4(),
+                  name: "test",
+                  keys: [
+                    Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
+                  ]);
+              var newDict = ChameleonDictionary.fromJson(dict.toJson());
+              appState.log.d(newDict.keys);
+            },
+            child: const Column(children: [
+              Text('Test JSON dictionary coding'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              var dictionaries =
+                  appState.sharedPreferencesProvider.getChameleonDictionaries();
+              dictionaries.add(ChameleonDictionary(
+                  id: const Uuid().v4(),
+                  name: "test",
+                  keys: [
+                    Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
+                  ]));
+              appState.sharedPreferencesProvider
+                  .setChameleonDictionaries(dictionaries);
+            },
+            child: const Column(children: [
+              Text('Add fake dictionary'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              appState.sharedPreferencesProvider.setChameleonDictionaries([]);
+            },
+            child: const Column(children: [
+              Text('Wipe dictionaries'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              appState.sharedPreferencesProvider.setChameleonTags([]);
+            },
+            child: const Column(children: [
+              Text('Wipe cards'),
             ]),
           ),
         ],

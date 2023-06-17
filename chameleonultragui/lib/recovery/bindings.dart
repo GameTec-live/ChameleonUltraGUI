@@ -63,6 +63,20 @@ class Recovery {
   late final _nested = _nestedPtr.asFunction<
       ffi.Pointer<ffi.Uint64> Function(
           ffi.Pointer<Nested>, ffi.Pointer<ffi.Uint32>)>();
+
+  int mfkey32(
+    ffi.Pointer<Mfkey32> data,
+  ) {
+    return _mfkey32(
+      data,
+    );
+  }
+
+  late final _mfkey32Ptr =
+      _lookup<ffi.NativeFunction<ffi.Uint64 Function(ffi.Pointer<Mfkey32>)>>(
+          'mfkey32');
+  late final _mfkey32 =
+      _mfkey32Ptr.asFunction<int Function(ffi.Pointer<Mfkey32>)>();
 }
 
 class DarksideItem extends ffi.Struct {
@@ -116,4 +130,34 @@ class Nested extends ffi.Struct {
 
   @ffi.Uint32()
   external int par1;
+}
+
+class Mfkey32 extends ffi.Struct {
+  /// serial number
+  @ffi.Uint32()
+  external int uid;
+
+  /// tag challenge first
+  @ffi.Uint32()
+  external int nt0;
+
+  /// tag challenge second
+  @ffi.Uint32()
+  external int nt1;
+
+  /// first encrypted reader challenge
+  @ffi.Uint32()
+  external int nr0_enc;
+
+  /// first encrypted reader response
+  @ffi.Uint32()
+  external int ar0_enc;
+
+  /// second encrypted reader challenge
+  @ffi.Uint32()
+  external int nr1_enc;
+
+  /// second encrypted reader response
+  @ffi.Uint32()
+  external int ar1_enc;
 }

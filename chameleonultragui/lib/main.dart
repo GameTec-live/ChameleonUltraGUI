@@ -177,7 +177,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.wifi),
-                    label: Text('Live Read/Write'),
+                    label: Text('Mfkey32'),
                   ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.credit_card),

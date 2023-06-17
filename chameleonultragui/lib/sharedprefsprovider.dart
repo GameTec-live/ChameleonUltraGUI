@@ -1,5 +1,110 @@
+import 'dart:typed_data';
+import 'dart:convert';
+import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+
+class ChameleonDictionary {
+  String id;
+  String name;
+  List<Uint8List> keys;
+
+  factory ChameleonDictionary.fromJson(String json) {
+    Map<String, dynamic> data = jsonDecode(json);
+    final id = data['id'] as String;
+    final name = data['name'] as String;
+    final encodedKeys = data['keys'] as List<dynamic>;
+    List<Uint8List> keys = [];
+    for (var key in encodedKeys) {
+      keys.add(Uint8List.fromList(List<int>.from(key)));
+    }
+    return ChameleonDictionary(id: id, name: name, keys: keys);
+  }
+
+  String toJson() {
+    return jsonEncode({
+      'id': id,
+      'name': name,
+      'keys': keys.map((key) => key.toList()).toList()
+    });
+  }
+
+  factory ChameleonDictionary.fromFile(String file, String name) {
+    final id = const Uuid().v4();
+    final lines = file.split("\n");
+    List<Uint8List> keys = [];
+    for (var key in lines) {
+      keys.add(hexToBytes(key));
+    }
+    return ChameleonDictionary(id: id, name: name, keys: keys);
+  }
+
+  Uint8List toFile() {
+    String output = "";
+    for (var key in keys) {
+      output += "${bytesToHex(key).toUpperCase()}\n";
+    }
+    return const Utf8Encoder().convert(output);
+  }
+
+  ChameleonDictionary({this.id = "", this.name = "", this.keys = const []});
+}
+
+class ChameleonTagSave {
+  String id;
+  String uid;
+  int sak;
+  Uint8List atqa;
+  String name;
+  ChameleonTag tag;
+  List<Uint8List> data;
+
+  factory ChameleonTagSave.fromJson(String json) {
+    Map<String, dynamic> data = jsonDecode(json);
+    final id = data['id'] as String;
+    final uid = data['uid'] as String;
+    final sak = data['sak'] as int;
+    final atqa = List<int>.from(data['atqa'] as List<dynamic>);
+    final name = data['name'] as String;
+    final tag = getTagTypeByValue(data['tag']);
+    final encodedData = data['data'] as List<dynamic>;
+    List<Uint8List> tagData = [];
+    for (var block in encodedData) {
+      tagData.add(Uint8List.fromList(List<int>.from(block)));
+    }
+    return ChameleonTagSave(
+        id: id,
+        uid: uid,
+        sak: sak,
+        name: name,
+        tag: tag,
+        data: tagData,
+        atqa: Uint8List.fromList(atqa));
+  }
+
+  String toJson() {
+    return jsonEncode({
+      'id': id,
+      'uid': uid,
+      'sak': sak,
+      'atqa': atqa.toList(),
+      'name': name,
+      'tag': tag.value,
+      'data': data.map((data) => data.toList()).toList()
+    });
+  }
+
+  ChameleonTagSave(
+      {required this.id,
+      required this.uid,
+      required this.name,
+      required this.sak,
+      required this.atqa,
+      required this.tag,
+      this.data = const []});
+}
 
 class SharedPreferencesProvider extends ChangeNotifier {
   SharedPreferencesProvider._privateConstructor();
@@ -101,5 +206,42 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setDeveloperMode(bool value) {
     _sharedPreferences.setBool('developer_mode', value);
+  }
+
+  List<ChameleonDictionary> getChameleonDictionaries() {
+    List<ChameleonDictionary> output = [];
+    final data = _sharedPreferences.getStringList('dictionaries') ?? [];
+    for (var dictionary in data) {
+      output.add(ChameleonDictionary.fromJson(dictionary));
+    }
+    return output;
+  }
+
+  void setChameleonDictionaries(List<ChameleonDictionary> dictionaries) {
+    List<String> output = [];
+    for (var dictionary in dictionaries) {
+      if (dictionary.id != "") {
+        // system empty dictionary, never save it
+        output.add(dictionary.toJson());
+      }
+    }
+    _sharedPreferences.setStringList('dictionaries', output);
+  }
+
+  List<ChameleonTagSave> getChameleonTags() {
+    List<ChameleonTagSave> output = [];
+    final data = _sharedPreferences.getStringList('cards') ?? [];
+    for (var tag in data) {
+      output.add(ChameleonTagSave.fromJson(tag));
+    }
+    return output;
+  }
+
+  void setChameleonTags(List<ChameleonTagSave> tags) {
+    List<String> output = [];
+    for (var tag in tags) {
+      output.add(tag.toJson());
+    }
+    _sharedPreferences.setStringList('cards', output);
   }
 }
