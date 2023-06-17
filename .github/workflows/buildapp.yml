@@ -72,7 +72,11 @@ jobs:
       - run: flutter config --enable-linux-desktop
       - run: flutter build linux
       - run: flutter test
+      - run: dart pub global activate flutter_to_debian
+      - run: flutter_to_debian
       - uses: actions/upload-artifact@v3
         with:
           name: linux
-          path: chameleonultragui/build/linux/x64/release
+          path: |
+            chameleonultragui/build/linux/x64/release
+            chameleonultragui/debian/packages
