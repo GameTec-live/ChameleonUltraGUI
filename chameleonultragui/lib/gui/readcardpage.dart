@@ -479,7 +479,6 @@ class _ReadCardPageState extends State<ReadCardPage> {
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 800;
 
-    double tagInfoFontSize = isSmallScreen ? 24 : 32;
     double fieldFontSize = isSmallScreen ? 16 : 20;
     double checkmarkSize = isSmallScreen ? 16 : 20;
 
@@ -504,11 +503,11 @@ class _ReadCardPageState extends State<ReadCardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
+                  const Text(
                     'Tag Info',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: tagInfoFontSize,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

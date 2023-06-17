@@ -224,7 +224,7 @@ class ChameleonCom {
     var dataStatus = 0x0000;
     var dataLength = 0x0000;
     // var startTime = DateTime.now();
-    Uint8List readBuffer;
+    List<int> readBuffer = [];
 
     log.d("Sending: ${bytesToHex(dataFrame)}");
     await _serialInstance!.finishRead();
@@ -233,9 +233,9 @@ class ChameleonCom {
     while (true) {
       while (true) {
         // TODO: return timeout
-        readBuffer = await _serialInstance!.read(16384);
+        readBuffer.addAll(await _serialInstance!.read(16384));
         if (readBuffer.isNotEmpty) {
-          log.d("Received: ${bytesToHex(readBuffer)}");
+          log.d("Received: ${bytesToHex(Uint8List.fromList(readBuffer))}");
           break;
         }
       }

@@ -83,8 +83,8 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
+            const Padding(
+              padding: EdgeInsets.all(8.0),
               child: Text(
                 "Cards:",
                 style: TextStyle(fontSize: 20),
@@ -464,8 +464,8 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
+            const Padding(
+              padding: EdgeInsets.all(8.0),
               child: Text(
                 "Dictionaries:",
                 style: TextStyle(fontSize: 20),
