@@ -15,6 +15,7 @@ import 'gui/savedcardspage.dart';
 import 'gui/settingspage.dart';
 import 'gui/connectpage.dart';
 import 'gui/devpage.dart';
+import 'gui/slotmanagerpage.dart';
 
 // Shared Preferences Provider
 import 'sharedprefsprovider.dart';
@@ -132,7 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
         break;
       case 1:
-        page = const Placeholder();
+        page =  SlotManagerPage();
         break;
       case 2:
         page = const SavedCardsPage();
