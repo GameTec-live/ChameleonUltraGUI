@@ -22,31 +22,14 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                 padding: const EdgeInsets.all(20),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 1,
-                  crossAxisSpacing: 4.0,
-                  mainAxisSpacing: 4.0,
+                  crossAxisSpacing: 8.0,
+                  mainAxisSpacing: 8.0,
                 ),
                 scrollDirection: Axis.vertical,
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) =>
-                          AlertDialog(
-                          content: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SearchBar(
-                                hintText: "Search for a card...",
-                                padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.symmetric(horizontal: 15)),
-                                leading: const Icon(Icons.search),
-                              ),
-                              const SizedBox(height: 10),
-                              const Text("List of Cards Here")
-                            ],
-                          ),
-                        ),
-                      );
+                      cardselectdialog(context);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -99,24 +82,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) =>
-                          AlertDialog(
-                          content: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SearchBar(
-                                hintText: "Search for a card...",
-                                padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.symmetric(horizontal: 15)),
-                                leading: const Icon(Icons.search),
-                              ),
-                              const SizedBox(height: 10),
-                              const Text("List of Cards Here")
-                            ],
-                          ),
-                        ),
-                      );
+                      cardselectdialog(context);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -169,24 +135,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) =>
-                          AlertDialog(
-                          content: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SearchBar(
-                                hintText: "Search for a card...",
-                                padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.symmetric(horizontal: 15)),
-                                leading: const Icon(Icons.search),
-                              ),
-                              const SizedBox(height: 10),
-                              const Text("List of Cards Here")
-                            ],
-                          ),
-                        ),
-                      );
+                      cardselectdialog(context);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -239,24 +188,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) =>
-                          AlertDialog(
-                          content: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SearchBar(
-                                hintText: "Search for a card...",
-                                padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.symmetric(horizontal: 15)),
-                                leading: const Icon(Icons.search),
-                              ),
-                              const SizedBox(height: 10),
-                              const Text("List of Cards Here")
-                            ],
-                          ),
-                        ),
-                      );
+                      cardselectdialog(context);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -309,24 +241,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) =>
-                          AlertDialog(
-                          content: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SearchBar(
-                                hintText: "Search for a card...",
-                                padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.symmetric(horizontal: 15)),
-                                leading: const Icon(Icons.search),
-                              ),
-                              const SizedBox(height: 10),
-                              const Text("List of Cards Here")
-                            ],
-                          ),
-                        ),
-                      );
+                      cardselectdialog(context);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -379,24 +294,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) =>
-                          AlertDialog(
-                          content: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SearchBar(
-                                hintText: "Search for a card...",
-                                padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.symmetric(horizontal: 15)),
-                                leading: const Icon(Icons.search),
-                              ),
-                              const SizedBox(height: 10),
-                              const Text("List of Cards Here")
-                            ],
-                          ),
-                        ),
-                      );
+                      cardselectdialog(context);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -449,24 +347,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) =>
-                          AlertDialog(
-                          content: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SearchBar(
-                                hintText: "Search for a card...",
-                                padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.symmetric(horizontal: 15)),
-                                leading: const Icon(Icons.search),
-                              ),
-                              const SizedBox(height: 10),
-                              const Text("List of Cards Here")
-                            ],
-                          ),
-                        ),
-                      );
+                      cardselectdialog(context);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -519,24 +400,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) =>
-                          AlertDialog(
-                          content: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SearchBar(
-                                hintText: "Search for a card...",
-                                padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.symmetric(horizontal: 15)),
-                                leading: const Icon(Icons.search),
-                              ),
-                              const SizedBox(height: 10),
-                              const Text("List of Cards Here")
-                            ],
-                          ),
-                        ),
-                      );
+                      cardselectdialog(context);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -593,6 +457,56 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<String?> cardselectdialog(BuildContext context) {
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) =>
+        AlertDialog(
+          content: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SearchBar(
+                hintText: "Search for a card...",
+                padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.symmetric(horizontal: 15)),
+                leading: const Icon(Icons.search),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.8,
+                width: 300,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        // Set card here
+                      },
+                       child: const ListTile(
+                        leading: Icon(Icons.credit_card, color: Colors.amber,),
+                        title: Text("Card Name"),
+                        subtitle: Text("Card Type"),
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Set card here
+                      },
+                       child: const ListTile(
+                        leading: Icon(Icons.credit_card, color: Colors.blue,),
+                        title: Text("Card Name 2"),
+                        subtitle: Text("Card Type 2"),
+                      ),
+                    ),
+                  ]
+                ),
+              ),
+            ],
+          ),
+        ),
     );
   }
 }
