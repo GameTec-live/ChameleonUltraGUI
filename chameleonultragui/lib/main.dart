@@ -123,6 +123,9 @@ class _MyHomePageState extends State<MyHomePage> {
     appState.devMode = appState.sharedPreferencesProvider.getDeveloperMode();
 
     Widget page; // Set Page
+    if (appState.chameleon.connected == false && selectedIndex != 0 && selectedIndex != 5 && selectedIndex != 6) { // If not connected, and not on home, settings or dev page, go to home page
+      selectedIndex = 0;
+    }
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
@@ -169,24 +172,24 @@ class _MyHomePageState extends State<MyHomePage> {
                     icon: Icon(Icons.home),
                     label: Text('Home'),
                   ),
-                  const NavigationRailDestination(
-                    icon: Icon(Icons.widgets),
-                    label: Text('Slot Manager'),
+                  NavigationRailDestination(
+                    icon:  Icon(Icons.widgets, color: appState.chameleon.connected == false ? Colors.grey : null),
+                    label: Text('Slot Manager', style: appState.chameleon.connected == false ? const TextStyle(color: Colors.grey) : null),
+                  ),
+                  NavigationRailDestination(
+                    icon:  Icon(Icons.auto_awesome_motion_outlined, color: appState.chameleon.connected == false ? Colors.grey : null),
+                    label: Text('Saved Cards', style: appState.chameleon.connected == false ? const TextStyle(color: Colors.grey) : null),
+                  ),
+                  NavigationRailDestination(
+                    icon:  Icon(Icons.wifi, color: appState.chameleon.connected == false ? Colors.grey : null),
+                    label: Text('Read Card', style: appState.chameleon.connected == false ? const TextStyle(color: Colors.grey) : null),
+                  ),
+                  NavigationRailDestination(
+                    icon:  Icon(Icons.credit_card, color: appState.chameleon.connected == false ? Colors.grey : null),
+                    label: Text('Mfkey32', style: appState.chameleon.connected == false ? const TextStyle(color: Colors.grey) : null),
                   ),
                   const NavigationRailDestination(
-                    icon: Icon(Icons.auto_awesome_motion_outlined),
-                    label: Text('Saved Cards'),
-                  ),
-                  const NavigationRailDestination(
-                    icon: Icon(Icons.wifi),
-                    label: Text('Read Card'),
-                  ),
-                  const NavigationRailDestination(
-                    icon: Icon(Icons.credit_card),
-                    label: Text('Mfkey32'),
-                  ),
-                  const NavigationRailDestination(
-                    icon: Icon(Icons.settings),
+                    icon:  Icon(Icons.settings),
                     label: Text('Settings'),
                   ),
                   if (appState.devMode)
