@@ -29,7 +29,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      cardselectdialog(context);
+                      cardselectdialog(context, 1);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -96,7 +96,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      cardselectdialog(context);
+                      cardselectdialog(context, 2);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -163,7 +163,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      cardselectdialog(context);
+                      cardselectdialog(context, 3);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -230,7 +230,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      cardselectdialog(context);
+                      cardselectdialog(context, 4);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -297,7 +297,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      cardselectdialog(context);
+                      cardselectdialog(context, 5);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -364,7 +364,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      cardselectdialog(context);
+                      cardselectdialog(context, 6);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -431,7 +431,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      cardselectdialog(context);
+                      cardselectdialog(context, 7);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -498,7 +498,7 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      cardselectdialog(context);
+                      cardselectdialog(context, 8);
                     },
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<
@@ -572,56 +572,102 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
     );
   }
 
-  Future<String?> cardselectdialog(BuildContext context) {
-    return showDialog<String>(
+  Future<String?> cardselectdialog(BuildContext context, int gridPosition) {
+    final List<Map<String, dynamic>> cards = [
+      {
+        'name': 'Card Name',
+        'type': 'Card Type',
+        'color': Colors.amber,
+      },
+      {
+        'name': 'Card Name 2',
+        'type': 'Card Type 2',
+        'color': Colors.blue,
+      },
+    ];
+
+    cards.sort((a, b) => a['name'].compareTo(b['name']));
+
+    return showSearch<String>(
       context: context,
-      builder: (BuildContext context) =>
-        AlertDialog(
-          content: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SearchBar(
-                hintText: "Search for a card...",
-                padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.symmetric(horizontal: 15)),
-                leading: const Icon(Icons.search),
+      delegate: CardSearchDelegate(cards),
+    );
+  }
+}
+
+class CardSearchDelegate extends SearchDelegate<String> {
+  final List<Map<String, dynamic>> cards;
+
+  CardSearchDelegate(this.cards);
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, '');
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final results = cards.where((card) =>
+        card['name'].toLowerCase().contains(query.toLowerCase()) ||
+        card['type'].toLowerCase().contains(query.toLowerCase()));
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (BuildContext context, int index) {
+        final card = results.elementAt(index);
+        return Column(
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                // Set card here
+              },
+              child: ListTile(
+                leading: Icon(Icons.credit_card, color: card['color']),
+                title: Text(card['name']),
+                subtitle: Text(card['type']),
               ),
-              const SizedBox(height: 10),
-              Expanded(
-                flex: 2,
-                child: SizedBox(
-                  height: 500,
-                  width: 300,
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          // Set card here
-                        },
-                         child: const ListTile(
-                          leading: Icon(Icons.credit_card, color: Colors.amber,),
-                          title: Text("Card Name"),
-                          subtitle: Text("Card Type"),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Set card here
-                        },
-                         child: const ListTile(
-                          leading: Icon(Icons.credit_card, color: Colors.blue,),
-                          title: Text("Card Name 2"),
-                          subtitle: Text("Card Type 2"),
-                        ),
-                      ),
-                    ]
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final results = cards.where((card) =>
+        card['name'].toLowerCase().contains(query.toLowerCase()) ||
+        card['type'].toLowerCase().contains(query.toLowerCase()));
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (BuildContext context, int index) {
+        final card = results.elementAt(index);
+        return ListTile(
+          leading: Icon(Icons.credit_card, color: card['color']),
+          title: Text(card['name']),
+          subtitle: Text(card['type']),
+          onTap: () {
+            close(context, card['name']);
+          },
+        );
+      },
     );
   }
 }
