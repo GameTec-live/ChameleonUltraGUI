@@ -136,7 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
         break;
       case 1:
-        page =  SlotManagerPage();
+        page =  const SlotManagerPage();
         break;
       case 2:
         page = const SavedCardsPage();

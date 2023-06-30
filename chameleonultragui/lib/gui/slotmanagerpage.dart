@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:chameleonultragui/main.dart';
-
 class SlotManagerPage extends StatefulWidget {
+  const SlotManagerPage({super.key});
+
   @override
-  _SlotManagerPageState createState() => _SlotManagerPageState();
+  SlotManagerPageState createState() => SlotManagerPageState();
 }
 
-class _SlotManagerPageState extends State<SlotManagerPage> {
+class SlotManagerPageState extends State<SlotManagerPage> {
+  
+  var slotdata = List.filled(8, {'Name': 'Unused', 'Type': 'Unused', 'ID': 'Unused', 'Last-updated': '00:00:00',},);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,12 +42,12 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                           ),
                         ),
                      ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Icon(Icons.nfc),
@@ -52,29 +55,29 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               Text("Slot 1")
                             ],
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.credit_card),
-                              SizedBox(width: 5),
-                              Text("Card Name")
+                              const Icon(Icons.credit_card),
+                              const SizedBox(width: 5),
+                              Text(slotdata[0]['Name'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.wifi),
-                              SizedBox(width: 5),
-                              Text("Card Type")
+                              const Icon(Icons.wifi),
+                              const SizedBox(width: 5),
+                              Text(slotdata[0]['Type'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.insert_drive_file),
-                              SizedBox(width: 5),
-                              Text("Card ID")
+                              const Icon(Icons.insert_drive_file),
+                              const SizedBox(width: 5),
+                              Text(slotdata[0]['ID'] ?? "Unknown")
                             ],
                           ),
                           Expanded(
@@ -83,9 +86,9 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Icon(Icons.access_time),
-                                  SizedBox(width: 5),
-                                  Text("Changed: 00:00:00"),
+                                  const Icon(Icons.access_time),
+                                  const SizedBox(width: 5),
+                                  Text(slotdata[0]['Last-updated'] ?? "00:00:00"),
                                 ],
                               ),
                             )
@@ -106,12 +109,12 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                           ),
                         ),
                      ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Icon(Icons.nfc, color: Colors.amber,),
@@ -119,29 +122,29 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               Text("Slot 2")
                             ],
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.credit_card),
-                              SizedBox(width: 5),
-                              Text("Card Name")
+                              const Icon(Icons.credit_card),
+                              const SizedBox(width: 5),
+                              Text(slotdata[1]['Name'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.wifi),
-                              SizedBox(width: 5),
-                              Text("Card Type")
+                              const Icon(Icons.wifi),
+                              const SizedBox(width: 5),
+                              Text(slotdata[1]['Type'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.insert_drive_file),
-                              SizedBox(width: 5),
-                              Text("Card ID")
+                              const Icon(Icons.insert_drive_file),
+                              const SizedBox(width: 5),
+                              Text(slotdata[1]['ID'] ?? "Unknown")
                             ],
                           ),
                           Expanded(
@@ -150,9 +153,9 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Icon(Icons.access_time),
-                                  SizedBox(width: 5),
-                                  Text("Changed: 00:00:00"),
+                                  const Icon(Icons.access_time),
+                                  const SizedBox(width: 5),
+                                  Text(slotdata[1]['Last-updated'] ?? "00:00:00"),
                                 ],
                               ),
                             )
@@ -173,12 +176,12 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                           ),
                         ),
                      ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Icon(Icons.nfc, color: Colors.blue,),
@@ -186,29 +189,29 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               Text("Slot 3")
                             ],
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.credit_card),
-                              SizedBox(width: 5),
-                              Text("Card Name")
+                              const Icon(Icons.credit_card),
+                              const SizedBox(width: 5),
+                              Text(slotdata[2]['Name'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.wifi),
-                              SizedBox(width: 5),
-                              Text("Card Type")
+                              const Icon(Icons.wifi),
+                              const SizedBox(width: 5),
+                              Text(slotdata[2]['Type'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.insert_drive_file),
-                              SizedBox(width: 5),
-                              Text("Card ID")
+                              const Icon(Icons.insert_drive_file),
+                              const SizedBox(width: 5),
+                              Text(slotdata[2]['ID'] ?? "Unknown")
                             ],
                           ),
                           Expanded(
@@ -217,9 +220,9 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Icon(Icons.access_time),
-                                  SizedBox(width: 5),
-                                  Text("Changed: 00:00:00"),
+                                  const Icon(Icons.access_time),
+                                  const SizedBox(width: 5),
+                                  Text(slotdata[2]['Last-updated'] ?? "00:00:00"),
                                 ],
                               ),
                             )
@@ -240,12 +243,12 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                           ),
                         ),
                      ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Icon(Icons.nfc, color: Colors.green,),
@@ -253,29 +256,29 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               Text("Slot 4")
                             ],
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.credit_card),
-                              SizedBox(width: 5),
-                              Text("Card Name")
+                              const Icon(Icons.credit_card),
+                              const SizedBox(width: 5),
+                              Text(slotdata[3]['Name'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.wifi),
-                              SizedBox(width: 5),
-                              Text("Card Type")
+                              const Icon(Icons.wifi),
+                              const SizedBox(width: 5),
+                              Text(slotdata[3]['Type'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.insert_drive_file),
-                              SizedBox(width: 5),
-                              Text("Card ID")
+                              const Icon(Icons.insert_drive_file),
+                              const SizedBox(width: 5),
+                              Text(slotdata[3]['ID'] ?? "Unknown")
                             ],
                           ),
                           Expanded(
@@ -284,9 +287,9 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Icon(Icons.access_time),
-                                  SizedBox(width: 5),
-                                  Text("Last Changed: 00:00:00"),
+                                  const Icon(Icons.access_time),
+                                  const SizedBox(width: 5),
+                                  Text(slotdata[3]['Last-updated'] ?? "00:00:00"),
                                 ],
                               ),
                             )
@@ -307,12 +310,12 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                           ),
                         ),
                      ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Icon(Icons.nfc, color: Colors.deepPurple,),
@@ -320,29 +323,29 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               Text("Slot 5")
                             ],
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.credit_card),
-                              SizedBox(width: 5),
-                              Text("Card Name")
+                              const Icon(Icons.credit_card),
+                              const SizedBox(width: 5),
+                              Text(slotdata[4]['Name'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.wifi),
-                              SizedBox(width: 5),
-                              Text("Card Type")
+                              const Icon(Icons.wifi),
+                              const SizedBox(width: 5),
+                              Text(slotdata[4]['Type'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.insert_drive_file),
-                              SizedBox(width: 5),
-                              Text("Card ID")
+                              const Icon(Icons.insert_drive_file),
+                              const SizedBox(width: 5),
+                              Text(slotdata[4]['ID'] ?? "Unknown")
                             ],
                           ),
                           Expanded(
@@ -351,9 +354,9 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Icon(Icons.access_time),
-                                  SizedBox(width: 5),
-                                  Text("Changed: 00:00:00"),
+                                  const Icon(Icons.access_time),
+                                  const SizedBox(width: 5),
+                                  Text(slotdata[4]['Last-updated'] ?? "00:00:00"),
                                 ],
                               ),
                             )
@@ -374,12 +377,12 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                           ),
                         ),
                      ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Icon(Icons.nfc, color: Colors.deepOrange,),
@@ -387,29 +390,29 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               Text("Slot 6")
                             ],
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.credit_card),
-                              SizedBox(width: 5),
-                              Text("Card Name")
+                              const Icon(Icons.credit_card),
+                              const SizedBox(width: 5),
+                              Text(slotdata[5]['Name'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.wifi),
-                              SizedBox(width: 5),
-                              Text("Card Type")
+                              const Icon(Icons.wifi),
+                              const SizedBox(width: 5),
+                              Text(slotdata[5]['Type'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.insert_drive_file),
-                              SizedBox(width: 5),
-                              Text("Card ID")
+                              const Icon(Icons.insert_drive_file),
+                              const SizedBox(width: 5),
+                              Text(slotdata[5]['ID'] ?? "Unknown")
                             ],
                           ),
                           Expanded(
@@ -418,9 +421,9 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Icon(Icons.access_time),
-                                  SizedBox(width: 5),
-                                  Text("Changed: 00:00:00"),
+                                  const Icon(Icons.access_time),
+                                  const SizedBox(width: 5),
+                                  Text(slotdata[5]['Last-updated'] ?? "00:00:00"),
                                 ],
                               ),
                             )
@@ -441,12 +444,12 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                           ),
                         ),
                      ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Icon(Icons.nfc, color: Colors.pink,),
@@ -454,29 +457,29 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               Text("Slot 7")
                             ],
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.credit_card),
-                              SizedBox(width: 5),
-                              Text("Card Name")
+                              const Icon(Icons.credit_card),
+                              const SizedBox(width: 5),
+                              Text(slotdata[6]['Name'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.wifi),
-                              SizedBox(width: 5),
-                              Text("Card Type")
+                              const Icon(Icons.wifi),
+                              const SizedBox(width: 5),
+                              Text(slotdata[6]['Type'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.insert_drive_file),
-                              SizedBox(width: 5),
-                              Text("Card ID")
+                              const Icon(Icons.insert_drive_file),
+                              const SizedBox(width: 5),
+                              Text(slotdata[6]['ID'] ?? "Unknown")
                             ],
                           ),
                           Expanded(
@@ -485,9 +488,9 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Icon(Icons.access_time),
-                                  SizedBox(width: 5),
-                                  Text("Changed: 00:00:00"),
+                                  const Icon(Icons.access_time),
+                                  const SizedBox(width: 5),
+                                  Text(slotdata[6]['Last-updated'] ?? "00:00:00"),
                                 ],
                               ),
                             )
@@ -508,12 +511,12 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                           ),
                         ),
                      ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Icon(Icons.nfc, color: Colors.teal,),
@@ -521,29 +524,29 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               Text("Slot 8")
                             ],
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.credit_card),
-                              SizedBox(width: 5),
-                              Text("Card Name")
+                              const Icon(Icons.credit_card),
+                              const SizedBox(width: 5),
+                              Text(slotdata[7]['Name'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.wifi),
-                              SizedBox(width: 5),
-                              Text("Card Type")
+                              const Icon(Icons.wifi),
+                              const SizedBox(width: 5),
+                              Text(slotdata[7]['Type'] ?? "Unknown")
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Icon(Icons.insert_drive_file),
-                              SizedBox(width: 5),
-                              Text("Card ID")
+                              const Icon(Icons.insert_drive_file),
+                              const SizedBox(width: 5),
+                              Text(slotdata[7]['ID'] ?? "Unknown")
                             ],
                           ),
                           Expanded(
@@ -552,9 +555,9 @@ class _SlotManagerPageState extends State<SlotManagerPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Icon(Icons.access_time),
-                                  SizedBox(width: 5),
-                                  Text("Changed: 00:00:00"),
+                                  const Icon(Icons.access_time),
+                                  const SizedBox(width: 5),
+                                  Text(slotdata[7]['Last-updated'] ?? "00:00:00"),
                                 ],
                               ),
                             )
@@ -604,7 +607,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
   List<Widget> buildActions(BuildContext context) {
     return [
       IconButton(
-        icon: Icon(Icons.clear),
+        icon: const Icon(Icons.clear),
         onPressed: () {
           query = '';
         },
@@ -615,7 +618,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back),
+      icon: const Icon(Icons.arrow_back),
       onPressed: () {
         close(context, '');
       },
@@ -636,6 +639,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
             ElevatedButton(
               onPressed: () {
                 // Set card here
+                Navigator.pop(context);
               },
               child: ListTile(
                 leading: Icon(Icons.credit_card, color: card['color']),
