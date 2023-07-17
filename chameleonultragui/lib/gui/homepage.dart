@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../chameleon/connector.dart';
 import '../comms/serial_abstract.dart';
 import '../main.dart';
 
@@ -11,6 +12,7 @@ class HomePage extends StatefulWidget {
 }
 class HomePageState extends State<HomePage> {
   late Future<(Icon, List<Icon>, String, String, String)> dataFuture;
+  var selectedSlot = 0;
 
   @override
   void initState() {
@@ -20,18 +22,19 @@ class HomePageState extends State<HomePage> {
 
   Future<(Icon, List<Icon>, String, String, String)> getFutureData() async {
     var appState = context.read<MyAppState>();
+    var connection = ChameleonCom(port: appState.chameleon);
     return (
-      await getBatteryChargeIcon(appState),
-      await getSlotIcons(appState),
-      await getUsedSlotsOut8(appState),
-      await getFWversion(appState),
-      await getRamusage(appState),
+      await getBatteryChargeIcon(connection),
+      await getSlotIcons(connection, selectedSlot),
+      await getUsedSlotsOut8(connection),
+      await getFWversion(connection),
+      await getRamusage(connection),
     );
   }
 
 
-  Future<Icon> getBatteryChargeIcon(appState) async {
-    int charge = await appState.chameleon.getBatteryCharge();
+  Future<Icon> getBatteryChargeIcon(connection) async {
+    int charge = await connection.getBatteryCharge();
     if (charge > 98) {
       return const Icon(Icons.battery_full);
     } else if (charge > 87) {
@@ -54,11 +57,11 @@ class HomePageState extends State<HomePage> {
     return const Icon(Icons.battery_unknown);
   }
 
-  Future<List<Icon>> getSlotIcons(appState) async {
-    int selectedSlot = await appState.chameleon.getSelectedSlot();
-    List<bool> usedSlots = await appState.chameleon.getUsedSlots();
+  Future<List<Icon>> getSlotIcons(connection, selectedSlot) async {
+    await connection.activateSlot(selectedSlot);
+    List<bool> usedSlots = await connection.getUsedSlots();
     List<Icon> icons = [];
-    for (int i = 0; i < 8; i++) {
+    for (int i = 1; i < 9; i++) {
       if (i == selectedSlot) {
         icons.add(const Icon(Icons.circle_outlined, color: Colors.red,));
       } else if (usedSlots[i]) {
@@ -70,8 +73,8 @@ class HomePageState extends State<HomePage> {
     return icons;
   }
 
-  Future<String> getUsedSlotsOut8(appState) async {
-    List<bool> usedSlots = await appState.chameleon.getUsedSlots();
+  Future<String> getUsedSlotsOut8(connection) async {
+    List<bool> usedSlots = await connection.getUsedSlots();
     int usedSlotsOut8 = 0;
     for (int i = 0; i < 8; i++) {
       if (usedSlots[i]) {
@@ -81,12 +84,12 @@ class HomePageState extends State<HomePage> {
     return usedSlotsOut8.toString();
   }
 
-  Future<String> getFWversion(appState) async {
-    return await appState.chameleon.getFirmwareVersion();
+  Future<String> getFWversion(connection) async {
+    return await connection.getFirmwareVersion();
   }
 
-  Future<String> getRamusage(appState) async {
-    return await appState.chameleon.getMemoryUsage();
+  Future<String> getRamusage(connection) async {
+    return await connection.getMemoryUsage();
   }
 
   @override
@@ -160,7 +163,9 @@ class HomePageState extends State<HomePage> {
                     children: [
                       IconButton(
                         onPressed: () {
-                          appState.chameleon.pressAbutton();
+                          if (selectedSlot > 0) {
+                            selectedSlot--;
+                          }
                           appState.changesMade();
                         },
                         icon: const Icon(Icons.arrow_back),
@@ -168,7 +173,9 @@ class HomePageState extends State<HomePage> {
                       ...slotIcons,
                       IconButton(
                         onPressed: () {
-                          appState.chameleon.pressBbutton();
+                          if (selectedSlot < 7) {
+                            selectedSlot++;
+                          }
                           appState.changesMade();
                         },
                         icon: const Icon(Icons.arrow_forward),
