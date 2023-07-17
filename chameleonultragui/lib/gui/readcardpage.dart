@@ -7,6 +7,7 @@ import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import '../comms/serial_abstract.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -522,7 +523,29 @@ class ReadCardPageState extends State<ReadCardPage> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () async {
-                      await readCardDetails(connection);
+                      if (appState.chameleon.device == ChameleonDevice.ultra) {
+                        await readCardDetails(connection);
+                      } else {
+                        showDialog<String>(
+                          context: context,
+                          builder: (BuildContext context) => AlertDialog(
+                            title: const Text('Unsupported Action'),
+                            content: const Center(
+                              child: Column(
+                                children: [
+                                  Text('The Chameleon Lite does not support reading cards', style: TextStyle(fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, 'OK'),
+                                child: const Text('OK'),
+                              ), 
+                            ],
+                          ),
+                        );
+                      }
                     },
                     child: const Text('Read'),
                   ),
