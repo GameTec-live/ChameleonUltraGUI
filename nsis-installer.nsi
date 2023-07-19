@@ -49,6 +49,7 @@ Section "Chameleon Ultra GUI (required)"
   File "chameleonultragui\build\windows\runner\Release\flutter_windows.dll"
   File "chameleonultragui\build\windows\runner\Release\recovery.dll"
   File "chameleonultragui\build\windows\runner\Release\serialport.dll"
+  File "chameleonultragui\build\windows\runner\Release\file_saver_plugin.dll"
   File "LICENSE"
   File /r "chameleonultragui\build\windows\runner\Release\data"
   
@@ -90,6 +91,7 @@ Section "Uninstall"
   Delete $INSTDIR\flutter_windows.dll
   Delete $INSTDIR\recovery.dll
   Delete $INSTDIR\serialport.dll
+  Delete  $INSTDIR\file_saver_plugin.dll
   RMDir /r $INSTDIR\data
   Delete $INSTDIR\LICENSE
   Delete $INSTDIR\uninstall.exe
