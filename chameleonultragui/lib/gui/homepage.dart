@@ -22,10 +22,11 @@ class HomePageState extends State<HomePage> {
   Future<(Icon, List<Icon>, String, String, String)> getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.chameleon);
+    List<bool> used_slots = await connection.getUsedSlots();
     return (
       await getBatteryChargeIcon(connection),
-      await getSlotIcons(connection, selectedSlot),
-      await getUsedSlotsOut8(connection),
+      await getSlotIcons(connection, selectedSlot, used_slots),
+      await getUsedSlotsOut8(connection, used_slots),
       await getFWversion(connection),
       await getRamusage(connection),
     );
@@ -56,9 +57,8 @@ class HomePageState extends State<HomePage> {
     return const Icon(Icons.battery_unknown);
   }
 
-  Future<List<Icon>> getSlotIcons(ChameleonCom connection, int selectedSlot) async {
+  Future<List<Icon>> getSlotIcons(ChameleonCom connection, int selectedSlot, List<bool> usedSlots) async {
     await connection.activateSlot(selectedSlot);
-    List<bool> usedSlots = await connection.getUsedSlots();
     List<Icon> icons = [];
     for (int i = 1; i < 9; i++) {
       if (i == selectedSlot) {
@@ -72,8 +72,7 @@ class HomePageState extends State<HomePage> {
     return icons;
   }
 
-  Future<String> getUsedSlotsOut8(ChameleonCom connection) async {
-    List<bool> usedSlots = await connection.getUsedSlots();
+  Future<String> getUsedSlotsOut8(ChameleonCom connection, List<bool> usedSlots) async {
     int usedSlotsOut8 = 0;
     for (int i = 0; i < 8; i++) {
       if (usedSlots[i]) {
