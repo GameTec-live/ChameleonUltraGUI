@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../chameleon/connector.dart';
-import '../comms/serial_abstract.dart';
-import '../main.dart';
+import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/main.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
