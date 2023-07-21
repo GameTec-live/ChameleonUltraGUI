@@ -18,7 +18,7 @@ class NativeSerial extends AbstractSerial {
     for (final port in await availableDevices()) {
       if (await connectDevice(port, true)) {
         portName = port;
-        usbConnected = true;
+        connectionType = ChameleonConnectType.usb;
         connected = true;
         return true;
       }
@@ -53,7 +53,7 @@ class NativeSerial extends AbstractSerial {
   Future<bool> connectSpecific(device) async {
     if (await connectDevice(device, true)) {
       portName = device;
-      usbConnected = true;
+      connectionType = ChameleonConnectType.usb;
       connected = true;
       return true;
     }

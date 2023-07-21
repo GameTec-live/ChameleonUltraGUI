@@ -2,13 +2,14 @@ import 'dart:typed_data';
 import 'package:logger/logger.dart';
 
 enum ChameleonDevice { none, ultra, lite }
+enum ChameleonConnectType { none, usb, ble }
 
 class AbstractSerial {
   Logger log = Logger();
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
   String portName = "None";
-  bool usbConnected = false;
+  ChameleonConnectType connectionType = ChameleonConnectType.none;
 
   Future<bool> preformConnection() async {
     return false;

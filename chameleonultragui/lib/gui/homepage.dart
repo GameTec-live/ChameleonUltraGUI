@@ -143,7 +143,7 @@ class HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Text(appState.chameleon.portName,style: const TextStyle(fontSize: 20)),
-                              Icon(appState.chameleon.usbConnected ? Icons.usb : Icons.bluetooth),
+                              Icon(appState.chameleon.connectionType == ChameleonConnectType.usb ? Icons.usb : Icons.bluetooth),
                               batteryIcon,
                             ],
                           ),
