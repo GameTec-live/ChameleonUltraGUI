@@ -530,7 +530,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                           context: context,
                           builder: (BuildContext context) => AlertDialog(
                             title: const Text('Unsupported Action'),
-                            content: const Text('The Chameleon Lite does not support reading cards', style: TextStyle(fontWeight: FontWeight.bold)),
+                            content: const Text('Chameleon Lite does not support reading cards', style: TextStyle(fontWeight: FontWeight.bold)),
                             actions: <Widget>[
                               TextButton(
                                 onPressed: () => Navigator.pop(context, 'OK'),
