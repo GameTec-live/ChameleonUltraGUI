@@ -30,7 +30,7 @@ bool FlutterWindow::OnCreate() {
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
   });
-
+  
   return true;
 }
 
