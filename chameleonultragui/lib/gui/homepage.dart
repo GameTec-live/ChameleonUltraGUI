@@ -223,7 +223,7 @@ class HomePageState extends State<HomePage> {
                                           var appState = context.read<MyAppState>();
                                           var connection = ChameleonCom(port: appState.chameleon);
                                           await connection.enterDFUMode();
-                                          appState.chameleon.performDisconnect();
+                                          // TODO: Make this cleaner, app freezes
                                         },
                                         child: const Row(
                                           children: [
