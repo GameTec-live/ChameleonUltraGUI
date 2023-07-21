@@ -7,7 +7,7 @@ import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
-import '../comms/serial_abstract.dart';
+import 'package:chameleonultragui/comms/serial_abstract.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
