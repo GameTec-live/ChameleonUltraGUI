@@ -7,6 +7,8 @@ class AbstractSerial {
   Logger log = Logger();
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
+  String portName = "None";
+  bool usbConnected = false;
 
   Future<bool> preformConnection() async {
     return false;

@@ -15,6 +15,8 @@ class NativeSerial extends AbstractSerial {
   Future<bool> preformConnection() async {
     for (final port in await availableDevices()) {
       if (await connectDevice(port)) {
+        portName = port;
+        usbConnected = true;
         connected = true;
         return true;
       }
@@ -50,6 +52,8 @@ class NativeSerial extends AbstractSerial {
   @override
   Future<bool> connectSpecific(device) async {
     if (await connectDevice(device)) {
+      portName = device;
+      usbConnected = true;
       connected = true;
       return true;
     }
