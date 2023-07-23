@@ -76,8 +76,7 @@ class MobileSerial extends AbstractSerial {
       port!.inputStream!.listen((Uint8List data) {
         messagePool.add(data);
       });
-      portName = port.toString();
-      portName.substring(portName.length - 10); // Limit length
+      portName = device.substring(device.length - 15); // Limit length
       connectionType = ChameleonConnectType.usb;
       return true;
     }
