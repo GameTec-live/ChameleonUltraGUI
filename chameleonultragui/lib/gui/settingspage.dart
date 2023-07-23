@@ -229,8 +229,8 @@ class SettingsMainPage extends StatelessWidget {
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
                   title: const Text('Developer mode?'),
-                  content: const Text(
-                      'Are you sure you want to activate developer mode?'),
+                  content: Text(
+                      'Are you sure you want to ${appState.sharedPreferencesProvider.getDeveloperMode() ? "deactivate" : "activate"} developer mode?'),
                   actions: <Widget>[
                     TextButton(
                       onPressed: () => Navigator.pop(context, 'Cancel'),
@@ -239,8 +239,16 @@ class SettingsMainPage extends StatelessWidget {
                     TextButton(
                       onPressed: () {
                         appState.devMode = true;
+                        if (appState.sharedPreferencesProvider.getDeveloperMode())
+                        {
+                          appState.sharedPreferencesProvider
+                              .setDeveloperMode(false);
+                        }
+                        else
+                        {
                         appState.sharedPreferencesProvider
                             .setDeveloperMode(true);
+                        }
                         appState.changesMade();
                         Navigator.pop(context, 'OK');
                       },
