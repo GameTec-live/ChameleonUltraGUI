@@ -15,6 +15,10 @@ Key:
 - windows: zip file containing windows build, run the binary manually
 - windows-installer: NSIS based Windows Installer, Installs the Windows build and creates Shortcuts
 
+#### Note for Linux users:
+You might need to add your user to the dialout or, on archlinux, to the uucp group for the app to talk to the device. If your user is not in this group, you may get serial or permission errors.
+It is also highly recommended to either uninstal or disable modemmanager (`sudo systemctl disable --now modemmanager`) as many distros ship modemmanager and it may interfere with communication.
+
 ## Contributing
 Contributions are welcome, most stuff that needs to be done can either be found in our [issues](https://github.com/GameTec-live/ChameleonUltraGUI/issues) or on the [Project board](https://github.com/users/GameTec-live/projects/2)
 

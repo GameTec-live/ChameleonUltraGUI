@@ -28,10 +28,11 @@ class HomePageState extends State<HomePage> {
   Future<(Icon, List<Icon>, String, String, String)> getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.chameleon);
+    List<bool> used_slots = await connection.getUsedSlots();
     return (
       await getBatteryChargeIcon(connection),
-      await getSlotIcons(connection, selectedSlot),
-      await getUsedSlotsOut8(connection),
+      await getSlotIcons(connection, selectedSlot, used_slots),
+      await getUsedSlotsOut8(connection, used_slots),
       await getFWversion(connection),
       await getRamusage(connection),
     );
@@ -62,8 +63,8 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<List<Icon>> getSlotIcons(
-      ChameleonCom connection, int selectedSlot) async {
-    List<bool> usedSlots = await connection.getUsedSlots();
+      ChameleonCom connection, int selectedSlot, List<bool> usedSlots) async {
+    await connection.activateSlot(selectedSlot);
     List<Icon> icons = [];
     for (int i = 1; i < 9; i++) {
       if (i == selectedSlot) {
@@ -80,8 +81,8 @@ class HomePageState extends State<HomePage> {
     return icons;
   }
 
-  Future<String> getUsedSlotsOut8(ChameleonCom connection) async {
-    List<bool> usedSlots = await connection.getUsedSlots();
+  Future<String> getUsedSlotsOut8(
+      ChameleonCom connection, List<bool> usedSlots) async {
     int usedSlotsOut8 = 0;
     for (int i = 0; i < 8; i++) {
       if (usedSlots[i]) {
@@ -154,7 +155,7 @@ class HomePageState extends State<HomePage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Scaffold(
               appBar: AppBar(
-                title: const Text('Home Page'),
+                title: const Text('Home'),
               ),
               body: const Center(child: CircularProgressIndicator()),
             );
@@ -197,7 +198,8 @@ class HomePageState extends State<HomePage> {
                               children: [
                                 Text(appState.chameleon.portName,
                                     style: const TextStyle(fontSize: 20)),
-                                Icon(appState.chameleon.usbConnected
+                                Icon(appState.chameleon.connectionType ==
+                                        ChameleonConnectType.usb
                                     ? Icons.usb
                                     : Icons.bluetooth),
                                 batteryIcon,
@@ -230,6 +232,7 @@ class HomePageState extends State<HomePage> {
                             if (selectedSlot > 1) {
                               selectedSlot--;
                             }
+                            setState(() {});
                             appState.changesMade();
                           },
                           icon: const Icon(Icons.arrow_back),
@@ -240,6 +243,7 @@ class HomePageState extends State<HomePage> {
                             if (selectedSlot < 8) {
                               selectedSlot++;
                             }
+                            setState(() {});
                             appState.changesMade();
                           },
                           icon: const Icon(Icons.arrow_forward),
@@ -299,14 +303,33 @@ class HomePageState extends State<HomePage> {
                                   content: Center(
                                     child: Column(
                                       children: [
-                                        ElevatedButton(
-                                          onPressed: () async {
-                                            await flashFirmware(appState);
-                                          },
-                                          child: const Column(children: [
-                                            Text('Update to latest FW'),
-                                          ]),
-                                        ),
+                                        const Text("Flash Firmware"),
+                                        const Text("Wipe Device"),
+                                        TextButton(
+                                            onPressed: () async {
+                                              var appState =
+                                                  context.read<MyAppState>();
+                                              var connection = ChameleonCom(
+                                                  port: appState.chameleon);
+                                              await connection.enterDFUMode();
+                                              // TODO: Make this cleaner, app freezes
+                                            },
+                                            child: const Row(
+                                              children: [
+                                                Icon(Icons.system_update),
+                                                Text("Enter DFU Mode"),
+                                              ],
+                                            )),
+                                        TextButton(
+                                            onPressed: () async {
+                                              await flashFirmware(appState);
+                                            },
+                                            child: const Row(
+                                              children: [
+                                                Icon(Icons.system_update),
+                                                Text("Flash latest FW via DFU"),
+                                              ],
+                                            ))
                                       ],
                                     ),
                                   ),

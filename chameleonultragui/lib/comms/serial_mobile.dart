@@ -12,6 +12,17 @@ class MobileSerial extends AbstractSerial {
   UsbPort? port;
 
   @override
+  Future<bool> performDisconnect() async {
+    if (port != null) {
+      port?.close();
+      connected = false;
+      return true;
+    }
+    connected = false; // For debug button
+    return false;
+  }
+
+  @override
   Future<List> availableDevices() async {
     List<UsbDevice> availableDevices = await UsbSerial.listDevices();
     List output = [];
@@ -65,7 +76,8 @@ class MobileSerial extends AbstractSerial {
       port!.inputStream!.listen((Uint8List data) {
         messagePool.add(data);
       });
-
+      portName = device.substring(device.length - 15); // Limit length
+      connectionType = ChameleonConnectType.usb;
       return true;
     }
     return false;
