@@ -101,7 +101,7 @@ class HomePageState extends State<HomePage> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Home Page'),
+              title: const Text('Home'),
             ),
             body: const Center(child: CircularProgressIndicator()),
           );
