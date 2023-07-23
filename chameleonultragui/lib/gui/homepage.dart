@@ -132,10 +132,9 @@ class HomePageState extends State<HomePage> {
       }
     }
     await connection.enterDFUMode();
+    await appState.chameleon.performDisconnect();
     await asyncSleep(2000);
-    // TODO: correct search for DFU port
-    appState.chameleon.connectSpecific(
-        (await appState.chameleon.availableChameleons())[0]['port']);
+    appState.chameleon.connectSpecific(appState.chameleon.portName);
     var dfu = ChameleonDFU(port: appState.chameleon);
     await dfu.setPRN();
     await dfu.getMTU();
