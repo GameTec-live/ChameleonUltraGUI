@@ -12,6 +12,17 @@ class MobileSerial extends AbstractSerial {
   UsbPort? port;
 
   @override
+  Future<bool> performDisconnect() async {
+    if (port != null) {
+      port?.close();
+      connected = false;
+      return true;
+    }
+    connected = false; // For debug button
+    return false;
+  }
+
+  @override
   Future<List> availableDevices() async {
     List<UsbDevice> availableDevices = await UsbSerial.listDevices();
     List output = [];
