@@ -30,6 +30,8 @@ class AbstractSerial {
     return [];
   }
 
+  Future<void> open() async {}
+
   Future<bool> write(Uint8List command) async {
     return false;
   }

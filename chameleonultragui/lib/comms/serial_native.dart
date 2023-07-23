@@ -5,6 +5,7 @@ import 'serial_abstract.dart';
 class NativeSerial extends AbstractSerial {
   // Class for PC Serial Communication
   SerialPort? port;
+  SerialPort? checkPort;
 
   @override
   Future<List> availableDevices() async {
@@ -14,7 +15,7 @@ class NativeSerial extends AbstractSerial {
   @override
   Future<bool> preformConnection() async {
     for (final port in await availableDevices()) {
-      if (await connectDevice(port)) {
+      if (await connectDevice(port, true)) {
         portName = port;
         usbConnected = true;
         connected = true;
@@ -39,19 +40,17 @@ class NativeSerial extends AbstractSerial {
   Future<List> availableChameleons() async {
     List chamList = [];
     for (final port in await availableDevices()) {
-      if (await connectDevice(port)) {
+      if (await connectDevice(port, false)) {
         chamList.add({'port': port, 'device': device});
       }
     }
-    device = ChameleonDevice.none;
-    port?.close();
 
     return chamList;
   }
 
   @override
   Future<bool> connectSpecific(device) async {
-    if (await connectDevice(device)) {
+    if (await connectDevice(device, true)) {
       portName = device;
       usbConnected = true;
       connected = true;
@@ -60,12 +59,12 @@ class NativeSerial extends AbstractSerial {
     return false;
   }
 
-  Future<bool> connectDevice(String address) async {
+  Future<bool> connectDevice(String address, bool setPort) async {
     log.d("Connecting to $address");
     try {
-      port = SerialPort(address);
-      port!.openReadWrite();
-      port!.config = SerialPortConfig()
+      checkPort = SerialPort(address);
+      checkPort!.openReadWrite();
+      checkPort!.config = SerialPortConfig()
         ..baudRate = 115200
         ..bits = 8
         ..stopBits = 1
@@ -76,10 +75,10 @@ class NativeSerial extends AbstractSerial {
         ..dtr = SerialPortDtr.flowControl
         ..setFlowControl(SerialPortFlowControl.rtsCts);
       log.d("Connected to $address");
-      log.d("Manufacturer: ${port!.manufacturer}");
-      log.d("Product: ${port!.productName}");
-      if (port!.manufacturer == "Proxgrind") {
-        if (port!.productName!.startsWith('ChameleonUltra')) {
+      log.d("Manufacturer: ${checkPort!.manufacturer}");
+      log.d("Product: ${checkPort!.productName}");
+      if (checkPort!.manufacturer == "Proxgrind") {
+        if (checkPort!.productName!.startsWith('ChameleonUltra')) {
           device = ChameleonDevice.ultra;
         } else {
           device = ChameleonDevice.lite;
@@ -87,7 +86,10 @@ class NativeSerial extends AbstractSerial {
 
         log.d(
             "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
-        port!.close();
+        checkPort!.close();
+        if (setPort) {
+          port = checkPort;
+        }
         return true;
       }
 
@@ -98,8 +100,12 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> write(Uint8List command) async {
+  Future<void> open() async {
     port!.openReadWrite();
+  }
+
+  @override
+  Future<bool> write(Uint8List command) async {
     return port!.write(command) > 1;
   }
 

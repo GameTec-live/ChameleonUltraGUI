@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:io' show Platform;
-import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/connector/chameleon.dart';
 
 Future<void> asyncSleep(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
@@ -43,6 +43,35 @@ Uint8List u64ToBytes(int u64) {
 bool isValidHexString(String hexString) {
   final hexPattern = RegExp(r'^[A-Fa-f0-9]+$');
   return hexPattern.hasMatch(hexString);
+}
+
+int calculateCRC32(List<int> data) {
+  Uint8List bytes = Uint8List.fromList(data);
+  Uint32List crcTable = generateCRCTable();
+  int crc = 0xFFFFFFFF;
+
+  for (int i = 0; i < bytes.length; i++) {
+    crc = (crc >> 8) ^ crcTable[(crc ^ bytes[i]) & 0xFF];
+  }
+
+  crc = crc ^ 0xFFFFFFFF;
+  return crc;
+}
+
+Uint32List generateCRCTable() {
+  Uint32List crcTable = Uint32List(256);
+  for (int i = 0; i < 256; i++) {
+    int crc = i;
+    for (int j = 0; j < 8; j++) {
+      if ((crc & 1) == 1) {
+        crc = (crc >> 1) ^ 0xEDB88320;
+      } else {
+        crc = crc >> 1;
+      }
+    }
+    crcTable[i] = crc;
+  }
+  return crcTable;
 }
 
 String chameleonTagToString(ChameleonTag tag) {

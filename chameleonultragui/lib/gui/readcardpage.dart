@@ -1,13 +1,13 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/connector/chameleon.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
-import '../comms/serial_abstract.dart';
+import 'package:chameleonultragui/comms/serial_abstract.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -530,12 +530,14 @@ class ReadCardPageState extends State<ReadCardPage> {
                           context: context,
                           builder: (BuildContext context) => AlertDialog(
                             title: const Text('Unsupported Action'),
-                            content: const Text('The Chameleon Lite does not support reading cards', style: TextStyle(fontWeight: FontWeight.bold)),
+                            content: const Text(
+                                'The Chameleon Lite does not support reading cards',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
                             actions: <Widget>[
                               TextButton(
                                 onPressed: () => Navigator.pop(context, 'OK'),
                                 child: const Text('OK'),
-                              ), 
+                              ),
                             ],
                           ),
                         );

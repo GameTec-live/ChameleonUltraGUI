@@ -1,4 +1,4 @@
-import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/connector/chameleon.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';

@@ -1,13 +1,17 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:chameleonultragui/connector/dfu.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/connector/chameleon.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import '../main.dart';
+import 'package:http/http.dart' as http;
+import 'package:archive/archive_io.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
@@ -392,6 +396,60 @@ class DevPage extends StatelessWidget {
             },
             child: const Column(children: [
               Text('Mf1 detection test'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await cml.enterDFUMode();
+            },
+            child: const Column(children: [
+              Text('Reboot to DFU'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              List files = [null, null];
+              final releases = json.decode((await http.get(Uri.parse(
+                      "https://api.github.com/repos/Foxushka/ChameleonUltra/releases")))
+                  .body
+                  .toString());
+              Uint8List content = Uint8List(0);
+              for (var file in releases[0]["assets"]) {
+                if (file["name"] == "ultra-dfu-app.zip") {
+                  content = await http
+                      .readBytes(Uri.parse(file["browser_download_url"]));
+                  break;
+                }
+              }
+
+              if (content.isEmpty) {
+                return;
+              }
+
+              final archive = ZipDecoder().decodeBytes(content);
+              for (var file in archive.files) {
+                if (file.isFile) {
+                  if (file.name == "application.dat") {
+                    files[0] = file;
+                  } else if (file.name == "application.bin") {
+                    files[1] = file;
+                  }
+                }
+              }
+              await cml.enterDFUMode();
+              await asyncSleep(2000);
+              appState.chameleon.connectSpecific(
+                  (await appState.chameleon.availableChameleons())[0]['port']);
+              var dfu = ChameleonDFU(port: appState.chameleon);
+              await dfu.setPRN();
+              await dfu.getMTU();
+              await dfu.flashFirmware(0x01, files[0].content);
+              await dfu.flashFirmware(0x02, files[1].content);
+              appState.log.i("Firmware flashed!");
+              appState.chameleon.performDisconnect();
+            },
+            child: const Column(children: [
+              Text('DFU test'),
             ]),
           ),
         ],

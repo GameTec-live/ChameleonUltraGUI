@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/connector/chameleon.dart';
 
 // Mifare Classic keys from Proxmark3
 final gMifareClassicKeysList = {
