@@ -103,6 +103,8 @@ class ConnectPage extends StatelessWidget {
                                         ),
                                         TextButton(
                                           onPressed: () async {
+                                            appState.chameleon.connectSpecific(
+                                                chameleonDevice['port']);
                                             var connection = ChameleonCom(
                                                 port: appState.chameleon);
                                             Uint8List applicationDat,

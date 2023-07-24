@@ -231,15 +231,15 @@ class ChameleonDFU {
     log.d(
         "Serial: Streaming Data: len:${data.length} offset:$offset crc:0x${crc.toRadixString(16).padLeft(8, '0')} mtu:$mtu");
     Map<String, int> response = {'crc': 0, 'offset': 0};
-
-    void validateCrc() {
-      if (crc != response['crc']) {
-        throw ("Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
-      }
-      if (offset != response['offset']!) {
-        throw ("Failed offset validation. Expected: $offset Received: ${response['offset']}.");
-      }
-    }
+    //
+    // void validateCrc() {
+    //   if (crc != response['crc']) {
+    //     throw ("Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
+    //   }
+    //   if (offset != response['offset']!) {
+    //     throw ("Failed offset validation. Expected: $offset Received: ${response['offset']}.");
+    //   }
+    // }
 
     await _serialInstance!.finishRead();
     await _serialInstance!.open();
@@ -257,8 +257,9 @@ class ChameleonDFU {
     response = await calculateChecksum();
     await _serialInstance!.finishRead();
 
-    crc = (calculateCRC32(data).toUnsigned(32) & 0xFFFFFFFF).toInt();
-    //validateCrc();
+    // crc = (calculateCRC32(toTransmit.sublist(1)).toUnsigned(32) & 0xFFFFFFFF)
+    //     .toInt();
+    // validateCrc();
 
     return crc;
   }
