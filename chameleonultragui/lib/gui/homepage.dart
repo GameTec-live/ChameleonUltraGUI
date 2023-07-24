@@ -28,11 +28,11 @@ class HomePageState extends State<HomePage> {
   Future<(Icon, List<Icon>, String, String, String)> getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.chameleon);
-    List<bool> used_slots = await connection.getUsedSlots();
+    List<bool> usedSlots = await connection.getUsedSlots();
     return (
       await getBatteryChargeIcon(connection),
-      await getSlotIcons(connection, selectedSlot, used_slots),
-      await getUsedSlotsOut8(connection, used_slots),
+      await getSlotIcons(connection, selectedSlot, usedSlots),
+      await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
       await getRamusage(connection),
     );
@@ -105,7 +105,7 @@ class HomePageState extends State<HomePage> {
     var connection = ChameleonCom(port: appState.chameleon);
     List files = [null, null];
     final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/Foxushka/ChameleonUltra/releases")))
+            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
         .body
         .toString());
     Uint8List content = Uint8List(0);
@@ -134,7 +134,8 @@ class HomePageState extends State<HomePage> {
     await connection.enterDFUMode();
     await appState.chameleon.performDisconnect();
     await asyncSleep(2000);
-    appState.chameleon.connectSpecific(appState.chameleon.portName);
+    appState.chameleon.connectSpecific(
+        (await appState.chameleon.availableChameleons(true))[0]['port']);
     var dfu = ChameleonDFU(port: appState.chameleon);
     await dfu.setPRN();
     await dfu.getMTU();
@@ -311,7 +312,8 @@ class HomePageState extends State<HomePage> {
                                               var connection = ChameleonCom(
                                                   port: appState.chameleon);
                                               await connection.enterDFUMode();
-                                              // TODO: Make this cleaner, app freezes
+                                              appState.chameleon
+                                                  .performDisconnect();
                                             },
                                             child: const Row(
                                               children: [

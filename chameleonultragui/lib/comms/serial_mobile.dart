@@ -37,7 +37,7 @@ class MobileSerial extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons() async {
+  Future<List> availableChameleons(bool onlyDFU) async {
     List output = [];
     for (var deviceName in await availableDevices()) {
       if (deviceMap[deviceName]!.manufacturerName == "Proxgrind") {
@@ -49,8 +49,19 @@ class MobileSerial extends AbstractSerial {
 
         log.d(
             "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
+
+        if (deviceMap[deviceName]!.vid == 0x1915) {
+          connectionType = ChameleonConnectType.dfu;
+          log.w("Chameleon is in DFU mode!");
+        }
       }
-      output.add({'port': deviceName, 'device': device});
+      if (onlyDFU) {
+        if (connectionType == ChameleonConnectType.dfu) {
+          output.add({'port': port, 'device': device, 'type': connectionType});
+        }
+      } else {
+        output.add({'port': port, 'device': device, 'type': connectionType});
+      }
     }
 
     return output;

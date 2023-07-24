@@ -362,6 +362,7 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await cml.enterDFUMode();
+              appState.chameleon.performDisconnect();
             },
             child: const Column(children: [
               Text('Reboot to DFU'),
@@ -371,7 +372,7 @@ class DevPage extends StatelessWidget {
             onPressed: () async {
               List files = [null, null];
               final releases = json.decode((await http.get(Uri.parse(
-                      "https://api.github.com/repos/Foxushka/ChameleonUltra/releases")))
+                      "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
                   .body
                   .toString());
               Uint8List content = Uint8List(0);
@@ -399,8 +400,8 @@ class DevPage extends StatelessWidget {
               }
               await cml.enterDFUMode();
               await asyncSleep(2000);
-              appState.chameleon.connectSpecific(
-                  (await appState.chameleon.availableChameleons())[0]['port']);
+              appState.chameleon.connectSpecific((await appState.chameleon
+                  .availableChameleons(true))[0]['port']);
               var dfu = ChameleonDFU(port: appState.chameleon);
               await dfu.setPRN();
               await dfu.getMTU();

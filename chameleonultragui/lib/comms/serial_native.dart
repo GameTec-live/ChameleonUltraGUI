@@ -1,4 +1,3 @@
-import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
 import 'serial_abstract.dart';
@@ -18,7 +17,6 @@ class NativeSerial extends AbstractSerial {
     for (final port in await availableDevices()) {
       if (await connectDevice(port, true)) {
         portName = port;
-        connectionType = ChameleonConnectType.usb;
         connected = true;
         return true;
       }
@@ -38,22 +36,28 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons() async {
-    List chamList = [];
+  Future<List> availableChameleons(bool onlyDFU) async {
+    List output = [];
     for (final port in await availableDevices()) {
       if (await connectDevice(port, false)) {
-        chamList.add({'port': port, 'device': device});
+        if (onlyDFU) {
+          if (connectionType == ChameleonConnectType.dfu) {
+            output
+                .add({'port': port, 'device': device, 'type': connectionType});
+          }
+        } else {
+          output.add({'port': port, 'device': device, 'type': connectionType});
+        }
       }
     }
 
-    return chamList;
+    return output;
   }
 
   @override
   Future<bool> connectSpecific(device) async {
     if (await connectDevice(device, true)) {
       portName = device;
-      connectionType = ChameleonConnectType.usb;
       connected = true;
       return true;
     }
@@ -87,10 +91,20 @@ class NativeSerial extends AbstractSerial {
 
         log.d(
             "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
+
+        connectionType = ChameleonConnectType.usb;
+
+        if (checkPort!.vendorId == 0x1915) {
+          connectionType = ChameleonConnectType.dfu;
+          log.w("Chameleon is in DFU mode!");
+        }
+
         checkPort!.close();
+
         if (setPort) {
           port = checkPort;
         }
+
         return true;
       }
 
@@ -121,5 +135,3 @@ class NativeSerial extends AbstractSerial {
     port!.close();
   }
 }
-
-// https://pub.dev/packages/flutter_libserialport/example <- PC Serial Library

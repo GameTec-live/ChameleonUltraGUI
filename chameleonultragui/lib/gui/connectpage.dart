@@ -1,7 +1,7 @@
+import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../comms/serial_abstract.dart';
-import '../main.dart';
 
 class ConnectPage extends StatelessWidget {
   const ConnectPage({super.key});
@@ -11,7 +11,7 @@ class ConnectPage extends StatelessWidget {
     var appState = context.watch<MyAppState>(); // Get State
 
     return FutureBuilder(
-      future: appState.chameleon.availableChameleons(),
+      future: appState.chameleon.availableChameleons(false),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -103,6 +103,9 @@ class ConnectPage extends StatelessWidget {
                                       children: [
                                         const Icon(Icons.usb),
                                         Text(chameleonDevice['port']),
+                                        if (chameleonDevice['type'] ==
+                                            ChameleonConnectType.dfu)
+                                          const Text(" (DFU)"),
                                       ],
                                     ),
                                   ),
