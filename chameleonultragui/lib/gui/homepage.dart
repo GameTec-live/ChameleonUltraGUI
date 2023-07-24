@@ -296,6 +296,7 @@ class HomePageState extends State<HomePage> {
                                               appState.chameleon
                                                   .performDisconnect();
                                               Navigator.pop(context, 'Cancel');
+                                              appState.changesMade();
                                             },
                                             child: const Row(
                                               children: [
