@@ -26,6 +26,8 @@ class MobileSerial extends AbstractSerial {
 
   @override
   Future<List> availableDevices() async {
+    device = ChameleonDevice.none;
+    connectionType = ChameleonConnectType.none;
     List<UsbDevice> availableDevices = await UsbSerial.listDevices();
     List output = [];
     deviceMap = {};
@@ -59,10 +61,12 @@ class MobileSerial extends AbstractSerial {
       }
       if (onlyDFU) {
         if (connectionType == ChameleonConnectType.dfu) {
-          output.add({'port': port, 'device': device, 'type': connectionType});
+          output.add(
+              {'port': deviceName, 'device': device, 'type': connectionType});
         }
       } else {
-        output.add({'port': port, 'device': device, 'type': connectionType});
+        output.add(
+            {'port': deviceName, 'device': device, 'type': connectionType});
       }
     }
 
@@ -91,6 +95,10 @@ class MobileSerial extends AbstractSerial {
       });
       portName = device.substring(device.length - 15); // Limit length
       connectionType = ChameleonConnectType.usb;
+      if (deviceMap[device]!.vid == 0x1915) {
+        connectionType = ChameleonConnectType.dfu;
+        log.w("Chameleon is in DFU mode!");
+      }
       return true;
     }
     return false;

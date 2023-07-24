@@ -58,7 +58,7 @@ Future<void> flashFile(
     await appState.chameleon.performDisconnect();
     await asyncSleep(2000);
   }
-  appState.chameleon.connectSpecific(
+  await appState.chameleon.connectSpecific(
       (await appState.chameleon.availableChameleons(true))[0]['port']);
   var dfu = ChameleonDFU(port: appState.chameleon);
   await dfu.setPRN();

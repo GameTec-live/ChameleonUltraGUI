@@ -83,7 +83,7 @@ class ConnectPage extends StatelessWidget {
                           ),
                           ...result.map<Widget>((chameleonDevice) {
                             return ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
                                 if (chameleonDevice['type'] ==
                                     ChameleonConnectType.dfu) {
                                   showDialog<String>(
@@ -132,7 +132,7 @@ class ConnectPage extends StatelessWidget {
                                     ),
                                   );
                                 } else {
-                                  appState.chameleon
+                                  await appState.chameleon
                                       .connectSpecific(chameleonDevice['port']);
                                   appState.changesMade();
                                 }
@@ -153,7 +153,8 @@ class ConnectPage extends StatelessWidget {
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         const Icon(Icons.usb),
-                                        Text(chameleonDevice['port']),
+                                        Text(chameleonDevice['port'] ??
+                                            "MISSING"),
                                         if (chameleonDevice['type'] ==
                                             ChameleonConnectType.dfu)
                                           const Text(" (DFU)"),
