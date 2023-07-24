@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/gui/flashing.dart';
 import 'package:chameleonultragui/gui/mfkey32page.dart';
 import 'package:chameleonultragui/gui/readcardpage.dart';
 import 'package:flutter/material.dart';
@@ -82,6 +83,7 @@ class MyAppState extends ChangeNotifier {
       : NativeSerial(); // Chameleon Object, connected Chameleon
   bool switchOn = true;
   bool devMode = false;
+  double? progress;
   /*void toggleswitch() {
     setState(() {
       switchOn = !switchOn;
@@ -92,6 +94,11 @@ class MyAppState extends ChangeNotifier {
   // maybe via this: https://www.woolha.com/tutorials/flutter-switch-input-widget-example or this https://dev.to/naidanut/adding-expandable-side-bar-using-navigationrail-in-flutter-5ai8
   Logger log = Logger(); // Logger, App wide logger
   void changesMade() {
+    notifyListeners();
+  }
+
+  void setProgressBar(dynamic value) {
+    progress = value;
     notifyListeners();
   }
 }
@@ -123,20 +130,29 @@ class _MyHomePageState extends State<MyHomePage> {
     appState.devMode = appState.sharedPreferencesProvider.getDeveloperMode();
 
     Widget page; // Set Page
-    if (appState.chameleon.connected == false && selectedIndex != 0 && selectedIndex != 5 && selectedIndex != 6) { // If not connected, and not on home, settings or dev page, go to home page
+    if (appState.chameleon.connected == false &&
+        selectedIndex != 0 &&
+        selectedIndex != 5 &&
+        selectedIndex != 6) {
+      // If not connected, and not on home, settings or dev page, go to home page
       selectedIndex = 0;
     }
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
         if (appState.chameleon.connected == true) {
-          page = const HomePage();
+          if (appState.chameleon.connectionType == ChameleonConnectType.dfu) {
+            page = const FlashingPage();
+            selectedIndex = 0;
+          } else {
+            page = const HomePage();
+          }
         } else {
           page = const ConnectPage();
         }
         break;
       case 1:
-        page =  const SlotManagerPage();
+        page = const SlotManagerPage();
         break;
       case 2:
         page = const SavedCardsPage();
@@ -159,64 +175,106 @@ class _MyHomePageState extends State<MyHomePage> {
     return LayoutBuilder(// Build Page
         builder: (context, constraints) {
       return Scaffold(
-        body: Row(
-          children: [
-            SafeArea(
-              child: NavigationRail(
-                // Sidebar
-                extended:
-                    appState.sharedPreferencesProvider.getSideBarExpanded(),
-                destinations: [
-                  // Sidebar Items
-                  const NavigationRailDestination(
-                    icon: Icon(Icons.home),
-                    label: Text('Home'),
-                  ),
-                  NavigationRailDestination(
-                    icon:  Icon(Icons.widgets, color: appState.chameleon.connected == false ? Colors.grey : null),
-                    label: Text('Slot Manager', style: appState.chameleon.connected == false ? const TextStyle(color: Colors.grey) : null),
-                  ),
-                  NavigationRailDestination(
-                    icon:  Icon(Icons.auto_awesome_motion_outlined, color: appState.chameleon.connected == false ? Colors.grey : null),
-                    label: Text('Saved Cards', style: appState.chameleon.connected == false ? const TextStyle(color: Colors.grey) : null),
-                  ),
-                  NavigationRailDestination(
-                    icon:  Icon(Icons.wifi, color: appState.chameleon.connected == false ? Colors.grey : null),
-                    label: Text('Read Card', style: appState.chameleon.connected == false ? const TextStyle(color: Colors.grey) : null),
-                  ),
-                  NavigationRailDestination(
-                    icon:  Icon(Icons.credit_card, color: appState.chameleon.connected == false ? Colors.grey : null),
-                    label: Text('Mfkey32', style: appState.chameleon.connected == false ? const TextStyle(color: Colors.grey) : null),
-                  ),
-                  const NavigationRailDestination(
-                    icon:  Icon(Icons.settings),
-                    label: Text('Settings'),
-                  ),
-                  if (appState.devMode)
-                    const NavigationRailDestination(
-                      icon: Icon(Icons.developer_mode),
-                      label: Text('🐞 Debug 🐞'),
-                    ),
-                ],
-                selectedIndex: selectedIndex,
-                onDestinationSelected: (value) {
-                  setState(() {
-                    selectedIndex = value;
-                  });
-                },
+          body: Row(
+            children: [
+              (appState.chameleon.connectionType != ChameleonConnectType.dfu ||
+                      !appState.chameleon.connected)
+                  ? SafeArea(
+                      child: NavigationRail(
+                        // Sidebar
+                        extended: appState.sharedPreferencesProvider
+                            .getSideBarExpanded(),
+                        destinations: [
+                          // Sidebar Items
+                          const NavigationRailDestination(
+                            icon: Icon(Icons.home),
+                            label: Text('Home'),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.widgets,
+                                color: appState.chameleon.connected == false
+                                    ? Colors.grey
+                                    : null),
+                            label: Text('Slot Manager',
+                                style: appState.chameleon.connected == false
+                                    ? const TextStyle(color: Colors.grey)
+                                    : null),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.auto_awesome_motion_outlined,
+                                color: appState.chameleon.connected == false
+                                    ? Colors.grey
+                                    : null),
+                            label: Text('Saved Cards',
+                                style: appState.chameleon.connected == false
+                                    ? const TextStyle(color: Colors.grey)
+                                    : null),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.wifi,
+                                color: appState.chameleon.connected == false
+                                    ? Colors.grey
+                                    : null),
+                            label: Text('Read Card',
+                                style: appState.chameleon.connected == false
+                                    ? const TextStyle(color: Colors.grey)
+                                    : null),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.credit_card,
+                                color: appState.chameleon.connected == false
+                                    ? Colors.grey
+                                    : null),
+                            label: Text('Mfkey32',
+                                style: appState.chameleon.connected == false
+                                    ? const TextStyle(color: Colors.grey)
+                                    : null),
+                          ),
+                          const NavigationRailDestination(
+                            icon: Icon(Icons.settings),
+                            label: Text('Settings'),
+                          ),
+                          if (appState.devMode)
+                            const NavigationRailDestination(
+                              icon: Icon(Icons.developer_mode),
+                              label: Text('🐞 Debug 🐞'),
+                            ),
+                        ],
+                        selectedIndex: selectedIndex,
+                        onDestinationSelected: (value) {
+                          setState(() {
+                            selectedIndex = value;
+                          });
+                        },
+                      ),
+                    )
+                  : const SizedBox(),
+              Expanded(
+                child: Container(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  child: page,
+                ),
               ),
-            ),
-            Expanded(
-              child: Container(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: page,
-              ),
-            ),
-          ],
-        ),
-      );
+            ],
+          ),
+          bottomNavigationBar: const BottomProgressBar());
     });
   }
 }
 
-// Moved reference: https://pastebin.com/raw/cjt3EyiF
+class BottomProgressBar extends StatelessWidget {
+  const BottomProgressBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    return (appState.chameleon.connected == true &&
+            appState.chameleon.connectionType == ChameleonConnectType.dfu)
+        ? LinearProgressIndicator(
+            value: appState.progress,
+            backgroundColor: Colors.grey[300],
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+          )
+        : const SizedBox();
+  }
+}

@@ -222,7 +222,9 @@ class ChameleonDFU {
           crc: crc,
           offset: offset);
       await execute();
+
       callback(((offset / firmwareBytes.length) * 100).round());
+      await asyncSleep(3);
     }
   }
 
