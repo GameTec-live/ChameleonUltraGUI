@@ -13,6 +13,8 @@ class MobileSerial extends AbstractSerial {
 
   @override
   Future<bool> performDisconnect() async {
+    device = ChameleonDevice.none;
+    connectionType = ChameleonConnectType.none;
     if (port != null) {
       port?.close();
       connected = false;

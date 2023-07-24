@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:chameleonultragui/comms/serial_abstract.dart';
-import 'package:chameleonultragui/connector/chameleon.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
@@ -103,10 +102,8 @@ class ConnectPage extends StatelessWidget {
                                         ),
                                         TextButton(
                                           onPressed: () async {
-                                            appState.chameleon.connectSpecific(
-                                                chameleonDevice['port']);
-                                            var connection = ChameleonCom(
-                                                port: appState.chameleon);
+                                            Navigator.pop(context, 'Flash');
+                                            appState.changesMade();
                                             Uint8List applicationDat,
                                                 applicationBin;
 
@@ -118,15 +115,16 @@ class ConnectPage extends StatelessWidget {
                                                 await unpackFirmware(content);
 
                                             flashFile(
-                                                connection,
+                                                null,
                                                 appState,
                                                 applicationDat,
                                                 applicationBin,
-                                                (progress) => appState.log
-                                                    .d("Flashing: $progress%"));
+                                                (progress) =>
+                                                    appState.setProgressBar(
+                                                        progress / 100),
+                                                enterDFU: false);
 
                                             appState.changesMade();
-                                            Navigator.pop(context, 'Flash');
                                           },
                                           child: const Text('Flash'),
                                         ),

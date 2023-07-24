@@ -108,7 +108,7 @@ class HomePageState extends State<HomePage> {
     (applicationDat, applicationBin) = await unpackFirmware(content);
 
     flashFile(connection, appState, applicationDat, applicationBin,
-        (progress) => appState.log.d("Flashing: $progress%"));
+        (progress) => appState.setProgressBar(progress / 100));
   }
 
   Future<void> flashFirmwareZip(MyAppState appState) async {
@@ -124,7 +124,7 @@ class HomePageState extends State<HomePage> {
           await unpackFirmware(await file.readAsBytes());
 
       flashFile(connection, appState, applicationDat, applicationBin,
-          (progress) => appState.log.d("Flashing: $progress%"));
+          (progress) => appState.setProgressBar(progress / 100));
     }
   }
 
@@ -295,6 +295,7 @@ class HomePageState extends State<HomePage> {
                                               await connection.enterDFUMode();
                                               appState.chameleon
                                                   .performDisconnect();
+                                              Navigator.pop(context, 'Cancel');
                                             },
                                             child: const Row(
                                               children: [
@@ -304,6 +305,7 @@ class HomePageState extends State<HomePage> {
                                             )),
                                         TextButton(
                                             onPressed: () async {
+                                              Navigator.pop(context, 'Cancel');
                                               await flashFirmware(appState);
                                             },
                                             child: const Row(
@@ -314,6 +316,7 @@ class HomePageState extends State<HomePage> {
                                             )),
                                         TextButton(
                                             onPressed: () async {
+                                              Navigator.pop(context, 'Cancel');
                                               await flashFirmwareZip(appState);
                                             },
                                             child: const Row(
