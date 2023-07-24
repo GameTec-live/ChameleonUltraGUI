@@ -46,8 +46,12 @@ Future<(Uint8List, Uint8List)> unpackFirmware(Uint8List content) async {
   return (applicationDat, applicationBin);
 }
 
-Future<void> flashFile(ChameleonCom connection, MyAppState appState,
-    Uint8List applicationDat, Uint8List applicationBin) async {
+Future<void> flashFile(
+    ChameleonCom connection,
+    MyAppState appState,
+    Uint8List applicationDat,
+    Uint8List applicationBin,
+    void Function(int progress) callback) async {
   await connection.enterDFUMode();
   await appState.chameleon.performDisconnect();
   await asyncSleep(2000);
@@ -56,8 +60,8 @@ Future<void> flashFile(ChameleonCom connection, MyAppState appState,
   var dfu = ChameleonDFU(port: appState.chameleon);
   await dfu.setPRN();
   await dfu.getMTU();
-  await dfu.flashFirmware(0x01, applicationDat);
-  await dfu.flashFirmware(0x02, applicationBin);
+  await dfu.flashFirmware(0x01, applicationDat, callback);
+  await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");
   appState.chameleon.performDisconnect();
 }

@@ -205,7 +205,8 @@ class ChameleonDFU {
     return {'offset': offset, 'crc': crc};
   }
 
-  Future<void> flashFirmware(int objectType, Uint8List firmwareBytes) async {
+  Future<void> flashFirmware(int objectType, Uint8List firmwareBytes,
+      void Function(int progress) callback) async {
     var object = await selectObject(objectType);
     if (object['maxSize'] < firmwareBytes.length) {
       throw ("Firmware can't fit here!");
@@ -221,6 +222,7 @@ class ChameleonDFU {
           crc: crc,
           offset: offset);
       await execute();
+      callback(((offset / firmwareBytes.length) * 100).round());
     }
   }
 

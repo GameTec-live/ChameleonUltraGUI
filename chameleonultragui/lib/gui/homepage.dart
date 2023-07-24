@@ -107,7 +107,8 @@ class HomePageState extends State<HomePage> {
 
     (applicationDat, applicationBin) = await unpackFirmware(content);
 
-    flashFile(connection, appState, applicationDat, applicationBin);
+    flashFile(connection, appState, applicationDat, applicationBin,
+        (progress) => appState.log.d("Flashing: $progress%"));
   }
 
   Future<void> flashFirmwareZip(MyAppState appState) async {
@@ -122,7 +123,8 @@ class HomePageState extends State<HomePage> {
       (applicationDat, applicationBin) =
           await unpackFirmware(await file.readAsBytes());
 
-      flashFile(connection, appState, applicationDat, applicationBin);
+      flashFile(connection, appState, applicationDat, applicationBin,
+          (progress) => appState.log.d("Flashing: $progress%"));
     }
   }
 

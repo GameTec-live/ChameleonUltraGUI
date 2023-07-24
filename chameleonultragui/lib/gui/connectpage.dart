@@ -115,8 +115,13 @@ class ConnectPage extends StatelessWidget {
                                             (applicationDat, applicationBin) =
                                                 await unpackFirmware(content);
 
-                                            flashFile(connection, appState,
-                                                applicationDat, applicationBin);
+                                            flashFile(
+                                                connection,
+                                                appState,
+                                                applicationDat,
+                                                applicationBin,
+                                                (progress) => appState.log
+                                                    .d("Flashing: $progress%"));
 
                                             appState.changesMade();
                                             Navigator.pop(context, 'Flash');
