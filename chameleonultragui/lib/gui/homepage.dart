@@ -1,9 +1,5 @@
-import 'dart:convert';
 import 'dart:typed_data';
-import 'package:http/http.dart' as http;
-import 'package:archive/archive.dart';
-import 'package:chameleonultragui/connector/dfu.dart';
-import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/connector/chameleon.dart';
@@ -103,46 +99,13 @@ class HomePageState extends State<HomePage> {
 
   Future<void> flashFirmware(MyAppState appState) async {
     var connection = ChameleonCom(port: appState.chameleon);
-    List files = [null, null];
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
-        .body
-        .toString());
-    Uint8List content = Uint8List(0);
-    for (var file in releases[0]["assets"]) {
-      if (file["name"] ==
-          "${(appState.chameleon.device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
-        content = await http.readBytes(Uri.parse(file["browser_download_url"]));
-        break;
-      }
-    }
+    Uint8List applicationDat, applicationBin;
 
-    if (content.isEmpty) {
-      return;
-    }
+    Uint8List content = await fetchFirmware(appState.chameleon.device);
 
-    final archive = ZipDecoder().decodeBytes(content);
-    for (var file in archive.files) {
-      if (file.isFile) {
-        if (file.name == "application.dat") {
-          files[0] = file;
-        } else if (file.name == "application.bin") {
-          files[1] = file;
-        }
-      }
-    }
-    await connection.enterDFUMode();
-    await appState.chameleon.performDisconnect();
-    await asyncSleep(2000);
-    appState.chameleon.connectSpecific(
-        (await appState.chameleon.availableChameleons(true))[0]['port']);
-    var dfu = ChameleonDFU(port: appState.chameleon);
-    await dfu.setPRN();
-    await dfu.getMTU();
-    await dfu.flashFirmware(0x01, files[0].content);
-    await dfu.flashFirmware(0x02, files[1].content);
-    appState.log.i("Firmware flashed!");
-    appState.chameleon.performDisconnect();
+    (applicationDat, applicationBin) = await unpackFirmware(content);
+
+    flashFile(connection, appState, applicationDat, applicationBin);
   }
 
   @override

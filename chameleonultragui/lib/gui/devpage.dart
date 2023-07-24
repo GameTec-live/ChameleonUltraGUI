@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:chameleonultragui/connector/dfu.dart';
+import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/chameleon.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
@@ -10,8 +10,6 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:http/http.dart' as http;
-import 'package:archive/archive_io.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
@@ -370,45 +368,14 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              List files = [null, null];
-              final releases = json.decode((await http.get(Uri.parse(
-                      "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
-                  .body
-                  .toString());
-              Uint8List content = Uint8List(0);
-              for (var file in releases[0]["assets"]) {
-                if (file["name"] == "ultra-dfu-app.zip") {
-                  content = await http
-                      .readBytes(Uri.parse(file["browser_download_url"]));
-                  break;
-                }
-              }
+              var connection = ChameleonCom(port: appState.chameleon);
+              Uint8List applicationDat, applicationBin;
 
-              if (content.isEmpty) {
-                return;
-              }
+              Uint8List content = await fetchFirmware(ChameleonDevice.ultra);
 
-              final archive = ZipDecoder().decodeBytes(content);
-              for (var file in archive.files) {
-                if (file.isFile) {
-                  if (file.name == "application.dat") {
-                    files[0] = file;
-                  } else if (file.name == "application.bin") {
-                    files[1] = file;
-                  }
-                }
-              }
-              await cml.enterDFUMode();
-              await asyncSleep(2000);
-              appState.chameleon.connectSpecific((await appState.chameleon
-                  .availableChameleons(true))[0]['port']);
-              var dfu = ChameleonDFU(port: appState.chameleon);
-              await dfu.setPRN();
-              await dfu.getMTU();
-              await dfu.flashFirmware(0x01, files[0].content);
-              await dfu.flashFirmware(0x02, files[1].content);
-              appState.log.i("Firmware flashed!");
-              appState.chameleon.performDisconnect();
+              (applicationDat, applicationBin) = await unpackFirmware(content);
+
+              flashFile(connection, appState, applicationDat, applicationBin);
             },
             child: const Column(children: [
               Text('DFU flash ultra FW'),
