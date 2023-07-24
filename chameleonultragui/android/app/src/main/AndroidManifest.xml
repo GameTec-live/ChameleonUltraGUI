@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.chameleonultragui">
+    <uses-permission android:name="android.permission.INTERNET"/>
    <application
         android:label="CU GUI"
         android:name="${applicationName}"
