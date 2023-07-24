@@ -1,9 +1,7 @@
-import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
-import 'package:http/http.dart' as http;
-import 'package:archive/archive.dart';
-import 'package:chameleonultragui/connector/dfu.dart';
-import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/connector/chameleon.dart';
@@ -28,11 +26,11 @@ class HomePageState extends State<HomePage> {
   Future<(Icon, List<Icon>, String, String, String)> getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.chameleon);
-    List<bool> used_slots = await connection.getUsedSlots();
+    List<bool> usedSlots = await connection.getUsedSlots();
     return (
       await getBatteryChargeIcon(connection),
-      await getSlotIcons(connection, selectedSlot, used_slots),
-      await getUsedSlotsOut8(connection, used_slots),
+      await getSlotIcons(connection, selectedSlot, usedSlots),
+      await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
       await getRamusage(connection),
     );
@@ -103,45 +101,31 @@ class HomePageState extends State<HomePage> {
 
   Future<void> flashFirmware(MyAppState appState) async {
     var connection = ChameleonCom(port: appState.chameleon);
-    List files = [null, null];
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/Foxushka/ChameleonUltra/releases")))
-        .body
-        .toString());
-    Uint8List content = Uint8List(0);
-    for (var file in releases[0]["assets"]) {
-      if (file["name"] ==
-          "${(appState.chameleon.device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
-        content = await http.readBytes(Uri.parse(file["browser_download_url"]));
-        break;
-      }
-    }
+    Uint8List applicationDat, applicationBin;
 
-    if (content.isEmpty) {
-      return;
-    }
+    Uint8List content = await fetchFirmware(appState.chameleon.device);
 
-    final archive = ZipDecoder().decodeBytes(content);
-    for (var file in archive.files) {
-      if (file.isFile) {
-        if (file.name == "application.dat") {
-          files[0] = file;
-        } else if (file.name == "application.bin") {
-          files[1] = file;
-        }
-      }
+    (applicationDat, applicationBin) = await unpackFirmware(content);
+
+    flashFile(connection, appState, applicationDat, applicationBin,
+        (progress) => appState.log.d("Flashing: $progress%"));
+  }
+
+  Future<void> flashFirmwareZip(MyAppState appState) async {
+    var connection = ChameleonCom(port: appState.chameleon);
+    Uint8List applicationDat, applicationBin;
+
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      File file = File(result.files.single.path!);
+
+      (applicationDat, applicationBin) =
+          await unpackFirmware(await file.readAsBytes());
+
+      flashFile(connection, appState, applicationDat, applicationBin,
+          (progress) => appState.log.d("Flashing: $progress%"));
     }
-    await connection.enterDFUMode();
-    await appState.chameleon.performDisconnect();
-    await asyncSleep(2000);
-    appState.chameleon.connectSpecific(appState.chameleon.portName);
-    var dfu = ChameleonDFU(port: appState.chameleon);
-    await dfu.setPRN();
-    await dfu.getMTU();
-    await dfu.flashFirmware(0x01, files[0].content);
-    await dfu.flashFirmware(0x02, files[1].content);
-    appState.log.i("Firmware flashed!");
-    appState.chameleon.performDisconnect();
   }
 
   @override
@@ -302,8 +286,6 @@ class HomePageState extends State<HomePage> {
                                   content: Center(
                                     child: Column(
                                       children: [
-                                        const Text("Flash Firmware"),
-                                        const Text("Wipe Device"),
                                         TextButton(
                                             onPressed: () async {
                                               var appState =
@@ -311,7 +293,8 @@ class HomePageState extends State<HomePage> {
                                               var connection = ChameleonCom(
                                                   port: appState.chameleon);
                                               await connection.enterDFUMode();
-                                              // TODO: Make this cleaner, app freezes
+                                              appState.chameleon
+                                                  .performDisconnect();
                                             },
                                             child: const Row(
                                               children: [
@@ -327,6 +310,16 @@ class HomePageState extends State<HomePage> {
                                               children: [
                                                 Icon(Icons.system_update),
                                                 Text("Flash latest FW via DFU"),
+                                              ],
+                                            )),
+                                        TextButton(
+                                            onPressed: () async {
+                                              await flashFirmwareZip(appState);
+                                            },
+                                            child: const Row(
+                                              children: [
+                                                Icon(Icons.system_update),
+                                                Text("Flash .zip FW via DFU"),
                                               ],
                                             ))
                                       ],

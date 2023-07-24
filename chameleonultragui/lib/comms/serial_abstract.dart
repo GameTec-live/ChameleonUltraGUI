@@ -3,7 +3,7 @@ import 'package:logger/logger.dart';
 
 enum ChameleonDevice { none, ultra, lite }
 
-enum ChameleonConnectType { none, usb, ble }
+enum ChameleonConnectType { none, usb, ble, dfu }
 
 class AbstractSerial {
   Logger log = Logger();
@@ -28,7 +28,7 @@ class AbstractSerial {
     return false;
   }
 
-  Future<List> availableChameleons() async {
+  Future<List> availableChameleons(bool onlyDFU) async {
     return [];
   }
 
