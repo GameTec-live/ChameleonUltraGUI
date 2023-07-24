@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:chameleonultragui/chameleon/connector.dart';
+import 'package:chameleonultragui/connector/chameleon.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
@@ -530,12 +530,14 @@ class ReadCardPageState extends State<ReadCardPage> {
                           context: context,
                           builder: (BuildContext context) => AlertDialog(
                             title: const Text('Unsupported Action'),
-                            content: const Text('Chameleon Lite does not support reading cards', style: TextStyle(fontWeight: FontWeight.bold)),
+                            content: const Text(
+                                'Chameleon Lite does not support reading cards',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
                             actions: <Widget>[
                               TextButton(
                                 onPressed: () => Navigator.pop(context, 'OK'),
                                 child: const Text('OK'),
-                              ), 
+                              ),
                             ],
                           ),
                         );

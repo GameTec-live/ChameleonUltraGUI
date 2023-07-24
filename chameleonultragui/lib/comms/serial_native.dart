@@ -101,8 +101,12 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> write(Uint8List command) async {
+  Future<void> open() async {
     port!.openReadWrite();
+  }
+
+  @override
+  Future<bool> write(Uint8List command) async {
     return port!.write(command) > 1;
   }
 

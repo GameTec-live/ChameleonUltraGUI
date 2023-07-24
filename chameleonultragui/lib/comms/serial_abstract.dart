@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:logger/logger.dart';
 
 enum ChameleonDevice { none, ultra, lite }
+
 enum ChameleonConnectType { none, usb, ble }
 
 class AbstractSerial {
@@ -30,6 +31,8 @@ class AbstractSerial {
   Future<List> availableChameleons() async {
     return [];
   }
+
+  Future<void> open() async {}
 
   Future<bool> write(Uint8List command) async {
     return false;

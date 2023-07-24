@@ -214,7 +214,9 @@ class ChameleonCom {
   }
 
   Future<ChameleonMessage?> sendCmdSync(ChameleonCommand cmd, int status,
-      {Uint8List? data, Duration timeout = const Duration(seconds: 3)}) async {
+      {Uint8List? data,
+      Duration timeout = const Duration(seconds: 3),
+      bool skipReceive = false}) async {
     var dataFrame = makeDataFrameBytes(cmd, status, data);
     List<int> dataBuffer = [];
     var dataPosition = 0;
@@ -225,7 +227,11 @@ class ChameleonCom {
 
     log.d("Sending: ${bytesToHex(dataFrame)}");
     await _serialInstance!.finishRead();
+    await _serialInstance!.open();
     await _serialInstance!.write(Uint8List.fromList(dataFrame));
+    if (skipReceive) {
+      return null;
+    }
 
     while (true) {
       while (true) {
@@ -610,30 +616,38 @@ class ChameleonCom {
 
   Future<void> enterDFUMode() async {
     await sendCmdSync(ChameleonCommand.enterBootloader, 0x00,
-        data: Uint8List(0));
+        data: Uint8List(0), skipReceive: true);
   }
 
-  Future<int> getBatteryCharge() async { // 0-100, get device battery charge
+  // NOT IMPLEMENTED METHODS
+
+  Future<int> getBatteryCharge() async {
+    // 0-100, get device battery charge
     return 0;
   }
 
-  Future<List<bool>> getUsedSlots() async { // get the used slots on the device, 8 slots, true if used
+  Future<List<bool>> getUsedSlots() async {
+    // get the used slots on the device, 8 slots, true if used
     return [false, false, false, false, false, false, false, false];
   }
 
-  Future<int> getSelectedSlot() async { // get the selected slot on the device, 0-7 (8 slots)
+  Future<int> getSelectedSlot() async {
+    // get the selected slot on the device, 0-7 (8 slots)
     return 0;
   }
 
-  Future<bool> pressAbutton() async { // Emulate a press of the A button on the device
+  Future<bool> pressAbutton() async {
+    // Emulate a press of the A button on the device
     return false;
   }
 
-  Future<bool> pressBbutton() async { // Emulate a press of the B button on the device
+  Future<bool> pressBbutton() async {
+    // Emulate a press of the B button on the device
     return false;
   }
 
-  Future<String> getMemoryUsage() async { // Get the memory usage of the device
+  Future<String> getMemoryUsage() async {
+    // Get the memory usage of the device
     return "0/0";
   }
 }
