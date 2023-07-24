@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/connector/chameleon.dart';
@@ -106,6 +108,22 @@ class HomePageState extends State<HomePage> {
     (applicationDat, applicationBin) = await unpackFirmware(content);
 
     flashFile(connection, appState, applicationDat, applicationBin);
+  }
+
+  Future<void> flashFirmwareZip(MyAppState appState) async {
+    var connection = ChameleonCom(port: appState.chameleon);
+    Uint8List applicationDat, applicationBin;
+
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      File file = File(result.files.single.path!);
+
+      (applicationDat, applicationBin) =
+          await unpackFirmware(await file.readAsBytes());
+
+      flashFile(connection, appState, applicationDat, applicationBin);
+    }
   }
 
   @override
@@ -266,8 +284,6 @@ class HomePageState extends State<HomePage> {
                                   content: Center(
                                     child: Column(
                                       children: [
-                                        const Text("Flash Firmware"),
-                                        const Text("Wipe Device"),
                                         TextButton(
                                             onPressed: () async {
                                               var appState =
@@ -292,6 +308,16 @@ class HomePageState extends State<HomePage> {
                                               children: [
                                                 Icon(Icons.system_update),
                                                 Text("Flash latest FW via DFU"),
+                                              ],
+                                            )),
+                                        TextButton(
+                                            onPressed: () async {
+                                              await flashFirmwareZip(appState);
+                                            },
+                                            child: const Row(
+                                              children: [
+                                                Icon(Icons.system_update),
+                                                Text("Flash .zip FW via DFU"),
                                               ],
                                             ))
                                       ],
