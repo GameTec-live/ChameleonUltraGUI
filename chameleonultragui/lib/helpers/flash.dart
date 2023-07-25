@@ -56,13 +56,24 @@ Future<void> flashFile(
   if (applicationDat.isEmpty || applicationBin.isEmpty) {
     throw ("Empty firmware file");
   }
+
   if (enterDFU) {
     await connection!.enterDFUMode();
     await appState.chameleon.performDisconnect();
-    await asyncSleep(2000);
   }
-  await appState.chameleon.connectSpecific(
-      (await appState.chameleon.availableChameleons(true))[0]['port']);
+
+  List chameleons = [];
+
+  while (chameleons.isEmpty) {
+    await asyncSleep(250);
+    chameleons = await appState.chameleon.availableChameleons(true);
+  }
+
+  if (chameleons.length > 1) {
+    throw ("More than one Chameleon in DFU. Please connect only one at a time");
+  }
+
+  await appState.chameleon.connectSpecific(chameleons[0]['port']);
   var dfu = ChameleonDFU(port: appState.chameleon);
   await dfu.setPRN();
   await dfu.getMTU();

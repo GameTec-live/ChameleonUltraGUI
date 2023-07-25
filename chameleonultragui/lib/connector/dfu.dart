@@ -37,6 +37,12 @@ enum ChameleonResponseCode {
 
   const ChameleonResponseCode(this.value);
   final int value;
+
+  static ChameleonResponseCode fromValue(int value) {
+    return ChameleonResponseCode.values.firstWhere(
+        (responseCode) => responseCode.value == value,
+        orElse: () => ChameleonResponseCode.invalidCode);
+  }
 }
 
 class Slip {
@@ -140,20 +146,20 @@ class ChameleonDFU {
     log.d("Received: ${bytesToHex(Uint8List.fromList(readBuffer))}");
 
     if (readBuffer[0] != ChameleonDFUCommand.response.value) {
-      log.e("DFU sent not response");
-      return null;
+      throw ("DFU sent not response");
     }
 
     if (readBuffer[1] != cmd.value) {
-      log.e("DFU sent invalid command response");
-      return null;
+      throw ("DFU sent invalid command response");
     }
 
     if (readBuffer[2] == ChameleonResponseCode.success.value) {
       return Uint8List.fromList(readBuffer).sublist(3);
     } else {
-      log.e("DFU error");
-      return null;
+      if (readBuffer[2] == ChameleonResponseCode.extendedError.value) {
+        throw ("DFU error: ${ChameleonResponseCode.fromValue(readBuffer[3])}");
+      }
+      throw ("DFU error");
     }
   }
 
