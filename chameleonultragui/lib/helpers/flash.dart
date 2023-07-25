@@ -53,6 +53,9 @@ Future<void> flashFile(
     Uint8List applicationBin,
     void Function(int progress) callback,
     {bool enterDFU = true}) async {
+  if (applicationDat.isEmpty || applicationBin.isEmpty) {
+    throw ("Empty firmware file");
+  }
   if (enterDFU) {
     await connection!.enterDFUMode();
     await appState.chameleon.performDisconnect();
