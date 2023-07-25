@@ -307,7 +307,7 @@ class HomePageState extends State<HomePage> {
                                         TextButton(
                                             onPressed: () async {
                                               Navigator.pop(context, 'Cancel');
-                                              await flashFirmware(appState); //TODO DO NOT BUILD on not stable branch, will result in bricked chameleon, see: https://github.com/flutter/flutter/issues/129121
+                                              await flashFirmware(appState);
                                             },
                                             child: const Row(
                                               children: [
