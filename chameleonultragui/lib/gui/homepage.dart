@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -92,7 +93,7 @@ class HomePageState extends State<HomePage> {
 
   Future<String> getFWversion(ChameleonCom connection) async {
     int fwv = await connection.getFirmwareVersion();
-    return fwv.toString();
+    return numToVerCode(fwv);
   }
 
   Future<String> getRamusage(ChameleonCom connection) async {
