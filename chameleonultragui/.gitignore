@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /android/app/.cxx
+
+# Make sure to never leak keys
+**/upload-keystore.jks
