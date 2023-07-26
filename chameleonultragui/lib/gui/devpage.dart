@@ -242,6 +242,14 @@ class DevPage extends StatelessWidget {
               Text('DFU flash lite FW'),
             ]),
           ),
+          ElevatedButton(
+            onPressed: () async {
+              await cml.setDefaultDataToSlot(1, ChameleonTag.mifare1K);
+            },
+            child: const Column(children: [
+              Text('Dump card contents'),
+            ]),
+          ),
         ],
       ),
     );

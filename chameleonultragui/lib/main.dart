@@ -4,6 +4,7 @@ import 'package:chameleonultragui/gui/flashing.dart';
 import 'package:chameleonultragui/gui/mfkey32page.dart';
 import 'package:chameleonultragui/gui/readcardpage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Comms Imports
@@ -172,6 +173,11 @@ class _MyHomePageState extends State<MyHomePage> {
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
+
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Theme.of(context).colorScheme.surface,
+    ));
+
     return LayoutBuilder(// Build Page
         builder: (context, constraints) {
       return Scaffold(

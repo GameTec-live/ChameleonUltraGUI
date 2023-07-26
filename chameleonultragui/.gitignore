@@ -50,3 +50,4 @@ app.*.map.json
 
 # Fastlane
 android/fastlane/report.xml
+**/upload-keystore.jks
