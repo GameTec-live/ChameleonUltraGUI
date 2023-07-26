@@ -1,0 +1,6 @@
+This app allows to control your Chameleon Ultra and Chameleon Lite via USB-OTG or BLE
+
+Features:
+ - DFU updates
+ - Read cards (Ultra only)
+ - Manage saved cards and dictionaries
