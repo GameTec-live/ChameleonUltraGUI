@@ -116,3 +116,9 @@ String platformToPath() {
     return "../";
   }
 }
+
+String numToVerCode(int versionCode) {
+  int major = (versionCode >> 8) & 0xFF;
+  int minor = versionCode & 0xFF;
+  return '$major.$minor';
+}

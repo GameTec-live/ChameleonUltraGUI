@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -23,7 +24,8 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<(Icon, List<Icon>, String, String, String)> getFutureData() async {
+  Future<(Icon, List<Icon>, String, String, String, int)>
+      getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.chameleon);
     List<bool> usedSlots = await connection.getUsedSlots();
@@ -33,6 +35,7 @@ class HomePageState extends State<HomePage> {
       await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
       await getRamusage(connection),
+      await getActivatedSlot(connection),
     );
   }
 
@@ -92,11 +95,15 @@ class HomePageState extends State<HomePage> {
 
   Future<String> getFWversion(ChameleonCom connection) async {
     int fwv = await connection.getFirmwareVersion();
-    return fwv.toString();
+    return numToVerCode(fwv);
   }
 
   Future<String> getRamusage(ChameleonCom connection) async {
     return await connection.getMemoryUsage();
+  }
+
+  Future<int> getActivatedSlot(ChameleonCom connection) async {
+    return await connection.getActivatedSlot();
   }
 
   Future<void> flashFirmware(MyAppState appState) async {
@@ -145,8 +152,15 @@ class HomePageState extends State<HomePage> {
           } else if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}');
           } else {
-            final (batteryIcon, slotIcons, usedSlots, fwVersion, ramUsage) =
-                snapshot.data;
+            final (
+              batteryIcon,
+              slotIcons,
+              usedSlots,
+              fwVersion,
+              ramUsage,
+              slot
+            ) = snapshot.data;
+            // selectedSlot = slot;
 
             return Scaffold(
               appBar: AppBar(
@@ -211,7 +225,7 @@ class HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (selectedSlot > 1) {
                               selectedSlot--;
                             }
@@ -222,7 +236,7 @@ class HomePageState extends State<HomePage> {
                         ),
                         ...slotIcons,
                         IconButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (selectedSlot < 8) {
                               selectedSlot++;
                             }

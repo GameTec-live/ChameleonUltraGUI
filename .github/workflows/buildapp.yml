@@ -12,17 +12,29 @@ jobs:
         working-directory: ./chameleonultragui
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '11'
+          java-version: '17'
+      - name: Load Secret
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.KEY_PROPERTIES }}
+          filename: "key.properties"
+          working-directory: "./chameleonultragui/android"
+      - name: Load Secret
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.UPLOAD_KEYSTORE }}
+          filename: "upload-keystore.jks"
+          working-directory: "./chameleonultragui"
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
       - run: flutter pub get
       #- run: flutter test
-      - run: flutter build apk
-      - run: flutter build appbundle
+      - run: flutter build apk --build-number ${{ github.run_number }}
+      - run: flutter build appbundle --build-number ${{ github.run_number }}
       - uses: actions/upload-artifact@v3
         with:
           name: appbundle
