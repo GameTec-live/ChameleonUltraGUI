@@ -31,22 +31,6 @@ Deploy a new version to the Google Play
 
 Deploy a new version to the Google Play beta track
 
-### android alpha
-
-```sh
-[bundle exec] fastlane android alpha
-```
-
-Deploy a new version to the Google Play alpha track
-
-### android internal
-
-```sh
-[bundle exec] fastlane android internal
-```
-
-Deploy a new version to the Google Play internal track
-
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

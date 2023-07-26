@@ -43,6 +43,15 @@ jobs:
         with:
           name: apk
           path: chameleonultragui/build/app/outputs/flutter-apk/app-release.apk
+      - name: Load Secret
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.PLAYSTORE_KEY }}
+          filename: "api-key.json"
+          working-directory: "./chameleonultragui"
+      - name: Fastlane Publishing Beta
+        run: fastlane beta
+        working-directory: "./chameleonultragui/android"
 
   build-windows:
     runs-on: windows-latest
