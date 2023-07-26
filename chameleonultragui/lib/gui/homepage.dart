@@ -24,7 +24,8 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<(Icon, List<Icon>, String, String, String)> getFutureData() async {
+  Future<(Icon, List<Icon>, String, String, String, int)>
+      getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.chameleon);
     List<bool> usedSlots = await connection.getUsedSlots();
@@ -34,6 +35,7 @@ class HomePageState extends State<HomePage> {
       await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
       await getRamusage(connection),
+      await getActivatedSlot(connection),
     );
   }
 
@@ -100,6 +102,16 @@ class HomePageState extends State<HomePage> {
     return await connection.getMemoryUsage();
   }
 
+  Future<int> getActivatedSlot(ChameleonCom connection) async {
+    return await connection.getActivatedSlot();
+  }
+
+  Future<void> setSlot(int slot) async {
+    var appState = context.read<MyAppState>();
+    var connection = ChameleonCom(port: appState.chameleon);
+    return await connection.activateSlot(slot + 3);
+  }
+
   Future<void> flashFirmware(MyAppState appState) async {
     var connection = ChameleonCom(port: appState.chameleon);
     Uint8List applicationDat, applicationBin;
@@ -146,8 +158,15 @@ class HomePageState extends State<HomePage> {
           } else if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}');
           } else {
-            final (batteryIcon, slotIcons, usedSlots, fwVersion, ramUsage) =
-                snapshot.data;
+            final (
+              batteryIcon,
+              slotIcons,
+              usedSlots,
+              fwVersion,
+              ramUsage,
+              slot
+            ) = snapshot.data;
+            selectedSlot = slot;
 
             return Scaffold(
               appBar: AppBar(
@@ -212,9 +231,10 @@ class HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (selectedSlot > 1) {
                               selectedSlot--;
+                              await setSlot(selectedSlot);
                             }
                             setState(() {});
                             appState.changesMade();
@@ -223,9 +243,10 @@ class HomePageState extends State<HomePage> {
                         ),
                         ...slotIcons,
                         IconButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (selectedSlot < 8) {
                               selectedSlot++;
+                              await setSlot(selectedSlot);
                             }
                             setState(() {});
                             appState.changesMade();

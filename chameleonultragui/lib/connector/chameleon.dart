@@ -24,6 +24,8 @@ enum ChameleonCommand {
   enterBootloader(1010),
   getDeviceChipID(1011),
 
+  getActivatedSlot(1014),
+
   // hf reader commands
   scan14ATag(2000),
   mf1SupportDetect(2001),
@@ -481,6 +483,7 @@ class ChameleonCom {
 
   Future<void> activateSlot(int slot) async {
     // Slot 1-8
+    print(slot - 1);
     await sendCmdSync(ChameleonCommand.setSlotActivated, 0x00,
         data: Uint8List.fromList([slot - 1]));
   }
@@ -619,6 +622,13 @@ class ChameleonCom {
         data: Uint8List(0), skipReceive: true);
   }
 
+  Future<int> getActivatedSlot() async {
+    // get the selected slot on the device, 0-7 (8 slots)
+    return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
+            data: Uint8List.fromList([0x00])))!
+        .data[0];
+  }
+
   // NOT IMPLEMENTED METHODS
 
   Future<int> getBatteryCharge() async {
@@ -629,11 +639,6 @@ class ChameleonCom {
   Future<List<bool>> getUsedSlots() async {
     // get the used slots on the device, 8 slots, true if used
     return [false, false, false, false, false, false, false, false];
-  }
-
-  Future<int> getSelectedSlot() async {
-    // get the selected slot on the device, 0-7 (8 slots)
-    return 0;
   }
 
   Future<bool> pressAbutton() async {
