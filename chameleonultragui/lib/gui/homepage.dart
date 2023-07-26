@@ -106,12 +106,6 @@ class HomePageState extends State<HomePage> {
     return await connection.getActivatedSlot();
   }
 
-  Future<void> setSlot(int slot) async {
-    var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.chameleon);
-    return await connection.activateSlot(slot + 3);
-  }
-
   Future<void> flashFirmware(MyAppState appState) async {
     var connection = ChameleonCom(port: appState.chameleon);
     Uint8List applicationDat, applicationBin;
@@ -166,7 +160,7 @@ class HomePageState extends State<HomePage> {
               ramUsage,
               slot
             ) = snapshot.data;
-            selectedSlot = slot;
+            // selectedSlot = slot;
 
             return Scaffold(
               appBar: AppBar(
@@ -234,7 +228,6 @@ class HomePageState extends State<HomePage> {
                           onPressed: () async {
                             if (selectedSlot > 1) {
                               selectedSlot--;
-                              await setSlot(selectedSlot);
                             }
                             setState(() {});
                             appState.changesMade();
@@ -246,7 +239,6 @@ class HomePageState extends State<HomePage> {
                           onPressed: () async {
                             if (selectedSlot < 8) {
                               selectedSlot++;
-                              await setSlot(selectedSlot);
                             }
                             setState(() {});
                             appState.changesMade();

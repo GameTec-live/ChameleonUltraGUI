@@ -483,7 +483,6 @@ class ChameleonCom {
 
   Future<void> activateSlot(int slot) async {
     // Slot 1-8
-    print(slot - 1);
     await sendCmdSync(ChameleonCommand.setSlotActivated, 0x00,
         data: Uint8List.fromList([slot - 1]));
   }
@@ -624,8 +623,9 @@ class ChameleonCom {
 
   Future<int> getActivatedSlot() async {
     // get the selected slot on the device, 0-7 (8 slots)
+    return 0;
     return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
-            data: Uint8List.fromList([0x00])))!
+            data: Uint8List(0)))!
         .data[0];
   }
 
