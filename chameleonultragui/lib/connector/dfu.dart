@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -123,17 +124,13 @@ class ChameleonDFU {
     _serialInstance = port;
   }
 
-  Future<Uint8List?> sendCmdSync(ChameleonDFUCommand cmd, Uint8List data,
-      {bool transparent = false}) async {
+  Future<Uint8List?> sendCmdSync(
+      ChameleonDFUCommand cmd, Uint8List data) async {
     var packet = Slip.encode(Uint8List.fromList([cmd.value, ...data.toList()]));
+
     log.d("Sending: ${bytesToHex(packet)}");
-    if (!transparent) {
-      await _serialInstance!.finishRead();
-      await _serialInstance!.open();
-      await _serialInstance!.write(packet);
-    } else {
-      await _serialInstance!.write(packet);
-    }
+    await _serialInstance!.write(packet);
+
     List<int> readBuffer = [];
 
     while (true) {
@@ -201,9 +198,8 @@ class ChameleonDFU {
   }
 
   Future<Map<String, int>> calculateChecksum() async {
-    var response = await sendCmdSync(
-        ChameleonDFUCommand.calcChecSum, Uint8List(0),
-        transparent: true);
+    var response =
+        await sendCmdSync(ChameleonDFUCommand.calcChecSum, Uint8List(0));
 
     var offset = ByteData.view(response!.buffer).getUint32(0, Endian.little);
     var crc = ByteData.view(response.buffer).getUint32(4, Endian.little);
@@ -238,37 +234,59 @@ class ChameleonDFU {
       {int crc = 0, int offset = 0}) async {
     log.d(
         "Serial: Streaming Data: len:${data.length} offset:$offset crc:0x${crc.toRadixString(16).padLeft(8, '0')} mtu:$mtu");
-    Map<String, int> response = {'crc': 0, 'offset': 0}; //TODO: Validate CRC
-    //
-    // void validateCrc() {
-    //   if (crc != response['crc']) {
-    //     throw ("Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
-    //   }
-    //   if (offset != response['offset']!) {
-    //     throw ("Failed offset validation. Expected: $offset Received: ${response['offset']}.");
-    //   }
-    // }
+    Map<String, int> response = {'crc': 0, 'offset': 0};
 
-    await _serialInstance!.finishRead();
-    await _serialInstance!.open();
+    void validateCrc() {
+      // TODO: fix CRC
+      // if (crc != response['crc']) {
+      //   throw ("Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
+      // }
+      if (offset != response['offset']!) {
+        log.w(
+            "Failed offset validation. Expected: $offset Received: ${response['offset']}.");
+      }
+    }
+
     for (int i = 0; i < data.length; i += (mtu - 1) ~/ 2 - 1) {
       List<int> toTransmit =
           data.sublist(i, min(i + (mtu - 1) ~/ 2 - 1, data.length));
 
       var packet = Slip.encode(Uint8List.fromList(
           [ChameleonDFUCommand.writeObject.value, ...toTransmit.toList()]));
-      await _serialInstance!.write(packet);
+
+      await delayedSend(packet);
 
       offset += toTransmit.length;
+      response = await calculateChecksum();
+      validateCrc();
     }
 
+    await _serialInstance!.read(16384);
+
     response = await calculateChecksum();
-    await _serialInstance!.finishRead();
 
     // crc = (calculateCRC32(toTransmit.sublist(1)).toUnsigned(32) & 0xFFFFFFFF)
     //     .toInt();
-    // validateCrc();
+
+    validateCrc();
 
     return crc;
+  }
+
+  Future<void> delayedSend(Uint8List packet) async {
+    // Windows has some issues with transmitting data
+    // We work around it by sending message by parts with delay
+    var offsetSize = 128;
+
+    if (Platform.isWindows) {
+      for (var offset = 0; offset < packet.length; offset += offsetSize) {
+        await _serialInstance!.write(packet.sublist(
+            offset, offset + min(offsetSize, packet.length - offset)));
+        await asyncSleep(1);
+      }
+    } else {
+      // Other OS: send as is
+      _serialInstance!.write(packet);
+    }
   }
 }

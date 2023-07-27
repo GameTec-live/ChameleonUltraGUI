@@ -67,6 +67,10 @@ class NativeSerial extends AbstractSerial {
   }
 
   Future<bool> connectDevice(String address, bool setPort) async {
+    if (port != null && port!.isOpen && !setPort) {
+      log.d("Chameleon is connected now");
+    }
+
     log.d("Connecting to $address");
     try {
       checkPort = SerialPort(address);
