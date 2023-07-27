@@ -1,0 +1,64 @@
+---
+    name: Publish APP
+    
+    on:
+        #push:
+        #    branches:
+        #        - main
+        workflow_dispatch:
+          inputs:
+            publish_track:
+              description: 'Publishing Track'
+              required: true
+              default: 'production'
+              type: choice
+              options:
+                - 'production'
+                - 'beta'
+                - 'alpha'
+                - 'internal'
+    
+    jobs:
+      build-android:
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'
+        defaults:
+          run:
+            working-directory: ./chameleonultragui
+        steps:
+          - uses: actions/checkout@v3
+          - uses: actions/setup-java@v3
+            with:
+              distribution: 'zulu'
+              java-version: '17'
+          - name: Load Secret
+            uses: mobiledevops/secret-to-file-action@v1
+            with:
+              base64-encoded-secret: ${{ secrets.KEY_PROPERTIES }}
+              filename: "key.properties"
+              working-directory: "./chameleonultragui/android"
+          - name: Load Secret
+            uses: mobiledevops/secret-to-file-action@v1
+            with:
+              base64-encoded-secret: ${{ secrets.UPLOAD_KEYSTORE }}
+              filename: "upload-keystore.jks"
+              working-directory: "./chameleonultragui"
+          - uses: subosito/flutter-action@v2
+            with:
+              channel: 'stable'
+          - run: flutter pub get
+          #- run: flutter test
+          - run: flutter build appbundle --build-number ${{ github.run_number }}
+          - uses: actions/upload-artifact@v3
+            with:
+              name: appbundle
+              path: chameleonultragui/build/app/outputs/bundle/release/app-release.aab
+          - name: Load Secret
+            uses: mobiledevops/secret-to-file-action@v1
+            with:
+                base64-encoded-secret: ${{ secrets.PLAYSTORE_KEY }}
+                filename: "api-key.json"
+                working-directory: "./chameleonultragui"
+          - name: Fastlane Publishing Beta
+            run: fastlane ${{ github.event.inputs.publish_track }}
+            working-directory: "./chameleonultragui/android"
