@@ -5,11 +5,9 @@ import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/chameleon.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
-import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
