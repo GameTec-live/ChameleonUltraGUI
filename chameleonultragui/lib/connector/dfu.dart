@@ -238,7 +238,7 @@ class ChameleonDFU {
       {int crc = 0, int offset = 0}) async {
     log.d(
         "Serial: Streaming Data: len:${data.length} offset:$offset crc:0x${crc.toRadixString(16).padLeft(8, '0')} mtu:$mtu");
-    Map<String, int> response = {'crc': 0, 'offset': 0};
+    Map<String, int> response = {'crc': 0, 'offset': 0}; //TODO: Validate CRC
     //
     // void validateCrc() {
     //   if (crc != response['crc']) {
