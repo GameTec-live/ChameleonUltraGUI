@@ -60,7 +60,7 @@ Future<void> flashFile(
 
   // Flashing Easteregg
   var rng = Random();
-  var randomNumber = rng.nextInt(20) + 1;
+  var randomNumber = rng.nextInt(100) + 1;
   appState.easteregg = false;
   if (randomNumber == 1) {
     appState.easteregg = true;
