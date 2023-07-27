@@ -1,11 +1,22 @@
 ---
-    name: Build APP
+    name: Publish APP
     
     on:
         #push:
         #    branches:
         #        - main
         workflow_dispatch:
+          inputs:
+            publish_track:
+              description: 'Publishing Track'
+              required: true
+              default: 'production'
+              type: choice
+              options:
+                - 'production'
+                - 'beta'
+                - 'alpha'
+                - 'internal'
     
     jobs:
       build-android:
@@ -36,7 +47,7 @@
               channel: 'stable'
           - run: flutter pub get
           #- run: flutter test
-          - run: flutter build appbundle
+          - run: flutter build appbundle --build-number ${{ github.run_number }}
           - uses: actions/upload-artifact@v3
             with:
               name: appbundle
@@ -48,5 +59,5 @@
                 filename: "api-key.json"
                 working-directory: "./chameleonultragui"
           - name: Fastlane Publishing Beta
-            run: fastlane production
+            run: fastlane ${{ github.event.inputs.publish_track }}
             working-directory: "./chameleonultragui/android"
