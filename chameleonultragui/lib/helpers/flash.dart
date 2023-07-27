@@ -7,6 +7,7 @@ import 'package:chameleonultragui/connector/chameleon.dart';
 import 'package:chameleonultragui/connector/dfu.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
+import 'dart:math';
 
 Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
   Uint8List content = Uint8List(0);
@@ -55,6 +56,14 @@ Future<void> flashFile(
     {bool enterDFU = true}) async {
   if (applicationDat.isEmpty || applicationBin.isEmpty) {
     throw ("Empty firmware file");
+  }
+
+  // Flashing Easteregg
+  var rng = Random();
+  var randomNumber = rng.nextInt(100) + 1;
+  appState.easteregg = false;
+  if (randomNumber == 1) {
+    appState.easteregg = true;
   }
 
   if (enterDFU) {

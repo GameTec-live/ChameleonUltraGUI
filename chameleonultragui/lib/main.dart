@@ -85,6 +85,9 @@ class MyAppState extends ChangeNotifier {
   bool switchOn = true;
   bool devMode = false;
   double? progress;
+  // Flashing Easteregg
+  bool easteregg = false;
+
   /*void toggleswitch() {
     setState(() {
       switchOn = !switchOn;
