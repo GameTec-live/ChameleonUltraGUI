@@ -101,6 +101,8 @@ flutter:
     - assets/black-ultra-standing-front.png
     - assets/black-lite-standing-front.png
     - assets/logo.png
+    - assets/black-ultra-standing-front-flashing.png
+    - assets/black-lite-standing-front-flashing.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

@@ -21,14 +21,14 @@ class FlashingPage extends StatelessWidget {
             children: [
               Image.asset(
                 appState.chameleon.device == ChameleonDevice.ultra
-                    ? 'assets/black-ultra-standing-front.png'
-                    : 'assets/black-lite-standing-front.png',
+                    ? appState.easteregg ? 'assets/black-ultra-standing-front-flashing.png' : 'assets/black-ultra-standing-front.png'
+                    : appState.easteregg ? 'assets/black-lite-standing-front-flashing.png' : 'assets/black-lite-standing-front.png',
                 width: 300,
                 height: 300,
               ),
               const SizedBox(height: 20),
               Text(
-                'Installing firmware on your Chameleon ${appState.chameleon.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}',
+                appState.easteregg ? 'Your Chameleon ${appState.chameleon.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'} is flashing' : 'Installing firmware on your Chameleon ${appState.chameleon.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}',
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
