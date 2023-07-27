@@ -66,3 +66,4 @@
           - name: Fastlane Publishing on production
             if:  github.event_name != 'workflow_dispatch' || github.event.inputs.publish_track == ''
             run: fastlane production
+            working-directory: "./chameleonultragui/android"
