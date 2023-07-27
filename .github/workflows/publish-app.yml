@@ -2,9 +2,9 @@
     name: Publish APP
     
     on:
-        #push:
-        #    branches:
-        #        - main
+        push:
+            branches:
+                - main
         workflow_dispatch:
           inputs:
             publish_track:
