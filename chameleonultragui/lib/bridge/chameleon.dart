@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:logger/logger.dart';
 import 'package:enough_convert/enough_convert.dart';
 
@@ -23,6 +23,8 @@ enum ChameleonCommand {
   // bootloader
   enterBootloader(1010),
   getDeviceChipID(1011),
+
+  getActivatedSlot(1014),
 
   // hf reader commands
   scan14ATag(2000),
@@ -619,6 +621,14 @@ class ChameleonCom {
         data: Uint8List(0), skipReceive: true);
   }
 
+  Future<int> getActivatedSlot() async {
+    // get the selected slot on the device, 0-7 (8 slots)
+    return 0;
+    return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
+            data: Uint8List(0)))!
+        .data[0];
+  }
+
   // NOT IMPLEMENTED METHODS
 
   Future<int> getBatteryCharge() async {
@@ -629,11 +639,6 @@ class ChameleonCom {
   Future<List<bool>> getUsedSlots() async {
     // get the used slots on the device, 8 slots, true if used
     return [false, false, false, false, false, false, false, false];
-  }
-
-  Future<int> getSelectedSlot() async {
-    // get the selected slot on the device, 0-7 (8 slots)
-    return 0;
   }
 
   Future<bool> pressAbutton() async {

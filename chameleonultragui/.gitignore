@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /android/app/.cxx
+
+# Make sure to never leak keys
+**/upload-keystore.jks
+**/api-key.json
+
+# Fastlane
+android/fastlane/report.xml
+**/upload-keystore.jks

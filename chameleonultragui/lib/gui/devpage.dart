@@ -1,17 +1,13 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:chameleonultragui/connector/dfu.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/connector/chameleon.dart';
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
-import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
-import 'package:http/http.dart' as http;
-import 'package:archive/archive_io.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
@@ -22,7 +18,7 @@ class DevPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-    var cml = ChameleonCom(port: appState.chameleon);
+    var cml = ChameleonCom(port: appState.connector);
 
     return Center(
       child: Column(
@@ -33,7 +29,7 @@ class DevPage extends StatelessWidget {
             child: IconButton(
               onPressed: () {
                 // Disconnect
-                appState.chameleon.performDisconnect();
+                appState.connector.performDisconnect();
                 appState.changesMade();
               },
               icon: const Icon(Icons.close),
@@ -42,31 +38,9 @@ class DevPage extends StatelessWidget {
           const Text('Chameleon Ultra GUI'), // Display dummy / debug info
           Text('Platform: ${Platform.operatingSystem}'),
           Text('Android: ${appState.onAndroid}'),
-          Text('Serial protocol : ${appState.chameleon}'),
-          Text('Chameleon connected: ${appState.chameleon.connected}'),
-          Text('Chameleon device type: ${appState.chameleon.device}'),
-          ElevatedButton(
-            // Connect Button
-            onPressed: () {
-              appState.chameleon.preformConnection();
-              appState.changesMade();
-            },
-            child: const Text('Connect'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              appState.log.d(
-                  "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
-              var card = await cml.scan14443aTag();
-              appState.log.d('Card uid: ${card.uid}');
-              appState.log.d('sak: ${card.sak}');
-              appState.log.d('atqa: ${card.atqa}');
-            },
-            child: const Column(children: [
-              Text('Read card'),
-            ]),
-          ),
+          Text('Serial protocol : ${appState.connector}'),
+          Text('Chameleon connected: ${appState.connector.connected}'),
+          Text('Chameleon device type: ${appState.connector.device}'),
           ElevatedButton(
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
@@ -154,29 +128,6 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
-              var data = await cml.mf1Auth(0x03, 0x60,
-                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
-              appState.log.d(data);
-              var block = await cml.mf1ReadBlock(0x02, 0x60,
-                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
-              appState.log.d(block);
-              block[0] = 0xFF;
-              await cml.mf1WriteBlock(
-                  0x02,
-                  0x60,
-                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
-                  block);
-              block = await cml.mf1ReadBlock(0x02, 0x60,
-                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
-              appState.log.d(block);
-            },
-            child: const Column(children: [
-              Text('Auth/read/write'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await cml.setReaderDeviceMode(true);
               appState.log.d(
                   "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
               var card = await cml.scan14443aTag();
@@ -202,37 +153,6 @@ class DevPage extends StatelessWidget {
             },
             child: const Column(children: [
               Text('Test naming'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              var detections = await cml.getMf1DetectionResult(0);
-              for (var item in detections.entries) {
-                var uid = item.key;
-                for (var item in item.value.entries) {
-                  for (var item in item.value.entries) {
-                    for (var i = 0; i < item.value.length; i++) {
-                      for (var j = i + 1; j < item.value.length; j++) {
-                        var item0 = item.value[i];
-                        var item1 = item.value[j];
-                        var mfkey = Mfkey32Dart(
-                            uid: uid,
-                            nt0: item0.nt,
-                            nt1: item1.nt,
-                            nr0Enc: item0.nr,
-                            ar0Enc: item0.ar,
-                            nr1Enc: item1.nr,
-                            ar1Enc: item1.ar);
-                        appState.log.i(
-                            "Mfkey32 recovered key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8))}");
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            child: const Column(children: [
-              Text('Mfkey32 decrypt'),
             ]),
           ),
           ElevatedButton(
@@ -281,87 +201,8 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              var dict = ChameleonDictionary(
-                  id: const Uuid().v4(),
-                  name: "test",
-                  keys: [
-                    Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
-                  ]);
-              var newDict = ChameleonDictionary.fromJson(dict.toJson());
-              appState.log.d(newDict.keys);
-            },
-            child: const Column(children: [
-              Text('Test JSON dictionary coding'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              var dictionaries =
-                  appState.sharedPreferencesProvider.getChameleonDictionaries();
-              dictionaries.add(ChameleonDictionary(
-                  id: const Uuid().v4(),
-                  name: "test",
-                  keys: [
-                    Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
-                  ]));
-              appState.sharedPreferencesProvider
-                  .setChameleonDictionaries(dictionaries);
-            },
-            child: const Column(children: [
-              Text('Add fake dictionary'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              appState.sharedPreferencesProvider.setChameleonDictionaries([]);
-            },
-            child: const Column(children: [
-              Text('Wipe dictionaries'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              var tags = appState.sharedPreferencesProvider.getChameleonTags();
-              tags.add(ChameleonTagSave(
-                  id: const Uuid().v4(),
-                  name: "test",
-                  data: [],
-                  atqa: Uint8List.fromList([0, 0]),
-                  uid: "",
-                  sak: 0,
-                  tag: ChameleonTag.mifare2K));
-              appState.sharedPreferencesProvider.setChameleonTags(tags);
-            },
-            child: const Column(children: [
-              Text('Add fake tag'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              appState.sharedPreferencesProvider.setChameleonTags([]);
-            },
-            child: const Column(children: [
-              Text('Wipe cards'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              appState.log.d("Current ${await cml.isMf1DetectionMode()}");
-              await cml.setMf1DetectionStatus(true);
-              appState.log
-                  .d("Test ${await cml.isMf1DetectionMode()} should be true");
-              await cml.setMf1DetectionStatus(false);
-
-              appState.log
-                  .d("Test ${await cml.isMf1DetectionMode()} should be false");
-            },
-            child: const Column(children: [
-              Text('Mf1 detection test'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
               await cml.enterDFUMode();
+              appState.connector.performDisconnect();
             },
             child: const Column(children: [
               Text('Reboot to DFU'),
@@ -369,48 +210,42 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              List files = [null, null];
-              final releases = json.decode((await http.get(Uri.parse(
-                      "https://api.github.com/repos/Foxushka/ChameleonUltra/releases")))
-                  .body
-                  .toString());
-              Uint8List content = Uint8List(0);
-              for (var file in releases[0]["assets"]) {
-                if (file["name"] == "ultra-dfu-app.zip") {
-                  content = await http
-                      .readBytes(Uri.parse(file["browser_download_url"]));
-                  break;
-                }
-              }
+              var connection = ChameleonCom(port: appState.connector);
+              Uint8List applicationDat, applicationBin;
 
-              if (content.isEmpty) {
-                return;
-              }
+              Uint8List content = await fetchFirmware(ChameleonDevice.ultra);
 
-              final archive = ZipDecoder().decodeBytes(content);
-              for (var file in archive.files) {
-                if (file.isFile) {
-                  if (file.name == "application.dat") {
-                    files[0] = file;
-                  } else if (file.name == "application.bin") {
-                    files[1] = file;
-                  }
-                }
-              }
-              await cml.enterDFUMode();
-              await asyncSleep(2000);
-              appState.chameleon.connectSpecific(
-                  (await appState.chameleon.availableChameleons())[0]['port']);
-              var dfu = ChameleonDFU(port: appState.chameleon);
-              await dfu.setPRN();
-              await dfu.getMTU();
-              await dfu.flashFirmware(0x01, files[0].content);
-              await dfu.flashFirmware(0x02, files[1].content);
-              appState.log.i("Firmware flashed!");
-              appState.chameleon.performDisconnect();
+              (applicationDat, applicationBin) = await unpackFirmware(content);
+
+              flashFile(connection, appState, applicationDat, applicationBin,
+                  (progress) => appState.log.d("Flashing: $progress%"));
             },
             child: const Column(children: [
               Text('DFU flash ultra FW'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              var connection = ChameleonCom(port: appState.connector);
+              Uint8List applicationDat, applicationBin;
+
+              Uint8List content = await fetchFirmware(ChameleonDevice.lite);
+
+              (applicationDat, applicationBin) = await unpackFirmware(content);
+
+              flashFile(connection, appState, applicationDat, applicationBin,
+                  (progress) => appState.log.d("Flashing: $progress%"));
+            },
+            child: const Column(children: [
+              Text('DFU flash lite FW'),
+            ]),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await cml.setDefaultDataToSlot(1, ChameleonTag.mifare1K);
+            },
+            child: const Column(children: [
+              Text('Dump card contents'),
             ]),
           ),
         ],

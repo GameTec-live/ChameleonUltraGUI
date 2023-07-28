@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:io' show Platform;
-import 'package:chameleonultragui/connector/chameleon.dart';
+import 'package:chameleonultragui/bridge/chameleon.dart';
 
 Future<void> asyncSleep(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
@@ -115,4 +115,10 @@ String platformToPath() {
   } else {
     return "../";
   }
+}
+
+String numToVerCode(int versionCode) {
+  int major = (versionCode >> 8) & 0xFF;
+  int minor = versionCode & 0xFF;
+  return '$major.$minor';
 }

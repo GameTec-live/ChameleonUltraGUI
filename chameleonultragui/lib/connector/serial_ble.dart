@@ -2,12 +2,12 @@ import 'package:chameleonultragui/comms/serial_abstract.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class BLESerial extends AbstractSerial {
-  
   Future<List> availableDevicesBLE() async {
     List<BluetoothDevice> devices = [];
 
     // Start scanning for BLE devices
-    FlutterBluePlus.startScan(timeout: const Duration(seconds: 4), androidUsesFineLocation: false);
+    FlutterBluePlus.startScan(
+        timeout: const Duration(seconds: 4), androidUsesFineLocation: false);
 
     // Wait for scan to complete
     await Future.delayed(const Duration(seconds: 4));

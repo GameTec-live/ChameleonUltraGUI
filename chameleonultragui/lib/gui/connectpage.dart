@@ -1,7 +1,9 @@
+import 'dart:typed_data';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../comms/serial_abstract.dart';
-import '../main.dart';
 
 class ConnectPage extends StatelessWidget {
   const ConnectPage({super.key});
@@ -11,7 +13,7 @@ class ConnectPage extends StatelessWidget {
     var appState = context.watch<MyAppState>(); // Get State
 
     return FutureBuilder(
-      future: appState.chameleon.availableChameleons(),
+      future: appState.connector.availableChameleons(false),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -65,7 +67,7 @@ class ConnectPage extends StatelessWidget {
                                 ),
                               );
                               // Connect via BLE here
-                              appState.chameleon.connected =
+                              appState.connector.connected =
                                   true; // Bypass / Dummy for testing
                               appState.changesMade();
                             },
@@ -81,10 +83,59 @@ class ConnectPage extends StatelessWidget {
                           ),
                           ...result.map<Widget>((chameleonDevice) {
                             return ElevatedButton(
-                              onPressed: () {
-                                appState.chameleon
-                                    .connectSpecific(chameleonDevice['port']);
-                                appState.changesMade();
+                              onPressed: () async {
+                                if (chameleonDevice['type'] ==
+                                    ChameleonConnectType.dfu) {
+                                  showDialog<String>(
+                                    context: context,
+                                    builder: (BuildContext context) =>
+                                        AlertDialog(
+                                      title: const Text(
+                                          'Chameleon is in DFU mode'),
+                                      content: const Text(
+                                          'This probably means your firmware is corrupted. Do you want to flash latest FW?'),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, 'Cancel'),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            Navigator.pop(context, 'Flash');
+                                            appState.changesMade();
+                                            Uint8List applicationDat,
+                                                applicationBin;
+
+                                            Uint8List content =
+                                                await fetchFirmware(
+                                                    appState.connector.device);
+
+                                            (applicationDat, applicationBin) =
+                                                await unpackFirmware(content);
+
+                                            flashFile(
+                                                null,
+                                                appState,
+                                                applicationDat,
+                                                applicationBin,
+                                                (progress) =>
+                                                    appState.setProgressBar(
+                                                        progress / 100),
+                                                enterDFU: false);
+
+                                            appState.changesMade();
+                                          },
+                                          child: const Text('Flash'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                } else {
+                                  await appState.connector
+                                      .connectSpecific(chameleonDevice['port']);
+                                  appState.changesMade();
+                                }
                               },
                               style: ButtonStyle(
                                 shape: MaterialStateProperty.all<
@@ -102,7 +153,11 @@ class ConnectPage extends StatelessWidget {
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         const Icon(Icons.usb),
-                                        Text(chameleonDevice['port']),
+                                        Text(chameleonDevice['port'] ??
+                                            "MISSING"),
+                                        if (chameleonDevice['type'] ==
+                                            ChameleonConnectType.dfu)
+                                          const Text(" (DFU)"),
                                       ],
                                     ),
                                   ),

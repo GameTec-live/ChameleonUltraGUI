@@ -1,13 +1,12 @@
-import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
-import 'package:http/http.dart' as http;
-import 'package:archive/archive.dart';
-import 'package:chameleonultragui/connector/dfu.dart';
+import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chameleonultragui/connector/chameleon.dart';
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 
 class HomePage extends StatefulWidget {
@@ -25,16 +24,18 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<(Icon, List<Icon>, String, String, String)> getFutureData() async {
+  Future<(Icon, List<Icon>, String, String, String, int)>
+      getFutureData() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.chameleon);
-    List<bool> used_slots = await connection.getUsedSlots();
+    var connection = ChameleonCom(port: appState.connector);
+    List<bool> usedSlots = await connection.getUsedSlots();
     return (
       await getBatteryChargeIcon(connection),
-      await getSlotIcons(connection, selectedSlot, used_slots),
-      await getUsedSlotsOut8(connection, used_slots),
+      await getSlotIcons(connection, selectedSlot, usedSlots),
+      await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
       await getRamusage(connection),
+      await getActivatedSlot(connection),
     );
   }
 
@@ -94,54 +95,44 @@ class HomePageState extends State<HomePage> {
 
   Future<String> getFWversion(ChameleonCom connection) async {
     int fwv = await connection.getFirmwareVersion();
-    return fwv.toString();
+    return numToVerCode(fwv);
   }
 
   Future<String> getRamusage(ChameleonCom connection) async {
     return await connection.getMemoryUsage();
   }
 
+  Future<int> getActivatedSlot(ChameleonCom connection) async {
+    return await connection.getActivatedSlot();
+  }
+
   Future<void> flashFirmware(MyAppState appState) async {
-    var connection = ChameleonCom(port: appState.chameleon);
-    List files = [null, null];
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/Foxushka/ChameleonUltra/releases")))
-        .body
-        .toString());
-    Uint8List content = Uint8List(0);
-    for (var file in releases[0]["assets"]) {
-      if (file["name"] ==
-          "${(appState.chameleon.device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
-        content = await http.readBytes(Uri.parse(file["browser_download_url"]));
-        break;
-      }
-    }
+    var connection = ChameleonCom(port: appState.connector);
+    Uint8List applicationDat, applicationBin;
 
-    if (content.isEmpty) {
-      return;
-    }
+    Uint8List content = await fetchFirmware(appState.connector.device);
 
-    final archive = ZipDecoder().decodeBytes(content);
-    for (var file in archive.files) {
-      if (file.isFile) {
-        if (file.name == "application.dat") {
-          files[0] = file;
-        } else if (file.name == "application.bin") {
-          files[1] = file;
-        }
-      }
+    (applicationDat, applicationBin) = await unpackFirmware(content);
+
+    flashFile(connection, appState, applicationDat, applicationBin,
+        (progress) => appState.setProgressBar(progress / 100));
+  }
+
+  Future<void> flashFirmwareZip(MyAppState appState) async {
+    var connection = ChameleonCom(port: appState.connector);
+    Uint8List applicationDat, applicationBin;
+
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      File file = File(result.files.single.path!);
+
+      (applicationDat, applicationBin) =
+          await unpackFirmware(await file.readAsBytes());
+
+      flashFile(connection, appState, applicationDat, applicationBin,
+          (progress) => appState.setProgressBar(progress / 100));
     }
-    await connection.enterDFUMode();
-    await appState.chameleon.performDisconnect();
-    await asyncSleep(2000);
-    appState.chameleon.connectSpecific(appState.chameleon.portName);
-    var dfu = ChameleonDFU(port: appState.chameleon);
-    await dfu.setPRN();
-    await dfu.getMTU();
-    await dfu.flashFirmware(0x01, files[0].content);
-    await dfu.flashFirmware(0x02, files[1].content);
-    appState.log.i("Firmware flashed!");
-    appState.chameleon.performDisconnect();
   }
 
   @override
@@ -161,8 +152,15 @@ class HomePageState extends State<HomePage> {
           } else if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}');
           } else {
-            final (batteryIcon, slotIcons, usedSlots, fwVersion, ramUsage) =
-                snapshot.data;
+            final (
+              batteryIcon,
+              slotIcons,
+              usedSlots,
+              fwVersion,
+              ramUsage,
+              slot
+            ) = snapshot.data;
+            // selectedSlot = slot;
 
             return Scaffold(
               appBar: AppBar(
@@ -184,7 +182,7 @@ class HomePageState extends State<HomePage> {
                                 IconButton(
                                   onPressed: () {
                                     // Disconnect
-                                    appState.chameleon.performDisconnect();
+                                    appState.connector.performDisconnect();
                                     appState.changesMade();
                                   },
                                   icon: const Icon(Icons.close),
@@ -195,9 +193,9 @@ class HomePageState extends State<HomePage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Text(appState.chameleon.portName,
+                                Text(appState.connector.portName,
                                     style: const TextStyle(fontSize: 20)),
-                                Icon(appState.chameleon.connectionType ==
+                                Icon(appState.connector.connectionType ==
                                         ChameleonConnectType.usb
                                     ? Icons.usb
                                     : Icons.bluetooth),
@@ -212,7 +210,7 @@ class HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                            "Chameleon ${appState.chameleon.device == ChameleonDevice.ultra ? "Ultra" : "Lite"}",
+                            "Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"}",
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize:
@@ -227,7 +225,7 @@ class HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (selectedSlot > 1) {
                               selectedSlot--;
                             }
@@ -238,7 +236,7 @@ class HomePageState extends State<HomePage> {
                         ),
                         ...slotIcons,
                         IconButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (selectedSlot < 8) {
                               selectedSlot++;
                             }
@@ -253,7 +251,7 @@ class HomePageState extends State<HomePage> {
                       child: FractionallySizedBox(
                         widthFactor: 0.4,
                         child: Image.asset(
-                          appState.chameleon.device == ChameleonDevice.ultra
+                          appState.connector.device == ChameleonDevice.ultra
                               ? 'assets/black-ultra-standing-front.png'
                               : 'assets/black-lite-standing-front.png',
                           fit: BoxFit.contain,
@@ -302,16 +300,17 @@ class HomePageState extends State<HomePage> {
                                   content: Center(
                                     child: Column(
                                       children: [
-                                        const Text("Flash Firmware"),
-                                        const Text("Wipe Device"),
                                         TextButton(
                                             onPressed: () async {
                                               var appState =
                                                   context.read<MyAppState>();
                                               var connection = ChameleonCom(
-                                                  port: appState.chameleon);
+                                                  port: appState.connector);
                                               await connection.enterDFUMode();
-                                              // TODO: Make this cleaner, app freezes
+                                              appState.connector
+                                                  .performDisconnect();
+                                              Navigator.pop(context, 'Cancel');
+                                              appState.changesMade();
                                             },
                                             child: const Row(
                                               children: [
@@ -321,12 +320,24 @@ class HomePageState extends State<HomePage> {
                                             )),
                                         TextButton(
                                             onPressed: () async {
+                                              Navigator.pop(context, 'Cancel');
                                               await flashFirmware(appState);
                                             },
                                             child: const Row(
                                               children: [
                                                 Icon(Icons.system_update),
                                                 Text("Flash latest FW via DFU"),
+                                              ],
+                                            )),
+                                        TextButton(
+                                            onPressed: () async {
+                                              Navigator.pop(context, 'Cancel');
+                                              await flashFirmwareZip(appState);
+                                            },
+                                            child: const Row(
+                                              children: [
+                                                Icon(Icons.system_update),
+                                                Text("Flash .zip FW via DFU"),
                                               ],
                                             ))
                                       ],

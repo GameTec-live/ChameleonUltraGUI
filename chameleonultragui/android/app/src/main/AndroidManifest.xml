@@ -1,7 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.chameleonultragui">
+    package="io.chameleon.ultra">
+    <uses-permission android:name="android.permission.INTERNET"/>
    <application
-        android:label="chameleonultragui"
+        android:label="CU GUI"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
