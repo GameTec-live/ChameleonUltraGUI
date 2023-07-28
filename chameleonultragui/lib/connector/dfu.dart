@@ -261,7 +261,10 @@ class ChameleonDFU {
       validateCrc();
     }
 
-    await _serialInstance!.read(16384);
+    if (Platform.isWindows) {
+      // Transmittion errors fix
+      await _serialInstance!.read(16384);
+    }
 
     response = await calculateChecksum();
 
