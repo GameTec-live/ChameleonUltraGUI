@@ -7,7 +7,7 @@ import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -482,7 +482,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     double checkmarkSize = isSmallScreen ? 16 : 20;
 
     var appState = context.watch<MyAppState>();
-    var connection = ChameleonCom(port: appState.chameleon);
+    var connection = ChameleonCom(port: appState.connector);
     status.dictionaries =
         appState.sharedPreferencesProvider.getChameleonDictionaries();
     status.dictionaries
@@ -523,7 +523,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () async {
-                      if (appState.chameleon.device == ChameleonDevice.ultra) {
+                      if (appState.connector.device == ChameleonDevice.ultra) {
                         await readCardDetails(connection);
                       } else {
                         showDialog<String>(

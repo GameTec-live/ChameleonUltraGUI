@@ -1,4 +1,4 @@
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -20,7 +20,7 @@ class FlashingPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Image.asset(
-                appState.chameleon.device == ChameleonDevice.ultra
+                appState.connector.device == ChameleonDevice.ultra
                     ? appState.easteregg
                         ? 'assets/black-ultra-standing-front-flashing.png'
                         : 'assets/black-ultra-standing-front.png'
@@ -33,8 +33,8 @@ class FlashingPage extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 appState.easteregg
-                    ? 'Your Chameleon ${appState.chameleon.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'} is flashing'
-                    : 'Installing firmware on your Chameleon ${appState.chameleon.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}',
+                    ? 'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'} is flashing'
+                    : 'Installing firmware on your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}',
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,

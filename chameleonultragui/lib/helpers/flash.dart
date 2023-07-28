@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:http/http.dart' as http;
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/bridge/dfu.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -68,29 +68,29 @@ Future<void> flashFile(
 
   if (enterDFU) {
     await connection!.enterDFUMode();
-    await appState.chameleon.performDisconnect();
+    await appState.connector.performDisconnect();
   }
 
   List chameleons = [];
 
   while (chameleons.isEmpty) {
     await asyncSleep(250);
-    chameleons = await appState.chameleon.availableChameleons(true);
+    chameleons = await appState.connector.availableChameleons(true);
   }
 
   if (chameleons.length > 1) {
     throw ("More than one Chameleon in DFU. Please connect only one at a time");
   }
 
-  await appState.chameleon.connectSpecific(chameleons[0]['port']);
-  var dfu = ChameleonDFU(port: appState.chameleon);
-  await appState.chameleon.finishRead();
-  await appState.chameleon.open();
+  await appState.connector.connectSpecific(chameleons[0]['port']);
+  var dfu = ChameleonDFU(port: appState.connector);
+  await appState.connector.finishRead();
+  await appState.connector.open();
   await dfu.setPRN();
   await dfu.getMTU();
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");
-  appState.chameleon.performDisconnect();
+  appState.connector.performDisconnect();
   appState.changesMade();
 }

@@ -27,7 +27,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
 
   Future<(bool, int)> getMf1DetectionStatus() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.chameleon);
+    var connection = ChameleonCom(port: appState.connector);
     return (
       await connection.isMf1DetectionMode(),
       await connection.getMf1DetectionCount(),
@@ -44,7 +44,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
 
   Future<void> handleMfkeyCalculation() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.chameleon);
+    var connection = ChameleonCom(port: appState.connector);
 
     var detections = await connection.getMf1DetectionResult(0);
     for (var item in detections.entries) {
@@ -118,7 +118,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                         onPressed: () async {
                           var appState = context.read<MyAppState>();
                           var connection =
-                              ChameleonCom(port: appState.chameleon);
+                              ChameleonCom(port: appState.connector);
                           await connection
                               .setMf1DetectionStatus(!isDetectionMode);
                           await updateDetectionStatus();

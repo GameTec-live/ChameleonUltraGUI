@@ -1,4 +1,4 @@
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 
 class BLESerial extends AbstractSerial {
   // Class for BLE Serial Communication
