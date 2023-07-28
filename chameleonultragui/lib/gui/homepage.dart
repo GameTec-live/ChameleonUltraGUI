@@ -5,7 +5,7 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chameleonultragui/connector/chameleon.dart';
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/comms/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 
