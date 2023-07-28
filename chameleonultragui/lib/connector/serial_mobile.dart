@@ -79,7 +79,7 @@ class MobileSerial extends AbstractSerial {
     connected = false;
     if (deviceMap.containsKey(devicePort)) {
       port = (await deviceMap[devicePort]!.create())!;
-      if (deviceMap[devicePort]!.productName!.contains('hw_v1')) {
+      if (deviceMap[devicePort]!.productName!.contains('ChameleonUltra')) {
         device = ChameleonDevice.ultra;
       } else {
         device = ChameleonDevice.lite;
