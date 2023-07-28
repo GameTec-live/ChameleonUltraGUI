@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/flashing.dart';
 import 'package:chameleonultragui/gui/mfkey32page.dart';
 import 'package:chameleonultragui/gui/readcardpage.dart';
@@ -8,8 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Comms Imports
-import 'comms/serial_mobile.dart';
-import 'comms/serial_native.dart';
+import 'connector/serial_mobile.dart';
+import 'connector/serial_native.dart';
 
 // GUI Imports
 import 'gui/homepage.dart';
@@ -79,7 +79,7 @@ class MyAppState extends ChangeNotifier {
   // State
   bool onAndroid =
       Platform.isAndroid; // Are we on android? (mostly for serial port)
-  AbstractSerial chameleon = Platform.isAndroid
+  AbstractSerial connector = Platform.isAndroid
       ? MobileSerial()
       : NativeSerial(); // Chameleon Object, connected Chameleon
   bool switchOn = true;
@@ -134,7 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
     appState.devMode = appState.sharedPreferencesProvider.getDeveloperMode();
 
     Widget page; // Set Page
-    if (appState.chameleon.connected == false &&
+    if (appState.connector.connected == false &&
         selectedIndex != 0 &&
         selectedIndex != 5 &&
         selectedIndex != 6) {
@@ -144,8 +144,8 @@ class _MyHomePageState extends State<MyHomePage> {
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
-        if (appState.chameleon.connected == true) {
-          if (appState.chameleon.connectionType == ChameleonConnectType.dfu) {
+        if (appState.connector.connected == true) {
+          if (appState.connector.connectionType == ChameleonConnectType.dfu) {
             page = const FlashingPage();
             selectedIndex = 0;
           } else {
@@ -186,8 +186,8 @@ class _MyHomePageState extends State<MyHomePage> {
       return Scaffold(
           body: Row(
             children: [
-              (appState.chameleon.connectionType != ChameleonConnectType.dfu ||
-                      !appState.chameleon.connected)
+              (appState.connector.connectionType != ChameleonConnectType.dfu ||
+                      !appState.connector.connected)
                   ? SafeArea(
                       child: NavigationRail(
                         // Sidebar
@@ -201,41 +201,41 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.widgets,
-                                color: appState.chameleon.connected == false
+                                color: appState.connector.connected == false
                                     ? Colors.grey
                                     : null),
                             label: Text('Slot Manager',
-                                style: appState.chameleon.connected == false
+                                style: appState.connector.connected == false
                                     ? const TextStyle(color: Colors.grey)
                                     : null),
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.auto_awesome_motion_outlined,
-                                color: appState.chameleon.connected == false
+                                color: appState.connector.connected == false
                                     ? Colors.grey
                                     : null),
                             label: Text('Saved Cards',
-                                style: appState.chameleon.connected == false
+                                style: appState.connector.connected == false
                                     ? const TextStyle(color: Colors.grey)
                                     : null),
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.wifi,
-                                color: appState.chameleon.connected == false
+                                color: appState.connector.connected == false
                                     ? Colors.grey
                                     : null),
                             label: Text('Read Card',
-                                style: appState.chameleon.connected == false
+                                style: appState.connector.connected == false
                                     ? const TextStyle(color: Colors.grey)
                                     : null),
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.credit_card,
-                                color: appState.chameleon.connected == false
+                                color: appState.connector.connected == false
                                     ? Colors.grey
                                     : null),
                             label: Text('Mfkey32',
-                                style: appState.chameleon.connected == false
+                                style: appState.connector.connected == false
                                     ? const TextStyle(color: Colors.grey)
                                     : null),
                           ),
@@ -277,8 +277,8 @@ class BottomProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    return (appState.chameleon.connected == true &&
-            appState.chameleon.connectionType == ChameleonConnectType.dfu)
+    return (appState.connector.connected == true &&
+            appState.connector.connectionType == ChameleonConnectType.dfu)
         ? LinearProgressIndicator(
             value: appState.progress,
             backgroundColor: Colors.grey[300],

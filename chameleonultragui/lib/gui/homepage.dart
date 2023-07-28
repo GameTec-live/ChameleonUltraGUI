@@ -5,8 +5,8 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chameleonultragui/connector/chameleon.dart';
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 
 class HomePage extends StatefulWidget {
@@ -27,7 +27,7 @@ class HomePageState extends State<HomePage> {
   Future<(Icon, List<Icon>, String, String, String, int)>
       getFutureData() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.chameleon);
+    var connection = ChameleonCom(port: appState.connector);
     List<bool> usedSlots = await connection.getUsedSlots();
     return (
       await getBatteryChargeIcon(connection),
@@ -107,10 +107,10 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<void> flashFirmware(MyAppState appState) async {
-    var connection = ChameleonCom(port: appState.chameleon);
+    var connection = ChameleonCom(port: appState.connector);
     Uint8List applicationDat, applicationBin;
 
-    Uint8List content = await fetchFirmware(appState.chameleon.device);
+    Uint8List content = await fetchFirmware(appState.connector.device);
 
     (applicationDat, applicationBin) = await unpackFirmware(content);
 
@@ -119,7 +119,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<void> flashFirmwareZip(MyAppState appState) async {
-    var connection = ChameleonCom(port: appState.chameleon);
+    var connection = ChameleonCom(port: appState.connector);
     Uint8List applicationDat, applicationBin;
 
     FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -182,7 +182,7 @@ class HomePageState extends State<HomePage> {
                                 IconButton(
                                   onPressed: () {
                                     // Disconnect
-                                    appState.chameleon.performDisconnect();
+                                    appState.connector.performDisconnect();
                                     appState.changesMade();
                                   },
                                   icon: const Icon(Icons.close),
@@ -193,9 +193,9 @@ class HomePageState extends State<HomePage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Text(appState.chameleon.portName,
+                                Text(appState.connector.portName,
                                     style: const TextStyle(fontSize: 20)),
-                                Icon(appState.chameleon.connectionType ==
+                                Icon(appState.connector.connectionType ==
                                         ChameleonConnectType.usb
                                     ? Icons.usb
                                     : Icons.bluetooth),
@@ -210,7 +210,7 @@ class HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                            "Chameleon ${appState.chameleon.device == ChameleonDevice.ultra ? "Ultra" : "Lite"}",
+                            "Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"}",
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize:
@@ -251,7 +251,7 @@ class HomePageState extends State<HomePage> {
                       child: FractionallySizedBox(
                         widthFactor: 0.4,
                         child: Image.asset(
-                          appState.chameleon.device == ChameleonDevice.ultra
+                          appState.connector.device == ChameleonDevice.ultra
                               ? 'assets/black-ultra-standing-front.png'
                               : 'assets/black-lite-standing-front.png',
                           fit: BoxFit.contain,
@@ -305,9 +305,9 @@ class HomePageState extends State<HomePage> {
                                               var appState =
                                                   context.read<MyAppState>();
                                               var connection = ChameleonCom(
-                                                  port: appState.chameleon);
+                                                  port: appState.connector);
                                               await connection.enterDFUMode();
-                                              appState.chameleon
+                                              appState.connector
                                                   .performDisconnect();
                                               Navigator.pop(context, 'Cancel');
                                               appState.changesMade();

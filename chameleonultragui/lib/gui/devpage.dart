@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/connector/chameleon.dart';
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +18,7 @@ class DevPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-    var cml = ChameleonCom(port: appState.chameleon);
+    var cml = ChameleonCom(port: appState.connector);
 
     return Center(
       child: Column(
@@ -29,7 +29,7 @@ class DevPage extends StatelessWidget {
             child: IconButton(
               onPressed: () {
                 // Disconnect
-                appState.chameleon.performDisconnect();
+                appState.connector.performDisconnect();
                 appState.changesMade();
               },
               icon: const Icon(Icons.close),
@@ -38,9 +38,9 @@ class DevPage extends StatelessWidget {
           const Text('Chameleon Ultra GUI'), // Display dummy / debug info
           Text('Platform: ${Platform.operatingSystem}'),
           Text('Android: ${appState.onAndroid}'),
-          Text('Serial protocol : ${appState.chameleon}'),
-          Text('Chameleon connected: ${appState.chameleon.connected}'),
-          Text('Chameleon device type: ${appState.chameleon.device}'),
+          Text('Serial protocol : ${appState.connector}'),
+          Text('Chameleon connected: ${appState.connector.connected}'),
+          Text('Chameleon device type: ${appState.connector.device}'),
           ElevatedButton(
             onPressed: () async {
               await cml.setReaderDeviceMode(true);
@@ -202,7 +202,7 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await cml.enterDFUMode();
-              appState.chameleon.performDisconnect();
+              appState.connector.performDisconnect();
             },
             child: const Column(children: [
               Text('Reboot to DFU'),
@@ -210,7 +210,7 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              var connection = ChameleonCom(port: appState.chameleon);
+              var connection = ChameleonCom(port: appState.connector);
               Uint8List applicationDat, applicationBin;
 
               Uint8List content = await fetchFirmware(ChameleonDevice.ultra);
@@ -226,7 +226,7 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              var connection = ChameleonCom(port: appState.chameleon);
+              var connection = ChameleonCom(port: appState.connector);
               Uint8List applicationDat, applicationBin;
 
               Uint8List content = await fetchFirmware(ChameleonDevice.lite);

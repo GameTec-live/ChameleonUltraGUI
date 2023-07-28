@@ -67,6 +67,10 @@ class NativeSerial extends AbstractSerial {
   }
 
   Future<bool> connectDevice(String address, bool setPort) async {
+    if (port != null && port!.isOpen && !setPort) {
+      log.d("Chameleon is connected now");
+    }
+
     log.d("Connecting to $address");
     try {
       checkPort = SerialPort(address);
@@ -85,7 +89,7 @@ class NativeSerial extends AbstractSerial {
       log.d("Manufacturer: ${checkPort!.manufacturer}");
       log.d("Product: ${checkPort!.productName}");
       if (checkPort!.manufacturer == "Proxgrind") {
-        if (checkPort!.productName!.startsWith('ChameleonUltra')) {
+        if (checkPort!.productName!.contains('ChameleonUltra')) {
           device = ChameleonDevice.ultra;
         } else {
           device = ChameleonDevice.lite;

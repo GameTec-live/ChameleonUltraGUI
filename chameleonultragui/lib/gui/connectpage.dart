@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +13,7 @@ class ConnectPage extends StatelessWidget {
     var appState = context.watch<MyAppState>(); // Get State
 
     return FutureBuilder(
-      future: appState.chameleon.availableChameleons(false),
+      future: appState.connector.availableChameleons(false),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -67,7 +67,7 @@ class ConnectPage extends StatelessWidget {
                                 ),
                               );
                               // Connect via BLE here
-                              appState.chameleon.connected =
+                              appState.connector.connected =
                                   true; // Bypass / Dummy for testing
                               appState.changesMade();
                             },
@@ -109,7 +109,7 @@ class ConnectPage extends StatelessWidget {
 
                                             Uint8List content =
                                                 await fetchFirmware(
-                                                    appState.chameleon.device);
+                                                    appState.connector.device);
 
                                             (applicationDat, applicationBin) =
                                                 await unpackFirmware(content);
@@ -132,7 +132,7 @@ class ConnectPage extends StatelessWidget {
                                     ),
                                   );
                                 } else {
-                                  await appState.chameleon
+                                  await appState.connector
                                       .connectSpecific(chameleonDevice['port']);
                                   appState.changesMade();
                                 }

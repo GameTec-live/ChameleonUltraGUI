@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/comms/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:logger/logger.dart';
 import 'package:enough_convert/enough_convert.dart';
 
