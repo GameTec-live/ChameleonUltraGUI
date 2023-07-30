@@ -23,7 +23,7 @@ class AndroidSerial extends AbstractSerial {
     List output = [];
 
     output.addAll(await mobileSerial.availableChameleons(onlyDFU));
-    if (await checkPermissions()) {
+    if (await checkPermissions() && !onlyDFU) {
       output.addAll(await bleSerial.availableChameleons(onlyDFU));
     }
 
