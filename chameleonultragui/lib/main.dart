@@ -14,15 +14,15 @@ import 'connector/serial_mobile.dart';
 import 'connector/serial_native.dart';
 
 // GUI Imports
-import 'gui/homepage.dart';
-import 'gui/savedcardspage.dart';
-import 'gui/settingspage.dart';
-import 'gui/connectpage.dart';
-import 'gui/devpage.dart';
-import 'gui/slotmanagerpage.dart';
+import 'package:chameleonultragui/gui/homepage.dart';
+import 'package:chameleonultragui/gui/savedcardspage.dart';
+import 'package:chameleonultragui/gui/settingspage.dart';
+import 'package:chameleonultragui/gui/connectpage.dart';
+import 'package:chameleonultragui/gui/devpage.dart';
+import 'package:chameleonultragui/gui/slotmanagerpage.dart';
 
 // Shared Preferences Provider
-import 'sharedprefsprovider.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Logger
 import 'package:logger/logger.dart';

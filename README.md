@@ -41,3 +41,12 @@ Contributions are welcome, most stuff that needs to be done can either be found 
 
   TLDR; yes, some day, but very low priority.
 </details>
+
+## Donate
+If you want to support us and donate 1) Thank you, you make it possible for us to keep this app free and make it easier to publish this app on the apple appstore 2) You have the following options:
+
+Open Collective: COMING SOON
+
+Crypto Currencies if your into that jam:
+- BTC: bc1qrcd4ctxagaxsetyhpzc08d2upl0mh498gp3lkl
+- ETH: 0x0f20e505E9e534236dF4390DcFfD5C4A03C0eec7
