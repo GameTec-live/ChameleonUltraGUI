@@ -196,9 +196,9 @@ class HomePageState extends State<HomePage> {
                                 Text(appState.connector.portName,
                                     style: const TextStyle(fontSize: 20)),
                                 Icon(appState.connector.connectionType ==
-                                        ChameleonConnectType.usb
-                                    ? Icons.usb
-                                    : Icons.bluetooth),
+                                        ChameleonConnectType.ble
+                                    ? Icons.bluetooth
+                                    : Icons.usb),
                                 batteryIcon,
                               ],
                             ),
