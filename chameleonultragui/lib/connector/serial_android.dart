@@ -13,8 +13,9 @@ class AndroidSerial extends AbstractSerial {
 
   @override
   Future<bool> preformDisconnect() async {
-    return (await bleSerial.preformDisconnect() ||
-        await mobileSerial.preformDisconnect());
+    bool ble = await bleSerial.preformDisconnect();
+    bool otg = await mobileSerial.preformDisconnect();
+    return (ble || otg);
   }
 
   @override
