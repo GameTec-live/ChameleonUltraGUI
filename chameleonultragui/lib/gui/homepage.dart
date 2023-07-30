@@ -182,7 +182,7 @@ class HomePageState extends State<HomePage> {
                                 IconButton(
                                   onPressed: () {
                                     // Disconnect
-                                    appState.connector.performDisconnect();
+                                    appState.connector.preformDisconnect();
                                     appState.changesMade();
                                   },
                                   icon: const Icon(Icons.close),
@@ -308,7 +308,7 @@ class HomePageState extends State<HomePage> {
                                                   port: appState.connector);
                                               await connection.enterDFUMode();
                                               appState.connector
-                                                  .performDisconnect();
+                                                  .preformDisconnect();
                                               Navigator.pop(context, 'Cancel');
                                               appState.changesMade();
                                             },

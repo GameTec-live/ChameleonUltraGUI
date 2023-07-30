@@ -12,7 +12,7 @@ class MobileSerial extends AbstractSerial {
   UsbPort? port;
 
   @override
-  Future<bool> performDisconnect() async {
+  Future<bool> preformDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
     if (port != null) {
@@ -74,12 +74,12 @@ class MobileSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(devicePort) async {
+  Future<bool> connectSpecific(deviceName) async {
     await availableDevices();
     connected = false;
-    if (deviceMap.containsKey(devicePort)) {
-      port = (await deviceMap[devicePort]!.create())!;
-      if (deviceMap[devicePort]!.productName!.contains('hw_v1')) {
+    if (deviceMap.containsKey(deviceName)) {
+      port = (await deviceMap[deviceName]!.create())!;
+      if (deviceMap[deviceName]!.productName!.contains('hw_v1')) {
         device = ChameleonDevice.ultra;
       } else {
         device = ChameleonDevice.lite;
@@ -96,22 +96,23 @@ class MobileSerial extends AbstractSerial {
       port!.setPortParameters(
           115200, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
       connected = true;
+
       port!.inputStream!.listen((Uint8List data) {
         messagePool.add(data);
       });
 
       UsbSerial.usbEventStream!.listen((event) {
         if (event.event == "android.hardware.usb.action.USB_DEVICE_DETACHED" &&
-            event.device!.deviceName == devicePort) {
+            event.device!.deviceName == deviceName) {
           log.w("Chameleon disconnected from USB");
           device = ChameleonDevice.none;
           connected = false;
         }
       });
 
-      portName = devicePort.substring(devicePort.length - 15); // Limit length
+      portName = deviceName.substring(deviceName.length - 15); // Limit length
       connectionType = ChameleonConnectType.usb;
-      if (deviceMap[devicePort]!.vid == 0x1915) {
+      if (deviceMap[deviceName]!.vid == 0x1915) {
         connectionType = ChameleonConnectType.dfu;
         log.w("Chameleon is in DFU mode!");
       }
@@ -136,7 +137,7 @@ class MobileSerial extends AbstractSerial {
         completer.complete(message);
         break;
       }
-      await asyncSleep(100);
+      await asyncSleep(10);
     }
 
     return completer.future;

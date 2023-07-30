@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -29,7 +30,7 @@ class DevPage extends StatelessWidget {
             child: IconButton(
               onPressed: () {
                 // Disconnect
-                appState.connector.performDisconnect();
+                appState.connector.preformDisconnect();
                 appState.changesMade();
               },
               icon: const Icon(Icons.close),
@@ -202,7 +203,7 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await cml.enterDFUMode();
-              appState.connector.performDisconnect();
+              appState.connector.preformDisconnect();
             },
             child: const Column(children: [
               Text('Reboot to DFU'),

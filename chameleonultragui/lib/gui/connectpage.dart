@@ -13,7 +13,9 @@ class ConnectPage extends StatelessWidget {
     var appState = context.watch<MyAppState>(); // Get State
 
     return FutureBuilder(
-      future: appState.connector.availableChameleons(false),
+      future: appState.connector.connected
+          ? Future.value([])
+          : appState.connector.availableChameleons(false),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -22,6 +24,7 @@ class ConnectPage extends StatelessWidget {
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
+          appState.connector.preformDisconnect();
           return Text('Error: ${snapshot.error}');
         } else {
           final result = snapshot.data;
@@ -152,7 +155,10 @@ class ConnectPage extends StatelessWidget {
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
-                                        const Icon(Icons.usb),
+                                        chameleonDevice['type'] ==
+                                                ChameleonConnectType.ble
+                                            ? const Icon(Icons.bluetooth)
+                                            : const Icon(Icons.usb),
                                         Text(chameleonDevice['port'] ??
                                             "MISSING"),
                                         if (chameleonDevice['type'] ==

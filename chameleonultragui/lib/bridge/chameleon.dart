@@ -617,6 +617,9 @@ class ChameleonCom {
   }
 
   Future<void> enterDFUMode() async {
+    if (_serialInstance!.connectionType == ChameleonConnectType.ble) {
+      throw ("No DFU in BLE yet");
+    }
     await sendCmdSync(ChameleonCommand.enterBootloader, 0x00,
         data: Uint8List(0), skipReceive: true);
   }

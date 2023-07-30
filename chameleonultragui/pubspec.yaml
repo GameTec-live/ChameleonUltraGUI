@@ -58,7 +58,8 @@ dependencies:
   uuid: ^3.0.7
   http: ^1.1.0
   archive: ^3.3.7
-  flutter_blue_plus: ^1.10.1
+  flutter_reactive_ble: ^5.1.1
+  permission_handler: ^10.4.3
 
 dev_dependencies:
   flutter_test:

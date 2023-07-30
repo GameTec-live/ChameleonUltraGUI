@@ -16,7 +16,7 @@ class AbstractSerial {
     return false;
   }
 
-  Future<bool> performDisconnect() async {
+  Future<bool> preformDisconnect() async {
     return false;
   }
 
@@ -24,7 +24,7 @@ class AbstractSerial {
     return [];
   }
 
-  Future<bool> connectSpecific(device) async {
+  Future<bool> connectSpecific(deviceName) async {
     return false;
   }
 

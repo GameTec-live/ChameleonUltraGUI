@@ -161,19 +161,19 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.7"
+  fixnum:
+    dependency: transitive
+    description:
+      name: fixnum
+      sha256: "25517a4deb0c03aa0f32fd12db525856438902d9c16536311e76cdc57b31d7d1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   flutter:
     dependency: "direct main"
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_blue_plus:
-    dependency: "direct main"
-    description:
-      name: flutter_blue_plus
-      sha256: d601805c12217708a7aa4878f3eda5daf1c3e2a2ad67cfa6b64cb5ed7e909805
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.10.1"
   flutter_launcher_icons:
     dependency: "direct dev"
     description:
@@ -206,6 +206,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.15"
+  flutter_reactive_ble:
+    dependency: "direct main"
+    description:
+      name: flutter_reactive_ble
+      sha256: dfcd3cca271a054121ef96fde0fdad43274a5a38b423fc3f519fd9edc43e42c9
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.1"
   flutter_staggered_grid_view:
     dependency: "direct main"
     description:
@@ -224,6 +232,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  functional_data:
+    dependency: transitive
+    description:
+      name: functional_data
+      sha256: aefdec4365452283b2a7cf420a3169654d51d3e9553069a22d76680d7a9d7c3d
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   glob:
     dependency: transitive
     description:
@@ -400,6 +416,46 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.7"
+  permission_handler:
+    dependency: "direct main"
+    description:
+      name: permission_handler
+      sha256: "63e5216aae014a72fe9579ccd027323395ce7a98271d9defa9d57320d001af81"
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.4.3"
+  permission_handler_android:
+    dependency: transitive
+    description:
+      name: permission_handler_android
+      sha256: "2ffaf52a21f64ac9b35fe7369bb9533edbd4f698e5604db8645b1064ff4cf221"
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.3.3"
+  permission_handler_apple:
+    dependency: transitive
+    description:
+      name: permission_handler_apple
+      sha256: "99e220bce3f8877c78e4ace901082fb29fa1b4ebde529ad0932d8d664b34f3f5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.1.4"
+  permission_handler_platform_interface:
+    dependency: transitive
+    description:
+      name: permission_handler_platform_interface
+      sha256: "7c6b1500385dd1d2ca61bb89e2488ca178e274a69144d26bbd65e33eae7c02a9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.11.3"
+  permission_handler_windows:
+    dependency: transitive
+    description:
+      name: permission_handler_windows
+      sha256: cc074aace208760f1eee6aa4fae766b45d947df85bc831cde77009cdb4720098
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.3"
   petitparser:
     dependency: transitive
     description:
@@ -432,6 +488,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.7.3"
+  protobuf:
+    dependency: transitive
+    description:
+      name: protobuf
+      sha256: "01dd9bd0fa02548bf2ceee13545d4a0ec6046459d847b6b061d8a27237108a08"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   provider:
     dependency: "direct main"
     description:
@@ -448,6 +512,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.1"
+  reactive_ble_mobile:
+    dependency: transitive
+    description:
+      name: reactive_ble_mobile
+      sha256: "2fdd8bcd00533f3e1e544030edeba723ce2dfdd24c3b22a04103b410b1272290"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.1"
+  reactive_ble_platform_interface:
+    dependency: transitive
+    description:
+      name: reactive_ble_platform_interface
+      sha256: d0c0041de584df5c697d276ae8c3ddc767b2c364ed29b4ae25126c57e4467cba
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.1"
   serial_communication:
     dependency: "direct main"
     description:
