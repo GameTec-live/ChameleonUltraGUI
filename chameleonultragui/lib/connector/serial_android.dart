@@ -91,21 +91,18 @@ class AndroidSerial extends AbstractSerial {
   }
 
   @override
-  ChameleonDevice get device => (bleSerial.device != ChameleonDevice.none)
-      ? bleSerial.device
-      : mobileSerial.device;
+  ChameleonDevice get device =>
+      (bleSerial.connected) ? bleSerial.device : mobileSerial.device;
 
   @override
   bool get connected => (bleSerial.connected || mobileSerial.connected);
 
   @override
-  String get portName => (bleSerial.connectionType != ChameleonConnectType.none)
-      ? bleSerial.portName
-      : mobileSerial.portName;
+  String get portName =>
+      (bleSerial.connected) ? bleSerial.portName : mobileSerial.portName;
 
   @override
-  ChameleonConnectType get connectionType =>
-      (bleSerial.connectionType != ChameleonConnectType.none)
-          ? bleSerial.connectionType
-          : mobileSerial.connectionType;
+  ChameleonConnectType get connectionType => (bleSerial.connected)
+      ? bleSerial.connectionType
+      : mobileSerial.connectionType;
 }
