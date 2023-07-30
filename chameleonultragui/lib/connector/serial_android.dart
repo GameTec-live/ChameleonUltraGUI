@@ -99,10 +99,9 @@ class AndroidSerial extends AbstractSerial {
   bool get connected => (bleSerial.connected || mobileSerial.connected);
 
   @override
-  String get portName =>
-      (bleSerial.portName != "None" && bleSerial.portName != "")
-          ? bleSerial.portName
-          : mobileSerial.portName;
+  String get portName => (bleSerial.connectionType != ChameleonConnectType.none)
+      ? bleSerial.portName
+      : mobileSerial.portName;
 
   @override
   ChameleonConnectType get connectionType =>
