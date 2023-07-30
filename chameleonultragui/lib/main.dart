@@ -136,6 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget page; // Set Page
     if (appState.connector.connected == false &&
         selectedIndex != 0 &&
+        selectedIndex != 2 &&
         selectedIndex != 5 &&
         selectedIndex != 6) {
       // If not connected, and not on home, settings or dev page, go to home page
@@ -209,15 +210,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                     ? const TextStyle(color: Colors.grey)
                                     : null),
                           ),
-                          NavigationRailDestination(
-                            icon: Icon(Icons.auto_awesome_motion_outlined,
-                                color: appState.connector.connected == false
-                                    ? Colors.grey
-                                    : null),
-                            label: Text('Saved Cards',
-                                style: appState.connector.connected == false
-                                    ? const TextStyle(color: Colors.grey)
-                                    : null),
+                          const NavigationRailDestination(
+                            icon: Icon(Icons.auto_awesome_motion_outlined),
+                            label: Text('Saved Cards'),
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.wifi,

@@ -30,11 +30,11 @@ class AndroidSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(deviceName) async {
-    if (deviceName.contains(":")) {
-      return bleSerial.connectSpecific(deviceName);
+  Future<bool> connectSpecific(devicePort) async {
+    if (devicePort.contains(":")) {
+      return bleSerial.connectSpecific(devicePort);
     } else {
-      return mobileSerial.connectSpecific(deviceName);
+      return mobileSerial.connectSpecific(devicePort);
     }
   }
 

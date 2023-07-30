@@ -16,6 +16,7 @@ class BLESerial extends AbstractSerial {
   Stream<List<int>>? receivedDataStream;
   StreamSubscription<ConnectionStateUpdate>? connection;
   List<Uint8List> messagePool = [];
+  Map<String, ChameleonDevice> chameleonMap = {};
 
   @override
   Future<List> availableDevices() async {
@@ -73,19 +74,20 @@ class BLESerial extends AbstractSerial {
 
       output.add(
           {'port': bleDevice.id, 'device': device, 'type': connectionType});
+      chameleonMap[bleDevice.id] = device;
     }
 
     return output;
   }
 
   @override
-  Future<bool> connectSpecific(deviceName) async {
+  Future<bool> connectSpecific(devicePort) async {
     Completer<bool> completer = Completer<bool>();
 
     await preformDisconnect();
     connection = flutterReactiveBle
         .connectToAdvertisingDevice(
-      id: deviceName,
+      id: devicePort,
       withServices: [_UART_UUID, _UART_RX, _UART_TX],
       prescanDuration: const Duration(seconds: 5),
     )
@@ -111,8 +113,9 @@ class BLESerial extends AbstractSerial {
             characteristicId: _UART_RX,
             deviceId: connectionState.deviceId);
 
-        portName = deviceName;
-        device = ChameleonDevice.ultra;
+        portName = devicePort;
+        device = chameleonMap[devicePort]!;
+
         connectionType = ChameleonConnectType.ble;
         completer.complete(true);
       } else if (connectionState.connectionState ==
