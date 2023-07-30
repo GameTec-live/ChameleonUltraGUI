@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
-import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/gui/flashing.dart';
 import 'package:chameleonultragui/gui/mfkey32page.dart';
 import 'package:chameleonultragui/gui/readcardpage.dart';
@@ -10,7 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Comms Imports
-import 'connector/serial_mobile.dart';
 import 'connector/serial_native.dart';
 
 // GUI Imports

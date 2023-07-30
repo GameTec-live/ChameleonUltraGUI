@@ -24,7 +24,7 @@ class AbstractSerial {
     return [];
   }
 
-  Future<bool> connectSpecific(deviceName) async {
+  Future<bool> connectSpecific(devicePort) async {
     return false;
   }
 

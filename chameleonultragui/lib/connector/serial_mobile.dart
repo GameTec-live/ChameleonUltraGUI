@@ -74,11 +74,16 @@ class MobileSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(device) async {
+  Future<bool> connectSpecific(devicePort) async {
     await availableDevices();
     connected = false;
-    if (deviceMap.containsKey(device)) {
-      port = (await deviceMap[device]!.create())!;
+    if (deviceMap.containsKey(devicePort)) {
+      port = (await deviceMap[devicePort]!.create())!;
+      if (deviceMap[devicePort]!.productName!.contains('ChameleonUltra')) {
+        device = ChameleonDevice.ultra;
+      } else {
+        device = ChameleonDevice.lite;
+      }
       bool openResult = await port!.open();
       if (!openResult) {
         return false;
@@ -94,9 +99,19 @@ class MobileSerial extends AbstractSerial {
       port!.inputStream!.listen((Uint8List data) {
         messagePool.add(data);
       });
-      portName = device.substring(device.length - 15); // Limit length
+
+      UsbSerial.usbEventStream!.listen((event) {
+        if (event.event == "android.hardware.usb.action.USB_DEVICE_DETACHED" &&
+            event.device!.deviceName == devicePort) {
+          log.w("Chameleon disconnected from USB");
+          device = ChameleonDevice.none;
+          connected = false;
+        }
+      });
+
+      portName = devicePort.substring(devicePort.length - 15); // Limit length
       connectionType = ChameleonConnectType.usb;
-      if (deviceMap[device]!.vid == 0x1915) {
+      if (deviceMap[devicePort]!.vid == 0x1915) {
         connectionType = ChameleonConnectType.dfu;
         log.w("Chameleon is in DFU mode!");
       }
