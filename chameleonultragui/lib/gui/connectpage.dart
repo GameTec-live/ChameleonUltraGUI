@@ -59,31 +59,6 @@ class ConnectPage extends StatelessWidget {
                         ),
                         scrollDirection: Axis.vertical,
                         children: [
-                          // "Add" Button for Bluetooth
-                          ElevatedButton(
-                            onPressed: () {
-                              showDialog<String>(
-                                context: context,
-                                builder: (BuildContext context) =>
-                                    const AlertDialog(
-                                  content: Text('Identifies as BLE Dialog'),
-                                ),
-                              );
-                              // Connect via BLE here
-                              appState.connector.connected =
-                                  true; // Bypass / Dummy for testing
-                              appState.changesMade();
-                            },
-                            style: ButtonStyle(
-                              shape: MaterialStateProperty.all<
-                                  RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18.0),
-                                ),
-                              ),
-                            ),
-                            child: const Icon(Icons.add),
-                          ),
                           ...result.map<Widget>((chameleonDevice) {
                             return ElevatedButton(
                               onPressed: () async {
