@@ -156,7 +156,7 @@ class ChameleonDFU {
       if (readBuffer[2] == ChameleonResponseCode.extendedError.value) {
         throw ("DFU error: ${ChameleonResponseCode.fromValue(readBuffer[3])}");
       }
-      throw ("DFU error");
+      // throw ("DFU error");
     }
   }
 
@@ -238,9 +238,10 @@ class ChameleonDFU {
 
     void validateCrc() {
       // TODO: fix CRC
-      // if (crc != response['crc']) {
-      //   throw ("Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
-      // }
+      if (crc != response['crc']) {
+        log.w(
+            "Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
+      }
       if (offset != response['offset']!) {
         log.w(
             "Failed offset validation. Expected: $offset Received: ${response['offset']}.");
@@ -257,6 +258,11 @@ class ChameleonDFU {
       await delayedSend(packet);
 
       offset += toTransmit.length;
+      if (Platform.isAndroid) {
+        await asyncSleep(100);
+      }
+      crc = (calculateCRC32(toTransmit.sublist(1)).toUnsigned(32) & 0xFFFFFFFF)
+          .toInt();
       response = await calculateChecksum();
       validateCrc();
     }
@@ -268,9 +274,6 @@ class ChameleonDFU {
 
     response = await calculateChecksum();
 
-    // crc = (calculateCRC32(toTransmit.sublist(1)).toUnsigned(32) & 0xFFFFFFFF)
-    //     .toInt();
-
     validateCrc();
 
     return crc;
@@ -281,15 +284,34 @@ class ChameleonDFU {
     // We work around it by sending message by parts with delay
     var offsetSize = 128;
 
-    if (Platform.isWindows) {
+    if (Platform.isAndroid) {
+      offsetSize = 8;
+    }
+
+    if (Platform.isWindows || Platform.isAndroid) {
       for (var offset = 0; offset < packet.length; offset += offsetSize) {
-        await _serialInstance!.write(packet.sublist(
-            offset, offset + min(offsetSize, packet.length - offset)));
-        await asyncSleep(1);
+        if (min(offsetSize, packet.length - offset) != offsetSize) {
+          for (var secondOffset = 0;
+              secondOffset < min(offsetSize, packet.length - offset);
+              secondOffset++) {
+            await _serialInstance!.write(
+                packet.sublist(
+                    offset + secondOffset, offset + secondOffset + 1),
+                firmware: true);
+            await asyncSleep(100);
+          }
+        } else {
+          await _serialInstance!.write(
+              packet.sublist(
+                  offset, offset + min(offsetSize, packet.length - offset)),
+              firmware: true);
+        }
+
+        await asyncSleep(100);
       }
     } else {
       // Other OS: send as is
-      _serialInstance!.write(packet);
+      _serialInstance!.write(packet, firmware: true);
     }
   }
 }

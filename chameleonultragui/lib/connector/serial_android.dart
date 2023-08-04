@@ -23,7 +23,7 @@ class AndroidSerial extends AbstractSerial {
     List output = [];
 
     output.addAll(await mobileSerial.availableChameleons(onlyDFU));
-    if (await checkPermissions() && !onlyDFU) {
+    if (await checkPermissions()) {
       output.addAll(await bleSerial.availableChameleons(onlyDFU));
     }
 
@@ -33,6 +33,7 @@ class AndroidSerial extends AbstractSerial {
   @override
   Future<bool> connectSpecific(devicePort) async {
     if (devicePort.contains(":")) {
+      print(devicePort);
       return bleSerial.connectSpecific(devicePort);
     } else {
       return mobileSerial.connectSpecific(devicePort);
@@ -64,11 +65,11 @@ class AndroidSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> write(Uint8List command) async {
+  Future<bool> write(Uint8List command, {bool firmware = false}) async {
     if (bleSerial.connected) {
-      return bleSerial.write(command);
+      return bleSerial.write(command, firmware: firmware);
     } else {
-      return mobileSerial.write(command);
+      return mobileSerial.write(command, firmware: firmware);
     }
   }
 

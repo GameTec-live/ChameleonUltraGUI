@@ -121,7 +121,7 @@ class MobileSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> write(Uint8List command) async {
+  Future<bool> write(Uint8List command, {bool firmware = false}) async {
     await port!.write(command);
     return true;
   }

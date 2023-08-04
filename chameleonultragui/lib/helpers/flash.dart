@@ -87,7 +87,8 @@ Future<void> flashFile(
   await appState.connector.finishRead();
   await appState.connector.open();
   await dfu.setPRN();
-  await dfu.getMTU();
+  // TODO: set only in BLE dfu
+  dfu.mtu = 2051;
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");

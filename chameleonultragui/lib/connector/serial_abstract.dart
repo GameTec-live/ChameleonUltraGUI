@@ -34,7 +34,7 @@ class AbstractSerial {
 
   Future<void> open() async {}
 
-  Future<bool> write(Uint8List command) async {
+  Future<bool> write(Uint8List command, {bool firmware = false}) async {
     return false;
   }
 
