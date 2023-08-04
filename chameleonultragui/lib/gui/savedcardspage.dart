@@ -150,7 +150,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   builder: (BuildContext context) {
                                     return AlertDialog(
                                       title: const Text('Correct tag details'),
-                                      content: Column(children: [
+                                      content: SingleChildScrollView(
+                                          child: Column(children: [
                                         Column(children: [
                                           const SizedBox(height: 20),
                                           const Text('UID 4 byte length'),
@@ -235,7 +236,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             appState.changesMade();
                                           },
                                         )
-                                      ]),
+                                      ])),
                                       actions: [
                                         ElevatedButton(
                                           onPressed: () async {
