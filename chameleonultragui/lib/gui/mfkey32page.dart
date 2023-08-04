@@ -17,7 +17,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   final TextEditingController controller = TextEditingController();
   late Future<(bool, int)> detectionStatusFuture;
   bool isDetectionMode = false;
-  int detectionCount = 0;
+  int detectionCount = -1;
+  bool firstLoad = true;
 
   @override
   void initState() {
@@ -28,6 +29,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   Future<(bool, int)> getMf1DetectionStatus() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
+
     return (
       await connection.isMf1DetectionMode(),
       await connection.getMf1DetectionCount(),
@@ -92,7 +94,16 @@ class Mfkey32PageState extends State<Mfkey32Page> {
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else {
-          final (isDetectionMode, detectionCount) = snapshot.data;
+          var appState = context.read<MyAppState>();
+          if (detectionCount == -1) {
+            updateDetectionStatus();
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Mfkey32'),
+              ),
+              body: const Center(child: CircularProgressIndicator()),
+            );
+          }
 
           return Scaffold(
             appBar: AppBar(
@@ -116,13 +127,11 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                       const SizedBox(height: 25.0),
                       ElevatedButton(
                         onPressed: () async {
-                          var appState = context.read<MyAppState>();
                           var connection =
                               ChameleonCom(port: appState.connector);
                           await connection
                               .setMf1DetectionStatus(!isDetectionMode);
                           await updateDetectionStatus();
-                          appState.changesMade();
                         },
                         child: Text(isDetectionMode
                             ? 'Disable Mfkey32 collection'
@@ -130,8 +139,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                       ),
                       const SizedBox(height: 16.0),
                       ElevatedButton(
-                        onPressed: () {
-                          updateDetectionStatus();
+                        onPressed: () async {
+                          await updateDetectionStatus();
                         },
                         child: const Text('Update'),
                       ),

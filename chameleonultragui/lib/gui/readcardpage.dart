@@ -28,6 +28,65 @@ enum ChameleonMifareClassicState {
   save
 }
 
+class ErrorBox extends StatelessWidget {
+  final String errorMessage;
+  final double boxHeight;
+  final double boxWidth;
+  final Color iconColor;
+  final double iconSize;
+  final BorderRadius borderRadius;
+
+  const ErrorBox({
+    super.key,
+    required this.errorMessage,
+    this.boxHeight = 60.0,
+    this.boxWidth = double.infinity,
+    this.iconColor = Colors.white,
+    this.iconSize = 24.0,
+    this.borderRadius = const BorderRadius.all(Radius.circular(8.0)),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    final Color boxColor = brightness == Brightness.light
+        ? const Color(0xFFFDEDED)
+        : const Color(0xFFFF7961);
+    const Color textColor = Color(0xFF5F2120);
+
+    return Container(
+      height: boxHeight,
+      width: boxWidth,
+      decoration: BoxDecoration(
+        color: boxColor,
+        borderRadius: borderRadius,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: textColor,
+            size: iconSize,
+          ),
+          const SizedBox(width: 16.0),
+          Expanded(
+            child: Text(
+              errorMessage,
+              style: const TextStyle(
+                color: textColor,
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ChameleonReadTagStatus {
   String uid;
   String sak;
@@ -35,6 +94,7 @@ class ChameleonReadTagStatus {
   String ats;
   String tech;
   String dumpName;
+  bool noCard;
   bool allKeysExists;
   MifareClassicType type;
   List<ChameleonKeyCheckmark> checkMarks;
@@ -52,6 +112,7 @@ class ChameleonReadTagStatus {
       this.ats = '',
       this.tech = '',
       this.dumpName = '',
+      this.noCard = false,
       this.allKeysExists = false,
       this.type = MifareClassicType.none,
       this.dictionaries = const [],
@@ -106,9 +167,19 @@ class ReadCardPageState extends State<ReadCardPage> {
             ? ChameleonMifareClassicState.recovery
             : ChameleonMifareClassicState.none;
         status.allKeysExists = false;
+        status.noCard = false;
       });
-    } on Exception catch (_) {
-      // TODO: catch error
+    } catch (_) {
+      setState(() {
+        status.uid = "";
+        status.sak = "";
+        status.atqa = "";
+        status.ats = "";
+        status.tech = "";
+        status.state = ChameleonMifareClassicState.none;
+        status.allKeysExists = false;
+        status.noCard = true;
+      });
     }
   }
 
@@ -127,7 +198,7 @@ class ReadCardPageState extends State<ReadCardPage> {
       if (mifare) {
         mf1Type = mfClassicGetType(card.atqa, card.sak);
       } else {
-        appState.log.e("Not mifare tag!");
+        appState.log.e("Not Mifare Classic tag!");
         return;
       }
 
@@ -342,9 +413,7 @@ class ReadCardPageState extends State<ReadCardPage> {
           status.state = ChameleonMifareClassicState.dump;
         });
       }
-    } on Exception catch (_) {
-      // TODO: catch error
-    }
+    } catch (_) {}
   }
 
   Future<void> dumpData(ChameleonCom connection) async {
@@ -521,6 +590,14 @@ class ReadCardPageState extends State<ReadCardPage> {
                     style: TextStyle(fontSize: fieldFontSize),
                   ),
                   const SizedBox(height: 16),
+                  ...(status.noCard)
+                      ? [
+                          const ErrorBox(
+                              errorMessage:
+                                  "No card found. Try to move Chameleon on card"),
+                          const SizedBox(height: 16)
+                        ]
+                      : [],
                   ElevatedButton(
                     onPressed: () async {
                       if (appState.connector.device == ChameleonDevice.ultra) {
