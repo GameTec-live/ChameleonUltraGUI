@@ -490,11 +490,17 @@ class SavedCardsPageState extends State<SavedCardsPage> {
 
                             if (result != null) {
                               File file = File(result.files.single.path!);
-                              var contents = const Utf8Decoder()
-                                  .convert(await file.readAsBytes());
+                              String contents;
+                              try {
+                                contents = const Utf8Decoder()
+                                    .convert(await file.readAsBytes());
+                              } catch (e) {
+                                return;
+                              }
 
                               List<Uint8List> keys = [];
                               for (var key in contents.split("\n")) {
+                                key = key.trim();
                                 if (key.length == 12 && isValidHexString(key)) {
                                   keys.add(hexToBytes(key));
                                 }
