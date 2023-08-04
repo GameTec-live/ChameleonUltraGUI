@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/helpers/general.dart';
@@ -150,93 +151,97 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   builder: (BuildContext context) {
                                     return AlertDialog(
                                       title: const Text('Correct tag details'),
-                                      content: SingleChildScrollView(
-                                          child: Column(children: [
-                                        Column(children: [
-                                          const SizedBox(height: 20),
-                                          const Text('UID 4 byte length'),
-                                          const SizedBox(height: 10),
+                                      content: StatefulBuilder(builder:
+                                          (BuildContext context,
+                                              StateSetter setState) {
+                                        return SingleChildScrollView(
+                                            child: Column(children: [
+                                          Column(children: [
+                                            const SizedBox(height: 20),
+                                            const Text('UID 4 byte length'),
+                                            const SizedBox(height: 10),
+                                            TextFormField(
+                                              controller: uid4Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'UID',
+                                                  hintText: 'Enter UID'),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            TextFormField(
+                                              controller: sak4Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'SAK',
+                                                  hintText: 'Enter SAK'),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            TextFormField(
+                                              controller: atqa4Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'ATQA',
+                                                  hintText: 'Enter ATQA'),
+                                            ),
+                                            const SizedBox(height: 40),
+                                          ]),
+                                          Column(children: [
+                                            const Text('UID 7 byte length'),
+                                            const SizedBox(height: 10),
+                                            TextFormField(
+                                              controller: uid7Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'UID',
+                                                  hintText: 'Enter UID'),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            TextFormField(
+                                              controller: sak7Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'SAK',
+                                                  hintText: 'Enter SAK (08)'),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            TextFormField(
+                                              controller: atqa7Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'ATQA',
+                                                  hintText:
+                                                      'Enter ATQA (00 44)'),
+                                            ),
+                                            const SizedBox(height: 40)
+                                          ]),
                                           TextFormField(
-                                            controller: uid4Controller,
+                                            controller: nameController,
                                             decoration: const InputDecoration(
-                                                labelText: 'UID',
-                                                hintText: 'Enter UID'),
+                                                labelText: 'Name',
+                                                hintText: 'Enter name of card'),
                                           ),
-                                          const SizedBox(height: 20),
-                                          TextFormField(
-                                            controller: sak4Controller,
-                                            decoration: const InputDecoration(
-                                                labelText: 'SAK',
-                                                hintText: 'Enter SAK'),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          TextFormField(
-                                            controller: atqa4Controller,
-                                            decoration: const InputDecoration(
-                                                labelText: 'ATQA',
-                                                hintText: 'Enter ATQA'),
-                                          ),
-                                          const SizedBox(height: 40),
-                                        ]),
-                                        Column(children: [
-                                          const Text('UID 7 byte length'),
-                                          const SizedBox(height: 10),
-                                          TextFormField(
-                                            controller: uid7Controller,
-                                            decoration: const InputDecoration(
-                                                labelText: 'UID',
-                                                hintText: 'Enter UID'),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          TextFormField(
-                                            controller: sak7Controller,
-                                            decoration: const InputDecoration(
-                                                labelText: 'SAK',
-                                                hintText: 'Enter SAK (08)'),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          TextFormField(
-                                            controller: atqa7Controller,
-                                            decoration: const InputDecoration(
-                                                labelText: 'ATQA',
-                                                hintText: 'Enter ATQA (00 44)'),
-                                          ),
-                                          const SizedBox(height: 40)
-                                        ]),
-                                        TextFormField(
-                                          controller: nameController,
-                                          decoration: const InputDecoration(
-                                              labelText: 'Name',
-                                              hintText: 'Enter name of card'),
-                                        ),
-                                        DropdownButton<MifareClassicType>(
-                                          value:
-                                              selectedType, // TODO: Fix value change
-                                          items: [
-                                            MifareClassicType.m1k,
-                                            MifareClassicType.m2k,
-                                            MifareClassicType.m4k,
-                                            MifareClassicType.mini
-                                          ].map<
-                                                  DropdownMenuItem<
-                                                      MifareClassicType>>(
-                                              (MifareClassicType type) {
-                                            return DropdownMenuItem<
-                                                MifareClassicType>(
-                                              value: type,
-                                              child: Text(
-                                                  "Mifare Classic ${mfClassicGetName(type)}"),
-                                            );
-                                          }).toList(),
-                                          onChanged:
-                                              (MifareClassicType? newValue) {
-                                            setState(() {
-                                              selectedType = newValue!;
-                                            });
-                                            appState.changesMade();
-                                          },
-                                        )
-                                      ])),
+                                          DropdownButton<MifareClassicType>(
+                                            value: selectedType,
+                                            items: [
+                                              MifareClassicType.m1k,
+                                              MifareClassicType.m2k,
+                                              MifareClassicType.m4k,
+                                              MifareClassicType.mini
+                                            ].map<
+                                                    DropdownMenuItem<
+                                                        MifareClassicType>>(
+                                                (MifareClassicType type) {
+                                              return DropdownMenuItem<
+                                                  MifareClassicType>(
+                                                value: type,
+                                                child: Text(
+                                                    "Mifare Classic ${mfClassicGetName(type)}"),
+                                              );
+                                            }).toList(),
+                                            onChanged:
+                                                (MifareClassicType? newValue) {
+                                              setState(() {
+                                                selectedType = newValue!;
+                                              });
+                                              appState.changesMade();
+                                            },
+                                          )
+                                        ]));
+                                      }),
                                       actions: [
                                         ElevatedButton(
                                           onPressed: () async {
@@ -244,6 +249,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             for (var i = 0;
                                                 i < contents.length;
                                                 i += 16) {
+                                              if (i + 16 > contents.length) {
+                                                break;
+                                              }
                                               blocks.add(
                                                   contents.sublist(i, i + 16));
                                             }
@@ -307,8 +315,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             Navigator.pop(
                                                 context); // Close the modal after saving
                                           },
-                                          child:
-                                              const Text('Save as 7 byte UID'),
+                                          child: const Text('Save 7B'),
                                         ),
                                         ElevatedButton(
                                           onPressed: () {
