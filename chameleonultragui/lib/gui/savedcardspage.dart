@@ -495,6 +495,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
 
                               List<Uint8List> keys = [];
                               for (var key in contents.split("\n")) {
+                                key = key.trim();
                                 if (key.length == 12 && isValidHexString(key)) {
                                   keys.add(hexToBytes(key));
                                 }
