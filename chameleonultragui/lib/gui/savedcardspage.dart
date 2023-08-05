@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/helpers/general.dart';
@@ -122,7 +121,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 appState.sharedPreferencesProvider
                                     .setChameleonTags(tags);
                                 appState.changesMade();
-                              } on Exception catch (_) {
+                              } catch (_) {
                                 var uid4 = contents.sublist(0, 4);
                                 var uid7 = contents.sublist(0, 7);
                                 var uid4sak = contents[5];
