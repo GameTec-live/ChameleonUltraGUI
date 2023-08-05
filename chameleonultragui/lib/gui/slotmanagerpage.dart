@@ -691,20 +691,21 @@ class CardSearchDelegate extends SearchDelegate<String> {
               ChameleonTag.mifare2K,
               ChameleonTag.mifare4K
             ].contains(card.tag)) {
+              await connection.setReaderDeviceMode(false);
               await connection.enableSlot(gridPosition, true);
               await connection.activateSlot(gridPosition);
               await connection.setDefaultDataToSlot(gridPosition, card.tag);
-              for (var blockOffset = 0;
-                  blockOffset < card.data.length;
-                  blockOffset++) {
-                await connection.setMf1BlockData(
-                    blockOffset ~/ 16, card.data[blockOffset]);
-              }
               var cardData = ChameleonCard(
                   uid: hexToBytes(card.uid.replaceAll(" ", "")),
                   atqa: card.atqa,
                   sak: card.sak);
               await connection.setMf1AntiCollision(cardData);
+              for (var blockOffset = 0;
+                  blockOffset < card.data.length;
+                  blockOffset++) {
+                await connection.setMf1BlockData(
+                    blockOffset, card.data[blockOffset]);
+              }
               await connection.saveSlotData();
             } else {
               appState.log.e("Can't write this card type yet.");

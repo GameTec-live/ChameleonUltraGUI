@@ -24,7 +24,7 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<(Icon, List<Icon>, String, String, String, int)>
+  Future<(Icon, List<Icon>, String, String, String, int, bool)>
       getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
@@ -36,6 +36,7 @@ class HomePageState extends State<HomePage> {
       await getFWversion(connection),
       await getRamusage(connection),
       await getActivatedSlot(connection),
+      await isReaderDeviceMode(connection),
     );
   }
 
@@ -106,6 +107,10 @@ class HomePageState extends State<HomePage> {
     return await connection.getActivatedSlot();
   }
 
+  Future<bool> isReaderDeviceMode(ChameleonCom connection) async {
+    return await connection.isReaderDeviceMode();
+  }
+
   Future<void> flashFirmware(MyAppState appState) async {
     var connection = ChameleonCom(port: appState.connector);
     Uint8List applicationDat, applicationBin;
@@ -158,7 +163,8 @@ class HomePageState extends State<HomePage> {
               usedSlots,
               fwVersion,
               ramUsage,
-              slot
+              slot,
+              isReaderDeviceMode
             ) = snapshot.data;
             // selectedSlot = slot;
 
@@ -288,8 +294,40 @@ class HomePageState extends State<HomePage> {
                     ),
                     Align(
                       alignment: Alignment.bottomRight,
-                      child: Column(
+                      child: Row(
                         children: [
+                          const Spacer(),
+                          (isReaderDeviceMode)
+                              ? Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: IconButton(
+                                    onPressed: () async {
+                                      var connection = ChameleonCom(
+                                          port: appState.connector);
+                                      await connection
+                                          .setReaderDeviceMode(false);
+                                      setState(() {});
+                                      appState.changesMade();
+                                    },
+                                    tooltip: "Go to emulator mode",
+                                    icon: const Icon(Icons.nfc_sharp),
+                                  ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: IconButton(
+                                    onPressed: () async {
+                                      var connection = ChameleonCom(
+                                          port: appState.connector);
+                                      await connection
+                                          .setReaderDeviceMode(true);
+                                      setState(() {});
+                                      appState.changesMade();
+                                    },
+                                    tooltip: "Go to reader mode",
+                                    icon: const Icon(Icons.barcode_reader),
+                                  ),
+                                ),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: IconButton(

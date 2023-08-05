@@ -239,15 +239,13 @@ class SettingsMainPage extends StatelessWidget {
                     TextButton(
                       onPressed: () {
                         appState.devMode = true;
-                        if (appState.sharedPreferencesProvider.getDeveloperMode())
-                        {
+                        if (appState.sharedPreferencesProvider
+                            .getDeveloperMode()) {
                           appState.sharedPreferencesProvider
                               .setDeveloperMode(false);
-                        }
-                        else
-                        {
-                        appState.sharedPreferencesProvider
-                            .setDeveloperMode(true);
+                        } else {
+                          appState.sharedPreferencesProvider
+                              .setDeveloperMode(true);
                         }
                         appState.changesMade();
                         Navigator.pop(context, 'OK');
