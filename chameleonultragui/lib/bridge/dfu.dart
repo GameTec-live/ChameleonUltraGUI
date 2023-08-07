@@ -261,7 +261,7 @@ class ChameleonDFU {
       validateCrc();
     }
 
-    if (Platform.isWindows) {
+    if (Platform.isWindows | Platform.isMacOS) {
       // Transmittion errors fix
       await _serialInstance!.read(16384);
     }
@@ -281,7 +281,7 @@ class ChameleonDFU {
     // We work around it by sending message by parts with delay
     var offsetSize = 128;
 
-    if (Platform.isWindows) {
+    if (Platform.isWindows | Platform.isMacOS) {
       for (var offset = 0; offset < packet.length; offset += offsetSize) {
         await _serialInstance!.write(packet.sublist(
             offset, offset + min(offsetSize, packet.length - offset)));
