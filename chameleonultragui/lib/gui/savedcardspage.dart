@@ -314,7 +314,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             Navigator.pop(
                                                 context); // Close the modal after saving
                                           },
-                                          child: const Text('Save 7B'),
+                                          child:
+                                              const Text('Save as 7 byte UID'),
                                         ),
                                         ElevatedButton(
                                           onPressed: () {

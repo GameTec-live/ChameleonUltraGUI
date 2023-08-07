@@ -155,6 +155,7 @@ class HomePageState extends State<HomePage> {
               body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
+            appState.connector.preformDisconnect();
             return Text('Error: ${snapshot.error}');
           } else {
             final (

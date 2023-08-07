@@ -156,7 +156,7 @@ class ChameleonDFU {
       if (readBuffer[2] == ChameleonResponseCode.extendedError.value) {
         throw ("DFU error: ${ChameleonResponseCode.fromValue(readBuffer[3])}");
       }
-      // throw ("DFU error");
+      throw ("DFU error: ${ChameleonResponseCode.fromValue(readBuffer[2])}");
     }
   }
 

@@ -18,7 +18,6 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   late Future<(bool, int)> detectionStatusFuture;
   bool isDetectionMode = false;
   int detectionCount = -1;
-  bool firstLoad = true;
 
   @override
   void initState() {

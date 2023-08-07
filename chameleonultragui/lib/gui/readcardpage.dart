@@ -422,49 +422,51 @@ class ReadCardPageState extends State<ReadCardPage> {
     });
 
     status.cardData = List.generate(256, (_) => Uint8List(0));
-    for (var sector = 0;
-        sector < mfClassicGetSectorCount(status.type);
-        sector++) {
-      for (var block = 0;
-          block < mfClassicGetBlockCountBySector(sector);
-          block++) {
-        for (var keyType = 0; keyType < 2; keyType++) {
-          var blockData = await connection.mf1ReadBlock(
-              block + mfClassicGetFirstBlockCountBySector(sector),
-              0x60 + keyType,
-              status.validKeys[sector + (keyType * 40)]);
-          if (blockData.isEmpty) {
-            if (keyType == 1) {
-              blockData = Uint8List(16);
-            } else {
-              continue;
+    try {
+      for (var sector = 0;
+          sector < mfClassicGetSectorCount(status.type);
+          sector++) {
+        for (var block = 0;
+            block < mfClassicGetBlockCountBySector(sector);
+            block++) {
+          for (var keyType = 0; keyType < 2; keyType++) {
+            var blockData = await connection.mf1ReadBlock(
+                block + mfClassicGetFirstBlockCountBySector(sector),
+                0x60 + keyType,
+                status.validKeys[sector + (keyType * 40)]);
+            if (blockData.isEmpty) {
+              if (keyType == 1) {
+                blockData = Uint8List(16);
+              } else {
+                continue;
+              }
             }
-          }
-          if (mfClassicGetSectorTrailerBlockBySector(sector) ==
-              block + mfClassicGetFirstBlockCountBySector(sector)) {
-            // set keys in sector trailer
-            blockData.setRange(0, 6, status.validKeys[sector]);
-            blockData.setRange(10, 16, status.validKeys[sector + 40]);
-          }
-          status.cardData[block + mfClassicGetFirstBlockCountBySector(sector)] =
-              blockData;
+            if (mfClassicGetSectorTrailerBlockBySector(sector) ==
+                block + mfClassicGetFirstBlockCountBySector(sector)) {
+              // set keys in sector trailer
+              blockData.setRange(0, 6, status.validKeys[sector]);
+              blockData.setRange(10, 16, status.validKeys[sector + 40]);
+            }
+            status.cardData[block +
+                mfClassicGetFirstBlockCountBySector(sector)] = blockData;
 
-          setState(() {
-            status.dumpProgress =
-                (block + mfClassicGetFirstBlockCountBySector(sector)) /
-                    (mfClassicGetBlockCount(status.type));
-          });
+            setState(() {
+              status.dumpProgress =
+                  (block + mfClassicGetFirstBlockCountBySector(sector)) /
+                      (mfClassicGetBlockCount(status.type));
+            });
 
-          await asyncSleep(1); // Let GUI update
-          break;
+            await asyncSleep(1); // Let GUI update
+            break;
+          }
         }
       }
-    }
 
-    setState(() {
-      status.dumpProgress = 0;
-      status.state = ChameleonMifareClassicState.save;
-    });
+      setState(() {
+        status.dumpProgress = 0;
+        status.state = ChameleonMifareClassicState.save;
+      });
+    } catch (_) {}
   }
 
   Future<void> saveCard(
