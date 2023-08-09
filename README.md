@@ -1,11 +1,13 @@
 # ChameleonUltraGUI
 A GUI for the Chameleon Ultra written in Flutter for crossplatform operation
-[![Autobuild](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml)
 
-Note:
-Not working are currently the "Slot Manager" and "Home" Page.
+[![Autobuild](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml) 
+[![Open collective](https://opencollective.com/chameleon-ultra-gui/tiers/badge.svg)](https://opencollective.com/chameleon-ultra-gui#support)
+
 ## Installation
 You can download the latest builds from Github Actions [here](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml?query=branch%3Amain) under the artifacts section.
+
+Note: Under some Linux systems, especially ones running KDE desktop enviroments, you may need to install the zenity package for the filepicker to work correctly.
 
 Key:
 - apk: Android APK, download and install either via ADB or your app/filemanager of choice
