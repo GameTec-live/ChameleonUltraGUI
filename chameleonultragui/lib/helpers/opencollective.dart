@@ -24,7 +24,7 @@ Future<List<String>> fetchOpenCollectiveHighrollers() async {
   }
 }
 
-Future<double> fetchOpenCollectiveBalance() async {
+Future<double> fetchOpenCollectiveBalance() async { // Will be used later on when everything is async ;)
   try {
     final Uri url = Uri.parse('https://api.opencollective.com/graphql/v2');
     const headers = {'Content-Type': 'application/json'};
