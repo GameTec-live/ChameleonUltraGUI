@@ -218,7 +218,8 @@ class DevPage extends StatelessWidget {
               (applicationDat, applicationBin) = await unpackFirmware(content);
 
               flashFile(connection, appState, applicationDat, applicationBin,
-                  (progress) => appState.log.d("Flashing: $progress%"));
+                  (progress) => appState.log.d("Flashing: $progress%"),
+                  firmwareZip: content);
             },
             child: const Column(children: [
               Text('DFU flash ultra FW'),
@@ -234,7 +235,8 @@ class DevPage extends StatelessWidget {
               (applicationDat, applicationBin) = await unpackFirmware(content);
 
               flashFile(connection, appState, applicationDat, applicationBin,
-                  (progress) => appState.log.d("Flashing: $progress%"));
+                  (progress) => appState.log.d("Flashing: $progress%"),
+                  firmwareZip: content);
             },
             child: const Column(children: [
               Text('DFU flash lite FW'),

@@ -230,10 +230,13 @@ class ChameleonCom {
     log.d("Sending: ${bytesToHex(dataFrame)}");
     await _serialInstance!.finishRead();
     await _serialInstance!.open();
-    await _serialInstance!.write(Uint8List.fromList(dataFrame));
     if (skipReceive) {
+      try {
+        await _serialInstance!.write(Uint8List.fromList(dataFrame));
+      } catch (_) {}
       return null;
     }
+    await _serialInstance!.write(Uint8List.fromList(dataFrame));
 
     while (true) {
       while (true) {
@@ -626,9 +629,9 @@ class ChameleonCom {
   Future<int> getActivatedSlot() async {
     // get the selected slot on the device, 0-7 (8 slots)
     return 0;
-    // return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
-    //         data: Uint8List(0)))!
-    //     .data[0];
+    return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
+            data: Uint8List(0)))!
+        .data[0];
   }
 
   // NOT IMPLEMENTED METHODS

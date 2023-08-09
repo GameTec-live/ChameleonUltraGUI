@@ -120,7 +120,8 @@ class HomePageState extends State<HomePage> {
     (applicationDat, applicationBin) = await unpackFirmware(content);
 
     flashFile(connection, appState, applicationDat, applicationBin,
-        (progress) => appState.setProgressBar(progress / 100));
+        (progress) => appState.setProgressBar(progress / 100),
+        firmwareZip: content);
   }
 
   Future<void> flashFirmwareZip(MyAppState appState) async {
@@ -136,7 +137,8 @@ class HomePageState extends State<HomePage> {
           await unpackFirmware(await file.readAsBytes());
 
       flashFile(connection, appState, applicationDat, applicationBin,
-          (progress) => appState.setProgressBar(progress / 100));
+          (progress) => appState.setProgressBar(progress / 100),
+          firmwareZip: await file.readAsBytes());
     }
   }
 

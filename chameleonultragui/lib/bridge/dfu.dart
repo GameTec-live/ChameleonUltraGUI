@@ -190,10 +190,15 @@ class ChameleonDFU {
   }
 
   Future<int> getMTU() async {
-    mtu = ByteData.view(
-            (await sendCmdSync(ChameleonDFUCommand.getSerialMTU, Uint8List(0)))!
-                .buffer)
-        .getUint16(0, Endian.little);
+    try {
+      mtu = ByteData.view((await sendCmdSync(
+                  ChameleonDFUCommand.getSerialMTU, Uint8List(0)))!
+              .buffer)
+          .getUint16(0, Endian.little);
+    } catch (_) {
+      mtu = 2051;
+    }
+
     return mtu;
   }
 
@@ -237,8 +242,8 @@ class ChameleonDFU {
     Map<String, int> response = {'crc': 0, 'offset': 0};
 
     void validateCrc() {
-      // TODO: fix CRC
       if (crc != response['crc']) {
+        // Yes, always fail
         log.w(
             "Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
       }
@@ -258,9 +263,6 @@ class ChameleonDFU {
       await delayedSend(packet);
 
       offset += toTransmit.length;
-      if (Platform.isAndroid) {
-        await asyncSleep(100);
-      }
       crc = (calculateCRC32(toTransmit.sublist(1)).toUnsigned(32) & 0xFFFFFFFF)
           .toInt();
       response = await calculateChecksum();
@@ -283,10 +285,6 @@ class ChameleonDFU {
     // Windows has some issues with transmitting data
     // We work around it by sending message by parts with delay
     var offsetSize = 128;
-
-    if (Platform.isAndroid) {
-      offsetSize = 8;
-    }
 
     if (Platform.isWindows || Platform.isAndroid) {
       for (var offset = 0; offset < packet.length; offset += offsetSize) {
