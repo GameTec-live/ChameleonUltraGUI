@@ -54,14 +54,17 @@ void validateFiles(Uint8List dat, Uint8List bin) {
   if (dat.isEmpty || bin.isEmpty) {
     throw ("Empty firmware file");
   }
+
   final metadata = Packet.fromBuffer(dat);
   if (!metadata.hasSignedCommand()) {
     throw ("Package isn't signed");
   }
+
   final command = metadata.signedCommand.command;
   if (!command.hasInit()) {
-    throw ("Package command isn't INIT");
+    throw ("Package command doesn't have init");
   }
+
   final hash = command.init.hash;
   final expectedHash = hash.hash.reversed;
   final actualHash = switch (hash.hashType) {
@@ -69,7 +72,9 @@ void validateFiles(Uint8List dat, Uint8List bin) {
     HashType.SHA256 => sha256,
     HashType.SHA512 => sha512,
     _ => throw ("Unsupported hash type ${hash.hashType}"),
-  }.convert(bin).bytes;
+  }
+      .convert(bin)
+      .bytes;
 
   if (!const IterableEquality().equals(expectedHash, actualHash)) {
     throw ("Hashes don't match! expected: ${expectedHash.toList()}, actual: $actualHash");
@@ -88,9 +93,9 @@ Future<void> flashFile(
   // Flashing Easteregg
   var rng = Random();
   var randomNumber = rng.nextInt(100) + 1;
-  appState.easteregg = false;
+  appState.easterEgg = false;
   if (randomNumber == 1) {
-    appState.easteregg = true;
+    appState.easterEgg = true;
   }
 
   if (enterDFU) {
