@@ -33,3 +33,16 @@ set_target_properties(recovery PROPERTIES
 )
 
 target_compile_definitions(recovery PUBLIC DART_SHARED_LIB)
+
+if (WIN32)
+  # Workaround Flutter bug
+  set_target_properties(recovery PROPERTIES
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+  )
+
+  add_custom_command(
+    TARGET recovery POST_BUILD
+    COMMAND ../../src/post_build.bat $<CONFIG> $<TARGET_FILE_DIR:recovery>
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+endif (WIN32)

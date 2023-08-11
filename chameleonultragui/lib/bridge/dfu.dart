@@ -269,7 +269,7 @@ class ChameleonDFU {
       validateCrc();
     }
 
-    if (Platform.isWindows) {
+    if (Platform.isWindows || Platform.isMacOS) {
       // Transmittion errors fix
       await _serialInstance!.read(16384);
     }
@@ -286,7 +286,7 @@ class ChameleonDFU {
     // We work around it by sending message by parts with delay
     var offsetSize = 128;
 
-    if (Platform.isWindows || Platform.isAndroid) {
+    if (Platform.isWindows || Platform.isAndroid || Platform.isAndroid) {
       for (var offset = 0; offset < packet.length; offset += offsetSize) {
         if (min(offsetSize, packet.length - offset) != offsetSize) {
           for (var secondOffset = 0;

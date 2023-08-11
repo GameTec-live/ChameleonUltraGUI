@@ -21,10 +21,10 @@ class FlashingPage extends StatelessWidget {
             children: [
               Image.asset(
                 appState.connector.device == ChameleonDevice.ultra
-                    ? appState.easteregg
+                    ? appState.easterEgg
                         ? 'assets/black-ultra-standing-front-flashing.png'
                         : 'assets/black-ultra-standing-front.png'
-                    : appState.easteregg
+                    : appState.easterEgg
                         ? 'assets/black-lite-standing-front-flashing.png'
                         : 'assets/black-lite-standing-front.png',
                 width: 300,
@@ -32,7 +32,7 @@ class FlashingPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                appState.easteregg
+                appState.easterEgg
                     ? 'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'} is flashing'
                     : 'Installing firmware on your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}',
                 style:

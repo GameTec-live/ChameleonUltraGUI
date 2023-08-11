@@ -2,18 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:logger/logger.dart';
-import '../main.dart';
+import 'package:chameleonultragui/helpers/open_collective.dart';
+import 'package:chameleonultragui/main.dart';
 
-class SettingsMainPage extends StatelessWidget {
-  /* Todo list:
-  Think of useful settings that users might want to change
-  Make sure we fix (context as Element).reassemble(); under the switch. It's terrible. 
-  */
-  const SettingsMainPage({super.key});
+//TODO: FIX INDENTING
+class SettingsMainPage extends StatefulWidget {
+  const SettingsMainPage({Key? key}) : super(key: key);
+
+  @override
+  SettingsMainPageState createState() => SettingsMainPageState();
+}
+
+class SettingsMainPageState extends State<SettingsMainPage> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future<String> getFutureData() async {
+    return await fetchOCnames();
+  }
+
+  Future<String> fetchOCnames() async {
+    final List<String> names = await fetchOpenCollectiveHighrollers();
+    String finalNames = "";
+    for (String name in names) {
+      finalNames += "$name, ";
+    }
+    return finalNames.substring(0, finalNames.length - 2);
+  }
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -184,36 +206,61 @@ class SettingsMainPage extends StatelessWidget {
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
                   title: const Text('About'),
-                  content: const Center(
-                    child: Column(
-                      children: [
-                        Text('Chameleon Ultra GUI',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(
-                            'A Tool to graphically manage and configure your Chameleon Ultra, written in Flutter and running on Desktop and Mobile.'),
-                        SizedBox(height: 10),
-                        Text('Version:'),
-                        Text('UNRELEASED',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        SizedBox(height: 10),
-                        Text('Developed by:'),
-                        Text('Foxushka, Akisame and GameTec_live',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        SizedBox(height: 10),
-                        Text('License:'),
-                        Text('GPLV3',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        SizedBox(height: 10),
-                        Text(
-                            'https://github.com/GameTec-live/ChameleonUltraGUI'),
-                      ],
+                  content: Center(
+                    child: FutureBuilder(
+                      future: getFutureData(),
+                      builder: (BuildContext context, AsyncSnapshot snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Text('Error: ${snapshot.error}');
+                        } else {
+                          final (names) = snapshot.data;
+                          return Column(
+                            children: [
+                              const Text('Chameleon Ultra GUI',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              const Text(
+                                  'A Tool to graphically manage and configure your Chameleon Ultra, written in Flutter and running on Desktop and Mobile.'),
+                              const SizedBox(height: 10),
+                              const Text('Version:'),
+                              const Text('UNRELEASED',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              const Text('Developed by:'),
+                              const Text('Foxushka, Akisame and GameTec_live',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              const Text('License:'),
+                              const Text('GPLV3',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              const Text(
+                                  'https://github.com/GameTec-live/ChameleonUltraGUI'),
+                              const SizedBox(height: 30),
+                              const Text(
+                                  "Thanks to everyone who supports us on Open Collective!"),
+                              const SizedBox(height: 10),
+                              Text(names,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                            ],
+                          );
+                        }
+                      },
                     ),
                   ),
                   actions: <Widget>[
                     /* TextButton(
-                      onPressed: () => Navigator.pop(context, 'Cancel'),
-                      child: const Text('Cancel'),
-                    ), */ // A Cancel button on an about widget??
+                            onPressed: () => Navigator.pop(context, 'Cancel'),
+                            child: const Text('Cancel'),
+                          ), */ // A Cancel button on an about widget??
                     TextButton(
                       onPressed: () => Navigator.pop(context, 'OK'),
                       child: const Text('OK'),

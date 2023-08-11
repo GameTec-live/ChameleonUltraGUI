@@ -90,13 +90,6 @@ if(PLUGIN_BUNDLED_LIBRARIES)
     COMPONENT Runtime)
 endif()
 
-if(CONFIG:Debug)
-  set(DEBUG_OR_RELEASE "Debug")
-else()
-  set(DEBUG_OR_RELEASE "Release")
-endif()
-install(FILES "${INSTALL_BUNDLE_LIB_DIR}/../../shared/${DEBUG_OR_RELEASE}/recovery.dll" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}/" COMPONENT Runtime)
-
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.
 set(FLUTTER_ASSET_DIR_NAME "flutter_assets")
