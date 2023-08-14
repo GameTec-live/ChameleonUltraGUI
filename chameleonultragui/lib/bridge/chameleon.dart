@@ -580,7 +580,7 @@ class ChameleonCom {
   Future<String> readEM410X() async {
     var resp = await sendCmdSync(ChameleonCommand.scanEM410Xtag, 0x00,
         data: Uint8List(0));
-    return bytesToHex(resp!.data);
+    return bytesToHexSpace(resp!.data);
   }
 
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
