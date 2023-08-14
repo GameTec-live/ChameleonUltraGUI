@@ -277,6 +277,20 @@ class CardSearchDelegate extends SearchDelegate<String> {
               await connection.saveSlotData();
               appState.changesMade();
               refresh();
+            } else if (card.tag == ChameleonTag.em410X) {
+              await connection.setReaderDeviceMode(false);
+              await connection.enableSlot(gridPosition, true);
+              await connection.activateSlot(gridPosition);
+              await connection.setDefaultDataToSlot(gridPosition, card.tag);
+              await connection.setEM410XEmulatorID(
+                  hexToBytes(card.uid.replaceAll(" ", "")));
+              await connection.setSlotTagName(
+                  gridPosition,
+                  (card.name.isEmpty) ? "No name" : card.name,
+                  ChameleonTagFrequiency.lf);
+              await connection.saveSlotData();
+              appState.changesMade();
+              refresh();
             } else {
               appState.log.e("Can't write this card type yet.");
             }
