@@ -482,24 +482,24 @@ class ChameleonCom {
   }
 
   Future<void> activateSlot(int slot) async {
-    // Slot 1-8
+    // Slot 0-7
     await sendCmdSync(ChameleonCommand.setSlotActivated, 0x00,
-        data: Uint8List.fromList([slot - 1]));
+        data: Uint8List.fromList([slot]));
   }
 
   Future<void> setSlotType(int slot, ChameleonTag type) async {
     await sendCmdSync(ChameleonCommand.setSlotTagType, 0x00,
-        data: Uint8List.fromList([slot - 1, type.value]));
+        data: Uint8List.fromList([slot, type.value]));
   }
 
   Future<void> setDefaultDataToSlot(int slot, ChameleonTag type) async {
     await sendCmdSync(ChameleonCommand.setSlotDataDefault, 0x00,
-        data: Uint8List.fromList([slot - 1, type.value]));
+        data: Uint8List.fromList([slot, type.value]));
   }
 
   Future<void> enableSlot(int slot, bool status) async {
     await sendCmdSync(ChameleonCommand.setSlotEnable, 0x00,
-        data: Uint8List.fromList([slot - 1, status ? 1 : 0]));
+        data: Uint8List.fromList([slot, status ? 1 : 0]));
   }
 
   Future<bool> isMf1DetectionMode() async {
@@ -624,9 +624,9 @@ class ChameleonCom {
   Future<int> getActivatedSlot() async {
     // get the selected slot on the device, 0-7 (8 slots)
     return 0;
-    return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
-            data: Uint8List(0)))!
-        .data[0];
+    // return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
+    //         data: Uint8List(0)))!
+    //     .data[0];
   }
 
   // NOT IMPLEMENTED METHODS
