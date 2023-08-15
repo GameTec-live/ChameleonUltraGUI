@@ -44,11 +44,11 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       }
 
       if (slotData[currentFunctionIndex]['hfName']!.isEmpty) {
-        slotData[currentFunctionIndex]['hfName'] = "Emtpy";
+        slotData[currentFunctionIndex]['hfName'] = "Empty";
       }
 
       if (slotData[currentFunctionIndex]['lfName']!.isEmpty) {
-        slotData[currentFunctionIndex]['lfName'] = "Emtpy";
+        slotData[currentFunctionIndex]['lfName'] = "Empty";
       }
 
       setState(() {
