@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
@@ -50,6 +51,12 @@ Future<(Uint8List, Uint8List)> unpackFirmware(Uint8List content) async {
   return (applicationDat, applicationBin);
 }
 
+Future<File> createTempFile() async {
+  final tempDir = await Directory.systemTemp.createTemp('firmware');
+  final tempFile = File('${tempDir.path}/flash.zip');
+  return tempFile;
+}
+
 void validateFiles(Uint8List dat, Uint8List bin) {
   if (dat.isEmpty || bin.isEmpty) {
     throw ("Empty firmware file");
@@ -87,7 +94,8 @@ Future<void> flashFile(
     Uint8List applicationDat,
     Uint8List applicationBin,
     void Function(int progress) callback,
-    {bool enterDFU = true}) async {
+    {bool enterDFU = true,
+    List<int> firmwareZip = const []}) async {
   validateFiles(applicationDat, applicationBin);
 
   // Flashing Easteregg
@@ -98,9 +106,11 @@ Future<void> flashFile(
     appState.easterEgg = true;
   }
 
+  bool isBLE = appState.connector.portName.contains(":");
+
   if (enterDFU) {
     await connection!.enterDFUMode();
-    await appState.connector.performDisconnect();
+    await appState.connector.preformDisconnect();
   }
 
   List chameleons = [];
@@ -114,6 +124,10 @@ Future<void> flashFile(
     throw ("More than one Chameleon in DFU. Please connect only one at a time");
   }
 
+  if (isBLE) {
+    throw ("BLE DFU not yet supported");
+  }
+
   await appState.connector.connectSpecific(chameleons[0]['port']);
   var dfu = ChameleonDFU(port: appState.connector);
   await appState.connector.finishRead();
@@ -123,6 +137,6 @@ Future<void> flashFile(
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");
-  appState.connector.performDisconnect();
+  appState.connector.preformDisconnect();
   appState.changesMade();
 }

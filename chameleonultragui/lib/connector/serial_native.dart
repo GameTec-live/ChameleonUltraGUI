@@ -25,7 +25,7 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> performDisconnect() async {
+  Future<bool> preformDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
     if (port != null) {
@@ -57,9 +57,9 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(device) async {
-    if (await connectDevice(device, true)) {
-      portName = device;
+  Future<bool> connectSpecific(devicePort) async {
+    if (await connectDevice(devicePort, true)) {
+      portName = devicePort;
       connected = true;
       return true;
     }
@@ -126,7 +126,7 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> write(Uint8List command) async {
+  Future<bool> write(Uint8List command, {bool firmware = false}) async {
     return port!.write(command) > 1;
   }
 

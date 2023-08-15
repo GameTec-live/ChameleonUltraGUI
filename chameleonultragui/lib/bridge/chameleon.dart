@@ -217,31 +217,37 @@ class ChameleonCom {
 
   Future<ChameleonMessage?> sendCmdSync(ChameleonCommand cmd, int status,
       {Uint8List? data,
-      Duration timeout = const Duration(seconds: 3),
+      Duration timeout = const Duration(seconds: 5),
       bool skipReceive = false}) async {
     var dataFrame = makeDataFrameBytes(cmd, status, data);
     List<int> dataBuffer = [];
     var dataPosition = 0;
     var dataStatus = 0x0000;
     var dataLength = 0x0000;
-    // var startTime = DateTime.now();
+    var startTime = DateTime.now();
     List<int> readBuffer = [];
 
     log.d("Sending: ${bytesToHex(dataFrame)}");
     await _serialInstance!.finishRead();
     await _serialInstance!.open();
-    await _serialInstance!.write(Uint8List.fromList(dataFrame));
     if (skipReceive) {
+      try {
+        await _serialInstance!.write(Uint8List.fromList(dataFrame));
+      } catch (_) {}
       return null;
     }
+    await _serialInstance!.write(Uint8List.fromList(dataFrame));
 
     while (true) {
       while (true) {
-        // TODO: return timeout
         readBuffer.addAll(await _serialInstance!.read(16384));
         if (readBuffer.isNotEmpty) {
           log.d("Received: ${bytesToHex(Uint8List.fromList(readBuffer))}");
           break;
+        }
+        if (startTime.millisecondsSinceEpoch + timeout.inMilliseconds <
+            DateTime.now().millisecondsSinceEpoch) {
+          throw ("Timeout waiting for response");
         }
       }
 
@@ -260,22 +266,19 @@ class ChameleonCom {
             // start of frame
             if (dataPosition == 0) {
               if (dataBuffer[dataPosition] != dataFrameSof) {
-                log.e('Data frame no sof byte.');
-                break;
+                throw ('Data frame no sof byte.');
               }
             }
             if (dataPosition == 1) {
               if (dataBuffer[dataPosition] !=
                   lrcCalc(dataBuffer.sublist(0, 1))) {
-                log.e('Data frame sof lrc error.');
-                break;
+                throw ('Data frame sof lrc error.');
               }
             }
           } else if (dataPosition == 8) {
             // frame head lrc
             if (dataBuffer[dataPosition] != lrcCalc(dataBuffer.sublist(0, 8))) {
-              log.e('Data frame head lrc error.');
-              break;
+              throw ('Data frame head lrc error.');
             }
             // frame head complete, cache info
             //dataCmd = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(2, 4)));
@@ -284,8 +287,7 @@ class ChameleonCom {
             dataLength =
                 _toInt16BE(Uint8List.fromList(dataBuffer.sublist(6, 8)));
             if (dataLength > dataMaxLength) {
-              log.e('Data frame data length too than of max.');
-              break;
+              throw ('Data frame data length too than of max.');
             }
           } else if (dataPosition == (8 + dataLength + 1)) {
             if (dataBuffer[dataPosition] ==
@@ -295,7 +297,7 @@ class ChameleonCom {
               return ChameleonMessage(
                   status: dataStatus, data: Uint8List.fromList(dataResponse));
             } else {
-              log.e('Data frame finally lrc error.');
+              throw ('Data frame finally lrc error.');
             }
           }
 
@@ -377,8 +379,9 @@ class ChameleonCom {
 
   Future<ChameleonDarksideResult> checkMf1Darkside() async {
     // Check card vulnerability to Mifare Classic darkside attack
-    int status =
-        (await sendCmdSync(ChameleonCommand.mf1DarksideDetect, 0x00))!.status;
+    int status = (await sendCmdSync(ChameleonCommand.mf1DarksideDetect, 0x00,
+            timeout: const Duration(seconds: 20)))!
+        .status;
     if (status == 0) {
       return ChameleonDarksideResult.vurnerable;
     } else if (status == 0x20) {
@@ -420,7 +423,8 @@ class ChameleonCom {
     int i = 0;
     var resp = await sendCmdSync(ChameleonCommand.mf1NestedAcquire, 0x00,
         data: Uint8List.fromList(
-            [keyType, block, ...keyKnown, targetKeyType, targetBlock]));
+            [keyType, block, ...keyKnown, targetKeyType, targetBlock]),
+        timeout: const Duration(seconds: 30));
     var nonces = ChameleonNestedNonces(nonces: []);
 
     while (i < resp!.data.length) {
@@ -441,7 +445,8 @@ class ChameleonCom {
     // keyType 0x60 if A key, 0x61 B key
     var resp = await sendCmdSync(ChameleonCommand.mf1DarksideAcquire, 0x00,
         data: Uint8List.fromList(
-            [targetKeyType, targetBlock, firstRecover ? 1 : 0, syncMax]));
+            [targetKeyType, targetBlock, firstRecover ? 1 : 0, syncMax]),
+        timeout: const Duration(seconds: 30));
 
     if (resp!.data.length != 32) {
       throw ("Invalid data length");

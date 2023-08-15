@@ -66,7 +66,7 @@ class HomePageState extends State<HomePage> {
 
   Future<List<Icon>> getSlotIcons(
       ChameleonCom connection, int selectedSlot, List<bool> usedSlots) async {
-    await connection.activateSlot(selectedSlot);
+    await connection.activateSlot(selectedSlot - 1);
     List<Icon> icons = [];
     for (int i = 1; i < 9; i++) {
       if (i == selectedSlot) {
@@ -120,7 +120,8 @@ class HomePageState extends State<HomePage> {
     (applicationDat, applicationBin) = await unpackFirmware(content);
 
     flashFile(connection, appState, applicationDat, applicationBin,
-        (progress) => appState.setProgressBar(progress / 100));
+        (progress) => appState.setProgressBar(progress / 100),
+        firmwareZip: content);
   }
 
   Future<void> flashFirmwareZip(MyAppState appState) async {
@@ -136,7 +137,8 @@ class HomePageState extends State<HomePage> {
           await unpackFirmware(await file.readAsBytes());
 
       flashFile(connection, appState, applicationDat, applicationBin,
-          (progress) => appState.setProgressBar(progress / 100));
+          (progress) => appState.setProgressBar(progress / 100),
+          firmwareZip: await file.readAsBytes());
     }
   }
 
@@ -155,6 +157,7 @@ class HomePageState extends State<HomePage> {
               body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
+            appState.connector.preformDisconnect();
             return Text('Error: ${snapshot.error}');
           } else {
             final (
@@ -188,7 +191,7 @@ class HomePageState extends State<HomePage> {
                                 IconButton(
                                   onPressed: () {
                                     // Disconnect
-                                    appState.connector.performDisconnect();
+                                    appState.connector.preformDisconnect();
                                     appState.changesMade();
                                   },
                                   icon: const Icon(Icons.close),
@@ -202,9 +205,9 @@ class HomePageState extends State<HomePage> {
                                 Text(appState.connector.portName,
                                     style: const TextStyle(fontSize: 20)),
                                 Icon(appState.connector.connectionType ==
-                                        ChameleonConnectType.usb
-                                    ? Icons.usb
-                                    : Icons.bluetooth),
+                                        ChameleonConnectType.ble
+                                    ? Icons.bluetooth
+                                    : Icons.usb),
                                 batteryIcon,
                               ],
                             ),
@@ -340,13 +343,11 @@ class HomePageState extends State<HomePage> {
                                       children: [
                                         TextButton(
                                             onPressed: () async {
-                                              var appState =
-                                                  context.read<MyAppState>();
                                               var connection = ChameleonCom(
                                                   port: appState.connector);
                                               await connection.enterDFUMode();
                                               appState.connector
-                                                  .performDisconnect();
+                                                  .preformDisconnect();
                                               Navigator.pop(context, 'Cancel');
                                               appState.changesMade();
                                             },
@@ -356,28 +357,41 @@ class HomePageState extends State<HomePage> {
                                                 Text("Enter DFU Mode"),
                                               ],
                                             )),
-                                        TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(context, 'Cancel');
-                                              await flashFirmware(appState);
-                                            },
-                                            child: const Row(
-                                              children: [
-                                                Icon(Icons.system_update),
-                                                Text("Flash latest FW via DFU"),
-                                              ],
-                                            )),
-                                        TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(context, 'Cancel');
-                                              await flashFirmwareZip(appState);
-                                            },
-                                            child: const Row(
-                                              children: [
-                                                Icon(Icons.system_update),
-                                                Text("Flash .zip FW via DFU"),
-                                              ],
-                                            ))
+                                        ...(appState.connector.connectionType !=
+                                                ChameleonConnectType.ble)
+                                            ? [
+                                                TextButton(
+                                                    onPressed: () async {
+                                                      Navigator.pop(
+                                                          context, 'Cancel');
+                                                      await flashFirmware(
+                                                          appState);
+                                                    },
+                                                    child: const Row(
+                                                      children: [
+                                                        Icon(Icons
+                                                            .system_update),
+                                                        Text(
+                                                            "Flash latest FW via DFU"),
+                                                      ],
+                                                    )),
+                                                TextButton(
+                                                    onPressed: () async {
+                                                      Navigator.pop(
+                                                          context, 'Cancel');
+                                                      await flashFirmwareZip(
+                                                          appState);
+                                                    },
+                                                    child: const Row(
+                                                      children: [
+                                                        Icon(Icons
+                                                            .system_update),
+                                                        Text(
+                                                            "Flash .zip FW via DFU"),
+                                                      ],
+                                                    ))
+                                              ]
+                                            : []
                                       ],
                                     ),
                                   ),

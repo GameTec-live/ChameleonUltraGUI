@@ -29,7 +29,7 @@ class DevPage extends StatelessWidget {
             child: IconButton(
               onPressed: () {
                 // Disconnect
-                appState.connector.performDisconnect();
+                appState.connector.preformDisconnect();
                 appState.changesMade();
               },
               icon: const Icon(Icons.close),
@@ -131,14 +131,14 @@ class DevPage extends StatelessWidget {
               appState.log.d(
                   "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
               var card = await cml.scan14443aTag();
-              appState.log.d('Card uid: ${card.uid}');
-              appState.log.d('sak: ${card.sak}');
-              appState.log.d('atqa: ${card.atqa}');
+              appState.log.d('Card UID: ${card.uid}');
+              appState.log.d('SAK: ${card.sak}');
+              appState.log.d('ATQA: ${card.atqa}');
               await cml.setReaderDeviceMode(false);
               await cml.setMf1AntiCollision(card);
             },
             child: const Column(children: [
-              Text('Copy card uid to emulator'),
+              Text('Copy card UID to emulator'),
             ]),
           ),
           ElevatedButton(
@@ -202,7 +202,7 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await cml.enterDFUMode();
-              appState.connector.performDisconnect();
+              appState.connector.preformDisconnect();
             },
             child: const Column(children: [
               Text('Reboot to DFU'),
@@ -218,7 +218,8 @@ class DevPage extends StatelessWidget {
               (applicationDat, applicationBin) = await unpackFirmware(content);
 
               flashFile(connection, appState, applicationDat, applicationBin,
-                  (progress) => appState.log.d("Flashing: $progress%"));
+                  (progress) => appState.log.d("Flashing: $progress%"),
+                  firmwareZip: content);
             },
             child: const Column(children: [
               Text('DFU flash ultra FW'),
@@ -234,7 +235,8 @@ class DevPage extends StatelessWidget {
               (applicationDat, applicationBin) = await unpackFirmware(content);
 
               flashFile(connection, appState, applicationDat, applicationBin,
-                  (progress) => appState.log.d("Flashing: $progress%"));
+                  (progress) => appState.log.d("Flashing: $progress%"),
+                  firmwareZip: content);
             },
             child: const Column(children: [
               Text('DFU flash lite FW'),
