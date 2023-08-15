@@ -29,10 +29,19 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
     if (currentFunctionIndex < 8) {
-      slotData[currentFunctionIndex]['hfName'] = await connection
-          .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.hf);
-      slotData[currentFunctionIndex]['lfName'] = await connection
-          .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.lf);
+      try {
+        slotData[currentFunctionIndex]['hfName'] = await connection
+            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.hf);
+      } catch (_) {
+        slotData[currentFunctionIndex]['hfName'] = "";
+      }
+
+      try {
+        slotData[currentFunctionIndex]['lfName'] = await connection
+            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.lf);
+      } catch (_) {
+        slotData[currentFunctionIndex]['lfName'] = "";
+      }
 
       if (slotData[currentFunctionIndex]['hfName']!.isEmpty) {
         slotData[currentFunctionIndex]['hfName'] = "Emtpy";
