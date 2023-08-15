@@ -286,26 +286,13 @@ class ChameleonDFU {
     // We work around it by sending message by parts with delay
     var offsetSize = 128;
 
-    if (Platform.isWindows || Platform.isAndroid || Platform.isAndroid) {
+    if (Platform.isWindows || Platform.isMacOS) {
       for (var offset = 0; offset < packet.length; offset += offsetSize) {
-        if (min(offsetSize, packet.length - offset) != offsetSize) {
-          for (var secondOffset = 0;
-              secondOffset < min(offsetSize, packet.length - offset);
-              secondOffset++) {
-            await _serialInstance!.write(
-                packet.sublist(
-                    offset + secondOffset, offset + secondOffset + 1),
-                firmware: true);
-            await asyncSleep(100);
-          }
-        } else {
-          await _serialInstance!.write(
-              packet.sublist(
-                  offset, offset + min(offsetSize, packet.length - offset)),
-              firmware: true);
-        }
-
-        await asyncSleep(100);
+        await _serialInstance!.write(
+            packet.sublist(
+                offset, offset + min(offsetSize, packet.length - offset)),
+            firmware: true);
+        await asyncSleep(1);
       }
     } else {
       // Other OS: send as is

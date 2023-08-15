@@ -66,7 +66,7 @@ class HomePageState extends State<HomePage> {
 
   Future<List<Icon>> getSlotIcons(
       ChameleonCom connection, int selectedSlot, List<bool> usedSlots) async {
-    await connection.activateSlot(selectedSlot);
+    await connection.activateSlot(selectedSlot - 1);
     List<Icon> icons = [];
     for (int i = 1; i < 9; i++) {
       if (i == selectedSlot) {
@@ -343,6 +343,8 @@ class HomePageState extends State<HomePage> {
                                       children: [
                                         TextButton(
                                             onPressed: () async {
+                                              var connection = ChameleonCom(
+                                                  port: appState.connector);
                                               await connection.enterDFUMode();
                                               appState.connector
                                                   .preformDisconnect();
