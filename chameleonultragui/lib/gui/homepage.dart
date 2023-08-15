@@ -343,10 +343,6 @@ class HomePageState extends State<HomePage> {
                                       children: [
                                         TextButton(
                                             onPressed: () async {
-                                              var appState =
-                                                  context.read<MyAppState>();
-                                              var connection = ChameleonCom(
-                                                  port: appState.connector);
                                               await connection.enterDFUMode();
                                               appState.connector
                                                   .preformDisconnect();
@@ -359,28 +355,41 @@ class HomePageState extends State<HomePage> {
                                                 Text("Enter DFU Mode"),
                                               ],
                                             )),
-                                        TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(context, 'Cancel');
-                                              await flashFirmware(appState);
-                                            },
-                                            child: const Row(
-                                              children: [
-                                                Icon(Icons.system_update),
-                                                Text("Flash latest FW via DFU"),
-                                              ],
-                                            )),
-                                        TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(context, 'Cancel');
-                                              await flashFirmwareZip(appState);
-                                            },
-                                            child: const Row(
-                                              children: [
-                                                Icon(Icons.system_update),
-                                                Text("Flash .zip FW via DFU"),
-                                              ],
-                                            ))
+                                        ...(appState.connector.connectionType !=
+                                                ChameleonConnectType.ble)
+                                            ? [
+                                                TextButton(
+                                                    onPressed: () async {
+                                                      Navigator.pop(
+                                                          context, 'Cancel');
+                                                      await flashFirmware(
+                                                          appState);
+                                                    },
+                                                    child: const Row(
+                                                      children: [
+                                                        Icon(Icons
+                                                            .system_update),
+                                                        Text(
+                                                            "Flash latest FW via DFU"),
+                                                      ],
+                                                    )),
+                                                TextButton(
+                                                    onPressed: () async {
+                                                      Navigator.pop(
+                                                          context, 'Cancel');
+                                                      await flashFirmwareZip(
+                                                          appState);
+                                                    },
+                                                    child: const Row(
+                                                      children: [
+                                                        Icon(Icons
+                                                            .system_update),
+                                                        Text(
+                                                            "Flash .zip FW via DFU"),
+                                                      ],
+                                                    ))
+                                              ]
+                                            : []
                                       ],
                                     ),
                                   ),

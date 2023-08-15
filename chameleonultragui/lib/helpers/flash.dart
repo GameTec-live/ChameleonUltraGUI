@@ -13,8 +13,6 @@ import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/protobuf/dfu-cc.pb.dart';
 import 'dart:math';
 
-import 'package:nordic_dfu/nordic_dfu.dart';
-
 Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
   Uint8List content = Uint8List(0);
 
@@ -126,47 +124,19 @@ Future<void> flashFile(
     throw ("More than one Chameleon in DFU. Please connect only one at a time");
   }
 
-  if (!isBLE) {
-    await appState.connector.connectSpecific(chameleons[0]['port']);
-    var dfu = ChameleonDFU(port: appState.connector);
-    await appState.connector.finishRead();
-    await appState.connector.open();
-    await dfu.setPRN();
-    await dfu.getMTU();
-    await dfu.flashFirmware(0x01, applicationDat, callback);
-    await dfu.flashFirmware(0x02, applicationBin, callback);
-    appState.log.i("Firmware flashed!");
-    appState.connector.preformDisconnect();
-    appState.changesMade();
-  } else {
-    final tempFile = await createTempFile();
-    await tempFile.writeAsBytes(Uint8List.fromList(firmwareZip));
-    print(chameleons[0]['port']);
-    print(tempFile.path);
-    await NordicDfu().startDfu(
-      chameleons[0]['port'],
-      tempFile.path,
-      onProgressChanged: (
-        deviceAddress,
-        percent,
-        speed,
-        avgSpeed,
-        currentPart,
-        partsTotal,
-      ) {
-        appState.log.e('deviceAddress: $deviceAddress, percent: $percent');
-      },
-      onError: (address, error, errorType, message) {
-        print(address);
-        print(error);
-        print(message);
-      },
-      onDeviceConnected: (address) {
-        print(address);
-      },
-      onDeviceConnecting: (address) {
-        print(address);
-      },
-    );
+  if (isBLE) {
+    throw ("BLE DFU not yet supported");
   }
+
+  await appState.connector.connectSpecific(chameleons[0]['port']);
+  var dfu = ChameleonDFU(port: appState.connector);
+  await appState.connector.finishRead();
+  await appState.connector.open();
+  await dfu.setPRN();
+  await dfu.getMTU();
+  await dfu.flashFirmware(0x01, applicationDat, callback);
+  await dfu.flashFirmware(0x02, applicationBin, callback);
+  appState.log.i("Firmware flashed!");
+  appState.connector.preformDisconnect();
+  appState.changesMade();
 }

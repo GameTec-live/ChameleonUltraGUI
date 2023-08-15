@@ -138,7 +138,10 @@ class ConnectPage extends StatelessWidget {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.end,
                                             children: [
-                                              const Icon(Icons.usb),
+                                              chameleonDevice['type'] ==
+                                                      ChameleonConnectType.ble
+                                                  ? const Icon(Icons.bluetooth)
+                                                  : const Icon(Icons.usb),
                                               Text(chameleonDevice['port'] ??
                                                   ""),
                                               if (chameleonDevice['type'] ==

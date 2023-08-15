@@ -60,7 +60,6 @@ dependencies:
   archive: ^3.3.7
   flutter_reactive_ble: ^5.1.1
   permission_handler: ^10.4.3
-  nordic_dfu: ^6.1.0
   protobuf: ^2.0.0
   collection: ^1.17.1
   crypto: ^3.0.3
