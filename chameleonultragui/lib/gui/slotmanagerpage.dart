@@ -3,6 +3,7 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 
 class SlotManagerPage extends StatefulWidget {
@@ -13,15 +14,56 @@ class SlotManagerPage extends StatefulWidget {
 }
 
 class SlotManagerPageState extends State<SlotManagerPage> {
-  var slotdata = List.filled(
+  List<Map<String, String>> slotData = List.generate(
     8,
-    {
-      'Name': 'Unused',
-      'Type': 'Unused',
-      'ID': 'Unused',
-      'Last-updated': '00:00:00',
+    (_) => {
+      'hfName': 'Loading',
+      'lfName': 'Loading',
+      'Last-updated': 'Not implemented',
     },
   );
+
+  int currentFunctionIndex = 0;
+
+  Future<void> executeNextFunction() async {
+    var appState = context.read<MyAppState>();
+    var connection = ChameleonCom(port: appState.connector);
+    if (currentFunctionIndex < 8) {
+      try {
+        slotData[currentFunctionIndex]['hfName'] = await connection
+            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.hf);
+      } catch (_) {
+        slotData[currentFunctionIndex]['hfName'] = "";
+      }
+
+      try {
+        slotData[currentFunctionIndex]['lfName'] = await connection
+            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.lf);
+      } catch (_) {
+        slotData[currentFunctionIndex]['lfName'] = "";
+      }
+
+      if (slotData[currentFunctionIndex]['hfName']!.isEmpty) {
+        slotData[currentFunctionIndex]['hfName'] = "Empty";
+      }
+
+      if (slotData[currentFunctionIndex]['lfName']!.isEmpty) {
+        slotData[currentFunctionIndex]['lfName'] = "Empty";
+      }
+
+      setState(() {
+        currentFunctionIndex++;
+      });
+    }
+  }
+
+  void reloadPage() {
+    setState(() {
+      currentFunctionIndex = 0;
+    });
+    var appState = context.read<MyAppState>();
+    appState.changesMade();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,560 +75,90 @@ class SlotManagerPageState extends State<SlotManagerPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Expanded(
-              child: GridView(
-                padding: const EdgeInsets.all(20),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16.0,
-                  mainAxisSpacing: 16.0,
-                ),
-                scrollDirection: Axis.vertical,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      cardSelectDialog(context, 1);
-                    },
-                    style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(Icons.nfc),
-                              SizedBox(width: 5),
-                              Text("Slot 1")
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.credit_card),
-                              const SizedBox(width: 5),
-                              Text(slotdata[0]['Name'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.wifi),
-                              const SizedBox(width: 5),
-                              Text(slotdata[0]['Type'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.insert_drive_file),
-                              const SizedBox(width: 5),
-                              Text(slotdata[0]['ID'] ?? "Unknown")
-                            ],
-                          ),
-                          Expanded(
-                              child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                const Icon(Icons.access_time),
-                                const SizedBox(width: 5),
-                                Text(slotdata[0]['Last-updated'] ?? "00:00:00"),
-                              ],
-                            ),
-                          )),
-                        ],
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      cardSelectDialog(context, 2);
-                    },
-                    style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.nfc,
-                                color: Colors.amber,
+            FutureBuilder(
+              future: executeNextFunction(),
+              builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+                return Expanded(
+                  child: Card(
+                    child: StaggeredGridView.countBuilder(
+                      padding: const EdgeInsets.all(20),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      itemCount: 8,
+                      itemBuilder: (BuildContext context, int index) {
+                        return Container(
+                          constraints: const BoxConstraints(maxHeight: 120),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              cardSelectDialog(context, index);
+                            },
+                            style: ButtonStyle(
+                              shape: MaterialStateProperty.all<
+                                  RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18.0),
+                                ),
                               ),
-                              SizedBox(width: 5),
-                              Text("Slot 2")
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.credit_card),
-                              const SizedBox(width: 5),
-                              Text(slotdata[1]['Name'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.wifi),
-                              const SizedBox(width: 5),
-                              Text(slotdata[1]['Type'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.insert_drive_file),
-                              const SizedBox(width: 5),
-                              Text(slotdata[1]['ID'] ?? "Unknown")
-                            ],
-                          ),
-                          Expanded(
-                              child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                const Icon(Icons.access_time),
-                                const SizedBox(width: 5),
-                                Text(slotdata[1]['Last-updated'] ?? "00:00:00"),
-                              ],
                             ),
-                          )),
-                        ],
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      cardSelectDialog(context, 3);
-                    },
-                    style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.nfc,
-                                color: Colors.blue,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.nfc),
+                                      const SizedBox(width: 5),
+                                      Text("Slot ${index + 1}")
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.credit_card),
+                                      const SizedBox(width: 5),
+                                      Text(slotData[index]['hfName'] ??
+                                          "Unknown")
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.wifi),
+                                      const SizedBox(width: 5),
+                                      Text(slotData[index]['lfName'] ??
+                                          "Unknown")
+                                    ],
+                                  ),
+                                  Expanded(
+                                      child: Align(
+                                    alignment: Alignment.bottomRight,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        const Icon(Icons.access_time),
+                                        const SizedBox(width: 5),
+                                        Text(slotData[index]['Last-updated'] ??
+                                            "Not implemented"),
+                                      ],
+                                    ),
+                                  )),
+                                ],
                               ),
-                              SizedBox(width: 5),
-                              Text("Slot 3")
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.credit_card),
-                              const SizedBox(width: 5),
-                              Text(slotdata[2]['Name'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.wifi),
-                              const SizedBox(width: 5),
-                              Text(slotdata[2]['Type'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.insert_drive_file),
-                              const SizedBox(width: 5),
-                              Text(slotdata[2]['ID'] ?? "Unknown")
-                            ],
-                          ),
-                          Expanded(
-                              child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                const Icon(Icons.access_time),
-                                const SizedBox(width: 5),
-                                Text(slotdata[2]['Last-updated'] ?? "00:00:00"),
-                              ],
                             ),
-                          )),
-                        ],
-                      ),
+                          ),
+                        );
+                      },
+                      staggeredTileBuilder: (int index) =>
+                          const StaggeredTile.fit(1),
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      cardSelectDialog(context, 4);
-                    },
-                    style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.nfc,
-                                color: Colors.green,
-                              ),
-                              SizedBox(width: 5),
-                              Text("Slot 4")
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.credit_card),
-                              const SizedBox(width: 5),
-                              Text(slotdata[3]['Name'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.wifi),
-                              const SizedBox(width: 5),
-                              Text(slotdata[3]['Type'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.insert_drive_file),
-                              const SizedBox(width: 5),
-                              Text(slotdata[3]['ID'] ?? "Unknown")
-                            ],
-                          ),
-                          Expanded(
-                              child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                const Icon(Icons.access_time),
-                                const SizedBox(width: 5),
-                                Text(slotdata[3]['Last-updated'] ?? "00:00:00"),
-                              ],
-                            ),
-                          )),
-                        ],
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      cardSelectDialog(context, 5);
-                    },
-                    style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.nfc,
-                                color: Colors.deepPurple,
-                              ),
-                              SizedBox(width: 5),
-                              Text("Slot 5")
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.credit_card),
-                              const SizedBox(width: 5),
-                              Text(slotdata[4]['Name'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.wifi),
-                              const SizedBox(width: 5),
-                              Text(slotdata[4]['Type'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.insert_drive_file),
-                              const SizedBox(width: 5),
-                              Text(slotdata[4]['ID'] ?? "Unknown")
-                            ],
-                          ),
-                          Expanded(
-                              child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                const Icon(Icons.access_time),
-                                const SizedBox(width: 5),
-                                Text(slotdata[4]['Last-updated'] ?? "00:00:00"),
-                              ],
-                            ),
-                          )),
-                        ],
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      cardSelectDialog(context, 6);
-                    },
-                    style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.nfc,
-                                color: Colors.deepOrange,
-                              ),
-                              SizedBox(width: 5),
-                              Text("Slot 6")
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.credit_card),
-                              const SizedBox(width: 5),
-                              Text(slotdata[5]['Name'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.wifi),
-                              const SizedBox(width: 5),
-                              Text(slotdata[5]['Type'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.insert_drive_file),
-                              const SizedBox(width: 5),
-                              Text(slotdata[5]['ID'] ?? "Unknown")
-                            ],
-                          ),
-                          Expanded(
-                              child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                const Icon(Icons.access_time),
-                                const SizedBox(width: 5),
-                                Text(slotdata[5]['Last-updated'] ?? "00:00:00"),
-                              ],
-                            ),
-                          )),
-                        ],
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      cardSelectDialog(context, 7);
-                    },
-                    style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.nfc,
-                                color: Colors.pink,
-                              ),
-                              SizedBox(width: 5),
-                              Text("Slot 7")
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.credit_card),
-                              const SizedBox(width: 5),
-                              Text(slotdata[6]['Name'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.wifi),
-                              const SizedBox(width: 5),
-                              Text(slotdata[6]['Type'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.insert_drive_file),
-                              const SizedBox(width: 5),
-                              Text(slotdata[6]['ID'] ?? "Unknown")
-                            ],
-                          ),
-                          Expanded(
-                              child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                const Icon(Icons.access_time),
-                                const SizedBox(width: 5),
-                                Text(slotdata[6]['Last-updated'] ?? "00:00:00"),
-                              ],
-                            ),
-                          )),
-                        ],
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      cardSelectDialog(context, 8);
-                    },
-                    style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.nfc,
-                                color: Colors.teal,
-                              ),
-                              SizedBox(width: 5),
-                              Text("Slot 8")
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.credit_card),
-                              const SizedBox(width: 5),
-                              Text(slotdata[7]['Name'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.wifi),
-                              const SizedBox(width: 5),
-                              Text(slotdata[7]['Type'] ?? "Unknown")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.insert_drive_file),
-                              const SizedBox(width: 5),
-                              Text(slotdata[7]['ID'] ?? "Unknown")
-                            ],
-                          ),
-                          Expanded(
-                              child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                const Icon(Icons.access_time),
-                                const SizedBox(width: 5),
-                                Text(slotdata[7]['Last-updated'] ?? "00:00:00"),
-                              ],
-                            ),
-                          )),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                );
+              },
+            )
           ],
         ),
       ),
@@ -601,7 +173,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
     return showSearch<String>(
       context: context,
-      delegate: CardSearchDelegate(tags, gridPosition),
+      delegate: CardSearchDelegate(tags, gridPosition, reloadPage),
     );
   }
 }
@@ -609,8 +181,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 class CardSearchDelegate extends SearchDelegate<String> {
   final List<ChameleonTagSave> cards;
   final int gridPosition;
+  final dynamic refresh;
 
-  CardSearchDelegate(this.cards, this.gridPosition);
+  CardSearchDelegate(this.cards, this.gridPosition, this.refresh);
 
   @override
   List<Widget> buildActions(BuildContext context) {
@@ -706,7 +279,27 @@ class CardSearchDelegate extends SearchDelegate<String> {
                 await connection.setMf1BlockData(
                     blockOffset, card.data[blockOffset]);
               }
+              await connection.setSlotTagName(
+                  gridPosition,
+                  (card.name.isEmpty) ? "No name" : card.name,
+                  ChameleonTagFrequiency.hf);
               await connection.saveSlotData();
+              appState.changesMade();
+              refresh();
+            } else if (card.tag == ChameleonTag.em410X) {
+              await connection.setReaderDeviceMode(false);
+              await connection.enableSlot(gridPosition, true);
+              await connection.activateSlot(gridPosition);
+              await connection.setDefaultDataToSlot(gridPosition, card.tag);
+              await connection.setEM410XEmulatorID(
+                  hexToBytes(card.uid.replaceAll(" ", "")));
+              await connection.setSlotTagName(
+                  gridPosition,
+                  (card.name.isEmpty) ? "No name" : card.name,
+                  ChameleonTagFrequiency.lf);
+              await connection.saveSlotData();
+              appState.changesMade();
+              refresh();
             } else {
               appState.log.e("Can't write this card type yet.");
             }

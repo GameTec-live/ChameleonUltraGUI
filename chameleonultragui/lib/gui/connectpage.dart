@@ -127,44 +127,53 @@ class ConnectPage extends StatelessWidget {
                                 children: [
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        chameleonDevice['type'] ==
-                                                ChameleonConnectType.ble
-                                            ? const Icon(Icons.bluetooth)
-                                            : const Icon(Icons.usb),
-                                        Text(chameleonDevice['port'] ??
-                                            "MISSING"),
-                                        if (chameleonDevice['type'] ==
-                                            ChameleonConnectType.dfu)
-                                          const Text(" (DFU)"),
-                                      ],
+                                    child: FittedBox(
+                                      alignment: Alignment.centerRight,
+                                      fit: BoxFit.scaleDown,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment
+                                            .end, // Align the inner Row's children to the right
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              const Icon(Icons.usb),
+                                              Text(chameleonDevice['port'] ??
+                                                  ""),
+                                              if (chameleonDevice['type'] ==
+                                                  ChameleonConnectType.dfu)
+                                                const Text(" (DFU)"),
+                                            ],
+                                          )
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                          "Chameleon ${(chameleonDevice['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 20)),
-                                    ],
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: FractionallySizedBox(
-                                      widthFactor: 0.4,
+                                  FittedBox(
+                                      alignment: Alignment.topRight,
+                                      fit: BoxFit.scaleDown,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                              "Chameleon ${(chameleonDevice['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20)),
+                                        ],
+                                      )),
+                                  const SizedBox(height: 8),
+                                  Expanded(
+                                      flex: 1,
                                       child: Image.asset(
                                         chameleonDevice['device'] ==
                                                 ChameleonDevice.ultra
                                             ? 'assets/black-ultra-standing-front.png'
                                             : 'assets/black-lite-standing-front.png',
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
+                                        fit: BoxFit.fitHeight,
+                                      )),
                                 ],
                               ),
                             );
