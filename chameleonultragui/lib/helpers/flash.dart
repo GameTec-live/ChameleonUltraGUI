@@ -13,20 +13,54 @@ import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/protobuf/dfu-cc.pb.dart';
 import 'dart:math';
 
-Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
+Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
   Uint8List content = Uint8List(0);
 
-  final releases = json.decode((await http.get(Uri.parse(
-          "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
-      .body
-      .toString());
+  try {
+    final releases = json.decode((await http.get(Uri.parse(
+            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
+        .body
+        .toString());
 
-  for (var file in releases[0]["assets"]) {
-    if (file["name"] ==
-        "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
-      content = await http.readBytes(Uri.parse(file["browser_download_url"]));
-      break;
+    for (var file in releases[0]["assets"]) {
+      if (file["name"] ==
+          "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
+        content = await http.readBytes(Uri.parse(file["browser_download_url"]));
+        break;
+      }
     }
+  } catch (_) {}
+
+  return content;
+}
+
+Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
+  Uint8List content = Uint8List(0);
+
+  try {
+    final artifacts = json.decode((await http.get(Uri.parse(
+            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts")))
+        .body
+        .toString());
+
+    for (var artifact in artifacts["artifacts"]) {
+      if (artifact["name"] ==
+          "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app") {
+        content = await http.readBytes(Uri.parse(
+            "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
+        break;
+      }
+    }
+  } catch (_) {}
+
+  return content;
+}
+
+Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
+  var content = await fetchFirmwareFromActions(device);
+
+  if (content.isEmpty) {
+    content = await fetchFirmwareFromReleases(device);
   }
 
   return content;
