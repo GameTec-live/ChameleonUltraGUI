@@ -138,7 +138,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               },
             ),
             const SizedBox(height: 10),
-            const Text("Colorscheme:"),
+            const Text("Color cheme:"),
             DropdownButton(
               value: appState.sharedPreferencesProvider.sharedPreferences
                       .getInt('app_theme_color') ??
@@ -275,9 +275,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               onPressed: () => showDialog<String>(
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
-                  title: const Text('Developer mode?'),
+                  title: const Text('Debug mode?'),
                   content: Text(
-                      'Are you sure you want to ${appState.sharedPreferencesProvider.getDeveloperMode() ? "deactivate" : "activate"} developer mode?'),
+                      'Are you sure you want to ${appState.sharedPreferencesProvider.getDeveloperMode() ? "deactivate" : "activate"} debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms'),
                   actions: <Widget>[
                     TextButton(
                       onPressed: () => Navigator.pop(context, 'Cancel'),
@@ -302,7 +302,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ],
                 ),
               ),
-              child: const Text('Activate developer mode'),
+              child: const Text('Activate debug mode'),
             )
           ],
         ),

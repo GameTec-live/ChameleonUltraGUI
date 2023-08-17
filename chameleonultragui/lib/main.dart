@@ -240,7 +240,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           if (appState.devMode)
                             const NavigationRailDestination(
-                              icon: Icon(Icons.developer_mode),
+                              icon: Icon(Icons.bug_report),
                               label: Text('🐞 Debug 🐞'),
                             ),
                         ],
