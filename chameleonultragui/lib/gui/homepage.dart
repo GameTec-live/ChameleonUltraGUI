@@ -556,8 +556,28 @@ class HomePageState extends State<HomePage> {
                                           await connection
                                               .setAnimationMode(animation);
                                           await connection.saveSettings();
+                                          setState(() {});
+                                          appState.changesMade();
                                         },
                                       ),
+                                      const SizedBox(height: 10),
+                                      const Text("Other:"),
+                                      const SizedBox(height: 10),
+                                      TextButton(
+                                          onPressed: () async {
+                                            var connection = ChameleonCom(
+                                                port: appState.connector);
+                                            await connection.resetSettings();
+                                            Navigator.pop(
+                                                dialogContext, 'Cancel');
+                                            appState.changesMade();
+                                          },
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.lock_reset),
+                                              Text("Reset settings"),
+                                            ],
+                                          )),
                                     ],
                                   ),
                                   actions: <Widget>[
