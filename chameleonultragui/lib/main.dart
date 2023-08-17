@@ -77,13 +77,15 @@ class MyApp extends StatelessWidget {
 class MyAppState extends ChangeNotifier {
   final SharedPreferencesProvider sharedPreferencesProvider;
   MyAppState(this.sharedPreferencesProvider);
-  // State
+
   bool onAndroid =
       Platform.isAndroid; // Are we on android? (mostly for serial port)
-  //AbstractSerial connector = Platform.isAndroid
-  //    ? AndroidSerial()
-  //    : NativeSerial(); // Chameleon Object, connected Chameleon
-  AbstractSerial connector = BLESerial(); // iOS
+
+// Android uses AndroidSerial, iOS can only use BLESerial
+// The rest (desktops?) can use NativeSerial
+  AbstractSerial connector = Platform.isAndroid
+      ? AndroidSerial()
+      : (Platform.isIOS ? BLESerial() : NativeSerial());
 
   bool switchOn = true;
   bool devMode = false;
