@@ -13,7 +13,9 @@ class ConnectPage extends StatelessWidget {
     var appState = context.watch<MyAppState>(); // Get State
 
     return FutureBuilder(
-      future: appState.connector.availableChameleons(false),
+      future: appState.connector.connected
+          ? Future.value([])
+          : appState.connector.availableChameleons(false),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -22,6 +24,7 @@ class ConnectPage extends StatelessWidget {
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
+          appState.connector.preformDisconnect();
           return Text('Error: ${snapshot.error}');
         } else {
           final result = snapshot.data;
@@ -56,31 +59,6 @@ class ConnectPage extends StatelessWidget {
                         ),
                         scrollDirection: Axis.vertical,
                         children: [
-                          // "Add" Button for Bluetooth
-                          ElevatedButton(
-                            onPressed: () {
-                              showDialog<String>(
-                                context: context,
-                                builder: (BuildContext context) =>
-                                    const AlertDialog(
-                                  content: Text('Identifies as BLE Dialog'),
-                                ),
-                              );
-                              // Connect via BLE here
-                              appState.connector.connected =
-                                  true; // Bypass / Dummy for testing
-                              appState.changesMade();
-                            },
-                            style: ButtonStyle(
-                              shape: MaterialStateProperty.all<
-                                  RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18.0),
-                                ),
-                              ),
-                            ),
-                            child: const Icon(Icons.add),
-                          ),
                           ...result.map<Widget>((chameleonDevice) {
                             return ElevatedButton(
                               onPressed: () async {
@@ -149,41 +127,57 @@ class ConnectPage extends StatelessWidget {
                                 children: [
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        const Icon(Icons.usb),
-                                        Text(chameleonDevice['port'] ??
-                                            "MISSING"),
-                                        if (chameleonDevice['type'] ==
-                                            ChameleonConnectType.dfu)
-                                          const Text(" (DFU)"),
-                                      ],
+                                    child: FittedBox(
+                                      alignment: Alignment.centerRight,
+                                      fit: BoxFit.scaleDown,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment
+                                            .end, // Align the inner Row's children to the right
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              chameleonDevice['type'] ==
+                                                      ChameleonConnectType.ble
+                                                  ? const Icon(Icons.bluetooth)
+                                                  : const Icon(Icons.usb),
+                                              Text(chameleonDevice['port'] ??
+                                                  ""),
+                                              if (chameleonDevice['type'] ==
+                                                  ChameleonConnectType.dfu)
+                                                const Text(" (DFU)"),
+                                            ],
+                                          )
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                          "Chameleon ${(chameleonDevice['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 20)),
-                                    ],
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: FractionallySizedBox(
-                                      widthFactor: 0.4,
+                                  FittedBox(
+                                      alignment: Alignment.topRight,
+                                      fit: BoxFit.scaleDown,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                              "Chameleon ${(chameleonDevice['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20)),
+                                        ],
+                                      )),
+                                  const SizedBox(height: 8),
+                                  Expanded(
+                                      flex: 1,
                                       child: Image.asset(
                                         chameleonDevice['device'] ==
                                                 ChameleonDevice.ultra
                                             ? 'assets/black-ultra-standing-front.png'
                                             : 'assets/black-lite-standing-front.png',
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
+                                        fit: BoxFit.fitHeight,
+                                      )),
+                                  const SizedBox(height: 8),
                                 ],
                               ),
                             );

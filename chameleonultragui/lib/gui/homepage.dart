@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:toggle_switch/toggle_switch.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -24,8 +25,17 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<(Icon, List<Icon>, String, String, String, int)>
-      getFutureData() async {
+  Future<
+      (
+        Icon,
+        List<Icon>,
+        String,
+        List<String>,
+        String,
+        int,
+        bool,
+        ChameleonAnimation
+      )> getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
     List<bool> usedSlots = await connection.getUsedSlots();
@@ -36,6 +46,8 @@ class HomePageState extends State<HomePage> {
       await getFWversion(connection),
       await getRamusage(connection),
       await getActivatedSlot(connection),
+      await isReaderDeviceMode(connection),
+      await getAnimationMode(connection),
     );
   }
 
@@ -65,7 +77,7 @@ class HomePageState extends State<HomePage> {
 
   Future<List<Icon>> getSlotIcons(
       ChameleonCom connection, int selectedSlot, List<bool> usedSlots) async {
-    await connection.activateSlot(selectedSlot);
+    await connection.activateSlot(selectedSlot - 1);
     List<Icon> icons = [];
     for (int i = 1; i < 9; i++) {
       if (i == selectedSlot) {
@@ -93,9 +105,20 @@ class HomePageState extends State<HomePage> {
     return usedSlotsOut8.toString();
   }
 
-  Future<String> getFWversion(ChameleonCom connection) async {
-    int fwv = await connection.getFirmwareVersion();
-    return numToVerCode(fwv);
+  Future<List<String>> getFWversion(ChameleonCom connection) async {
+    String commitHash = "";
+    String firmwareVersion =
+        numToVerCode(await connection.getFirmwareVersion());
+
+    try {
+      commitHash = await connection.getGitCommitHash();
+    } catch (_) {}
+
+    if (commitHash.isEmpty) {
+      commitHash = "Outdated FW";
+    }
+
+    return ["$firmwareVersion ($commitHash)", commitHash];
   }
 
   Future<String> getRamusage(ChameleonCom connection) async {
@@ -104,6 +127,18 @@ class HomePageState extends State<HomePage> {
 
   Future<int> getActivatedSlot(ChameleonCom connection) async {
     return await connection.getActivatedSlot();
+  }
+
+  Future<bool> isReaderDeviceMode(ChameleonCom connection) async {
+    return await connection.isReaderDeviceMode();
+  }
+
+  Future<ChameleonAnimation> getAnimationMode(ChameleonCom connection) async {
+    try {
+      return await connection.getAnimationMode();
+    } catch (_) {
+      return ChameleonAnimation.full;
+    }
   }
 
   Future<void> flashFirmware(MyAppState appState) async {
@@ -115,7 +150,8 @@ class HomePageState extends State<HomePage> {
     (applicationDat, applicationBin) = await unpackFirmware(content);
 
     flashFile(connection, appState, applicationDat, applicationBin,
-        (progress) => appState.setProgressBar(progress / 100));
+        (progress) => appState.setProgressBar(progress / 100),
+        firmwareZip: content);
   }
 
   Future<void> flashFirmwareZip(MyAppState appState) async {
@@ -131,7 +167,8 @@ class HomePageState extends State<HomePage> {
           await unpackFirmware(await file.readAsBytes());
 
       flashFile(connection, appState, applicationDat, applicationBin,
-          (progress) => appState.setProgressBar(progress / 100));
+          (progress) => appState.setProgressBar(progress / 100),
+          firmwareZip: await file.readAsBytes());
     }
   }
 
@@ -150,7 +187,8 @@ class HomePageState extends State<HomePage> {
               body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
+            appState.connector.preformDisconnect();
+            return Text('Error: ${snapshot.error.toString()}');
           } else {
             final (
               batteryIcon,
@@ -158,7 +196,9 @@ class HomePageState extends State<HomePage> {
               usedSlots,
               fwVersion,
               ramUsage,
-              slot
+              slot,
+              isReaderDeviceMode,
+              animationMode
             ) = snapshot.data;
             // selectedSlot = slot;
 
@@ -182,7 +222,7 @@ class HomePageState extends State<HomePage> {
                                 IconButton(
                                   onPressed: () {
                                     // Disconnect
-                                    appState.connector.performDisconnect();
+                                    appState.connector.preformDisconnect();
                                     appState.changesMade();
                                   },
                                   icon: const Icon(Icons.close),
@@ -196,9 +236,9 @@ class HomePageState extends State<HomePage> {
                                 Text(appState.connector.portName,
                                     style: const TextStyle(fontSize: 20)),
                                 Icon(appState.connector.connectionType ==
-                                        ChameleonConnectType.usb
-                                    ? Icons.usb
-                                    : Icons.bluetooth),
+                                        ChameleonConnectType.ble
+                                    ? Icons.bluetooth
+                                    : Icons.usb),
                                 batteryIcon,
                               ],
                             ),
@@ -258,6 +298,7 @@ class HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -266,82 +307,282 @@ class HomePageState extends State<HomePage> {
                                 fontWeight: FontWeight.bold,
                                 fontSize:
                                     MediaQuery.of(context).size.width / 50)),
-                        Text(fwVersion,
+                        Text(fwVersion[0],
                             style: TextStyle(
                                 fontSize:
                                     MediaQuery.of(context).size.width / 50)),
+                        Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: IconButton(
+                            onPressed: () async {
+                              var snackBar;
+                              var latestCommit;
+
+                              try {
+                                latestCommit = await latestAvailableCommit(
+                                    appState.connector.device);
+                              } catch (e) {
+                                ScaffoldMessenger.of(context)
+                                    .hideCurrentSnackBar();
+                                snackBar = SnackBar(
+                                  content:
+                                      Text('Update error: ${e.toString()}'),
+                                  action: SnackBarAction(
+                                    label: 'Close',
+                                    onPressed: () {},
+                                  ),
+                                );
+
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(snackBar);
+                                return;
+                              }
+
+                              if (latestCommit.startsWith(fwVersion[1])) {
+                                snackBar = SnackBar(
+                                  content: Text(
+                                      'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware is up to date'),
+                                  action: SnackBarAction(
+                                    label: 'Close',
+                                    onPressed: () {},
+                                  ),
+                                );
+
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(snackBar);
+                              } else {
+                                snackBar = SnackBar(
+                                  content: Text(
+                                      'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                                  action: SnackBarAction(
+                                    label: 'Close',
+                                    onPressed: () {},
+                                  ),
+                                );
+
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(snackBar);
+                                try {
+                                  await flashFirmware(appState);
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context)
+                                      .hideCurrentSnackBar();
+                                  snackBar = SnackBar(
+                                    content:
+                                        Text('Update error: ${e.toString()}'),
+                                    action: SnackBarAction(
+                                      label: 'Close',
+                                      onPressed: () {},
+                                    ),
+                                  );
+
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(snackBar);
+                                }
+                              }
+                            },
+                            tooltip: "Check for updates",
+                            icon: const Icon(Icons.update),
+                          ),
+                        )
                       ],
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Memory Usage: ",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize:
-                                    MediaQuery.of(context).size.width / 50)),
-                        Text(ramUsage,
-                            style: TextStyle(
-                                fontSize:
-                                    MediaQuery.of(context).size.width / 50)),
-                      ],
-                    ),
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: [
+                    //     Text("Memory Usage: ",
+                    //         style: TextStyle(
+                    //             fontWeight: FontWeight.bold,
+                    //             fontSize:
+                    //                 MediaQuery.of(context).size.width / 50)),
+                    //     Text(ramUsage,
+                    //         style: TextStyle(
+                    //             fontSize:
+                    //                 MediaQuery.of(context).size.width / 50)),
+                    //   ],
+                    // ),
                     Align(
                       alignment: Alignment.bottomRight,
-                      child: Column(
+                      child: Row(
                         children: [
+                          const Spacer(),
+                          (isReaderDeviceMode)
+                              ? Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: IconButton(
+                                    onPressed: () async {
+                                      var connection = ChameleonCom(
+                                          port: appState.connector);
+                                      await connection
+                                          .setReaderDeviceMode(false);
+                                      setState(() {});
+                                      appState.changesMade();
+                                    },
+                                    tooltip: "Go to emulator mode",
+                                    icon: const Icon(Icons.nfc_sharp),
+                                  ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: IconButton(
+                                    onPressed: () async {
+                                      var connection = ChameleonCom(
+                                          port: appState.connector);
+                                      await connection
+                                          .setReaderDeviceMode(true);
+                                      setState(() {});
+                                      appState.changesMade();
+                                    },
+                                    tooltip: "Go to reader mode",
+                                    icon: const Icon(Icons.barcode_reader),
+                                  ),
+                                ),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: IconButton(
                               onPressed: () => showDialog<String>(
                                 context: context,
-                                builder: (BuildContext context) => AlertDialog(
+                                builder: (BuildContext dialogContext) =>
+                                    AlertDialog(
                                   title: const Text('Device Settings'),
-                                  content: Center(
-                                    child: Column(
-                                      children: [
-                                        TextButton(
-                                            onPressed: () async {
-                                              var appState =
-                                                  context.read<MyAppState>();
-                                              var connection = ChameleonCom(
-                                                  port: appState.connector);
-                                              await connection.enterDFUMode();
-                                              appState.connector
-                                                  .performDisconnect();
-                                              Navigator.pop(context, 'Cancel');
-                                              appState.changesMade();
-                                            },
-                                            child: const Row(
-                                              children: [
-                                                Icon(Icons.system_update),
-                                                Text("Enter DFU Mode"),
-                                              ],
-                                            )),
-                                        TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(context, 'Cancel');
-                                              await flashFirmware(appState);
-                                            },
-                                            child: const Row(
-                                              children: [
-                                                Icon(Icons.system_update),
-                                                Text("Flash latest FW via DFU"),
-                                              ],
-                                            )),
-                                        TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(context, 'Cancel');
-                                              await flashFirmwareZip(appState);
-                                            },
-                                            child: const Row(
-                                              children: [
-                                                Icon(Icons.system_update),
-                                                Text("Flash .zip FW via DFU"),
-                                              ],
-                                            ))
-                                      ],
-                                    ),
+                                  content: Column(
+                                    children: [
+                                      const Text("Firmware management:"),
+                                      const SizedBox(height: 10),
+                                      TextButton(
+                                          onPressed: () async {
+                                            var connection = ChameleonCom(
+                                                port: appState.connector);
+                                            await connection.enterDFUMode();
+                                            appState.connector
+                                                .preformDisconnect();
+                                            Navigator.pop(
+                                                dialogContext, 'Cancel');
+                                            appState.changesMade();
+                                          },
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.medical_services),
+                                              Text("Enter DFU Mode"),
+                                            ],
+                                          )),
+                                      ...(appState.connector.connectionType !=
+                                              ChameleonConnectType.ble)
+                                          ? [
+                                              TextButton(
+                                                  onPressed: () async {
+                                                    Navigator.pop(dialogContext,
+                                                        'Cancel');
+                                                    var snackBar = SnackBar(
+                                                      content: Text(
+                                                          'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                                                      action: SnackBarAction(
+                                                        label: 'Close',
+                                                        onPressed: () {},
+                                                      ),
+                                                    );
+
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(snackBar);
+                                                    try {
+                                                      await flashFirmware(
+                                                          appState);
+                                                    } catch (e) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .hideCurrentSnackBar();
+                                                      snackBar = SnackBar(
+                                                        content: Text(
+                                                            'Update error: ${e.toString()}'),
+                                                        action: SnackBarAction(
+                                                          label: 'Close',
+                                                          onPressed: () {},
+                                                        ),
+                                                      );
+
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                              snackBar);
+                                                    }
+                                                  },
+                                                  child: const Row(
+                                                    children: [
+                                                      Icon(Icons
+                                                          .system_security_update),
+                                                      Text(
+                                                          "Flash latest FW via DFU"),
+                                                    ],
+                                                  )),
+                                              TextButton(
+                                                  onPressed: () async {
+                                                    Navigator.pop(dialogContext,
+                                                        'Cancel');
+                                                    await flashFirmwareZip(
+                                                        appState);
+                                                  },
+                                                  child: const Row(
+                                                    children: [
+                                                      Icon(Icons
+                                                          .system_security_update_good),
+                                                      Text(
+                                                          "Flash .zip FW via DFU"),
+                                                    ],
+                                                  ))
+                                            ]
+                                          : [],
+                                      const SizedBox(height: 10),
+                                      const Text("Animations:"),
+                                      const SizedBox(height: 10),
+                                      ToggleSwitch(
+                                        minWidth: 70.0,
+                                        cornerRadius: 10.0,
+                                        activeFgColor: Colors.white,
+                                        inactiveBgColor: Colors.grey,
+                                        inactiveFgColor: Colors.white,
+                                        initialLabelIndex: animationMode.value,
+                                        totalSwitches: 3,
+                                        labels: const ['Full', 'Mini', 'None'],
+                                        radiusStyle: true,
+                                        onToggle: (index) async {
+                                          var animation =
+                                              ChameleonAnimation.full;
+                                          if (index == 1) {
+                                            animation =
+                                                ChameleonAnimation.minimal;
+                                          } else if (index == 2) {
+                                            animation = ChameleonAnimation.none;
+                                          }
+
+                                          var connection = ChameleonCom(
+                                              port: appState.connector);
+                                          await connection
+                                              .setAnimationMode(animation);
+                                          await connection.saveSettings();
+                                          setState(() {});
+                                          appState.changesMade();
+                                        },
+                                      ),
+                                      const SizedBox(height: 10),
+                                      const Text("Other:"),
+                                      const SizedBox(height: 10),
+                                      TextButton(
+                                          onPressed: () async {
+                                            var connection = ChameleonCom(
+                                                port: appState.connector);
+                                            await connection.resetSettings();
+                                            Navigator.pop(
+                                                dialogContext, 'Cancel');
+                                            appState.changesMade();
+                                          },
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.lock_reset),
+                                              Text("Reset settings"),
+                                            ],
+                                          )),
+                                    ],
                                   ),
                                   actions: <Widget>[
                                     TextButton(

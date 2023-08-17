@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/gui/flashing.dart';
 import 'package:chameleonultragui/gui/mfkey32page.dart';
 import 'package:chameleonultragui/gui/readcardpage.dart';
@@ -8,19 +9,18 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Comms Imports
-import 'connector/serial_mobile.dart';
 import 'connector/serial_native.dart';
 
 // GUI Imports
-import 'gui/homepage.dart';
-import 'gui/savedcardspage.dart';
-import 'gui/settingspage.dart';
-import 'gui/connectpage.dart';
-import 'gui/devpage.dart';
-import 'gui/slotmanagerpage.dart';
+import 'package:chameleonultragui/gui/homepage.dart';
+import 'package:chameleonultragui/gui/savedcardspage.dart';
+import 'package:chameleonultragui/gui/settingspage.dart';
+import 'package:chameleonultragui/gui/connectpage.dart';
+import 'package:chameleonultragui/gui/devpage.dart';
+import 'package:chameleonultragui/gui/slotmanagerpage.dart';
 
 // Shared Preferences Provider
-import 'sharedprefsprovider.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Logger
 import 'package:logger/logger.dart';
@@ -80,13 +80,13 @@ class MyAppState extends ChangeNotifier {
   bool onAndroid =
       Platform.isAndroid; // Are we on android? (mostly for serial port)
   AbstractSerial connector = Platform.isAndroid
-      ? MobileSerial()
+      ? AndroidSerial()
       : NativeSerial(); // Chameleon Object, connected Chameleon
   bool switchOn = true;
   bool devMode = false;
   double? progress;
   // Flashing Easteregg
-  bool easteregg = false;
+  bool easterEgg = false;
 
   /*void toggleswitch() {
     setState(() {
@@ -136,6 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget page; // Set Page
     if (appState.connector.connected == false &&
         selectedIndex != 0 &&
+        selectedIndex != 2 &&
         selectedIndex != 5 &&
         selectedIndex != 6) {
       // If not connected, and not on home, settings or dev page, go to home page
@@ -209,15 +210,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                     ? const TextStyle(color: Colors.grey)
                                     : null),
                           ),
-                          NavigationRailDestination(
-                            icon: Icon(Icons.auto_awesome_motion_outlined,
-                                color: appState.connector.connected == false
-                                    ? Colors.grey
-                                    : null),
-                            label: Text('Saved Cards',
-                                style: appState.connector.connected == false
-                                    ? const TextStyle(color: Colors.grey)
-                                    : null),
+                          const NavigationRailDestination(
+                            icon: Icon(Icons.auto_awesome_motion_outlined),
+                            label: Text('Saved Cards'),
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.wifi,
@@ -245,7 +240,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           if (appState.devMode)
                             const NavigationRailDestination(
-                              icon: Icon(Icons.developer_mode),
+                              icon: Icon(Icons.bug_report),
                               label: Text('🐞 Debug 🐞'),
                             ),
                         ],

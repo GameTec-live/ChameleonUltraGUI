@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -17,14 +18,24 @@ enum ChameleonCommand {
 
   setSlotTagNick(1007),
   getSlotTagNick(1008),
-
-  slotDataConfigSave(1009),
+  saveSlotNicks(1009),
 
   // bootloader
   enterBootloader(1010),
-  getDeviceChipID(1011),
 
-  getActivatedSlot(1014),
+  // device info
+  getDeviceChipID(1011),
+  getDeviceBLEAddress(1012),
+
+  // settings
+  saveSettings(1013),
+  resetSettings(1014),
+
+  // animation
+  setAnimationMode(1015),
+  getAnimationMode(1016),
+
+  getGitCommitHash(1017),
 
   // hf reader commands
   scan14ATag(2000),
@@ -77,6 +88,15 @@ enum ChameleonTagFrequiency {
   hf(2);
 
   const ChameleonTagFrequiency(this.value);
+  final int value;
+}
+
+enum ChameleonAnimation {
+  full(0),
+  minimal(1),
+  none(2);
+
+  const ChameleonAnimation(this.value);
   final int value;
 }
 
@@ -166,7 +186,6 @@ class ChameleonDetectionResult {
 
 // Some ChatGPT magic
 // Nobody knows how it works
-// TODO: Handle error in messages
 
 class ChameleonCom {
   int baudrate = 115200;
@@ -217,31 +236,37 @@ class ChameleonCom {
 
   Future<ChameleonMessage?> sendCmdSync(ChameleonCommand cmd, int status,
       {Uint8List? data,
-      Duration timeout = const Duration(seconds: 3),
+      Duration timeout = const Duration(seconds: 5),
       bool skipReceive = false}) async {
     var dataFrame = makeDataFrameBytes(cmd, status, data);
     List<int> dataBuffer = [];
     var dataPosition = 0;
     var dataStatus = 0x0000;
     var dataLength = 0x0000;
-    // var startTime = DateTime.now();
+    var startTime = DateTime.now();
     List<int> readBuffer = [];
 
     log.d("Sending: ${bytesToHex(dataFrame)}");
     await _serialInstance!.finishRead();
     await _serialInstance!.open();
-    await _serialInstance!.write(Uint8List.fromList(dataFrame));
     if (skipReceive) {
+      try {
+        await _serialInstance!.write(Uint8List.fromList(dataFrame));
+      } catch (_) {}
       return null;
     }
+    await _serialInstance!.write(Uint8List.fromList(dataFrame));
 
     while (true) {
       while (true) {
-        // TODO: return timeout
         readBuffer.addAll(await _serialInstance!.read(16384));
         if (readBuffer.isNotEmpty) {
           log.d("Received: ${bytesToHex(Uint8List.fromList(readBuffer))}");
           break;
+        }
+        if (startTime.millisecondsSinceEpoch + timeout.inMilliseconds <
+            DateTime.now().millisecondsSinceEpoch) {
+          throw ("Timeout waiting for response");
         }
       }
 
@@ -260,22 +285,19 @@ class ChameleonCom {
             // start of frame
             if (dataPosition == 0) {
               if (dataBuffer[dataPosition] != dataFrameSof) {
-                log.e('Data frame no sof byte.');
-                break;
+                throw ('Data frame no sof byte.');
               }
             }
             if (dataPosition == 1) {
               if (dataBuffer[dataPosition] !=
                   lrcCalc(dataBuffer.sublist(0, 1))) {
-                log.e('Data frame sof lrc error.');
-                break;
+                throw ('Data frame sof lrc error.');
               }
             }
           } else if (dataPosition == 8) {
             // frame head lrc
             if (dataBuffer[dataPosition] != lrcCalc(dataBuffer.sublist(0, 8))) {
-              log.e('Data frame head lrc error.');
-              break;
+              throw ('Data frame head lrc error.');
             }
             // frame head complete, cache info
             //dataCmd = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(2, 4)));
@@ -284,8 +306,7 @@ class ChameleonCom {
             dataLength =
                 _toInt16BE(Uint8List.fromList(dataBuffer.sublist(6, 8)));
             if (dataLength > dataMaxLength) {
-              log.e('Data frame data length too than of max.');
-              break;
+              throw ('Data frame data length too than of max.');
             }
           } else if (dataPosition == (8 + dataLength + 1)) {
             if (dataBuffer[dataPosition] ==
@@ -295,7 +316,7 @@ class ChameleonCom {
               return ChameleonMessage(
                   status: dataStatus, data: Uint8List.fromList(dataResponse));
             } else {
-              log.e('Data frame finally lrc error.');
+              throw ('Data frame finally lrc error.');
             }
           }
 
@@ -324,6 +345,12 @@ class ChameleonCom {
   Future<String> getDeviceChipID() async {
     var resp = await sendCmdSync(ChameleonCommand.getDeviceChipID, 0x00);
     return bytesToHex(resp!.data);
+  }
+
+  Future<String> getDeviceBLEAddress() async {
+    var resp = await sendCmdSync(ChameleonCommand.getDeviceBLEAddress, 0x00);
+    return bytesToHexSpace(Uint8List.fromList(resp!.data.reversed.toList()))
+        .replaceAll(" ", ":");
   }
 
   Future<bool> isReaderDeviceMode() async {
@@ -377,8 +404,9 @@ class ChameleonCom {
 
   Future<ChameleonDarksideResult> checkMf1Darkside() async {
     // Check card vulnerability to Mifare Classic darkside attack
-    int status =
-        (await sendCmdSync(ChameleonCommand.mf1DarksideDetect, 0x00))!.status;
+    int status = (await sendCmdSync(ChameleonCommand.mf1DarksideDetect, 0x00,
+            timeout: const Duration(seconds: 20)))!
+        .status;
     if (status == 0) {
       return ChameleonDarksideResult.vurnerable;
     } else if (status == 0x20) {
@@ -420,7 +448,8 @@ class ChameleonCom {
     int i = 0;
     var resp = await sendCmdSync(ChameleonCommand.mf1NestedAcquire, 0x00,
         data: Uint8List.fromList(
-            [keyType, block, ...keyKnown, targetKeyType, targetBlock]));
+            [keyType, block, ...keyKnown, targetKeyType, targetBlock]),
+        timeout: const Duration(seconds: 30));
     var nonces = ChameleonNestedNonces(nonces: []);
 
     while (i < resp!.data.length) {
@@ -441,7 +470,8 @@ class ChameleonCom {
     // keyType 0x60 if A key, 0x61 B key
     var resp = await sendCmdSync(ChameleonCommand.mf1DarksideAcquire, 0x00,
         data: Uint8List.fromList(
-            [targetKeyType, targetBlock, firstRecover ? 1 : 0, syncMax]));
+            [targetKeyType, targetBlock, firstRecover ? 1 : 0, syncMax]),
+        timeout: const Duration(seconds: 30));
 
     if (resp!.data.length != 32) {
       throw ("Invalid data length");
@@ -482,24 +512,24 @@ class ChameleonCom {
   }
 
   Future<void> activateSlot(int slot) async {
-    // Slot 1-8
+    // Slot 0-7
     await sendCmdSync(ChameleonCommand.setSlotActivated, 0x00,
-        data: Uint8List.fromList([slot - 1]));
+        data: Uint8List.fromList([slot]));
   }
 
   Future<void> setSlotType(int slot, ChameleonTag type) async {
     await sendCmdSync(ChameleonCommand.setSlotTagType, 0x00,
-        data: Uint8List.fromList([slot - 1, type.value]));
+        data: Uint8List.fromList([slot, type.value]));
   }
 
   Future<void> setDefaultDataToSlot(int slot, ChameleonTag type) async {
     await sendCmdSync(ChameleonCommand.setSlotDataDefault, 0x00,
-        data: Uint8List.fromList([slot - 1, type.value]));
+        data: Uint8List.fromList([slot, type.value]));
   }
 
   Future<void> enableSlot(int slot, bool status) async {
     await sendCmdSync(ChameleonCommand.setSlotEnable, 0x00,
-        data: Uint8List.fromList([slot - 1, status ? 1 : 0]));
+        data: Uint8List.fromList([slot, status ? 1 : 0]));
   }
 
   Future<bool> isMf1DetectionMode() async {
@@ -522,21 +552,21 @@ class ChameleonCom {
   Future<Map<int, Map<int, Map<String, List<ChameleonDetectionResult>>>>>
       getMf1DetectionResult(int index) async {
     // Get results from index
-    var data = (await sendCmdSync(ChameleonCommand.mf1GetDetectionResult, 0x00,
+    var resp = (await sendCmdSync(ChameleonCommand.mf1GetDetectionResult, 0x00,
             data: Uint8List(4)
               ..buffer.asByteData().setInt16(0, index, Endian.big)))!
         .data;
     List<ChameleonDetectionResult> resultList = [];
     int pos = 0;
-    while (pos < data.length) {
+    while (pos < resp.length) {
       resultList.add(ChameleonDetectionResult(
-          block: data[0 + pos],
-          type: 0x60 + (data[1 + pos] & 0x01),
-          isNested: (data[1 + pos] >> 1 & 0x01) == 0x01,
-          uid: bytesToU32(data.sublist(2 + pos, 6 + pos)),
-          nt: bytesToU32(data.sublist(6 + pos, 10 + pos)),
-          nr: bytesToU32(data.sublist(10 + pos, 14 + pos)),
-          ar: bytesToU32(data.sublist(14 + pos, 18 + pos))));
+          block: resp[0 + pos],
+          type: 0x60 + (resp[1 + pos] & 0x01),
+          isNested: (resp[1 + pos] >> 1 & 0x01) == 0x01,
+          uid: bytesToU32(resp.sublist(2 + pos, 6 + pos)),
+          nt: bytesToU32(resp.sublist(6 + pos, 10 + pos)),
+          nr: bytesToU32(resp.sublist(10 + pos, 14 + pos)),
+          ar: bytesToU32(resp.sublist(14 + pos, 18 + pos))));
       pos += 18;
     }
 
@@ -580,7 +610,7 @@ class ChameleonCom {
   Future<String> readEM410X() async {
     var resp = await sendCmdSync(ChameleonCommand.scanEM410Xtag, 0x00,
         data: Uint8List(0));
-    return bytesToHex(resp!.data);
+    return bytesToHexSpace(resp!.data);
   }
 
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
@@ -612,8 +642,7 @@ class ChameleonCom {
   }
 
   Future<void> saveSlotData() async {
-    await sendCmdSync(ChameleonCommand.slotDataConfigSave, 0x00,
-        data: Uint8List(0));
+    await sendCmdSync(ChameleonCommand.saveSlotNicks, 0x00, data: Uint8List(0));
   }
 
   Future<void> enterDFUMode() async {
@@ -621,12 +650,41 @@ class ChameleonCom {
         data: Uint8List(0), skipReceive: true);
   }
 
+  Future<void> saveSettings() async {
+    await sendCmdSync(ChameleonCommand.saveSettings, 0x00);
+  }
+
+  Future<void> resetSettings() async {
+    await sendCmdSync(ChameleonCommand.resetSettings, 0x00);
+  }
+
+  Future<void> setAnimationMode(ChameleonAnimation animation) async {
+    await sendCmdSync(ChameleonCommand.setAnimationMode, 0x00,
+        data: Uint8List.fromList([animation.value]));
+  }
+
+  Future<ChameleonAnimation> getAnimationMode() async {
+    var resp = await sendCmdSync(ChameleonCommand.getAnimationMode, 0x00);
+    if (resp!.data[0] == 0) {
+      return ChameleonAnimation.full;
+    } else if (resp.data[0] == 1) {
+      return ChameleonAnimation.minimal;
+    } else {
+      return ChameleonAnimation.none;
+    }
+  }
+
+  Future<String> getGitCommitHash() async {
+    var resp = await sendCmdSync(ChameleonCommand.getGitCommitHash, 0x00);
+    return const AsciiDecoder().convert(resp!.data);
+  }
+
   Future<int> getActivatedSlot() async {
     // get the selected slot on the device, 0-7 (8 slots)
     return 0;
-    return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
-            data: Uint8List(0)))!
-        .data[0];
+    // return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
+    //         data: Uint8List(0)))!
+    //     .data[0];
   }
 
   // NOT IMPLEMENTED METHODS

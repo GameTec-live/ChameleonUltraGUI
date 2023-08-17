@@ -156,7 +156,7 @@ class ChameleonDFU {
       if (readBuffer[2] == ChameleonResponseCode.extendedError.value) {
         throw ("DFU error: ${ChameleonResponseCode.fromValue(readBuffer[3])}");
       }
-      throw ("DFU error");
+      throw ("DFU error: ${ChameleonResponseCode.fromValue(readBuffer[2])}");
     }
   }
 
@@ -190,10 +190,15 @@ class ChameleonDFU {
   }
 
   Future<int> getMTU() async {
-    mtu = ByteData.view(
-            (await sendCmdSync(ChameleonDFUCommand.getSerialMTU, Uint8List(0)))!
-                .buffer)
-        .getUint16(0, Endian.little);
+    try {
+      mtu = ByteData.view((await sendCmdSync(
+                  ChameleonDFUCommand.getSerialMTU, Uint8List(0)))!
+              .buffer)
+          .getUint16(0, Endian.little);
+    } catch (_) {
+      mtu = 2051;
+    }
+
     return mtu;
   }
 
@@ -237,10 +242,11 @@ class ChameleonDFU {
     Map<String, int> response = {'crc': 0, 'offset': 0};
 
     void validateCrc() {
-      // TODO: fix CRC
-      // if (crc != response['crc']) {
-      //   throw ("Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
-      // }
+      if (crc != response['crc']) {
+        // Yes, always fail
+        log.w(
+            "Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
+      }
       if (offset != response['offset']!) {
         log.w(
             "Failed offset validation. Expected: $offset Received: ${response['offset']}.");
@@ -257,19 +263,18 @@ class ChameleonDFU {
       await delayedSend(packet);
 
       offset += toTransmit.length;
+      crc = (calculateCRC32(toTransmit.sublist(1)).toUnsigned(32) & 0xFFFFFFFF)
+          .toInt();
       response = await calculateChecksum();
       validateCrc();
     }
 
-    if (Platform.isWindows) {
+    if (Platform.isWindows || Platform.isMacOS) {
       // Transmittion errors fix
       await _serialInstance!.read(16384);
     }
 
     response = await calculateChecksum();
-
-    // crc = (calculateCRC32(toTransmit.sublist(1)).toUnsigned(32) & 0xFFFFFFFF)
-    //     .toInt();
 
     validateCrc();
 
@@ -281,15 +286,17 @@ class ChameleonDFU {
     // We work around it by sending message by parts with delay
     var offsetSize = 128;
 
-    if (Platform.isWindows) {
+    if (Platform.isWindows || Platform.isMacOS) {
       for (var offset = 0; offset < packet.length; offset += offsetSize) {
-        await _serialInstance!.write(packet.sublist(
-            offset, offset + min(offsetSize, packet.length - offset)));
+        await _serialInstance!.write(
+            packet.sublist(
+                offset, offset + min(offsetSize, packet.length - offset)),
+            firmware: true);
         await asyncSleep(1);
       }
     } else {
       // Other OS: send as is
-      _serialInstance!.write(packet);
+      _serialInstance!.write(packet, firmware: true);
     }
   }
 }

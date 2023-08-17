@@ -94,7 +94,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               child: Card(
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
-                  crossAxisCount: 2,
+                  crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: tags.length + 1,
@@ -121,7 +121,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 appState.sharedPreferencesProvider
                                     .setChameleonTags(tags);
                                 appState.changesMade();
-                              } on Exception catch (_) {
+                              } catch (_) {
                                 var uid4 = contents.sublist(0, 4);
                                 var uid7 = contents.sublist(0, 7);
                                 var uid4sak = contents[5];
@@ -150,92 +150,97 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   builder: (BuildContext context) {
                                     return AlertDialog(
                                       title: const Text('Correct tag details'),
-                                      content: Column(children: [
-                                        Column(children: [
-                                          const SizedBox(height: 20),
-                                          const Text('UID 4 byte length'),
-                                          const SizedBox(height: 10),
+                                      content: StatefulBuilder(builder:
+                                          (BuildContext context,
+                                              StateSetter setState) {
+                                        return SingleChildScrollView(
+                                            child: Column(children: [
+                                          Column(children: [
+                                            const SizedBox(height: 20),
+                                            const Text('UID 4 byte length'),
+                                            const SizedBox(height: 10),
+                                            TextFormField(
+                                              controller: uid4Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'UID',
+                                                  hintText: 'Enter UID'),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            TextFormField(
+                                              controller: sak4Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'SAK',
+                                                  hintText: 'Enter SAK'),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            TextFormField(
+                                              controller: atqa4Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'ATQA',
+                                                  hintText: 'Enter ATQA'),
+                                            ),
+                                            const SizedBox(height: 40),
+                                          ]),
+                                          Column(children: [
+                                            const Text('UID 7 byte length'),
+                                            const SizedBox(height: 10),
+                                            TextFormField(
+                                              controller: uid7Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'UID',
+                                                  hintText: 'Enter UID'),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            TextFormField(
+                                              controller: sak7Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'SAK',
+                                                  hintText: 'Enter SAK (08)'),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            TextFormField(
+                                              controller: atqa7Controller,
+                                              decoration: const InputDecoration(
+                                                  labelText: 'ATQA',
+                                                  hintText:
+                                                      'Enter ATQA (00 44)'),
+                                            ),
+                                            const SizedBox(height: 40)
+                                          ]),
                                           TextFormField(
-                                            controller: uid4Controller,
+                                            controller: nameController,
                                             decoration: const InputDecoration(
-                                                labelText: 'UID',
-                                                hintText: 'Enter UID'),
+                                                labelText: 'Name',
+                                                hintText: 'Enter name of card'),
                                           ),
-                                          const SizedBox(height: 20),
-                                          TextFormField(
-                                            controller: sak4Controller,
-                                            decoration: const InputDecoration(
-                                                labelText: 'SAK',
-                                                hintText: 'Enter SAK'),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          TextFormField(
-                                            controller: atqa4Controller,
-                                            decoration: const InputDecoration(
-                                                labelText: 'ATQA',
-                                                hintText: 'Enter ATQA'),
-                                          ),
-                                          const SizedBox(height: 40),
-                                        ]),
-                                        Column(children: [
-                                          const Text('UID 7 byte length'),
-                                          const SizedBox(height: 10),
-                                          TextFormField(
-                                            controller: uid7Controller,
-                                            decoration: const InputDecoration(
-                                                labelText: 'UID',
-                                                hintText: 'Enter UID'),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          TextFormField(
-                                            controller: sak7Controller,
-                                            decoration: const InputDecoration(
-                                                labelText: 'SAK',
-                                                hintText: 'Enter SAK (08)'),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          TextFormField(
-                                            controller: atqa7Controller,
-                                            decoration: const InputDecoration(
-                                                labelText: 'ATQA',
-                                                hintText: 'Enter ATQA (00 44)'),
-                                          ),
-                                          const SizedBox(height: 40)
-                                        ]),
-                                        TextFormField(
-                                          controller: nameController,
-                                          decoration: const InputDecoration(
-                                              labelText: 'Name',
-                                              hintText: 'Enter name of card'),
-                                        ),
-                                        DropdownButton<MifareClassicType>(
-                                          value:
-                                              selectedType, // TODO: Fix value change
-                                          items: [
-                                            MifareClassicType.m1k,
-                                            MifareClassicType.m2k,
-                                            MifareClassicType.m4k,
-                                            MifareClassicType.mini
-                                          ].map<
-                                                  DropdownMenuItem<
-                                                      MifareClassicType>>(
-                                              (MifareClassicType type) {
-                                            return DropdownMenuItem<
-                                                MifareClassicType>(
-                                              value: type,
-                                              child: Text(
-                                                  "Mifare Classic ${mfClassicGetName(type)}"),
-                                            );
-                                          }).toList(),
-                                          onChanged:
-                                              (MifareClassicType? newValue) {
-                                            setState(() {
-                                              selectedType = newValue!;
-                                            });
-                                            appState.changesMade();
-                                          },
-                                        )
-                                      ]),
+                                          DropdownButton<MifareClassicType>(
+                                            value: selectedType,
+                                            items: [
+                                              MifareClassicType.m1k,
+                                              MifareClassicType.m2k,
+                                              MifareClassicType.m4k,
+                                              MifareClassicType.mini
+                                            ].map<
+                                                    DropdownMenuItem<
+                                                        MifareClassicType>>(
+                                                (MifareClassicType type) {
+                                              return DropdownMenuItem<
+                                                  MifareClassicType>(
+                                                value: type,
+                                                child: Text(
+                                                    "Mifare Classic ${mfClassicGetName(type)}"),
+                                              );
+                                            }).toList(),
+                                            onChanged:
+                                                (MifareClassicType? newValue) {
+                                              setState(() {
+                                                selectedType = newValue!;
+                                              });
+                                              appState.changesMade();
+                                            },
+                                          )
+                                        ]));
+                                      }),
                                       actions: [
                                         ElevatedButton(
                                           onPressed: () async {
@@ -243,6 +248,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             for (var i = 0;
                                                 i < contents.length;
                                                 i += 16) {
+                                              if (i + 16 > contents.length) {
+                                                break;
+                                              }
                                               blocks.add(
                                                   contents.sublist(i, i + 16));
                                             }
@@ -339,7 +347,93 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       return Container(
                         constraints: const BoxConstraints(maxHeight: 100),
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text(tag.name),
+                                  content: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Text("UID: ${tag.uid}"),
+                                      Text("Tag Type: ${chameleonTagToString(tag.tag)}"),
+                                      Text("SAK: ${tag.sak}"),
+                                      Text("ATQA: ${tag.atqa[0]} ${tag.atqa[1]}"),
+                                    ],
+                                  ),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(Icons.edit),
+                                    ),
+
+                                    IconButton(
+                                      onPressed: () async {
+                                        await showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              title: const Text(
+                                                  'Select save format'),
+                                              actions: [
+                                                ElevatedButton(
+                                                  onPressed: () async {
+                                                    await saveTag(
+                                                        tag, appState, true);
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: const Text(
+                                                      'Save as .bin'),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () async {
+                                                    await saveTag(
+                                                        tag, appState, false);
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: const Text(
+                                                      'Save as .json'),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.download_rounded),
+                                    ),
+
+                                    IconButton(
+                                      onPressed: () async {
+                                        var tags = appState
+                                            .sharedPreferencesProvider
+                                            .getChameleonTags();
+                                        List<ChameleonTagSave> output = [];
+                                        for (var tagTest in tags) {
+                                          if (tagTest.id != tag.id) {
+                                            output.add(tagTest);
+                                          }
+                                        }
+                                        appState.sharedPreferencesProvider
+                                            .setChameleonTags(output);
+                                        appState.changesMade();
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.delete_outline),
+                                    ),
+
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text('Ok'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
                           style: ButtonStyle(
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(
@@ -475,7 +569,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               child: Card(
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
-                  crossAxisCount: 2,
+                  crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: dictionaries.length + 1,
@@ -490,11 +584,17 @@ class SavedCardsPageState extends State<SavedCardsPage> {
 
                             if (result != null) {
                               File file = File(result.files.single.path!);
-                              var contents = const Utf8Decoder()
-                                  .convert(await file.readAsBytes());
+                              String contents;
+                              try {
+                                contents = const Utf8Decoder()
+                                    .convert(await file.readAsBytes());
+                              } catch (e) {
+                                return;
+                              }
 
                               List<Uint8List> keys = [];
                               for (var key in contents.split("\n")) {
+                                key = key.trim();
                                 if (key.length == 12 && isValidHexString(key)) {
                                   keys.add(hexToBytes(key));
                                 }
@@ -532,7 +632,94 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       return Container(
                         constraints: const BoxConstraints(maxHeight: 100),
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            List<Text> displayList = [];
+                            for (var key in dictionary.keys) {
+                              displayList.add(Text(key.toString()));
+                            }
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text(dictionary.name),
+                                  content: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Text("Key Count: ${dictionary.keys.length}"),
+                                      const SizedBox(height: 10),
+                                      SizedBox(
+                                        height: 400,
+                                        width: 600,
+                                        child: ListView(
+                                          children: displayList,
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(Icons.edit),
+                                    ),
+
+                                    IconButton(
+                                      onPressed: () async {
+                                        try {
+                                          await FileSaver.instance.saveAs(
+                                              name: '${dictionary.name}.dic',
+                                              bytes: dictionary.toFile(),
+                                              ext: 'bin',
+                                              mimeType: MimeType.other);
+                                        } on UnimplementedError catch (_) {
+                                          String? outputFile = await FilePicker
+                                              .platform
+                                              .saveFile(
+                                            dialogTitle:
+                                                'Please select an output file:',
+                                            fileName: '${dictionary.name}.dic',
+                                          );
+
+                                          if (outputFile != null) {
+                                            var file = File(outputFile);
+                                            await file.writeAsBytes(
+                                                dictionary.toFile());
+                                          }
+                                        }
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.download_rounded),
+                                    ),
+
+                                    IconButton(
+                                      onPressed: () async {
+                                        var dictionaries = appState
+                                            .sharedPreferencesProvider
+                                            .getChameleonDictionaries();
+                                        List<ChameleonDictionary> output = [];
+                                        for (var dict in dictionaries) {
+                                          if (dict.id != dictionary.id) {
+                                            output.add(dict);
+                                          }
+                                        }
+                                        appState.sharedPreferencesProvider
+                                            .setChameleonDictionaries(output);
+                                        appState.changesMade();
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.delete_outline),
+                                    ),
+
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text('Ok'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
                           style: ButtonStyle(
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(

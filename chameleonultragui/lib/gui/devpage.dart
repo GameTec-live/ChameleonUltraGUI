@@ -29,13 +29,21 @@ class DevPage extends StatelessWidget {
             child: IconButton(
               onPressed: () {
                 // Disconnect
-                appState.connector.performDisconnect();
+                appState.connector.preformDisconnect();
                 appState.changesMade();
               },
               icon: const Icon(Icons.close),
             ),
           ),
-          const Text('Chameleon Ultra GUI'), // Display dummy / debug info
+          const Text(
+            '🐞 Chameleon Ultra GUI DEBUG MENU 🐞',
+            textScaleFactor: 2,
+          ),
+          const Text(
+            'Using this menu may brick your Chameleon PERMANENTLY',
+            textScaleFactor: 2,
+          ),
+          const Text('⚠️ YOU HAVE BEEN WARNED ⚠️', textScaleFactor: 3),
           Text('Platform: ${Platform.operatingSystem}'),
           Text('Android: ${appState.onAndroid}'),
           Text('Serial protocol : ${appState.connector}'),
@@ -131,14 +139,14 @@ class DevPage extends StatelessWidget {
               appState.log.d(
                   "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
               var card = await cml.scan14443aTag();
-              appState.log.d('Card uid: ${card.uid}');
-              appState.log.d('sak: ${card.sak}');
-              appState.log.d('atqa: ${card.atqa}');
+              appState.log.d('Card UID: ${card.uid}');
+              appState.log.d('SAK: ${card.sak}');
+              appState.log.d('ATQA: ${card.atqa}');
               await cml.setReaderDeviceMode(false);
               await cml.setMf1AntiCollision(card);
             },
             child: const Column(children: [
-              Text('Copy card uid to emulator'),
+              Text('Copy card UID to emulator'),
             ]),
           ),
           ElevatedButton(
@@ -201,15 +209,6 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              await cml.enterDFUMode();
-              appState.connector.performDisconnect();
-            },
-            child: const Column(children: [
-              Text('Reboot to DFU'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
               var connection = ChameleonCom(port: appState.connector);
               Uint8List applicationDat, applicationBin;
 
@@ -218,10 +217,11 @@ class DevPage extends StatelessWidget {
               (applicationDat, applicationBin) = await unpackFirmware(content);
 
               flashFile(connection, appState, applicationDat, applicationBin,
-                  (progress) => appState.log.d("Flashing: $progress%"));
+                  (progress) => appState.log.d("Flashing: $progress%"),
+                  firmwareZip: content);
             },
             child: const Column(children: [
-              Text('DFU flash ultra FW'),
+              Text('💀 DFU flash ultra FW 💀'),
             ]),
           ),
           ElevatedButton(
@@ -234,18 +234,19 @@ class DevPage extends StatelessWidget {
               (applicationDat, applicationBin) = await unpackFirmware(content);
 
               flashFile(connection, appState, applicationDat, applicationBin,
-                  (progress) => appState.log.d("Flashing: $progress%"));
+                  (progress) => appState.log.d("Flashing: $progress%"),
+                  firmwareZip: content);
             },
             child: const Column(children: [
-              Text('DFU flash lite FW'),
+              Text('💀 DFU flash lite FW 💀'),
             ]),
           ),
           ElevatedButton(
             onPressed: () async {
-              await cml.setDefaultDataToSlot(1, ChameleonTag.mifare1K);
+              await cml.getGitCommitHash();
             },
             child: const Column(children: [
-              Text('Dump card contents'),
+              Text('Test getGitCommitHash'),
             ]),
           ),
         ],

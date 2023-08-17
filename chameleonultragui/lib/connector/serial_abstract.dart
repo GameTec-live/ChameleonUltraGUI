@@ -16,7 +16,7 @@ class AbstractSerial {
     return false;
   }
 
-  Future<bool> performDisconnect() async {
+  Future<bool> preformDisconnect() async {
     return false;
   }
 
@@ -24,7 +24,7 @@ class AbstractSerial {
     return [];
   }
 
-  Future<bool> connectSpecific(device) async {
+  Future<bool> connectSpecific(devicePort) async {
     return false;
   }
 
@@ -34,7 +34,7 @@ class AbstractSerial {
 
   Future<void> open() async {}
 
-  Future<bool> write(Uint8List command) async {
+  Future<bool> write(Uint8List command, {bool firmware = false}) async {
     return false;
   }
 

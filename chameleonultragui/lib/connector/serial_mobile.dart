@@ -12,7 +12,7 @@ class MobileSerial extends AbstractSerial {
   UsbPort? port;
 
   @override
-  Future<bool> performDisconnect() async {
+  Future<bool> preformDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
     if (port != null) {
@@ -84,7 +84,6 @@ class MobileSerial extends AbstractSerial {
       } else {
         device = ChameleonDevice.lite;
       }
-
       bool openResult = await port!.open();
       if (!openResult) {
         return false;
@@ -96,6 +95,7 @@ class MobileSerial extends AbstractSerial {
       port!.setPortParameters(
           115200, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
       connected = true;
+
       port!.inputStream!.listen((Uint8List data) {
         messagePool.add(data);
       });
@@ -121,7 +121,7 @@ class MobileSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> write(Uint8List command) async {
+  Future<bool> write(Uint8List command, {bool firmware = false}) async {
     await port!.write(command);
     return true;
   }
@@ -136,7 +136,7 @@ class MobileSerial extends AbstractSerial {
         completer.complete(message);
         break;
       }
-      await asyncSleep(100);
+      await asyncSleep(10);
     }
 
     return completer.future;
