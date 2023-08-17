@@ -267,6 +267,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
               await connection.setReaderDeviceMode(false);
               await connection.enableSlot(gridPosition, true);
               await connection.activateSlot(gridPosition);
+              await connection.setSlotType(gridPosition, card.tag);
               await connection.setDefaultDataToSlot(gridPosition, card.tag);
               var cardData = ChameleonCard(
                   uid: hexToBytes(card.uid.replaceAll(" ", "")),

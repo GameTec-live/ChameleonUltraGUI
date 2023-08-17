@@ -96,6 +96,28 @@ String chameleonTagToString(ChameleonTag tag) {
   }
 }
 
+ChameleonTag numberToChameleonTag(int type) {
+  if (type == ChameleonTag.mifareMini.value) {
+    return ChameleonTag.mifareMini;
+  } else if (type == ChameleonTag.mifare1K.value) {
+    return ChameleonTag.mifare1K;
+  } else if (type == ChameleonTag.mifare2K.value) {
+    return ChameleonTag.mifare2K;
+  } else if (type == ChameleonTag.mifare4K.value) {
+    return ChameleonTag.mifare4K;
+  } else if (type == ChameleonTag.em410X.value) {
+    return ChameleonTag.em410X;
+  } else if (type == ChameleonTag.ntag213.value) {
+    return ChameleonTag.ntag213;
+  } else if (type == ChameleonTag.ntag215.value) {
+    return ChameleonTag.ntag215;
+  } else if (type == ChameleonTag.ntag216.value) {
+    return ChameleonTag.ntag216;
+  } else {
+    return ChameleonTag.unknown;
+  }
+}
+
 ChameleonTag getTagTypeByValue(int value) {
   return ChameleonTag.values.firstWhere((element) => element.value == value,
       orElse: () => ChameleonTag.unknown);
