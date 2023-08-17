@@ -134,7 +134,11 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<ChameleonAnimation> getAnimationMode(ChameleonCom connection) async {
-    return await connection.getAnimationMode();
+    try {
+      return await connection.getAnimationMode();
+    } catch (_) {
+      return ChameleonAnimation.full;
+    }
   }
 
   Future<void> flashFirmware(MyAppState appState) async {
@@ -184,7 +188,7 @@ class HomePageState extends State<HomePage> {
             );
           } else if (snapshot.hasError) {
             appState.connector.preformDisconnect();
-            return Text('Error: ${snapshot.error}');
+            return Text('Error: ${snapshot.error.toString()}');
           } else {
             final (
               batteryIcon,
