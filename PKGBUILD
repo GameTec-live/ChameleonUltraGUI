@@ -6,23 +6,23 @@ arch=('x86_64')
 url="https://github.com/GameTec-live/ChameleonUltraGUI"
 depends=('gtk3' 'zenity')
 makedepends=('flutter' 'clang' 'cmake' 'ninja' 'pkgconf' 'xz')
-source=("https://github.com/GameTec-live/ChameleonUltraGUI/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('')
+source=("git+https://github.com/GameTec-live/ChameleonUltraGUI.git#branch=main")
+sha256sums=('SKIP')
 
 prepare(){
-    cd "$pkgname-$pkgver"
+    cd "ChameleonUltraGUI/chameleonultragui"
     flutter --no-version-check config --no-analytics
     flutter --no-version-check config --enable-linux-desktop
     flutter --no-version-check pub get
 }
 
 build() {
-    cd "$pkgname-$pkgver"
+    cd "ChameleonUltraGUI/chameleonultragui"
     flutter --no-version-check build linux --release
 }
 
 package() {
-    cd "$pkgname-$pkgver/build/linux/x64/release/bundle/"
+    cd "ChameleonUltraGUI/chameleonultragui/build/linux/x64/release/bundle/"
     # create the target folders
     install -dm 755 "$pkgdir/opt/$pkgname" "$pkgdir/usr/bin/"
     # copy the bundled output to /opt
