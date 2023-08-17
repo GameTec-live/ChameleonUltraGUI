@@ -94,7 +94,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               child: Card(
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
-                  crossAxisCount: 2,
+                  crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: tags.length + 1,
@@ -347,7 +347,93 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       return Container(
                         constraints: const BoxConstraints(maxHeight: 100),
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text(tag.name),
+                                  content: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Text("UID: ${tag.uid}"),
+                                      Text("Tag Type: ${chameleonTagToString(tag.tag)}"),
+                                      Text("SAK: ${tag.sak}"),
+                                      Text("ATQA: ${tag.atqa[0]} ${tag.atqa[1]}"),
+                                    ],
+                                  ),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(Icons.edit),
+                                    ),
+
+                                    IconButton(
+                                      onPressed: () async {
+                                        await showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              title: const Text(
+                                                  'Select save format'),
+                                              actions: [
+                                                ElevatedButton(
+                                                  onPressed: () async {
+                                                    await saveTag(
+                                                        tag, appState, true);
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: const Text(
+                                                      'Save as .bin'),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () async {
+                                                    await saveTag(
+                                                        tag, appState, false);
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: const Text(
+                                                      'Save as .json'),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.download_rounded),
+                                    ),
+
+                                    IconButton(
+                                      onPressed: () async {
+                                        var tags = appState
+                                            .sharedPreferencesProvider
+                                            .getChameleonTags();
+                                        List<ChameleonTagSave> output = [];
+                                        for (var tagTest in tags) {
+                                          if (tagTest.id != tag.id) {
+                                            output.add(tagTest);
+                                          }
+                                        }
+                                        appState.sharedPreferencesProvider
+                                            .setChameleonTags(output);
+                                        appState.changesMade();
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.delete_outline),
+                                    ),
+
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text('Ok'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
                           style: ButtonStyle(
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(
@@ -483,7 +569,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               child: Card(
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
-                  crossAxisCount: 2,
+                  crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: dictionaries.length + 1,
@@ -546,7 +632,94 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       return Container(
                         constraints: const BoxConstraints(maxHeight: 100),
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            List<Text> displayList = [];
+                            for (var key in dictionary.keys) {
+                              displayList.add(Text(key.toString()));
+                            }
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text(dictionary.name),
+                                  content: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Text("Key Count: ${dictionary.keys.length}"),
+                                      const SizedBox(height: 10),
+                                      SizedBox(
+                                        height: 400,
+                                        width: 600,
+                                        child: ListView(
+                                          children: displayList,
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(Icons.edit),
+                                    ),
+
+                                    IconButton(
+                                      onPressed: () async {
+                                        try {
+                                          await FileSaver.instance.saveAs(
+                                              name: '${dictionary.name}.dic',
+                                              bytes: dictionary.toFile(),
+                                              ext: 'bin',
+                                              mimeType: MimeType.other);
+                                        } on UnimplementedError catch (_) {
+                                          String? outputFile = await FilePicker
+                                              .platform
+                                              .saveFile(
+                                            dialogTitle:
+                                                'Please select an output file:',
+                                            fileName: '${dictionary.name}.dic',
+                                          );
+
+                                          if (outputFile != null) {
+                                            var file = File(outputFile);
+                                            await file.writeAsBytes(
+                                                dictionary.toFile());
+                                          }
+                                        }
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.download_rounded),
+                                    ),
+
+                                    IconButton(
+                                      onPressed: () async {
+                                        var dictionaries = appState
+                                            .sharedPreferencesProvider
+                                            .getChameleonDictionaries();
+                                        List<ChameleonDictionary> output = [];
+                                        for (var dict in dictionaries) {
+                                          if (dict.id != dictionary.id) {
+                                            output.add(dict);
+                                          }
+                                        }
+                                        appState.sharedPreferencesProvider
+                                            .setChameleonDictionaries(output);
+                                        appState.changesMade();
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.delete_outline),
+                                    ),
+
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text('Ok'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
                           style: ButtonStyle(
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(
