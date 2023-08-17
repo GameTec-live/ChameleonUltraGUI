@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
+import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/gui/flashing.dart';
 import 'package:chameleonultragui/gui/mfkey32page.dart';
 import 'package:chameleonultragui/gui/readcardpage.dart';
@@ -79,9 +80,11 @@ class MyAppState extends ChangeNotifier {
   // State
   bool onAndroid =
       Platform.isAndroid; // Are we on android? (mostly for serial port)
-  AbstractSerial connector = Platform.isAndroid
-      ? AndroidSerial()
-      : NativeSerial(); // Chameleon Object, connected Chameleon
+  //AbstractSerial connector = Platform.isAndroid
+  //    ? AndroidSerial()
+  //    : NativeSerial(); // Chameleon Object, connected Chameleon
+  AbstractSerial connector = BLESerial(); // iOS
+
   bool switchOn = true;
   bool devMode = false;
   double? progress;
