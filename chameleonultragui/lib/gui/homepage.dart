@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:toggle_switch/toggle_switch.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -24,8 +25,17 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<(Icon, List<Icon>, String, List<String>, String, int, bool)>
-      getFutureData() async {
+  Future<
+      (
+        Icon,
+        List<Icon>,
+        String,
+        List<String>,
+        String,
+        int,
+        bool,
+        ChameleonAnimation
+      )> getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
     List<bool> usedSlots = await connection.getUsedSlots();
@@ -37,6 +47,7 @@ class HomePageState extends State<HomePage> {
       await getRamusage(connection),
       await getActivatedSlot(connection),
       await isReaderDeviceMode(connection),
+      await getAnimationMode(connection),
     );
   }
 
@@ -122,6 +133,10 @@ class HomePageState extends State<HomePage> {
     return await connection.isReaderDeviceMode();
   }
 
+  Future<ChameleonAnimation> getAnimationMode(ChameleonCom connection) async {
+    return await connection.getAnimationMode();
+  }
+
   Future<void> flashFirmware(MyAppState appState) async {
     var connection = ChameleonCom(port: appState.connector);
     Uint8List applicationDat, applicationBin;
@@ -179,6 +194,7 @@ class HomePageState extends State<HomePage> {
               ramUsage,
               slot,
               isReaderDeviceMode,
+              animationMode
             ) = snapshot.data;
             // selectedSlot = slot;
 
@@ -427,6 +443,8 @@ class HomePageState extends State<HomePage> {
                                   title: const Text('Device Settings'),
                                   content: Column(
                                     children: [
+                                      const Text("Firmware management:"),
+                                      const SizedBox(height: 10),
                                       TextButton(
                                           onPressed: () async {
                                             var connection = ChameleonCom(
@@ -509,7 +527,37 @@ class HomePageState extends State<HomePage> {
                                                     ],
                                                   ))
                                             ]
-                                          : []
+                                          : [],
+                                      const SizedBox(height: 10),
+                                      const Text("Animations:"),
+                                      const SizedBox(height: 10),
+                                      ToggleSwitch(
+                                        minWidth: 70.0,
+                                        cornerRadius: 10.0,
+                                        activeFgColor: Colors.white,
+                                        inactiveBgColor: Colors.grey,
+                                        inactiveFgColor: Colors.white,
+                                        initialLabelIndex: animationMode.value,
+                                        totalSwitches: 3,
+                                        labels: const ['Full', 'Mini', 'None'],
+                                        radiusStyle: true,
+                                        onToggle: (index) async {
+                                          var animation =
+                                              ChameleonAnimation.full;
+                                          if (index == 1) {
+                                            animation =
+                                                ChameleonAnimation.minimal;
+                                          } else if (index == 2) {
+                                            animation = ChameleonAnimation.none;
+                                          }
+
+                                          var connection = ChameleonCom(
+                                              port: appState.connector);
+                                          await connection
+                                              .setAnimationMode(animation);
+                                          await connection.saveSettings();
+                                        },
+                                      ),
                                     ],
                                   ),
                                   actions: <Widget>[

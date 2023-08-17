@@ -659,12 +659,12 @@ class ChameleonCom {
   }
 
   Future<void> setAnimationMode(ChameleonAnimation animation) async {
-    await sendCmdSync(ChameleonCommand.saveSettings, 0x00,
+    await sendCmdSync(ChameleonCommand.setAnimationMode, 0x00,
         data: Uint8List.fromList([animation.value]));
   }
 
   Future<ChameleonAnimation> getAnimationMode() async {
-    var resp = await sendCmdSync(ChameleonCommand.resetSettings, 0x00);
+    var resp = await sendCmdSync(ChameleonCommand.getAnimationMode, 0x00);
     if (resp!.data[0] == 0) {
       return ChameleonAnimation.full;
     } else if (resp.data[0] == 1) {
