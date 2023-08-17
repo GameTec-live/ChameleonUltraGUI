@@ -14,6 +14,11 @@ class SlotManagerPage extends StatefulWidget {
 }
 
 class SlotManagerPageState extends State<SlotManagerPage> {
+  List<(ChameleonTag, ChameleonTag)> usedSlots = List.generate(
+    8,
+    (_) => (ChameleonTag.unknown, ChameleonTag.unknown),
+  );
+
   List<Map<String, String>> slotData = List.generate(
     8,
     (_) => {
@@ -28,6 +33,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   Future<void> executeNextFunction() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
+    if (currentFunctionIndex == 0) {
+      usedSlots = await connection.getUsedSlots();
+    }
     if (currentFunctionIndex < 8) {
       try {
         slotData[currentFunctionIndex]['hfName'] = await connection
@@ -120,8 +128,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                     children: [
                                       const Icon(Icons.credit_card),
                                       const SizedBox(width: 5),
-                                      Text(slotData[index]['hfName'] ??
-                                          "Unknown")
+                                      Text(
+                                          "${slotData[index]['hfName'] ?? "Unknown"} (${chameleonTagToString(usedSlots[index].$1)})")
                                     ],
                                   ),
                                   Row(
@@ -129,8 +137,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                     children: [
                                       const Icon(Icons.wifi),
                                       const SizedBox(width: 5),
-                                      Text(slotData[index]['lfName'] ??
-                                          "Unknown")
+                                      Text(
+                                          "${slotData[index]['lfName'] ?? "Unknown"} (${chameleonTagToString(usedSlots[index].$2)})")
                                     ],
                                   ),
                                   Expanded(
