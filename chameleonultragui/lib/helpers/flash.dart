@@ -15,12 +15,18 @@ import 'dart:math';
 
 Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
   Uint8List content = Uint8List(0);
+  String error = "";
 
   try {
     final releases = json.decode((await http.get(Uri.parse(
             "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
         .body
         .toString());
+
+    if (releases.containsKey("message")) {
+      error = releases["message"];
+      throw error;
+    }
 
     for (var file in releases[0]["assets"]) {
       if (file["name"] ==
@@ -31,17 +37,27 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
     }
   } catch (_) {}
 
+  if (error.isNotEmpty) {
+    throw error;
+  }
+
   return content;
 }
 
 Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
   Uint8List content = Uint8List(0);
+  String error = "";
 
   try {
     final artifacts = json.decode((await http.get(Uri.parse(
             "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts")))
         .body
         .toString());
+
+    if (artifacts.containsKey("message")) {
+      error = artifacts["message"];
+      throw error;
+    }
 
     for (var artifact in artifacts["artifacts"]) {
       if (artifact["name"] ==
@@ -52,6 +68,10 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
       }
     }
   } catch (_) {}
+
+  if (error.isNotEmpty) {
+    throw error;
+  }
 
   return content;
 }
@@ -64,6 +84,53 @@ Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
   }
 
   return content;
+}
+
+Future<String> latestAvailableCommit(ChameleonDevice device) async {
+  String error = "";
+
+  try {
+    final artifacts = json.decode((await http.get(Uri.parse(
+            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts")))
+        .body
+        .toString());
+
+    if (artifacts.containsKey("message")) {
+      error = artifacts["message"];
+      throw error;
+    }
+
+    for (var artifact in artifacts["artifacts"]) {
+      if (artifact["name"] ==
+          "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app") {
+        return artifact["workflow_run"]["head_sha"];
+      }
+    }
+  } catch (_) {}
+
+  try {
+    final releases = json.decode((await http.get(Uri.parse(
+            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
+        .body
+        .toString());
+
+    if (releases.containsKey("message")) {
+      error = releases["message"];
+      throw error;
+    }
+
+    for (var release in releases) {
+      if (release["name"].startsWith("Compiled commit ")) {
+        return release["name"].split("Compiled commit ")[1];
+      }
+    }
+  } catch (_) {}
+
+  if (error.isNotEmpty) {
+    throw error;
+  }
+
+  return "";
 }
 
 Future<(Uint8List, Uint8List)> unpackFirmware(Uint8List content) async {
