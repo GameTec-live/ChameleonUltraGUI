@@ -18,7 +18,8 @@ default_platform(:android)
 platform :android do
   desc "Deploy a new version to the Google Play"
   lane :production do
-    upload_to_play_store(aab: "../build/app/outputs/bundle/release/app-release.aab", skip_upload_changelogs: true, skip_upload_metadata: true, skip_upload_screenshots: true, skip_upload_images: true)
+    changelog_from_git_commits()
+    upload_to_play_store(aab: "../build/app/outputs/bundle/release/app-release.aab", skip_upload_metadata: true, skip_upload_screenshots: true, skip_upload_images: true)
   end
 
   desc "Deploy a new version to the Google Play beta track"
