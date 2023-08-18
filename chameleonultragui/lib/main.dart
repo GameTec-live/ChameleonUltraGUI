@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
+import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/gui/flashing.dart';
 import 'package:chameleonultragui/gui/mfkey32page.dart';
 import 'package:chameleonultragui/gui/readcardpage.dart';
@@ -76,12 +77,16 @@ class MyApp extends StatelessWidget {
 class MyAppState extends ChangeNotifier {
   final SharedPreferencesProvider sharedPreferencesProvider;
   MyAppState(this.sharedPreferencesProvider);
-  // State
+
   bool onAndroid =
       Platform.isAndroid; // Are we on android? (mostly for serial port)
+
+// Android uses AndroidSerial, iOS can only use BLESerial
+// The rest (desktops?) can use NativeSerial
   AbstractSerial connector = Platform.isAndroid
       ? AndroidSerial()
-      : NativeSerial(); // Chameleon Object, connected Chameleon
+      : (Platform.isIOS ? BLESerial() : NativeSerial());
+
   bool switchOn = true;
   bool devMode = false;
   double? progress;
@@ -240,7 +245,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           if (appState.devMode)
                             const NavigationRailDestination(
-                              icon: Icon(Icons.developer_mode),
+                              icon: Icon(Icons.bug_report),
                               label: Text('🐞 Debug 🐞'),
                             ),
                         ],

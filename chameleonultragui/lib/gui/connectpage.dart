@@ -177,6 +177,7 @@ class ConnectPage extends StatelessWidget {
                                             : 'assets/black-lite-standing-front.png',
                                         fit: BoxFit.fitHeight,
                                       )),
+                                  const SizedBox(height: 8),
                                 ],
                               ),
                             );

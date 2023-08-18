@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -17,14 +18,28 @@ enum ChameleonCommand {
 
   setSlotTagNick(1007),
   getSlotTagNick(1008),
-
-  slotDataConfigSave(1009),
+  saveSlotNicks(1009),
 
   // bootloader
   enterBootloader(1010),
-  getDeviceChipID(1011),
 
-  getActivatedSlot(1014),
+  // device info
+  getDeviceChipID(1011),
+  getDeviceBLEAddress(1012),
+
+  // settings
+  saveSettings(1013),
+  resetSettings(1014),
+
+  // animation
+  setAnimationMode(1015),
+  getAnimationMode(1016),
+
+  getGitCommitHash(1017),
+
+  // slot
+  getActiveSlot(1018),
+  getSlotInfo(1019),
 
   // hf reader commands
   scan14ATag(2000),
@@ -77,6 +92,15 @@ enum ChameleonTagFrequiency {
   hf(2);
 
   const ChameleonTagFrequiency(this.value);
+  final int value;
+}
+
+enum ChameleonAnimation {
+  full(0),
+  minimal(1),
+  none(2);
+
+  const ChameleonAnimation(this.value);
   final int value;
 }
 
@@ -166,7 +190,6 @@ class ChameleonDetectionResult {
 
 // Some ChatGPT magic
 // Nobody knows how it works
-// TODO: Handle error in messages
 
 class ChameleonCom {
   int baudrate = 115200;
@@ -326,6 +349,12 @@ class ChameleonCom {
   Future<String> getDeviceChipID() async {
     var resp = await sendCmdSync(ChameleonCommand.getDeviceChipID, 0x00);
     return bytesToHex(resp!.data);
+  }
+
+  Future<String> getDeviceBLEAddress() async {
+    var resp = await sendCmdSync(ChameleonCommand.getDeviceBLEAddress, 0x00);
+    return bytesToHexSpace(Uint8List.fromList(resp!.data.reversed.toList()))
+        .replaceAll(" ", ":");
   }
 
   Future<bool> isReaderDeviceMode() async {
@@ -527,21 +556,21 @@ class ChameleonCom {
   Future<Map<int, Map<int, Map<String, List<ChameleonDetectionResult>>>>>
       getMf1DetectionResult(int index) async {
     // Get results from index
-    var data = (await sendCmdSync(ChameleonCommand.mf1GetDetectionResult, 0x00,
+    var resp = (await sendCmdSync(ChameleonCommand.mf1GetDetectionResult, 0x00,
             data: Uint8List(4)
               ..buffer.asByteData().setInt16(0, index, Endian.big)))!
         .data;
     List<ChameleonDetectionResult> resultList = [];
     int pos = 0;
-    while (pos < data.length) {
+    while (pos < resp.length) {
       resultList.add(ChameleonDetectionResult(
-          block: data[0 + pos],
-          type: 0x60 + (data[1 + pos] & 0x01),
-          isNested: (data[1 + pos] >> 1 & 0x01) == 0x01,
-          uid: bytesToU32(data.sublist(2 + pos, 6 + pos)),
-          nt: bytesToU32(data.sublist(6 + pos, 10 + pos)),
-          nr: bytesToU32(data.sublist(10 + pos, 14 + pos)),
-          ar: bytesToU32(data.sublist(14 + pos, 18 + pos))));
+          block: resp[0 + pos],
+          type: 0x60 + (resp[1 + pos] & 0x01),
+          isNested: (resp[1 + pos] >> 1 & 0x01) == 0x01,
+          uid: bytesToU32(resp.sublist(2 + pos, 6 + pos)),
+          nt: bytesToU32(resp.sublist(6 + pos, 10 + pos)),
+          nr: bytesToU32(resp.sublist(10 + pos, 14 + pos)),
+          ar: bytesToU32(resp.sublist(14 + pos, 18 + pos))));
       pos += 18;
     }
 
@@ -617,8 +646,7 @@ class ChameleonCom {
   }
 
   Future<void> saveSlotData() async {
-    await sendCmdSync(ChameleonCommand.slotDataConfigSave, 0x00,
-        data: Uint8List(0));
+    await sendCmdSync(ChameleonCommand.saveSlotNicks, 0x00, data: Uint8List(0));
   }
 
   Future<void> enterDFUMode() async {
@@ -626,12 +654,50 @@ class ChameleonCom {
         data: Uint8List(0), skipReceive: true);
   }
 
-  Future<int> getActivatedSlot() async {
+  Future<void> saveSettings() async {
+    await sendCmdSync(ChameleonCommand.saveSettings, 0x00);
+  }
+
+  Future<void> resetSettings() async {
+    await sendCmdSync(ChameleonCommand.resetSettings, 0x00);
+  }
+
+  Future<void> setAnimationMode(ChameleonAnimation animation) async {
+    await sendCmdSync(ChameleonCommand.setAnimationMode, 0x00,
+        data: Uint8List.fromList([animation.value]));
+  }
+
+  Future<ChameleonAnimation> getAnimationMode() async {
+    var resp = await sendCmdSync(ChameleonCommand.getAnimationMode, 0x00);
+    if (resp!.data[0] == 0) {
+      return ChameleonAnimation.full;
+    } else if (resp.data[0] == 1) {
+      return ChameleonAnimation.minimal;
+    } else {
+      return ChameleonAnimation.none;
+    }
+  }
+
+  Future<String> getGitCommitHash() async {
+    var resp = await sendCmdSync(ChameleonCommand.getGitCommitHash, 0x00);
+    return const AsciiDecoder().convert(resp!.data);
+  }
+
+  Future<int> getActiveSlot() async {
     // get the selected slot on the device, 0-7 (8 slots)
-    return 0;
-    // return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
-    //         data: Uint8List(0)))!
-    //     .data[0];
+    return (await sendCmdSync(ChameleonCommand.getActiveSlot, 0x00))!.data[0];
+  }
+
+  Future<List<(ChameleonTag, ChameleonTag)>> getUsedSlots() async {
+    List<(ChameleonTag, ChameleonTag)> tags = [];
+    var resp = await sendCmdSync(ChameleonCommand.getSlotInfo, 0x00);
+    for (var i = 0; i < 8; i++) {
+      tags.add((
+        numberToChameleonTag(resp!.data[(i * 2)]),
+        numberToChameleonTag(resp.data[(i * 2) + 1])
+      ));
+    }
+    return tags;
   }
 
   // NOT IMPLEMENTED METHODS
@@ -639,11 +705,6 @@ class ChameleonCom {
   Future<int> getBatteryCharge() async {
     // 0-100, get device battery charge
     return 0;
-  }
-
-  Future<List<bool>> getUsedSlots() async {
-    // get the used slots on the device, 8 slots, true if used
-    return [false, false, false, false, false, false, false, false];
   }
 
   Future<bool> pressAbutton() async {
