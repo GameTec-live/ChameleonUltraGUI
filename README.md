@@ -1,5 +1,5 @@
-# ChameleonUltraGUI
-A GUI for the Chameleon Ultra written in Flutter for cross platform operation
+# Chameleon Ultra GUI
+A GUI for the Chameleon Ultra/Chameleon Lite written in Flutter for cross platform operation
 
 [![Autobuild](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml) 
 [![Open collective](https://opencollective.com/chameleon-ultra-gui/tiers/badge.svg)](https://opencollective.com/chameleon-ultra-gui#support)
@@ -14,6 +14,7 @@ App available in those stores:
 - Arch Linux (AUR): not yet
 - Flathub: not yet
 - Chocolatey (Windows): not yet
+- Web (for Chromium-based browsers): not yet
 
 Note: Under some Linux systems, especially ones running KDE desktop environments, you may need to install the `zenity` package for the file picker to work correctly.
 
