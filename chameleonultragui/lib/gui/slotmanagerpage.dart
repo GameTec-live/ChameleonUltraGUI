@@ -105,7 +105,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   child: Card(
                     child: StaggeredGridView.countBuilder(
                       padding: const EdgeInsets.all(20),
-                      crossAxisCount: 2,
+                      crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                       itemCount: 8,
