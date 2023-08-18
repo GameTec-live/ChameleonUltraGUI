@@ -37,8 +37,12 @@ class HomePageState extends State<HomePage> {
       )> getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
-    List<(ChameleonTag, ChameleonTag)> usedSlots =
-        await connection.getUsedSlots();
+    List<(ChameleonTag, ChameleonTag)> usedSlots;
+    try {
+      usedSlots = await connection.getUsedSlots();
+    } catch (_) {
+      usedSlots = [];
+    }
 
     return (
       await getBatteryChargeIcon(connection),
@@ -78,7 +82,11 @@ class HomePageState extends State<HomePage> {
   Future<List<Icon>> getSlotIcons(ChameleonCom connection,
       List<(ChameleonTag, ChameleonTag)> usedSlots) async {
     List<Icon> icons = [];
-    selectedSlot = await connection.getActiveSlot() + 1;
+    try {
+      selectedSlot = await connection.getActiveSlot() + 1;
+    } catch (_) {
+      selectedSlot = 1;
+    }
     for (int i = 1; i < 9; i++) {
       if (i == selectedSlot) {
         icons.add(const Icon(
