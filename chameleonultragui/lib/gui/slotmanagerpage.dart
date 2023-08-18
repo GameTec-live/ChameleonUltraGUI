@@ -196,6 +196,11 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     var appState = context.read<MyAppState>();
     var tags = appState.sharedPreferencesProvider.getChameleonTags();
 
+    // Don't allow user to upload more tags while already uploading dump
+    if (progress != -1) {
+      return Future.value("");
+    }
+
     tags.sort((a, b) => a.name.compareTo(b.name));
 
     return showSearch<String>(
