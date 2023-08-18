@@ -58,11 +58,17 @@ enum ChameleonCommand {
   // lf commands
   scanEM410Xtag(3000),
   writeEM410XtoT5577(3001),
-  setEM410XemulatorID(5000),
 
   mf1LoadBlockData(4000),
   mf1SetAntiCollision(4001),
 
+  // mfkey32
+  mf1SetDetectionEnable(4003),
+  mf1GetDetectionCount(4004),
+  mf1GetDetectionResult(4005),
+  mf1GetDetectionStatus(4006),
+
+  // emulator settings
   mf1GetEmulatorConfig(4009),
   mf1GetGen1aMode(4010),
   mf1SetGen1aMode(4011),
@@ -73,11 +79,8 @@ enum ChameleonCommand {
   mf1GetWriteMode(4016),
   mf1SetWriteMode(4017),
 
-  // mfkey32
-  mf1SetDetectionEnable(5003),
-  mf1GetDetectionCount(5004),
-  mf1GetDetectionResult(5005),
-  mf1GetDetectionStatus(5006);
+  // lf emulator
+  setEM410XemulatorID(5000);
 
   const ChameleonCommand(this.value);
   final int value;
