@@ -130,7 +130,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<String> getRamusage(ChameleonCom connection) async {
-    return await connection.getMemoryUsage();
+    return "0/0";
   }
 
   Future<bool> isReaderDeviceMode(ChameleonCom connection) async {

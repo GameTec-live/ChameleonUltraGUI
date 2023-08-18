@@ -41,6 +41,8 @@ enum ChameleonCommand {
   getActiveSlot(1018),
   getSlotInfo(1019),
 
+  factoryReset(1020), // WARNING: ERASES ALL
+
   // hf reader commands
   scan14ATag(2000),
   mf1SupportDetect(2001),
@@ -60,6 +62,16 @@ enum ChameleonCommand {
 
   mf1LoadBlockData(4000),
   mf1SetAntiCollision(4001),
+
+  mf1GetEmulatorConfig(4009),
+  mf1GetGen1aMode(4010),
+  mf1SetGen1aMode(4011),
+  mf1GetGen2Mode(4012),
+  mf1SetGen2Mode(4013),
+  mf1GetFirstBlockColl(4014),
+  mf1SetFirstBlockColl(4015),
+  mf1GetWriteMode(4016),
+  mf1SetWriteMode(4017),
 
   // mfkey32
   mf1SetDetectionEnable(5003),
@@ -101,6 +113,16 @@ enum ChameleonAnimation {
   none(2);
 
   const ChameleonAnimation(this.value);
+  final int value;
+}
+
+enum ChameleonMf1WriteMode {
+  normal(0),
+  deined(1),
+  deceive(2),
+  shadow(3);
+
+  const ChameleonMf1WriteMode(this.value);
   final int value;
 }
 
@@ -548,8 +570,7 @@ class ChameleonCom {
   }
 
   Future<int> getMf1DetectionCount() async {
-    var resp = await sendCmdSync(ChameleonCommand.mf1GetDetectionCount, 0x00,
-        data: Uint8List(0));
+    var resp = await sendCmdSync(ChameleonCommand.mf1GetDetectionCount, 0x00);
     return resp!.data.buffer.asByteData().getInt16(0, Endian.little);
   }
 
@@ -612,8 +633,7 @@ class ChameleonCom {
   }
 
   Future<String> readEM410X() async {
-    var resp = await sendCmdSync(ChameleonCommand.scanEM410Xtag, 0x00,
-        data: Uint8List(0));
+    var resp = await sendCmdSync(ChameleonCommand.scanEM410Xtag, 0x00);
     return bytesToHexSpace(resp!.data);
   }
 
@@ -646,12 +666,16 @@ class ChameleonCom {
   }
 
   Future<void> saveSlotData() async {
-    await sendCmdSync(ChameleonCommand.saveSlotNicks, 0x00, data: Uint8List(0));
+    await sendCmdSync(ChameleonCommand.saveSlotNicks, 0x00);
   }
 
   Future<void> enterDFUMode() async {
     await sendCmdSync(ChameleonCommand.enterBootloader, 0x00,
-        data: Uint8List(0), skipReceive: true);
+        skipReceive: true);
+  }
+
+  Future<void> factoryReset() async {
+    await sendCmdSync(ChameleonCommand.factoryReset, 0x00, skipReceive: true);
   }
 
   Future<void> saveSettings() async {
@@ -700,25 +724,83 @@ class ChameleonCom {
     return tags;
   }
 
-  // NOT IMPLEMENTED METHODS
+  Future<(bool, bool, bool, bool, ChameleonMf1WriteMode)>
+      getMf1EmulatorConfig() async {
+    var resp = await sendCmdSync(ChameleonCommand.mf1GetEmulatorConfig, 0x00);
+    if (resp!.data.length != 5) throw ("Invalid data length");
+    ChameleonMf1WriteMode mode = ChameleonMf1WriteMode.normal;
+    if (resp.data[4] == 1) {
+      mode = ChameleonMf1WriteMode.deined;
+    } else if (resp.data[4] == 2) {
+      mode = ChameleonMf1WriteMode.deceive;
+    } else if (resp.data[4] == 3) {
+      mode = ChameleonMf1WriteMode.shadow;
+    }
+    return (
+      resp.data[0] == 1, // is detection enabled
+      resp.data[1] == 1, // is gen1a mode enabled
+      resp.data[2] == 1, // is gen2 mode enabled
+      resp.data[3] == 1, // use anti collision data from block 0 mode enabled
+      mode // write mode
+    );
+  }
 
+  Future<bool> isMf1Gen1aMode() async {
+    var resp = await sendCmdSync(ChameleonCommand.mf1GetGen1aMode, 0x00);
+    if (resp!.data.length != 1) throw ("Invalid data length");
+    return resp.data[0] == 1;
+  }
+
+  Future<void> setMf1Gen1aMode(bool gen1aMode) async {
+    await sendCmdSync(ChameleonCommand.mf1SetGen1aMode, 0x00,
+        data: Uint8List.fromList([gen1aMode ? 1 : 0]));
+  }
+
+  Future<bool> isMf1Gen2Mode() async {
+    var resp = await sendCmdSync(ChameleonCommand.mf1GetGen2Mode, 0x00);
+    if (resp!.data.length != 1) throw ("Invalid data length");
+    return resp.data[0] == 1;
+  }
+
+  Future<void> setMf1Gen2Mode(bool gen2Mode) async {
+    await sendCmdSync(ChameleonCommand.mf1SetGen2Mode, 0x00,
+        data: Uint8List.fromList([gen2Mode ? 1 : 0]));
+  }
+
+  Future<bool> isMf1UseFirstBlockColl() async {
+    var resp = await sendCmdSync(ChameleonCommand.mf1GetFirstBlockColl, 0x00);
+    if (resp!.data.length != 1) throw ("Invalid data length");
+    return resp.data[0] == 1;
+  }
+
+  Future<void> setMf1UseFirstBlockColl(bool useColl) async {
+    await sendCmdSync(ChameleonCommand.mf1SetFirstBlockColl, 0x00,
+        data: Uint8List.fromList([useColl ? 1 : 0]));
+  }
+
+  Future<ChameleonMf1WriteMode> getMf1WriteMode() async {
+    var resp = await sendCmdSync(ChameleonCommand.mf1GetWriteMode, 0x00);
+    if (resp!.data.length != 1) throw ("Invalid data length");
+    print(resp.data[0]);
+    if (resp.data[0] == 1) {
+      return ChameleonMf1WriteMode.deined;
+    } else if (resp.data[0] == 2) {
+      return ChameleonMf1WriteMode.deceive;
+    } else if (resp.data[0] == 3) {
+      return ChameleonMf1WriteMode.shadow;
+    } else {
+      return ChameleonMf1WriteMode.normal;
+    }
+  }
+
+  Future<void> setMf1WriteMode(ChameleonMf1WriteMode mode) async {
+    await sendCmdSync(ChameleonCommand.mf1SetWriteMode, 0x00,
+        data: Uint8List.fromList([mode.value]));
+  }
+
+  // NOT IMPLEMENTED METHODS
   Future<int> getBatteryCharge() async {
     // 0-100, get device battery charge
     return 0;
-  }
-
-  Future<bool> pressAbutton() async {
-    // Emulate a press of the A button on the device
-    return false;
-  }
-
-  Future<bool> pressBbutton() async {
-    // Emulate a press of the B button on the device
-    return false;
-  }
-
-  Future<String> getMemoryUsage() async {
-    // Get the memory usage of the device
-    return "0/0";
   }
 }
