@@ -27,10 +27,6 @@ jobs:
       - run: flutter build apk --build-number ${{ github.run_number }}
       - uses: actions/upload-artifact@v3
         with:
-          name: appbundle
-          path: chameleonultragui/build/app/outputs/bundle/release/app-release.aab
-      - uses: actions/upload-artifact@v3
-        with:
           name: apk
           path: chameleonultragui/build/app/outputs/flutter-apk/app-release.apk
 

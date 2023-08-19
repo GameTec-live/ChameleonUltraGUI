@@ -33,13 +33,18 @@ class HomePageState extends State<HomePage> {
         String,
         List<String>,
         String,
-        int,
         bool,
         ChameleonAnimation
       )> getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
-    List<bool> usedSlots = await connection.getUsedSlots();
+    List<(ChameleonTag, ChameleonTag)> usedSlots;
+    try {
+      usedSlots = await connection.getUsedSlots();
+    } catch (_) {
+      usedSlots = [];
+    }
+
     var isChameleonUltra = appState.connector.device == ChameleonDevice.ultra;
     if (appState.onWeb) {
       // Serial on Web doesnt provide device/manufacture names, so try to
@@ -50,14 +55,17 @@ class HomePageState extends State<HomePage> {
     return (
       isChameleonUltra,
       await getBatteryChargeIcon(connection),
-      await getSlotIcons(connection, selectedSlot, usedSlots),
+      await getSlotIcons(connection, usedSlots),
       await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
       await getRamusage(connection),
-      await getActivatedSlot(connection),
       await isReaderDeviceMode(connection),
       await getAnimationMode(connection),
     );
+  }
+
+  Future<bool> detectChameleonUltra(ChameleonCom connection) async {
+    return await connection.detectChameleonUltra();
   }
 
   Future<Icon> getBatteryChargeIcon(ChameleonCom connection) async {
@@ -84,17 +92,21 @@ class HomePageState extends State<HomePage> {
     return const Icon(Icons.battery_unknown);
   }
 
-  Future<List<Icon>> getSlotIcons(
-      ChameleonCom connection, int selectedSlot, List<bool> usedSlots) async {
-    await connection.activateSlot(selectedSlot - 1);
+  Future<List<Icon>> getSlotIcons(ChameleonCom connection,
+      List<(ChameleonTag, ChameleonTag)> usedSlots) async {
     List<Icon> icons = [];
+    try {
+      selectedSlot = await connection.getActiveSlot() + 1;
+    } catch (_) {
+      selectedSlot = 1;
+    }
     for (int i = 1; i < 9; i++) {
       if (i == selectedSlot) {
         icons.add(const Icon(
           Icons.circle_outlined,
           color: Colors.red,
         ));
-      } else if (usedSlots[i - 1]) {
+      } else if (false) {
         icons.add(const Icon(Icons.circle));
       } else {
         icons.add(const Icon(Icons.circle_outlined));
@@ -103,11 +115,11 @@ class HomePageState extends State<HomePage> {
     return icons;
   }
 
-  Future<String> getUsedSlotsOut8(
-      ChameleonCom connection, List<bool> usedSlots) async {
+  Future<String> getUsedSlotsOut8(ChameleonCom connection,
+      List<(ChameleonTag, ChameleonTag)> usedSlots) async {
     int usedSlotsOut8 = 0;
     for (int i = 0; i < 8; i++) {
-      if (usedSlots[i]) {
+      if (false) {
         usedSlotsOut8++;
       }
     }
@@ -132,14 +144,6 @@ class HomePageState extends State<HomePage> {
 
   Future<String> getRamusage(ChameleonCom connection) async {
     return await connection.getMemoryUsage();
-  }
-
-  Future<int> getActivatedSlot(ChameleonCom connection) async {
-    return await connection.getActivatedSlot();
-  }
-
-  Future<bool> detectChameleonUltra(ChameleonCom connection) async {
-    return await connection.detectChameleonUltra();
   }
 
   Future<bool> isReaderDeviceMode(ChameleonCom connection) async {
@@ -188,6 +192,7 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.read<MyAppState>();
+    var connection = ChameleonCom(port: appState.connector);
 
     return FutureBuilder(
         future: getFutureData(),
@@ -210,11 +215,9 @@ class HomePageState extends State<HomePage> {
               usedSlots,
               fwVersion,
               ramUsage,
-              slot,
               isReaderDeviceMode,
               animationMode
             ) = snapshot.data;
-            // selectedSlot = slot;
 
             return Scaffold(
               appBar: AppBar(
@@ -281,10 +284,10 @@ class HomePageState extends State<HomePage> {
                         IconButton(
                           onPressed: () async {
                             if (selectedSlot > 1) {
-                              selectedSlot--;
+                              await connection.activateSlot(selectedSlot - 2);
+                              setState(() {});
+                              appState.changesMade();
                             }
-                            setState(() {});
-                            appState.changesMade();
                           },
                           icon: const Icon(Icons.arrow_back),
                         ),
@@ -292,10 +295,11 @@ class HomePageState extends State<HomePage> {
                         IconButton(
                           onPressed: () async {
                             if (selectedSlot < 8) {
-                              selectedSlot++;
+                              await connection
+                                  .activateSlot(selectedSlot); // already +1
+                              setState(() {});
+                              appState.changesMade();
                             }
-                            setState(() {});
-                            appState.changesMade();
                           },
                           icon: const Icon(Icons.arrow_forward),
                         ),

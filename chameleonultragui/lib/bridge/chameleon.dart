@@ -37,6 +37,10 @@ enum ChameleonCommand {
 
   getGitCommitHash(1017),
 
+  // slot
+  getActiveSlot(1018),
+  getSlotInfo(1019),
+
   // hf reader commands
   scan14ATag(2000),
   mf1SupportDetect(2001),
@@ -704,12 +708,21 @@ class ChameleonCom {
     return const AsciiDecoder().convert(resp!.data);
   }
 
-  Future<int> getActivatedSlot() async {
+  Future<int> getActiveSlot() async {
     // get the selected slot on the device, 0-7 (8 slots)
-    return 0;
-    // return (await sendCmdSync(ChameleonCommand.getActivatedSlot, 0x00,
-    //         data: Uint8List(0)))!
-    //     .data[0];
+    return (await sendCmdSync(ChameleonCommand.getActiveSlot, 0x00))!.data[0];
+  }
+
+  Future<List<(ChameleonTag, ChameleonTag)>> getUsedSlots() async {
+    List<(ChameleonTag, ChameleonTag)> tags = [];
+    var resp = await sendCmdSync(ChameleonCommand.getSlotInfo, 0x00);
+    for (var i = 0; i < 8; i++) {
+      tags.add((
+        numberToChameleonTag(resp!.data[(i * 2)]),
+        numberToChameleonTag(resp.data[(i * 2) + 1])
+      ));
+    }
+    return tags;
   }
 
   // NOT IMPLEMENTED METHODS
@@ -717,11 +730,6 @@ class ChameleonCom {
   Future<int> getBatteryCharge() async {
     // 0-100, get device battery charge
     return 0;
-  }
-
-  Future<List<bool>> getUsedSlots() async {
-    // get the used slots on the device, 8 slots, true if used
-    return [false, false, false, false, false, false, false, false];
   }
 
   Future<bool> pressAbutton() async {

@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +17,11 @@ class SlotManagerPage extends StatefulWidget {
 }
 
 class SlotManagerPageState extends State<SlotManagerPage> {
+  List<(ChameleonTag, ChameleonTag)> usedSlots = List.generate(
+    8,
+    (_) => (ChameleonTag.unknown, ChameleonTag.unknown),
+  );
+
   List<Map<String, String>> slotData = List.generate(
     8,
     (_) => {
@@ -24,10 +32,16 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   );
 
   int currentFunctionIndex = 0;
+  int progress = -1;
 
   Future<void> executeNextFunction() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
+    if (currentFunctionIndex == 0) {
+      try {
+        usedSlots = await connection.getUsedSlots();
+      } catch (_) {}
+    }
     if (currentFunctionIndex < 8) {
       try {
         slotData[currentFunctionIndex]['hfName'] = await connection
@@ -58,8 +72,17 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   }
 
   void reloadPage() {
+    setUploadState(-1);
     setState(() {
       currentFunctionIndex = 0;
+    });
+    var appState = context.read<MyAppState>();
+    appState.changesMade();
+  }
+
+  void setUploadState(int progressBar) {
+    setState(() {
+      progress = progressBar;
     });
     var appState = context.read<MyAppState>();
     appState.changesMade();
@@ -120,8 +143,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                     children: [
                                       const Icon(Icons.credit_card),
                                       const SizedBox(width: 5),
-                                      Text(slotData[index]['hfName'] ??
-                                          "Unknown")
+                                      Text(
+                                          "${slotData[index]['hfName'] ?? "Unknown"} (${chameleonTagToString(usedSlots[index].$1)})")
                                     ],
                                   ),
                                   Row(
@@ -129,8 +152,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                     children: [
                                       const Icon(Icons.wifi),
                                       const SizedBox(width: 5),
-                                      Text(slotData[index]['lfName'] ??
-                                          "Unknown")
+                                      Text(
+                                          "${slotData[index]['lfName'] ?? "Unknown"} (${chameleonTagToString(usedSlots[index].$2)})")
                                     ],
                                   ),
                                   Expanded(
@@ -158,6 +181,10 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   ),
                 );
               },
+            ),
+            LinearProgressIndicator(
+              value: (progress / 100).toDouble(),
+              semanticsLabel: 'Linear progress indicator',
             )
           ],
         ),
@@ -169,11 +196,17 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     var appState = context.read<MyAppState>();
     var tags = appState.sharedPreferencesProvider.getChameleonTags();
 
+    // Don't allow user to upload more tags while already uploading dump
+    if (progress != -1) {
+      return Future.value("");
+    }
+
     tags.sort((a, b) => a.name.compareTo(b.name));
 
     return showSearch<String>(
       context: context,
-      delegate: CardSearchDelegate(tags, gridPosition, reloadPage),
+      delegate:
+          CardSearchDelegate(tags, gridPosition, reloadPage, setUploadState),
     );
   }
 }
@@ -182,8 +215,10 @@ class CardSearchDelegate extends SearchDelegate<String> {
   final List<ChameleonTagSave> cards;
   final int gridPosition;
   final dynamic refresh;
+  final dynamic setUploadState;
 
-  CardSearchDelegate(this.cards, this.gridPosition, this.refresh);
+  CardSearchDelegate(
+      this.cards, this.gridPosition, this.refresh, this.setUploadState);
 
   @override
   List<Widget> buildActions(BuildContext context) {
@@ -264,21 +299,57 @@ class CardSearchDelegate extends SearchDelegate<String> {
               ChameleonTag.mifare2K,
               ChameleonTag.mifare4K
             ].contains(card.tag)) {
+              close(context, card.name);
+              setUploadState(0);
               await connection.setReaderDeviceMode(false);
               await connection.enableSlot(gridPosition, true);
               await connection.activateSlot(gridPosition);
+              await connection.setSlotType(gridPosition, card.tag);
               await connection.setDefaultDataToSlot(gridPosition, card.tag);
               var cardData = ChameleonCard(
                   uid: hexToBytes(card.uid.replaceAll(" ", "")),
                   atqa: card.atqa,
                   sak: card.sak);
               await connection.setMf1AntiCollision(cardData);
+
+              List<int> blockChunk = [];
+              int lastSend = 0;
+
               for (var blockOffset = 0;
-                  blockOffset < card.data.length;
+                  blockOffset <
+                      mfClassicGetBlockCount(
+                          chameleonTagTypeGetMfClassicType(card.tag));
                   blockOffset++) {
-                await connection.setMf1BlockData(
-                    blockOffset, card.data[blockOffset]);
+                if ((card.data.length > blockOffset &&
+                        card.data[blockOffset].isEmpty) ||
+                    blockChunk.length >= 128) {
+                  if (blockChunk.isNotEmpty) {
+                    await connection.setMf1BlockData(
+                        lastSend, Uint8List.fromList(blockChunk));
+                    blockChunk = [];
+                    lastSend = blockOffset;
+                  }
+                }
+
+                if (card.data.length > blockOffset) {
+                  blockChunk.addAll(card.data[blockOffset]);
+                }
+
+                setUploadState((blockOffset /
+                        mfClassicGetBlockCount(
+                            chameleonTagTypeGetMfClassicType(card.tag)) *
+                        100)
+                    .round());
+                await asyncSleep(1);
               }
+
+              if (blockChunk.isNotEmpty) {
+                await connection.setMf1BlockData(
+                    lastSend, Uint8List.fromList(blockChunk));
+              }
+
+              setUploadState(100);
+
               await connection.setSlotTagName(
                   gridPosition,
                   (card.name.isEmpty) ? "No name" : card.name,
@@ -287,9 +358,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
               appState.changesMade();
               refresh();
             } else if (card.tag == ChameleonTag.em410X) {
+              close(context, card.name);
               await connection.setReaderDeviceMode(false);
               await connection.enableSlot(gridPosition, true);
               await connection.activateSlot(gridPosition);
+              await connection.setSlotType(gridPosition, card.tag);
               await connection.setDefaultDataToSlot(gridPosition, card.tag);
               await connection.setEM410XEmulatorID(
                   hexToBytes(card.uid.replaceAll(" ", "")));
@@ -302,8 +375,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
               refresh();
             } else {
               appState.log.e("Can't write this card type yet.");
+              close(context, card.name);
             }
-            close(context, card.name);
           },
         );
       },
