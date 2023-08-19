@@ -23,15 +23,31 @@
 #include "crapto1.h"
 #include "bucketsort.h"
 
-#if !defined LOWMEM && defined __GNUC__
+#if !defined LOWMEM
+#ifdef __APPLE__
+static inline int old_filter(uint32_t const x)
+{
+    uint32_t f;
+
+    f = 0xf22c0 >> (x & 0xf) & 16;
+    f |= 0x6c9c0 >> (x >> 4 & 0xf) & 8;
+    f |= 0x3c8b0 >> (x >> 8 & 0xf) & 4;
+    f |= 0x1e458 >> (x >> 12 & 0xf) & 2;
+    f |= 0x0d938 >> (x >> 16 & 0xf) & 1;
+    return BIT(0xEC57E80A, f);
+}
+#else
+int old_filter(uint32_t const x);
+#endif
+
 static uint8_t filterlut[1 << 20];
 static void __attribute__((constructor)) fill_lut(void)
 {
     uint32_t i;
     for (i = 0; i < 1 << 20; ++i)
-        filterlut[i] = filter(i);
+        filterlut[i] = old_filter(i);
 }
-#define filter(x) (filterlut[(x)&0xfffff])
+#define crypto1_filter(x) (filterlut[(x)&0xfffff])
 #endif
 
 /** update_contribution
@@ -53,13 +69,13 @@ static inline void extend_table(uint32_t *tbl, uint32_t **end, int bit, int m1, 
 {
     in <<= 24;
     for (*tbl <<= 1; tbl <= *end; *++tbl <<= 1)
-        if (filter(*tbl) ^ filter(*tbl | 1))
+        if (crypto1_filter(*tbl) ^ crypto1_filter(*tbl | 1))
         {
-            *tbl |= filter(*tbl) ^ bit;
+            *tbl |= crypto1_filter(*tbl) ^ bit;
             update_contribution(tbl, m1, m2);
             *tbl ^= in;
         }
-        else if (filter(*tbl) == bit)
+        else if (crypto1_filter(*tbl) == bit)
         {
             *++*end = tbl[1];
             tbl[1] = tbl[0] | 1;
@@ -78,11 +94,11 @@ static inline void extend_table_simple(uint32_t *tbl, uint32_t **end, int bit)
 {
     for (*tbl <<= 1; tbl <= *end; *++tbl <<= 1)
     {
-        if (filter(*tbl) ^ filter(*tbl | 1))
+        if (crypto1_filter(*tbl) ^ crypto1_filter(*tbl | 1))
         { // replace
-            *tbl |= filter(*tbl) ^ bit;
+            *tbl |= crypto1_filter(*tbl) ^ bit;
         }
-        else if (filter(*tbl) == bit)
+        else if (crypto1_filter(*tbl) == bit)
         { // insert
             *++*end = *++tbl;
             *tbl = tbl[-1] | 1;
@@ -193,9 +209,9 @@ struct Crypto1State *lfsr_recovery32(uint32_t ks2, uint32_t in)
     // initialize statelists: add all possible states which would result into the rightmost 2 bits of the keystream
     for (i = 1 << 20; i >= 0; --i)
     {
-        if (filter(i) == (oks & 1))
+        if (crypto1_filter(i) == (oks & 1))
             *++odd_tail = i;
-        if (filter(i) == (eks & 1))
+        if (crypto1_filter(i) == (eks & 1))
             *++even_tail = i;
     }
 
@@ -270,7 +286,7 @@ struct Crypto1State *lfsr_recovery64(uint32_t ks2, uint32_t ks3)
 
     for (i = 0xfffff; i >= 0; --i)
     {
-        if (filter(i) != oks[0])
+        if (crypto1_filter(i) != oks[0])
             continue;
 
         *(tail = table) = i;
@@ -291,7 +307,7 @@ struct Crypto1State *lfsr_recovery64(uint32_t ks2, uint32_t ks3)
             {
                 *tail = *tail << 1;
                 *tail |= evenparity32((i & C1[j]) ^ (*tail & C2[j]));
-                if (filter(*tail) != oks[29 + j])
+                if (crypto1_filter(*tail) != oks[29 + j])
                     goto continue2;
             }
 
@@ -302,7 +318,7 @@ struct Crypto1State *lfsr_recovery64(uint32_t ks2, uint32_t ks3)
             for (j = 0; j < 32; ++j)
             {
                 win = win << 1 ^ hi[j] ^ (evenparity32(*tail & T2[j]));
-                if (filter(win) != eks[j])
+                if (crypto1_filter(win) != eks[j])
                     goto continue2;
             }
 
@@ -334,7 +350,7 @@ uint8_t lfsr_rollback_bit(struct Crypto1State *s, uint32_t in, int fb)
     out ^= LF_POLY_EVEN & (s->even >>= 1);
     out ^= LF_POLY_ODD & s->odd;
     out ^= !!in;
-    out ^= (ret = filter(s->odd)) & (!!fb);
+    out ^= (ret = crypto1_filter(s->odd)) & (!!fb);
 
     s->even |= (evenparity32(out)) << 23;
     return ret;
@@ -465,8 +481,8 @@ uint32_t *lfsr_prefix_ks(uint8_t ks[8], int isodd)
         for (uint32_t c = 0; good && c < 8; ++c)
         {
             uint32_t entry = i ^ fastfwd[isodd][c];
-            good &= (BIT(ks[c], isodd) == filter(entry >> 1));
-            good &= (BIT(ks[c], isodd + 2) == filter(entry));
+            good &= (BIT(ks[c], isodd) == crypto1_filter(entry >> 1));
+            good &= (BIT(ks[c], isodd + 2) == crypto1_filter(entry));
         }
         if (good)
             candidates[size++] = i;
