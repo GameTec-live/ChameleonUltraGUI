@@ -68,15 +68,25 @@ enum MifareClassicType {
   m4k
 } // can't start with number...
 
-final gMifareClassicKeys = gMifareClassicKeysList
-    .map((key) => Uint8List.fromList([
-          (key >> 40) & 0xFF,
-          (key >> 32) & 0xFF,
-          (key >> 24) & 0xFF,
-          (key >> 16) & 0xFF,
-          (key >> 8) & 0xFF,
-          key & 0xFF,
-        ]))
+final List<Uint8List> gMifareClassicKeys = gMifareClassicKeysList
+    .map((key) {
+      // Right shift returns a 32b int in Javascript, so use a BigInt instead
+      // Without this a key like 0xFFFFFFFFFFFF will turn into an array like
+      // [0, 0, 255, 255, 255, 255] instead of [255, 255, 255, 255, 255, 255]
+      final bigKey = BigInt.from(key);
+      final bigFF = BigInt.from(0xFF);
+
+      final bigList = [
+          (bigKey >> 40) & bigFF,
+          (bigKey >> 32) & bigFF,
+          (bigKey >> 24) & bigFF,
+          (bigKey >> 16) & bigFF,
+          (bigKey >> 8) & bigFF,
+          bigKey & bigFF,
+        ];
+
+      return Uint8List.fromList(bigList.map((bigInt) => bigInt.toInt()).toList());
+    })
     .toList();
 
 MifareClassicType mfClassicGetType(Uint8List atqa, int sak) {

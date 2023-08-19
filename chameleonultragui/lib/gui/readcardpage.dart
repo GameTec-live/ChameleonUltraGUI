@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -221,6 +220,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     setState(() {
       status.state = ChameleonMifareClassicState.recoveryOngoing;
     });
+
     try {
       if (!await connection.isReaderDeviceMode()) {
         await connection.setReaderDeviceMode(true);
@@ -250,10 +250,12 @@ class ReadCardPageState extends State<ReadCardPage> {
               setState(() {
                 status.checkMarks = status.checkMarks;
               });
-              for (var key in [
+              var keys = [
                 ...status.selectedDictionary!.keys,
                 ...gMifareClassicKeys
-              ]) {
+              ];
+
+              for (var key in keys) {
                 await asyncSleep(1); // Let GUI update
                 if (await connection.mf1Auth(
                     mfClassicGetSectorTrailerBlockBySector(sector),
@@ -307,10 +309,17 @@ class ReadCardPageState extends State<ReadCardPage> {
           return;
         }
 
-        if (!hasKey) {
-          if (await connection.checkMf1Darkside() ==
-              ChameleonDarksideResult.vurnerable) {
+        if (appState.onWeb) {
+          // Break as web doesnt support recovery methods from the C lib yet
+          setState(() {
+            status.state = ChameleonMifareClassicState.recovery;
+          });
+          return;
+        }
 
+        if (!hasKey) {
+          final isVulnerableDarkside = await connection.checkMf1Darkside();
+          if (isVulnerableDarkside == ChameleonDarksideResult.vurnerable) {
             // recover with darkside
             var data = await connection.getMf1Darkside(0x03, 0x61, true, 15);
             var darkside = DarksideDart(uid: data.uid, items: []);
@@ -950,20 +959,16 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         },
                                       ),
                                       const SizedBox(height: 8),
-                                      Tooltip(
-                                        message: appState.onWeb ? 'Not supported yet on Web' : '',
-                                        triggerMode: TooltipTriggerMode.manual,
-                                        child: ElevatedButton(
-                                          onPressed: appState.onWeb ? null : (status.state ==
-                                                  ChameleonMifareClassicState
-                                                      .recovery)
-                                              ? () async {
-                                                  await recoverKeys(
-                                                      connection, appState);
-                                                }
-                                              : null,
-                                          child: const Text('Recover keys'),
-                                        )
+                                      ElevatedButton(
+                                        onPressed: (status.state ==
+                                                ChameleonMifareClassicState
+                                                    .recovery)
+                                            ? () async {
+                                                await recoverKeys(
+                                                    connection, appState);
+                                              }
+                                            : null,
+                                        child: const Text('Recover keys'),
                                       )
                                     ])
                                   : (const Column(children: [])),
