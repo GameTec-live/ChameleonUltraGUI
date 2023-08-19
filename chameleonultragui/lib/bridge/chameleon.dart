@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:logger/logger.dart';
-import 'package:enough_convert/enough_convert.dart';
 
 enum ChameleonCommand {
   // basic commands
@@ -222,7 +221,6 @@ class ChameleonCom {
   int dataMaxLength = 512;
   AbstractSerial? _serialInstance;
   Logger log = Logger();
-  GbkCodec codec = const GbkCodec(allowInvalid: false);
 
   ChameleonCom({AbstractSerial? port}) {
     if (port != null) {
@@ -658,14 +656,14 @@ class ChameleonCom {
       int index, String name, ChameleonTagFrequiency frequiency) async {
     await sendCmdSync(ChameleonCommand.setSlotTagNick, 0x00,
         data: Uint8List.fromList(
-            [index, frequiency.value, ...codec.encode(name)]));
+            [index, frequiency.value, ...utf8.encode(name)]));
   }
 
   Future<String> getSlotTagName(
       int index, ChameleonTagFrequiency frequiency) async {
     var resp = await sendCmdSync(ChameleonCommand.getSlotTagNick, 0x00,
         data: Uint8List.fromList([index, frequiency.value]));
-    return codec.decode(resp!.data);
+    return utf8.decode(resp!.data);
   }
 
   Future<void> saveSlotData() async {
