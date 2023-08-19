@@ -31,7 +31,6 @@ class HomePageState extends State<HomePage> {
         Icon,
         String,
         List<String>,
-        String,
         bool,
         ChameleonAnimation
       )> getFutureData() async {
@@ -48,7 +47,6 @@ class HomePageState extends State<HomePage> {
       await getBatteryChargeIcon(connection),
       await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
-      await getRamusage(connection),
       await isReaderDeviceMode(connection),
       await getAnimationMode(connection),
     );
