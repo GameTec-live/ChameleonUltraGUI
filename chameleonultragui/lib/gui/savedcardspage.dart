@@ -359,8 +359,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     children: [
                                       Text("UID: ${tag.uid}"),
                                       Text("Tag Type: ${chameleonTagToString(tag.tag)}"),
-                                      Text("SAK: ${tag.sak}"),
-                                      Text("ATQA: ${tag.atqa[0]} ${tag.atqa[1]}"),
+                                      Text("SAK: ${tag.sak == 0 ? "Unavailable" : tag.sak}"),
+                                      Text("ATQA: ${tag.atqa.asMap().containsKey(0) ? tag.atqa[0] : ""} ${tag.atqa.asMap().containsKey(1) ? tag.atqa[1] : "Unavailable"}"),
                                     ],
                                   ),
                                   actions: [
