@@ -496,7 +496,14 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     IconButton(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return CardEditMenu(tagSave: tag);
+                                          },
+                                        );
+                                      },
                                       icon: const Icon(Icons.edit),
                                     ),
                                     IconButton(

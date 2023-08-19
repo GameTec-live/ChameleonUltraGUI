@@ -111,7 +111,7 @@ class CardEditMenuState extends State<CardEditMenu> {
             var tags = appState.sharedPreferencesProvider.getChameleonTags();
             List<ChameleonTagSave> output = [];
             for (var tagTest in tags) {
-              if (tagTest.id != widget.tagSave.uid) {
+              if (tagTest.id != widget.tagSave.id) {
                 output.add(tagTest);
               }
             }
