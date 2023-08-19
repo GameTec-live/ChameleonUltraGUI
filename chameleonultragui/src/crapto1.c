@@ -37,7 +37,7 @@ static inline int old_filter(uint32_t const x)
     return BIT(0xEC57E80A, f);
 }
 #else
-int old_filter(uint32_t const x);
+int old_filter(x) (filter(x));
 #endif
 
 static uint8_t filterlut[1 << 20];
