@@ -39,6 +39,7 @@ enum ChameleonCommand {
   // slot
   getActiveSlot(1018),
   getSlotInfo(1019),
+  getEnabledSlots(1023),
 
   factoryReset(1020), // WARNING: ERASES ALL
 
@@ -797,6 +798,16 @@ class ChameleonCom {
   Future<void> setMf1WriteMode(ChameleonMf1WriteMode mode) async {
     await sendCmdSync(ChameleonCommand.mf1SetWriteMode, 0x00,
         data: Uint8List.fromList([mode.value]));
+  }
+
+  Future<List<bool>> getEnabledSlots() async {
+    var resp = await sendCmdSync(ChameleonCommand.getEnabledSlots, 0x00);
+    if (resp!.data.length != 8) throw ("Invalid data length");
+    List<bool> slots = [];
+    for (var slot = 0; slot < 8; slot++) {
+      slots.add(resp.data[slot] != 0);
+    }
+    return slots;
   }
 
   // NOT IMPLEMENTED METHODS
