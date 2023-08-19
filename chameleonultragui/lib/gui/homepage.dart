@@ -265,7 +265,7 @@ class HomePageState extends State<HomePage> {
                     Text("Used Slots: $usedSlots/8",
                         style: TextStyle(
                             fontSize: MediaQuery.of(context).size.width / 50)),
-                    SlotChanger(),
+                    const SlotChanger(),
                     Expanded(
                       child: FractionallySizedBox(
                         widthFactor: 0.4,
@@ -294,8 +294,8 @@ class HomePageState extends State<HomePage> {
                           padding: const EdgeInsets.all(4.0),
                           child: IconButton(
                             onPressed: () async {
-                              var snackBar;
-                              var latestCommit;
+                              SnackBar snackBar;
+                              String latestCommit;
 
                               try {
                                 latestCommit = await latestAvailableCommit(
