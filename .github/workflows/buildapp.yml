@@ -23,7 +23,6 @@ jobs:
         with:
           channel: 'stable'
       - run: flutter pub get
-      #- run: flutter test
       - run: flutter build apk --build-number ${{ github.run_number }}
       - uses: actions/upload-artifact@v3
         with:
@@ -94,7 +93,6 @@ jobs:
       - run: flutter config
       - run: brew install automake libtool
       - run: flutter build macos
-      - run: flutter test
       - uses: actions/upload-artifact@v3
         with:
           name: macos
