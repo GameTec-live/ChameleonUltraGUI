@@ -69,10 +69,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                 ar1Enc: item1.ar,
               );
 
-              var mfkey32 = await recovery.mfkey32(mfkey);
-              var hexData = bytesToHex(u64ToBytes((mfkey32)[0]).sublist(2, 8));
               controller.text +=
-                  "\nUID ${bytesToHex(u64ToBytes(uid).sublist(4, 8))} block $block key $key: $hexData";
+                  "\nUID ${bytesToHex(u64ToBytes(uid).sublist(4, 8))} block $block key $key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8))}";
               controller.text = controller.text.trim();
               appState.changesMade();
             }
