@@ -344,14 +344,12 @@ class ChameleonCom {
     var resp = await sendCmdSync(ChameleonCommand.getAppVersion, 0x00);
     if (resp!.data.length != 2) throw ("Invalid data length");
     final result = (resp.data[1] << 8) | resp.data[0];
-    log.d("ChamelonCom.getFirmwareVersion: $result");
     return result;
   }
 
   Future<String> getDeviceChipID() async {
     var resp = await sendCmdSync(ChameleonCommand.getDeviceChipID, 0x00);
     final result = bytesToHex(resp!.data);
-    log.d("ChamelonCom.getDeviceChipID: $result");
     return result;
   }
 
