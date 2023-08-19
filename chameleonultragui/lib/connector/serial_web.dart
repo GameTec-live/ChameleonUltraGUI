@@ -44,6 +44,10 @@ class SerialConnector extends AbstractSerial {
   bool keepReading = false;
 
   @override
+  // ignore: overridden_fields
+  String portName = "WebSerial";
+
+  @override
   get device {
     if (currentDevice != null) {
       return currentDevice!.type;
