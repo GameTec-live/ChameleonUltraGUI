@@ -80,3 +80,21 @@ jobs:
         with:
           name: linux-debian
           path: chameleonultragui/debian/packages
+
+  build-macos:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter config --enable-linux-desktop
+      - run: flutter build macos
+      - run: flutter test
+      - uses: actions/upload-artifact@v3
+        with:
+          name: macos
+          path: chameleonultragui/build/macos/Build/Products/Release
