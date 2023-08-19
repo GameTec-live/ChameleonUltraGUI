@@ -339,12 +339,37 @@ class ChameleonCom {
   Future<int> getFirmwareVersion() async {
     var resp = await sendCmdSync(ChameleonCommand.getAppVersion, 0x00);
     if (resp!.data.length != 2) throw ("Invalid data length");
-    return (resp.data[1] << 8) | resp.data[0];
+    final result = (resp.data[1] << 8) | resp.data[0];
+    log.d("ChamelonCom.getFirmwareVersion: $result");
+    return result;
   }
 
   Future<String> getDeviceChipID() async {
     var resp = await sendCmdSync(ChameleonCommand.getDeviceChipID, 0x00);
-    return bytesToHex(resp!.data);
+    final result = bytesToHex(resp!.data);
+    log.d("ChamelonCom.getDeviceChipID: $result");
+    return result;
+  }
+
+  Future<bool> detectChameleonUltra() async {
+    // Check if device is a ChameleonUltra by trying to switch to reader mode,
+    // a ChameleonLite will return success on setting to reader but the
+    // actual device mode will always be emulator
+    var isReader = await isReaderDeviceMode();
+    if (isReader) {
+      return true;
+    }
+
+    await setReaderDeviceMode(true);
+
+    isReader = await isReaderDeviceMode();
+    if (isReader) {
+      // Reset device mode back to emulator
+      await setReaderDeviceMode(false);
+      return true;
+    }
+
+    return false;
   }
 
   Future<String> getDeviceBLEAddress() async {

@@ -27,6 +27,7 @@ class HomePageState extends State<HomePage> {
 
   Future<
       (
+        bool,
         Icon,
         List<Icon>,
         String,
@@ -39,7 +40,15 @@ class HomePageState extends State<HomePage> {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
     List<bool> usedSlots = await connection.getUsedSlots();
+    var isChameleonUltra = appState.connector.device == ChameleonDevice.ultra;
+    if (appState.onWeb) {
+      // Serial on Web doesnt provide device/manufacture names, so try to
+      // detect the current device type instead
+      isChameleonUltra = await detectChameleonUltra(connection);
+    }
+
     return (
+      isChameleonUltra,
       await getBatteryChargeIcon(connection),
       await getSlotIcons(connection, selectedSlot, usedSlots),
       await getUsedSlotsOut8(connection, usedSlots),
@@ -129,6 +138,10 @@ class HomePageState extends State<HomePage> {
     return await connection.getActivatedSlot();
   }
 
+  Future<bool> detectChameleonUltra(ChameleonCom connection) async {
+    return await connection.detectChameleonUltra();
+  }
+
   Future<bool> isReaderDeviceMode(ChameleonCom connection) async {
     return await connection.isReaderDeviceMode();
   }
@@ -191,6 +204,7 @@ class HomePageState extends State<HomePage> {
             return Text('Error: ${snapshot.error.toString()}');
           } else {
             final (
+              isChameleonUltra,
               batteryIcon,
               slotIcons,
               usedSlots,
@@ -220,9 +234,9 @@ class HomePageState extends State<HomePage> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 IconButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     // Disconnect
-                                    appState.connector.preformDisconnect();
+                                    await appState.connector.preformDisconnect();
                                     appState.changesMade();
                                   },
                                   icon: const Icon(Icons.close),
@@ -250,7 +264,7 @@ class HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                            "Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"}",
+                            "Chameleon ${isChameleonUltra ? "Ultra" : "Lite"}",
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize:
@@ -291,7 +305,7 @@ class HomePageState extends State<HomePage> {
                       child: FractionallySizedBox(
                         widthFactor: 0.4,
                         child: Image.asset(
-                          appState.connector.device == ChameleonDevice.ultra
+                          isChameleonUltra
                               ? 'assets/black-ultra-standing-front.png'
                               : 'assets/black-lite-standing-front.png',
                           fit: BoxFit.contain,

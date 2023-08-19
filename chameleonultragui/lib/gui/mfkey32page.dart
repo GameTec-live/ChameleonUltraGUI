@@ -58,6 +58,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
             for (var j = i + 1; j < item.value.length; j++) {
               var item0 = item.value[i];
               var item1 = item.value[j];
+
               var mfkey = Mfkey32Dart(
                 uid: uid,
                 nt0: item0.nt,
@@ -67,8 +68,11 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                 nr1Enc: item1.nr,
                 ar1Enc: item1.ar,
               );
+
+              var mfkey32 = await recovery.mfkey32(mfkey);
+              var hexData = bytesToHex(u64ToBytes((mfkey32)[0]).sublist(2, 8));
               controller.text +=
-                  "\nUID ${bytesToHex(u64ToBytes(uid).sublist(4, 8))} block $block key $key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8))}";
+                  "\nUID ${bytesToHex(u64ToBytes(uid).sublist(4, 8))} block $block key $key: $hexData";
               controller.text = controller.text.trim();
               appState.changesMade();
             }
@@ -80,6 +84,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
 
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>(); // Get State
+
     return FutureBuilder(
       future: detectionStatusFuture,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -91,6 +97,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
             body: const Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasError) {
+          appState.log.e('Widget build error', snapshot.error, snapshot.stackTrace);
           return Text('Error: ${snapshot.error}');
         } else {
           var appState = context.read<MyAppState>();

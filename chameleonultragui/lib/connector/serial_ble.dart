@@ -15,7 +15,7 @@ Uuid dfuUUID = Uuid.parse("FE59");
 Uuid dfuControl = Uuid.parse("8EC90001-F315-4F60-9FB8-838830DAEA50");
 Uuid dfuFirmware = Uuid.parse("8EC90002-F315-4F60-9FB8-838830DAEA50");
 
-class BLESerial extends AbstractSerial {
+class SerialConnector extends AbstractSerial {
   FlutterReactiveBle flutterReactiveBle = FlutterReactiveBle();
   QualifiedCharacteristic? txCharacteristic;
   QualifiedCharacteristic? rxCharacteristic;

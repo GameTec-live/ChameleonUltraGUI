@@ -20,6 +20,8 @@ class AbstractSerial {
     return false;
   }
 
+  Future pairDevices() async {} // For web only
+
   Future<List> availableDevices() async {
     return [];
   }

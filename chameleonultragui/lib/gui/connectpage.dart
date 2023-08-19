@@ -12,10 +12,12 @@ class ConnectPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
 
+    var connector = appState.connector;
+
     return FutureBuilder(
-      future: appState.connector.connected
+      future: connector.connected
           ? Future.value([])
-          : appState.connector.availableChameleons(false),
+          : connector.availableChameleons(false),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -24,10 +26,22 @@ class ConnectPage extends StatelessWidget {
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
-          appState.connector.preformDisconnect();
-          return Text('Error: ${snapshot.error}');
+          connector.preformDisconnect();
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Connect'),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error: ${snapshot.error}')
+                ]
+              )
+            )
+          );
         } else {
-          final result = snapshot.data;
+          final result = snapshot.data as List;
 
           return Scaffold(
             appBar: AppBar(
@@ -37,15 +51,29 @@ class ConnectPage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center, // Center
                 children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: IconButton(
-                      onPressed: () {
-                        // Refresh
-                        appState.changesMade();
-                      },
-                      icon: const Icon(Icons.refresh),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ...(!appState.onWeb ? [] : [
+                        IconButton(
+                          onPressed: () async {
+                            // Refresh
+                            await connector.pairDevices();
+                            appState.changesMade();
+                          },
+                          icon: const Icon(Icons.handshake_outlined),
+                          tooltip: "Pair devices",
+                        )
+                      ]),
+                      IconButton(
+                        onPressed: () {
+                          // Refresh
+                          appState.changesMade();
+                        },
+                        icon: const Icon(Icons.refresh),
+                        tooltip: "Refresh devices",
+                      ),
+                    ]
                   ),
                   Expanded(
                     child: GridView(
@@ -62,8 +90,7 @@ class ConnectPage extends StatelessWidget {
                           ...result.map<Widget>((chameleonDevice) {
                             return ElevatedButton(
                               onPressed: () async {
-                                if (chameleonDevice['type'] ==
-                                    ChameleonConnectType.dfu) {
+                                if (chameleonDevice['type'] == ChameleonConnectType.dfu) {
                                   showDialog<String>(
                                     context: context,
                                     builder: (BuildContext context) =>
@@ -87,7 +114,7 @@ class ConnectPage extends StatelessWidget {
 
                                             Uint8List content =
                                                 await fetchFirmware(
-                                                    appState.connector.device);
+                                                    connector.device);
 
                                             (applicationDat, applicationBin) =
                                                 await unpackFirmware(content);
@@ -110,8 +137,7 @@ class ConnectPage extends StatelessWidget {
                                     ),
                                   );
                                 } else {
-                                  await appState.connector
-                                      .connectSpecific(chameleonDevice['port']);
+                                  await connector.connectSpecific(chameleonDevice['port']);
                                   appState.changesMade();
                                 }
                               },

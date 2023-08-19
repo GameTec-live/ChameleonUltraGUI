@@ -29,6 +29,16 @@ Key:
 You might need to add your user to the `dialout` or, on Arch Linux, to the `uucp` group for the app to talk to the device. If your user is not in this group, you may get serial or permission errors.
 It is also highly recommended to either uninstall or disable ModemManager (`sudo systemctl disable --now modemmanager`) as many distros ship ModemManager and it may interfere with communication.
 
+#### Note for Web users:
+
+You need to pair your Chameleon first before it shows up on the connect page, click on the handshake icon and select the relevant serial devices.
+
+*Known issues*
+- Chameleon Lite's are displayed as Ultra's on the connect page (but are correct after connecting)
+> This is because the Web Serial API is quite limited with the [device information](https://developer.mozilla.org/en-US/docs/Web/API/SerialPort/getInfo) it returns as it only returns an usb vendor id & product id (which are the same for Ultra's & Lite's). So on the connect page any device will be displayed as an Ultra, after you connect to a specific device the correct device type will be detected by checking if the device supports reader mode (=Ultra) or not (=Lite)
+- key recovery is not supported (yet)
+- cannot download firmware due to CORS issue with nightly.link
+
 ## Contributing
 Contributions are welcome, most stuff that needs to be done can either be found in our [issues](https://github.com/GameTec-live/ChameleonUltraGUI/issues) or on the [Project board](https://github.com/users/GameTec-live/projects/2)
 

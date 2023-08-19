@@ -4,7 +4,7 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
-import 'package:chameleonultragui/recovery/recovery.dart';
+import 'package:chameleonultragui/recovery/definitions.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -44,7 +44,7 @@ class DevPage extends StatelessWidget {
             textScaleFactor: 2,
           ),
           const Text('⚠️ YOU HAVE BEEN WARNED ⚠️', textScaleFactor: 3),
-          Text('Platform: ${Platform.operatingSystem}'),
+          Text('Platform: ${appState.onWeb ? 'Web' : Platform.operatingSystem}'),
           Text('Android: ${appState.onAndroid}'),
           Text('Serial protocol : ${appState.connector}'),
           Text('Chameleon connected: ${appState.connector.connected}'),
@@ -105,7 +105,7 @@ class DevPage extends StatelessWidget {
               for (var tries = 0; tries < 0xFF && !found; tries++) {
                 darkside.items.add(DarksideItemDart(
                     nt1: data.nt1,
-                    ks1: data.ks1,
+                    ks1: BigInt.from(data.ks1),
                     par: data.par,
                     nr: data.nr,
                     ar: data.ar));
@@ -168,13 +168,13 @@ class DevPage extends StatelessWidget {
               var darkside = DarksideDart(uid: 2374329723, items: []);
               darkside.items.add(DarksideItemDart(
                   nt1: 913032415,
-                  ks1: 216745674933338888,
+                  ks1: BigInt.parse('216745674933338888'), // Use string as this num is bigger then max int value in js
                   par: 0,
                   nr: 0,
                   ar: 0));
               darkside.items.add(DarksideItemDart(
                   nt1: 913032415,
-                  ks1: 1010230244403446283,
+                  ks1: BigInt.parse('1010230244403446283'),
                   par: 0,
                   nr: 1,
                   ar: 0));

@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/connector/serial_ble.dart';
-import 'package:chameleonultragui/connector/serial_mobile.dart';
+import 'package:chameleonultragui/connector/serial_ble.dart' as ble;
+import 'package:chameleonultragui/connector/serial_mobile.dart' as mobile;
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 // Class combines Android OTG and BLE serial
-class AndroidSerial extends AbstractSerial {
-  BLESerial bleSerial = BLESerial();
-  MobileSerial mobileSerial = MobileSerial();
+class SerialConnector extends AbstractSerial {
+  ble.SerialConnector bleSerial = ble.SerialConnector();
+  mobile.SerialConnector mobileSerial = mobile.SerialConnector();
 
   @override
   Future<bool> preformDisconnect() async {

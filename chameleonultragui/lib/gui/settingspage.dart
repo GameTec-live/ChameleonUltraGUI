@@ -272,37 +272,46 @@ class SettingsMainPageState extends State<SettingsMainPage> {
             ),
             const SizedBox(height: 10),
             TextButton(
-              onPressed: () => showDialog<String>(
-                context: context,
-                builder: (BuildContext context) => AlertDialog(
-                  title: const Text('Debug mode?'),
-                  content: Text(
-                      'Are you sure you want to ${appState.sharedPreferencesProvider.getDeveloperMode() ? "deactivate" : "activate"} debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms'),
-                  actions: <Widget>[
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, 'Cancel'),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        appState.devMode = true;
-                        if (appState.sharedPreferencesProvider
-                            .getDeveloperMode()) {
-                          appState.sharedPreferencesProvider
-                              .setDeveloperMode(false);
-                        } else {
-                          appState.sharedPreferencesProvider
-                              .setDeveloperMode(true);
-                        }
-                        appState.changesMade();
-                        Navigator.pop(context, 'OK');
-                      },
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-              ),
-              child: const Text('Activate debug mode'),
+              onPressed: () {
+                if (appState.devMode) {
+                  appState.devMode = false;
+                  appState.sharedPreferencesProvider.setDeveloperMode(false);
+                  appState.changesMade();
+                  return;
+                }
+
+                showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: const Text('Debug mode?'),
+                    content: Text(
+                        'Are you sure you want to ${appState.sharedPreferencesProvider.getDeveloperMode() ? "deactivate" : "activate"} debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms'),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, 'Cancel'),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          appState.devMode = true;
+                          if (appState.sharedPreferencesProvider
+                              .getDeveloperMode()) {
+                            appState.sharedPreferencesProvider
+                                .setDeveloperMode(false);
+                          } else {
+                            appState.sharedPreferencesProvider
+                                .setDeveloperMode(true);
+                          }
+                          appState.changesMade();
+                          Navigator.pop(context, 'OK');
+                        },
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              child: Text(appState.devMode ? 'Deactivate debug mode' : 'Activate debug mode'),
             )
           ],
         ),

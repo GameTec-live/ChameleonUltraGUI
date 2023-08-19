@@ -311,6 +311,7 @@ class ReadCardPageState extends State<ReadCardPage> {
         if (!hasKey) {
           if (await connection.checkMf1Darkside() ==
               ChameleonDarksideResult.vurnerable) {
+
             // recover with darkside
             var data = await connection.getMf1Darkside(0x03, 0x61, true, 15);
             var darkside = DarksideDart(uid: data.uid, items: []);
@@ -320,7 +321,7 @@ class ReadCardPageState extends State<ReadCardPage> {
             for (var tries = 0; tries < 0xFF && !found; tries++) {
               darkside.items.add(DarksideItemDart(
                   nt1: data.nt1,
-                  ks1: data.ks1,
+                  ks1: BigInt.from(data.ks1),
                   par: data.par,
                   nr: data.nr,
                   ar: data.ar));
@@ -402,6 +403,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                     validKey,
                     mfClassicGetSectorTrailerBlockBySector(sector),
                     0x60 + keyType);
+
                 var nested = NestedDart(
                     uid: distance.uid,
                     distance: distance.distance,
@@ -960,16 +962,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         },
                                       ),
                                       const SizedBox(height: 8),
-                                      ElevatedButton(
-                                        onPressed: (status.state ==
-                                                ChameleonMifareClassicState
-                                                    .recovery)
-                                            ? () async {
-                                                await recoverKeys(
-                                                    connection, appState);
-                                              }
-                                            : null,
-                                        child: const Text('Recover keys'),
+                                      Tooltip(
+                                        message: appState.onWeb ? 'Not supported yet on Web' : '',
+                                        triggerMode: TooltipTriggerMode.manual,
+                                        child: ElevatedButton(
+                                          onPressed: appState.onWeb ? null : (status.state ==
+                                                  ChameleonMifareClassicState
+                                                      .recovery)
+                                              ? () async {
+                                                  await recoverKeys(
+                                                      connection, appState);
+                                                }
+                                              : null,
+                                          child: const Text('Recover keys'),
+                                        )
                                       )
                                     ])
                                   : (const Column(children: [])),

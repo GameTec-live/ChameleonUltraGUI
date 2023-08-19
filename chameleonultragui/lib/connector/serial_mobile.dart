@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:usb_serial/usb_serial.dart';
 
 // Class for Android Serial Communication
-class MobileSerial extends AbstractSerial {
+class SerialConnector extends AbstractSerial {
   Map<String, UsbDevice> deviceMap = {};
   List<Uint8List> messagePool = []; // TODO: Fix or rewrite on release
   UsbPort? port;

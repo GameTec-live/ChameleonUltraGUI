@@ -1,16 +1,19 @@
 import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/connector/serial_android.dart';
-import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/gui/flashing.dart';
 import 'package:chameleonultragui/gui/mfkey32page.dart';
 import 'package:chameleonultragui/gui/readcardpage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Comms Imports
-import 'connector/serial_native.dart';
+import 'connector/serial_stub.dart'
+  if (dart.library.js) 'connector/serial_web.dart'
+  if (Platform.isAndroid) 'connector/serial_mobile.dart'
+  if (Platform.isIOS) 'connector/serial_ble.dart'
+  if (dart.library.io) 'connector/serial_native.dart';
 
 // GUI Imports
 import 'package:chameleonultragui/gui/homepage.dart';
@@ -77,16 +80,10 @@ class MyApp extends StatelessWidget {
 class MyAppState extends ChangeNotifier {
   final SharedPreferencesProvider sharedPreferencesProvider;
   MyAppState(this.sharedPreferencesProvider);
-
-  bool onAndroid =
-      Platform.isAndroid; // Are we on android? (mostly for serial port)
-
-// Android uses AndroidSerial, iOS can only use BLESerial
-// The rest (desktops?) can use NativeSerial
-  AbstractSerial connector = Platform.isAndroid
-      ? AndroidSerial()
-      : (Platform.isIOS ? BLESerial() : NativeSerial());
-
+  // State
+  bool onWeb = kIsWeb;
+  bool onAndroid = !kIsWeb && Platform.isAndroid; // Are we on android? (mostly for serial port)
+  AbstractSerial connector = SerialConnector(); // Chameleon Object, connected Chameleon
   bool switchOn = true;
   bool devMode = false;
   double? progress;
