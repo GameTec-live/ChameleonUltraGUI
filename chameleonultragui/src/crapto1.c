@@ -24,7 +24,6 @@
 #include "bucketsort.h"
 
 #if !defined LOWMEM
-#ifdef __APPLE__
 static inline int old_filter(uint32_t const x)
 {
     uint32_t f;
@@ -36,9 +35,6 @@ static inline int old_filter(uint32_t const x)
     f |= 0x0d938 >> (x >> 16 & 0xf) & 1;
     return BIT(0xEC57E80A, f);
 }
-#else
-int old_filter(x) (filter(x));
-#endif
 
 static uint8_t filterlut[1 << 20];
 static void __attribute__((constructor)) fill_lut(void)
