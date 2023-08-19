@@ -6,6 +6,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:uuid/uuid.dart';
+import 'package:chameleonultragui/gui/components/hexeditor.dart';
 
 class CardEditMenu extends StatefulWidget {
   final ChameleonTagSave tagSave;
@@ -95,6 +96,17 @@ class CardEditMenuState extends State<CardEditMenu> {
               ),
               const SizedBox(height: 40),
             ]),
+            ElevatedButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return HexEdit(data: widget.tagSave.data);
+                  },
+                );
+              },
+              child: const Text("Edit data"),
+            ),
           ],
         ),
       ),
