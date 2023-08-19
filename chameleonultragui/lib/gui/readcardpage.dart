@@ -2,16 +2,15 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/helpers/files.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:file_saver/file_saver.dart';
 
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
@@ -523,23 +522,12 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
 
     if (bin) {
-      try {
-        await FileSaver.instance.saveAs(
-            name: bytesToHex(card.uid),
-            bytes: Uint8List.fromList(cardDump),
-            ext: 'bin',
-            mimeType: MimeType.other);
-      } on UnimplementedError catch (_) {
-        String? outputFile = await FilePicker.platform.saveFile(
-          dialogTitle: 'Please select an output file:',
-          fileName: '${bytesToHex(card.uid)}.bin',
-        );
-
-        if (outputFile != null) {
-          var file = File(outputFile);
-          await file.writeAsBytes(Uint8List.fromList(cardDump));
-        }
-      }
+      saveFile(
+        appState: appState,
+        fileName: bytesToHex(card.uid),
+        fileExtension: 'bin',
+        bytes: Uint8List.fromList(cardDump),
+      );
     } else {
       var tags = appState.sharedPreferencesProvider.getChameleonTags();
       tags.add(ChameleonTagSave(

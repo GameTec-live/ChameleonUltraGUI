@@ -1,8 +1,7 @@
-import 'dart:io' show File;
 import 'dart:typed_data';
+import 'package:chameleonultragui/helpers/files.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -175,18 +174,16 @@ class HomePageState extends State<HomePage> {
     var connection = ChameleonCom(port: appState.connector);
     Uint8List applicationDat, applicationBin;
 
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-
-    if (result != null) {
-      File file = File(result.files.single.path!);
-
-      (applicationDat, applicationBin) =
-          await unpackFirmware(await file.readAsBytes());
-
-      flashFile(connection, appState, applicationDat, applicationBin,
-          (progress) => appState.setProgressBar(progress / 100),
-          firmwareZip: await file.readAsBytes());
+    FileResult? file = await pickFile(appState);
+    if (file == null) {
+      return;
     }
+
+    (applicationDat, applicationBin) = await unpackFirmware(file.bytes);
+
+    flashFile(connection, appState, applicationDat, applicationBin,
+        (progress) => appState.setProgressBar(progress / 100),
+        firmwareZip: file.bytes);
   }
 
   @override
