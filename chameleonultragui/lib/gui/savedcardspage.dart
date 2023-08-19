@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:uuid/uuid.dart';
+import 'package:chameleonultragui/gui/components/cardeditmenu.dart';
 
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
@@ -364,7 +365,14 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   ),
                                   actions: [
                                     IconButton(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return CardEditMenu(tagSave: tag);
+                                          },
+                                        );
+                                      },
                                       icon: const Icon(Icons.edit),
                                     ),
 

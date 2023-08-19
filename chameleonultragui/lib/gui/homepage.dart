@@ -29,7 +29,6 @@ class HomePageState extends State<HomePage> {
   Future<
       (
         Icon,
-        List<Icon>,
         String,
         List<String>,
         String,
@@ -47,7 +46,6 @@ class HomePageState extends State<HomePage> {
 
     return (
       await getBatteryChargeIcon(connection),
-      await getSlotIcons(connection, usedSlots),
       await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
       await getRamusage(connection),
@@ -78,29 +76,6 @@ class HomePageState extends State<HomePage> {
       return const Icon(Icons.battery_alert);
     }
     return const Icon(Icons.battery_unknown);
-  }
-
-  Future<List<Icon>> getSlotIcons(ChameleonCom connection,
-      List<(ChameleonTag, ChameleonTag)> usedSlots) async {
-    List<Icon> icons = [];
-    try {
-      selectedSlot = await connection.getActiveSlot() + 1;
-    } catch (_) {
-      selectedSlot = 1;
-    }
-    for (int i = 1; i < 9; i++) {
-      if (i == selectedSlot) {
-        icons.add(const Icon(
-          Icons.circle_outlined,
-          color: Colors.red,
-        ));
-      } else if (false) {
-        icons.add(const Icon(Icons.circle));
-      } else {
-        icons.add(const Icon(Icons.circle_outlined));
-      }
-    }
-    return icons;
   }
 
   Future<String> getUsedSlotsOut8(ChameleonCom connection,
@@ -180,7 +155,7 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
+    //var connection = ChameleonCom(port: appState.connector);
 
     return FutureBuilder(
         future: getFutureData(),
@@ -198,10 +173,8 @@ class HomePageState extends State<HomePage> {
           } else {
             final (
               batteryIcon,
-              slotIcons,
               usedSlots,
               fwVersion,
-              ramUsage,
               isReaderDeviceMode,
               animationMode
             ) = snapshot.data;
