@@ -43,7 +43,6 @@ dependencies:
   serial_communication: ^0.0.2
   logger: ^1.4.0
   convert: ^3.1.1
-  enough_convert: ^1.6.0
   shared_preferences: ^2.1.2
   ffigen: ^8.0.2
   dylib: ^0.3.3

@@ -46,7 +46,6 @@
             with:
               channel: 'stable'
           - run: flutter pub get
-          #- run: flutter test
           - run: flutter build appbundle --build-number ${{ github.run_number }}
           - uses: actions/upload-artifact@v3
             with:

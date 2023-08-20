@@ -241,12 +241,13 @@ class DevPage extends StatelessWidget {
               Text('💀 DFU flash lite FW 💀'),
             ]),
           ),
+          const SizedBox(height: 10),
           ElevatedButton(
             onPressed: () async {
-              await cml.getGitCommitHash();
+              await cml.factoryReset();
             },
             child: const Column(children: [
-              Text('Test getGitCommitHash'),
+              Text('✅ Safe option: restart chameleon ✅'),
             ]),
           ),
         ],

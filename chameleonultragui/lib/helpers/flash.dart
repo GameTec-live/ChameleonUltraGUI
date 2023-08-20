@@ -120,8 +120,8 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
     }
 
     for (var release in releases) {
-      if (release["name"].startsWith("Compiled commit ")) {
-        return release["name"].split("Compiled commit ")[1];
+      if (release["author"]["login"] == "github-actions[bot]") {
+        return release["body"].split("Built from commit ")[1].split("\n")[0];
       }
     }
   } catch (_) {}
