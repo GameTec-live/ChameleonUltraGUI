@@ -710,14 +710,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.4"
-  web:
-    dependency: transitive
-    description:
-      name: web
-      sha256: dc8ccd225a2005c1be616fe02951e2e342092edf968cf0844220383757ef8f10
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.4-beta"
   win32:
     dependency: transitive
     description:
