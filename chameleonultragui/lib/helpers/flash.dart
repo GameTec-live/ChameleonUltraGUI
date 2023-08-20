@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
+import 'package:chameleonultragui/helpers/http.dart';
 import 'package:crypto/crypto.dart';
 import 'package:collection/collection.dart';
-import 'package:http/http.dart' as http;
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/bridge/dfu.dart';
@@ -18,20 +18,18 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
   String error = "";
 
   try {
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
-        .body
-        .toString());
+    final response = await httpGet("https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases");
+    final releases = json.decode(response.body.toString());
 
-    if (releases.containsKey("message")) {
+    if (releases is! List && releases.containsKey("message")) {
       error = releases["message"];
       throw error;
     }
 
+    final expectedAssetName = "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip";
     for (var file in releases[0]["assets"]) {
-      if (file["name"] ==
-          "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
-        content = await http.readBytes(Uri.parse(file["browser_download_url"]));
+      if (file["name"] == expectedAssetName) {
+        content = await httpGetBinary(file["browser_download_url"]);
         break;
       }
     }
@@ -49,21 +47,19 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
   String error = "";
 
   try {
-    final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts")))
-        .body
-        .toString());
+    final response = await httpGet("https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts");
+    final artifacts = json.decode(response.body.toString());
 
     if (artifacts.containsKey("message")) {
       error = artifacts["message"];
       throw error;
     }
 
+    final expectedAssetName = "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app";
     for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] ==
-          "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app") {
-        content = await http.readBytes(Uri.parse(
-            "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
+      if (artifact["name"] == expectedAssetName) {
+        final assetUrl = "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}";
+        content = await httpGetBinary(assetUrl);
         break;
       }
     }
@@ -90,29 +86,25 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
   String error = "";
 
   try {
-    final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts")))
-        .body
-        .toString());
+    final response = await httpGet("https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts");
+    final artifacts = json.decode(response.body.toString());
 
     if (artifacts.containsKey("message")) {
       error = artifacts["message"];
       throw error;
     }
 
+    final expectedAssetName = "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app";
     for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] ==
-          "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app") {
+      if (artifact["name"] == expectedAssetName) {
         return artifact["workflow_run"]["head_sha"];
       }
     }
   } catch (_) {}
 
   try {
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
-        .body
-        .toString());
+    final response = await httpGet("https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases");
+    final releases = json.decode(response.body.toString());
 
     if (releases.containsKey("message")) {
       error = releases["message"];
