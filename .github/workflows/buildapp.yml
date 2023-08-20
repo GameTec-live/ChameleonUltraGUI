@@ -23,7 +23,6 @@ jobs:
         with:
           channel: 'stable'
       - run: flutter pub get
-      #- run: flutter test
       - run: flutter build apk --build-number ${{ github.run_number }}
       - uses: actions/upload-artifact@v3
         with:
@@ -80,3 +79,21 @@ jobs:
         with:
           name: linux-debian
           path: chameleonultragui/debian/packages
+
+  # build-macos:
+  #   runs-on: macos-latest
+  #   defaults:
+  #     run:
+  #       working-directory: ./chameleonultragui
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         channel: 'stable'
+  #     - run: flutter config
+  #     - run: brew install automake libtool
+  #     - run: flutter build macos
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         name: macos
+  #         path: "chameleonultragui/build/macos/Build/Products/Release/Chameleon Ultra GUI.app"

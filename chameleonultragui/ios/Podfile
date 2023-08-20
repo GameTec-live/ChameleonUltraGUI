@@ -1,4 +1,4 @@
-platform :ios, '15.0'
+platform :ios, '11.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -31,10 +31,7 @@ target 'Runner' do
   use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-# Commented the below out because RunnerTests does not exists and it breaks Pod install
-#  target 'RunnerTests' do
-#    inherit! :search_paths
-#  end
+  pod 'recovery', :path => './recovery.podspec'
 end
 
 post_install do |installer|

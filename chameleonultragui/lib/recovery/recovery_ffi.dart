@@ -61,6 +61,8 @@ String resolvePath() {
         break;
       }
     }
+  } else if (!io.File(path).existsSync() && (Platform.isMacOS || Platform.isIOS)) {
+    return 'recovery.framework/recovery';
   }
   return path;
 }

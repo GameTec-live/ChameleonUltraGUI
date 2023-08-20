@@ -31,7 +31,6 @@ class HomePageState extends State<HomePage> {
         List<Icon>,
         String,
         List<String>,
-        String,
         bool,
         ChameleonAnimation
       )> getFutureData() async {
@@ -57,7 +56,6 @@ class HomePageState extends State<HomePage> {
       await getSlotIcons(connection, usedSlots),
       await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
-      await getRamusage(connection),
       await isReaderDeviceMode(connection),
       await getAnimationMode(connection),
     );
@@ -141,10 +139,6 @@ class HomePageState extends State<HomePage> {
     return ["$firmwareVersion ($commitHash)", commitHash];
   }
 
-  Future<String> getRamusage(ChameleonCom connection) async {
-    return await connection.getMemoryUsage();
-  }
-
   Future<bool> isReaderDeviceMode(ChameleonCom connection) async {
     return await connection.isReaderDeviceMode();
   }
@@ -211,7 +205,6 @@ class HomePageState extends State<HomePage> {
               slotIcons,
               usedSlots,
               fwVersion,
-              ramUsage,
               isReaderDeviceMode,
               animationMode
             ) = snapshot.data;
@@ -407,20 +400,6 @@ class HomePageState extends State<HomePage> {
                         )
                       ],
                     ),
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.center,
-                    //   children: [
-                    //     Text("Memory Usage: ",
-                    //         style: TextStyle(
-                    //             fontWeight: FontWeight.bold,
-                    //             fontSize:
-                    //                 MediaQuery.of(context).size.width / 50)),
-                    //     Text(ramUsage,
-                    //         style: TextStyle(
-                    //             fontSize:
-                    //                 MediaQuery.of(context).size.width / 50)),
-                    //   ],
-                    // ),
                     Align(
                       alignment: Alignment.bottomRight,
                       child: Row(
