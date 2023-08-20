@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:io' show Platform;
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 Future<void> asyncSleep(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
@@ -36,9 +37,25 @@ int bytesToU64(Uint8List byteArray) {
 }
 
 Uint8List u64ToBytes(int u64) {
-  final ByteData byteData = ByteData(8)..setUint64(0, u64, Endian.big);
-  return byteData.buffer.asUint8List();
+  if (!kIsWeb) {
+    // Uint64 accessor not supported by dart2js
+    final ByteData byteData = ByteData(8)..setUint64(0, u64, Endian.big);
+    return byteData.buffer.asUint8List();
+  }
+
+  final bigInt = BigInt.from(u64);
+  final data = Uint8List((bigInt.bitLength / 8).ceil());
+  var tmp = bigInt;
+
+  for (var i = 1; i <= data.lengthInBytes; i++) {
+    final int8 = tmp.toUnsigned(8).toInt();
+    data[i - 1] = int8;
+    tmp = tmp >> 8;
+  }
+
+  return data;
 }
+
 
 bool isValidHexString(String hexString) {
   final hexPattern = RegExp(r'^[A-Fa-f0-9]+$');

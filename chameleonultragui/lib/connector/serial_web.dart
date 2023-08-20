@@ -114,7 +114,7 @@ class SerialConnector extends AbstractSerial {
       SerialPortInfo deviceInfo = deviceValue.getInfo();
       // log.d('deviceInfo ${deviceInfo.hashCode} ${deviceInfo.usbVendorId} ${deviceInfo.usbProductId}');
       if (deviceInfo.usbVendorId == 0x6868 || deviceInfo.usbVendorId == 0x1915) {
-        var portId = '${deviceInfo.usbVendorId}x${deviceInfo.usbProductId}';
+        var portId = '${deviceInfo.usbVendorId!.toRadixString(16)}:${deviceInfo.usbProductId!.toRadixString(16)}';
 
         deviceMap[portId] = DeviceInfo(deviceValue, deviceInfo);
         output.add(portId);
@@ -239,7 +239,7 @@ class SerialConnector extends AbstractSerial {
         // value is a Uint8Array.
         messagePool.add(result.value);
       } catch (e) {
-        log.e('read error: $e');
+        log.e('read error: $e', e);
         keepReading = false;
       }
     }

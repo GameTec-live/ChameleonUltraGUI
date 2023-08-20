@@ -109,6 +109,7 @@ flutter:
   assets:
     - assets/black-ultra-standing-front.png
     - assets/black-lite-standing-front.png
+    - assets/black-both-standing-front.png
     - assets/logo.png
     - assets/black-ultra-standing-front-flashing.png
     - assets/black-lite-standing-front-flashing.png

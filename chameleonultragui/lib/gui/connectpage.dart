@@ -26,6 +26,8 @@ class ConnectPage extends StatelessWidget {
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
+          appState.log.e('${snapshot.error}', snapshot.error, snapshot.stackTrace);
+
           connector.performDisconnect();
           return Scaffold(
             appBar: AppBar(
@@ -187,7 +189,7 @@ class ConnectPage extends StatelessWidget {
                                             MainAxisAlignment.start,
                                         children: [
                                           Text(
-                                              "Chameleon ${(chameleonDevice['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
+                                              "Chameleon${appState.onWeb ? '' : (chameleonDevice['device'] == ChameleonDevice.ultra) ? ' Ultra' : ' Lite'}",
                                               style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 20)),
@@ -197,6 +199,9 @@ class ConnectPage extends StatelessWidget {
                                   Expanded(
                                       flex: 1,
                                       child: Image.asset(
+                                        appState.onWeb ?
+                                          'assets/black-both-standing-front.png'
+                                        :
                                         chameleonDevice['device'] ==
                                                 ChameleonDevice.ultra
                                             ? 'assets/black-ultra-standing-front.png'
