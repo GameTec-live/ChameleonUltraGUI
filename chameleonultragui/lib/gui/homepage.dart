@@ -26,14 +26,8 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<
-      (
-        Icon,
-        String,
-        List<String>,
-        bool,
-        ChameleonAnimation
-      )> getFutureData() async {
+  Future<(Icon, String, List<String>, bool, ChameleonAnimation)>
+      getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
     List<(ChameleonTag, ChameleonTag)> usedSlots;
@@ -514,6 +508,52 @@ class HomePageState extends State<HomePage> {
                                               Text("Reset settings"),
                                             ],
                                           )),
+                                      TextButton(
+                                          onPressed: () async {
+                                            // Ask for confirmation
+                                            Navigator.pop(
+                                                dialogContext, 'Cancel');
+                                            showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) =>
+                                                  AlertDialog(
+                                                title:
+                                                    const Text('Factory reset'),
+                                                content: const Text(
+                                                    'Are you sure you want to factory reset your Chameleon?'),
+                                                actions: <Widget>[
+                                                  TextButton(
+                                                    onPressed: () async {
+                                                      var connection =
+                                                          ChameleonCom(
+                                                              port: appState
+                                                                  .connector);
+                                                      await connection
+                                                          .factoryReset();
+                                                      await appState.connector
+                                                          .preformDisconnect();
+                                                      Navigator.pop(
+                                                          context, 'Cancel');
+                                                      appState.changesMade();
+                                                    },
+                                                    child: const Text('Yes'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            context, 'Cancel'),
+                                                    child: const Text('No'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.lock_reset),
+                                              Text("Factory reset"),
+                                            ],
+                                          )),
                                     ],
                                   ),
                                   actions: <Widget>[
@@ -536,7 +576,6 @@ class HomePageState extends State<HomePage> {
               ),
             );
           }
-        }
-      );
+        });
   }
 }
