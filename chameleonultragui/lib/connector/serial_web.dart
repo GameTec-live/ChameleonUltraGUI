@@ -37,11 +37,7 @@ class DeviceInfo {
 // Class for WebUSB API Serial Communication
 class SerialConnector extends AbstractSerial {
   Map<String, DeviceInfo> deviceMap = {};
-  List<Uint8List> messagePool = []; // TODO: Fix or rewrite on release
   DeviceInfo? currentDevice;
-
-  ReadableStreamReader? reader;
-  bool keepReading = false;
 
   @override
   // ignore: overridden_fields
@@ -189,8 +185,6 @@ class SerialConnector extends AbstractSerial {
       device = deviceValue.type;
       currentDevice = deviceValue;
 
-      listen();
-
       if (deviceValue.info.usbVendorId == 0x1915) {
         connectionType = ChameleonConnectType.dfu;
         log.w("Chameleon is in DFU mode!");
@@ -220,52 +214,23 @@ class SerialConnector extends AbstractSerial {
     return false;
   }
 
-  Future listen () async {
-    final readable = currentDevice!.port.readable;
-    if (!readable.locked && reader == null) {
-      reader = currentDevice!.port.readable.reader;
-    }
-
-    keepReading = true;
-
-    while (connected && keepReading) {
-      try {
-        var result = await reader!.read();
-        if (result.done) {
-          keepReading = false;
-          // reader.cancel() has been called.
-          break;
-        }
-        // value is a Uint8Array.
-        messagePool.add(result.value);
-      } catch (e) {
-        log.e('read error: $e', e);
-        keepReading = false;
-      }
-    }
-
-    // Allow the serial port to be closed later.
-    reader!.releaseLock();
-  }
-
   @override
   Future<Uint8List> read(int length) async {
-    final completer = Completer<Uint8List>();
-    while (true) {
-      if (messagePool.isNotEmpty) {
-        var message = messagePool[0];
-        messagePool.removeWhere((item) => item == message);
-        completer.complete(message);
-        break;
+    final reader = currentDevice!.port.readable.reader;
+
+    try {
+      var result = await reader.read();
+      if (result.done) {
+        // reader.cancel() has been called.
+        return Uint8List.fromList([]);
       }
-      await asyncSleep(100);
+      // value is a Uint8Array.
+      return result.value;
+    } catch (e) {
+      log.e('read error: $e', e);
+      rethrow;
+    } finally {
+      reader.releaseLock();
     }
-
-    return completer.future;
-  }
-
-  @override
-  Future<void> finishRead() async {
-    messagePool = [];
   }
 }
