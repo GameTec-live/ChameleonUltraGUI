@@ -194,23 +194,29 @@ class SerialConnector extends AbstractSerial {
 
   @override
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
+    if (!connected) {
+      return false;
+    }
+
     try {
       final writer = currentDevice!.port.writable.writer;
 
-      await writer.ready;
       await writer.write(command);
       await writer.close();
 
       return true;
     } catch (e) {
       log.e('write error: $e');
+      rethrow;
     }
-
-    return false;
   }
 
   @override
   Future<Uint8List> read(int length) async {
+    if (!connected) {
+      return Uint8List.fromList([]);
+    }
+
     final reader = currentDevice!.port.readable.reader;
 
     try {

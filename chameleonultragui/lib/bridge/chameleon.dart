@@ -259,7 +259,11 @@ class ChameleonCom {
       } catch (_) {}
       return null;
     }
-    await _serialInstance!.write(Uint8List.fromList(dataFrame));
+
+    final success = await _serialInstance!.write(Uint8List.fromList(dataFrame));
+    if (!success) {
+      throw ("Write failed");
+    }
 
     while (true) {
       while (true) {
