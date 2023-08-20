@@ -64,29 +64,31 @@ bool isValidHexString(String hexString) {
 
 int calculateCRC32(List<int> data) {
   Uint8List bytes = Uint8List.fromList(data);
-  Uint32List crcTable = generateCRCTable();
-  int crc = 0xFFFFFFFF;
+  List<BigInt> crcTable = generateCRCTable();
+  BigInt crc = BigInt.from(0xFFFFFFFF);
 
   for (int i = 0; i < bytes.length; i++) {
-    crc = (crc >> 8) ^ crcTable[(crc ^ bytes[i]) & 0xFF];
+    crc = (crc >> 8) ^ crcTable[(((crc ^ BigInt.from(bytes[i]))) & BigInt.from(0xFF)).toInt()];
   }
 
-  crc = crc ^ 0xFFFFFFFF;
-  return crc;
+  crc = crc ^ BigInt.from(0xFFFFFFFF);
+  return crc.toInt();
 }
 
-Uint32List generateCRCTable() {
-  Uint32List crcTable = Uint32List(256);
+List<BigInt> generateCRCTable() {
+  var bigOne = BigInt.from(1);
+
+  List<BigInt> crcTable = List.empty(growable: true);
   for (int i = 0; i < 256; i++) {
-    int crc = i;
+    BigInt crc = BigInt.from(i);
     for (int j = 0; j < 8; j++) {
-      if ((crc & 1) == 1) {
-        crc = (crc >> 1) ^ 0xEDB88320;
+      if ((crc & bigOne) == bigOne) {
+        crc = (crc >> 1) ^ BigInt.from(0xEDB88320);
       } else {
         crc = crc >> 1;
       }
     }
-    crcTable[i] = crc;
+    crcTable.add(crc);
   }
   return crcTable;
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
+import 'package:chameleonultragui/helpers/files.dart';
 import 'package:chameleonultragui/helpers/http.dart';
 import 'package:crypto/crypto.dart';
 import 'package:collection/collection.dart';
@@ -12,6 +13,39 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/protobuf/dfu-cc.pb.dart';
 import 'dart:math';
+
+Future<void> flashFirmware(MyAppState appState) async {
+  var connection = ChameleonCom(port: appState.connector);
+  Uint8List applicationDat, applicationBin;
+
+  Uint8List content = await fetchFirmware(appState.connector.device);
+
+  (applicationDat, applicationBin) = await unpackFirmware(content);
+
+  flashFile(connection, appState, applicationDat, applicationBin,
+      (progress) => appState.setProgressBar(progress / 100),
+      firmwareZip: content);
+}
+
+Future<void> flashFirmwareZip(MyAppState appState) async {
+  var connection = ChameleonCom(port: appState.connector);
+  Uint8List applicationDat, applicationBin;
+
+  FileResult? file = await pickFile(appState);
+  if (file == null) {
+    appState.log.d("Empty file picked");
+    return;
+  }
+
+  (applicationDat, applicationBin) = await unpackFirmware(file.bytes);
+
+  appState.log.d('Start flashing file');
+  await flashFile(connection, appState, applicationDat, applicationBin,
+      (progress) => appState.setProgressBar(progress / 100),
+      firmwareZip: file.bytes,
+      enterDFU: false);
+  appState.log.d('Done flashing file');
+}
 
 Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
   Uint8List content = Uint8List(0);
@@ -200,28 +234,32 @@ Future<void> flashFile(
   }
 
   bool isBLE = appState.connector.portName.contains(":");
+  bool isConnectedAndDFU = appState.connector.connected && appState.connector.connectionType == ChameleonConnectType.dfu;
 
-  if (enterDFU) {
-    await connection!.enterDFUMode();
-    await appState.connector.performDisconnect();
+  if (!isConnectedAndDFU) {
+    if (enterDFU) {
+      await connection!.enterDFUMode();
+      await appState.connector.performDisconnect();
+    }
+
+    List chameleons = [];
+
+    while (chameleons.isEmpty) {
+      await asyncSleep(250);
+      chameleons = await appState.connector.availableChameleons(true);
+    }
+
+    if (chameleons.length > 1) {
+      throw ("More than one Chameleon in DFU. Please connect only one at a time");
+    }
+
+    if (isBLE) {
+      throw ("BLE DFU not yet supported");
+    }
+
+    await appState.connector.connectSpecific(chameleons[0]['port']);
   }
 
-  List chameleons = [];
-
-  while (chameleons.isEmpty) {
-    await asyncSleep(250);
-    chameleons = await appState.connector.availableChameleons(true);
-  }
-
-  if (chameleons.length > 1) {
-    throw ("More than one Chameleon in DFU. Please connect only one at a time");
-  }
-
-  if (isBLE) {
-    throw ("BLE DFU not yet supported");
-  }
-
-  await appState.connector.connectSpecific(chameleons[0]['port']);
   var dfu = ChameleonDFU(port: appState.connector);
   await appState.connector.finishRead();
   await appState.connector.open();
@@ -230,6 +268,6 @@ Future<void> flashFile(
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");
-  appState.connector.performDisconnect();
+  await appState.connector.performDisconnect();
   appState.changesMade();
 }

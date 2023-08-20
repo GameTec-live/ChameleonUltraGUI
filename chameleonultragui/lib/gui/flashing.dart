@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -32,7 +33,9 @@ class FlashingPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                appState.easterEgg
+                appState.onWeb
+                    ? 'Select the firmware zip file to start flasing'
+                    : appState.easterEgg
                     ? 'Your ${appState.connector.deviceName} is flashing'
                     : 'Installing firmware on your ${appState.connector.deviceName}',
                 style:
@@ -40,6 +43,18 @@ class FlashingPage extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
+              TextButton(
+                onPressed: () async {
+                  await flashFirmwareZip(appState);
+                },
+                child: const Row(
+                  children: [
+                    Icon(Icons.system_security_update_good),
+                    Text(
+                        "Flash .zip FW via DFU"),
+                  ],
+                )
+              ),
               const Text(
                 'Please wait...',
                 style: TextStyle(fontSize: 20),

@@ -86,6 +86,19 @@ enum ChameleonCommand {
   final int value;
 }
 
+enum ChameleonStatus {
+  paramError(96),
+  deviceModeError(102),
+  invalidCommand(103),
+  deviceSuccess(104),
+  notImplemented(105),
+  flashWriteFail(112),
+  flashReadFail(113);
+
+  const ChameleonStatus(this.value);
+  final int value;
+}
+
 enum ChameleonTag {
   unknown(0),
   em410X(1),
@@ -393,7 +406,7 @@ class ChameleonCom {
     // - STATUS_INVALID_CMD = 0x67
     //
     var result = await sendCmdSync(ChameleonCommand.writeEM410XtoT5577, 0x00);
-    return result!.status != 0x67;
+    return result!.status != ChameleonStatus.invalidCommand.value;
   }
 
   Future<String> getDeviceBLEAddress() async {
@@ -732,7 +745,13 @@ class ChameleonCom {
 
   Future<int> getActiveSlot() async {
     // get the selected slot on the device, 0-7 (8 slots)
-    return (await sendCmdSync(ChameleonCommand.getActiveSlot, 0x00))!.data[0];
+    var resp = (await sendCmdSync(ChameleonCommand.getActiveSlot, 0x00));
+    if (resp!.data.isEmpty) {
+      // data can be empty when f.e. firmware doesnt support this command
+      return 0;
+    }
+
+    return resp.data[0];
   }
 
   Future<List<(ChameleonTag, ChameleonTag)>> getUsedSlots() async {

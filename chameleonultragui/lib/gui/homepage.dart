@@ -45,8 +45,7 @@ class HomePageState extends State<HomePage> {
 
     var getIsChameleonUltra = Future.value(appState.connector.device == ChameleonDevice.ultra);
     if (appState.onWeb) {
-      // Serial on Web doesnt provide device/manufacture names, so try to
-      // detect the current device type instead
+      // Serial on Web doesnt provide device/manufacture names, so detect the device type instead
       getIsChameleonUltra = detectChameleonUltra(connection).then((isChameleonUltra) {
         // Also update device type in SerialConnection
         appState.connector.device = isChameleonUltra ? ChameleonDevice.ultra : ChameleonDevice.lite;
@@ -153,36 +152,6 @@ class HomePageState extends State<HomePage> {
     } catch (_) {
       return ChameleonAnimation.full;
     }
-  }
-
-  Future<void> flashFirmware(MyAppState appState) async {
-    var connection = ChameleonCom(port: appState.connector);
-    Uint8List applicationDat, applicationBin;
-
-    Uint8List content = await fetchFirmware(appState.connector.device);
-
-    (applicationDat, applicationBin) = await unpackFirmware(content);
-
-    flashFile(connection, appState, applicationDat, applicationBin,
-        (progress) => appState.setProgressBar(progress / 100),
-        firmwareZip: content);
-  }
-
-  Future<void> flashFirmwareZip(MyAppState appState) async {
-    var connection = ChameleonCom(port: appState.connector);
-    Uint8List applicationDat, applicationBin;
-
-    FileResult? file = await pickFile(appState);
-    if (file == null) {
-      appState.log.d("Empty file picked");
-      return;
-    }
-
-    (applicationDat, applicationBin) = await unpackFirmware(file.bytes);
-
-    flashFile(connection, appState, applicationDat, applicationBin,
-        (progress) => appState.setProgressBar(progress / 100),
-        firmwareZip: file.bytes);
   }
 
   @override

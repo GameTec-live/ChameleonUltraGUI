@@ -92,6 +92,7 @@ class ConnectPage extends StatelessWidget {
                           ...result.map<Widget>((chameleonDevice) {
                             return ElevatedButton(
                               onPressed: () async {
+                                // TODO: move this to gui/flashing.dart
                                 if (chameleonDevice['type'] == ChameleonConnectType.dfu) {
                                   showDialog<String>(
                                     context: context,

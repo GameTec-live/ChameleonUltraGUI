@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:html';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:serial/serial.dart';
 
 class DeviceInfo {
@@ -220,25 +221,38 @@ class SerialConnector extends AbstractSerial {
 
   @override
   Future<Uint8List> read(int length) async {
+    var data = List<int>.empty(growable: true);
     if (!connected) {
-      return Uint8List.fromList([]);
+      return Uint8List.fromList(data);
     }
 
+    const readTimeout = 10; // wait max 10ms to see if there is more data on the read stream
     final reader = currentDevice!.port.readable.reader;
 
-    try {
-      var result = await reader.read();
-      if (result.done) {
-        // reader.cancel() has been called.
-        return Uint8List.fromList([]);
+    while (true) {
+      try {
+        final result = await Future.any<dynamic>([
+          reader.read() as dynamic,
+          asyncSleep(readTimeout) as dynamic,
+        ]);
+
+        if (result is ReadableStreamDefaultReadResult) {
+          if (result.done) {
+            break;
+          }
+
+          data.addAll(result.value);
+        } else {
+          // timed out, no (more) data
+          break;
+        }
+      } catch (e) {
+        log.e('read error: $e', e);
+        rethrow;
       }
-      // value is a Uint8Array.
-      return result.value;
-    } catch (e) {
-      log.e('read error: $e', e);
-      rethrow;
-    } finally {
-      reader.releaseLock();
     }
+
+    reader.releaseLock();
+    return Uint8List.fromList(data);
   }
 }

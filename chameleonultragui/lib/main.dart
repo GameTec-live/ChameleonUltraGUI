@@ -261,7 +261,8 @@ class BottomProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     return (appState.connector.connected == true &&
-            appState.connector.connectionType == ChameleonConnectType.dfu)
+            appState.connector.connectionType == ChameleonConnectType.dfu &&
+            (appState.progress != null && appState.progress !> 0))
         ? LinearProgressIndicator(
             value: appState.progress,
             backgroundColor: Colors.grey[300],

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:logger/logger.dart';
 import 'dart:math';
 
@@ -263,13 +264,15 @@ class ChameleonDFU {
       await delayedSend(packet);
 
       offset += toTransmit.length;
-      crc = (calculateCRC32(toTransmit.sublist(1)).toUnsigned(32) & 0xFFFFFFFF)
+
+      crc = (BigInt.from(calculateCRC32(toTransmit.sublist(1))) & BigInt.from(0xFFFFFFFF))
           .toInt();
       response = await calculateChecksum();
+
       validateCrc();
     }
 
-    if (Platform.isWindows || Platform.isMacOS) {
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS)) {
       // Transmittion errors fix
       await _serialInstance!.read(16384);
     }
@@ -284,9 +287,9 @@ class ChameleonDFU {
   Future<void> delayedSend(Uint8List packet) async {
     // Windows has some issues with transmitting data
     // We work around it by sending message by parts with delay
-    var offsetSize = 128;
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS)) {
+      var offsetSize = 128;
 
-    if (Platform.isWindows || Platform.isMacOS) {
       for (var offset = 0; offset < packet.length; offset += offsetSize) {
         await _serialInstance!.write(
             packet.sublist(
@@ -296,7 +299,7 @@ class ChameleonDFU {
       }
     } else {
       // Other OS: send as is
-      _serialInstance!.write(packet, firmware: true);
+      await _serialInstance!.write(packet, firmware: true);
     }
   }
 }
