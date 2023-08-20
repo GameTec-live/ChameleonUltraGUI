@@ -197,44 +197,30 @@ class _MyHomePageState extends State<MyHomePage> {
                         extended: appState.sharedPreferencesProvider
                             .getSideBarExpanded(),
                         destinations: [
+                          // Text color bug on disabled: https://github.com/flutter/flutter/pull/132345
                           // Sidebar Items
                           const NavigationRailDestination(
                             icon: Icon(Icons.home),
                             label: Text('Home'),
                           ),
                           NavigationRailDestination(
-                            icon: Icon(Icons.widgets,
-                                color: appState.connector.connected == false
-                                    ? Colors.grey
-                                    : null),
-                            label: Text('Slot Manager',
-                                style: appState.connector.connected == false
-                                    ? const TextStyle(color: Colors.grey)
-                                    : null),
+                            disabled: appState.connector.connected == false,
+                            icon: const Icon(Icons.widgets),
+                            label: const Text('Slot Manager'),
                           ),
                           const NavigationRailDestination(
                             icon: Icon(Icons.auto_awesome_motion_outlined),
                             label: Text('Saved Cards'),
                           ),
                           NavigationRailDestination(
-                            icon: Icon(Icons.wifi,
-                                color: appState.connector.connected == false
-                                    ? Colors.grey
-                                    : null),
-                            label: Text('Read Card',
-                                style: appState.connector.connected == false
-                                    ? const TextStyle(color: Colors.grey)
-                                    : null),
+                            disabled: appState.connector.connected == false,
+                            icon: const Icon(Icons.wifi),
+                            label: const Text('Read Card'),
                           ),
                           NavigationRailDestination(
-                            icon: Icon(Icons.credit_card,
-                                color: appState.connector.connected == false
-                                    ? Colors.grey
-                                    : null),
-                            label: Text('Mfkey32',
-                                style: appState.connector.connected == false
-                                    ? const TextStyle(color: Colors.grey)
-                                    : null),
+                            disabled: appState.connector.connected == false,
+                            icon: const Icon(Icons.credit_card),
+                            label: const Text('Mfkey32'),
                           ),
                           const NavigationRailDestination(
                             icon: Icon(Icons.settings),
