@@ -363,36 +363,41 @@ class HomePageState extends State<HomePage> {
                                   ),
                                 );
 
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(snackBar);
+                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
                               } else {
+                                var message = 'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...';
+                                if (appState.onWeb) {
+                                  message = 'Your Chameleon firmware is out of date! Automatic updating is not supported on web, download manually and then update by clicking on the Settings icon';
+                                }
+
                                 snackBar = SnackBar(
-                                  content: Text(
-                                      'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                                  content: Text(message),
                                   action: SnackBarAction(
                                     label: 'Close',
                                     onPressed: () {},
                                   ),
                                 );
 
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(snackBar);
-                                try {
-                                  await flashFirmware(appState);
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context)
-                                      .hideCurrentSnackBar();
-                                  snackBar = SnackBar(
-                                    content:
-                                        Text('Update error: ${e.toString()}'),
-                                    action: SnackBarAction(
-                                      label: 'Close',
-                                      onPressed: () {},
-                                    ),
-                                  );
+                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(snackBar);
+                                if (!appState.onWeb) {
+                                  try {
+                                    await flashFirmware(appState);
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context)
+                                        .hideCurrentSnackBar();
+                                    snackBar = SnackBar(
+                                      content:
+                                          Text('Update error: ${e.toString()}'),
+                                      action: SnackBarAction(
+                                        label: 'Close',
+                                        onPressed: () {},
+                                      ),
+                                    );
+
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(snackBar);
+                                  }
                                 }
                               }
                             },
