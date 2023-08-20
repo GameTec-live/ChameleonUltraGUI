@@ -3,13 +3,11 @@ import 'dart:async';
 import 'dart:html';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/helpers/general.dart';
 import 'package:serial/serial.dart';
 
 class DeviceInfo {
   final SerialPort port;
   final SerialPortInfo info;
-  final ChameleonConnectType connection = ChameleonConnectType.usb;
   ChameleonDevice _type = ChameleonDevice.ultra;
 
   DeviceInfo(this.port, this.info);
@@ -32,6 +30,13 @@ class DeviceInfo {
   set type(ChameleonDevice dev) => {
     _type = dev
   };
+
+  ChameleonConnectType get connection {
+    if (info.usbVendorId == 0x1915) {
+      return ChameleonConnectType.dfu;
+    }
+    return ChameleonConnectType.usb;
+  }
 }
 
 // Class for WebUSB API Serial Communication
@@ -72,8 +77,6 @@ class SerialConnector extends AbstractSerial {
 
   @override
   Future<bool> performDisconnect() async {
-    device = ChameleonDevice.none;
-    connectionType = ChameleonConnectType.none;
     if (currentDevice != null) {
       final readable = currentDevice!.port.readable;
 
@@ -94,8 +97,6 @@ class SerialConnector extends AbstractSerial {
 
   @override
   Future<List> availableDevices() async {
-    device = ChameleonDevice.none;
-    connectionType = ChameleonConnectType.none;
     deviceMap = {};
 
     List output = [];
@@ -121,6 +122,7 @@ class SerialConnector extends AbstractSerial {
 
     for (var devicePort in await availableDevices()) {
       var device = deviceMap[devicePort];
+      ChameleonConnectType connectionType = ChameleonConnectType.usb;
 
       if (device!.info.usbProductId == 1) { //}"Proxgrind") {
         log.d("Found Chameleon ${device.deviceName}!");
@@ -180,11 +182,8 @@ class SerialConnector extends AbstractSerial {
       device = deviceValue.type;
       currentDevice = deviceValue;
 
-      if (deviceValue.info.usbVendorId == 0x1915) {
-        connectionType = ChameleonConnectType.dfu;
-        log.w("Chameleon is in DFU mode!");
-      } else {
-        connectionType = ChameleonConnectType.usb;
+      if (currentDevice!.connection == ChameleonConnectType.dfu) {
+        log.w("Chameleon is in DFU mode! ${currentDevice!.connection}");
       }
 
       return connected;
@@ -201,6 +200,7 @@ class SerialConnector extends AbstractSerial {
     try {
       final writer = currentDevice!.port.writable.writer;
 
+      await writer.ready;
       await writer.write(command);
       await writer.close();
 

@@ -382,24 +382,18 @@ class ChameleonCom {
   }
 
   Future<bool> detectChameleonUltra() async {
-    // Check if device is a ChameleonUltra by trying to switch to reader mode,
-    // a ChameleonLite will return success on setting to reader but the
-    // actual device mode will always be emulator
-    var isReader = await isReaderDeviceMode();
-    if (isReader) {
-      return true;
-    }
-
-    await setReaderDeviceMode(true);
-
-    isReader = await isReaderDeviceMode();
-    if (isReader) {
-      // Reset device mode back to emulator
-      await setReaderDeviceMode(false);
-      return true;
-    }
-
-    return false;
+    // Check if device is a ChameleonUltra by trying to write a LF tag but
+    // with empty parameters.
+    //
+    // A Chameleon Ultra will return either:
+    // - STATUS_PAR_ERR = 0x60
+    // - STATUS_DEVICE_MODE_ERROR = 0x66
+    //
+    // A Chameleon Lite will return
+    // - STATUS_INVALID_CMD = 0x67
+    //
+    var result = await sendCmdSync(ChameleonCommand.writeEM410XtoT5577, 0x00);
+    return result!.status != 0x67;
   }
 
   Future<String> getDeviceBLEAddress() async {

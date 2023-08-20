@@ -170,6 +170,7 @@ class HomePageState extends State<HomePage> {
 
     FileResult? file = await pickFile(appState);
     if (file == null) {
+      appState.log.d("Empty file picked");
       return;
     }
 
@@ -455,10 +456,8 @@ class HomePageState extends State<HomePage> {
                                             var connection = ChameleonCom(
                                                 port: appState.connector);
                                             await connection.enterDFUMode();
-                                            appState.connector
-                                                .performDisconnect();
-                                            Navigator.pop(
-                                                dialogContext, 'Cancel');
+                                            appState.connector.performDisconnect();
+                                            Navigator.pop(dialogContext, 'Cancel');
                                             appState.changesMade();
                                           },
                                           child: const Row(
