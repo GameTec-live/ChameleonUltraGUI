@@ -78,11 +78,6 @@ class SerialConnector extends AbstractSerial {
       final readable = currentDevice!.port.readable;
 
       if (readable.locked) {
-        if (reader != null) {
-          await reader!.cancel();
-          reader = null;
-        }
-
         await readable.cancel();
       }
 
