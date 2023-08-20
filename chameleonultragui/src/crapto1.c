@@ -23,7 +23,7 @@
 #include "crapto1.h"
 #include "bucketsort.h"
 
-#if !defined LOWMEM
+#if !defined LOWMEM && !defined(_MSC_VER)
 static inline int old_filter(uint32_t const x)
 {
     uint32_t f;
