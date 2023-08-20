@@ -421,7 +421,8 @@ class HomePageState extends State<HomePage> {
                       child: Row(
                         children: [
                           const Spacer(),
-                          (isReaderDeviceMode)
+                          ...(!isChameleonUltra ? [] : [
+                            (isReaderDeviceMode)
                               ? Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: IconButton(
@@ -452,6 +453,7 @@ class HomePageState extends State<HomePage> {
                                     icon: const Icon(Icons.barcode_reader),
                                   ),
                                 ),
+                              ]),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: IconButton(
