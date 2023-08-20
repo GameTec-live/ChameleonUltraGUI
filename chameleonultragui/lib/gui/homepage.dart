@@ -202,7 +202,7 @@ class HomePageState extends State<HomePage> {
               body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
-            appState.connector.preformDisconnect();
+            appState.connector.performDisconnect();
             return Text('Error: ${snapshot.error.toString()}');
           } else {
             final (
@@ -236,7 +236,7 @@ class HomePageState extends State<HomePage> {
                                 IconButton(
                                   onPressed: () async {
                                     // Disconnect
-                                    await appState.connector.preformDisconnect();
+                                    await appState.connector.performDisconnect();
                                     appState.changesMade();
                                   },
                                   icon: const Icon(Icons.close),
@@ -470,7 +470,7 @@ class HomePageState extends State<HomePage> {
                                                 port: appState.connector);
                                             await connection.enterDFUMode();
                                             appState.connector
-                                                .preformDisconnect();
+                                                .performDisconnect();
                                             Navigator.pop(
                                                 dialogContext, 'Cancel');
                                             appState.changesMade();

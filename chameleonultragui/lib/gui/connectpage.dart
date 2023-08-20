@@ -26,7 +26,7 @@ class ConnectPage extends StatelessWidget {
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
-          connector.preformDisconnect();
+          connector.performDisconnect();
           return Scaffold(
             appBar: AppBar(
               title: const Text('Connect'),

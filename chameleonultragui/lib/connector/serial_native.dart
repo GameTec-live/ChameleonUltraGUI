@@ -13,7 +13,7 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<bool> preformConnection() async {
+  Future<bool> performConnection() async {
     for (final port in await availableDevices()) {
       if (await connectDevice(port, true)) {
         portName = port;
@@ -25,7 +25,7 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<bool> preformDisconnect() async {
+  Future<bool> performDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
     if (port != null) {

@@ -12,7 +12,7 @@ class SerialConnector extends AbstractSerial {
   UsbPort? port;
 
   @override
-  Future<bool> preformDisconnect() async {
+  Future<bool> performDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
     if (port != null) {

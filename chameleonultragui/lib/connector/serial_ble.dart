@@ -28,7 +28,7 @@ class SerialConnector extends AbstractSerial {
   @override
   Future<List> availableDevices() async {
     List<DiscoveredDevice> foundDevices = [];
-    await preformDisconnect();
+    await performDisconnect();
 
     StreamSubscription<DiscoveredDevice> subscription;
 
@@ -114,7 +114,7 @@ class SerialConnector extends AbstractSerial {
       services = [dfuUUID, dfuControl, dfuFirmware];
     }
 
-    await preformDisconnect();
+    await performDisconnect();
     connection = flutterReactiveBle
         .connectToAdvertisingDevice(
       id: devicePort,
@@ -191,7 +191,7 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<bool> preformDisconnect() async {
+  Future<bool> performDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
     if (connection != null) {

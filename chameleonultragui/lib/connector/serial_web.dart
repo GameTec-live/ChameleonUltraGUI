@@ -75,7 +75,7 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<bool> preformDisconnect() async {
+  Future<bool> performDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
     if (currentDevice != null) {

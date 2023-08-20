@@ -12,9 +12,9 @@ class SerialConnector extends AbstractSerial {
   mobile.SerialConnector mobileSerial = mobile.SerialConnector();
 
   @override
-  Future<bool> preformDisconnect() async {
-    bool ble = await bleSerial.preformDisconnect();
-    bool otg = await mobileSerial.preformDisconnect();
+  Future<bool> performDisconnect() async {
+    bool ble = await bleSerial.performDisconnect();
+    bool otg = await mobileSerial.performDisconnect();
     return (ble || otg);
   }
 

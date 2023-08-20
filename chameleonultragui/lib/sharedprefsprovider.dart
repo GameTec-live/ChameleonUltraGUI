@@ -11,6 +11,8 @@ class ChameleonDictionary {
   String name;
   List<Uint8List> keys;
 
+  ChameleonDictionary({this.id = "", this.name = "", this.keys = const []});
+
   factory ChameleonDictionary.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
     final id = data['id'] as String;
@@ -48,8 +50,6 @@ class ChameleonDictionary {
     }
     return const Utf8Encoder().convert(output);
   }
-
-  ChameleonDictionary({this.id = "", this.name = "", this.keys = const []});
 }
 
 class ChameleonTagSave {

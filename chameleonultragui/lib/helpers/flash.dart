@@ -203,7 +203,7 @@ Future<void> flashFile(
 
   if (enterDFU) {
     await connection!.enterDFUMode();
-    await appState.connector.preformDisconnect();
+    await appState.connector.performDisconnect();
   }
 
   List chameleons = [];
@@ -230,6 +230,6 @@ Future<void> flashFile(
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");
-  appState.connector.preformDisconnect();
+  appState.connector.performDisconnect();
   appState.changesMade();
 }

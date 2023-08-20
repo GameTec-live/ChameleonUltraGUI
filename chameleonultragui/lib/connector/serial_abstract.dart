@@ -12,11 +12,11 @@ class AbstractSerial {
   String portName = "None";
   ChameleonConnectType connectionType = ChameleonConnectType.none;
 
-  Future<bool> preformConnection() async {
+  Future<bool> performConnection() async {
     return false;
   }
 
-  Future<bool> preformDisconnect() async {
+  Future<bool> performDisconnect() async {
     return false;
   }
 
