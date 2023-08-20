@@ -454,12 +454,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             children: [
                               Row(
                                 children: [
-                                  const Row(
+                                  Row(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Icon(
                                         Icons.nfc_sharp,
-                                        color: Colors.blue,
+                                        color: tag.color,
                                       ),
                                     ],
                                   ),
@@ -747,12 +747,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             children: [
                               Row(
                                 children: [
-                                  const Row(
+                                  Row(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Icon(
                                         Icons.key_rounded,
-                                        color: Colors.blue,
+                                        color: dictionary.color,
                                       ),
                                     ],
                                   ),

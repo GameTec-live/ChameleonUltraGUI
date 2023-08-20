@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:io' show Platform;
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:flutter/material.dart';
 
 Future<void> asyncSleep(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
@@ -121,6 +122,14 @@ ChameleonTag numberToChameleonTag(int type) {
 ChameleonTag getTagTypeByValue(int value) {
   return ChameleonTag.values.firstWhere((element) => element.value == value,
       orElse: () => ChameleonTag.unknown);
+}
+
+String colorToHex(Color color) {
+  return '#${color.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+}
+
+Color hexToColor(String hex) {
+  return Color(int.parse(hex.substring(1, 7), radix: 16) + 0xFF000000);
 }
 
 String platformToPath() {
