@@ -58,6 +58,13 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
+  set device(ChameleonDevice device) {
+    if (currentDevice != null) {
+      currentDevice!.type = device;
+    }
+  }
+
+  @override
   get connectionType {
     if (currentDevice != null) {
       return currentDevice!.connection;

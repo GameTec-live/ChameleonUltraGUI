@@ -12,6 +12,17 @@ class AbstractSerial {
   String portName = "None";
   ChameleonConnectType connectionType = ChameleonConnectType.none;
 
+  get deviceName {
+    if (device == ChameleonDevice.ultra) {
+      return 'Chameleon Ultra';
+    }
+    if (device == ChameleonDevice.lite) {
+      return 'Chameleon Lite';
+    }
+
+    return 'Unknown';
+  }
+
   Future<bool> performConnection() async {
     return false;
   }

@@ -43,15 +43,19 @@ class HomePageState extends State<HomePage> {
       usedSlots = [];
     }
 
-    var isChameleonUltra = appState.connector.device == ChameleonDevice.ultra;
+    var getIsChameleonUltra = Future.value(appState.connector.device == ChameleonDevice.ultra);
     if (appState.onWeb) {
       // Serial on Web doesnt provide device/manufacture names, so try to
       // detect the current device type instead
-      isChameleonUltra = await detectChameleonUltra(connection);
+      getIsChameleonUltra = detectChameleonUltra(connection).then((isChameleonUltra) {
+        // Also update device type in SerialConnection
+        appState.connector.device = isChameleonUltra ? ChameleonDevice.ultra : ChameleonDevice.lite;
+        return isChameleonUltra;
+      });
     }
 
     return (
-      isChameleonUltra,
+      await getIsChameleonUltra,
       await getBatteryChargeIcon(connection),
       await getSlotIcons(connection, usedSlots),
       await getUsedSlotsOut8(connection, usedSlots),
@@ -197,6 +201,7 @@ class HomePageState extends State<HomePage> {
               body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
+            appState.log.e('Error ${snapshot.error}', snapshot.error);
             appState.connector.performDisconnect();
             return Text('Error: ${snapshot.error.toString()}');
           } else {
@@ -258,7 +263,7 @@ class HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                            "Chameleon ${isChameleonUltra ? "Ultra" : "Lite"}",
+                            appState.connector.deviceName,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize:
@@ -286,8 +291,7 @@ class HomePageState extends State<HomePage> {
                         IconButton(
                           onPressed: () async {
                             if (selectedSlot < 8) {
-                              await connection
-                                  .activateSlot(selectedSlot); // already +1
+                              await connection.activateSlot(selectedSlot); // already +1
                               setState(() {});
                               appState.changesMade();
                             }
@@ -350,7 +354,7 @@ class HomePageState extends State<HomePage> {
                               if (latestCommit.startsWith(fwVersion[1])) {
                                 snackBar = SnackBar(
                                   content: Text(
-                                      'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware is up to date'),
+                                      'Your ${appState.connector.deviceName} firmware is up to date'),
                                   action: SnackBarAction(
                                     label: 'Close',
                                     onPressed: () {},
@@ -359,9 +363,9 @@ class HomePageState extends State<HomePage> {
 
                                 ScaffoldMessenger.of(context).showSnackBar(snackBar);
                               } else {
-                                var message = 'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...';
+                                var message = 'Downloading and preparing new ${appState.connector.deviceName} firmware...';
                                 if (appState.onWeb) {
-                                  message = 'Your Chameleon firmware is out of date! Automatic updating is not supported on web, download manually and then update by clicking on the Settings icon';
+                                  message = 'Your ${appState.connector.deviceName} firmware is out of date! Automatic updating is not supported on web, download manually and then update by clicking on the Settings icon';
                                 }
 
                                 snackBar = SnackBar(
@@ -475,7 +479,7 @@ class HomePageState extends State<HomePage> {
                                                         'Cancel');
                                                     var snackBar = SnackBar(
                                                       content: Text(
-                                                          'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                                                          'Downloading and preparing new ${appState.connector.deviceName} firmware...'),
                                                       action: SnackBarAction(
                                                         label: 'Close',
                                                         onPressed: () {},

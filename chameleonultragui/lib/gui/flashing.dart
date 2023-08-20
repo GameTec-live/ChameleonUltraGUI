@@ -33,8 +33,8 @@ class FlashingPage extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 appState.easterEgg
-                    ? 'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'} is flashing'
-                    : 'Installing firmware on your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}',
+                    ? 'Your ${appState.connector.deviceName} is flashing'
+                    : 'Installing firmware on your ${appState.connector.deviceName}',
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
