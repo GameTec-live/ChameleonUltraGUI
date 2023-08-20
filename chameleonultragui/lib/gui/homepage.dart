@@ -103,10 +103,6 @@ class HomePageState extends State<HomePage> {
     return ["$firmwareVersion ($commitHash)", commitHash];
   }
 
-  Future<String> getRamusage(ChameleonCom connection) async {
-    return await connection.getMemoryUsage();
-  }
-
   Future<bool> isReaderDeviceMode(ChameleonCom connection) async {
     return await connection.isReaderDeviceMode();
   }
@@ -337,20 +333,6 @@ class HomePageState extends State<HomePage> {
                         )
                       ],
                     ),
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.center,
-                    //   children: [
-                    //     Text("Memory Usage: ",
-                    //         style: TextStyle(
-                    //             fontWeight: FontWeight.bold,
-                    //             fontSize:
-                    //                 MediaQuery.of(context).size.width / 50)),
-                    //     Text(ramUsage,
-                    //         style: TextStyle(
-                    //             fontSize:
-                    //                 MediaQuery.of(context).size.width / 50)),
-                    //   ],
-                    // ),
                     Align(
                       alignment: Alignment.bottomRight,
                       child: Row(

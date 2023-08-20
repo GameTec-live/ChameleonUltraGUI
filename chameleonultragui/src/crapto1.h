@@ -69,9 +69,9 @@ bool validate_prng_nonce(uint32_t nonce);
 #define BIT(x, n) ((x) >> (n)&1)
 #define BEBIT(x, n) BIT(x, (n) ^ 24)
 #ifdef __OPTIMIZE_SIZE__
-int filter(uint32_t const x);
+int crypto1_filter(uint32_t const x);
 #else
-static inline int filter(uint32_t const x)
+static inline int crypto1_filter(uint32_t const x)
 {
     uint32_t f;
 
