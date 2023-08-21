@@ -5,7 +5,6 @@ import 'package:logger/logger.dart';
 import 'package:chameleonultragui/helpers/open_collective.dart';
 import 'package:chameleonultragui/main.dart';
 
-//TODO: FIX INDENTING
 class SettingsMainPage extends StatefulWidget {
   const SettingsMainPage({Key? key}) : super(key: key);
 

@@ -9,6 +9,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:toggle_switch/toggle_switch.dart';
+import 'package:chameleonultragui/gui/components/slotchanger.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -25,15 +26,8 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<
-      (
-        Icon,
-        List<Icon>,
-        String,
-        List<String>,
-        bool,
-        ChameleonAnimation
-      )> getFutureData() async {
+  Future<(Icon, String, List<String>, bool, ChameleonAnimation)>
+      getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
     List<(ChameleonTag, ChameleonTag)> usedSlots;
@@ -45,7 +39,6 @@ class HomePageState extends State<HomePage> {
 
     return (
       await getBatteryChargeIcon(connection),
-      await getSlotIcons(connection, usedSlots),
       await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
       await isReaderDeviceMode(connection),
@@ -75,29 +68,6 @@ class HomePageState extends State<HomePage> {
       return const Icon(Icons.battery_alert);
     }
     return const Icon(Icons.battery_unknown);
-  }
-
-  Future<List<Icon>> getSlotIcons(ChameleonCom connection,
-      List<(ChameleonTag, ChameleonTag)> usedSlots) async {
-    List<Icon> icons = [];
-    try {
-      selectedSlot = await connection.getActiveSlot() + 1;
-    } catch (_) {
-      selectedSlot = 1;
-    }
-    for (int i = 1; i < 9; i++) {
-      if (i == selectedSlot) {
-        icons.add(const Icon(
-          Icons.circle_outlined,
-          color: Colors.red,
-        ));
-      } else if (false) {
-        icons.add(const Icon(Icons.circle));
-      } else {
-        icons.add(const Icon(Icons.circle_outlined));
-      }
-    }
-    return icons;
   }
 
   Future<String> getUsedSlotsOut8(ChameleonCom connection,
@@ -173,7 +143,7 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
+    //var connection = ChameleonCom(port: appState.connector);
 
     return FutureBuilder(
         future: getFutureData(),
@@ -191,7 +161,6 @@ class HomePageState extends State<HomePage> {
           } else {
             final (
               batteryIcon,
-              slotIcons,
               usedSlots,
               fwVersion,
               isReaderDeviceMode,
@@ -257,33 +226,7 @@ class HomePageState extends State<HomePage> {
                     Text("Used Slots: $usedSlots/8",
                         style: TextStyle(
                             fontSize: MediaQuery.of(context).size.width / 50)),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          onPressed: () async {
-                            if (selectedSlot > 1) {
-                              await connection.activateSlot(selectedSlot - 2);
-                              setState(() {});
-                              appState.changesMade();
-                            }
-                          },
-                          icon: const Icon(Icons.arrow_back),
-                        ),
-                        ...slotIcons,
-                        IconButton(
-                          onPressed: () async {
-                            if (selectedSlot < 8) {
-                              await connection
-                                  .activateSlot(selectedSlot); // already +1
-                              setState(() {});
-                              appState.changesMade();
-                            }
-                          },
-                          icon: const Icon(Icons.arrow_forward),
-                        ),
-                      ],
-                    ),
+                    const SlotChanger(),
                     Expanded(
                       child: FractionallySizedBox(
                         widthFactor: 0.4,
@@ -312,8 +255,8 @@ class HomePageState extends State<HomePage> {
                           padding: const EdgeInsets.all(4.0),
                           child: IconButton(
                             onPressed: () async {
-                              var snackBar;
-                              var latestCommit;
+                              SnackBar snackBar;
+                              String latestCommit;
 
                               try {
                                 latestCommit = await latestAvailableCommit(
@@ -563,6 +506,52 @@ class HomePageState extends State<HomePage> {
                                             children: [
                                               Icon(Icons.lock_reset),
                                               Text("Reset settings"),
+                                            ],
+                                          )),
+                                      TextButton(
+                                          onPressed: () async {
+                                            // Ask for confirmation
+                                            Navigator.pop(
+                                                dialogContext, 'Cancel');
+                                            showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) =>
+                                                  AlertDialog(
+                                                title:
+                                                    const Text('Factory reset'),
+                                                content: const Text(
+                                                    'Are you sure you want to factory reset your Chameleon?'),
+                                                actions: <Widget>[
+                                                  TextButton(
+                                                    onPressed: () async {
+                                                      var connection =
+                                                          ChameleonCom(
+                                                              port: appState
+                                                                  .connector);
+                                                      await connection
+                                                          .factoryReset();
+                                                      await appState.connector
+                                                          .preformDisconnect();
+                                                      Navigator.pop(
+                                                          context, 'Cancel');
+                                                      appState.changesMade();
+                                                    },
+                                                    child: const Text('Yes'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            context, 'Cancel'),
+                                                    child: const Text('No'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.lock_reset),
+                                              Text("Factory reset"),
                                             ],
                                           )),
                                     ],
