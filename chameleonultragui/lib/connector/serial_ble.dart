@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -30,6 +31,8 @@ class BLESerial extends AbstractSerial {
     List<DiscoveredDevice> foundDevices = [];
     await preformDisconnect();
 
+    Completer<List<DiscoveredDevice>> completer =
+        Completer<List<DiscoveredDevice>>();
     StreamSubscription<DiscoveredDevice> subscription;
 
     subscription = flutterReactiveBle.scanForDevices(
@@ -44,15 +47,21 @@ class BLESerial extends AbstractSerial {
         }
         foundDevices.add(device);
       }
+    }, onError: (e) {
+      log.e("Got BLE search error: $e");
+      if (Platform.isIOS) {
+        throw (e); // BLE is primary there, throw exception
+      } else {
+        completer.complete([]); // Other platforms: we don't care
+      }
     });
-
-    Completer<List<DiscoveredDevice>> completer =
-        Completer<List<DiscoveredDevice>>();
 
     Timer(const Duration(seconds: 2), () {
       subscription.cancel();
-      log.d('Found BLE devices: ${foundDevices.length}');
-      completer.complete(foundDevices);
+      try {
+        completer.complete(foundDevices);
+        log.d('Found BLE devices: ${foundDevices.length}');
+      } catch (_) {}
     });
 
     return completer.future;
