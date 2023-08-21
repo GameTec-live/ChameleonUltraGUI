@@ -63,10 +63,10 @@ enum ChameleonCommand {
   mf1SetAntiCollision(4001),
 
   // mfkey32
-  mf1SetDetectionEnable(4003),
-  mf1GetDetectionCount(4004),
-  mf1GetDetectionResult(4005),
-  mf1GetDetectionStatus(4006),
+  mf1SetDetectionEnable(4004),
+  mf1GetDetectionCount(4005),
+  mf1GetDetectionResult(4006),
+  mf1GetDetectionStatus(4007),
 
   // emulator settings
   mf1GetEmulatorConfig(4009),
