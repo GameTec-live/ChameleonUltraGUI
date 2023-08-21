@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/components/cardeditmenu.dart';
+import 'package:chameleonultragui/gui/components/dicteditmenu.dart';
 
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
@@ -95,7 +96,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               child: Card(
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
-                  crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 2 : 1,
+                  crossAxisCount:
+                      MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: tags.length + 1,
@@ -358,9 +360,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Text("UID: ${tag.uid}"),
-                                      Text("Tag Type: ${chameleonTagToString(tag.tag)}"),
-                                      Text("SAK: ${tag.sak == 0 ? "Unavailable" : tag.sak}"),
-                                      Text("ATQA: ${tag.atqa.asMap().containsKey(0) ? tag.atqa[0] : ""} ${tag.atqa.asMap().containsKey(1) ? tag.atqa[1] : "Unavailable"}"),
+                                      Text(
+                                          "Tag Type: ${chameleonTagToString(tag.tag)}"),
+                                      Text(
+                                          "SAK: ${tag.sak == 0 ? "Unavailable" : tag.sak}"),
+                                      Text(
+                                          "ATQA: ${tag.atqa.asMap().containsKey(0) ? tag.atqa[0] : ""} ${tag.atqa.asMap().containsKey(1) ? tag.atqa[1] : "Unavailable"}"),
                                     ],
                                   ),
                                   actions: [
@@ -375,7 +380,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       },
                                       icon: const Icon(Icons.edit),
                                     ),
-
                                     IconButton(
                                       onPressed: () async {
                                         await showDialog(
@@ -411,7 +415,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       },
                                       icon: const Icon(Icons.download_rounded),
                                     ),
-
                                     IconButton(
                                       onPressed: () async {
                                         var tags = appState
@@ -430,7 +433,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       },
                                       icon: const Icon(Icons.delete_outline),
                                     ),
-
                                     ElevatedButton(
                                       onPressed: () {
                                         Navigator.pop(context);
@@ -584,7 +586,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               child: Card(
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
-                  crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 2 : 1,
+                  crossAxisCount:
+                      MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: dictionaries.length + 1,
@@ -648,10 +651,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                         constraints: const BoxConstraints(maxHeight: 100),
                         child: ElevatedButton(
                           onPressed: () {
-                            List<Text> displayList = [];
+                            String output = "";
                             for (var key in dictionary.keys) {
-                              displayList.add(Text(key.toString()));
+                              output += "${bytesToHexSpace(key)}\n";
                             }
+                            output.trim();
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
@@ -660,23 +664,31 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   content: Column(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      Text("Key Count: ${dictionary.keys.length}"),
+                                      Text(
+                                          "Key Count: ${dictionary.keys.length}"),
                                       const SizedBox(height: 10),
                                       SizedBox(
                                         height: 400,
                                         width: 600,
                                         child: ListView(
-                                          children: displayList,
+                                          children: [Text(output),],
                                         ),
                                       )
                                     ],
                                   ),
                                   actions: [
                                     IconButton(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return DictEditMenu(
+                                                dict: dictionary);
+                                          },
+                                        );
+                                      },
                                       icon: const Icon(Icons.edit),
                                     ),
-
                                     IconButton(
                                       onPressed: () async {
                                         try {
@@ -704,7 +716,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       },
                                       icon: const Icon(Icons.download_rounded),
                                     ),
-
                                     IconButton(
                                       onPressed: () async {
                                         var dictionaries = appState
@@ -723,7 +734,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       },
                                       icon: const Icon(Icons.delete_outline),
                                     ),
-
                                     ElevatedButton(
                                       onPressed: () {
                                         Navigator.pop(context);
@@ -789,7 +799,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     IconButton(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return DictEditMenu(
+                                                dict: dictionary);
+                                          },
+                                        );
+                                      },
                                       icon: const Icon(Icons.edit),
                                     ),
                                     IconButton(
