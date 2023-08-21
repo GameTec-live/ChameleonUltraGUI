@@ -36,7 +36,7 @@ class CardEditMenuState extends State<CardEditMenu> {
     selectedType = widget.tagSave.tag;
     uid = widget.tagSave.uid;
     uidsak = widget.tagSave.sak;
-    uidatqa = widget.tagSave.atqa.asMap().containsKey(0) ? Uint8List.fromList([widget.tagSave.atqa[0], widget.tagSave.atqa[1]]) : Uint8List.fromList([]);
+    uidatqa = Uint8List.fromList(widget.tagSave.atqa);
     uidController = TextEditingController(text: uid);
     sak4Controller = TextEditingController(text: bytesToHex(Uint8List.fromList([uidsak])));
     atqa4Controller = TextEditingController(text: bytesToHexSpace(uidatqa));
