@@ -155,7 +155,7 @@ class CardEditMenuState extends State<CardEditMenu> {
               const SizedBox(height: 40),
             ]),
 
-            ElevatedButton(
+            /*ElevatedButton(
               onPressed: () {
                 showDialog(
                   context: context,
@@ -165,7 +165,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                 );
               },
               child: const Text("Edit data"),
-            ),
+            ),*/ //TODO: Make Hex editor
           ],
         ),
       ),
