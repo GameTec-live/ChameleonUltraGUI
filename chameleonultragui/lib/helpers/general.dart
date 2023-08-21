@@ -153,3 +153,11 @@ String numToVerCode(int versionCode) {
   int minor = versionCode & 0xFF;
   return '$major.$minor';
 }
+
+ChameleonTagFrequiency chameleontagToFrequency(ChameleonTag tag) {
+  if (chameleonTagToString(tag).toLowerCase().contains("mifare") || chameleonTagToString(tag).toLowerCase().contains("ntag")) {
+    return ChameleonTagFrequiency.hf;
+  } else {
+    return ChameleonTagFrequiency.lf;
+  }
+}
