@@ -19,25 +19,35 @@ class CardEditMenu extends StatefulWidget {
 }
 
 class CardEditMenuState extends State<CardEditMenu> {
+  ChameleonTag selectedType = ChameleonTag.unknown;
+  String uid = "";
+  int uidsak = 0;
+  Uint8List uidatqa = Uint8List.fromList([]);
+  TextEditingController uidController = TextEditingController();
+  TextEditingController sak4Controller = TextEditingController();
+  TextEditingController atqa4Controller =TextEditingController();
+  TextEditingController nameController = TextEditingController();
+  Color pickerColor = Colors.deepOrange;
+  Color currentColor = Colors.deepOrange;
+
   @override
   void initState() {
     super.initState();
+    selectedType = widget.tagSave.tag;
+    uid = widget.tagSave.uid;
+    uidsak = widget.tagSave.sak;
+    uidatqa = widget.tagSave.atqa.asMap().containsKey(0) ? Uint8List.fromList([widget.tagSave.atqa[0], widget.tagSave.atqa[1]]) : Uint8List.fromList([]);
+    uidController = TextEditingController(text: uid);
+    sak4Controller = TextEditingController(text: bytesToHex(Uint8List.fromList([uidsak])));
+    atqa4Controller = TextEditingController(text: bytesToHexSpace(uidatqa));
+    nameController = TextEditingController(text: widget.tagSave.name);
+    pickerColor = widget.tagSave.color;
+    currentColor = widget.tagSave.color;
   }
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    ChameleonTag selectedType = widget.tagSave.tag;
-    var uid = widget.tagSave.uid;
-    var uidsak = widget.tagSave.sak;
-    var uidatqa =
-        widget.tagSave.atqa.asMap().containsKey(0) ? Uint8List.fromList([widget.tagSave.atqa[0], widget.tagSave.atqa[1]]) : Uint8List.fromList([]);
-    final uidController = TextEditingController(text: uid);
-    final sak4Controller =
-        TextEditingController(text: bytesToHex(Uint8List.fromList([uidsak])));
-    final atqa4Controller =
-        TextEditingController(text: bytesToHexSpace(uidatqa));
-    final nameController = TextEditingController(text: widget.tagSave.name);
 
     return AlertDialog(
       title: const Text('Edit card'),
@@ -46,8 +56,56 @@ class CardEditMenuState extends State<CardEditMenu> {
           children: [
             TextFormField(
               controller: nameController,
-              decoration: const InputDecoration(
-                  labelText: 'Name', hintText: 'Enter name of card'),
+              decoration: InputDecoration(
+                  labelText: 'Name',
+                  hintText: 'Enter name of card',
+                  prefix: IconButton(
+                    icon: Icon(Icons.nfc, color: currentColor),
+                    onPressed: () async {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Pick a color!'),
+                            content: SingleChildScrollView(
+                              child: ColorPicker(
+                                pickerColor: pickerColor,
+                                onColorChanged: (Color color) {
+                                  setState(() {
+                                    pickerColor = color;
+                                  });
+                                },
+                                pickerAreaHeightPercent: 0.8,
+                              ),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () {
+                                  setState(() => currentColor = pickerColor = Colors.deepOrange);
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('Reset to default'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                child: const Text('Ok'),
+                                onPressed: () {
+                                  setState(() => currentColor = pickerColor);
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  )
+                ),
             ),
             DropdownButton<ChameleonTag>(
               value: selectedType,
@@ -72,8 +130,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                 setState(() {
                   selectedType = newValue!;
                 });
-                appState.log.d('Changed card type to ${chameleonTagToString(selectedType)}');
-                appState.changesMade(); // TODO: Make refreshing work
+                appState.changesMade();
               },
             ),
             Column(children: [
@@ -141,6 +198,7 @@ class CardEditMenuState extends State<CardEditMenu> {
               uid: uidController.text,
               tag: selectedType,
               data: widget.tagSave.data,
+              color: currentColor,
             );
             tags.add(tag);
             appState.sharedPreferencesProvider.setChameleonTags(tags);
