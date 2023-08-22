@@ -10,14 +10,21 @@ enum ChameleonCommand {
   getAppVersion(1000),
   changeMode(1001),
   getDeviceMode(1002),
+  getGitCommitHash(1017),
+  getBatteryCharge(1025),
+
+  // slot
   setSlotActivated(1003),
   setSlotTagType(1004),
   setSlotDataDefault(1005),
   setSlotEnable(1006),
-
   setSlotTagNick(1007),
   getSlotTagNick(1008),
   saveSlotNicks(1009),
+  getActiveSlot(1018),
+  getSlotInfo(1019),
+  getEnabledSlots(1023),
+  deleteSlotInfo(1024),
 
   // bootloader
   enterBootloader(1010),
@@ -33,13 +40,6 @@ enum ChameleonCommand {
   // animation
   setAnimationMode(1015),
   getAnimationMode(1016),
-
-  getGitCommitHash(1017),
-
-  // slot
-  getActiveSlot(1018),
-  getSlotInfo(1019),
-  getEnabledSlots(1023),
 
   factoryReset(1020), // WARNING: ERASES ALL
 
@@ -63,10 +63,10 @@ enum ChameleonCommand {
   mf1SetAntiCollision(4001),
 
   // mfkey32
-  mf1SetDetectionEnable(4003),
-  mf1GetDetectionCount(4004),
-  mf1GetDetectionResult(4005),
-  mf1GetDetectionStatus(4006),
+  mf1SetDetectionEnable(4004),
+  mf1GetDetectionCount(4005),
+  mf1GetDetectionResult(4006),
+  mf1GetDetectionStatus(4007),
 
   // emulator settings
   mf1GetEmulatorConfig(4009),
@@ -704,6 +704,12 @@ class ChameleonCom {
     return utf8.decode(resp!.data);
   }
 
+  Future<void> deleteSlotInfo(
+      int index, ChameleonTagFrequency frequiency) async {
+    await sendCmdSync(ChameleonCommand.deleteSlotInfo, 0x00,
+        data: Uint8List.fromList([index, frequiency.value]));
+  }
+
   Future<void> saveSlotData() async {
     await sendCmdSync(ChameleonCommand.saveSlotNicks, 0x00);
   }
@@ -826,7 +832,6 @@ class ChameleonCom {
   Future<ChameleonMf1WriteMode> getMf1WriteMode() async {
     var resp = await sendCmdSync(ChameleonCommand.mf1GetWriteMode, 0x00);
     if (resp!.data.length != 1) throw ("Invalid data length");
-    print(resp.data[0]);
     if (resp.data[0] == 1) {
       return ChameleonMf1WriteMode.deined;
     } else if (resp.data[0] == 2) {
@@ -853,9 +858,9 @@ class ChameleonCom {
     return slots;
   }
 
-  // NOT IMPLEMENTED METHODS
-  Future<int> getBatteryCharge() async {
-    // 0-100, get device battery charge
-    return 0;
+  Future<(int, int)> getBatteryCharge() async {
+    var resp = await sendCmdSync(ChameleonCommand.getBatteryCharge, 0x00);
+    if (resp!.data.length != 3) throw ("Invalid data length");
+    return (_toInt16BE(resp.data.sublist(0, 2)), resp.data[2]);
   }
 }

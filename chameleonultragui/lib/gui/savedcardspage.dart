@@ -11,6 +11,9 @@ import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:uuid/uuid.dart';
 
+import 'components/cardeditmenu.dart';
+import 'components/dicteditmenu.dart';
+
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
 
@@ -332,17 +335,25 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     children: [
                                       Text("UID: ${tag.uid}"),
                                       Text("Tag Type: ${tag.tag.name}"),
-                                      Text("SAK: ${tag.sak}"),
-                                      Text("ATQA: ${tag.atqa[0]} ${tag.atqa[1]}"),
+                                      Text(
+                                          "SAK: ${tag.sak == 0 ? "Unavailable" : tag.sak}"),
+                                      Text(
+                                          "ATQA: ${tag.atqa.asMap().containsKey(0) ? tag.atqa[0] : ""} ${tag.atqa.asMap().containsKey(1) ? tag.atqa[1] : "Unavailable"}"),
                                     ],
                                   ),
                                   actions: [
-                                    const IconButton(
-                                      onPressed: null,
-                                      icon: Icon(Icons.edit),
-                                      tooltip: 'Not implemented yet',
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return CardEditMenu(tagSave: tag);
+                                          },
+                                        );
+                                      },
+                                      icon: const Icon(Icons.edit),
+                                      tooltip: 'Edit card',
                                     ),
-
                                     IconButton(
                                       onPressed: () async {
                                         await showDialog(
@@ -462,10 +473,17 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    const IconButton(
-                                      onPressed: null,
-                                      icon: Icon(Icons.edit),
-                                      tooltip: 'Not implemented yet',
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return CardEditMenu(tagSave: tag);
+                                          },
+                                        );
+                                      },
+                                      icon: const Icon(Icons.edit),
+                                      tooltip: 'Edit card',
                                     ),
                                     IconButton(
                                       onPressed: () async {
@@ -632,10 +650,18 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     ],
                                   ),
                                   actions: [
-                                    const IconButton(
-                                      onPressed: null,
-                                      icon: Icon(Icons.edit),
-                                      tooltip: 'Not implemented yet',
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return DictEditMenu(
+                                                dict: dictionary);
+                                          },
+                                        );
+                                      },
+                                      icon: const Icon(Icons.edit),
+                                      tooltip: 'Edit dictionary',
                                     ),
 
                                     IconButton(
@@ -734,10 +760,18 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    const IconButton(
-                                      onPressed: null,
-                                      icon: Icon(Icons.edit),
-                                      tooltip: 'Not implemented yet',
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return DictEditMenu(
+                                                dict: dictionary);
+                                          },
+                                        );
+                                      },
+                                      icon: const Icon(Icons.edit),
+                                      tooltip: 'Edit dictionary',
                                     ),
                                     IconButton(
                                       onPressed: () async {

@@ -1,5 +1,4 @@
 
-import 'package:chameleonultragui/gui/widgets/dialog_device_settings.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/foundation.dart';
@@ -10,8 +9,11 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:sizer_pro/sizer.dart';
 
+import 'components/dialog_device_settings.dart';
 import 'features/flash_firmware_latest.dart';
 import 'features/flash_firmware_zip.dart';
+import 'package:toggle_switch/toggle_switch.dart';
+import 'package:chameleonultragui/gui/components/slotchanger.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -28,16 +30,8 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<
-      (
-        bool,
-        Icon,
-        List<Icon>,
-        String,
-        List<String>,
-        bool,
-        ChameleonAnimation
-      )> getFutureData() async {
+  Future<(bool, Icon, String, List<String>, bool, ChameleonAnimation)>
+      getFutureData() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
     List<(ChameleonTag, ChameleonTag)> usedSlots;
@@ -60,7 +54,6 @@ class HomePageState extends State<HomePage> {
     return (
       await getIsChameleonUltra,
       await getBatteryChargeIcon(connection),
-      await getSlotIcons(connection, usedSlots),
       await getUsedSlotsOut8(connection, usedSlots),
       await getFWversion(connection),
       await isReaderDeviceMode(connection),
@@ -73,7 +66,11 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<Icon> getBatteryChargeIcon(ChameleonCom connection) async {
-    int charge = await connection.getBatteryCharge();
+    int charge = 0;
+    try {
+      (_, charge) = await connection.getBatteryCharge();
+    } catch (_) {}
+
     if (charge > 98) {
       return const Icon(Icons.battery_full);
     } else if (charge > 87) {
@@ -93,38 +90,20 @@ class HomePageState extends State<HomePage> {
     } else if (charge > 0) {
       return const Icon(Icons.battery_alert);
     }
-    return const Icon(Icons.battery_unknown);
-  }
 
-  Future<List<Icon>> getSlotIcons(ChameleonCom connection,
-      List<(ChameleonTag, ChameleonTag)> usedSlots) async {
-    List<Icon> icons = [];
-    try {
-      selectedSlot = await connection.getActiveSlot() + 1;
-    } catch (_) {
-      selectedSlot = 1;
-    }
-    for (int i = 1; i < 9; i++) {
-      if (i == selectedSlot) {
-        icons.add(const Icon(
-          Icons.circle_outlined,
-          color: Colors.red,
-        ));
-      } else if (false) {
-        icons.add(const Icon(Icons.circle));
-      } else {
-        icons.add(const Icon(Icons.circle_outlined));
-      }
-    }
-    return icons;
+    return const Icon(Icons.battery_unknown);
   }
 
   Future<String> getUsedSlotsOut8(ChameleonCom connection,
       List<(ChameleonTag, ChameleonTag)> usedSlots) async {
     int usedSlotsOut8 = 0;
-    for (int i = 0; i < 8; i++) {
-      if (false) {
-        usedSlotsOut8++;
+
+    if (usedSlots.isNotEmpty) {
+      for (int i = 0; i < 8; i++) {
+        if (usedSlots[i].$1 != ChameleonTag.unknown ||
+            usedSlots[i].$2 != ChameleonTag.unknown) {
+          usedSlotsOut8++;
+        }
       }
     }
     return usedSlotsOut8.toString();
@@ -161,7 +140,7 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
+    //var connection = ChameleonCom(port: appState.connector);
 
     return FutureBuilder(
         future: getFutureData(),
@@ -178,7 +157,6 @@ class HomePageState extends State<HomePage> {
             final (
               isChameleonUltra,
               batteryIcon,
-              slotIcons,
               usedSlots,
               fwVersion,
               isReaderDeviceMode,
@@ -329,32 +307,7 @@ class HomePageState extends State<HomePage> {
                     Text("Used Slots: $usedSlots/8",
                         style: TextStyle(
                             fontSize: MediaQuery.of(context).size.width / 50)),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          onPressed: () async {
-                            if (selectedSlot > 1) {
-                              await connection.activateSlot(selectedSlot - 2);
-                              setState(() {});
-                              appState.changesMade();
-                            }
-                          },
-                          icon: const Icon(Icons.arrow_back),
-                        ),
-                        ...slotIcons,
-                        IconButton(
-                          onPressed: () async {
-                            if (selectedSlot < 8) {
-                              await connection.activateSlot(selectedSlot); // already +1
-                              setState(() {});
-                              appState.changesMade();
-                            }
-                          },
-                          icon: const Icon(Icons.arrow_forward),
-                        ),
-                      ],
-                    ),
+                    const SlotChanger(),
                     Expanded(
                       child: FractionallySizedBox(
                         widthFactor: 0.4,
@@ -396,10 +349,7 @@ class HomePageState extends State<HomePage> {
                                 snackBar = SnackBar(
                                   content:
                                       Text('Update error: ${e.toString()}'),
-                                  action: SnackBarAction(
-                                    label: 'Close',
-                                    onPressed: () => scaffoldMessenger.hideCurrentSnackBar()
-                                  ),
+                                  showCloseIcon: true,
                                 );
 
                                 scaffoldMessenger.showSnackBar(snackBar);
@@ -410,10 +360,7 @@ class HomePageState extends State<HomePage> {
                                 snackBar = SnackBar(
                                   content: Text(
                                       'Your ${appState.connector.deviceName} firmware is up to date'),
-                                  action: SnackBarAction(
-                                    label: 'Close',
-                                    onPressed: () => scaffoldMessenger.hideCurrentSnackBar()
-                                  ),
+                                  showCloseIcon: true,
                                 );
 
                                 scaffoldMessenger.showSnackBar(snackBar);
@@ -425,10 +372,7 @@ class HomePageState extends State<HomePage> {
 
                                 snackBar = SnackBar(
                                   content: Text(message),
-                                  action: SnackBarAction(
-                                    label: 'Close',
-                                    onPressed: () => scaffoldMessenger.hideCurrentSnackBar()
-                                  ),
+                                  showCloseIcon: true,
                                 );
 
                                 scaffoldMessenger.showSnackBar(snackBar);
@@ -441,10 +385,7 @@ class HomePageState extends State<HomePage> {
                                     snackBar = SnackBar(
                                       content:
                                           Text('Update error: ${e.toString()}'),
-                                      action: SnackBarAction(
-                                        label: 'Close',
-                                        onPressed: () => scaffoldMessenger.hideCurrentSnackBar()
-                                      ),
+                                      showCloseIcon: true,
                                     );
 
                                     scaffoldMessenger

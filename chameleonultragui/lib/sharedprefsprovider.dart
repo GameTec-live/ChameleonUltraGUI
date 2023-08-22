@@ -10,25 +10,29 @@ class ChameleonDictionary {
   String id;
   String name;
   List<Uint8List> keys;
-
-  ChameleonDictionary({this.id = "", this.name = "", this.keys = const []});
+  Color color;
 
   factory ChameleonDictionary.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
     final id = data['id'] as String;
     final name = data['name'] as String;
     final encodedKeys = data['keys'] as List<dynamic>;
+    if (data['color'] == null) {
+      data['color'] = colorToHex(Colors.deepOrange);
+    }
+    final color = hexToColor(data['color']);
     List<Uint8List> keys = [];
     for (var key in encodedKeys) {
       keys.add(Uint8List.fromList(List<int>.from(key)));
     }
-    return ChameleonDictionary(id: id, name: name, keys: keys);
+    return ChameleonDictionary(id: id, name: name, keys: keys, color: color);
   }
 
   String toJson() {
     return jsonEncode({
       'id': id,
       'name': name,
+      'color': colorToHex(color),
       'keys': keys.map((key) => key.toList()).toList()
     });
   }
@@ -50,6 +54,8 @@ class ChameleonDictionary {
     }
     return const Utf8Encoder().convert(output);
   }
+
+  ChameleonDictionary({this.id = "", this.name = "", this.keys = const [], this.color = Colors.deepOrange});
 }
 
 class ChameleonTagSave {
@@ -60,6 +66,7 @@ class ChameleonTagSave {
   String name;
   ChameleonTag tag;
   List<Uint8List> data;
+  Color color;
 
   factory ChameleonTagSave.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
@@ -69,6 +76,10 @@ class ChameleonTagSave {
     final atqa = List<int>.from(data['atqa'] as List<dynamic>);
     final name = data['name'] as String;
     final tag = getTagTypeByValue(data['tag']);
+    if (data['color'] == null) {
+      data['color'] = colorToHex(Colors.deepOrange);
+    }
+    final color = hexToColor(data['color']);
     final encodedData = data['data'] as List<dynamic>;
     List<Uint8List> tagData = [];
     for (var block in encodedData) {
@@ -81,6 +92,7 @@ class ChameleonTagSave {
         name: name,
         tag: tag,
         data: tagData,
+        color: color,
         atqa: Uint8List.fromList(atqa));
   }
 
@@ -92,6 +104,7 @@ class ChameleonTagSave {
       'atqa': atqa.toList(),
       'name': name,
       'tag': tag.value,
+      'color': colorToHex(color),
       'data': data.map((data) => data.toList()).toList()
     });
   }
@@ -103,6 +116,7 @@ class ChameleonTagSave {
       required this.sak,
       required this.atqa,
       required this.tag,
+      this.color = Colors.deepOrange,
       this.data = const []});
 }
 

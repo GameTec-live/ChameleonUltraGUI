@@ -1,14 +1,14 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/features/flash_firmware_zip.dart';
-import 'package:chameleonultragui/gui/widgets/card_web_pair_devices.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'features/flash_firmware_latest.dart';
-import 'widgets/button_chameleon_device.dart';
-import 'widgets/button_dfu_device.dart';
+import 'components/card_web_pair_devices.dart';
+import 'components/button_chameleon_device.dart';
+import 'components/button_dfu_device.dart';
 
 class ConnectPage extends StatelessWidget {
   const ConnectPage({super.key});

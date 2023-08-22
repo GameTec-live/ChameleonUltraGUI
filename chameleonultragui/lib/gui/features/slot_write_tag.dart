@@ -76,9 +76,10 @@ Future<bool> slotWriteTag({
     onProgress(100);
     return true;
   }
-
+  
   if (card.tag == ChameleonTag.em410X) {
     onProgress(0);
+
     await connection.setReaderDeviceMode(false);
     await connection.enableSlot(slotIndex, true);
     await connection.activateSlot(slotIndex);

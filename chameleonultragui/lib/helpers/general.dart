@@ -111,6 +111,14 @@ ChameleonTag getTagTypeByValue(int value) {
       orElse: () => ChameleonTag.unknown);
 }
 
+String colorToHex(Color color) {
+  return '#${color.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+}
+
+Color hexToColor(String hex) {
+  return Color(int.parse(hex.substring(1, 7), radix: 16) + 0xFF000000);
+}
+
 String platformToPath() {
   if (Platform.isAndroid) {
     return "android";

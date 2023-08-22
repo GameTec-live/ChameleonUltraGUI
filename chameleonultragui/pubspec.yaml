@@ -62,6 +62,7 @@ dependencies:
   protobuf: ^2.0.0
   collection: ^1.17.1
   crypto: ^3.0.3
+  flutter_colorpicker: ^1.0.3
   serial: # ^0.0.5 Use git branch until 0.0.5 is released
     git:
       url: https://github.com/xclud/dart_serial
