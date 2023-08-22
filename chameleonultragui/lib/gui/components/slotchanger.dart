@@ -55,6 +55,17 @@ class SlotChangerState extends State<SlotChanger> {
     return icons;
   }
 
+  List<Icon> presold = [
+    const Icon(Icons.circle_outlined),
+    const Icon(Icons.circle_outlined),
+    const Icon(Icons.circle_outlined),
+    const Icon(Icons.circle_outlined),
+    const Icon(Icons.circle_outlined),
+    const Icon(Icons.circle_outlined),
+    const Icon(Icons.circle_outlined),
+    const Icon(Icons.circle_outlined),
+  ];
+
   @override
   Widget build(BuildContext context) {
     var appState = context.read<MyAppState>();
@@ -64,12 +75,26 @@ class SlotChangerState extends State<SlotChanger> {
         future: getFutureData(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: () async {},
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                ...presold,
+                IconButton(
+                  onPressed: () async {},
+                  icon: const Icon(Icons.arrow_forward),
+                ),
+              ],
+            );
           } else if (snapshot.hasError) {
             appState.connector.preformDisconnect();
             return Text('Error: ${snapshot.error.toString()}');
           } else {
             final slotIcons = snapshot.data;
+            presold = slotIcons;
 
             return Row(
               mainAxisAlignment: MainAxisAlignment.center,

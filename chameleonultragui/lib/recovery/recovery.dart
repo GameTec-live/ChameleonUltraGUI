@@ -9,6 +9,9 @@ import 'package:dylib/dylib.dart';
 import 'bindings.dart';
 import 'package:ffi/ffi.dart';
 import 'dart:ffi' as ffi;
+import 'package:logger/logger.dart';
+
+Logger log = Logger();
 
 class DarksideItemDart {
   int nt1;
@@ -110,14 +113,14 @@ String resolvePath() {
   );
   if (!io.File(path).existsSync() &&
       Platform.environment.containsKey('FLUTTER_TEST')) {
-    print("Library test hotfix: Library not exists");
+    log.d("Library test hotfix: Library not exists");
     Directory dir = Directory('build/${platformToPath()}');
     for (var f in dir.listSync(recursive: true).toList()) {
       if (f.path.endsWith(path)) {
-        print(
+        log.e(
             "THIS HOTFIX IS ONLY FOR TESTS. IF YOU SEE THIS LINE ON DEBUG/RELEASE BUILDS REPORT IT IMMEDIATELY.");
-        print("THIS WILL LEAD TO HIGH SECURITY VURNERABILITY.");
-        print("Library test hotfix: found at ${f.path}");
+        log.e("THIS WILL LEAD TO HIGH SECURITY VURNERABILITY.");
+        log.e("Library test hotfix: found at ${f.path}");
         path = f.path;
         break;
       }

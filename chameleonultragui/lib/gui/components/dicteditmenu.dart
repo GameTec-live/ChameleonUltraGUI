@@ -21,6 +21,7 @@ class DictEditMenuState extends State<DictEditMenu> {
   TextEditingController keysController = TextEditingController();
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   String bytesToHex(Uint8List bytes) {
     return bytes
@@ -65,70 +66,80 @@ class DictEditMenuState extends State<DictEditMenu> {
     return AlertDialog(
       title: const Text('Edit Dictionoary'),
       content: SingleChildScrollView(
-        child: Column(
-          children: [
-            TextFormField(
-              controller: nameController,
-              decoration: InputDecoration(
-                  labelText: 'Name',
-                  hintText: 'Enter name of Dictionary',
-                  prefix: IconButton(
-                    icon: Icon(Icons.nfc, color: currentColor),
-                    onPressed: () async {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('Pick a color!'),
-                            content: SingleChildScrollView(
-                              child: ColorPicker(
-                                pickerColor: pickerColor,
-                                onColorChanged: (Color color) {
-                                  setState(() {
-                                    pickerColor = color;
-                                  });
-                                },
-                                pickerAreaHeightPercent: 0.8,
+        child: Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: nameController,
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a name';
+                  }
+                  return null;
+                },
+                decoration: InputDecoration(
+                    labelText: 'Name',
+                    hintText: 'Enter name of Dictionary',
+                    prefix: IconButton(
+                      icon: Icon(Icons.nfc, color: currentColor),
+                      onPressed: () async {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Pick a color!'),
+                              content: SingleChildScrollView(
+                                child: ColorPicker(
+                                  pickerColor: pickerColor,
+                                  onColorChanged: (Color color) {
+                                    setState(() {
+                                      pickerColor = color;
+                                    });
+                                  },
+                                  pickerAreaHeightPercent: 0.8,
+                                ),
                               ),
-                            ),
-                            actions: <Widget>[
-                              TextButton(
-                                onPressed: () {
-                                  setState(() => currentColor =
-                                      pickerColor = Colors.deepOrange);
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('Reset to default'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                child: const Text('OK'),
-                                onPressed: () {
-                                  setState(() => currentColor = pickerColor);
-                                  Navigator.pop(context);
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  )),
-            ),
-            TextFormField(
-              maxLines: null,
-              controller: keysController,
-              decoration: const InputDecoration(
-                labelText: 'Keys',
-                hintText: 'Enter keys for dictionary',
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() => currentColor =
+                                        pickerColor = Colors.deepOrange);
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Reset to default'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  child: const Text('Ok'),
+                                  onPressed: () {
+                                    setState(() => currentColor = pickerColor);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    )),
               ),
-            )
-          ],
+              TextFormField(
+                maxLines: null,
+                controller: keysController,
+                decoration: const InputDecoration(
+                  labelText: 'Keys',
+                  hintText: 'Enter keys for dictionary',
+                ),
+              )
+            ],
+          ),
         ),
       ),
       actions: [
@@ -140,30 +151,28 @@ class DictEditMenuState extends State<DictEditMenu> {
         ),
         TextButton(
           onPressed: () {
-            // Delete old dict
-            var dictionaries =
-                appState.sharedPreferencesProvider.getChameleonDictionaries();
-            List<ChameleonDictionary> output = [];
-            for (var dictTest in dictionaries) {
-              if (dictTest.id != widget.dict.id) {
-                output.add(dictTest);
-              }
+            if (!_formKey.currentState!.validate()) {
+              return;
             }
-            appState.sharedPreferencesProvider.setChameleonDictionaries(output);
-            appState.changesMade();
-
-            // Write new dict
-            dictionaries =
-                appState.sharedPreferencesProvider.getChameleonDictionaries();
+            
             ChameleonDictionary dict = ChameleonDictionary(
               id: const Uuid().v4(),
               name: nameController.text,
               keys: stringToDict(keysController.text),
               color: currentColor,
             );
-            dictionaries.add(dict);
-            appState.sharedPreferencesProvider
-                .setChameleonDictionaries(dictionaries);
+
+            var dictionaries =
+                appState.sharedPreferencesProvider.getChameleonDictionaries();
+            List<ChameleonDictionary> output = [];
+            for (var dictTest in dictionaries) {
+              if (dictTest.id != widget.dict.id) {
+                output.add(dictTest);
+              } else {
+                output.add(dict);
+              }
+            }
+            appState.sharedPreferencesProvider.setChameleonDictionaries(output);
             appState.changesMade();
             Navigator.pop(context);
           },

@@ -145,7 +145,7 @@ class HomePageState extends State<HomePage> {
           firmwareZip: await file.readAsBytes());
     }
   }
-
+  // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
     var appState = context.read<MyAppState>();

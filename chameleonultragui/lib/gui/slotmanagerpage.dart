@@ -241,11 +241,14 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   }
 }
 
+enum SearchFilter { all, hf, lf }
+
 class CardSearchDelegate extends SearchDelegate<String> {
   final List<ChameleonTagSave> cards;
   final int gridPosition;
   final dynamic refresh;
   final dynamic setUploadState;
+  SearchFilter filter = SearchFilter.all;
 
   CardSearchDelegate(
       this.cards, this.gridPosition, this.refresh, this.setUploadState);
@@ -253,6 +256,34 @@ class CardSearchDelegate extends SearchDelegate<String> {
   @override
   List<Widget> buildActions(BuildContext context) {
     return [
+      StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+          return DropdownButton(
+            items: const [
+              DropdownMenuItem(
+                value: SearchFilter.all,
+                child: Text("All"),
+              ),
+              DropdownMenuItem(
+                value: SearchFilter.hf,
+                child: Text("HF"),
+              ),
+              DropdownMenuItem(
+                value: SearchFilter.lf,
+                child: Text("LF"),
+              ),
+            ],
+            onChanged: (SearchFilter? value) {
+              if (value != null) {
+                setState(() {
+                  filter = value;
+                });
+              }
+            },
+            value: filter,
+          );
+        },
+      ),
       IconButton(
         icon: const Icon(Icons.clear),
         onPressed: () {
@@ -275,10 +306,17 @@ class CardSearchDelegate extends SearchDelegate<String> {
   @override
   Widget buildResults(BuildContext context) {
     final results = cards.where((card) =>
-        card.name.toLowerCase().contains(query.toLowerCase()) ||
-        chameleonTagToString(card.tag)
-            .toLowerCase()
-            .contains(query.toLowerCase()));
+        (((card.name.toLowerCase().contains(query.toLowerCase())) ||
+                (chameleonTagToString(card.tag)
+                    .toLowerCase()
+                    .contains(query.toLowerCase()))) &&
+            ((filter == SearchFilter.all) ||
+                (filter == SearchFilter.hf &&
+                    chameleontagToFrequency(card.tag) ==
+                        ChameleonTagFrequiency.hf) ||
+                (filter == SearchFilter.lf &&
+                    chameleontagToFrequency(card.tag) ==
+                        ChameleonTagFrequiency.lf))));
 
     return ListView.builder(
       itemCount: results.length,
@@ -307,10 +345,18 @@ class CardSearchDelegate extends SearchDelegate<String> {
   @override
   Widget buildSuggestions(BuildContext context) {
     final results = cards.where((card) =>
-        card.name.toLowerCase().contains(query.toLowerCase()) ||
-        chameleonTagToString(card.tag)
-            .toLowerCase()
-            .contains(query.toLowerCase()));
+        (((card.name.toLowerCase().contains(query.toLowerCase())) ||
+                (chameleonTagToString(card.tag)
+                    .toLowerCase()
+                    .contains(query.toLowerCase()))) &&
+            ((filter == SearchFilter.all) ||
+                (filter == SearchFilter.hf &&
+                    chameleontagToFrequency(card.tag) ==
+                        ChameleonTagFrequiency.hf) ||
+                (filter == SearchFilter.lf &&
+                    chameleontagToFrequency(card.tag) ==
+                        ChameleonTagFrequiency.lf))));
+
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
 
