@@ -106,6 +106,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                               var uid4sak = contents[5];
                               var uid4atqa = Uint8List.fromList(
                                   [contents[7], contents[6]]);
+                              var uid7sak = contents[7];
+                              var uid7atqa = Uint8List.fromList(
+                                  [contents[9], contents[8]]);
 
                               final uid4Controller = TextEditingController(
                                   text: bytesToHexSpace(uid4));
@@ -118,9 +121,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   text: bytesToHexSpace(uid7));
                               final sak7Controller =
                                   TextEditingController(text: bytesToHex(
-                                      Uint8List.fromList([uid4sak])));
+                                      Uint8List.fromList([uid7sak])));
                               final atqa7Controller =
-                                  TextEditingController(text: bytesToHexSpace(uid4atqa));
+                                  TextEditingController(text: bytesToHexSpace(uid7atqa));
                               final nameController =
                                   TextEditingController(text: tagName);
 
