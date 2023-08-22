@@ -39,6 +39,11 @@ class SlotChangerState extends State<SlotChanger> {
     } catch (_) {
       selectedSlot = 1;
     }
+
+    if (usedSlots.isEmpty) {
+      return [const Icon(Icons.warning)];
+    }
+
     for (int i = 1; i < 9; i++) {
       if (i == selectedSlot) {
         icons.add(const Icon(
