@@ -165,41 +165,52 @@ class HomePageState extends State<HomePage> {
             return Scaffold(
               appBar: AppBar(
                 title: const Text('Home'),
-                actionsIconTheme: const IconThemeData(size: 24),
-                actions: [
-                  if (SizerUtil.width >= 600)
-                    Text(appState.connector.portName,
-                        style: const TextStyle(fontSize: 20)),
-                  IconButton(
-                    onPressed: null,
-                    padding: EdgeInsets.zero,
-                    disabledColor: Theme.of(context).textTheme.bodyLarge!.color,
-                    icon: Icon(appState.connector.connectionType ==
-                            ChameleonConnectType.ble
-                        ? Icons.bluetooth
-                        : Icons.usb),
-                  ),
-                  IconButton(
-                    onPressed: null,
-                    padding: EdgeInsets.zero,
-                    disabledColor: Theme.of(context).textTheme.bodyLarge!.color,
-                    icon: batteryIcon,
-                  ),
-
-                  IconButton(
-                    onPressed: () async {
-                      // Disconnect
-                      await appState.connector.performDisconnect();
-                      appState.changesMade();
-                    },
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
               ),
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center, // Center
                   children: [
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                IconButton(
+                                  onPressed: () async {
+                                    // Disconnect
+                                    await appState.connector.performDisconnect();
+                                    appState.changesMade();
+                                  },
+                                  icon: const Icon(Icons.close),
+                                ),
+                              ]
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(appState.connector.portName,
+                                    style: const TextStyle(fontSize: 20)),
+                                IconButton(
+                                  onPressed: null,
+                                  padding: EdgeInsets.zero,
+                                  disabledColor: Theme.of(context).textTheme.bodyLarge!.color,
+                                  icon: Icon(appState.connector.connectionType ==
+                                          ChameleonConnectType.ble
+                                      ? Icons.bluetooth
+                                      : Icons.usb),
+                                ),
+                                batteryIcon
+                              ]
+                            )
+                          ]
+                        )
+                      )
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

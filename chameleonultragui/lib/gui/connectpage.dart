@@ -44,6 +44,35 @@ class ConnectPage extends StatelessWidget {
           page = Column(
             mainAxisAlignment: MainAxisAlignment.center, // Center
             children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (appState.onWeb)
+                        IconButton(
+                          onPressed: () async {
+                            // Refresh
+                            await connector.pairDevices();
+                            appState.changesMade();
+                          },
+                          icon: const Icon(Icons.handshake_outlined),
+                          tooltip: "Pair devices",
+                        ),
+                      IconButton(
+                        onPressed: () {
+                          // Refresh
+                          appState.changesMade();
+                        },
+                        icon: const Icon(Icons.refresh),
+                        tooltip: "Refresh devices",
+                      ),
+                    ]
+                  )
+                )
+              ),
               Expanded(
                 child: GridView(
                     padding: const EdgeInsets.all(20),
@@ -105,26 +134,6 @@ class ConnectPage extends StatelessWidget {
         return Scaffold(
               appBar: AppBar(
                 title: const Text('Connect'),
-                actions: [
-                  if (appState.onWeb)
-                    IconButton(
-                      onPressed: () async {
-                        // Refresh
-                        await connector.pairDevices();
-                        appState.changesMade();
-                      },
-                      icon: const Icon(Icons.handshake_outlined),
-                      tooltip: "Pair devices",
-                    ),
-                  IconButton(
-                    onPressed: () {
-                      // Refresh
-                      appState.changesMade();
-                    },
-                    icon: const Icon(Icons.refresh),
-                    tooltip: "Refresh devices",
-                  ),
-                ],
               ),
               body: Center(child: page),
         );
