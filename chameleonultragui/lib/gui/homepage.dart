@@ -185,99 +185,7 @@ class HomePageState extends State<HomePage> {
                     disabledColor: Theme.of(context).textTheme.bodyLarge!.color,
                     icon: batteryIcon,
                   ),
-                  if (isChameleonUltra)
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () async {
-                        var connection = ChameleonCom(
-                            port: appState.connector);
-                        await connection.setReaderDeviceMode(!isReaderDeviceMode);
-                        setState(() {});
-                        appState.changesMade();
-                      },
-                      tooltip: isReaderDeviceMode ? 'Go to emulator mode' : 'Go to reader mode',
-                      icon: Icon(isReaderDeviceMode ? Icons.nfc_sharp : Icons.barcode_reader),
-                    ),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => showDialog<String>(
-                      context: context,
-                      builder: (BuildContext dialogContext) {
-                        onClose() {
-                          Navigator.pop(dialogContext, 'Cancel');
-                        }
 
-                        var scaffoldMessenger = ScaffoldMessenger.of(context);
-                        var connection = ChameleonCom(port: appState.connector);
-
-                        var canUpdateLatest = !kIsWeb && appState.connector.connectionType != ChameleonConnectType.ble;
-                        var canUpdateZip = canUpdateLatest;
-
-                        return DialogDeviceSettings(
-                          currentAnimation: animationMode,
-                          onClose: onClose,
-                          onEnterDFUMode: () async {
-                            onClose();
-
-                            await connection.enterDFUMode();
-                            await appState.connector.performDisconnect();
-                            await asyncSleep(500);
-                            appState.changesMade();
-                          },
-                          onResetSettings: () async {
-                            await connection.resetSettings();
-                            onClose();
-                            appState.changesMade();
-                          },
-                          onUpdateAnimation: (animation) async {
-                            await connection.setAnimationMode(animation);
-                            await connection.saveSettings();
-
-                            setState(() {});
-                            appState.changesMade();
-                          },
-                          onFirmwareUpdateLatest: !canUpdateLatest ? null : () async {
-                            onClose();
-
-                            var snackBar = SnackBar(
-                              content: Text(
-                                  'Downloading and preparing new ${appState.connector.deviceName} firmware...'),
-                              showCloseIcon: true,
-                            );
-
-                            scaffoldMessenger.showSnackBar(snackBar);
-                            try {
-                              await flashFirmwareLatest(appState);
-                            } catch (e) {
-                              snackBar = SnackBar(
-                                content: Text('Update error: ${e.toString()}'),
-                                showCloseIcon: true,
-                              );
-
-                              scaffoldMessenger.hideCurrentSnackBar();
-                              scaffoldMessenger.showSnackBar(snackBar);
-                            }
-                          },
-                          onFirmwareUpdateFromZip: !canUpdateZip ? null : () async {
-                            onClose();
-
-                            try {
-                              await flashFirmwareZip(appState);
-                            } catch (e) {
-                              var snackBar = SnackBar(
-                                content: Text('Update error: ${e.toString()}'),
-                                showCloseIcon: true,
-                              );
-
-                              scaffoldMessenger.showSnackBar(snackBar);
-                            }
-                          }
-                        );
-                      }
-                    ),
-                    icon: const Icon(Icons.settings_applications),
-                    tooltip: 'Device Settings',
-                  ),
                   IconButton(
                     onPressed: () async {
                       // Disconnect
@@ -399,6 +307,108 @@ class HomePageState extends State<HomePage> {
                         )
                       ],
                     ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (isChameleonUltra)
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: IconButton(
+                              onPressed: () async {
+                                var connection = ChameleonCom(
+                                    port: appState.connector);
+                                await connection.setReaderDeviceMode(!isReaderDeviceMode);
+                                setState(() {});
+                                appState.changesMade();
+                              },
+                              tooltip: isReaderDeviceMode ? 'Go to emulator mode' : 'Go to reader mode',
+                              icon: Icon(isReaderDeviceMode ? Icons.nfc_sharp : Icons.barcode_reader),
+                            ),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () => showDialog<String>(
+                              context: context,
+                              builder: (BuildContext dialogContext) {
+                                onClose() {
+                                  Navigator.pop(dialogContext, 'Cancel');
+                                }
+
+                                var scaffoldMessenger = ScaffoldMessenger.of(context);
+                                var connection = ChameleonCom(port: appState.connector);
+
+                                var canUpdateLatest = !kIsWeb && appState.connector.connectionType != ChameleonConnectType.ble;
+                                var canUpdateZip = canUpdateLatest;
+
+                                return DialogDeviceSettings(
+                                  currentAnimation: animationMode,
+                                  onClose: onClose,
+                                  onEnterDFUMode: () async {
+                                    onClose();
+
+                                    await connection.enterDFUMode();
+                                    await appState.connector.performDisconnect();
+                                    await asyncSleep(500);
+                                    appState.changesMade();
+                                  },
+                                  onResetSettings: () async {
+                                    await connection.resetSettings();
+                                    onClose();
+                                    appState.changesMade();
+                                  },
+                                  onUpdateAnimation: (animation) async {
+                                    await connection.setAnimationMode(animation);
+                                    await connection.saveSettings();
+
+                                    setState(() {});
+                                    appState.changesMade();
+                                  },
+                                  onFirmwareUpdateLatest: !canUpdateLatest ? null : () async {
+                                    onClose();
+
+                                    var snackBar = SnackBar(
+                                      content: Text(
+                                          'Downloading and preparing new ${appState.connector.deviceName} firmware...'),
+                                      showCloseIcon: true,
+                                    );
+
+                                    scaffoldMessenger.showSnackBar(snackBar);
+                                    try {
+                                      await flashFirmwareLatest(appState);
+                                    } catch (e) {
+                                      snackBar = SnackBar(
+                                        content: Text('Update error: ${e.toString()}'),
+                                        showCloseIcon: true,
+                                      );
+
+                                      scaffoldMessenger.hideCurrentSnackBar();
+                                      scaffoldMessenger.showSnackBar(snackBar);
+                                    }
+                                  },
+                                  onFirmwareUpdateFromZip: !canUpdateZip ? null : () async {
+                                    onClose();
+
+                                    try {
+                                      await flashFirmwareZip(appState);
+                                    } catch (e) {
+                                      var snackBar = SnackBar(
+                                        content: Text('Update error: ${e.toString()}'),
+                                        showCloseIcon: true,
+                                      );
+
+                                      scaffoldMessenger.showSnackBar(snackBar);
+                                    }
+                                  }
+                                );
+                              }
+                            ),
+                            icon: const Icon(Icons.settings),
+                            tooltip: 'Device Settings',
+                          ),
+                        )
+                      ]
+                    )
                   ],
                 ),
               ),
