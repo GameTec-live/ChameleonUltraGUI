@@ -31,12 +31,11 @@ class SlotSettingsState extends State<SlotSettings> {
 
   Future<void> fetchInfo() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
 
     if (hfName.isEmpty) {
       try {
-        hfName = (await connection.getSlotTagName(
-                widget.slot, ChameleonTagFrequiency.hf))
+        hfName = (await appState.communicator!
+                .getSlotTagName(widget.slot, ChameleonTagFrequiency.hf))
             .trim();
       } catch (_) {}
 
@@ -49,8 +48,8 @@ class SlotSettingsState extends State<SlotSettings> {
 
     if (lfName.isEmpty) {
       try {
-        lfName = (await connection.getSlotTagName(
-                widget.slot, ChameleonTagFrequiency.lf))
+        lfName = (await appState.communicator!
+                .getSlotTagName(widget.slot, ChameleonTagFrequiency.lf))
             .trim();
       } catch (_) {}
 
@@ -63,13 +62,14 @@ class SlotSettingsState extends State<SlotSettings> {
 
     if (firstRun) {
       firstRun = false;
-      await connection.activateSlot(widget.slot);
-      bool isEnabled = (await connection.getEnabledSlots())[widget.slot];
+      await appState.communicator!.activateSlot(widget.slot);
+      bool isEnabled =
+          (await appState.communicator!.getEnabledSlots())[widget.slot];
       if (!isEnabled) {
         selectedEnabled = selectedEnabled.reversed.toList();
       }
       var (isDetection, isGen1a, isGen2, isAntiColl, writeMode) =
-          (await connection.getMf1EmulatorConfig());
+          (await appState.communicator!.getMf1EmulatorConfig());
       if (!isDetection) {
         selectedDetection = selectedDetection.reversed.toList();
       }
@@ -98,7 +98,6 @@ class SlotSettingsState extends State<SlotSettings> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
 
     return FutureBuilder(
         future: fetchInfo(),
@@ -119,11 +118,11 @@ class SlotSettingsState extends State<SlotSettings> {
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: () async {
-                        await connection.deleteSlotInfo(
+                        await appState.communicator!.deleteSlotInfo(
                             widget.slot, ChameleonTagFrequiency.hf);
-                        await connection.setSlotTagName(
+                        await appState.communicator!.setSlotTagName(
                             widget.slot, "Empty", ChameleonTagFrequiency.hf);
-                        await connection.saveSlotData();
+                        await appState.communicator!.saveSlotData();
 
                         setState(() {
                           hfName = "";
@@ -148,11 +147,11 @@ class SlotSettingsState extends State<SlotSettings> {
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: () async {
-                        await connection.deleteSlotInfo(
+                        await appState.communicator!.deleteSlotInfo(
                             widget.slot, ChameleonTagFrequiency.lf);
-                        await connection.setSlotTagName(
+                        await appState.communicator!.setSlotTagName(
                             widget.slot, "Empty", ChameleonTagFrequiency.lf);
-                        await connection.saveSlotData();
+                        await appState.communicator!.saveSlotData();
 
                         setState(() {
                           lfName = "";
@@ -179,8 +178,9 @@ class SlotSettingsState extends State<SlotSettings> {
                         selectedGen1aMode[i] = i == index;
                       }
                     });
-                    await connection.activateSlot(widget.slot);
-                    await connection.setMf1Gen1aMode(index == 0 ? true : false);
+                    await appState.communicator!.activateSlot(widget.slot);
+                    await appState.communicator!
+                        .setMf1Gen1aMode(index == 0 ? true : false);
 
                     widget.refresh(widget.slot);
                   },
@@ -204,8 +204,9 @@ class SlotSettingsState extends State<SlotSettings> {
                       }
                     });
 
-                    await connection.activateSlot(widget.slot);
-                    await connection.setMf1Gen2Mode(index == 0 ? true : false);
+                    await appState.communicator!.activateSlot(widget.slot);
+                    await appState.communicator!
+                        .setMf1Gen2Mode(index == 0 ? true : false);
 
                     widget.refresh(widget.slot);
                   },
@@ -229,8 +230,8 @@ class SlotSettingsState extends State<SlotSettings> {
                       }
                     });
 
-                    await connection.activateSlot(widget.slot);
-                    await connection
+                    await appState.communicator!.activateSlot(widget.slot);
+                    await appState.communicator!
                         .setMf1UseFirstBlockColl(index == 0 ? true : false);
 
                     widget.refresh(widget.slot);
@@ -255,8 +256,8 @@ class SlotSettingsState extends State<SlotSettings> {
                       }
                     });
 
-                    await connection.activateSlot(widget.slot);
-                    await connection
+                    await appState.communicator!.activateSlot(widget.slot);
+                    await appState.communicator!
                         .setMf1DetectionStatus(index == 0 ? true : false);
 
                     widget.refresh(widget.slot);
@@ -281,19 +282,19 @@ class SlotSettingsState extends State<SlotSettings> {
                       }
                     });
 
-                    await connection.activateSlot(widget.slot);
+                    await appState.communicator!.activateSlot(widget.slot);
 
                     if (index == 0) {
-                      await connection
+                      await appState.communicator!
                           .setMf1WriteMode(ChameleonMf1WriteMode.normal);
                     } else if (index == 1) {
-                      await connection
+                      await appState.communicator!
                           .setMf1WriteMode(ChameleonMf1WriteMode.deined);
                     } else if (index == 2) {
-                      await connection
+                      await appState.communicator!
                           .setMf1WriteMode(ChameleonMf1WriteMode.deceive);
                     } else if (index == 3) {
-                      await connection
+                      await appState.communicator!
                           .setMf1WriteMode(ChameleonMf1WriteMode.shadow);
                     }
 
@@ -324,8 +325,8 @@ class SlotSettingsState extends State<SlotSettings> {
                       }
                     });
 
-                    await connection.enableSlot(
-                        widget.slot, index == 0 ? true : false);
+                    await appState.communicator!
+                        .enableSlot(widget.slot, index == 0 ? true : false);
                     widget.refresh(widget.slot);
                   },
                   borderRadius: const BorderRadius.all(Radius.circular(8)),

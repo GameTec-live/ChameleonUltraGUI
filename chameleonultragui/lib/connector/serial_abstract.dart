@@ -9,8 +9,10 @@ class AbstractSerial {
   Logger log = Logger();
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
+  bool isOpen = false;
   String portName = "None";
   ChameleonConnectType connectionType = ChameleonConnectType.none;
+  dynamic messageCallback;
 
   Future<bool> preformConnection() async {
     return false;
@@ -43,4 +45,10 @@ class AbstractSerial {
   }
 
   Future<void> finishRead() async {}
+
+  Future<void> initializeThread() async {}
+
+  Future<void> registerCallback(dynamic callback) async {
+    messageCallback = callback;
+  }
 }

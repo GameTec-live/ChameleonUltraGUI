@@ -8,7 +8,7 @@ import 'package:usb_serial/usb_serial.dart';
 // Class for Android Serial Communication
 class MobileSerial extends AbstractSerial {
   Map<String, UsbDevice> deviceMap = {};
-  List<Uint8List> messagePool = []; // TODO: Fix or rewrite on release
+  List<Uint8List> messagePool = [];
   UsbPort? port;
 
   @override

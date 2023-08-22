@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
@@ -86,6 +87,7 @@ class MyAppState extends ChangeNotifier {
   AbstractSerial connector = Platform.isAndroid
       ? AndroidSerial()
       : (Platform.isIOS ? BLESerial() : NativeSerial());
+  ChameleonCommunicator? communicator;
 
   bool devMode = false;
   double? progress;

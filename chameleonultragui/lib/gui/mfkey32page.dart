@@ -1,4 +1,3 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
@@ -27,16 +26,16 @@ class Mfkey32PageState extends State<Mfkey32Page> {
 
   Future<(bool, int)> getMf1DetectionStatus() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
 
     return (
-      await connection.isMf1DetectionMode(),
-      await connection.getMf1DetectionCount(),
+      await appState.communicator!.isMf1DetectionMode(),
+      await appState.communicator!.getMf1DetectionCount(),
     );
   }
 
   Future<void> updateDetectionStatus() async {
     var (mode, count) = await getMf1DetectionStatus();
+
     setState(() {
       isDetectionMode = mode;
       detectionCount = count;
@@ -45,9 +44,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
 
   Future<void> handleMfkeyCalculation() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
 
-    var detections = await connection.getMf1DetectionResult(0);
+    var detections = await appState.communicator!.getMf1DetectionResult(0);
     for (var item in detections.entries) {
       var uid = item.key;
       for (var item in item.value.entries) {
@@ -126,9 +124,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                       const SizedBox(height: 25.0),
                       ElevatedButton(
                         onPressed: () async {
-                          var connection =
-                              ChameleonCom(port: appState.connector);
-                          await connection
+                          await appState.communicator!
                               .setMf1DetectionStatus(!isDetectionMode);
                           await updateDetectionStatus();
                         },

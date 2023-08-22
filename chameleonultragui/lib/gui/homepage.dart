@@ -29,27 +29,28 @@ class HomePageState extends State<HomePage> {
   Future<(Icon, String, List<String>, bool, ChameleonAnimation)>
       getFutureData() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
     List<(ChameleonTag, ChameleonTag)> usedSlots;
     try {
-      usedSlots = await connection.getUsedSlots();
+      usedSlots = await appState.communicator!.getUsedSlots();
     } catch (_) {
       usedSlots = [];
     }
 
     return (
-      await getBatteryChargeIcon(connection),
-      await getUsedSlotsOut8(connection, usedSlots),
-      await getFWversion(connection),
-      await isReaderDeviceMode(connection),
-      await getAnimationMode(connection),
+      await getBatteryChargeIcon(),
+      await getUsedSlotsOut8(usedSlots),
+      await getFWversion(),
+      await isReaderDeviceMode(),
+      await getAnimationMode(),
     );
   }
 
-  Future<Icon> getBatteryChargeIcon(ChameleonCom connection) async {
+  Future<Icon> getBatteryChargeIcon() async {
+    var appState = context.read<MyAppState>();
     int charge = 0;
+
     try {
-      (_, charge) = await connection.getBatteryCharge();
+      (_, charge) = await appState.communicator!.getBatteryCharge();
     } catch (_) {}
 
     if (charge > 98) {
@@ -75,12 +76,14 @@ class HomePageState extends State<HomePage> {
     return const Icon(Icons.battery_unknown);
   }
 
-  Future<String> getUsedSlotsOut8(ChameleonCom connection,
+  Future<String> getUsedSlotsOut8(
       List<(ChameleonTag, ChameleonTag)> usedSlots) async {
+    int usedSlotsOut8 = 0;
+
     if (usedSlots.isEmpty) {
       return "Unknown";
     }
-    int usedSlotsOut8 = 0;
+
     for (int i = 0; i < 8; i++) {
       if (usedSlots[i].$1 != ChameleonTag.unknown ||
           usedSlots[i].$2 != ChameleonTag.unknown) {
@@ -90,13 +93,14 @@ class HomePageState extends State<HomePage> {
     return usedSlotsOut8.toString();
   }
 
-  Future<List<String>> getFWversion(ChameleonCom connection) async {
+  Future<List<String>> getFWversion() async {
+    var appState = context.read<MyAppState>();
     String commitHash = "";
     String firmwareVersion =
-        numToVerCode(await connection.getFirmwareVersion());
+        numToVerCode(await appState.communicator!.getFirmwareVersion());
 
     try {
-      commitHash = await connection.getGitCommitHash();
+      commitHash = await appState.communicator!.getGitCommitHash();
     } catch (_) {}
 
     if (commitHash.isEmpty) {
@@ -106,33 +110,34 @@ class HomePageState extends State<HomePage> {
     return ["$firmwareVersion ($commitHash)", commitHash];
   }
 
-  Future<bool> isReaderDeviceMode(ChameleonCom connection) async {
-    return await connection.isReaderDeviceMode();
+  Future<bool> isReaderDeviceMode() async {
+    var appState = context.read<MyAppState>();
+    return await appState.communicator!.isReaderDeviceMode();
   }
 
-  Future<ChameleonAnimation> getAnimationMode(ChameleonCom connection) async {
+  Future<ChameleonAnimation> getAnimationMode() async {
+    var appState = context.read<MyAppState>();
+
     try {
-      return await connection.getAnimationMode();
+      return await appState.communicator!.getAnimationMode();
     } catch (_) {
       return ChameleonAnimation.full;
     }
   }
 
   Future<void> flashFirmware(MyAppState appState) async {
-    var connection = ChameleonCom(port: appState.connector);
     Uint8List applicationDat, applicationBin;
 
     Uint8List content = await fetchFirmware(appState.connector.device);
 
     (applicationDat, applicationBin) = await unpackFirmware(content);
 
-    flashFile(connection, appState, applicationDat, applicationBin,
+    flashFile(appState.communicator, appState, applicationDat, applicationBin,
         (progress) => appState.setProgressBar(progress / 100),
         firmwareZip: content);
   }
 
   Future<void> flashFirmwareZip(MyAppState appState) async {
-    var connection = ChameleonCom(port: appState.connector);
     Uint8List applicationDat, applicationBin;
 
     FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -143,11 +148,12 @@ class HomePageState extends State<HomePage> {
       (applicationDat, applicationBin) =
           await unpackFirmware(await file.readAsBytes());
 
-      flashFile(connection, appState, applicationDat, applicationBin,
+      flashFile(appState.communicator, appState, applicationDat, applicationBin,
           (progress) => appState.setProgressBar(progress / 100),
           firmwareZip: await file.readAsBytes());
     }
   }
+
   // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
@@ -346,9 +352,7 @@ class HomePageState extends State<HomePage> {
                                   padding: const EdgeInsets.all(8.0),
                                   child: IconButton(
                                     onPressed: () async {
-                                      var connection = ChameleonCom(
-                                          port: appState.connector);
-                                      await connection
+                                      await appState.communicator!
                                           .setReaderDeviceMode(false);
                                       setState(() {});
                                       appState.changesMade();
@@ -361,9 +365,7 @@ class HomePageState extends State<HomePage> {
                                   padding: const EdgeInsets.all(8.0),
                                   child: IconButton(
                                     onPressed: () async {
-                                      var connection = ChameleonCom(
-                                          port: appState.connector);
-                                      await connection
+                                      await appState.communicator!
                                           .setReaderDeviceMode(true);
                                       setState(() {});
                                       appState.changesMade();
@@ -386,9 +388,8 @@ class HomePageState extends State<HomePage> {
                                       const SizedBox(height: 10),
                                       TextButton(
                                           onPressed: () async {
-                                            var connection = ChameleonCom(
-                                                port: appState.connector);
-                                            await connection.enterDFUMode();
+                                            await appState.communicator!
+                                                .enterDFUMode();
                                             appState.connector
                                                 .preformDisconnect();
                                             Navigator.pop(
@@ -490,11 +491,10 @@ class HomePageState extends State<HomePage> {
                                             animation = ChameleonAnimation.none;
                                           }
 
-                                          var connection = ChameleonCom(
-                                              port: appState.connector);
-                                          await connection
+                                          await appState.communicator!
                                               .setAnimationMode(animation);
-                                          await connection.saveSettings();
+                                          await appState.communicator!
+                                              .saveSettings();
                                           setState(() {});
                                           appState.changesMade();
                                         },
@@ -504,9 +504,8 @@ class HomePageState extends State<HomePage> {
                                       const SizedBox(height: 10),
                                       TextButton(
                                           onPressed: () async {
-                                            var connection = ChameleonCom(
-                                                port: appState.connector);
-                                            await connection.resetSettings();
+                                            await appState.communicator!
+                                                .resetSettings();
                                             Navigator.pop(
                                                 dialogContext, 'Cancel');
                                             appState.changesMade();
@@ -533,11 +532,8 @@ class HomePageState extends State<HomePage> {
                                                 actions: <Widget>[
                                                   TextButton(
                                                     onPressed: () async {
-                                                      var connection =
-                                                          ChameleonCom(
-                                                              port: appState
-                                                                  .connector);
-                                                      await connection
+                                                      await appState
+                                                          .communicator!
                                                           .factoryReset();
                                                       await appState.connector
                                                           .preformDisconnect();

@@ -144,17 +144,17 @@ class ReadCardPage extends StatefulWidget {
 class ReadCardPageState extends State<ReadCardPage> {
   ChameleonReadTagStatus status = ChameleonReadTagStatus();
 
-  Future<void> readCardDetails(ChameleonCom connection) async {
+  Future<void> readCardDetails(MyAppState appState) async {
     status.validKeys = List.generate(80, (_) => Uint8List(0));
     status.checkMarks = List.generate(80, (_) => ChameleonKeyCheckmark.none);
 
     try {
-      if (!await connection.isReaderDeviceMode()) {
-        await connection.setReaderDeviceMode(true);
+      if (!await appState.communicator!.isReaderDeviceMode()) {
+        await appState.communicator!.setReaderDeviceMode(true);
       }
 
-      var card = await connection.scan14443aTag();
-      var mifare = await connection.detectMf1Support();
+      var card = await appState.communicator!.scan14443aTag();
+      var mifare = await appState.communicator!.detectMf1Support();
       var mf1Type = MifareClassicType.none;
       if (mifare) {
         mf1Type = mfClassicGetType(card.atqa, card.sak);
@@ -189,13 +189,13 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> readCardInfo(ChameleonCom connection) async {
+  Future<void> readCardInfo(MyAppState appState) async {
     try {
-      if (!await connection.isReaderDeviceMode()) {
-        await connection.setReaderDeviceMode(true);
+      if (!await appState.communicator!.isReaderDeviceMode()) {
+        await appState.communicator!.setReaderDeviceMode(true);
       }
 
-      var card = await connection.readEM410X();
+      var card = await appState.communicator!.readEM410X();
       if (card == "00 00 00 00 00") {
         setState(() {
           status.lfUid = "";
@@ -218,17 +218,17 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> recoverKeys(ChameleonCom connection, MyAppState appState) async {
+  Future<void> recoverKeys(MyAppState appState) async {
     setState(() {
       status.state = ChameleonMifareClassicState.recoveryOngoing;
     });
     try {
-      if (!await connection.isReaderDeviceMode()) {
-        await connection.setReaderDeviceMode(true);
+      if (!await appState.communicator!.isReaderDeviceMode()) {
+        await appState.communicator!.setReaderDeviceMode(true);
       }
 
-      var card = await connection.scan14443aTag();
-      var mifare = await connection.detectMf1Support();
+      var card = await appState.communicator!.scan14443aTag();
+      var mifare = await appState.communicator!.detectMf1Support();
       var mf1Type = MifareClassicType.none;
       if (mifare) {
         mf1Type = mfClassicGetType(card.atqa, card.sak);
@@ -256,7 +256,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                 ...gMifareClassicKeys
               ]) {
                 await asyncSleep(1); // Let GUI update
-                if (await connection.mf1Auth(
+                if (await appState.communicator!.mf1Auth(
                     mfClassicGetSectorTrailerBlockBySector(sector),
                     0x60 + keyType,
                     key)) {
@@ -309,10 +309,11 @@ class ReadCardPageState extends State<ReadCardPage> {
         }
 
         if (!hasKey) {
-          if (await connection.checkMf1Darkside() ==
+          if (await appState.communicator!.checkMf1Darkside() ==
               ChameleonDarksideResult.vurnerable) {
             // recover with darkside
-            var data = await connection.getMf1Darkside(0x03, 0x61, true, 15);
+            var data = await appState.communicator!
+                .getMf1Darkside(0x03, 0x61, true, 15);
             var darkside = DarksideDart(uid: data.uid, items: []);
             status.checkMarks[40] = ChameleonKeyCheckmark.checking;
             bool found = false;
@@ -330,8 +331,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                 for (var key in keys) {
                   var keyBytes = u64ToBytes(key);
                   await asyncSleep(1); // Let GUI update
-                  if ((await connection.mf1Auth(
-                          0x03, 0x61, keyBytes.sublist(2, 8))) ==
+                  if ((await appState.communicator!
+                          .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8))) ==
                       true) {
                     appState.log.i(
                         "Darkside: Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
@@ -343,7 +344,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                 }
               } else {
                 appState.log.d("Can't find keys, retrying...");
-                data = await connection.getMf1Darkside(0x03, 0x61, false, 15);
+                data = await appState.communicator!
+                    .getMf1Darkside(0x03, 0x61, false, 15);
               }
             }
           } else {
@@ -356,7 +358,7 @@ class ReadCardPageState extends State<ReadCardPage> {
           status.checkMarks = status.checkMarks;
         });
 
-        var prng = await connection.getMf1NTLevel();
+        var prng = await appState.communicator!.getMf1NTLevel();
         if (prng == ChameleonNTLevel.hard || prng == ChameleonNTLevel.unknown) {
           // No hardnested implementation yet
           return;
@@ -392,11 +394,11 @@ class ReadCardPageState extends State<ReadCardPage> {
               setState(() {
                 status.checkMarks = status.checkMarks;
               });
-              var distance = await connection.getMf1NTDistance(
+              var distance = await appState.communicator!.getMf1NTDistance(
                   validKeyBlock, 0x60 + validKeyType, validKey);
               bool found = false;
               for (var i = 0; i < 0xFF && !found; i++) {
-                var nonces = await connection.getMf1NestedNonces(
+                var nonces = await appState.communicator!.getMf1NestedNonces(
                     validKeyBlock,
                     0x60 + validKeyType,
                     validKey,
@@ -418,7 +420,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                   for (var key in keys) {
                     var keyBytes = u64ToBytes(key);
                     await asyncSleep(1); // Let GUI update
-                    if ((await connection.mf1Auth(
+                    if ((await appState.communicator!.mf1Auth(
                             mfClassicGetSectorTrailerBlockBySector(sector),
                             0x60 + keyType,
                             keyBytes.sublist(2, 8))) ==
@@ -451,7 +453,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     } catch (_) {}
   }
 
-  Future<void> dumpData(ChameleonCom connection) async {
+  Future<void> dumpData(MyAppState appState) async {
     setState(() {
       status.state = ChameleonMifareClassicState.dumpOngoing;
     });
@@ -465,7 +467,7 @@ class ReadCardPageState extends State<ReadCardPage> {
             block < mfClassicGetBlockCountBySector(sector);
             block++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            var blockData = await connection.mf1ReadBlock(
+            var blockData = await appState.communicator!.mf1ReadBlock(
                 block + mfClassicGetFirstBlockCountBySector(sector),
                 0x60 + keyType,
                 status.validKeys[sector + (keyType * 40)]);
@@ -504,9 +506,8 @@ class ReadCardPageState extends State<ReadCardPage> {
     } catch (_) {}
   }
 
-  Future<void> saveCard(
-      ChameleonCom connection, MyAppState appState, bool bin) async {
-    var card = await connection.scan14443aTag();
+  Future<void> saveCard(MyAppState appState, bool bin) async {
+    var card = await appState.communicator!.scan14443aTag();
 
     List<int> cardDump = [];
     for (var sector = 0;
@@ -552,7 +553,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> saveLfCard(ChameleonCom connection, MyAppState appState) async {
+  Future<void> saveLfCard(MyAppState appState) async {
     var tags = appState.sharedPreferencesProvider.getChameleonTags();
     tags.add(ChameleonTagSave(
         id: const Uuid().v4(),
@@ -602,7 +603,6 @@ class ReadCardPageState extends State<ReadCardPage> {
     double checkmarkSize = isSmallScreen ? 16 : 20;
 
     var appState = context.watch<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
     status.dictionaries =
         appState.sharedPreferencesProvider.getChameleonDictionaries();
     status.dictionaries
@@ -655,7 +655,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         onPressed: () async {
                           if (appState.connector.device ==
                               ChameleonDevice.ultra) {
-                            await readCardDetails(connection);
+                            await readCardDetails(appState);
                           } else {
                             showDialog<String>(
                               context: context,
@@ -966,8 +966,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                 ChameleonMifareClassicState
                                                     .recovery)
                                             ? () async {
-                                                await recoverKeys(
-                                                    connection, appState);
+                                                await recoverKeys(appState);
                                               }
                                             : null,
                                         child: const Text('Recover keys'),
@@ -985,7 +984,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                 ChameleonMifareClassicState
                                                     .dump)
                                             ? () async {
-                                                await dumpData(connection);
+                                                await dumpData(appState);
                                               }
                                             : null,
                                         child: const Text('Dump card'),
@@ -1021,9 +1020,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                       ElevatedButton(
                                                         onPressed: () async {
                                                           await saveCard(
-                                                              connection,
-                                                              appState,
-                                                              false);
+                                                              appState, false);
                                                           Navigator.pop(
                                                               context); // Close the modal after saving
                                                         },
@@ -1047,8 +1044,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           const SizedBox(width: 8),
                                           ElevatedButton(
                                             onPressed: () async {
-                                              await saveCard(
-                                                  connection, appState, true);
+                                              await saveCard(appState, true);
                                             },
                                             child: const Text('Save as .bin'),
                                           ),
@@ -1097,7 +1093,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         onPressed: () async {
                           if (appState.connector.device ==
                               ChameleonDevice.ultra) {
-                            await readCardInfo(connection);
+                            await readCardInfo(appState);
                           } else {
                             showDialog<String>(
                               context: context,
@@ -1140,8 +1136,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         actions: [
                                           ElevatedButton(
                                             onPressed: () async {
-                                              await saveLfCard(
-                                                  connection, appState);
+                                              await saveLfCard(appState);
                                               Navigator.pop(
                                                   context); // Close the modal after saving
                                             },

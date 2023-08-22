@@ -190,7 +190,7 @@ void validateFiles(Uint8List dat, Uint8List bin) {
 }
 
 Future<void> flashFile(
-    ChameleonCom? connection,
+    ChameleonCommunicator? connection,
     MyAppState appState,
     Uint8List applicationDat,
     Uint8List applicationBin,

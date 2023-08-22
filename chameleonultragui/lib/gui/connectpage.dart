@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/main.dart';
@@ -112,6 +113,8 @@ class ConnectPage extends StatelessWidget {
                                 } else {
                                   await appState.connector
                                       .connectSpecific(chameleonDevice['port']);
+                                  appState.communicator = ChameleonCommunicator(
+                                      port: appState.connector);
                                   appState.changesMade();
                                 }
                               },
