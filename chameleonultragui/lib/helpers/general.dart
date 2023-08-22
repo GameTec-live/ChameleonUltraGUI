@@ -155,9 +155,9 @@ String numToVerCode(int versionCode) {
 }
 
 ChameleonTagFrequiency chameleontagToFrequency(ChameleonTag tag) {
-  if (chameleonTagToString(tag).toLowerCase().contains("mifare") || chameleonTagToString(tag).toLowerCase().contains("ntag")) {
-    return ChameleonTagFrequiency.hf;
-  } else {
+  if (tag == ChameleonTag.em410X) {	
     return ChameleonTagFrequiency.lf;
+  } else {
+    return ChameleonTagFrequiency.hf;
   }
 }
