@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
   // Root Widget
   final SharedPreferencesProvider _sharedPreferencesProvider;
 
-  MyApp(this._sharedPreferencesProvider, {Key? key}) : super(key: key);
+  const MyApp(this._sharedPreferencesProvider, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

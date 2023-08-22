@@ -56,7 +56,7 @@ class ConnectPage extends StatelessWidget {
                     ),
                     scrollDirection: Axis.vertical,
                     children: [
-                      if (result!.isEmpty)
+                      if (result.isEmpty)
                         Align(
                           alignment: Alignment.center,
                           child: SizedBox(

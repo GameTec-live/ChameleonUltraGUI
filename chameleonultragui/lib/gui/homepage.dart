@@ -12,7 +12,6 @@ import 'package:sizer_pro/sizer.dart';
 import 'components/dialog_device_settings.dart';
 import 'features/flash_firmware_latest.dart';
 import 'features/flash_firmware_zip.dart';
-import 'package:toggle_switch/toggle_switch.dart';
 import 'package:chameleonultragui/gui/components/slotchanger.dart';
 
 class HomePage extends StatefulWidget {
