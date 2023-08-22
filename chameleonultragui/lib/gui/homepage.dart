@@ -77,6 +77,9 @@ class HomePageState extends State<HomePage> {
 
   Future<String> getUsedSlotsOut8(ChameleonCom connection,
       List<(ChameleonTag, ChameleonTag)> usedSlots) async {
+    if (usedSlots.isEmpty) {
+      return "Unknown";
+    }
     int usedSlotsOut8 = 0;
     for (int i = 0; i < 8; i++) {
       if (usedSlots[i].$1 != ChameleonTag.unknown ||
