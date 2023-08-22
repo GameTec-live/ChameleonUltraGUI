@@ -169,24 +169,27 @@ class CardEditMenuState extends State<CardEditMenu> {
                   },
                 ),
                 const SizedBox(height: 20),
-                TextFormField(
-                  controller: sak4Controller,
-                  decoration: const InputDecoration(
-                      labelText: 'SAK', hintText: 'Enter SAK'),
-                  validator: (value) {
-                    if (value == null ||
-                        value.isEmpty &&
-                            chameleontagToFrequency(selectedType) !=
-                                ChameleonTagFrequiency.lf) {
-                      return 'Please enter SAK';
-                    }
-                    if (value.replaceAll(" ", "").length != 2 &&
-                        chameleontagToFrequency(selectedType) !=
-                            ChameleonTagFrequiency.lf) {
-                      return 'SAK must be 1 byte long';
-                    }
-                    return null;
-                  },
+                Visibility(
+                  visible: chameleontagToFrequency(selectedType) != ChameleonTagFrequiency.lf,
+                  child: TextFormField(
+                    controller: sak4Controller,
+                    decoration: const InputDecoration(
+                        labelText: 'SAK', hintText: 'Enter SAK'),
+                    validator: (value) {
+                      if (value == null ||
+                          value.isEmpty &&
+                              chameleontagToFrequency(selectedType) !=
+                                  ChameleonTagFrequiency.lf) {
+                        return 'Please enter SAK';
+                      }
+                      if (value.replaceAll(" ", "").length != 2 &&
+                          chameleontagToFrequency(selectedType) !=
+                              ChameleonTagFrequiency.lf) {
+                        return 'SAK must be 1 byte long';
+                      }
+                      return null;
+                    },
+                  ),
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
