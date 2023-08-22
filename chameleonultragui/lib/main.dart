@@ -65,7 +65,7 @@ class MyApp extends StatelessWidget {
                         _sharedPreferencesProvider.getThemeColor()), // Color Scheme
                 brightness: Brightness.light, // Light Theme
               ),
-              darkTheme: ThemeData.dark().copyWith(
+              darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
                 colorScheme: ColorScheme.fromSeed(
                     seedColor: _sharedPreferencesProvider.getThemeColor(),
                     brightness: Brightness.dark), // Color Scheme

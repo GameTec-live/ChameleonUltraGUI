@@ -18,21 +18,19 @@ class CardWebPairDevices extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Pair devices',
-              style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 4),
-            Text(
+            const Text(
               'Due to the browser security model in Chrome you first need to pair your Chameleon devices before they will show here.',
-              style: TextStyle(color: Theme.of(context).primaryColor),
               textAlign: TextAlign.justify,
             ),
             const SizedBox(height: 4),
-            Text(
+            const Text(
               'If you need to pair new devices later on, f.e. after you switch your device to DFU mode to flash the firmware, use the pair button in the upper right corner.',
-              style: TextStyle(color: Theme.of(context).primaryColor),
               textAlign: TextAlign.justify,
             ),
             if (onPairDevices != null)
