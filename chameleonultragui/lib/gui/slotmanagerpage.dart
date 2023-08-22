@@ -22,6 +22,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     8,
     (_) => (ChameleonTag.unknown, ChameleonTag.unknown),
   );
+
   List<bool> enabledSlots = List.generate(
     8,
     (_) => true,
@@ -37,16 +38,17 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
   int currentFunctionIndex = 0;
   int progress = -1;
+  bool onlyOneSlot = false;
 
   Future<void> executeNextFunction() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
-    if (currentFunctionIndex == 0) {
+    if (currentFunctionIndex == 0 || onlyOneSlot) {
       try {
         usedSlots = await connection.getUsedSlots();
       } catch (_) {}
     }
-    if (currentFunctionIndex == 0) {
+    if (currentFunctionIndex == 0 || onlyOneSlot) {
       try {
         enabledSlots = await connection.getEnabledSlots();
       } catch (_) {}
@@ -74,17 +76,23 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       if (slotData[currentFunctionIndex]['lfName']!.isEmpty) {
         slotData[currentFunctionIndex]['lfName'] = "Empty";
       }
-
-      setState(() {
-        currentFunctionIndex++;
-      });
+      if (!onlyOneSlot) {
+        setState(() {
+          currentFunctionIndex++;
+        });
+      } else {
+        setState(() {
+          currentFunctionIndex = 8;
+        });
+      }
     }
   }
 
-  void reloadPage() {
+  void refreshSlot(int slot) {
     setUploadState(-1);
     setState(() {
-      currentFunctionIndex = 0;
+      currentFunctionIndex = slot;
+      onlyOneSlot = true;
     });
     var appState = context.read<MyAppState>();
     appState.changesMade();
@@ -183,7 +191,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                             builder: (BuildContext context) {
                                               return SlotSettings(
                                                   slot: index,
-                                                  refresh: reloadPage);
+                                                  refresh: refreshSlot);
                                             },
                                           );
                                         },
@@ -228,7 +236,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     return showSearch<String>(
       context: context,
       delegate:
-          CardSearchDelegate(tags, gridPosition, reloadPage, setUploadState),
+          CardSearchDelegate(tags, gridPosition, refreshSlot, setUploadState),
     );
   }
 }
@@ -378,7 +386,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
                   ChameleonTagFrequiency.hf);
               await connection.saveSlotData();
               appState.changesMade();
-              refresh();
+              refresh(gridPosition);
             } else if (card.tag == ChameleonTag.em410X) {
               close(context, card.name);
               await connection.setReaderDeviceMode(false);
@@ -394,7 +402,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
                   ChameleonTagFrequiency.lf);
               await connection.saveSlotData();
               appState.changesMade();
-              refresh();
+              refresh(gridPosition);
             } else {
               appState.log.e("Can't write this card type yet.");
               close(context, card.name);

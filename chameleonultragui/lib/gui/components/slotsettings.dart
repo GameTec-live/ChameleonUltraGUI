@@ -113,7 +113,7 @@ class SlotSettingsState extends State<SlotSettings> {
                     const SizedBox(width: 8),
                     Expanded(
                         child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: null,
                       child: Text(hfName),
                     )),
                     const SizedBox(width: 8),
@@ -129,7 +129,7 @@ class SlotSettingsState extends State<SlotSettings> {
                           hfName = "";
                         });
 
-                        widget.refresh();
+                        widget.refresh(widget.slot);
                       },
                       icon: const Icon(Icons.clear_rounded),
                     ),
@@ -153,7 +153,7 @@ class SlotSettingsState extends State<SlotSettings> {
                     await connection.activateSlot(widget.slot);
                     await connection.setMf1Gen1aMode(index == 0 ? true : false);
 
-                    widget.refresh();
+                    widget.refresh(widget.slot);
                   },
                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                   constraints: const BoxConstraints(
@@ -178,7 +178,7 @@ class SlotSettingsState extends State<SlotSettings> {
                     await connection.activateSlot(widget.slot);
                     await connection.setMf1Gen2Mode(index == 0 ? true : false);
 
-                    widget.refresh();
+                    widget.refresh(widget.slot);
                   },
                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                   constraints: const BoxConstraints(
@@ -204,7 +204,7 @@ class SlotSettingsState extends State<SlotSettings> {
                     await connection
                         .setMf1UseFirstBlockColl(index == 0 ? true : false);
 
-                    widget.refresh();
+                    widget.refresh(widget.slot);
                   },
                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                   constraints: const BoxConstraints(
@@ -230,7 +230,7 @@ class SlotSettingsState extends State<SlotSettings> {
                     await connection
                         .setMf1DetectionStatus(index == 0 ? true : false);
 
-                    widget.refresh();
+                    widget.refresh(widget.slot);
                   },
                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                   constraints: const BoxConstraints(
@@ -268,7 +268,7 @@ class SlotSettingsState extends State<SlotSettings> {
                           .setMf1WriteMode(ChameleonMf1WriteMode.shadow);
                     }
 
-                    widget.refresh();
+                    widget.refresh(widget.slot);
                   },
                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                   constraints: const BoxConstraints(
@@ -290,7 +290,7 @@ class SlotSettingsState extends State<SlotSettings> {
                     const SizedBox(width: 8),
                     Expanded(
                         child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: null,
                       child: Text(lfName),
                     )),
                     const SizedBox(width: 8),
@@ -305,7 +305,7 @@ class SlotSettingsState extends State<SlotSettings> {
                         setState(() {
                           lfName = "";
                         });
-                        widget.refresh();
+                        widget.refresh(widget.slot);
                       },
                       icon: const Icon(Icons.clear_rounded),
                     ),
@@ -325,7 +325,7 @@ class SlotSettingsState extends State<SlotSettings> {
 
                     await connection.enableSlot(
                         widget.slot, index == 0 ? true : false);
-                    widget.refresh();
+                    widget.refresh(widget.slot);
                   },
                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                   constraints: const BoxConstraints(
@@ -339,7 +339,7 @@ class SlotSettingsState extends State<SlotSettings> {
                 TextButton(
                   child: const Text('OK'),
                   onPressed: () {
-                    widget.refresh();
+                    widget.refresh(widget.slot);
                     Navigator.pop(context);
                   },
                 ),

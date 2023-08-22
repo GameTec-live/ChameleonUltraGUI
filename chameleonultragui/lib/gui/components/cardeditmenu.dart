@@ -6,7 +6,6 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:uuid/uuid.dart';
-import 'package:chameleonultragui/gui/components/hexeditor.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class CardEditMenu extends StatefulWidget {
