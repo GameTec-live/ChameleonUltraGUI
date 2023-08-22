@@ -789,7 +789,7 @@ class ChameleonCom {
   Future<ChameleonMf1WriteMode> getMf1WriteMode() async {
     var resp = await sendCmdSync(ChameleonCommand.mf1GetWriteMode, 0x00);
     if (resp!.data.length != 1) throw ("Invalid data length");
-    print(resp.data[0]);
+    log.d(resp.data[0]);
     if (resp.data[0] == 1) {
       return ChameleonMf1WriteMode.deined;
     } else if (resp.data[0] == 2) {

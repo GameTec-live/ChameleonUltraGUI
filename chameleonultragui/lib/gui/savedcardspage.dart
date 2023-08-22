@@ -70,6 +70,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     }
   }
 
+  // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -147,7 +148,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 final nameController =
                                     TextEditingController(text: "");
 
-                                // ignore: use_build_context_synchronously
                                 await showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
