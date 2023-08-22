@@ -29,11 +29,12 @@ class NativeSerial extends AbstractSerial {
   Future<bool> preformDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
+    isOpen = false;
+    messageCallback = null;
     if (port != null) {
       port?.close();
       reader?.close();
       reader = null;
-      isOpen = false;
       connected = false;
       return true;
     }

@@ -353,7 +353,7 @@ class ChameleonCommunicator {
 
       if (startTime.millisecondsSinceEpoch + timeout.inMilliseconds <
           DateTime.now().millisecondsSinceEpoch) {
-        throw ("Timeout waiting for response");
+        throw ("Timeout waiting for response for command ${cmd.value}");
       }
 
       await asyncSleep(1);

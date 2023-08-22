@@ -207,6 +207,8 @@ class BLESerial extends AbstractSerial {
   Future<bool> preformDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
+    isOpen = false;
+    messageCallback = null;
     if (connection != null) {
       await connection!.cancel();
       connected = false;
