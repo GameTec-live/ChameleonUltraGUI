@@ -52,7 +52,7 @@ class HexEditState extends State<HexEdit> {
           children: sectors,
         ),
       ),
-      actions: [],
+      actions: const [],
     );
   }
 }

@@ -5,8 +5,6 @@ import 'dart:typed_data';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
-import 'package:uuid/uuid.dart';
-import 'package:chameleonultragui/gui/components/hexeditor.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class CardEditMenu extends StatefulWidget {
@@ -77,7 +75,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                           context: context,
                           builder: (BuildContext context) {
                             return AlertDialog(
-                              title: const Text('Pick a color!'),
+                              title: const Text('Pick a color'),
                               content: SingleChildScrollView(
                                 child: ColorPicker(
                                   pickerColor: pickerColor,

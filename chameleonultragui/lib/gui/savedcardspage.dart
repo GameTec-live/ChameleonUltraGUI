@@ -437,7 +437,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       onPressed: () {
                                         Navigator.pop(context);
                                       },
-                                      child: const Text('Ok'),
+                                      child: const Text('OK'),
                                     ),
                                   ],
                                 );
@@ -671,7 +671,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         height: 400,
                                         width: 600,
                                         child: ListView(
-                                          children: [Text(output),],
+                                          children: [
+                                            Text(output),
+                                          ],
                                         ),
                                       )
                                     ],
@@ -738,7 +740,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       onPressed: () {
                                         Navigator.pop(context);
                                       },
-                                      child: const Text('Ok'),
+                                      child: const Text('OK'),
                                     ),
                                   ],
                                 );

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/components/slotsettings.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
@@ -22,26 +23,37 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     (_) => (ChameleonTag.unknown, ChameleonTag.unknown),
   );
 
+  List<bool> enabledSlots = List.generate(
+    8,
+    (_) => true,
+  );
+
   List<Map<String, String>> slotData = List.generate(
     8,
     (_) => {
-      'hfName': 'Loading',
-      'lfName': 'Loading',
-      'Last-updated': 'Not implemented',
+      'hfName': '...',
+      'lfName': '...',
     },
   );
 
   int currentFunctionIndex = 0;
   int progress = -1;
+  bool onlyOneSlot = false;
 
   Future<void> executeNextFunction() async {
     var appState = context.read<MyAppState>();
     var connection = ChameleonCom(port: appState.connector);
-    if (currentFunctionIndex == 0) {
+    if (currentFunctionIndex == 0 || onlyOneSlot) {
       try {
         usedSlots = await connection.getUsedSlots();
       } catch (_) {}
     }
+    if (currentFunctionIndex == 0 || onlyOneSlot) {
+      try {
+        enabledSlots = await connection.getEnabledSlots();
+      } catch (_) {}
+    }
+
     if (currentFunctionIndex < 8) {
       try {
         slotData[currentFunctionIndex]['hfName'] = await connection
@@ -64,17 +76,23 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       if (slotData[currentFunctionIndex]['lfName']!.isEmpty) {
         slotData[currentFunctionIndex]['lfName'] = "Empty";
       }
-
-      setState(() {
-        currentFunctionIndex++;
-      });
+      if (!onlyOneSlot) {
+        setState(() {
+          currentFunctionIndex++;
+        });
+      } else {
+        setState(() {
+          currentFunctionIndex = 8;
+        });
+      }
     }
   }
 
-  void reloadPage() {
+  void refreshSlot(int slot) {
     setUploadState(-1);
     setState(() {
-      currentFunctionIndex = 0;
+      currentFunctionIndex = slot;
+      onlyOneSlot = true;
     });
     var appState = context.read<MyAppState>();
     appState.changesMade();
@@ -126,14 +144,17 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                               ),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.only(
+                                  top: 8.0, left: 8.0, bottom: 8.0),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.nfc),
+                                      Icon(Icons.nfc,
+                                          color: enabledSlots[index]
+                                              ? Colors.green
+                                              : Colors.deepOrange),
                                       const SizedBox(width: 5),
                                       Text("Slot ${index + 1}")
                                     ],
@@ -149,27 +170,35 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                     ],
                                   ),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.wifi),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                          "${slotData[index]['lfName'] ?? "Unknown"} (${chameleonTagToString(usedSlots[index].$2)})")
+                                      Expanded(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            const Icon(Icons.wifi),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              "${slotData[index]['lfName'] ?? "Unknown"} (${chameleonTagToString(usedSlots[index].$2)})",
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return SlotSettings(
+                                                  slot: index,
+                                                  refresh: refreshSlot);
+                                            },
+                                          );
+                                        },
+                                        icon: const Icon(Icons.settings),
+                                      ),
                                     ],
-                                  ),
-                                  Expanded(
-                                      child: Align(
-                                    alignment: Alignment.bottomRight,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        const Icon(Icons.access_time),
-                                        const SizedBox(width: 5),
-                                        Text(slotData[index]['Last-updated'] ??
-                                            "Not implemented"),
-                                      ],
-                                    ),
-                                  )),
+                                  )
                                 ],
                               ),
                             ),
@@ -207,7 +236,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     return showSearch<String>(
       context: context,
       delegate:
-          CardSearchDelegate(tags, gridPosition, reloadPage, setUploadState),
+          CardSearchDelegate(tags, gridPosition, refreshSlot, setUploadState),
     );
   }
 }
@@ -403,7 +432,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
                   ChameleonTagFrequiency.hf);
               await connection.saveSlotData();
               appState.changesMade();
-              refresh();
+              refresh(gridPosition);
             } else if (card.tag == ChameleonTag.em410X) {
               close(context, card.name);
               await connection.setReaderDeviceMode(false);
@@ -419,7 +448,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
                   ChameleonTagFrequiency.lf);
               await connection.saveSlotData();
               appState.changesMade();
-              refresh();
+              refresh(gridPosition);
             } else {
               appState.log.e("Can't write this card type yet.");
               close(context, card.name);

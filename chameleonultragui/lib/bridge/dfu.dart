@@ -296,7 +296,7 @@ class ChameleonDFU {
       }
     } else {
       // Other OS: send as is
-      _serialInstance!.write(packet, firmware: true);
+      await _serialInstance!.write(packet, firmware: true);
     }
   }
 }
