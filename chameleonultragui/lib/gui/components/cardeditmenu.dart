@@ -192,24 +192,27 @@ class CardEditMenuState extends State<CardEditMenu> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                TextFormField(
-                  controller: atqa4Controller,
-                  decoration: const InputDecoration(
-                      labelText: 'ATQA', hintText: 'Enter ATQA'),
-                  validator: (value) {
-                    if (value == null ||
-                        value.isEmpty &&
-                            chameleontagToFrequency(selectedType) !=
-                                ChameleonTagFrequiency.lf) {
-                      return 'Please enter ATQA';
-                    }
-                    if (value.replaceAll(" ", "").length != 4 &&
-                        chameleontagToFrequency(selectedType) !=
-                            ChameleonTagFrequiency.lf) {
-                      return 'ATQA must be 2 bytes long';
-                    }
-                    return null;
-                  },
+                Visibility(
+                  visible: chameleontagToFrequency(selectedType) != ChameleonTagFrequiency.lf,
+                  child: TextFormField(
+                    controller: atqa4Controller,
+                    decoration: const InputDecoration(
+                        labelText: 'ATQA', hintText: 'Enter ATQA'),
+                    validator: (value) {
+                      if (value == null ||
+                          value.isEmpty &&
+                              chameleontagToFrequency(selectedType) !=
+                                  ChameleonTagFrequiency.lf) {
+                        return 'Please enter ATQA';
+                      }
+                      if (value.replaceAll(" ", "").length != 4 &&
+                          chameleontagToFrequency(selectedType) !=
+                              ChameleonTagFrequiency.lf) {
+                        return 'ATQA must be 2 bytes long';
+                      }
+                      return null;
+                    },
+                  ),
                 ),
                 const SizedBox(height: 40),
               ]),
