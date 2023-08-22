@@ -18,13 +18,13 @@ enum ChameleonCommand {
   setSlotTagType(1004),
   setSlotDataDefault(1005),
   setSlotEnable(1006),
+  setSlotTagNick(1007),
+  getSlotTagNick(1008),
+  saveSlotNicks(1009),
   getActiveSlot(1018),
   getSlotInfo(1019),
   getEnabledSlots(1023),
   deleteSlotInfo(1024),
-  setSlotTagNick(1007),
-  getSlotTagNick(1008),
-  saveSlotNicks(1009),
 
   // bootloader
   enterBootloader(1010),
@@ -665,6 +665,12 @@ class ChameleonCom {
     var resp = await sendCmdSync(ChameleonCommand.getSlotTagNick, 0x00,
         data: Uint8List.fromList([index, frequiency.value]));
     return utf8.decode(resp!.data);
+  }
+
+  Future<void> deleteSlotInfo(
+      int index, ChameleonTagFrequiency frequiency) async {
+    await sendCmdSync(ChameleonCommand.deleteSlotInfo, 0x00,
+        data: Uint8List.fromList([index, frequiency.value]));
   }
 
   Future<void> saveSlotData() async {
