@@ -135,6 +135,35 @@ class SlotSettingsState extends State<SlotSettings> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Text('LF:'),
+                    const SizedBox(width: 8),
+                    Expanded(
+                        child: OutlinedButton(
+                      onPressed: null,
+                      child: Text(lfName),
+                    )),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () async {
+                        await connection.deleteSlotInfo(
+                            widget.slot, ChameleonTagFrequiency.lf);
+                        await connection.setSlotTagName(
+                            widget.slot, "Empty", ChameleonTagFrequiency.lf);
+                        await connection.saveSlotData();
+
+                        setState(() {
+                          lfName = "";
+                        });
+                        widget.refresh(widget.slot);
+                      },
+                      icon: const Icon(Icons.clear_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 const Text(
                   'Mifare Classic emulator settings',
                   textScaleFactor: 1.2,
@@ -283,35 +312,7 @@ class SlotSettingsState extends State<SlotSettings> {
                     Text('Shadow')
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Text('LF:'),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: OutlinedButton(
-                      onPressed: null,
-                      child: Text(lfName),
-                    )),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () async {
-                        await connection.deleteSlotInfo(
-                            widget.slot, ChameleonTagFrequiency.lf);
-                        await connection.setSlotTagName(
-                            widget.slot, "Empty", ChameleonTagFrequiency.lf);
-                        await connection.saveSlotData();
-
-                        setState(() {
-                          lfName = "";
-                        });
-                        widget.refresh(widget.slot);
-                      },
-                      icon: const Icon(Icons.clear_rounded),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 32),
                 const Text('Slot status'),
                 const SizedBox(height: 8),
                 ToggleButtons(
