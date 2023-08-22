@@ -47,7 +47,11 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<Icon> getBatteryChargeIcon(ChameleonCom connection) async {
-    int charge = await connection.getBatteryCharge();
+    int charge = 0;
+    try {
+      (_, charge) = await connection.getBatteryCharge();
+    } catch (_) {}
+
     if (charge > 98) {
       return const Icon(Icons.battery_full);
     } else if (charge > 87) {
@@ -67,6 +71,7 @@ class HomePageState extends State<HomePage> {
     } else if (charge > 0) {
       return const Icon(Icons.battery_alert);
     }
+
     return const Icon(Icons.battery_unknown);
   }
 
@@ -74,7 +79,8 @@ class HomePageState extends State<HomePage> {
       List<(ChameleonTag, ChameleonTag)> usedSlots) async {
     int usedSlotsOut8 = 0;
     for (int i = 0; i < 8; i++) {
-      if (false) {
+      if (usedSlots[i].$1 != ChameleonTag.unknown ||
+          usedSlots[i].$2 != ChameleonTag.unknown) {
         usedSlotsOut8++;
       }
     }
