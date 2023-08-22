@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/components/slotsettings.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
@@ -21,13 +22,16 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     8,
     (_) => (ChameleonTag.unknown, ChameleonTag.unknown),
   );
+  List<bool> enabledSlots = List.generate(
+    8,
+    (_) => true,
+  );
 
   List<Map<String, String>> slotData = List.generate(
     8,
     (_) => {
-      'hfName': 'Loading',
-      'lfName': 'Loading',
-      'Last-updated': 'Not implemented',
+      'hfName': '...',
+      'lfName': '...',
     },
   );
 
@@ -42,6 +46,12 @@ class SlotManagerPageState extends State<SlotManagerPage> {
         usedSlots = await connection.getUsedSlots();
       } catch (_) {}
     }
+    if (currentFunctionIndex == 0) {
+      try {
+        enabledSlots = await connection.getEnabledSlots();
+      } catch (_) {}
+    }
+
     if (currentFunctionIndex < 8) {
       try {
         slotData[currentFunctionIndex]['hfName'] = await connection
@@ -105,7 +115,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   child: Card(
                     child: StaggeredGridView.countBuilder(
                       padding: const EdgeInsets.all(20),
-                      crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 2 : 1,
+                      crossAxisCount:
+                          MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                       itemCount: 8,
@@ -125,14 +136,17 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                               ),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.only(
+                                  top: 8.0, left: 8.0, bottom: 8.0),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.nfc),
+                                      Icon(Icons.nfc,
+                                          color: enabledSlots[index]
+                                              ? Colors.green
+                                              : Colors.deepOrange),
                                       const SizedBox(width: 5),
                                       Text("Slot ${index + 1}")
                                     ],
@@ -148,27 +162,35 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                     ],
                                   ),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.wifi),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                          "${slotData[index]['lfName'] ?? "Unknown"} (${chameleonTagToString(usedSlots[index].$2)})")
+                                      Expanded(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            const Icon(Icons.wifi),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              "${slotData[index]['lfName'] ?? "Unknown"} (${chameleonTagToString(usedSlots[index].$2)})",
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return SlotSettings(
+                                                  slot: index,
+                                                  refresh: reloadPage);
+                                            },
+                                          );
+                                        },
+                                        icon: const Icon(Icons.settings),
+                                      ),
                                     ],
-                                  ),
-                                  Expanded(
-                                      child: Align(
-                                    alignment: Alignment.bottomRight,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        const Icon(Icons.access_time),
-                                        const SizedBox(width: 5),
-                                        Text(slotData[index]['Last-updated'] ??
-                                            "Not implemented"),
-                                      ],
-                                    ),
-                                  )),
+                                  )
                                 ],
                               ),
                             ),

@@ -43,22 +43,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center, // Center
           children: [
-            Switch(
-              value: appState.switchOn,
-              activeColor: Colors.blue,
-              activeTrackColor: Colors.green,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.red,
-              onChanged: (bool value) {
-                // This is called when the user toggles the switch.
-                Logger log = Logger();
-                log.d('Switch toggled');
-                //appState.toggleswitch();
-                appState.switchOn = !appState.switchOn;
-                //(context as Element).reassemble();
-                appState.changesMade();
-              },
-            ),
             const SizedBox(height: 10),
             const Text("Sidebar Expansion:"),
             ToggleSwitch(

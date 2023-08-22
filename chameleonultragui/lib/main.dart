@@ -87,7 +87,6 @@ class MyAppState extends ChangeNotifier {
       ? AndroidSerial()
       : (Platform.isIOS ? BLESerial() : NativeSerial());
 
-  bool switchOn = true;
   bool devMode = false;
   double? progress;
   // Flashing Easteregg

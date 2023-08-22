@@ -107,7 +107,7 @@ class DictEditMenuState extends State<DictEditMenu> {
                                 child: const Text('Cancel'),
                               ),
                               TextButton(
-                                child: const Text('Ok'),
+                                child: const Text('OK'),
                                 onPressed: () {
                                   setState(() => currentColor = pickerColor);
                                   Navigator.pop(context);

@@ -25,7 +25,7 @@ class CardEditMenuState extends State<CardEditMenu> {
   Uint8List uidatqa = Uint8List.fromList([]);
   TextEditingController uidController = TextEditingController();
   TextEditingController sak4Controller = TextEditingController();
-  TextEditingController atqa4Controller =TextEditingController();
+  TextEditingController atqa4Controller = TextEditingController();
   TextEditingController nameController = TextEditingController();
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
@@ -38,7 +38,8 @@ class CardEditMenuState extends State<CardEditMenu> {
     uidsak = widget.tagSave.sak;
     uidatqa = Uint8List.fromList(widget.tagSave.atqa);
     uidController = TextEditingController(text: uid);
-    sak4Controller = TextEditingController(text: bytesToHex(Uint8List.fromList([uidsak])));
+    sak4Controller =
+        TextEditingController(text: bytesToHex(Uint8List.fromList([uidsak])));
     atqa4Controller = TextEditingController(text: bytesToHexSpace(uidatqa));
     nameController = TextEditingController(text: widget.tagSave.name);
     pickerColor = widget.tagSave.color;
@@ -66,7 +67,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                         context: context,
                         builder: (BuildContext context) {
                           return AlertDialog(
-                            title: const Text('Pick a color!'),
+                            title: const Text('Pick a color'),
                             content: SingleChildScrollView(
                               child: ColorPicker(
                                 pickerColor: pickerColor,
@@ -81,7 +82,8 @@ class CardEditMenuState extends State<CardEditMenu> {
                             actions: <Widget>[
                               TextButton(
                                 onPressed: () {
-                                  setState(() => currentColor = pickerColor = Colors.deepOrange);
+                                  setState(() => currentColor =
+                                      pickerColor = Colors.deepOrange);
                                   Navigator.pop(context);
                                 },
                                 child: const Text('Reset to default'),
@@ -93,7 +95,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                                 child: const Text('Cancel'),
                               ),
                               TextButton(
-                                child: const Text('Ok'),
+                                child: const Text('OK'),
                                 onPressed: () {
                                   setState(() => currentColor = pickerColor);
                                   Navigator.pop(context);
@@ -104,8 +106,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                         },
                       );
                     },
-                  )
-                ),
+                  )),
             ),
             DropdownButton<ChameleonTag>(
               value: selectedType,
