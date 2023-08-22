@@ -19,8 +19,8 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons(bool onlyDFU) async {
-    List output = [];
+  Future<List<ChameleonDevicePort>> availableChameleons(bool onlyDFU) async {
+    List<ChameleonDevicePort> output = [];
 
     output.addAll(await mobileSerial.availableChameleons(onlyDFU));
     if (await checkPermissions()) {

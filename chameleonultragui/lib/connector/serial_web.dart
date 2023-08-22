@@ -9,7 +9,7 @@ import 'package:serial/serial.dart';
 class DeviceInfo {
   final SerialPort port;
   final SerialPortInfo info;
-  ChameleonDevice _type = ChameleonDevice.ultra;
+  ChameleonDevice _type = ChameleonDevice.unknown;
 
   DeviceInfo(this.port, this.info);
 
@@ -33,7 +33,7 @@ class DeviceInfo {
   };
 
   ChameleonConnectType get connection {
-    if (info.usbVendorId == 0x1915) {
+    if (info.usbVendorId == ChameleonVendor.dfu.value) {
       return ChameleonConnectType.dfu;
     }
     return ChameleonConnectType.usb;
@@ -110,45 +110,43 @@ class SerialConnector extends AbstractSerial {
     List output = [];
 
     final pairedDevices = await window.navigator.serial.getPorts();
-    for (var deviceValue in pairedDevices) {
+
+    pairedDevices.asMap().forEach((index, deviceValue) {
       SerialPortInfo deviceInfo = deviceValue.getInfo();
-      // log.d('deviceInfo ${deviceInfo.hashCode} ${deviceInfo.usbVendorId} ${deviceInfo.usbProductId}');
-      if (deviceInfo.usbVendorId == 0x6868 || deviceInfo.usbVendorId == 0x1915) {
-        var portId = '${deviceInfo.usbVendorId!.toRadixString(16)}:${deviceInfo.usbProductId!.toRadixString(16)}';
+
+      if (isChameleonVendor(deviceInfo.usbVendorId)) {
+        var portId = '${deviceInfo.usbVendorId!.toRadixString(16)}:${deviceInfo.usbProductId!.toRadixString(16)}:$index';
 
         deviceMap[portId] = DeviceInfo(deviceValue, deviceInfo);
         output.add(portId);
       }
-    }
+    });
 
     return output;
   }
 
   @override
-  Future<List> availableChameleons(bool onlyDFU) async {
-    List output = [];
+  Future<List<ChameleonDevicePort>> availableChameleons(bool onlyDFU) async {
+    List<ChameleonDevicePort> output = [];
 
     for (var devicePort in await availableDevices()) {
       var device = deviceMap[devicePort];
-      ChameleonConnectType connectionType = ChameleonConnectType.usb;
-
-      if (device!.info.usbProductId == 1) { //}"Proxgrind") {
-        log.d("Found Chameleon ${device.deviceName}!");
-
-        if (device.info.usbVendorId == 0x1915) {
-          connectionType = ChameleonConnectType.dfu;
-          log.w("Chameleon is in DFU mode!");
-        }
+      if (device == null) {
+        continue;
       }
 
-      if (onlyDFU) {
-        if (connectionType == ChameleonConnectType.dfu) {
-          output.add(
-              {'port': devicePort, 'device': device.type, 'type': connectionType});
+      if (isChameleonVendor(device.info.usbVendorId, ChameleonVendor.dfu)) {
+        log.w("Chameleon is in DFU mode!");
+
+        output.add(ChameleonDevicePort(
+            port: devicePort, device: device.type, type: ChameleonConnectType.dfu));
+      } else if (isChameleonVendor(device.info.usbVendorId, ChameleonVendor.proxgrind)) {
+        log.d("Found Chameleon ${device.deviceName}!");
+
+        if (!onlyDFU) {
+          output.add(ChameleonDevicePort(
+              port: devicePort, device: device.type, type: ChameleonConnectType.usb));
         }
-      } else {
-        output.add(
-            {'port': devicePort, 'device': device.type, 'type': connectionType});
       }
     }
 

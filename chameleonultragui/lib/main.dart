@@ -6,7 +6,9 @@ import 'package:chameleonultragui/gui/readcardpage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:sizer_pro/sizer.dart';
 
 // Comms Imports
 import 'connector/serial_stub.dart'
@@ -39,7 +41,8 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   // Root Widget
   final SharedPreferencesProvider _sharedPreferencesProvider;
-  const MyApp(this._sharedPreferencesProvider, {Key? key}) : super(key: key);
+
+  MyApp(this._sharedPreferencesProvider, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -50,23 +53,29 @@ class MyApp extends StatelessWidget {
           create: (context) => MyAppState(_sharedPreferencesProvider),
         ),
       ],
-      child: MaterialApp(
-        title: 'Chameleon Ultra GUI', // App Name
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-              seedColor:
-                  _sharedPreferencesProvider.getThemeColor()), // Color Scheme
-          brightness: Brightness.light, // Light Theme
-        ),
-        darkTheme: ThemeData.dark().copyWith(
-          colorScheme: ColorScheme.fromSeed(
-              seedColor: _sharedPreferencesProvider.getThemeColor(),
-              brightness: Brightness.dark), // Color Scheme
-          brightness: Brightness.dark, // Dark Theme
-        ),
-        themeMode: _sharedPreferencesProvider.getTheme(), // Dark Theme
-        home: const MyHomePage(),
+      child: Sizer(
+        builder: (context, orientation, deviceType) {
+          return ScreenUtilInit(
+            builder: (_, __) => MaterialApp(
+              title: 'Chameleon Ultra GUI', // App Name
+              theme: ThemeData(
+                useMaterial3: true,
+                colorScheme: ColorScheme.fromSeed(
+                    seedColor:
+                        _sharedPreferencesProvider.getThemeColor()), // Color Scheme
+                brightness: Brightness.light, // Light Theme
+              ),
+              darkTheme: ThemeData.dark().copyWith(
+                colorScheme: ColorScheme.fromSeed(
+                    seedColor: _sharedPreferencesProvider.getThemeColor(),
+                    brightness: Brightness.dark), // Color Scheme
+                brightness: Brightness.dark, // Dark Theme
+              ),
+              themeMode: _sharedPreferencesProvider.getTheme(), // Dark Theme
+              home: const MyHomePage(),
+            ),
+          );
+        }
       ),
     );
 
@@ -186,61 +195,84 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return LayoutBuilder(// Build Page
         builder: (context, constraints) {
+      final useBottomNavigation = SizerUtil.orientation == Orientation.portrait && SizerUtil.width < 600;
+      final useSideNavigation = !useBottomNavigation && 
+        (appState.connector.connectionType != ChameleonConnectType.dfu ||
+        !appState.connector.connected);
+
+      var bottomIndex = selectedIndex;
+      if (useBottomNavigation && !appState.connector.connected) {
+        // adjust bottomIndex if the device is not connect, cause
+        // then we only show 3 buttons as NavigationDestinations
+        // cannot be disabled
+        if (selectedIndex == 2) {
+          bottomIndex = 1;
+        }
+
+        if (selectedIndex == 5) {
+          bottomIndex = 2;
+        }
+      }
+
       return Scaffold(
+          appBar: useSideNavigation
+            ? AppBar(
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+              title: const Text('Chameleon Ultra GUI')
+            )
+            : null,
           body: Row(
             children: [
-              (appState.connector.connectionType != ChameleonConnectType.dfu ||
-                      !appState.connector.connected)
-                  ? SafeArea(
-                      child: NavigationRail(
-                        // Sidebar
-                        extended: appState.sharedPreferencesProvider
-                            .getSideBarExpanded(),
-                        destinations: [
-                          // Text color bug on disabled: https://github.com/flutter/flutter/pull/132345
-                          // Sidebar Items
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.home),
-                            label: Text('Home'),
-                          ),
-                          NavigationRailDestination(
-                            disabled: appState.connector.connected == false,
-                            icon: const Icon(Icons.widgets),
-                            label: const Text('Slot Manager'),
-                          ),
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.auto_awesome_motion_outlined),
-                            label: Text('Saved Cards'),
-                          ),
-                          NavigationRailDestination(
-                            disabled: appState.connector.connected == false,
-                            icon: const Icon(Icons.wifi),
-                            label: const Text('Read Card'),
-                          ),
-                          NavigationRailDestination(
-                            disabled: appState.connector.connected == false,
-                            icon: const Icon(Icons.credit_card),
-                            label: const Text('Mfkey32'),
-                          ),
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.settings),
-                            label: Text('Settings'),
-                          ),
-                          if (appState.devMode)
-                            const NavigationRailDestination(
-                              icon: Icon(Icons.bug_report),
-                              label: Text('🐞 Debug 🐞'),
-                            ),
-                        ],
-                        selectedIndex: selectedIndex,
-                        onDestinationSelected: (value) {
-                          setState(() {
-                            selectedIndex = value;
-                          });
-                        },
+              if (useSideNavigation)
+                SafeArea(
+                  child: NavigationRail(
+                    // Sidebar
+                    extended: appState.sharedPreferencesProvider
+                        .getSideBarExpanded(),
+                    destinations: [
+                      // Text color bug on disabled: https://github.com/flutter/flutter/pull/132345
+                      // Sidebar Items
+                      const NavigationRailDestination(
+                        icon: Icon(Icons.home),
+                        label: Text('Home'),
                       ),
-                    )
-                  : const SizedBox(),
+                      NavigationRailDestination(
+                        disabled: appState.connector.connected == false,
+                        icon: const Icon(Icons.widgets),
+                        label: const Text('Slot Manager'),
+                      ),
+                      const NavigationRailDestination(
+                        icon: Icon(Icons.auto_awesome_motion_outlined),
+                        label: Text('Saved Cards'),
+                      ),
+                      NavigationRailDestination(
+                        disabled: appState.connector.connected == false,
+                        icon: const Icon(Icons.wifi),
+                        label: const Text('Read Card'),
+                      ),
+                      NavigationRailDestination(
+                        disabled: appState.connector.connected == false,
+                        icon: const Icon(Icons.credit_card),
+                        label: const Text('Mfkey32'),
+                      ),
+                      const NavigationRailDestination(
+                        icon: Icon(Icons.settings),
+                        label: Text('Settings'),
+                      ),
+                      if (appState.devMode)
+                        const NavigationRailDestination(
+                          icon: Icon(Icons.bug_report),
+                          label: Text('🐞 Debug 🐞'),
+                        ),
+                    ],
+                    selectedIndex: selectedIndex,
+                    onDestinationSelected: (value) {
+                      setState(() {
+                        selectedIndex = value;
+                      });
+                    },
+                  ),
+                ),
               Expanded(
                 child: Container(
                   color: Theme.of(context).colorScheme.primaryContainer,
@@ -249,7 +281,74 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ],
           ),
-          bottomNavigationBar: const BottomProgressBar());
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              const BottomProgressBar(),
+              if (useBottomNavigation)
+                NavigationBar(
+                  destinations: [
+                    NavigationDestination(
+                      icon: Icon(bottomIndex == 0 && appState.connector.connected ? Icons.close : Icons.home),
+                      label: 'Home',
+                    ),
+                    if (appState.connector.connected)
+                      const NavigationDestination(
+                        // enabled: appState.connector.connected == false,
+                        icon: Icon(Icons.widgets),
+                        label: 'Slots',
+                        tooltip: 'Slot Manager',
+                      ),
+                    const NavigationDestination(
+                      icon: Icon(Icons.auto_awesome_motion_outlined),
+                      label: 'Saved',
+                      tooltip: 'Saved Cards',
+                    ),
+                    if (appState.connector.connected)
+                      const NavigationDestination(
+                        // disabled: appState.connector.connected == false,
+                        icon: Icon(Icons.wifi),
+                        label: 'Read',
+                        tooltip: 'Read Card',
+                      ),
+                    if (appState.connector.connected)
+                      const NavigationDestination(
+                        // disabled: ,
+                        icon: Icon(Icons.credit_card),
+                        label: 'Mfkey32',
+                      ),
+                    const NavigationDestination(
+                      icon: Icon(Icons.settings),
+                      label: 'Settings',
+                    ),
+                    if (appState.devMode)
+                      const NavigationDestination(
+                        icon: Icon(Icons.bug_report),
+                        label: '🐞 Debug 🐞',
+                      ),
+                  ],
+                  selectedIndex: bottomIndex,
+                  onDestinationSelected: (value) {
+                    if (!appState.connector.connected) {
+                      if (value == 1) {
+                        value = 2;
+                      } else if (value == 2) {
+                        value = 5;
+                      }
+                    } else if (value == 0 && bottomIndex == 0) {
+                      // If user taps on Home icon while already on Home page
+                      // then close the active device port
+                      appState.connector.performDisconnect().then((_) => appState.changesMade());
+                    }
+
+                    setState(() {
+                      selectedIndex = value;
+                    });
+                  },
+                )
+              ]
+          ));
     });
   }
 }

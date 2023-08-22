@@ -1,9 +1,14 @@
-import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:chameleonultragui/gui/features/flash_firmware_zip.dart';
+import 'package:chameleonultragui/gui/widgets/card_web_pair_devices.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'features/flash_firmware_latest.dart';
+import 'widgets/button_chameleon_device.dart';
+import 'widgets/button_dfu_device.dart';
 
 class ConnectPage extends StatelessWidget {
   const ConnectPage({super.key});
@@ -14,213 +19,115 @@ class ConnectPage extends StatelessWidget {
 
     var connector = appState.connector;
 
-    return FutureBuilder(
+    return FutureBuilder<List<ChameleonDevicePort>>(
       future: connector.connected
           ? Future.value([])
           : connector.availableChameleons(false),
-      builder: (BuildContext context, AsyncSnapshot snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<List<ChameleonDevicePort>> snapshot) {
+        Widget? page;
+
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-              appBar: AppBar(
-                title: const Text('Connect'),
-              ),
-              body: const Center(child: CircularProgressIndicator()));
+          page = const CircularProgressIndicator();
         } else if (snapshot.hasError) {
           appState.log.e('${snapshot.error}', snapshot.error, snapshot.stackTrace);
-
           connector.performDisconnect();
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Connect'),
-            ),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Error: ${snapshot.error}')
-                ]
-              )
-            )
+
+          page = Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Error: ${snapshot.error}')
+            ]
           );
-        } else {
-          final result = snapshot.data as List;
+        } else if (snapshot.hasData) {
+          final result = snapshot.data;
 
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Connect'),
-            ),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center, // Center
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+          page = Column(
+            mainAxisAlignment: MainAxisAlignment.center, // Center
+            children: [
+              Expanded(
+                child: GridView(
+                    padding: const EdgeInsets.all(20),
+                    gridDelegate:
+                        SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: result!.isEmpty ? 1 : calculateCrossAxisCount(),
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 1,
+                    ),
+                    scrollDirection: Axis.vertical,
                     children: [
-                      ...(!appState.onWeb ? [] : [
-                        IconButton(
-                          onPressed: () async {
-                            // Refresh
-                            await connector.pairDevices();
-                            appState.changesMade();
-                          },
-                          icon: const Icon(Icons.handshake_outlined),
-                          tooltip: "Pair devices",
-                        )
-                      ]),
-                      IconButton(
-                        onPressed: () {
-                          // Refresh
-                          appState.changesMade();
-                        },
-                        icon: const Icon(Icons.refresh),
-                        tooltip: "Refresh devices",
-                      ),
-                    ]
-                  ),
-                  Expanded(
-                    child: GridView(
-                        padding: const EdgeInsets.all(20),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 1,
+                      if (result!.isEmpty)
+                        Align(
+                          alignment: Alignment.center,
+                          child: SizedBox(
+                            width: 300,
+                            child: CardWebPairDevices(onPairDevices: () async {
+                              await appState.connector.pairDevices();
+                              appState.changesMade();
+                            })
+                          ),
                         ),
-                        scrollDirection: Axis.vertical,
-                        children: [
-                          ...result.map<Widget>((chameleonDevice) {
-                            return ElevatedButton(
-                              onPressed: () async {
-                                // TODO: move this to gui/flashing.dart
-                                if (chameleonDevice['type'] == ChameleonConnectType.dfu) {
-                                  showDialog<String>(
-                                    context: context,
-                                    builder: (BuildContext context) =>
-                                        AlertDialog(
-                                      title: const Text(
-                                          'Chameleon is in DFU mode'),
-                                      content: const Text(
-                                          'This probably means your firmware is corrupted. Do you want to flash latest FW?'),
-                                      actions: <Widget>[
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, 'Cancel'),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () async {
-                                            Navigator.pop(context, 'Flash');
-                                            appState.changesMade();
-                                            Uint8List applicationDat,
-                                                applicationBin;
+                      ...result.map<Widget>((chameleonDevice) {
+                        if (chameleonDevice.type == ChameleonConnectType.dfu) {
+                          return ButtonDfuDevice(
+                            devicePort: chameleonDevice,
+                            onFirmwareUpdate: (fromZipFile) async {
+                              await appState.connector.connectSpecific(chameleonDevice.port);
 
-                                            Uint8List content =
-                                                await fetchFirmware(
-                                                    connector.device);
+                              if (fromZipFile) {
+                                await flashFirmwareZip(appState);
+                              } else {
+                                await flashFirmwareLatest(appState);
+                              }
 
-                                            (applicationDat, applicationBin) =
-                                                await unpackFirmware(content);
+                              // Give the device some time to restart/reconnect
+                              await asyncSleep(250);
 
-                                            flashFile(
-                                                null,
-                                                appState,
-                                                applicationDat,
-                                                applicationBin,
-                                                (progress) =>
-                                                    appState.setProgressBar(
-                                                        progress / 100),
-                                                enterDFU: false);
+                              appState.changesMade();
+                            },
+                          );
+                        }
 
-                                            appState.changesMade();
-                                          },
-                                          child: const Text('Flash'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                } else {
-                                  await connector.connectSpecific(chameleonDevice['port']);
-                                  appState.changesMade();
-                                }
-                              },
-                              style: ButtonStyle(
-                                shape: MaterialStateProperty.all<
-                                    RoundedRectangleBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18.0),
-                                  ),
-                                ),
-                              ),
-                              child: Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: FittedBox(
-                                      alignment: Alignment.centerRight,
-                                      fit: BoxFit.scaleDown,
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment
-                                            .end, // Align the inner Row's children to the right
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
-                                            children: [
-                                              chameleonDevice['type'] ==
-                                                      ChameleonConnectType.ble
-                                                  ? const Icon(Icons.bluetooth)
-                                                  : const Icon(Icons.usb),
-                                              Text(chameleonDevice['port'] ??
-                                                  ""),
-                                              if (chameleonDevice['type'] ==
-                                                  ChameleonConnectType.dfu)
-                                                const Text(" (DFU)"),
-                                            ],
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  FittedBox(
-                                      alignment: Alignment.topRight,
-                                      fit: BoxFit.scaleDown,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                              "Chameleon${appState.onWeb ? '' : (chameleonDevice['device'] == ChameleonDevice.ultra) ? ' Ultra' : ' Lite'}",
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 20)),
-                                        ],
-                                      )),
-                                  const SizedBox(height: 8),
-                                  Expanded(
-                                      flex: 1,
-                                      child: Image.asset(
-                                        appState.onWeb ?
-                                          'assets/black-both-standing-front.png'
-                                        :
-                                        chameleonDevice['device'] ==
-                                                ChameleonDevice.ultra
-                                            ? 'assets/black-ultra-standing-front.png'
-                                            : 'assets/black-lite-standing-front.png',
-                                        fit: BoxFit.fitHeight,
-                                      )),
-                                  const SizedBox(height: 8),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ]),
+                        return ButtonChameleonDevice(
+                          devicePort: chameleonDevice,
+                          onSelectDevice: () async {
+                            await connector.connectSpecific(chameleonDevice.port);
+                            appState.changesMade();
+                          }
+                        );
+                      }),
+                    ]),
+              ),
+            ],
+          );
+        }
+
+        return Scaffold(
+              appBar: AppBar(
+                title: const Text('Connect'),
+                actions: [
+                  if (appState.onWeb)
+                    IconButton(
+                      onPressed: () async {
+                        // Refresh
+                        await connector.pairDevices();
+                        appState.changesMade();
+                      },
+                      icon: const Icon(Icons.handshake_outlined),
+                      tooltip: "Pair devices",
+                    ),
+                  IconButton(
+                    onPressed: () {
+                      // Refresh
+                      appState.changesMade();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    tooltip: "Refresh devices",
                   ),
                 ],
               ),
-            ),
-          );
-        }
+              body: Center(child: page),
+        );
       },
     );
   }

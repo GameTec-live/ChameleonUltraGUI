@@ -1,5 +1,4 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,15 +11,14 @@ class FlashingPage extends StatelessWidget {
     var appState = context.watch<MyAppState>();
 
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Chameleon DFU'),
-        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Image.asset(
+                // TODO: On Web a device will always be ChameleonDevice.unknown,
+                // as in DFU mode we cannot detect the actual device type
                 appState.connector.device == ChameleonDevice.ultra
                     ? appState.easterEgg
                         ? 'assets/black-ultra-standing-front-flashing.png'
@@ -33,28 +31,14 @@ class FlashingPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                appState.onWeb
-                    ? 'Select the firmware zip file to start flasing'
-                    : appState.easterEgg
-                    ? 'Your ${appState.connector.deviceName} is flashing'
-                    : 'Installing firmware on your ${appState.connector.deviceName}',
+                    appState.easterEgg
+                    ? 'Your ${appState.connector.device.name} is flashing'
+                    : 'Installing firmware on your ${appState.connector.device.name}',
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              TextButton(
-                onPressed: () async {
-                  await flashFirmwareZip(appState);
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.system_security_update_good),
-                    Text(
-                        "Flash .zip FW via DFU"),
-                  ],
-                )
-              ),
               const Text(
                 'Please wait...',
                 style: TextStyle(fontSize: 20),

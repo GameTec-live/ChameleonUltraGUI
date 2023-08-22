@@ -59,8 +59,8 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons(bool onlyDFU) async {
-    List output = [];
+  Future<List<ChameleonDevicePort>> availableChameleons(bool onlyDFU) async {
+    List<ChameleonDevicePort> output = [];
     for (var bleDevice in await availableDevices()) {
       if (bleDevice.name.startsWith('ChameleonUltra')) {
         device = ChameleonDevice.ultra;
@@ -78,8 +78,8 @@ class SerialConnector extends AbstractSerial {
       log.d(
           "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
       if (!onlyDFU || onlyDFU && connectionType == ChameleonConnectType.dfu) {
-        output.add(
-            {'port': bleDevice.id, 'device': device, 'type': connectionType});
+        output.add(ChameleonDevicePort(
+            port: bleDevice.id, device: device, type: connectionType));
       }
 
       chameleonMap[bleDevice.id] = {

@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:io' show Platform;
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:sizer_pro/sizer.dart';
 
 Future<void> asyncSleep(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
@@ -93,48 +96,14 @@ List<BigInt> generateCRCTable() {
   return crcTable;
 }
 
-String chameleonTagToString(ChameleonTag tag) {
-  if (tag == ChameleonTag.mifareMini) {
-    return "Mifare Mini";
-  } else if (tag == ChameleonTag.mifare1K) {
-    return "Mifare Classic 1K";
-  } else if (tag == ChameleonTag.mifare2K) {
-    return "Mifare Classic 2K";
-  } else if (tag == ChameleonTag.mifare4K) {
-    return "Mifare Classic 4K";
-  } else if (tag == ChameleonTag.em410X) {
-    return "EM410X";
-  } else if (tag == ChameleonTag.ntag213) {
-    return "NTAG213";
-  } else if (tag == ChameleonTag.ntag215) {
-    return "NTAG215";
-  } else if (tag == ChameleonTag.ntag216) {
-    return "NTAG216";
-  } else {
-    return "Unknown";
-  }
-}
-
 ChameleonTag numberToChameleonTag(int type) {
-  if (type == ChameleonTag.mifareMini.value) {
-    return ChameleonTag.mifareMini;
-  } else if (type == ChameleonTag.mifare1K.value) {
-    return ChameleonTag.mifare1K;
-  } else if (type == ChameleonTag.mifare2K.value) {
-    return ChameleonTag.mifare2K;
-  } else if (type == ChameleonTag.mifare4K.value) {
-    return ChameleonTag.mifare4K;
-  } else if (type == ChameleonTag.em410X.value) {
-    return ChameleonTag.em410X;
-  } else if (type == ChameleonTag.ntag213.value) {
-    return ChameleonTag.ntag213;
-  } else if (type == ChameleonTag.ntag215.value) {
-    return ChameleonTag.ntag215;
-  } else if (type == ChameleonTag.ntag216.value) {
-    return ChameleonTag.ntag216;
-  } else {
-    return ChameleonTag.unknown;
+  for (var tag in ChameleonTag.values) {
+    if (tag.value == type) {
+      return tag;
+    }
   }
+
+  return ChameleonTag.unknown;
 }
 
 ChameleonTag getTagTypeByValue(int value) {
@@ -162,4 +131,17 @@ String numToVerCode(int versionCode) {
   int major = (versionCode >> 8) & 0xFF;
   int minor = versionCode & 0xFF;
   return '$major.$minor';
+}
+
+
+/// This method fixes an issue in sizer_pro cause it swaps x/y axis on any platform atm
+/// Default width for gridCell is 400, it's somewhat arbitrary but looks to be a good fit 
+// TODO: remove this fix after https://github.com/jinosh05/sizer_pro/pull/1 is merged
+int calculateCrossAxisCount({ int gridCellWidth = 400 }) {
+  if (kIsWeb || Platform.isAndroid || Platform.isIOS) {
+    return max(1, (SizerUtil.width / gridCellWidth).floor());
+  }
+
+  // use height instead of width cause they are swapped
+  return max(1, (SizerUtil.height / gridCellWidth).floor());
 }

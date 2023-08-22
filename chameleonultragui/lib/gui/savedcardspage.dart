@@ -331,7 +331,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Text("UID: ${tag.uid}"),
-                                      Text("Tag Type: ${chameleonTagToString(tag.tag)}"),
+                                      Text("Tag Type: ${tag.tag.name}"),
                                       Text("SAK: ${tag.sak}"),
                                       Text("ATQA: ${tag.atqa[0]} ${tag.atqa[1]}"),
                                     ],
@@ -444,7 +444,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               ),
                                             ),
                                             Text(
-                                              chameleonTagToString(tag.tag),
+                                              tag.tag.name,
                                               style: const TextStyle(
                                                 fontSize: 24,
                                               ),

@@ -1,9 +1,49 @@
 import 'dart:typed_data';
 import 'package:logger/logger.dart';
 
-enum ChameleonDevice { none, ultra, lite }
+// ChameleonDevice.unknown means we know the device is a Chameleon just not whether its an ultra or lite
+enum ChameleonDevice {
+  none('None'),
+  unknown('Chameleon'),
+  ultra('Chameleon Ultra'),
+  lite('Chameleon Lite');
+
+  const ChameleonDevice(this.name);
+  final String name;
+}
 
 enum ChameleonConnectType { none, usb, ble, dfu }
+
+class ChameleonDevicePort {
+  String port;
+  ChameleonDevice device;
+  ChameleonConnectType type;
+
+  ChameleonDevicePort({
+    required this.port,
+    required this.device,
+    required this.type
+  });
+}
+
+enum ChameleonVendor {
+  proxgrind(0x6868),
+  dfu(0x1915);
+
+  const ChameleonVendor(this.value);
+  final int value;
+}
+
+bool isChameleonVendor(int? vendorId, [ChameleonVendor? vendor, List<ChameleonVendor>? vendors ]) {
+  if (vendors == null && vendor != null) {
+    vendors = [vendor];
+  }
+
+  vendors ??= ChameleonVendor.values;
+  return vendors.any((id) {
+    return id.value == vendorId;
+  });
+}
 
 class AbstractSerial {
   Logger log = Logger();
@@ -41,7 +81,7 @@ class AbstractSerial {
     return false;
   }
 
-  Future<List> availableChameleons(bool onlyDFU) async {
+  Future<List<ChameleonDevicePort>> availableChameleons(bool onlyDFU) async {
     return [];
   }
 

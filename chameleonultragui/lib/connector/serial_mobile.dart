@@ -41,8 +41,8 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons(bool onlyDFU) async {
-    List output = [];
+  Future<List<ChameleonDevicePort>> availableChameleons(bool onlyDFU) async {
+    List<ChameleonDevicePort> output = [];
     for (var deviceName in await availableDevices()) {
       if (deviceMap[deviceName]!.manufacturerName == "Proxgrind") {
         if (deviceMap[deviceName]!.productName!.startsWith('ChameleonUltra')) {
@@ -54,19 +54,19 @@ class SerialConnector extends AbstractSerial {
         log.d(
             "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
 
-        if (deviceMap[deviceName]!.vid == 0x1915) {
+        if (deviceMap[deviceName]!.vid == ChameleonVendor.dfu.value) {
           connectionType = ChameleonConnectType.dfu;
           log.w("Chameleon is in DFU mode!");
         }
       }
       if (onlyDFU) {
         if (connectionType == ChameleonConnectType.dfu) {
-          output.add(
-              {'port': deviceName, 'device': device, 'type': connectionType});
+          output.add(ChameleonDevicePort(
+              port: deviceName, device: device, type: connectionType));
         }
       } else {
-        output.add(
-            {'port': deviceName, 'device': device, 'type': connectionType});
+        output.add(ChameleonDevicePort(
+            port: deviceName, device: device, type: connectionType));
       }
     }
 
@@ -111,7 +111,7 @@ class SerialConnector extends AbstractSerial {
 
       portName = devicePort.substring(devicePort.length - 15); // Limit length
       connectionType = ChameleonConnectType.usb;
-      if (deviceMap[devicePort]!.vid == 0x1915) {
+      if (isChameleonVendor(deviceMap[devicePort]!.vid, ChameleonVendor.dfu)) {
         connectionType = ChameleonConnectType.dfu;
         log.w("Chameleon is in DFU mode!");
       }

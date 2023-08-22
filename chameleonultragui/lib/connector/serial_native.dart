@@ -38,17 +38,16 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons(bool onlyDFU) async {
-    List output = [];
+  Future<List<ChameleonDevicePort>> availableChameleons(bool onlyDFU) async {
+    List<ChameleonDevicePort> output = [];
     for (final port in await availableDevices()) {
       if (await connectDevice(port, false)) {
-        if (onlyDFU) {
-          if (connectionType == ChameleonConnectType.dfu) {
-            output
-                .add({'port': port, 'device': device, 'type': connectionType});
-          }
-        } else {
-          output.add({'port': port, 'device': device, 'type': connectionType});
+        if (connectionType == ChameleonConnectType.dfu) {
+          output.add(ChameleonDevicePort(
+              port: port, device: device, type: connectionType));
+        } else if (!onlyDFU) {
+          output.add(ChameleonDevicePort(
+              port: port, device: device, type: connectionType));
         }
       }
     }
@@ -96,11 +95,11 @@ class SerialConnector extends AbstractSerial {
         }
 
         log.d(
-            "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
+            "Found ${device.name}!");
 
         connectionType = ChameleonConnectType.usb;
 
-        if (checkPort!.vendorId == 0x1915) {
+        if (checkPort!.vendorId == ChameleonVendor.dfu.value) {
           connectionType = ChameleonConnectType.dfu;
           log.w("Chameleon is in DFU mode!");
         }

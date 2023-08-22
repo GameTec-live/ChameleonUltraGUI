@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
-import 'package:chameleonultragui/helpers/files.dart';
 import 'package:chameleonultragui/helpers/http.dart';
 import 'package:crypto/crypto.dart';
 import 'package:collection/collection.dart';
@@ -13,108 +12,6 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/protobuf/dfu-cc.pb.dart';
 import 'dart:math';
-
-Future<void> flashFirmware(MyAppState appState) async {
-  var connection = ChameleonCom(port: appState.connector);
-  Uint8List applicationDat, applicationBin;
-
-  Uint8List content = await fetchFirmware(appState.connector.device);
-
-  (applicationDat, applicationBin) = await unpackFirmware(content);
-
-  flashFile(connection, appState, applicationDat, applicationBin,
-      (progress) => appState.setProgressBar(progress / 100),
-      firmwareZip: content);
-}
-
-Future<void> flashFirmwareZip(MyAppState appState) async {
-  var connection = ChameleonCom(port: appState.connector);
-  Uint8List applicationDat, applicationBin;
-
-  FileResult? file = await pickFile(appState);
-  if (file == null) {
-    appState.log.d("Empty file picked");
-    return;
-  }
-
-  (applicationDat, applicationBin) = await unpackFirmware(file.bytes);
-
-  appState.log.d('Start flashing file');
-  await flashFile(connection, appState, applicationDat, applicationBin,
-      (progress) => appState.setProgressBar(progress / 100),
-      firmwareZip: file.bytes,
-      enterDFU: false);
-  appState.log.d('Done flashing file');
-}
-
-Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
-  Uint8List content = Uint8List(0);
-  String error = "";
-
-  try {
-    final response = await httpGet("https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases");
-    final releases = json.decode(response.body.toString());
-
-    if (releases is! List && releases.containsKey("message")) {
-      error = releases["message"];
-      throw error;
-    }
-
-    final expectedAssetName = "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip";
-    for (var file in releases[0]["assets"]) {
-      if (file["name"] == expectedAssetName) {
-        content = await httpGetBinary(file["browser_download_url"]);
-        break;
-      }
-    }
-  } catch (_) {}
-
-  if (error.isNotEmpty) {
-    throw error;
-  }
-
-  return content;
-}
-
-Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
-  Uint8List content = Uint8List(0);
-  String error = "";
-
-  try {
-    final response = await httpGet("https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts");
-    final artifacts = json.decode(response.body.toString());
-
-    if (artifacts.containsKey("message")) {
-      error = artifacts["message"];
-      throw error;
-    }
-
-    final expectedAssetName = "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app";
-    for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] == expectedAssetName) {
-        final assetUrl = "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}";
-        content = await httpGetBinary(assetUrl);
-        break;
-      }
-    }
-  } catch (_) {}
-
-  if (error.isNotEmpty) {
-    throw error;
-  }
-
-  return content;
-}
-
-Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
-  var content = await fetchFirmwareFromActions(device);
-
-  if (content.isEmpty) {
-    content = await fetchFirmwareFromReleases(device);
-  }
-
-  return content;
-}
 
 Future<String> latestAvailableCommit(ChameleonDevice device) async {
   String error = "";
@@ -242,14 +139,22 @@ Future<void> flashFile(
       await appState.connector.performDisconnect();
     }
 
-    List chameleons = [];
+    List<ChameleonDevicePort> chameleons = [];
+    int tries = 0;
 
     while (chameleons.isEmpty) {
       await asyncSleep(250);
       chameleons = await appState.connector.availableChameleons(true);
+
+      tries++;
+      if (tries > 40) {
+        break; // Wait max 10 seconds for a device to enter DFU mode & reconnect
+      }
     }
 
-    if (chameleons.length > 1) {
+    if (chameleons.isEmpty) {
+      throw ("No Chameleon in DFU mode after waiting for 10 seconds");
+    } else if (chameleons.length > 1) {
       throw ("More than one Chameleon in DFU. Please connect only one at a time");
     }
 
@@ -257,7 +162,7 @@ Future<void> flashFile(
       throw ("BLE DFU not yet supported");
     }
 
-    await appState.connector.connectSpecific(chameleons[0]['port']);
+    await appState.connector.connectSpecific(chameleons[0].port);
   }
 
   var dfu = ChameleonDFU(port: appState.connector);

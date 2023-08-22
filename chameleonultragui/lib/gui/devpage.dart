@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
+import 'features/flash_firmware_latest.dart';
+
 class DevPage extends StatelessWidget {
   // Home Page
   const DevPage({super.key});
@@ -151,12 +153,12 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              await cml.setSlotTagName(1, "test", ChameleonTagFrequiency.hf);
-              var name = await cml.getSlotTagName(1, ChameleonTagFrequiency.hf);
+              await cml.setSlotTagName(1, "test", ChameleonTagFrequency.hf);
+              var name = await cml.getSlotTagName(1, ChameleonTagFrequency.hf);
               appState.log.d(name);
               await cml.setSlotTagName(
-                  1, "Hello 变色龙!", ChameleonTagFrequiency.hf);
-              name = await cml.getSlotTagName(1, ChameleonTagFrequiency.hf);
+                  1, "Hello 变色龙!", ChameleonTagFrequency.hf);
+              name = await cml.getSlotTagName(1, ChameleonTagFrequency.hf);
               appState.log.d(name);
             },
             child: const Column(children: [

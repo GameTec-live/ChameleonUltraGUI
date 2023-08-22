@@ -206,6 +206,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.1.1"
+  flutter_screenutil:
+    dependency: "direct main"
+    description:
+      name: flutter_screenutil
+      sha256: "8cf100b8e4973dc570b6415a2090b0bfaa8756ad333db46939efc3e774ee100d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.9.0"
   flutter_staggered_grid_view:
     dependency: "direct main"
     description:
@@ -593,6 +601,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
+  sizer_pro:
+    dependency: "direct main"
+    description:
+      name: sizer_pro
+      sha256: "9ee765d9a1460e22e225ed0a2e8079fb2d48fc44abc5bb8980ce890e5cbb2daa"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -761,4 +777,4 @@ packages:
     version: "2.1.1"
 sdks:
   dart: ">=3.1.0-185.0.dev <4.0.0"
-  flutter: ">=3.3.0"
+  flutter: ">=3.10.0"

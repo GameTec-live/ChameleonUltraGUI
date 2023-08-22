@@ -99,28 +99,31 @@ enum ChameleonStatus {
   final int value;
 }
 
-enum ChameleonTag {
-  unknown(0),
-  em410X(1),
-  mifareMini(2),
-  mifare1K(3),
-  mifare2K(4),
-  mifare4K(5),
-  ntag213(6),
-  ntag215(7),
-  ntag216(8);
-
-  const ChameleonTag(this.value);
-  final int value;
-}
-
-enum ChameleonTagFrequiency {
+enum ChameleonTagFrequency {
   unknown(0),
   lf(1),
   hf(2);
 
-  const ChameleonTagFrequiency(this.value);
+  const ChameleonTagFrequency(this.value);
   final int value;
+}
+
+enum ChameleonTag {
+  unknown(0, 'Unknown', ChameleonTagFrequency.unknown, false),
+  em410X(1, 'EM410X', ChameleonTagFrequency.lf, true),
+  mifareMini(2, 'Mifare Mini', ChameleonTagFrequency.hf, true),
+  mifare1K(3, 'Mifare Classic 1K', ChameleonTagFrequency.hf, true),
+  mifare2K(4, 'Mifare Classic 2K', ChameleonTagFrequency.hf, true),
+  mifare4K(5, 'Mifare Classic 4K', ChameleonTagFrequency.hf, true),
+  ntag213(6, 'NTAG213', ChameleonTagFrequency.hf, false),
+  ntag215(7, 'NTAG215', ChameleonTagFrequency.hf, false),
+  ntag216(8, 'NTAG216', ChameleonTagFrequency.hf, false);
+
+  const ChameleonTag(this.value, this.name, this.frequency, this.writable);
+  final int value;
+  final String name;
+  final ChameleonTagFrequency frequency;
+  final bool writable;
 }
 
 enum ChameleonAnimation {
@@ -688,14 +691,14 @@ class ChameleonCom {
   }
 
   Future<void> setSlotTagName(
-      int index, String name, ChameleonTagFrequiency frequiency) async {
+      int index, String name, ChameleonTagFrequency frequiency) async {
     await sendCmdSync(ChameleonCommand.setSlotTagNick, 0x00,
         data: Uint8List.fromList(
             [index, frequiency.value, ...utf8.encode(name)]));
   }
 
   Future<String> getSlotTagName(
-      int index, ChameleonTagFrequiency frequiency) async {
+      int index, ChameleonTagFrequency frequiency) async {
     var resp = await sendCmdSync(ChameleonCommand.getSlotTagNick, 0x00,
         data: Uint8List.fromList([index, frequiency.value]));
     return utf8.decode(resp!.data);
