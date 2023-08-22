@@ -239,5 +239,6 @@ Future<void> flashFile(
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");
   appState.connector.preformDisconnect();
+  await asyncSleep(500); // allow exit DFU mode
   appState.changesMade();
 }

@@ -32,6 +32,8 @@ class NativeSerial extends AbstractSerial {
     if (port != null) {
       port?.close();
       reader?.close();
+      reader = null;
+      isOpen = false;
       connected = false;
       return true;
     }
