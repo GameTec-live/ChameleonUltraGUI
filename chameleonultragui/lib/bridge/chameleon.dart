@@ -10,11 +10,18 @@ enum ChameleonCommand {
   getAppVersion(1000),
   changeMode(1001),
   getDeviceMode(1002),
+  getGitCommitHash(1017),
+  getBatteryCharge(1025),
+
+  // slot
   setSlotActivated(1003),
   setSlotTagType(1004),
   setSlotDataDefault(1005),
   setSlotEnable(1006),
-
+  getActiveSlot(1018),
+  getSlotInfo(1019),
+  getEnabledSlots(1023),
+  deleteSlotInfo(1024),
   setSlotTagNick(1007),
   getSlotTagNick(1008),
   saveSlotNicks(1009),
@@ -33,13 +40,6 @@ enum ChameleonCommand {
   // animation
   setAnimationMode(1015),
   getAnimationMode(1016),
-
-  getGitCommitHash(1017),
-
-  // slot
-  getActiveSlot(1018),
-  getSlotInfo(1019),
-  getEnabledSlots(1023),
 
   factoryReset(1020), // WARNING: ERASES ALL
 
@@ -810,9 +810,9 @@ class ChameleonCom {
     return slots;
   }
 
-  // NOT IMPLEMENTED METHODS
-  Future<int> getBatteryCharge() async {
-    // 0-100, get device battery charge
-    return 0;
+  Future<(int, int)> getBatteryCharge() async {
+    var resp = await sendCmdSync(ChameleonCommand.getBatteryCharge, 0x00);
+    if (resp!.data.length != 3) throw ("Invalid data length");
+    return (_toInt16BE(resp.data.sublist(0, 2)), resp.data[2]);
   }
 }
