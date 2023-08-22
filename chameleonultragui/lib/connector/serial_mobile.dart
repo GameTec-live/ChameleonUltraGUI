@@ -96,8 +96,12 @@ class MobileSerial extends AbstractSerial {
           115200, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
       connected = true;
 
-      port!.inputStream!.listen((Uint8List data) {
-        messagePool.add(data);
+      port!.inputStream!.listen((Uint8List data) async {
+        if (messageCallback) {
+          await messageCallback(data);
+        } else {
+          messagePool.add(data);
+        }
       });
 
       UsbSerial.usbEventStream!.listen((event) {
@@ -132,7 +136,7 @@ class MobileSerial extends AbstractSerial {
     while (true) {
       if (messagePool.isNotEmpty) {
         var message = messagePool[0];
-        messagePool.removeWhere((item) => item == message);
+        messagePool.remove(message);
         completer.complete(message);
         break;
       }

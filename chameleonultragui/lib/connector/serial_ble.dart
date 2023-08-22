@@ -169,8 +169,12 @@ class BLESerial extends AbstractSerial {
               deviceId: connectionState.deviceId);
           receivedDataStream =
               flutterReactiveBle.subscribeToCharacteristic(txCharacteristic!);
-          receivedDataStream!.listen((data) {
-            messagePool.add(Uint8List.fromList(data));
+          receivedDataStream!.listen((data) async {
+            if (messageCallback) {
+              await messageCallback(Uint8List.fromList(data));
+            } else {
+              messagePool.add(Uint8List.fromList(data));
+            }
           }, onError: (dynamic error) {
             log.e(error);
           });
@@ -232,7 +236,7 @@ class BLESerial extends AbstractSerial {
     while (true) {
       if (messagePool.isNotEmpty) {
         var message = messagePool[0];
-        messagePool.removeWhere((item) => item == message);
+        messagePool.remove(message);
         completer.complete(message);
         break;
       }
