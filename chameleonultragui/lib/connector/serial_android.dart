@@ -92,6 +92,12 @@ class AndroidSerial extends AbstractSerial {
   }
 
   @override
+  Future<void> registerCallback(dynamic callback) async {
+    bleSerial.messageCallback = callback;
+    mobileSerial.messageCallback = callback;
+  }
+
+  @override
   ChameleonDevice get device =>
       (bleSerial.connected) ? bleSerial.device : mobileSerial.device;
 

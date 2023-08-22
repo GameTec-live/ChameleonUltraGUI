@@ -97,7 +97,7 @@ class MobileSerial extends AbstractSerial {
       connected = true;
 
       port!.inputStream!.listen((Uint8List data) async {
-        if (messageCallback) {
+        if (messageCallback != null) {
           await messageCallback(data);
         } else {
           messagePool.add(data);

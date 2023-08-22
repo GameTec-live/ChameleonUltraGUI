@@ -170,7 +170,7 @@ class BLESerial extends AbstractSerial {
           receivedDataStream =
               flutterReactiveBle.subscribeToCharacteristic(txCharacteristic!);
           receivedDataStream!.listen((data) async {
-            if (messageCallback) {
+            if (messageCallback != null) {
               await messageCallback(Uint8List.fromList(data));
             } else {
               messagePool.add(Uint8List.fromList(data));
