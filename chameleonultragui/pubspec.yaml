@@ -30,7 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  toggle_switch: ^2.1.0
   sqflite:
   path:
   async:

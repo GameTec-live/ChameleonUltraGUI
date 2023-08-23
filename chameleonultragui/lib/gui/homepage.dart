@@ -1,5 +1,6 @@
 import 'dart:io' show File;
 import 'dart:typed_data';
+import 'package:chameleonultragui/gui/components/togglebuttons.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:file_picker/file_picker.dart';
@@ -8,7 +9,6 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
-import 'package:toggle_switch/toggle_switch.dart';
 import 'package:chameleonultragui/gui/components/slotchanger.dart';
 
 class HomePage extends StatefulWidget {
@@ -471,34 +471,27 @@ class HomePageState extends State<HomePage> {
                                       const SizedBox(height: 10),
                                       const Text("Animations:"),
                                       const SizedBox(height: 10),
-                                      ToggleSwitch(
-                                        minWidth: 70.0,
-                                        cornerRadius: 10.0,
-                                        activeFgColor: Colors.white,
-                                        inactiveBgColor: Colors.grey,
-                                        inactiveFgColor: Colors.white,
-                                        initialLabelIndex: animationMode.value,
-                                        totalSwitches: 3,
-                                        labels: const ['Full', 'Mini', 'None'],
-                                        radiusStyle: true,
-                                        onToggle: (index) async {
-                                          var animation =
-                                              ChameleonAnimation.full;
-                                          if (index == 1) {
-                                            animation =
-                                                ChameleonAnimation.minimal;
-                                          } else if (index == 2) {
-                                            animation = ChameleonAnimation.none;
-                                          }
+                                      ToggleButtonsWrapper(
+                                          items: const ['Full', 'Mini', 'None'],
+                                          selectedValue: animationMode.value,
+                                          onChange: (int index) async {
+                                            var animation =
+                                                ChameleonAnimation.full;
+                                            if (index == 1) {
+                                              animation =
+                                                  ChameleonAnimation.minimal;
+                                            } else if (index == 2) {
+                                              animation =
+                                                  ChameleonAnimation.none;
+                                            }
 
-                                          await appState.communicator!
-                                              .setAnimationMode(animation);
-                                          await appState.communicator!
-                                              .saveSettings();
-                                          setState(() {});
-                                          appState.changesMade();
-                                        },
-                                      ),
+                                            await appState.communicator!
+                                                .setAnimationMode(animation);
+                                            await appState.communicator!
+                                                .saveSettings();
+                                            setState(() {});
+                                            appState.changesMade();
+                                          }),
                                       const SizedBox(height: 10),
                                       const Text("Other:"),
                                       const SizedBox(height: 10),
