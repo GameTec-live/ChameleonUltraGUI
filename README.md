@@ -34,13 +34,14 @@ It is also highly recommended to either uninstall or disable ModemManager (`sudo
 Contributions are welcome, most stuff that needs to be done can either be found in our [issues](https://github.com/GameTec-live/ChameleonUltraGUI/issues) or on the [Project board](https://github.com/users/GameTec-live/projects/2)
 
 ## Screenshots
-![Connect Page](/screenshots/connect.png)
-![Home Page](/screenshots/home.png)
-![Slot Manager Page](/screenshots/smanager.png)
-![Saved Cards Page](/screenshots/saved.png)
-![Read Card Page](/screenshots/rcard.png)
-![Settings Page](/screenshots/settings.png)
-![Dev Page](/screenshots/devpage.png)
+![Connect Page](/screenshots/1.png)
+![Home Page](/screenshots/2.png)
+![Home Page Settings](/screenshots/3.png)
+![Slot Manager Page](/screenshots/4.png)
+![Saved Cards Page](/screenshots/5.png)
+![Read Card Page](/screenshots/6.png)
+![Read Card Page Mifare Classic](/screenshots/7.png)
+![Settings Page](/screenshots/8.png)
 
 <details>
   <summary>Mac and IOS</summary>
