@@ -383,7 +383,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
         return ListTile(
           leading: const Icon(Icons.credit_card),
           title: Text(card.name),
-          subtitle: Text(chameleonTagToString(card.tag)),
+          subtitle: Text(chameleonTagToString(card.tag) +
+              ((chameleonTagSaveCheckForMifareClassicEV1(card)) ? " EV1" : "")),
           onTap: () async {
             if ([
               ChameleonTag.mifareMini,
@@ -393,6 +394,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
             ].contains(card.tag)) {
               close(context, card.name);
               setUploadState(0);
+              var isEV1 = chameleonTagSaveCheckForMifareClassicEV1(card);
+              if (isEV1) {
+                card.tag = ChameleonTag.mifare2K;
+              }
+
               await appState.communicator!.setReaderDeviceMode(false);
               await appState.communicator!.enableSlot(gridPosition, true);
               await appState.communicator!.activateSlot(gridPosition);

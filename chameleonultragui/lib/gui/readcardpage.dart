@@ -31,6 +31,8 @@ enum ChameleonMifareClassicState {
   save
 }
 
+// Refactor this
+
 class ChameleonReadTagStatus {
   String hfUid;
   String lfUid;
@@ -44,6 +46,7 @@ class ChameleonReadTagStatus {
   bool noHfCard;
   bool noLfCard;
   bool allKeysExists;
+  bool isEV1;
   MifareClassicType type;
   List<ChameleonKeyCheckmark> checkMarks;
   List<Uint8List> validKeys;
@@ -66,6 +69,7 @@ class ChameleonReadTagStatus {
       this.noHfCard = false,
       this.noLfCard = false,
       this.allKeysExists = false,
+      this.isEV1 = false,
       this.type = MifareClassicType.none,
       this.dictionaries = const [],
       this.selectedDictionary,
@@ -102,16 +106,21 @@ class ReadCardPageState extends State<ReadCardPage> {
       var card = await appState.communicator!.scan14443aTag();
       var mifare = await appState.communicator!.detectMf1Support();
       var mf1Type = MifareClassicType.none;
+      bool isEV1 = false;
       if (mifare) {
         mf1Type = mfClassicGetType(card.atqa, card.sak);
+        isEV1 = (await appState.communicator!
+            .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]));
       }
       setState(() {
         status.hfUid = bytesToHexSpace(card.uid);
         status.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
         status.atqa = bytesToHexSpace(card.atqa);
         status.ats = "Unavailable";
-        status.hfTech =
-            mifare ? "Mifare Classic ${mfClassicGetName(mf1Type)}" : "Other";
+        status.hfTech = mifare
+            ? "Mifare Classic ${mfClassicGetName(mf1Type)}${(isEV1) ? " EV1" : ""}"
+            : "Other";
+        status.isEV1 = isEV1;
         status.recoveryError = "";
         status.checkMarks =
             List.generate(80, (_) => ChameleonKeyCheckmark.none);
@@ -135,6 +144,7 @@ class ReadCardPageState extends State<ReadCardPage> {
         status.state = ChameleonMifareClassicState.none;
         status.allKeysExists = false;
         status.noHfCard = true;
+        status.isEV1 = false;
       });
     }
   }
@@ -217,8 +227,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                   var keyBytes = u64ToBytes(key);
                   await asyncSleep(1); // Let GUI update
                   if ((await appState.communicator!
-                          .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8))) ==
-                      true) {
+                      .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8)))) {
                     appState.log.i(
                         "Darkside: Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                     status.validKeys[40] = keyBytes.sublist(2, 8);
@@ -315,10 +324,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                     var keyBytes = u64ToBytes(key);
                     await asyncSleep(1); // Let GUI update
                     if ((await appState.communicator!.mf1Auth(
-                            mfClassicGetSectorTrailerBlockBySector(sector),
-                            0x60 + keyType,
-                            keyBytes.sublist(2, 8))) ==
-                        true) {
+                        mfClassicGetSectorTrailerBlockBySector(sector),
+                        0x60 + keyType,
+                        keyBytes.sublist(2, 8)))) {
                       appState.log.i(
                           "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                       found = true;
@@ -384,6 +392,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                 ...status.selectedDictionary!.keys,
                 ...gMifareClassicKeys
               ]) {
+                appState.log
+                    .d("Checking $key on sector $sector, key type $keyType");
                 await asyncSleep(1); // Let GUI update
                 if (await appState.communicator!.mf1Auth(
                     mfClassicGetSectorTrailerBlockBySector(sector),
@@ -453,8 +463,17 @@ class ReadCardPageState extends State<ReadCardPage> {
 
     status.cardData = List.generate(256, (_) => Uint8List(0));
     try {
+      if (status.isEV1) {
+        status.validKeys[16] = gMifareClassicKeys[4]; // MFC EV1 SIGNATURE 16 A
+        status.validKeys[16 + 40] =
+            gMifareClassicKeys[5]; // MFC EV1 SIGNATURE 16 B
+        status.validKeys[17] = gMifareClassicKeys[6]; // MFC EV1 SIGNATURE 17 A
+        status.validKeys[17 + 40] =
+            gMifareClassicKeys[3]; // MFC EV1 SIGNATURE 17 B
+      }
+
       for (var sector = 0;
-          sector < mfClassicGetSectorCount(status.type);
+          sector < mfClassicGetSectorCount(status.type, isEV1: status.isEV1);
           sector++) {
         for (var block = 0;
             block < mfClassicGetBlockCountBySector(sector);

@@ -508,7 +508,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  chameleonTagToString(tag.tag),
+                                                  chameleonTagToString(
+                                                          tag.tag) +
+                                                      ((chameleonTagSaveCheckForMifareClassicEV1(
+                                                              tag))
+                                                          ? " EV1"
+                                                          : ""),
                                                   style: const TextStyle(
                                                     fontSize: 24,
                                                   ),

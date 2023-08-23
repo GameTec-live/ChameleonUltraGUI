@@ -308,7 +308,7 @@ class ChameleonCommunicator {
               status: dataStatus,
               data: Uint8List.fromList(dataResponse));
           log.d(
-              "Received message: command = ${message.command}, data = ${bytesToHex(message.data)}");
+              "Received message: command = ${message.command}, status = ${message.status}, data = ${bytesToHex(message.data)}");
           dataPosition = 0;
           dataBuffer = [];
           messageQueue.add(message);
