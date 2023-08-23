@@ -18,6 +18,7 @@ class SlotSettingsState extends State<SlotSettings> {
   bool isRun = false;
   bool isEnabled = false;
   late bool isDetection;
+  late int detectionCount;
   late bool isGen1a;
   late bool isGen2;
   late bool isAntiColl;
@@ -66,6 +67,11 @@ class SlotSettingsState extends State<SlotSettings> {
       isEnabled = (await appState.communicator!.getEnabledSlots())[widget.slot];
       var data = (await appState.communicator!.getMf1EmulatorConfig());
       isDetection = data.$1;
+      if (isDetection) {
+        detectionCount = await appState.communicator!.getMf1DetectionCount();
+      } else {
+        detectionCount = 0;
+      }
       isGen1a = data.$2;
       isGen2 = data.$3;
       isAntiColl = data.$4;
@@ -153,9 +159,21 @@ class SlotSettingsState extends State<SlotSettings> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  const Text('Slot status'),
+                  const SizedBox(height: 8),
+                  ToggleButtonsWrapper(
+                      items: const ['Enabled', 'Disabled'],
+                      selectedValue: isEnabled ? 0 : 1,
+                      onChange: (int index) async {
+                        await appState.communicator!
+                            .enableSlot(widget.slot, index == 0 ? true : false);
+
+                        widget.refresh(widget.slot);
+                      }),
+                  const SizedBox(height: 16),
                   const Text(
                     'Mifare Classic emulator settings',
-                    textScaleFactor: 1.2,
+                    textScaleFactor: 1.1,
                   ),
                   const SizedBox(height: 8),
                   const Text('Gen1A magic mode'),
@@ -204,11 +222,46 @@ class SlotSettingsState extends State<SlotSettings> {
                       selectedValue: isDetection ? 0 : 1,
                       onChange: (int index) async {
                         await appState.communicator!.activateSlot(widget.slot);
-                        await appState.communicator!
-                            .setMf1DetectionStatus(index == 0 ? true : false);
+                        await appState.communicator!.setMf1DetectionStatus(
+                            isDetection = index == 0 ? true : false);
 
                         widget.refresh(widget.slot);
                       }),
+                  ...(isDetection)
+                      ? [
+                          ...(detectionCount == 0)
+                              ? [
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                      "Present Chameleon to reader to recover keys",
+                                      textScaleFactor: 0.8)
+                                ]
+                              : [
+                                  const SizedBox(height: 8),
+                                  Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              appState.forceMfkey32Page = true;
+                                              appState.changesMade();
+                                            },
+                                            child: const Row(
+                                              children: [
+                                                Icon(Icons.card_giftcard),
+                                                Text("Recover keys"),
+                                              ],
+                                            )),
+                                      ]),
+                                ],
+                        ]
+                      : [
+                          const SizedBox(height: 8),
+                          const Text("Enable collection to recover keys",
+                              textScaleFactor: 0.8)
+                        ],
                   const SizedBox(height: 8),
                   const Text('Write mode'),
                   const SizedBox(height: 8),
@@ -234,26 +287,6 @@ class SlotSettingsState extends State<SlotSettings> {
 
                         widget.refresh(widget.slot);
                       }),
-                  const SizedBox(height: 32),
-                  const Text('Slot status'),
-                  const SizedBox(height: 8),
-                  ToggleButtonsWrapper(
-                      items: const ['Enabled', 'Disabled'],
-                      selectedValue: isEnabled ? 0 : 1,
-                      onChange: (int index) async {
-                        await appState.communicator!
-                            .enableSlot(widget.slot, index == 0 ? true : false);
-
-                        widget.refresh(widget.slot);
-                      }),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    child: const Text('OK'),
-                    onPressed: () {
-                      widget.refresh(widget.slot);
-                      Navigator.pop(context);
-                    },
-                  ),
                 ])));
           }
         });
