@@ -666,7 +666,7 @@ class ChameleonCommunicator {
       int index, ChameleonTagFrequency frequency) async {
     var resp = await sendCmdSync(ChameleonCommand.getSlotTagNick,
         data: Uint8List.fromList([index, frequency.value]));
-    return utf8.decode(resp!.data);
+    return utf8.decode(resp!.data, allowMalformed: true);
   }
 
   Future<void> deleteSlotInfo(

@@ -61,27 +61,35 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     }
 
     if (currentFunctionIndex < 8) {
-      try {
-        slotData[currentFunctionIndex]['hfName'] = await appState.communicator!
-            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequency.hf);
-      } catch (_) {
-        slotData[currentFunctionIndex]['hfName'] = "";
-      }
+      slotData[currentFunctionIndex]['hfName'] = "";
+      slotData[currentFunctionIndex]['lfName'] = "";
 
-      try {
-        slotData[currentFunctionIndex]['lfName'] = await appState.communicator!
-            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequency.lf);
-      } catch (_) {
-        slotData[currentFunctionIndex]['lfName'] = "";
+      for (var i = 0; i < 2; i++) {
+        try {
+          slotData[currentFunctionIndex]['hfName'] = await appState
+              .communicator!
+              .getSlotTagName(currentFunctionIndex, ChameleonTagFrequency.hf);
+          break;
+        } catch (_) {}
       }
 
       if (slotData[currentFunctionIndex]['hfName']!.isEmpty) {
         slotData[currentFunctionIndex]['hfName'] = "Empty";
       }
 
+      for (var i = 0; i < 2; i++) {
+        try {
+          slotData[currentFunctionIndex]['lfName'] = await appState
+              .communicator!
+              .getSlotTagName(currentFunctionIndex, ChameleonTagFrequency.lf);
+          break;
+        } catch (_) {}
+      }
+
       if (slotData[currentFunctionIndex]['lfName']!.isEmpty) {
         slotData[currentFunctionIndex]['lfName'] = "Empty";
       }
+
       if (!onlyOneSlot) {
         setState(() {
           currentFunctionIndex++;
