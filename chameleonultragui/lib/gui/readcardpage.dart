@@ -205,7 +205,7 @@ class ReadCardPageState extends State<ReadCardPage> {
 
         if (!hasKey) {
           if (await appState.communicator!.checkMf1Darkside() ==
-              ChameleonDarksideResult.vulnerable) {
+              DarksideResult.vulnerable) {
             // recover with darkside
             var data = await appState.communicator!
                 .getMf1Darkside(0x03, 0x61, true, 15);
@@ -257,7 +257,7 @@ class ReadCardPageState extends State<ReadCardPage> {
         });
 
         var prng = await appState.communicator!.getMf1NTLevel();
-        if (prng != ChameleonNTLevel.weak) {
+        if (prng != NTLevel.weak) {
           // No hardnested/staticnested implementation yet
           setState(() {
             status.recoveryError =
@@ -578,14 +578,14 @@ class ReadCardPageState extends State<ReadCardPage> {
       }
     } else {
       var tags = appState.sharedPreferencesProvider.getChameleonTags();
-      tags.add(ChameleonTagSave(
+      tags.add(TagSave(
           id: const Uuid().v4(),
           uid: status.hfUid,
           sak: hexToBytes(status.sak)[0],
           atqa: hexToBytes(status.atqa.replaceAll(" ", "")),
           name: status.dumpName,
           tag: (skipDump)
-              ? ChameleonTag.mifare1K
+              ? TagType.mifare1K
               : mfClassicGetChameleonTagType(status.type),
           data: status.cardData));
       appState.sharedPreferencesProvider.setChameleonTags(tags);
@@ -594,13 +594,13 @@ class ReadCardPageState extends State<ReadCardPage> {
 
   Future<void> saveLFCard(MyAppState appState) async {
     var tags = appState.sharedPreferencesProvider.getChameleonTags();
-    tags.add(ChameleonTagSave(
+    tags.add(TagSave(
         id: const Uuid().v4(),
         uid: status.lfUid,
         sak: 0,
         atqa: Uint8List(0),
         name: status.dumpName,
-        tag: ChameleonTag.em410X,
+        tag: TagType.em410X,
         data: []));
     appState.sharedPreferencesProvider.setChameleonTags(tags);
   }

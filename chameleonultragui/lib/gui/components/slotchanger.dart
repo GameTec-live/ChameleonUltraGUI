@@ -20,7 +20,7 @@ class SlotChangerState extends State<SlotChanger> {
 
   Future<List<Icon>> getFutureData() async {
     var appState = context.read<MyAppState>();
-    List<(ChameleonTag, ChameleonTag)> usedSlots;
+    List<(TagType, TagType)> usedSlots;
 
     try {
       usedSlots = await appState.communicator!.getUsedSlots();
@@ -31,8 +31,7 @@ class SlotChangerState extends State<SlotChanger> {
     return await getSlotIcons(usedSlots);
   }
 
-  Future<List<Icon>> getSlotIcons(
-      List<(ChameleonTag, ChameleonTag)> usedSlots) async {
+  Future<List<Icon>> getSlotIcons(List<(TagType, TagType)> usedSlots) async {
     var appState = context.read<MyAppState>();
     List<Icon> icons = [];
 
@@ -52,8 +51,8 @@ class SlotChangerState extends State<SlotChanger> {
           Icons.circle_outlined,
           color: Colors.red,
         ));
-      } else if (usedSlots[i - 1].$1 != ChameleonTag.unknown ||
-          usedSlots[i - 1].$2 != ChameleonTag.unknown) {
+      } else if (usedSlots[i - 1].$1 != TagType.unknown ||
+          usedSlots[i - 1].$2 != TagType.unknown) {
         icons.add(const Icon(Icons.circle));
       } else {
         icons.add(const Icon(Icons.circle_outlined));

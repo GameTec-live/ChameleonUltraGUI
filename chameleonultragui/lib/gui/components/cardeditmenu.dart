@@ -8,7 +8,7 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class CardEditMenu extends StatefulWidget {
-  final ChameleonTagSave tagSave;
+  final TagSave tagSave;
 
   const CardEditMenu({Key? key, required this.tagSave}) : super(key: key);
 
@@ -17,7 +17,7 @@ class CardEditMenu extends StatefulWidget {
 }
 
 class CardEditMenuState extends State<CardEditMenu> {
-  ChameleonTag selectedType = ChameleonTag.unknown;
+  TagType selectedType = TagType.unknown;
   String uid = "";
   int sak = 0;
   Uint8List atqa = Uint8List.fromList([]);
@@ -116,26 +116,26 @@ class CardEditMenuState extends State<CardEditMenu> {
                       },
                     )),
               ),
-              DropdownButton<ChameleonTag>(
+              DropdownButton<TagType>(
                 value: selectedType,
                 items: [
-                  ChameleonTag.mifare1K,
-                  ChameleonTag.mifare2K,
-                  ChameleonTag.mifare4K,
-                  ChameleonTag.mifareMini,
-                  ChameleonTag.ntag213,
-                  ChameleonTag.ntag215,
-                  ChameleonTag.ntag216,
-                  ChameleonTag.em410X,
-                ].map<DropdownMenuItem<ChameleonTag>>((ChameleonTag type) {
-                  return DropdownMenuItem<ChameleonTag>(
+                  TagType.mifare1K,
+                  TagType.mifare2K,
+                  TagType.mifare4K,
+                  TagType.mifareMini,
+                  TagType.ntag213,
+                  TagType.ntag215,
+                  TagType.ntag216,
+                  TagType.em410X,
+                ].map<DropdownMenuItem<TagType>>((TagType type) {
+                  return DropdownMenuItem<TagType>(
                     value: type,
                     child: Text(
                       chameleonTagToString(type),
                     ),
                   );
                 }).toList(),
-                onChanged: (ChameleonTag? newValue) {
+                onChanged: (TagType? newValue) {
                   setState(() {
                     selectedType = newValue!;
                   });
@@ -155,12 +155,12 @@ class CardEditMenuState extends State<CardEditMenu> {
                     if (!(value.replaceAll(" ", "").length == 14 ||
                             value.replaceAll(" ", "").length == 8) &&
                         chameleonTagToFrequency(selectedType) !=
-                            ChameleonTagFrequency.lf) {
+                            TagFrequency.lf) {
                       return 'UID must be 4 or 7 bytes long';
                     }
                     if (value.replaceAll(" ", "").length != 10 &&
                         chameleonTagToFrequency(selectedType) ==
-                            ChameleonTagFrequency.lf) {
+                            TagFrequency.lf) {
                       return 'UID must be 5 bytes long';
                     }
                     return null;
@@ -168,8 +168,8 @@ class CardEditMenuState extends State<CardEditMenu> {
                 ),
                 const SizedBox(height: 20),
                 Visibility(
-                  visible: chameleonTagToFrequency(selectedType) !=
-                      ChameleonTagFrequency.lf,
+                  visible:
+                      chameleonTagToFrequency(selectedType) != TagFrequency.lf,
                   child: TextFormField(
                     controller: sak4Controller,
                     decoration: const InputDecoration(
@@ -178,12 +178,12 @@ class CardEditMenuState extends State<CardEditMenu> {
                       if (value == null ||
                           value.isEmpty &&
                               chameleonTagToFrequency(selectedType) !=
-                                  ChameleonTagFrequency.lf) {
+                                  TagFrequency.lf) {
                         return 'Please enter SAK';
                       }
                       if (value.replaceAll(" ", "").length != 2 &&
                           chameleonTagToFrequency(selectedType) !=
-                              ChameleonTagFrequency.lf) {
+                              TagFrequency.lf) {
                         return 'SAK must be 1 byte long';
                       }
                       return null;
@@ -192,8 +192,8 @@ class CardEditMenuState extends State<CardEditMenu> {
                 ),
                 const SizedBox(height: 20),
                 Visibility(
-                  visible: chameleonTagToFrequency(selectedType) !=
-                      ChameleonTagFrequency.lf,
+                  visible:
+                      chameleonTagToFrequency(selectedType) != TagFrequency.lf,
                   child: TextFormField(
                     controller: atqa4Controller,
                     decoration: const InputDecoration(
@@ -202,12 +202,12 @@ class CardEditMenuState extends State<CardEditMenu> {
                       if (value == null ||
                           value.isEmpty &&
                               chameleonTagToFrequency(selectedType) !=
-                                  ChameleonTagFrequency.lf) {
+                                  TagFrequency.lf) {
                         return 'Please enter ATQA';
                       }
                       if (value.replaceAll(" ", "").length != 4 &&
                           chameleonTagToFrequency(selectedType) !=
-                              ChameleonTagFrequency.lf) {
+                              TagFrequency.lf) {
                         return 'ATQA must be 2 bytes long';
                       }
                       return null;
@@ -245,11 +245,10 @@ class CardEditMenuState extends State<CardEditMenu> {
               return;
             }
 
-            var tag = ChameleonTagSave(
+            var tag = TagSave(
               id: widget.tagSave.uid,
               name: nameController.text,
-              sak: chameleonTagToFrequency(selectedType) ==
-                      ChameleonTagFrequency.lf
+              sak: chameleonTagToFrequency(selectedType) == TagFrequency.lf
                   ? widget.tagSave.sak
                   : hexToBytes(sak4Controller.text.replaceAll(" ", ""))[0],
               atqa: hexToBytes(atqa4Controller.text.replaceAll(" ", "")),
@@ -260,7 +259,7 @@ class CardEditMenuState extends State<CardEditMenu> {
             );
 
             var tags = appState.sharedPreferencesProvider.getChameleonTags();
-            List<ChameleonTagSave> output = [];
+            List<TagSave> output = [];
             for (var tagTest in tags) {
               if (tagTest.id != widget.tagSave.id) {
                 output.add(tagTest);

@@ -75,53 +75,53 @@ Uint32List generateCRCTable() {
   return crcTable;
 }
 
-String chameleonTagToString(ChameleonTag tag) {
-  if (tag == ChameleonTag.mifareMini) {
+String chameleonTagToString(TagType tag) {
+  if (tag == TagType.mifareMini) {
     return "Mifare Mini";
-  } else if (tag == ChameleonTag.mifare1K) {
+  } else if (tag == TagType.mifare1K) {
     return "Mifare Classic 1K";
-  } else if (tag == ChameleonTag.mifare2K) {
+  } else if (tag == TagType.mifare2K) {
     return "Mifare Classic 2K";
-  } else if (tag == ChameleonTag.mifare4K) {
+  } else if (tag == TagType.mifare4K) {
     return "Mifare Classic 4K";
-  } else if (tag == ChameleonTag.em410X) {
+  } else if (tag == TagType.em410X) {
     return "EM410X";
-  } else if (tag == ChameleonTag.ntag213) {
+  } else if (tag == TagType.ntag213) {
     return "NTAG213";
-  } else if (tag == ChameleonTag.ntag215) {
+  } else if (tag == TagType.ntag215) {
     return "NTAG215";
-  } else if (tag == ChameleonTag.ntag216) {
+  } else if (tag == TagType.ntag216) {
     return "NTAG216";
   } else {
     return "Unknown";
   }
 }
 
-ChameleonTag numberToChameleonTag(int type) {
-  if (type == ChameleonTag.mifareMini.value) {
-    return ChameleonTag.mifareMini;
-  } else if (type == ChameleonTag.mifare1K.value) {
-    return ChameleonTag.mifare1K;
-  } else if (type == ChameleonTag.mifare2K.value) {
-    return ChameleonTag.mifare2K;
-  } else if (type == ChameleonTag.mifare4K.value) {
-    return ChameleonTag.mifare4K;
-  } else if (type == ChameleonTag.em410X.value) {
-    return ChameleonTag.em410X;
-  } else if (type == ChameleonTag.ntag213.value) {
-    return ChameleonTag.ntag213;
-  } else if (type == ChameleonTag.ntag215.value) {
-    return ChameleonTag.ntag215;
-  } else if (type == ChameleonTag.ntag216.value) {
-    return ChameleonTag.ntag216;
+TagType numberToChameleonTag(int type) {
+  if (type == TagType.mifareMini.value) {
+    return TagType.mifareMini;
+  } else if (type == TagType.mifare1K.value) {
+    return TagType.mifare1K;
+  } else if (type == TagType.mifare2K.value) {
+    return TagType.mifare2K;
+  } else if (type == TagType.mifare4K.value) {
+    return TagType.mifare4K;
+  } else if (type == TagType.em410X.value) {
+    return TagType.em410X;
+  } else if (type == TagType.ntag213.value) {
+    return TagType.ntag213;
+  } else if (type == TagType.ntag215.value) {
+    return TagType.ntag215;
+  } else if (type == TagType.ntag216.value) {
+    return TagType.ntag216;
   } else {
-    return ChameleonTag.unknown;
+    return TagType.unknown;
   }
 }
 
-ChameleonTag getTagTypeByValue(int value) {
-  return ChameleonTag.values.firstWhere((element) => element.value == value,
-      orElse: () => ChameleonTag.unknown);
+TagType getTagTypeByValue(int value) {
+  return TagType.values.firstWhere((element) => element.value == value,
+      orElse: () => TagType.unknown);
 }
 
 String colorToHex(Color color) {
@@ -154,10 +154,10 @@ String numToVerCode(int versionCode) {
   return '$major.$minor';
 }
 
-ChameleonTagFrequency chameleonTagToFrequency(ChameleonTag tag) {
-  if (tag == ChameleonTag.em410X) {
-    return ChameleonTagFrequency.lf;
+TagFrequency chameleonTagToFrequency(TagType tag) {
+  if (tag == TagType.em410X) {
+    return TagFrequency.lf;
   } else {
-    return ChameleonTagFrequency.hf;
+    return TagFrequency.hf;
   }
 }

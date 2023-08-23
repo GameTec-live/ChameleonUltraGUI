@@ -18,9 +18,9 @@ class SlotManagerPage extends StatefulWidget {
 }
 
 class SlotManagerPageState extends State<SlotManagerPage> {
-  List<(ChameleonTag, ChameleonTag)> usedSlots = List.generate(
+  List<(TagType, TagType)> usedSlots = List.generate(
     8,
-    (_) => (ChameleonTag.unknown, ChameleonTag.unknown),
+    (_) => (TagType.unknown, TagType.unknown),
   );
 
   List<bool> enabledSlots = List.generate(
@@ -68,7 +68,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
         try {
           slotData[currentFunctionIndex]['hfName'] = await appState
               .communicator!
-              .getSlotTagName(currentFunctionIndex, ChameleonTagFrequency.hf);
+              .getSlotTagName(currentFunctionIndex, TagFrequency.hf);
           break;
         } catch (_) {}
       }
@@ -81,7 +81,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
         try {
           slotData[currentFunctionIndex]['lfName'] = await appState
               .communicator!
-              .getSlotTagName(currentFunctionIndex, ChameleonTagFrequency.lf);
+              .getSlotTagName(currentFunctionIndex, TagFrequency.lf);
           break;
         } catch (_) {}
       }
@@ -261,7 +261,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 enum SearchFilter { all, hf, lf }
 
 class CardSearchDelegate extends SearchDelegate<String> {
-  final List<ChameleonTagSave> cards;
+  final List<TagSave> cards;
   final int gridPosition;
   final dynamic refresh;
   final dynamic setUploadState;
@@ -329,11 +329,9 @@ class CardSearchDelegate extends SearchDelegate<String> {
                     .contains(query.toLowerCase()))) &&
             ((filter == SearchFilter.all) ||
                 (filter == SearchFilter.hf &&
-                    chameleonTagToFrequency(card.tag) ==
-                        ChameleonTagFrequency.hf) ||
+                    chameleonTagToFrequency(card.tag) == TagFrequency.hf) ||
                 (filter == SearchFilter.lf &&
-                    chameleonTagToFrequency(card.tag) ==
-                        ChameleonTagFrequency.lf))));
+                    chameleonTagToFrequency(card.tag) == TagFrequency.lf))));
 
     return ListView.builder(
       itemCount: results.length,
@@ -368,11 +366,9 @@ class CardSearchDelegate extends SearchDelegate<String> {
                     .contains(query.toLowerCase()))) &&
             ((filter == SearchFilter.all) ||
                 (filter == SearchFilter.hf &&
-                    chameleonTagToFrequency(card.tag) ==
-                        ChameleonTagFrequency.hf) ||
+                    chameleonTagToFrequency(card.tag) == TagFrequency.hf) ||
                 (filter == SearchFilter.lf &&
-                    chameleonTagToFrequency(card.tag) ==
-                        ChameleonTagFrequency.lf))));
+                    chameleonTagToFrequency(card.tag) == TagFrequency.lf))));
 
     var appState = context.read<MyAppState>();
 
@@ -387,16 +383,16 @@ class CardSearchDelegate extends SearchDelegate<String> {
               ((chameleonTagSaveCheckForMifareClassicEV1(card)) ? " EV1" : "")),
           onTap: () async {
             if ([
-              ChameleonTag.mifareMini,
-              ChameleonTag.mifare1K,
-              ChameleonTag.mifare2K,
-              ChameleonTag.mifare4K
+              TagType.mifareMini,
+              TagType.mifare1K,
+              TagType.mifare2K,
+              TagType.mifare4K
             ].contains(card.tag)) {
               close(context, card.name);
               setUploadState(0);
               var isEV1 = chameleonTagSaveCheckForMifareClassicEV1(card);
               if (isEV1) {
-                card.tag = ChameleonTag.mifare2K;
+                card.tag = TagType.mifare2K;
               }
 
               await appState.communicator!.setReaderDeviceMode(false);
@@ -405,7 +401,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
               await appState.communicator!.setSlotType(gridPosition, card.tag);
               await appState.communicator!
                   .setDefaultDataToSlot(gridPosition, card.tag);
-              var cardData = ChameleonCard(
+              var cardData = CardData(
                   uid: hexToBytes(card.uid.replaceAll(" ", "")),
                   atqa: card.atqa,
                   sak: card.sak);
@@ -449,14 +445,12 @@ class CardSearchDelegate extends SearchDelegate<String> {
 
               setUploadState(100);
 
-              await appState.communicator!.setSlotTagName(
-                  gridPosition,
-                  (card.name.isEmpty) ? "No name" : card.name,
-                  ChameleonTagFrequency.hf);
+              await appState.communicator!.setSlotTagName(gridPosition,
+                  (card.name.isEmpty) ? "No name" : card.name, TagFrequency.hf);
               await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);
-            } else if (card.tag == ChameleonTag.em410X) {
+            } else if (card.tag == TagType.em410X) {
               close(context, card.name);
               await appState.communicator!.setReaderDeviceMode(false);
               await appState.communicator!.enableSlot(gridPosition, true);
@@ -466,10 +460,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
                   .setDefaultDataToSlot(gridPosition, card.tag);
               await appState.communicator!.setEM410XEmulatorID(
                   hexToBytes(card.uid.replaceAll(" ", "")));
-              await appState.communicator!.setSlotTagName(
-                  gridPosition,
-                  (card.name.isEmpty) ? "No name" : card.name,
-                  ChameleonTagFrequency.lf);
+              await appState.communicator!.setSlotTagName(gridPosition,
+                  (card.name.isEmpty) ? "No name" : card.name, TagFrequency.lf);
               await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);

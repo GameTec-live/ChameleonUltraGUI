@@ -25,8 +25,7 @@ class SavedCardsPage extends StatefulWidget {
 class SavedCardsPageState extends State<SavedCardsPage> {
   MifareClassicType selectedType = MifareClassicType.m1k;
 
-  Future<void> saveTag(
-      ChameleonTagSave tag, MyAppState appState, bool bin) async {
+  Future<void> saveTag(TagSave tag, MyAppState appState, bool bin) async {
     if (bin) {
       List<int> tagDump = [];
       for (var block in tag.data) {
@@ -121,7 +120,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     var tags = appState
                                         .sharedPreferencesProvider
                                         .getChameleonTags();
-                                    var tag = ChameleonTagSave.fromJson(string);
+                                    var tag = TagSave.fromJson(string);
                                     tag.id = const Uuid().v4();
                                     tags.add(tag);
                                     appState.sharedPreferencesProvider
@@ -279,7 +278,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                 var tags = appState
                                                     .sharedPreferencesProvider
                                                     .getChameleonTags();
-                                                var tag = ChameleonTagSave(
+                                                var tag = TagSave(
                                                   id: const Uuid().v4(),
                                                   name: nameController.text,
                                                   sak: hexToBytes(sak4Controller
@@ -316,7 +315,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                 var tags = appState
                                                     .sharedPreferencesProvider
                                                     .getChameleonTags();
-                                                var tag = ChameleonTagSave(
+                                                var tag = TagSave(
                                                   id: const Uuid().v4(),
                                                   name: nameController.text,
                                                   sak: hexToBytes(sak7Controller
@@ -446,7 +445,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             var tags = appState
                                                 .sharedPreferencesProvider
                                                 .getChameleonTags();
-                                            List<ChameleonTagSave> output = [];
+                                            List<TagSave> output = [];
                                             for (var tagTest in tags) {
                                               if (tagTest.id != tag.id) {
                                                 output.add(tagTest);
@@ -583,7 +582,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             var tags = appState
                                                 .sharedPreferencesProvider
                                                 .getChameleonTags();
-                                            List<ChameleonTagSave> output = [];
+                                            List<TagSave> output = [];
                                             for (var tagTest in tags) {
                                               if (tagTest.id != tag.id) {
                                                 output.add(tagTest);

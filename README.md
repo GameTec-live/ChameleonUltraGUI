@@ -38,10 +38,10 @@ Contributions are welcome, most stuff that needs to be done can either be found 
 ![Home Page](/screenshots/2.png)
 ![Home Page Settings](/screenshots/3.png)
 ![Slot Manager Page](/screenshots/4.png)
-![Saved Cards Page](/screenshots/5.png)
-![Read Card Page](/screenshots/6.png)
-![Read Card Page Mifare Classic](/screenshots/7.png)
-![Settings Page](/screenshots/8.png)
+![Slot Manager Saved Cards](/screenshots/5.png)
+![Saved Cards Page](/screenshots/6.png)
+![Read Card Page](/screenshots/7.png)
+![Read Card Page Mifare Classic](/screenshots/8.png)
 
 <details>
   <summary>Mac and IOS</summary>
