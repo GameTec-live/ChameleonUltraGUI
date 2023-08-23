@@ -414,7 +414,8 @@ class HomePageState extends State<HomePage> {
                                           },
                                           child: const Row(
                                             children: [
-                                              Icon(Icons.medical_services),
+                                              Icon(Icons
+                                                  .medical_services_outlined),
                                               Text("Enter DFU Mode"),
                                             ],
                                           )),
@@ -564,7 +565,8 @@ class HomePageState extends State<HomePage> {
                                           },
                                           child: const Row(
                                             children: [
-                                              Icon(Icons.lock_reset),
+                                              Icon(Icons
+                                                  .restore_from_trash_outlined),
                                               Text("Factory reset"),
                                             ],
                                           )),
