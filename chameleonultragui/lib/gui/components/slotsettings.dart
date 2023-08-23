@@ -252,7 +252,7 @@ class SlotSettingsState extends State<SlotSettings> {
                                             },
                                             child: const Row(
                                               children: [
-                                                Icon(Icons.card_giftcard),
+                                                Icon(Icons.lock_open),
                                                 Text("Recover keys"),
                                               ],
                                             )),
