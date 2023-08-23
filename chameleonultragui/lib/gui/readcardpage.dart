@@ -1090,8 +1090,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                     await dumpData(appState);
                                                   }
                                                 : null,
-                                            child: const Text(
-                                                'Dump partical data'),
+                                            child:
+                                                const Text('Dump partial data'),
                                           )
                                         ])
                                   : (const Column(children: [])),
