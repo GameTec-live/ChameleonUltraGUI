@@ -21,6 +21,8 @@ enum ChameleonKeyCheckmark { none, found, checking }
 
 enum ChameleonMifareClassicState {
   none,
+  checkKeys,
+  checkKeysOngoing,
   recovery,
   recoveryOngoing,
   dump,
@@ -96,6 +98,7 @@ class ChameleonReadTagStatus {
   String hfTech;
   String lfTech;
   String dumpName;
+  String recoveryError;
   bool noHfCard;
   bool noLfCard;
   bool allKeysExists;
@@ -117,6 +120,7 @@ class ChameleonReadTagStatus {
       this.hfTech = '',
       this.lfTech = '',
       this.dumpName = '',
+      this.recoveryError = '',
       this.noHfCard = false,
       this.noLfCard = false,
       this.allKeysExists = false,
@@ -144,7 +148,7 @@ class ReadCardPage extends StatefulWidget {
 class ReadCardPageState extends State<ReadCardPage> {
   ChameleonReadTagStatus status = ChameleonReadTagStatus();
 
-  Future<void> readCardDetails(MyAppState appState) async {
+  Future<void> readHFInfo(MyAppState appState) async {
     status.validKeys = List.generate(80, (_) => Uint8List(0));
     status.checkMarks = List.generate(80, (_) => ChameleonKeyCheckmark.none);
 
@@ -166,14 +170,16 @@ class ReadCardPageState extends State<ReadCardPage> {
         status.ats = "Unavailable";
         status.hfTech =
             mifare ? "Mifare Classic ${mfClassicGetName(mf1Type)}" : "Other";
+        status.recoveryError = "";
         status.checkMarks =
             List.generate(80, (_) => ChameleonKeyCheckmark.none);
         status.type = mf1Type;
         status.state = (mf1Type != MifareClassicType.none)
-            ? ChameleonMifareClassicState.recovery
+            ? ChameleonMifareClassicState.checkKeys
             : ChameleonMifareClassicState.none;
         status.allKeysExists = false;
         status.noHfCard = false;
+        status.dumpProgress = 0;
       });
     } catch (_) {
       setState(() {
@@ -182,6 +188,8 @@ class ReadCardPageState extends State<ReadCardPage> {
         status.atqa = "";
         status.ats = "";
         status.hfTech = "";
+        status.recoveryError = "";
+        status.type = MifareClassicType.none;
         status.state = ChameleonMifareClassicState.none;
         status.allKeysExists = false;
         status.noHfCard = true;
@@ -189,7 +197,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> readCardInfo(MyAppState appState) async {
+  Future<void> readLFInfo(MyAppState appState) async {
     try {
       if (!await appState.communicator!.isReaderDeviceMode()) {
         await appState.communicator!.setReaderDeviceMode(true);
@@ -227,85 +235,20 @@ class ReadCardPageState extends State<ReadCardPage> {
         await appState.communicator!.setReaderDeviceMode(true);
       }
 
-      var card = await appState.communicator!.scan14443aTag();
       var mifare = await appState.communicator!.detectMf1Support();
-      var mf1Type = MifareClassicType.none;
       if (mifare) {
-        mf1Type = mfClassicGetType(card.atqa, card.sak);
-      } else {
-        appState.log.e("Not Mifare Classic tag!");
-        return;
-      }
-
-      status.validKeys = List.generate(80, (_) => Uint8List(0));
-      if (mifare) {
-        for (var sector = 0;
-            sector < mfClassicGetSectorCount(mf1Type);
-            sector++) {
-          for (var keyType = 0; keyType < 2; keyType++) {
-            if (status.checkMarks[sector + (keyType * 40)] ==
-                ChameleonKeyCheckmark.none) {
-              // We are missing key, check from dictionary
-              status.checkMarks[sector + (keyType * 40)] =
-                  ChameleonKeyCheckmark.checking;
-              setState(() {
-                status.checkMarks = status.checkMarks;
-              });
-              for (var key in [
-                ...status.selectedDictionary!.keys,
-                ...gMifareClassicKeys
-              ]) {
-                await asyncSleep(1); // Let GUI update
-                if (await appState.communicator!.mf1Auth(
-                    mfClassicGetSectorTrailerBlockBySector(sector),
-                    0x60 + keyType,
-                    key)) {
-                  // Found valid key
-                  status.validKeys[sector + (keyType * 40)] = key;
-                  status.checkMarks[sector + (keyType * 40)] =
-                      ChameleonKeyCheckmark.found;
-                  setState(() {
-                    status.checkMarks = status.checkMarks;
-                  });
-                  break;
-                }
-              }
-              if (status.checkMarks[sector + (keyType * 40)] ==
-                  ChameleonKeyCheckmark.checking) {
-                status.checkMarks[sector + (keyType * 40)] =
-                    ChameleonKeyCheckmark.none;
-                setState(() {
-                  status.checkMarks = status.checkMarks;
-                });
-              }
-            }
-          }
-        }
         // Key check part competed, checking found keys
         bool hasKey = false;
-        bool hasAllKeys = true;
         for (var sector = 0;
-            sector < mfClassicGetSectorCount(status.type);
+            sector < mfClassicGetSectorCount(status.type) && !hasKey;
             sector++) {
           for (var keyType = 0; keyType < 2; keyType++) {
             if (status.checkMarks[sector + (keyType * 40)] ==
                 ChameleonKeyCheckmark.found) {
               hasKey = true;
-            }
-            if (status.checkMarks[sector + (keyType * 40)] !=
-                ChameleonKeyCheckmark.found) {
-              hasAllKeys = false;
+              break;
             }
           }
-        }
-
-        if (hasAllKeys) {
-          // all keys exists
-          setState(() {
-            status.allKeysExists = true;
-            status.state = ChameleonMifareClassicState.dump;
-          });
-          return;
         }
 
         if (!hasKey) {
@@ -349,7 +292,11 @@ class ReadCardPageState extends State<ReadCardPage> {
               }
             }
           } else {
-            appState.log.e("No keys and not vurnerable to darkside");
+            setState(() {
+              status.recoveryError =
+                  "No keys and not vurnerable to Darkside attack";
+              status.state = ChameleonMifareClassicState.recovery;
+            });
             return;
           }
         }
@@ -359,8 +306,13 @@ class ReadCardPageState extends State<ReadCardPage> {
         });
 
         var prng = await appState.communicator!.getMf1NTLevel();
-        if (prng == ChameleonNTLevel.hard || prng == ChameleonNTLevel.unknown) {
-          // No hardnested implementation yet
+        if (prng != ChameleonNTLevel.weak) {
+          // No hardnested/staticnested implementation yet
+          setState(() {
+            status.recoveryError =
+                "Key recovery from this card doesn't yet supported";
+            status.state = ChameleonMifareClassicState.recovery;
+          });
           return;
         }
 
@@ -453,6 +405,105 @@ class ReadCardPageState extends State<ReadCardPage> {
     } catch (_) {}
   }
 
+  Future<void> checkKeys(MyAppState appState) async {
+    setState(() {
+      status.state = ChameleonMifareClassicState.checkKeysOngoing;
+    });
+    try {
+      if (!await appState.communicator!.isReaderDeviceMode()) {
+        await appState.communicator!.setReaderDeviceMode(true);
+      }
+
+      var card = await appState.communicator!.scan14443aTag();
+      var mifare = await appState.communicator!.detectMf1Support();
+      var mf1Type = MifareClassicType.none;
+      if (mifare) {
+        mf1Type = mfClassicGetType(card.atqa, card.sak);
+      } else {
+        appState.log.e("Not Mifare Classic tag!");
+        return;
+      }
+
+      status.validKeys = List.generate(80, (_) => Uint8List(0));
+      if (mifare) {
+        for (var sector = 0;
+            sector < mfClassicGetSectorCount(mf1Type);
+            sector++) {
+          for (var keyType = 0; keyType < 2; keyType++) {
+            if (status.checkMarks[sector + (keyType * 40)] ==
+                ChameleonKeyCheckmark.none) {
+              // We are missing key, check from dictionary
+              status.checkMarks[sector + (keyType * 40)] =
+                  ChameleonKeyCheckmark.checking;
+              setState(() {
+                status.checkMarks = status.checkMarks;
+              });
+              for (var key in [
+                ...status.selectedDictionary!.keys,
+                ...gMifareClassicKeys
+              ]) {
+                await asyncSleep(1); // Let GUI update
+                if (await appState.communicator!.mf1Auth(
+                    mfClassicGetSectorTrailerBlockBySector(sector),
+                    0x60 + keyType,
+                    key)) {
+                  // Found valid key
+                  status.validKeys[sector + (keyType * 40)] = key;
+                  status.checkMarks[sector + (keyType * 40)] =
+                      ChameleonKeyCheckmark.found;
+                  setState(() {
+                    status.checkMarks = status.checkMarks;
+                  });
+                  break;
+                }
+              }
+              if (status.checkMarks[sector + (keyType * 40)] ==
+                  ChameleonKeyCheckmark.checking) {
+                status.checkMarks[sector + (keyType * 40)] =
+                    ChameleonKeyCheckmark.none;
+                setState(() {
+                  status.checkMarks = status.checkMarks;
+                });
+              }
+            }
+          }
+        }
+
+        // Key check part competed, checking found keys
+        bool hasAllKeys = true;
+        for (var sector = 0;
+            sector < mfClassicGetSectorCount(status.type);
+            sector++) {
+          for (var keyType = 0; keyType < 2; keyType++) {
+            if (status.checkMarks[sector + (keyType * 40)] !=
+                ChameleonKeyCheckmark.found) {
+              hasAllKeys = false;
+            }
+          }
+        }
+
+        if (hasAllKeys) {
+          // all keys exists
+          setState(() {
+            status.allKeysExists = true;
+            status.state = ChameleonMifareClassicState.dump;
+          });
+          return;
+        } else {
+          setState(() {
+            status.allKeysExists = false;
+            status.state = ChameleonMifareClassicState.recovery;
+          });
+        }
+      }
+    } catch (_) {
+      setState(() {
+        status.recoveryError = "Something went wrong in dictionary check";
+        status.state = ChameleonMifareClassicState.checkKeys;
+      });
+    }
+  }
+
   Future<void> dumpData(MyAppState appState) async {
     setState(() {
       status.state = ChameleonMifareClassicState.dumpOngoing;
@@ -467,10 +518,21 @@ class ReadCardPageState extends State<ReadCardPage> {
             block < mfClassicGetBlockCountBySector(sector);
             block++) {
           for (var keyType = 0; keyType < 2; keyType++) {
+            appState.log
+                .d("Dumping sector $sector, block $block with key $keyType");
+
+            if (status.validKeys[sector + (keyType * 40)].isEmpty) {
+              appState.log.w("Skipping missing key");
+              status.cardData[block +
+                  mfClassicGetFirstBlockCountBySector(sector)] = Uint8List(16);
+              continue;
+            }
+
             var blockData = await appState.communicator!.mf1ReadBlock(
                 block + mfClassicGetFirstBlockCountBySector(sector),
                 0x60 + keyType,
                 status.validKeys[sector + (keyType * 40)]);
+
             if (blockData.isEmpty) {
               if (keyType == 1) {
                 blockData = Uint8List(16);
@@ -478,12 +540,19 @@ class ReadCardPageState extends State<ReadCardPage> {
                 continue;
               }
             }
+
             if (mfClassicGetSectorTrailerBlockBySector(sector) ==
                 block + mfClassicGetFirstBlockCountBySector(sector)) {
               // set keys in sector trailer
-              blockData.setRange(0, 6, status.validKeys[sector]);
-              blockData.setRange(10, 16, status.validKeys[sector + 40]);
+              if (status.validKeys[sector].isNotEmpty) {
+                blockData.setRange(0, 6, status.validKeys[sector]);
+              }
+
+              if (status.validKeys[sector + 40].isNotEmpty) {
+                blockData.setRange(10, 16, status.validKeys[sector + 40]);
+              }
             }
+
             status.cardData[block +
                 mfClassicGetFirstBlockCountBySector(sector)] = blockData;
 
@@ -503,19 +572,28 @@ class ReadCardPageState extends State<ReadCardPage> {
         status.dumpProgress = 0;
         status.state = ChameleonMifareClassicState.save;
       });
-    } catch (_) {}
+    } catch (_) {
+      setState(() {
+        status.recoveryError = "Something went wrong while dumping data";
+        status.state = ChameleonMifareClassicState.dump;
+      });
+    }
   }
 
-  Future<void> saveCard(MyAppState appState, bool bin) async {
+  Future<void> saveHFCard(MyAppState appState,
+      {bool bin = false, bool skipDump = false}) async {
     List<int> cardDump = [];
-    for (var sector = 0;
-        sector < mfClassicGetSectorCount(status.type);
-        sector++) {
-      for (var block = 0;
-          block < mfClassicGetBlockCountBySector(sector);
-          block++) {
-        cardDump.addAll(status
-            .cardData[block + mfClassicGetFirstBlockCountBySector(sector)]);
+
+    if (skipDump) {
+      for (var sector = 0;
+          sector < mfClassicGetSectorCount(status.type);
+          sector++) {
+        for (var block = 0;
+            block < mfClassicGetBlockCountBySector(sector);
+            block++) {
+          cardDump.addAll(status
+              .cardData[block + mfClassicGetFirstBlockCountBySector(sector)]);
+        }
       }
     }
 
@@ -545,13 +623,15 @@ class ReadCardPageState extends State<ReadCardPage> {
           sak: hexToBytes(status.sak)[0],
           atqa: hexToBytes(status.atqa.replaceAll(" ", "")),
           name: status.dumpName,
-          tag: mfClassicGetChameleonTagType(status.type),
+          tag: (skipDump)
+              ? ChameleonTag.mifare1K
+              : mfClassicGetChameleonTagType(status.type),
           data: status.cardData));
       appState.sharedPreferencesProvider.setChameleonTags(tags);
     }
   }
 
-  Future<void> saveLfCard(MyAppState appState) async {
+  Future<void> saveLFCard(MyAppState appState) async {
     var tags = appState.sharedPreferencesProvider.getChameleonTags();
     tags.add(ChameleonTagSave(
         id: const Uuid().v4(),
@@ -633,7 +713,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                       buildFieldRow('UID', status.hfUid, fieldFontSize),
                       buildFieldRow('SAK', status.sak, fieldFontSize),
                       buildFieldRow('ATQA', status.atqa, fieldFontSize),
-                      buildFieldRow('ATS', status.ats, fieldFontSize),
+                      // buildFieldRow('ATS', status.ats, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
                         'Tech: ${status.hfTech}',
@@ -653,8 +733,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                         onPressed: () async {
                           if (appState.connector.device ==
                               ChameleonDevice.ultra) {
-                            await readCardDetails(appState);
-                          } else {
+                            await readHFInfo(appState);
+                          } else if (appState.connector.device ==
+                              ChameleonDevice.lite) {
                             showDialog<String>(
                               context: context,
                               builder: (BuildContext context) => AlertDialog(
@@ -672,10 +753,55 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 ],
                               ),
                             );
+                          } else {
+                            appState.changesMade();
                           }
                         },
                         child: const Text('Read'),
                       ),
+                      ...(status.hfUid != "")
+                          ? [
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text('Enter card name'),
+                                        content: TextField(
+                                          onChanged: (value) {
+                                            setState(() {
+                                              status.dumpName = value;
+                                            });
+                                          },
+                                        ),
+                                        actions: [
+                                          ElevatedButton(
+                                            onPressed: () async {
+                                              await saveHFCard(appState,
+                                                  skipDump: true);
+                                              Navigator.pop(
+                                                  context); // Close the modal after saving
+                                            },
+                                            child: const Text('OK'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              Navigator.pop(
+                                                  context); // Close the modal without saving
+                                            },
+                                            child: const Text('Cancel'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
+                                child: const Text('Save only UID'),
+                              ),
+                            ]
+                          : [],
                       ...(status.type != MifareClassicType.none)
                           ? [
                               const SizedBox(height: 16),
@@ -917,6 +1043,13 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   const Spacer(),
                                 ],
                               ),
+                              ...(status.recoveryError != "")
+                                  ? [
+                                      const SizedBox(height: 16),
+                                      ErrorBox(
+                                          errorMessage: status.recoveryError),
+                                    ]
+                                  : [],
                               const SizedBox(height: 12),
                               ...(status.dumpProgress != 0)
                                   ? [
@@ -931,8 +1064,45 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       status.state ==
                                           ChameleonMifareClassicState
                                               .recoveryOngoing)
+                                  ? Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                          const SizedBox(height: 8),
+                                          ElevatedButton(
+                                            onPressed: (status.state ==
+                                                    ChameleonMifareClassicState
+                                                        .recovery)
+                                                ? () async {
+                                                    await recoverKeys(appState);
+                                                  }
+                                                : null,
+                                            child: const Text('Recover keys'),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          ElevatedButton(
+                                            onPressed: (status.state ==
+                                                    ChameleonMifareClassicState
+                                                        .recovery)
+                                                ? () async {
+                                                    await dumpData(appState);
+                                                  }
+                                                : null,
+                                            child: const Text(
+                                                'Dump partical data'),
+                                          )
+                                        ])
+                                  : (const Column(children: [])),
+                              (status.state ==
+                                          ChameleonMifareClassicState
+                                              .checkKeys ||
+                                      status.state ==
+                                          ChameleonMifareClassicState
+                                              .checkKeysOngoing)
                                   ? Column(children: [
-                                      const Text("Key dictionary"),
+                                      const Text("Addtional key dictionary"),
                                       const SizedBox(height: 4),
                                       DropdownButton<String>(
                                         value: status.selectedDictionary!.id,
@@ -962,12 +1132,13 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       ElevatedButton(
                                         onPressed: (status.state ==
                                                 ChameleonMifareClassicState
-                                                    .recovery)
+                                                    .checkKeys)
                                             ? () async {
-                                                await recoverKeys(appState);
+                                                await checkKeys(appState);
                                               }
                                             : null,
-                                        child: const Text('Recover keys'),
+                                        child: const Text(
+                                            'Check keys from dictionary'),
                                       )
                                     ])
                                   : (const Column(children: [])),
@@ -1017,8 +1188,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                     actions: [
                                                       ElevatedButton(
                                                         onPressed: () async {
-                                                          await saveCard(
-                                                              appState, false);
+                                                          await saveHFCard(
+                                                              appState);
                                                           Navigator.pop(
                                                               context); // Close the modal after saving
                                                         },
@@ -1042,7 +1213,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           const SizedBox(width: 8),
                                           ElevatedButton(
                                             onPressed: () async {
-                                              await saveCard(appState, true);
+                                              await saveHFCard(appState,
+                                                  bin: true);
                                             },
                                             child: const Text('Save as .bin'),
                                           ),
@@ -1091,8 +1263,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                         onPressed: () async {
                           if (appState.connector.device ==
                               ChameleonDevice.ultra) {
-                            await readCardInfo(appState);
-                          } else {
+                            await readLFInfo(appState);
+                          } else if (appState.connector.device ==
+                              ChameleonDevice.lite) {
                             showDialog<String>(
                               context: context,
                               builder: (BuildContext context) => AlertDialog(
@@ -1110,6 +1283,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 ],
                               ),
                             );
+                          } else {
+                            appState.changesMade();
                           }
                         },
                         child: const Text('Read'),
@@ -1134,7 +1309,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         actions: [
                                           ElevatedButton(
                                             onPressed: () async {
-                                              await saveLfCard(appState);
+                                              await saveLFCard(appState);
                                               Navigator.pop(
                                                   context); // Close the modal after saving
                                             },
