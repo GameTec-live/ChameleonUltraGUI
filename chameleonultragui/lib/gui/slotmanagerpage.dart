@@ -151,7 +151,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                             ),
                             child: Padding(
                               padding: const EdgeInsets.only(
-                                  top: 8.0, left: 8.0, bottom: 8.0),
+                                  top: 8.0, left: 8.0, bottom: 6.0),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -204,7 +204,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                         icon: const Icon(Icons.settings),
                                       ),
                                     ],
-                                  )
+                                  ),
                                 ],
                               ),
                             ),
