@@ -584,6 +584,8 @@ class HomePageState extends State<HomePage> {
                                                                   appState
                                                                       .changesMade();
                                                                 }),
+                                                            const SizedBox(
+                                                                height: 10),
                                                             const Text(
                                                                 "Button config:"),
                                                             const SizedBox(
