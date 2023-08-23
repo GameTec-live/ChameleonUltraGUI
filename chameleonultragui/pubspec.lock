@@ -682,7 +682,7 @@ packages:
     description:
       path: "."
       ref: fixes
-      resolved-ref: e5e0a5c500826dbb19ee3e74d72881301fc8f0db
+      resolved-ref: "741ca94fb3b5496534437274de4ae3d9dcbdcb19"
       url: "https://github.com/Foxushka/usbserial.git"
     source: git
     version: "0.4.0"
