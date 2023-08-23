@@ -64,7 +64,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         .setSideBarAutoExpansion(true);
                   }
                   appState.sharedPreferencesProvider
-                      .setSideBarExpandedIndex(index ?? 1);
+                      .setSideBarExpandedIndex(index);
                   appState.changesMade();
                 }),
             const SizedBox(height: 10),
