@@ -49,11 +49,7 @@ Contributions are welcome, most stuff that needs to be done can either be found 
   ### Mac and IOS
   Why are there no macOS and iOS builds?
   
-  Currently, we missing two essential parts:
-  1. Apple Developer account
-  2. Recovery library bindings 
-
-  As Flutter apps don't work in VM environment, we unfortunately can't develop and test ourself
+  We are pending Proxgrid permission to use Chameleon Ultra name to complete app review in App Store. This might take ~1 week, we hope apps will be published at start of September.
 </details>
 
 ## Donate
