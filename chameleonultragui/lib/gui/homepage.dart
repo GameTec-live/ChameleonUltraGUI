@@ -125,7 +125,7 @@ class HomePageState extends State<HomePage> {
     Uint8List content = await fetchFirmware(appState.connector.device);
 
     (applicationDat, applicationBin) = await unpackFirmware(content);
-
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     flashFile(connection, appState, applicationDat, applicationBin,
         (progress) => appState.setProgressBar(progress / 100),
         firmwareZip: content);
@@ -305,7 +305,9 @@ class HomePageState extends State<HomePage> {
                                       'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
                                   action: SnackBarAction(
                                     label: 'Close',
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                    },
                                   ),
                                 );
 
@@ -321,7 +323,9 @@ class HomePageState extends State<HomePage> {
                                         Text('Update error: ${e.toString()}'),
                                     action: SnackBarAction(
                                       label: 'Close',
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                      },
                                     ),
                                   );
 
