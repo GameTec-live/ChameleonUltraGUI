@@ -6,6 +6,7 @@ class NativeSerial extends AbstractSerial {
   // Class for PC Serial Communication
   SerialPort? port;
   SerialPort? checkPort;
+  SerialPortReader? reader;
 
   @override
   Future<List> availableDevices() async {
@@ -28,8 +29,12 @@ class NativeSerial extends AbstractSerial {
   Future<bool> preformDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
+    isOpen = false;
+    messageCallback = null;
     if (port != null) {
       port?.close();
+      reader?.close();
+      reader = null;
       connected = false;
       return true;
     }
@@ -123,6 +128,9 @@ class NativeSerial extends AbstractSerial {
   @override
   Future<void> open() async {
     port!.openReadWrite();
+    if (connectionType != ChameleonConnectType.dfu) {
+      reader = SerialPortReader(port!, timeout: 1000);
+    }
   }
 
   @override
@@ -132,6 +140,9 @@ class NativeSerial extends AbstractSerial {
 
   @override
   Future<Uint8List> read(int length) async {
+    if (reader != null) {
+      throw ("Listener exists, unable to read");
+    }
     Uint8List output = port!.read(length);
     return output;
   }
@@ -139,5 +150,12 @@ class NativeSerial extends AbstractSerial {
   @override
   Future<void> finishRead() async {
     port!.close();
+  }
+
+  @override
+  Future<void> initializeThread() async {
+    reader?.stream.listen((data) async {
+      await messageCallback(data);
+    });
   }
 }

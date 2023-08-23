@@ -23,7 +23,7 @@ class AndroidSerial extends AbstractSerial {
     List output = [];
 
     output.addAll(await mobileSerial.availableChameleons(onlyDFU));
-    if (await checkPermissions()) {
+    if (await checkPermissions() && !onlyDFU) {
       output.addAll(await bleSerial.availableChameleons(onlyDFU));
     }
 
@@ -92,6 +92,12 @@ class AndroidSerial extends AbstractSerial {
   }
 
   @override
+  Future<void> registerCallback(dynamic callback) async {
+    bleSerial.messageCallback = callback;
+    mobileSerial.messageCallback = callback;
+  }
+
+  @override
   ChameleonDevice get device =>
       (bleSerial.connected) ? bleSerial.device : mobileSerial.device;
 
@@ -106,4 +112,10 @@ class AndroidSerial extends AbstractSerial {
   ChameleonConnectType get connectionType => (bleSerial.connected)
       ? bleSerial.connectionType
       : mobileSerial.connectionType;
+
+  @override
+  bool get isOpen => (bleSerial.isOpen || mobileSerial.isOpen);
+
+  @override
+  set isOpen(open) => {bleSerial.isOpen = mobileSerial.isOpen = open};
 }

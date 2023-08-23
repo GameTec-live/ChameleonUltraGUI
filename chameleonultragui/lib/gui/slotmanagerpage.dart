@@ -42,28 +42,34 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
   Future<void> executeNextFunction() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
+
     if (currentFunctionIndex == 0 || onlyOneSlot) {
       try {
-        usedSlots = await connection.getUsedSlots();
-      } catch (_) {}
-    }
-    if (currentFunctionIndex == 0 || onlyOneSlot) {
+        usedSlots = await appState.communicator!.getUsedSlots();
+      } catch (_) {
+        try {
+          await appState.communicator!.getFirmwareVersion();
+        } catch (_) {
+          appState.log.e("Lost connection to Chameleon!");
+          appState.connector.preformDisconnect();
+          appState.changesMade();
+        }
+      }
       try {
-        enabledSlots = await connection.getEnabledSlots();
+        enabledSlots = await appState.communicator!.getEnabledSlots();
       } catch (_) {}
     }
 
     if (currentFunctionIndex < 8) {
       try {
-        slotData[currentFunctionIndex]['hfName'] = await connection
+        slotData[currentFunctionIndex]['hfName'] = await appState.communicator!
             .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.hf);
       } catch (_) {
         slotData[currentFunctionIndex]['hfName'] = "";
       }
 
       try {
-        slotData[currentFunctionIndex]['lfName'] = await connection
+        slotData[currentFunctionIndex]['lfName'] = await appState.communicator!
             .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.lf);
       } catch (_) {
         slotData[currentFunctionIndex]['lfName'] = "";
@@ -145,7 +151,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                             ),
                             child: Padding(
                               padding: const EdgeInsets.only(
-                                  top: 8.0, left: 8.0, bottom: 8.0),
+                                  top: 8.0, left: 8.0, bottom: 6.0),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -198,7 +204,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                         icon: const Icon(Icons.settings),
                                       ),
                                     ],
-                                  )
+                                  ),
                                 ],
                               ),
                             ),
@@ -358,7 +364,6 @@ class CardSearchDelegate extends SearchDelegate<String> {
                         ChameleonTagFrequiency.lf))));
 
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
 
     return ListView.builder(
       itemCount: results.length,
@@ -377,16 +382,17 @@ class CardSearchDelegate extends SearchDelegate<String> {
             ].contains(card.tag)) {
               close(context, card.name);
               setUploadState(0);
-              await connection.setReaderDeviceMode(false);
-              await connection.enableSlot(gridPosition, true);
-              await connection.activateSlot(gridPosition);
-              await connection.setSlotType(gridPosition, card.tag);
-              await connection.setDefaultDataToSlot(gridPosition, card.tag);
+              await appState.communicator!.setReaderDeviceMode(false);
+              await appState.communicator!.enableSlot(gridPosition, true);
+              await appState.communicator!.activateSlot(gridPosition);
+              await appState.communicator!.setSlotType(gridPosition, card.tag);
+              await appState.communicator!
+                  .setDefaultDataToSlot(gridPosition, card.tag);
               var cardData = ChameleonCard(
                   uid: hexToBytes(card.uid.replaceAll(" ", "")),
                   atqa: card.atqa,
                   sak: card.sak);
-              await connection.setMf1AntiCollision(cardData);
+              await appState.communicator!.setMf1AntiCollision(cardData);
 
               List<int> blockChunk = [];
               int lastSend = 0;
@@ -400,7 +406,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
                         card.data[blockOffset].isEmpty) ||
                     blockChunk.length >= 128) {
                   if (blockChunk.isNotEmpty) {
-                    await connection.setMf1BlockData(
+                    await appState.communicator!.setMf1BlockData(
                         lastSend, Uint8List.fromList(blockChunk));
                     blockChunk = [];
                     lastSend = blockOffset;
@@ -420,33 +426,34 @@ class CardSearchDelegate extends SearchDelegate<String> {
               }
 
               if (blockChunk.isNotEmpty) {
-                await connection.setMf1BlockData(
-                    lastSend, Uint8List.fromList(blockChunk));
+                await appState.communicator!
+                    .setMf1BlockData(lastSend, Uint8List.fromList(blockChunk));
               }
 
               setUploadState(100);
 
-              await connection.setSlotTagName(
+              await appState.communicator!.setSlotTagName(
                   gridPosition,
                   (card.name.isEmpty) ? "No name" : card.name,
                   ChameleonTagFrequiency.hf);
-              await connection.saveSlotData();
+              await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);
             } else if (card.tag == ChameleonTag.em410X) {
               close(context, card.name);
-              await connection.setReaderDeviceMode(false);
-              await connection.enableSlot(gridPosition, true);
-              await connection.activateSlot(gridPosition);
-              await connection.setSlotType(gridPosition, card.tag);
-              await connection.setDefaultDataToSlot(gridPosition, card.tag);
-              await connection.setEM410XEmulatorID(
+              await appState.communicator!.setReaderDeviceMode(false);
+              await appState.communicator!.enableSlot(gridPosition, true);
+              await appState.communicator!.activateSlot(gridPosition);
+              await appState.communicator!.setSlotType(gridPosition, card.tag);
+              await appState.communicator!
+                  .setDefaultDataToSlot(gridPosition, card.tag);
+              await appState.communicator!.setEM410XEmulatorID(
                   hexToBytes(card.uid.replaceAll(" ", "")));
-              await connection.setSlotTagName(
+              await appState.communicator!.setSlotTagName(
                   gridPosition,
                   (card.name.isEmpty) ? "No name" : card.name,
                   ChameleonTagFrequiency.lf);
-              await connection.saveSlotData();
+              await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);
             } else {

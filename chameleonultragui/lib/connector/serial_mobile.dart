@@ -8,13 +8,15 @@ import 'package:usb_serial/usb_serial.dart';
 // Class for Android Serial Communication
 class MobileSerial extends AbstractSerial {
   Map<String, UsbDevice> deviceMap = {};
-  List<Uint8List> messagePool = []; // TODO: Fix or rewrite on release
+  List<Uint8List> messagePool = [];
   UsbPort? port;
 
   @override
   Future<bool> preformDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ChameleonConnectType.none;
+    isOpen = false;
+    messageCallback = null;
     if (port != null) {
       port?.close();
       connected = false;
@@ -96,8 +98,12 @@ class MobileSerial extends AbstractSerial {
           115200, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
       connected = true;
 
-      port!.inputStream!.listen((Uint8List data) {
-        messagePool.add(data);
+      port!.inputStream!.listen((Uint8List data) async {
+        if (messageCallback != null) {
+          await messageCallback(data);
+        } else {
+          messagePool.add(data);
+        }
       });
 
       UsbSerial.usbEventStream!.listen((event) {
@@ -132,7 +138,7 @@ class MobileSerial extends AbstractSerial {
     while (true) {
       if (messagePool.isNotEmpty) {
         var message = messagePool[0];
-        messagePool.removeWhere((item) => item == message);
+        messagePool.remove(message);
         completer.complete(message);
         break;
       }
