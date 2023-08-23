@@ -46,9 +46,15 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     if (currentFunctionIndex == 0 || onlyOneSlot) {
       try {
         usedSlots = await appState.communicator!.getUsedSlots();
-      } catch (_) {}
-    }
-    if (currentFunctionIndex == 0 || onlyOneSlot) {
+      } catch (_) {
+        try {
+          await appState.communicator!.getFirmwareVersion();
+        } catch (_) {
+          appState.log.e("Lost connection to Chameleon!");
+          appState.connector.preformDisconnect();
+          appState.changesMade();
+        }
+      }
       try {
         enabledSlots = await appState.communicator!.getEnabledSlots();
       } catch (_) {}

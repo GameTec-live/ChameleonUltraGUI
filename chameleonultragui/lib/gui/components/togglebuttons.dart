@@ -1,13 +1,11 @@
-import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class ToggleButtonsWrapper extends StatefulWidget {
-  List<String> items;
-  int selectedValue;
-  dynamic onChange;
+  final List<String> items;
+  final int selectedValue;
+  final dynamic onChange;
 
-  ToggleButtonsWrapper(
+  const ToggleButtonsWrapper(
       {Key? key,
       required this.items,
       required this.selectedValue,

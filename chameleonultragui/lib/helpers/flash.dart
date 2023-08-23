@@ -23,7 +23,7 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
         .body
         .toString());
 
-    if (releases.containsKey("message")) {
+    if (releases is! List && releases.containsKey("message")) {
       error = releases["message"];
       throw error;
     }
@@ -61,7 +61,8 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
 
     for (var artifact in artifacts["artifacts"]) {
       if (artifact["name"] ==
-          "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app") {
+              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
+          artifact["workflow_run"]["head_branch"] == "main") {
         content = await http.readBytes(Uri.parse(
             "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
         break;
@@ -102,7 +103,8 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
 
     for (var artifact in artifacts["artifacts"]) {
       if (artifact["name"] ==
-          "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app") {
+              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
+          artifact["workflow_run"]["head_branch"] == "main") {
         return artifact["workflow_run"]["head_sha"];
       }
     }
@@ -114,14 +116,14 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
         .body
         .toString());
 
-    if (releases.containsKey("message")) {
+    if (releases is! List && releases.containsKey("message")) {
       error = releases["message"];
       throw error;
     }
 
     for (var release in releases) {
       if (release["author"]["login"] == "github-actions[bot]") {
-        return release["body"].split("Built from commit ")[1].split("\n")[0];
+        return release["target_commitish"];
       }
     }
   } catch (_) {}

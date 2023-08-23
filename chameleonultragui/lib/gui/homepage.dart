@@ -293,6 +293,12 @@ class HomePageState extends State<HomePage> {
                                 return;
                               }
 
+                              appState.log.i("Latest commit: $latestCommit");
+
+                              if (latestCommit.isEmpty) {
+                                return;
+                              }
+
                               if (latestCommit.startsWith(fwVersion[1])) {
                                 snackBar = SnackBar(
                                   content: Text(

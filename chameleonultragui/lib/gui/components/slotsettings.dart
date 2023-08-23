@@ -1,4 +1,6 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/components/togglebuttons.dart';
+import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -14,13 +16,13 @@ class SlotSettings extends StatefulWidget {
 }
 
 class SlotSettingsState extends State<SlotSettings> {
-  List<bool> selectedGen1aMode = <bool>[true, false];
-  List<bool> selectedGen2Mode = <bool>[true, false];
-  List<bool> selectedAntiColl = <bool>[true, false];
-  List<bool> selectedDetection = <bool>[true, false];
-  List<bool> selectedWriteMode = <bool>[false, false, false, false];
-  List<bool> selectedEnabled = <bool>[true, false];
-  bool firstRun = true;
+  bool isRun = false;
+  bool isEnabled = false;
+  late bool isDetection;
+  late bool isGen1a;
+  late bool isGen2;
+  late bool isAntiColl;
+  late ChameleonMf1WriteMode writeMode;
   String hfName = "";
   String lfName = "";
 
@@ -60,38 +62,17 @@ class SlotSettingsState extends State<SlotSettings> {
       setState(() {});
     }
 
-    if (firstRun) {
-      firstRun = false;
+    if (!isRun) {
       await appState.communicator!.activateSlot(widget.slot);
-      bool isEnabled =
-          (await appState.communicator!.getEnabledSlots())[widget.slot];
-      if (!isEnabled) {
-        selectedEnabled = selectedEnabled.reversed.toList();
-      }
-      var (isDetection, isGen1a, isGen2, isAntiColl, writeMode) =
-          (await appState.communicator!.getMf1EmulatorConfig());
-      if (!isDetection) {
-        selectedDetection = selectedDetection.reversed.toList();
-      }
-      if (!isGen1a) {
-        selectedGen1aMode = selectedGen1aMode.reversed.toList();
-      }
-      if (!isGen2) {
-        selectedGen2Mode = selectedGen2Mode.reversed.toList();
-      }
-      if (!isAntiColl) {
-        selectedAntiColl = selectedAntiColl.reversed.toList();
-      }
-
-      if (writeMode == ChameleonMf1WriteMode.normal) {
-        selectedWriteMode[0] = true;
-      } else if (writeMode == ChameleonMf1WriteMode.deined) {
-        selectedWriteMode[1] = true;
-      } else if (writeMode == ChameleonMf1WriteMode.deceive) {
-        selectedWriteMode[2] = true;
-      } else if (writeMode == ChameleonMf1WriteMode.shadow) {
-        selectedWriteMode[3] = true;
-      }
+      isEnabled = (await appState.communicator!.getEnabledSlots())[widget.slot];
+      var data = (await appState.communicator!.getMf1EmulatorConfig());
+      isDetection = data.$1;
+      isGen1a = data.$2;
+      isGen2 = data.$3;
+      isAntiColl = data.$4;
+      writeMode = data.$5;
+      isRun = true;
+      setState(() {});
     }
   }
 
@@ -102,250 +83,180 @@ class SlotSettingsState extends State<SlotSettings> {
     return FutureBuilder(
         future: fetchInfo(),
         builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-          return AlertDialog(
-              title: const Text('Slot settings'),
-              content: SingleChildScrollView(
-                  child: Column(children: [
-                Row(
-                  children: [
-                    const Text('HF:'),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: OutlinedButton(
-                      onPressed: null,
-                      child: Text(hfName),
-                    )),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () async {
-                        await appState.communicator!.deleteSlotInfo(
-                            widget.slot, ChameleonTagFrequiency.hf);
-                        await appState.communicator!.setSlotTagName(
-                            widget.slot, "Empty", ChameleonTagFrequiency.hf);
-                        await appState.communicator!.saveSlotData();
+          if (snapshot.connectionState == ConnectionState.waiting && !isRun) {
+            return const AlertDialog(
+                title: Text('Slot settings'),
+                content: SingleChildScrollView(
+                    child: Column(children: [CircularProgressIndicator()])));
+          } else if (snapshot.hasError) {
+            appState.connector.preformDisconnect();
+            return Text('Error: ${snapshot.error.toString()}');
+          } else {
+            return AlertDialog(
+                title: const Text('Slot settings'),
+                content: SingleChildScrollView(
+                    child: Column(children: [
+                  Row(
+                    children: [
+                      const Text('HF:'),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: OutlinedButton(
+                        onPressed: null,
+                        child: Text(hfName),
+                      )),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () async {
+                          await appState.communicator!.deleteSlotInfo(
+                              widget.slot, ChameleonTagFrequiency.hf);
+                          await appState.communicator!.setSlotTagName(
+                              widget.slot, "Empty", ChameleonTagFrequiency.hf);
+                          await appState.communicator!.saveSlotData();
 
-                        setState(() {
-                          hfName = "";
-                        });
+                          setState(() {
+                            hfName = "";
+                          });
+
+                          widget.refresh(widget.slot);
+                        },
+                        icon: const Icon(Icons.clear_rounded),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text('LF:'),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: OutlinedButton(
+                        onPressed: null,
+                        child: Text(lfName),
+                      )),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () async {
+                          await appState.communicator!.deleteSlotInfo(
+                              widget.slot, ChameleonTagFrequiency.lf);
+                          await appState.communicator!.setSlotTagName(
+                              widget.slot, "Empty", ChameleonTagFrequiency.lf);
+                          await appState.communicator!.saveSlotData();
+
+                          setState(() {
+                            lfName = "";
+                          });
+
+                          widget.refresh(widget.slot);
+                        },
+                        icon: const Icon(Icons.clear_rounded),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Mifare Classic emulator settings',
+                    textScaleFactor: 1.2,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Gen1A magic mode'),
+                  const SizedBox(height: 8),
+                  ToggleButtonsWrapper(
+                      items: const ['Yes', 'No'],
+                      selectedValue: isGen1a ? 0 : 1,
+                      onChange: (int index) async {
+                        await appState.communicator!.activateSlot(widget.slot);
+                        await appState.communicator!
+                            .setMf1Gen1aMode(index == 0 ? true : false);
 
                         widget.refresh(widget.slot);
-                      },
-                      icon: const Icon(Icons.clear_rounded),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Text('LF:'),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: OutlinedButton(
-                      onPressed: null,
-                      child: Text(lfName),
-                    )),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () async {
-                        await appState.communicator!.deleteSlotInfo(
-                            widget.slot, ChameleonTagFrequiency.lf);
-                        await appState.communicator!.setSlotTagName(
-                            widget.slot, "Empty", ChameleonTagFrequiency.lf);
-                        await appState.communicator!.saveSlotData();
+                      }),
+                  const SizedBox(height: 8),
+                  const Text('Gen2 magic mode'),
+                  const SizedBox(height: 8),
+                  ToggleButtonsWrapper(
+                      items: const ['Yes', 'No'],
+                      selectedValue: isGen2 ? 0 : 1,
+                      onChange: (int index) async {
+                        await appState.communicator!.activateSlot(widget.slot);
+                        await appState.communicator!
+                            .setMf1Gen2Mode(index == 0 ? true : false);
 
-                        setState(() {
-                          lfName = "";
-                        });
                         widget.refresh(widget.slot);
-                      },
-                      icon: const Icon(Icons.clear_rounded),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Mifare Classic emulator settings',
-                  textScaleFactor: 1.2,
-                ),
-                const SizedBox(height: 8),
-                const Text('Gen1A magic mode'),
-                const SizedBox(height: 8),
-                ToggleButtons(
-                  direction: Axis.horizontal,
-                  onPressed: (int index) async {
-                    setState(() {
-                      for (int i = 0; i < selectedGen1aMode.length; i++) {
-                        selectedGen1aMode[i] = i == index;
-                      }
-                    });
-                    await appState.communicator!.activateSlot(widget.slot);
-                    await appState.communicator!
-                        .setMf1Gen1aMode(index == 0 ? true : false);
+                      }),
+                  const SizedBox(height: 8),
+                  const Text('Use UID/SAK/ATQA from 0 block'),
+                  const SizedBox(height: 8),
+                  ToggleButtonsWrapper(
+                      items: const ['Yes', 'No'],
+                      selectedValue: isAntiColl ? 0 : 1,
+                      onChange: (int index) async {
+                        await appState.communicator!.activateSlot(widget.slot);
+                        await appState.communicator!
+                            .setMf1UseFirstBlockColl(index == 0 ? true : false);
 
-                    widget.refresh(widget.slot);
-                  },
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  constraints: const BoxConstraints(
-                    minHeight: 40.0,
-                    minWidth: 80.0,
+                        widget.refresh(widget.slot);
+                      }),
+                  const SizedBox(height: 8),
+                  const Text('Collect nonces (Mfkey32)'),
+                  const SizedBox(height: 8),
+                  ToggleButtonsWrapper(
+                      items: const ['Yes', 'No'],
+                      selectedValue: isDetection ? 0 : 1,
+                      onChange: (int index) async {
+                        await appState.communicator!.activateSlot(widget.slot);
+                        await appState.communicator!
+                            .setMf1DetectionStatus(index == 0 ? true : false);
+
+                        widget.refresh(widget.slot);
+                      }),
+                  const SizedBox(height: 8),
+                  const Text('Write mode'),
+                  const SizedBox(height: 8),
+                  ToggleButtonsWrapper(
+                      items: const ['Normal', 'Decline', 'Deceive', 'Shadow'],
+                      selectedValue: writeMode.value,
+                      onChange: (int index) async {
+                        await appState.communicator!.activateSlot(widget.slot);
+
+                        if (index == 0) {
+                          await appState.communicator!
+                              .setMf1WriteMode(ChameleonMf1WriteMode.normal);
+                        } else if (index == 1) {
+                          await appState.communicator!
+                              .setMf1WriteMode(ChameleonMf1WriteMode.deined);
+                        } else if (index == 2) {
+                          await appState.communicator!
+                              .setMf1WriteMode(ChameleonMf1WriteMode.deceive);
+                        } else if (index == 3) {
+                          await appState.communicator!
+                              .setMf1WriteMode(ChameleonMf1WriteMode.shadow);
+                        }
+
+                        widget.refresh(widget.slot);
+                      }),
+                  const SizedBox(height: 32),
+                  const Text('Slot status'),
+                  const SizedBox(height: 8),
+                  ToggleButtonsWrapper(
+                      items: const ['Enabled', 'Disabled'],
+                      selectedValue: isEnabled ? 0 : 1,
+                      onChange: (int index) async {
+                        await appState.communicator!
+                            .enableSlot(widget.slot, index == 0 ? true : false);
+
+                        widget.refresh(widget.slot);
+                      }),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      widget.refresh(widget.slot);
+                      Navigator.pop(context);
+                    },
                   ),
-                  isSelected: selectedGen1aMode,
-                  children: const <Widget>[Text('Yes'), Text('No')],
-                ),
-                const SizedBox(height: 8),
-                const Text('Gen2 magic mode'),
-                const SizedBox(height: 8),
-                ToggleButtons(
-                  direction: Axis.horizontal,
-                  onPressed: (int index) async {
-                    setState(() {
-                      for (int i = 0; i < selectedGen2Mode.length; i++) {
-                        selectedGen2Mode[i] = i == index;
-                      }
-                    });
-
-                    await appState.communicator!.activateSlot(widget.slot);
-                    await appState.communicator!
-                        .setMf1Gen2Mode(index == 0 ? true : false);
-
-                    widget.refresh(widget.slot);
-                  },
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  constraints: const BoxConstraints(
-                    minHeight: 40.0,
-                    minWidth: 80.0,
-                  ),
-                  isSelected: selectedGen2Mode,
-                  children: const <Widget>[Text('Yes'), Text('No')],
-                ),
-                const SizedBox(height: 8),
-                const Text('Use UID/SAK/ATQA from 0 block'),
-                const SizedBox(height: 8),
-                ToggleButtons(
-                  direction: Axis.horizontal,
-                  onPressed: (int index) async {
-                    setState(() {
-                      for (int i = 0; i < selectedAntiColl.length; i++) {
-                        selectedAntiColl[i] = i == index;
-                      }
-                    });
-
-                    await appState.communicator!.activateSlot(widget.slot);
-                    await appState.communicator!
-                        .setMf1UseFirstBlockColl(index == 0 ? true : false);
-
-                    widget.refresh(widget.slot);
-                  },
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  constraints: const BoxConstraints(
-                    minHeight: 40.0,
-                    minWidth: 80.0,
-                  ),
-                  isSelected: selectedAntiColl,
-                  children: const <Widget>[Text('Yes'), Text('No')],
-                ),
-                const SizedBox(height: 8),
-                const Text('Collect nonces (Mfkey32)'),
-                const SizedBox(height: 8),
-                ToggleButtons(
-                  direction: Axis.horizontal,
-                  onPressed: (int index) async {
-                    setState(() {
-                      for (int i = 0; i < selectedDetection.length; i++) {
-                        selectedDetection[i] = i == index;
-                      }
-                    });
-
-                    await appState.communicator!.activateSlot(widget.slot);
-                    await appState.communicator!
-                        .setMf1DetectionStatus(index == 0 ? true : false);
-
-                    widget.refresh(widget.slot);
-                  },
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  constraints: const BoxConstraints(
-                    minHeight: 40.0,
-                    minWidth: 80.0,
-                  ),
-                  isSelected: selectedDetection,
-                  children: const <Widget>[Text('Yes'), Text('No')],
-                ),
-                const SizedBox(height: 8),
-                const Text('Write mode'),
-                const SizedBox(height: 8),
-                ToggleButtons(
-                  direction: Axis.horizontal,
-                  onPressed: (int index) async {
-                    setState(() {
-                      for (int i = 0; i < selectedWriteMode.length; i++) {
-                        selectedWriteMode[i] = i == index;
-                      }
-                    });
-
-                    await appState.communicator!.activateSlot(widget.slot);
-
-                    if (index == 0) {
-                      await appState.communicator!
-                          .setMf1WriteMode(ChameleonMf1WriteMode.normal);
-                    } else if (index == 1) {
-                      await appState.communicator!
-                          .setMf1WriteMode(ChameleonMf1WriteMode.deined);
-                    } else if (index == 2) {
-                      await appState.communicator!
-                          .setMf1WriteMode(ChameleonMf1WriteMode.deceive);
-                    } else if (index == 3) {
-                      await appState.communicator!
-                          .setMf1WriteMode(ChameleonMf1WriteMode.shadow);
-                    }
-
-                    widget.refresh(widget.slot);
-                  },
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  constraints: const BoxConstraints(
-                    minHeight: 40.0,
-                    minWidth: 80.0,
-                  ),
-                  isSelected: selectedWriteMode,
-                  children: const <Widget>[
-                    Text('Normal'),
-                    Text('Decline'),
-                    Text('Deceive'),
-                    Text('Shadow')
-                  ],
-                ),
-                const SizedBox(height: 32),
-                const Text('Slot status'),
-                const SizedBox(height: 8),
-                ToggleButtons(
-                  direction: Axis.horizontal,
-                  onPressed: (int index) async {
-                    setState(() {
-                      for (int i = 0; i < selectedEnabled.length; i++) {
-                        selectedEnabled[i] = i == index;
-                      }
-                    });
-
-                    await appState.communicator!
-                        .enableSlot(widget.slot, index == 0 ? true : false);
-                    widget.refresh(widget.slot);
-                  },
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  constraints: const BoxConstraints(
-                    minHeight: 40.0,
-                    minWidth: 80.0,
-                  ),
-                  isSelected: selectedEnabled,
-                  children: const <Widget>[Text('Enabled'), Text('Disabled')],
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  child: const Text('OK'),
-                  onPressed: () {
-                    widget.refresh(widget.slot);
-                    Navigator.pop(context);
-                  },
-                ),
-              ])));
+                ])));
+          }
         });
   }
 }
