@@ -39,7 +39,7 @@ class HomePageState extends State<HomePage> {
     return (
       await getBatteryChargeIcon(),
       await getUsedSlotsOut8(usedSlots),
-      await getFWversion(),
+      await getVersion(),
       await isReaderDeviceMode(),
       await getAnimationMode(),
     );
@@ -93,7 +93,7 @@ class HomePageState extends State<HomePage> {
     return usedSlotsOut8.toString();
   }
 
-  Future<List<String>> getFWversion() async {
+  Future<List<String>> getVersion() async {
     var appState = context.read<MyAppState>();
     String commitHash = "";
     String firmwareVersion =

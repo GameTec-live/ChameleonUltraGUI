@@ -36,7 +36,7 @@ class SlotSettingsState extends State<SlotSettings> {
     if (hfName.isEmpty) {
       try {
         hfName = (await appState.communicator!
-                .getSlotTagName(widget.slot, ChameleonTagFrequiency.hf))
+                .getSlotTagName(widget.slot, ChameleonTagFrequency.hf))
             .trim();
       } catch (_) {}
 
@@ -50,7 +50,7 @@ class SlotSettingsState extends State<SlotSettings> {
     if (lfName.isEmpty) {
       try {
         lfName = (await appState.communicator!
-                .getSlotTagName(widget.slot, ChameleonTagFrequiency.lf))
+                .getSlotTagName(widget.slot, ChameleonTagFrequency.lf))
             .trim();
       } catch (_) {}
 
@@ -108,9 +108,9 @@ class SlotSettingsState extends State<SlotSettings> {
                       IconButton(
                         onPressed: () async {
                           await appState.communicator!.deleteSlotInfo(
-                              widget.slot, ChameleonTagFrequiency.hf);
+                              widget.slot, ChameleonTagFrequency.hf);
                           await appState.communicator!.setSlotTagName(
-                              widget.slot, "Empty", ChameleonTagFrequiency.hf);
+                              widget.slot, "Empty", ChameleonTagFrequency.hf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
@@ -137,9 +137,9 @@ class SlotSettingsState extends State<SlotSettings> {
                       IconButton(
                         onPressed: () async {
                           await appState.communicator!.deleteSlotInfo(
-                              widget.slot, ChameleonTagFrequiency.lf);
+                              widget.slot, ChameleonTagFrequency.lf);
                           await appState.communicator!.setSlotTagName(
-                              widget.slot, "Empty", ChameleonTagFrequiency.lf);
+                              widget.slot, "Empty", ChameleonTagFrequency.lf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
@@ -223,7 +223,7 @@ class SlotSettingsState extends State<SlotSettings> {
                               .setMf1WriteMode(ChameleonMf1WriteMode.normal);
                         } else if (index == 1) {
                           await appState.communicator!
-                              .setMf1WriteMode(ChameleonMf1WriteMode.deined);
+                              .setMf1WriteMode(ChameleonMf1WriteMode.denied);
                         } else if (index == 2) {
                           await appState.communicator!
                               .setMf1WriteMode(ChameleonMf1WriteMode.deceive);

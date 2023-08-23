@@ -253,7 +253,7 @@ class ReadCardPageState extends State<ReadCardPage> {
 
         if (!hasKey) {
           if (await appState.communicator!.checkMf1Darkside() ==
-              ChameleonDarksideResult.vurnerable) {
+              ChameleonDarksideResult.vulnerable) {
             // recover with darkside
             var data = await appState.communicator!
                 .getMf1Darkside(0x03, 0x61, true, 15);
@@ -294,7 +294,7 @@ class ReadCardPageState extends State<ReadCardPage> {
           } else {
             setState(() {
               status.recoveryError =
-                  "No keys and not vurnerable to Darkside attack";
+                  "No keys and not vulnerable to Darkside attack";
               status.state = ChameleonMifareClassicState.recovery;
             });
             return;
@@ -1102,7 +1102,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           ChameleonMifareClassicState
                                               .checkKeysOngoing)
                                   ? Column(children: [
-                                      const Text("Addtional key dictionary"),
+                                      const Text("Additional key dictionary"),
                                       const SizedBox(height: 4),
                                       DropdownButton<String>(
                                         value: status.selectedDictionary!.id,

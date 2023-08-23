@@ -63,14 +63,14 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     if (currentFunctionIndex < 8) {
       try {
         slotData[currentFunctionIndex]['hfName'] = await appState.communicator!
-            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.hf);
+            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequency.hf);
       } catch (_) {
         slotData[currentFunctionIndex]['hfName'] = "";
       }
 
       try {
         slotData[currentFunctionIndex]['lfName'] = await appState.communicator!
-            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.lf);
+            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequency.lf);
       } catch (_) {
         slotData[currentFunctionIndex]['lfName'] = "";
       }
@@ -321,11 +321,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
                     .contains(query.toLowerCase()))) &&
             ((filter == SearchFilter.all) ||
                 (filter == SearchFilter.hf &&
-                    chameleontagToFrequency(card.tag) ==
-                        ChameleonTagFrequiency.hf) ||
+                    chameleonTagToFrequency(card.tag) ==
+                        ChameleonTagFrequency.hf) ||
                 (filter == SearchFilter.lf &&
-                    chameleontagToFrequency(card.tag) ==
-                        ChameleonTagFrequiency.lf))));
+                    chameleonTagToFrequency(card.tag) ==
+                        ChameleonTagFrequency.lf))));
 
     return ListView.builder(
       itemCount: results.length,
@@ -360,11 +360,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
                     .contains(query.toLowerCase()))) &&
             ((filter == SearchFilter.all) ||
                 (filter == SearchFilter.hf &&
-                    chameleontagToFrequency(card.tag) ==
-                        ChameleonTagFrequiency.hf) ||
+                    chameleonTagToFrequency(card.tag) ==
+                        ChameleonTagFrequency.hf) ||
                 (filter == SearchFilter.lf &&
-                    chameleontagToFrequency(card.tag) ==
-                        ChameleonTagFrequiency.lf))));
+                    chameleonTagToFrequency(card.tag) ==
+                        ChameleonTagFrequency.lf))));
 
     var appState = context.read<MyAppState>();
 
@@ -438,7 +438,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
               await appState.communicator!.setSlotTagName(
                   gridPosition,
                   (card.name.isEmpty) ? "No name" : card.name,
-                  ChameleonTagFrequiency.hf);
+                  ChameleonTagFrequency.hf);
               await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);
@@ -455,7 +455,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
               await appState.communicator!.setSlotTagName(
                   gridPosition,
                   (card.name.isEmpty) ? "No name" : card.name,
-                  ChameleonTagFrequiency.lf);
+                  ChameleonTagFrequency.lf);
               await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);

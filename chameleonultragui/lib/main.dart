@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-// Comms Imports
 import 'connector/serial_native.dart';
 
 // GUI Imports
@@ -90,19 +89,13 @@ class MyAppState extends ChangeNotifier {
   ChameleonCommunicator? communicator;
 
   bool devMode = false;
-  double? progress;
-  // Flashing Easteregg
+  double? progress; // DFU
+
+  // Flashing easter egg
   bool easterEgg = false;
 
-  /*void toggleswitch() {
-    setState(() {
-      switchOn = !switchOn;
-    })
-  }
-  // This doesn't work because we aren't working stateful
-  */
-  // maybe via this: https://www.woolha.com/tutorials/flutter-switch-input-widget-example or this https://dev.to/naidanut/adding-expandable-side-bar-using-navigationrail-in-flutter-5ai8
   Logger log = Logger(); // Logger, App wide logger
+
   void changesMade() {
     notifyListeners();
   }
