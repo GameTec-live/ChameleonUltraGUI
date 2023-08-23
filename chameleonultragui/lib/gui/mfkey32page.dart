@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/components/errorbadge.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
@@ -113,6 +114,10 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                   child: Column(
                     mainAxisSize: MainAxisSize.max,
                     children: [
+                      const ErrorBadge(
+                          errorMessage:
+                              "This page is deprecated and will be moved into slot settings in later releases"),
+                      const SizedBox(height: 16.0),
                       const Text(
                         'Recover keys via Mfkey32',
                         textAlign: TextAlign.center,
