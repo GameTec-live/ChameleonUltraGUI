@@ -507,8 +507,6 @@ class ReadCardPageState extends State<ReadCardPage> {
   }
 
   Future<void> saveCard(MyAppState appState, bool bin) async {
-    var card = await appState.communicator!.scan14443aTag();
-
     List<int> cardDump = [];
     for (var sector = 0;
         sector < mfClassicGetSectorCount(status.type);
@@ -524,14 +522,14 @@ class ReadCardPageState extends State<ReadCardPage> {
     if (bin) {
       try {
         await FileSaver.instance.saveAs(
-            name: bytesToHex(card.uid),
+            name: status.hfUid.replaceAll(" ", ""),
             bytes: Uint8List.fromList(cardDump),
             ext: 'bin',
             mimeType: MimeType.other);
       } on UnimplementedError catch (_) {
         String? outputFile = await FilePicker.platform.saveFile(
           dialogTitle: 'Please select an output file:',
-          fileName: '${bytesToHex(card.uid)}.bin',
+          fileName: '${status.hfUid.replaceAll(" ", "")}.bin',
         );
 
         if (outputFile != null) {
