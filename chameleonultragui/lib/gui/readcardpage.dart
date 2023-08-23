@@ -652,6 +652,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: 8),
                       buildFieldRow('UID', status.hfUid, fieldFontSize),
                       buildFieldRow('SAK', status.sak, fieldFontSize),
                       buildFieldRow('ATQA', status.atqa, fieldFontSize),
@@ -1185,6 +1186,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: 8),
                       buildFieldRow('UID', status.lfUid, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
