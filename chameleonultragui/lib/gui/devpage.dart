@@ -155,14 +155,14 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await appState.communicator!
-                  .setSlotTagName(1, "test", ChameleonTagFrequiency.hf);
+                  .setSlotTagName(1, "test", ChameleonTagFrequency.hf);
               var name = await appState.communicator!
-                  .getSlotTagName(1, ChameleonTagFrequiency.hf);
+                  .getSlotTagName(1, ChameleonTagFrequency.hf);
               appState.log.d(name);
               await appState.communicator!
-                  .setSlotTagName(1, "Hello 变色龙!", ChameleonTagFrequiency.hf);
+                  .setSlotTagName(1, "Hello 变色龙!", ChameleonTagFrequency.hf);
               name = await appState.communicator!
-                  .getSlotTagName(1, ChameleonTagFrequiency.hf);
+                  .getSlotTagName(1, ChameleonTagFrequency.hf);
               appState.log.d(name);
             },
             child: const Column(children: [

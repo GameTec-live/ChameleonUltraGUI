@@ -55,7 +55,11 @@ class ChameleonDictionary {
     return const Utf8Encoder().convert(output);
   }
 
-  ChameleonDictionary({this.id = "", this.name = "", this.keys = const [], this.color = Colors.deepOrange});
+  ChameleonDictionary(
+      {this.id = "",
+      this.name = "",
+      this.keys = const [],
+      this.color = Colors.deepOrange});
 }
 
 class ChameleonTagSave {
@@ -165,7 +169,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   bool getSideBarAutoExpansion() {
-    return _sharedPreferences.getBool('sidebar_autoexpanded') ?? true;
+    return _sharedPreferences.getBool('sidebar_auto_expanded') ?? true;
   }
 
   bool getSideBarExpanded() {
@@ -173,11 +177,11 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   int getSideBarExpandedIndex() {
-    return _sharedPreferences.getInt('sidebar_expandedindex') ?? 1;
+    return _sharedPreferences.getInt('sidebar_expanded_index') ?? 1;
   }
 
   void setSideBarAutoExpansion(bool autoExpanded) {
-    _sharedPreferences.setBool('sidebar_autoexpanded', autoExpanded);
+    _sharedPreferences.setBool('sidebar_auto_expanded', autoExpanded);
   }
 
   void setSideBarExpanded(bool expanded) {
@@ -185,7 +189,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   void setSideBarExpandedIndex(int index) {
-    _sharedPreferences.setInt('sidebar_expandedindex', index);
+    _sharedPreferences.setInt('sidebar_expanded_index', index);
   }
 
   MaterialColor getThemeColor() {

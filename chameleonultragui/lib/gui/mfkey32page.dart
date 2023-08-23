@@ -66,8 +66,9 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                 ar1Enc: item1.ar,
               );
               controller.text +=
-                  "\nUID ${bytesToHex(u64ToBytes(uid).sublist(4, 8))} block $block key $key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8))}";
+                  "\nUID: ${bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase()} block $block key $key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8)).toUpperCase()}";
               controller.text = controller.text.trim();
+              appState.forceMfkey32Page = true;
               appState.changesMade();
             }
           }
@@ -91,7 +92,6 @@ class Mfkey32PageState extends State<Mfkey32Page> {
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else {
-          var appState = context.read<MyAppState>();
           if (detectionCount == -1) {
             updateDetectionStatus();
             return Scaffold(
@@ -123,30 +123,13 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                       ),
                       const SizedBox(height: 25.0),
                       ElevatedButton(
-                        onPressed: () async {
-                          await appState.communicator!
-                              .setMf1DetectionStatus(!isDetectionMode);
-                          await updateDetectionStatus();
-                        },
-                        child: Text(isDetectionMode
-                            ? 'Disable Mfkey32 collection'
-                            : 'Enable Mfkey32 collection'),
-                      ),
-                      const SizedBox(height: 16.0),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await updateDetectionStatus();
-                        },
-                        child: const Text('Update'),
-                      ),
-                      const SizedBox(height: 16.0),
-                      ElevatedButton(
                         onPressed: (detectionCount > 0)
                             ? () async {
                                 await handleMfkeyCalculation();
                               }
                             : null,
-                        child: Text('Calculate $detectionCount keys'),
+                        child:
+                            Text('Recover keys from $detectionCount nonce(s)'),
                       ),
                       const SizedBox(height: 16.0),
                       Expanded(

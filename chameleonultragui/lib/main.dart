@@ -6,11 +6,11 @@ import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/gui/flashing.dart';
 import 'package:chameleonultragui/gui/mfkey32page.dart';
 import 'package:chameleonultragui/gui/readcardpage.dart';
+import 'package:chameleonultragui/gui/writecardpage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-// Comms Imports
 import 'connector/serial_native.dart';
 
 // GUI Imports
@@ -90,19 +90,15 @@ class MyAppState extends ChangeNotifier {
   ChameleonCommunicator? communicator;
 
   bool devMode = false;
-  double? progress;
-  // Flashing Easteregg
+  double? progress; // DFU
+
+  // Flashing easter egg
   bool easterEgg = false;
 
-  /*void toggleswitch() {
-    setState(() {
-      switchOn = !switchOn;
-    })
-  }
-  // This doesn't work because we aren't working stateful
-  */
-  // maybe via this: https://www.woolha.com/tutorials/flutter-switch-input-widget-example or this https://dev.to/naidanut/adding-expandable-side-bar-using-navigationrail-in-flutter-5ai8
+  bool forceMfkey32Page = false;
+
   Logger log = Logger(); // Logger, App wide logger
+
   void changesMade() {
     notifyListeners();
   }
@@ -148,6 +144,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // If not connected, and not on home, settings or dev page, go to home page
       selectedIndex = 0;
     }
+
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
@@ -172,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
         page = const ReadCardPage();
         break;
       case 4:
-        page = const Mfkey32Page();
+        page = const WriteCardPage();
         break;
       case 5:
         page = const SettingsMainPage();
@@ -182,6 +179,11 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
+    }
+
+    if (appState.forceMfkey32Page) {
+      appState.forceMfkey32Page = false;
+      page = const Mfkey32Page();
     }
 
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
@@ -235,7 +237,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 color: appState.connector.connected == false
                                     ? Colors.grey
                                     : null),
-                            label: Text('Mfkey32',
+                            label: Text('Write Card',
                                 style: appState.connector.connected == false
                                     ? const TextStyle(color: Colors.grey)
                                     : null),

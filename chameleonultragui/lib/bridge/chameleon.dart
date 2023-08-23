@@ -102,12 +102,12 @@ enum ChameleonTag {
   final int value;
 }
 
-enum ChameleonTagFrequiency {
+enum ChameleonTagFrequency {
   unknown(0),
   lf(1),
   hf(2);
 
-  const ChameleonTagFrequiency(this.value);
+  const ChameleonTagFrequency(this.value);
   final int value;
 }
 
@@ -122,7 +122,7 @@ enum ChameleonAnimation {
 
 enum ChameleonMf1WriteMode {
   normal(0),
-  deined(1),
+  denied(1),
   deceive(2),
   shadow(3);
 
@@ -150,7 +150,7 @@ class ChameleonMessage {
 enum ChameleonNTLevel { weak, static, hard, unknown }
 
 enum ChameleonDarksideResult {
-  vurnerable,
+  vulnerable,
   fixed,
   cantFixNT,
   luckAuthOK,
@@ -307,7 +307,8 @@ class ChameleonCommunicator {
               command: dataCmd,
               status: dataStatus,
               data: Uint8List.fromList(dataResponse));
-          log.d("Received message: command = ${message.command}");
+          log.d(
+              "Received message: command = ${message.command}, status = ${message.status}, data = ${bytesToHex(message.data)}");
           dataPosition = 0;
           dataBuffer = [];
           messageQueue.add(message);
@@ -413,7 +414,7 @@ class ChameleonCommunicator {
   Future<bool> detectMf1Support() async {
     // Detects if it is a Mifare Classic tag
     // true - Mifare Classic
-    // flase - any other card
+    // false - any other card
     return (await sendCmdSync(ChameleonCommand.mf1SupportDetect))!.status == 0;
   }
 
@@ -437,7 +438,7 @@ class ChameleonCommunicator {
             timeout: const Duration(seconds: 20)))!
         .status;
     if (status == 0) {
-      return ChameleonDarksideResult.vurnerable;
+      return ChameleonDarksideResult.vulnerable;
     } else if (status == 0x20) {
       return ChameleonDarksideResult.cantFixNT;
     } else if (status == 0x21) {
@@ -655,23 +656,23 @@ class ChameleonCommunicator {
   }
 
   Future<void> setSlotTagName(
-      int index, String name, ChameleonTagFrequiency frequiency) async {
+      int index, String name, ChameleonTagFrequency frequency) async {
     await sendCmdSync(ChameleonCommand.setSlotTagNick,
-        data: Uint8List.fromList(
-            [index, frequiency.value, ...utf8.encode(name)]));
+        data:
+            Uint8List.fromList([index, frequency.value, ...utf8.encode(name)]));
   }
 
   Future<String> getSlotTagName(
-      int index, ChameleonTagFrequiency frequiency) async {
+      int index, ChameleonTagFrequency frequency) async {
     var resp = await sendCmdSync(ChameleonCommand.getSlotTagNick,
-        data: Uint8List.fromList([index, frequiency.value]));
-    return utf8.decode(resp!.data);
+        data: Uint8List.fromList([index, frequency.value]));
+    return utf8.decode(resp!.data, allowMalformed: true);
   }
 
   Future<void> deleteSlotInfo(
-      int index, ChameleonTagFrequiency frequiency) async {
+      int index, ChameleonTagFrequency frequency) async {
     await sendCmdSync(ChameleonCommand.deleteSlotInfo,
-        data: Uint8List.fromList([index, frequiency.value]));
+        data: Uint8List.fromList([index, frequency.value]));
   }
 
   Future<void> saveSlotData() async {
@@ -738,7 +739,7 @@ class ChameleonCommunicator {
     if (resp!.data.length != 5) throw ("Invalid data length");
     ChameleonMf1WriteMode mode = ChameleonMf1WriteMode.normal;
     if (resp.data[4] == 1) {
-      mode = ChameleonMf1WriteMode.deined;
+      mode = ChameleonMf1WriteMode.denied;
     } else if (resp.data[4] == 2) {
       mode = ChameleonMf1WriteMode.deceive;
     } else if (resp.data[4] == 3) {
@@ -790,7 +791,7 @@ class ChameleonCommunicator {
     var resp = await sendCmdSync(ChameleonCommand.mf1GetWriteMode);
     if (resp!.data.length != 1) throw ("Invalid data length");
     if (resp.data[0] == 1) {
-      return ChameleonMf1WriteMode.deined;
+      return ChameleonMf1WriteMode.denied;
     } else if (resp.data[0] == 2) {
       return ChameleonMf1WriteMode.deceive;
     } else if (resp.data[0] == 3) {

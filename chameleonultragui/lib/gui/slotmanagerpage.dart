@@ -61,27 +61,35 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     }
 
     if (currentFunctionIndex < 8) {
-      try {
-        slotData[currentFunctionIndex]['hfName'] = await appState.communicator!
-            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.hf);
-      } catch (_) {
-        slotData[currentFunctionIndex]['hfName'] = "";
-      }
+      slotData[currentFunctionIndex]['hfName'] = "";
+      slotData[currentFunctionIndex]['lfName'] = "";
 
-      try {
-        slotData[currentFunctionIndex]['lfName'] = await appState.communicator!
-            .getSlotTagName(currentFunctionIndex, ChameleonTagFrequiency.lf);
-      } catch (_) {
-        slotData[currentFunctionIndex]['lfName'] = "";
+      for (var i = 0; i < 2; i++) {
+        try {
+          slotData[currentFunctionIndex]['hfName'] = await appState
+              .communicator!
+              .getSlotTagName(currentFunctionIndex, ChameleonTagFrequency.hf);
+          break;
+        } catch (_) {}
       }
 
       if (slotData[currentFunctionIndex]['hfName']!.isEmpty) {
         slotData[currentFunctionIndex]['hfName'] = "Empty";
       }
 
+      for (var i = 0; i < 2; i++) {
+        try {
+          slotData[currentFunctionIndex]['lfName'] = await appState
+              .communicator!
+              .getSlotTagName(currentFunctionIndex, ChameleonTagFrequency.lf);
+          break;
+        } catch (_) {}
+      }
+
       if (slotData[currentFunctionIndex]['lfName']!.isEmpty) {
         slotData[currentFunctionIndex]['lfName'] = "Empty";
       }
+
       if (!onlyOneSlot) {
         setState(() {
           currentFunctionIndex++;
@@ -218,10 +226,13 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                 );
               },
             ),
-            LinearProgressIndicator(
-              value: (progress / 100).toDouble(),
-              semanticsLabel: 'Linear progress indicator',
-            )
+            ...(progress != -1)
+                ? [
+                    LinearProgressIndicator(
+                      value: (progress / 100).toDouble(),
+                    )
+                  ]
+                : []
           ],
         ),
       ),
@@ -318,11 +329,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
                     .contains(query.toLowerCase()))) &&
             ((filter == SearchFilter.all) ||
                 (filter == SearchFilter.hf &&
-                    chameleontagToFrequency(card.tag) ==
-                        ChameleonTagFrequiency.hf) ||
+                    chameleonTagToFrequency(card.tag) ==
+                        ChameleonTagFrequency.hf) ||
                 (filter == SearchFilter.lf &&
-                    chameleontagToFrequency(card.tag) ==
-                        ChameleonTagFrequiency.lf))));
+                    chameleonTagToFrequency(card.tag) ==
+                        ChameleonTagFrequency.lf))));
 
     return ListView.builder(
       itemCount: results.length,
@@ -357,11 +368,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
                     .contains(query.toLowerCase()))) &&
             ((filter == SearchFilter.all) ||
                 (filter == SearchFilter.hf &&
-                    chameleontagToFrequency(card.tag) ==
-                        ChameleonTagFrequiency.hf) ||
+                    chameleonTagToFrequency(card.tag) ==
+                        ChameleonTagFrequency.hf) ||
                 (filter == SearchFilter.lf &&
-                    chameleontagToFrequency(card.tag) ==
-                        ChameleonTagFrequiency.lf))));
+                    chameleonTagToFrequency(card.tag) ==
+                        ChameleonTagFrequency.lf))));
 
     var appState = context.read<MyAppState>();
 
@@ -372,7 +383,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
         return ListTile(
           leading: const Icon(Icons.credit_card),
           title: Text(card.name),
-          subtitle: Text(chameleonTagToString(card.tag)),
+          subtitle: Text(chameleonTagToString(card.tag) +
+              ((chameleonTagSaveCheckForMifareClassicEV1(card)) ? " EV1" : "")),
           onTap: () async {
             if ([
               ChameleonTag.mifareMini,
@@ -382,6 +394,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
             ].contains(card.tag)) {
               close(context, card.name);
               setUploadState(0);
+              var isEV1 = chameleonTagSaveCheckForMifareClassicEV1(card);
+              if (isEV1) {
+                card.tag = ChameleonTag.mifare2K;
+              }
+
               await appState.communicator!.setReaderDeviceMode(false);
               await appState.communicator!.enableSlot(gridPosition, true);
               await appState.communicator!.activateSlot(gridPosition);
@@ -435,7 +452,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
               await appState.communicator!.setSlotTagName(
                   gridPosition,
                   (card.name.isEmpty) ? "No name" : card.name,
-                  ChameleonTagFrequiency.hf);
+                  ChameleonTagFrequency.hf);
               await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);
@@ -452,7 +469,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
               await appState.communicator!.setSlotTagName(
                   gridPosition,
                   (card.name.isEmpty) ? "No name" : card.name,
-                  ChameleonTagFrequiency.lf);
+                  ChameleonTagFrequency.lf);
               await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);

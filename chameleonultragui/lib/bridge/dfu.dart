@@ -270,7 +270,7 @@ class ChameleonDFU {
     }
 
     if (Platform.isWindows || Platform.isMacOS) {
-      // Transmittion errors fix
+      // Transmission errors fix
       await _serialInstance!.read(16384);
     }
 

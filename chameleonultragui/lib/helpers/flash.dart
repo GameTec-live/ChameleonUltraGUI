@@ -201,7 +201,7 @@ Future<void> flashFile(
     List<int> firmwareZip = const []}) async {
   validateFiles(applicationDat, applicationBin);
 
-  // Flashing Easteregg
+  // Flashing easter egg
   var rng = Random();
   var randomNumber = rng.nextInt(100) + 1;
   appState.easterEgg = false;

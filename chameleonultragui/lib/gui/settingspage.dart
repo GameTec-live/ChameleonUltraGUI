@@ -22,7 +22,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
   }
 
   Future<String> fetchOCnames() async {
-    final List<String> names = await fetchOpenCollectiveHighrollers();
+    final List<String> names = await fetchOpenCollectiveContributors();
     String finalNames = "";
     for (String name in names) {
       finalNames += "$name, ";
@@ -108,7 +108,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   );
                 }),
             const SizedBox(height: 10),
-            const Text("Color cheme:"),
+            const Text("Color scheme:"),
             DropdownButton(
               value: appState.sharedPreferencesProvider.sharedPreferences
                       .getInt('app_theme_color') ??
@@ -207,7 +207,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                       TextStyle(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
                               const Text('License:'),
-                              const Text('GPLV3',
+                              const Text('GNU General Public License v3.0',
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Mifare Classic keys from Proxmark3
 final gMifareClassicKeysList = {
@@ -109,9 +110,9 @@ String mfClassicGetName(MifareClassicType type) {
   }
 }
 
-int mfClassicGetSectorCount(MifareClassicType type) {
+int mfClassicGetSectorCount(MifareClassicType type, {bool isEV1 = false}) {
   if (type == MifareClassicType.m1k) {
-    return 16;
+    return (isEV1) ? 18 : 16;
   } else if (type == MifareClassicType.m2k) {
     return 32;
   } else if (type == MifareClassicType.m4k) {
@@ -123,9 +124,9 @@ int mfClassicGetSectorCount(MifareClassicType type) {
   }
 }
 
-int mfClassicGetBlockCount(MifareClassicType type) {
+int mfClassicGetBlockCount(MifareClassicType type, {bool isEV1 = false}) {
   if (type == MifareClassicType.m1k) {
-    return 64;
+    return (isEV1) ? 72 : 64;
   } else if (type == MifareClassicType.m2k) {
     return 128;
   } else if (type == MifareClassicType.m4k) {
@@ -183,4 +184,10 @@ MifareClassicType chameleonTagTypeGetMfClassicType(ChameleonTag type) {
   } else {
     return MifareClassicType.none;
   }
+}
+
+bool chameleonTagSaveCheckForMifareClassicEV1(ChameleonTagSave tag) {
+  return tag.tag == ChameleonTag.mifare1K &&
+      tag.data.length >= 71 &&
+      tag.data[71].isNotEmpty;
 }

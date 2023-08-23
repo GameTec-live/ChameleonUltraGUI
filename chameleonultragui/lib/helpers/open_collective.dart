@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-Future<List<String>> fetchOpenCollectiveHighrollers() async {
+Future<List<String>> fetchOpenCollectiveContributors() async {
   final Uri url = Uri.parse('https://api.opencollective.com/graphql/v2');
   const headers = {'Content-Type': 'application/json'};
   const body =
@@ -9,7 +9,7 @@ Future<List<String>> fetchOpenCollectiveHighrollers() async {
   try {
     final response = await http.post(url, headers: headers, body: body);
     final json = jsonDecode(response.body);
-    List<String> highrollers = [];
+    List<String> contributors = [];
 
     var nodes = json["data"]["account"]["transactions"]["nodes"]!;
     nodes.sort((a, b) {
@@ -17,11 +17,11 @@ Future<List<String>> fetchOpenCollectiveHighrollers() async {
     });
 
     for (var node in nodes) {
-      highrollers
+      contributors
           .add("${node["fromAccount"]["name"]} (${node["amount"]["value"]}\$)");
     }
 
-    return highrollers;
+    return contributors;
   } catch (e) {
     List<String> error = [e.toString()];
     return error;
