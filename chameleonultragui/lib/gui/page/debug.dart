@@ -7,6 +7,7 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/recovery/definitions.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 // Recovery
@@ -44,7 +45,7 @@ class DebugPage extends StatelessWidget {
             textScaleFactor: 2,
           ),
           const Text('⚠️ YOU HAVE BEEN WARNED ⚠️', textScaleFactor: 3),
-          Text('Platform: ${appState.onWeb ? 'Web' : Platform.operatingSystem}'),
+          Text('Platform: ${kIsWeb ? 'Web' : Platform.operatingSystem}'),
           Text('Android: ${appState.onAndroid}'),
           Text('Serial protocol : ${appState.connector}'),
           Text('Chameleon connected: ${appState.connector.connected}'),

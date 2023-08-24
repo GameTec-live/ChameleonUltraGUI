@@ -264,7 +264,6 @@ class ChameleonDFU {
       await delayedSend(packet);
 
       offset += toTransmit.length;
-
       crc = (BigInt.from(calculateCRC32(toTransmit.sublist(1))) & BigInt.from(0xFFFFFFFF))
           .toInt();
       response = await calculateChecksum();
@@ -273,7 +272,7 @@ class ChameleonDFU {
     }
 
     if (!kIsWeb && (Platform.isWindows || Platform.isMacOS)) {
-      // Transmittion errors fix
+      // Transmission errors fix
       await _serialInstance!.read(16384);
     }
 

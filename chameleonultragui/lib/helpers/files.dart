@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:chameleonultragui/main.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path/path.dart' show basenameWithoutExtension, extension;
 
 class FileResult {
@@ -32,7 +33,7 @@ Future<FileResult?> pickFile(MyAppState appState, { bool asText = false }) async
   final file = result.files.single;
   Uint8List bytes = Uint8List(0);
 
-  if (appState.onWeb) {
+  if (kIsWeb) {
     if (file.bytes != null) {
       bytes = file.bytes as Uint8List;
     }
@@ -57,7 +58,7 @@ Future<void> saveFile({
   String dialogTitle = 'Please select an output file:',
 }) async {
   try {
-    if (appState.onWeb) {
+    if (kIsWeb) {
       await FileSaver.instance.saveFile(
           name: fileName,
           bytes: bytes,

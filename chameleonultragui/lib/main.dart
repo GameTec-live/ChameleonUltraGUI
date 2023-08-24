@@ -92,7 +92,7 @@ class MyAppState extends ChangeNotifier {
   final SharedPreferencesProvider sharedPreferencesProvider;
   MyAppState(this.sharedPreferencesProvider);
   // State
-  bool onWeb = kIsWeb;
+
   bool onAndroid = !kIsWeb && Platform.isAndroid; // Are we on android? (mostly for serial port)
   AbstractSerial connector = SerialConnector(); // Chameleon Object, connected Chameleon
   ChameleonCommunicator? communicator;

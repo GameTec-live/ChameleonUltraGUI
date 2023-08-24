@@ -1,6 +1,6 @@
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -38,7 +38,7 @@ class HomePageState extends State<HomePage> {
       }
 
       var getIsChameleonUltra = Future.value(appState.connector.device == ChameleonDevice.ultra);
-      if (appState.onWeb) {
+      if (kIsWeb) {
         // Serial on Web doesnt provide device/manufacture names, so detect the device type instead
         getIsChameleonUltra = detectChameleonUltra().then((isChameleonUltra) {
           // Also update device type in SerialConnection
@@ -160,8 +160,11 @@ class HomePageState extends State<HomePage> {
         future: getFutureData(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Home'),
+              ),
+              body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
             appState.log.e('Build Error ${snapshot.error}', error: snapshot.error);
@@ -306,7 +309,7 @@ class HomePageState extends State<HomePage> {
                                   scaffoldMessenger.showSnackBar(snackBar);
                                 } else {
                                   var message = 'Downloading and preparing new ${appState.connector.device.name} firmware...';
-                                  if (appState.onWeb) {
+                                  if (kIsWeb) {
                                     message = 'Your ${appState.connector.device.name} firmware is out of date! Automatic updates are not (yet) supported on web, download manually and then update by clicking on the Settings icon';
                                   }
 
@@ -317,7 +320,7 @@ class HomePageState extends State<HomePage> {
 
                                   scaffoldMessenger.showSnackBar(snackBar);
 
-                                  if (!appState.onWeb) {
+                                  if (!kIsWeb) {
                                     try {
                                       await flashFirmwareLatest(appState);
                                     } catch (e) {
@@ -373,7 +376,7 @@ class HomePageState extends State<HomePage> {
                                   } else if (snapshot.hasError) {
                                     appState.log.e('Build error', error: snapshot.error);
 
-                                    // appState.connector.performDisconnect();
+                                    appState.connector.performDisconnect();
                                     return AlertDialog(
                                         title: const Text(
                                             'Device Settings'),

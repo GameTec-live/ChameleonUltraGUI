@@ -7,6 +7,7 @@ import 'package:chameleonultragui/gui/features/flash_firmware_latest.dart';
 import 'package:chameleonultragui/gui/features/flash_firmware_zip.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -51,7 +52,7 @@ class ConnectPage extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      if (appState.onWeb)
+                      if (kIsWeb)
                         IconButton(
                           onPressed: () async {
                             // Refresh
