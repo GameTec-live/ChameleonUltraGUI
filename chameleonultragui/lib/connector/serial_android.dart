@@ -12,9 +12,9 @@ class AndroidSerial extends AbstractSerial {
   MobileSerial mobileSerial = MobileSerial();
 
   @override
-  Future<bool> preformDisconnect() async {
-    bool ble = await bleSerial.preformDisconnect();
-    bool otg = await mobileSerial.preformDisconnect();
+  Future<bool> performDisconnect() async {
+    bool ble = await bleSerial.performDisconnect();
+    bool otg = await mobileSerial.performDisconnect();
     return (ble || otg);
   }
 
@@ -31,12 +31,12 @@ class AndroidSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(devicePort) async {
+  Future<bool> connectSpecificDevice(devicePort) async {
     if (devicePort.contains(":")) {
       log.d(devicePort);
-      return bleSerial.connectSpecific(devicePort);
+      return bleSerial.connectSpecificDevice(devicePort);
     } else {
-      return mobileSerial.connectSpecific(devicePort);
+      return mobileSerial.connectSpecificDevice(devicePort);
     }
   }
 
@@ -109,7 +109,7 @@ class AndroidSerial extends AbstractSerial {
       (bleSerial.connected) ? bleSerial.portName : mobileSerial.portName;
 
   @override
-  ChameleonConnectType get connectionType => (bleSerial.connected)
+  ConnectionType get connectionType => (bleSerial.connected)
       ? bleSerial.connectionType
       : mobileSerial.connectionType;
 

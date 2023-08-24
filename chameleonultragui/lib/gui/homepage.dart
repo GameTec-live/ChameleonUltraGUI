@@ -185,7 +185,7 @@ class HomePageState extends State<HomePage> {
               body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
-            appState.connector.preformDisconnect();
+            appState.connector.performDisconnect();
             return Text('Error: ${snapshot.error.toString()}');
           } else {
             final (
@@ -216,7 +216,7 @@ class HomePageState extends State<HomePage> {
                                     IconButton(
                                       onPressed: () {
                                         // Disconnect
-                                        appState.connector.preformDisconnect();
+                                        appState.connector.performDisconnect();
                                         appState.changesMade();
                                       },
                                       icon: const Icon(Icons.close),
@@ -230,7 +230,7 @@ class HomePageState extends State<HomePage> {
                                     Text(appState.connector.portName,
                                         style: const TextStyle(fontSize: 20)),
                                     Icon(appState.connector.connectionType ==
-                                            ChameleonConnectType.ble
+                                            ConnectionType.ble
                                         ? Icons.bluetooth
                                         : Icons.usb),
                                     batteryIcon,
@@ -284,93 +284,101 @@ class HomePageState extends State<HomePage> {
                                     fontSize:
                                         MediaQuery.of(context).size.width /
                                             50)),
-                            Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: IconButton(
-                                onPressed: () async {
-                                  SnackBar snackBar;
-                                  String latestCommit;
+                            ...(appState.connector.connectionType !=
+                                    ConnectionType.ble)
+                                ? [
+                                    Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: IconButton(
+                                        onPressed: () async {
+                                          SnackBar snackBar;
+                                          String latestCommit;
 
-                                  try {
-                                    latestCommit = await latestAvailableCommit(
-                                        appState.connector.device);
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context)
-                                        .hideCurrentSnackBar();
-                                    snackBar = SnackBar(
-                                      content:
-                                          Text('Update error: ${e.toString()}'),
-                                      action: SnackBarAction(
-                                        label: 'Close',
-                                        onPressed: () {},
-                                      ),
-                                    );
-
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(snackBar);
-                                    return;
-                                  }
-
-                                  appState.log
-                                      .i("Latest commit: $latestCommit");
-
-                                  if (latestCommit.isEmpty) {
-                                    return;
-                                  }
-
-                                  if (latestCommit.startsWith(fwVersion[1])) {
-                                    snackBar = SnackBar(
-                                      content: Text(
-                                          'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware is up to date'),
-                                      action: SnackBarAction(
-                                        label: 'Close',
-                                        onPressed: () {},
-                                      ),
-                                    );
-
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(snackBar);
-                                  } else {
-                                    snackBar = SnackBar(
-                                      content: Text(
-                                          'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
-                                      action: SnackBarAction(
-                                        label: 'Close',
-                                        onPressed: () {
-                                          ScaffoldMessenger.of(context)
-                                              .hideCurrentSnackBar();
-                                        },
-                                      ),
-                                    );
-
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(snackBar);
-                                    try {
-                                      await flashFirmware(appState);
-                                    } catch (e) {
-                                      ScaffoldMessenger.of(context)
-                                          .hideCurrentSnackBar();
-                                      snackBar = SnackBar(
-                                        content: Text(
-                                            'Update error: ${e.toString()}'),
-                                        action: SnackBarAction(
-                                          label: 'Close',
-                                          onPressed: () {
+                                          try {
+                                            latestCommit =
+                                                await latestAvailableCommit(
+                                                    appState.connector.device);
+                                          } catch (e) {
                                             ScaffoldMessenger.of(context)
                                                 .hideCurrentSnackBar();
-                                          },
-                                        ),
-                                      );
+                                            snackBar = SnackBar(
+                                              content: Text(
+                                                  'Update error: ${e.toString()}'),
+                                              action: SnackBarAction(
+                                                label: 'Close',
+                                                onPressed: () {},
+                                              ),
+                                            );
 
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(snackBar);
-                                    }
-                                  }
-                                },
-                                tooltip: "Check for updates",
-                                icon: const Icon(Icons.update),
-                              ),
-                            )
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(snackBar);
+                                            return;
+                                          }
+
+                                          appState.log.i(
+                                              "Latest commit: $latestCommit");
+
+                                          if (latestCommit.isEmpty) {
+                                            return;
+                                          }
+
+                                          if (latestCommit
+                                              .startsWith(fwVersion[1])) {
+                                            snackBar = SnackBar(
+                                              content: Text(
+                                                  'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware is up to date'),
+                                              action: SnackBarAction(
+                                                label: 'Close',
+                                                onPressed: () {},
+                                              ),
+                                            );
+
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(snackBar);
+                                          } else {
+                                            snackBar = SnackBar(
+                                              content: Text(
+                                                  'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                                              action: SnackBarAction(
+                                                label: 'Close',
+                                                onPressed: () {
+                                                  ScaffoldMessenger.of(context)
+                                                      .hideCurrentSnackBar();
+                                                },
+                                              ),
+                                            );
+
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(snackBar);
+                                            try {
+                                              await flashFirmware(appState);
+                                            } catch (e) {
+                                              ScaffoldMessenger.of(context)
+                                                  .hideCurrentSnackBar();
+                                              snackBar = SnackBar(
+                                                content: Text(
+                                                    'Update error: ${e.toString()}'),
+                                                action: SnackBarAction(
+                                                  label: 'Close',
+                                                  onPressed: () {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .hideCurrentSnackBar();
+                                                  },
+                                                ),
+                                              );
+
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(snackBar);
+                                            }
+                                          }
+                                        },
+                                        tooltip: "Check for updates",
+                                        icon: const Icon(Icons.update),
+                                      ),
+                                    )
+                                  ]
+                                : [],
                           ],
                         ),
                         Align(
@@ -429,7 +437,7 @@ class HomePageState extends State<HomePage> {
                                                     } else if (snapshot
                                                         .hasError) {
                                                       appState.connector
-                                                          .preformDisconnect();
+                                                          .performDisconnect();
                                                       return AlertDialog(
                                                           title: const Text(
                                                               'Device Settings'),
@@ -459,7 +467,7 @@ class HomePageState extends State<HomePage> {
                                                                       .enterDFUMode();
                                                                   appState
                                                                       .connector
-                                                                      .preformDisconnect();
+                                                                      .performDisconnect();
                                                                   Navigator.pop(
                                                                       dialogContext,
                                                                       'Cancel');
@@ -477,7 +485,7 @@ class HomePageState extends State<HomePage> {
                                                                 )),
                                                             ...(appState.connector
                                                                         .connectionType !=
-                                                                    ChameleonConnectType
+                                                                    ConnectionType
                                                                         .ble)
                                                                 ? [
                                                                     TextButton(
@@ -740,7 +748,7 @@ class HomePageState extends State<HomePage> {
                                                                           onPressed:
                                                                               () async {
                                                                             await appState.communicator!.factoryReset();
-                                                                            await appState.connector.preformDisconnect();
+                                                                            await appState.connector.performDisconnect();
                                                                             Navigator.pop(context,
                                                                                 'Cancel');
                                                                             appState.changesMade();

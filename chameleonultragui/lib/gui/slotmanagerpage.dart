@@ -51,7 +51,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           await appState.communicator!.getFirmwareVersion();
         } catch (_) {
           appState.log.e("Lost connection to Chameleon!");
-          appState.connector.preformDisconnect();
+          appState.connector.performDisconnect();
           appState.changesMade();
         }
       }

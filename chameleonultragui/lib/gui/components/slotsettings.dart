@@ -94,7 +94,7 @@ class SlotSettingsState extends State<SlotSettings> {
                 content: SingleChildScrollView(
                     child: Column(children: [CircularProgressIndicator()])));
           } else if (snapshot.hasError) {
-            appState.connector.preformDisconnect();
+            appState.connector.performDisconnect();
             return AlertDialog(
                 title: const Text('Slot Settings'),
                 content: Text('Error: ${snapshot.error.toString()}'));

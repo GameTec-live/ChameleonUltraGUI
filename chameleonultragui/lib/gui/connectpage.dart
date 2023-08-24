@@ -25,7 +25,7 @@ class ConnectPage extends StatelessWidget {
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
-          appState.connector.preformDisconnect();
+          appState.connector.performDisconnect();
           return Text('Error: ${snapshot.error}');
         } else {
           final result = snapshot.data;
@@ -64,7 +64,7 @@ class ConnectPage extends StatelessWidget {
                             return ElevatedButton(
                               onPressed: () async {
                                 if (chameleonDevice['type'] ==
-                                    ChameleonConnectType.dfu) {
+                                    ConnectionType.dfu) {
                                   showDialog<String>(
                                     context: context,
                                     builder: (BuildContext context) =>
@@ -112,7 +112,8 @@ class ConnectPage extends StatelessWidget {
                                   );
                                 } else {
                                   await appState.connector
-                                      .connectSpecific(chameleonDevice['port']);
+                                      .connectSpecificDevice(
+                                          chameleonDevice['port']);
                                   appState.communicator = ChameleonCommunicator(
                                       port: appState.connector);
                                   appState.changesMade();
@@ -142,13 +143,13 @@ class ConnectPage extends StatelessWidget {
                                                 MainAxisAlignment.end,
                                             children: [
                                               chameleonDevice['type'] ==
-                                                      ChameleonConnectType.ble
+                                                      ConnectionType.ble
                                                   ? const Icon(Icons.bluetooth)
                                                   : const Icon(Icons.usb),
                                               Text(chameleonDevice['port'] ??
                                                   ""),
                                               if (chameleonDevice['type'] ==
-                                                  ChameleonConnectType.dfu)
+                                                  ConnectionType.dfu)
                                                 const Text(" (DFU)"),
                                             ],
                                           )

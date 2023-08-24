@@ -28,7 +28,7 @@ class DevPage extends StatelessWidget {
             child: IconButton(
               onPressed: () {
                 // Disconnect
-                appState.connector.preformDisconnect();
+                appState.connector.performDisconnect();
                 appState.changesMade();
               },
               icon: const Icon(Icons.close),

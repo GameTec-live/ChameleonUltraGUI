@@ -3,7 +3,7 @@ import 'package:logger/logger.dart';
 
 enum ChameleonDevice { none, ultra, lite }
 
-enum ChameleonConnectType { none, usb, ble, dfu }
+enum ConnectionType { none, usb, ble, dfu }
 
 class AbstractSerial {
   Logger log = Logger();
@@ -11,14 +11,14 @@ class AbstractSerial {
   bool connected = false;
   bool isOpen = false;
   String portName = "None";
-  ChameleonConnectType connectionType = ChameleonConnectType.none;
+  ConnectionType connectionType = ConnectionType.none;
   dynamic messageCallback;
 
-  Future<bool> preformConnection() async {
+  Future<bool> performConnect() async {
     return false;
   }
 
-  Future<bool> preformDisconnect() async {
+  Future<bool> performDisconnect() async {
     return false;
   }
 
@@ -26,7 +26,7 @@ class AbstractSerial {
     return [];
   }
 
-  Future<bool> connectSpecific(devicePort) async {
+  Future<bool> connectSpecificDevice(devicePort) async {
     return false;
   }
 

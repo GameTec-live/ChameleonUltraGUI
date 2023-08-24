@@ -95,7 +95,7 @@ class SlotChangerState extends State<SlotChanger> {
               ],
             );
           } else if (snapshot.hasError) {
-            appState.connector.preformDisconnect();
+            appState.connector.performDisconnect();
             return Text('Error: ${snapshot.error.toString()}');
           } else {
             final slotIcons = snapshot.data;

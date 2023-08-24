@@ -12,9 +12,9 @@ class MobileSerial extends AbstractSerial {
   UsbPort? port;
 
   @override
-  Future<bool> preformDisconnect() async {
+  Future<bool> performDisconnect() async {
     device = ChameleonDevice.none;
-    connectionType = ChameleonConnectType.none;
+    connectionType = ConnectionType.none;
     isOpen = false;
     messageCallback = null;
     if (port != null) {
@@ -29,7 +29,7 @@ class MobileSerial extends AbstractSerial {
   @override
   Future<List> availableDevices() async {
     device = ChameleonDevice.none;
-    connectionType = ChameleonConnectType.none;
+    connectionType = ConnectionType.none;
     List<UsbDevice> availableDevices = await UsbSerial.listDevices();
     List output = [];
     deviceMap = {};
@@ -57,12 +57,12 @@ class MobileSerial extends AbstractSerial {
             "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
 
         if (deviceMap[deviceName]!.vid == 0x1915) {
-          connectionType = ChameleonConnectType.dfu;
+          connectionType = ConnectionType.dfu;
           log.w("Chameleon is in DFU mode!");
         }
       }
       if (onlyDFU) {
-        if (connectionType == ChameleonConnectType.dfu) {
+        if (connectionType == ConnectionType.dfu) {
           output.add(
               {'port': deviceName, 'device': device, 'type': connectionType});
         }
@@ -76,7 +76,7 @@ class MobileSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(devicePort) async {
+  Future<bool> connectSpecificDevice(devicePort) async {
     await availableDevices();
     connected = false;
     if (deviceMap.containsKey(devicePort)) {
@@ -116,9 +116,9 @@ class MobileSerial extends AbstractSerial {
       });
 
       portName = devicePort.substring(devicePort.length - 15); // Limit length
-      connectionType = ChameleonConnectType.usb;
+      connectionType = ConnectionType.usb;
       if (deviceMap[devicePort]!.vid == 0x1915) {
-        connectionType = ChameleonConnectType.dfu;
+        connectionType = ConnectionType.dfu;
         log.w("Chameleon is in DFU mode!");
       }
       return true;

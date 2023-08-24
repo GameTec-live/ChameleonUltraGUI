@@ -149,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // Sidebar Navigation
       case 0:
         if (appState.connector.connected == true) {
-          if (appState.connector.connectionType == ChameleonConnectType.dfu) {
+          if (appState.connector.connectionType == ConnectionType.dfu) {
             page = const FlashingPage();
             selectedIndex = 0;
           } else {
@@ -195,7 +195,7 @@ class _MyHomePageState extends State<MyHomePage> {
       return Scaffold(
           body: Row(
             children: [
-              (appState.connector.connectionType != ChameleonConnectType.dfu ||
+              (appState.connector.connectionType != ConnectionType.dfu ||
                       !appState.connector.connected)
                   ? SafeArea(
                       child: NavigationRail(
@@ -281,7 +281,7 @@ class BottomProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     return (appState.connector.connected == true &&
-            appState.connector.connectionType == ChameleonConnectType.dfu)
+            appState.connector.connectionType == ConnectionType.dfu)
         ? LinearProgressIndicator(
             value: appState.progress,
             backgroundColor: Colors.grey[300],
