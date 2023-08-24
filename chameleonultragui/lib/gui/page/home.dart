@@ -56,11 +56,11 @@ class HomePageState extends State<HomePage> {
       );
   }
 
-  Future<(AnimationSetting, ButtonPress, ButtonPress)> getSettingsData() async {
-    return (
-      await getAnimationMode(),
-      await getButtonConfig(ButtonType.a),
-      await getButtonConfig(ButtonType.b)
+  Future<DeviceSettingsData> getSettingsData() async {
+    return DeviceSettingsData(
+      animationMode: await getAnimationMode(),
+      aButtonMode: await getButtonConfig(ButtonType.a),
+      bButtonMode: await getButtonConfig(ButtonType.b)
     );
   }
 
@@ -366,7 +366,7 @@ class HomePageState extends State<HomePage> {
                               context: context,
                               builder: (BuildContext dialogContext) => FutureBuilder(
                                 future: getSettingsData(),
-                                builder: (BuildContext dialogContext, AsyncSnapshot snapshot) {
+                                builder: (BuildContext dialogContext, AsyncSnapshot<DeviceSettingsData> snapshot) {
                                   if (snapshot.connectionState == ConnectionState.waiting) {
                                     return const AlertDialog(
                                         title:
@@ -384,6 +384,13 @@ class HomePageState extends State<HomePage> {
                                             'Error: ${snapshot.error.toString()}'));
                                   }
 
+                                  var deviceSettings = snapshot.data;
+                                  if (deviceSettings == null) {
+                                    // This should never happen, if data is null then
+                                    // there should've been an error already
+                                    throw ("Empty device settings snapshot");
+                                  }
+
                                   onClose() {
                                     Navigator.pop(dialogContext, 'Cancel');
                                   }
@@ -391,17 +398,11 @@ class HomePageState extends State<HomePage> {
                                   var scaffoldMessenger = ScaffoldMessenger.of(context);
                                   final communicator = appState.communicator!;
 
-                                  final (
-                                      animationMode,
-                                      aButtonMode,
-                                      bButtonMode
-                                  ) = snapshot.data;
-
                                   var canUpdateLatest = !kIsWeb && appState.connector.connectionType != ConnectionType.ble;
                                   var canUpdateZip = canUpdateLatest;
 
                                   return DialogDeviceSettings(
-                                    animationMode: animationMode,
+                                    deviceSettings: deviceSettings,
                                     onClose: onClose,
                                     onEnterDFUMode: () async {
                                       onClose();
@@ -420,6 +421,14 @@ class HomePageState extends State<HomePage> {
                                       await communicator.setAnimationMode(animation);
                                       await communicator.saveSettings();
 
+                                      setState(() {});
+                                      appState.changesMade();
+                                    },
+                                    onUpdateButtonMode: (buttonType, mode) async {
+                                      await communicator.setButtonConfig(
+                                              buttonType,
+                                              mode);
+                                      await communicator.saveSettings();
                                       setState(() {});
                                       appState.changesMade();
                                     },
