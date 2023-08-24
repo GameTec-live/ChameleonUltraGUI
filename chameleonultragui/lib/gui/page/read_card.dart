@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
-import 'package:chameleonultragui/gui/components/error_message.dart';
+import 'package:chameleonultragui/gui/component/error_message.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
@@ -683,14 +683,12 @@ class ReadCardPageState extends State<ReadCardPage> {
                         style: TextStyle(fontSize: fieldFontSize),
                       ),
                       const SizedBox(height: 16),
-                      ...(status.noHfCard)
-                          ? [
-                              const ErrorMessage(
-                                  errorMessage:
-                                      "No card found. Try to move Chameleon on card"),
-                              const SizedBox(height: 16)
-                            ]
-                          : [],
+                      if (status.noHfCard) ...[
+                        const ErrorMessage(
+                            errorMessage:
+                                "No card found. Try to move Chameleon on card"),
+                        const SizedBox(height: 16)
+                      ],
                       ElevatedButton(
                         onPressed: () async {
                           if (appState.connector.device ==
@@ -721,469 +719,393 @@ class ReadCardPageState extends State<ReadCardPage> {
                         },
                         child: const Text('Read'),
                       ),
-                      ...(status.hfUid != "")
-                          ? [
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  await showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: const Text('Enter card name'),
-                                        content: TextField(
-                                          onChanged: (value) {
-                                            setState(() {
-                                              status.dumpName = value;
-                                            });
-                                          },
-                                        ),
-                                        actions: [
-                                          ElevatedButton(
-                                            onPressed: () async {
-                                              await saveHFCard(appState,
-                                                  skipDump: true);
-                                              Navigator.pop(
-                                                  context); // Close the modal after saving
-                                            },
-                                            child: const Text('OK'),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              Navigator.pop(
-                                                  context); // Close the modal without saving
-                                            },
-                                            child: const Text('Cancel'),
-                                          ),
-                                        ],
-                                      );
+                      if (status.hfUid != "") ...[
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () async {
+                            await showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: const Text('Enter card name'),
+                                  content: TextField(
+                                    onChanged: (value) {
+                                      setState(() {
+                                        status.dumpName = value;
+                                      });
                                     },
-                                  );
-                                },
-                                child: const Text('Save only UID'),
-                              ),
-                            ]
-                          : [],
-                      ...(status.type != MifareClassicType.none)
-                          ? [
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Keys',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
+                                  ),
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        await saveHFCard(appState,
+                                            skipDump: true);
+                                        Navigator.pop(
+                                            context); // Close the modal after saving
+                                      },
+                                      child: const Text('OK'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(
+                                            context); // Close the modal without saving
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          child: const Text('Save only UID'),
+                        ),
+                      ],
+                      if (status.type != MifareClassicType.none) ...[
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Keys',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            const Spacer(),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Text("     "),
+                                    ...List.generate(
+                                      (status.type == MifareClassicType.mini)
+                                          ? 5
+                                          : 16,
+                                      (index) => Padding(
+                                        padding: const EdgeInsets.all(2),
+                                        child: SizedBox(
+                                          width: checkmarkSize,
+                                          height: checkmarkSize,
+                                          child: Text("$index"),
+                                        ),
+                                      ),
+                                    )
+                                  ],
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  const Spacer(),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Text("A "),
+                                    ...List.generate(
+                                      (status.type == MifareClassicType.mini)
+                                          ? 5
+                                          : 16,
+                                      (index) => Padding(
+                                        padding: const EdgeInsets.all(2),
+                                        child: SizedBox(
+                                          width: checkmarkSize,
+                                          height: checkmarkSize,
+                                          child: buildCheckmark(
+                                              status.checkMarks[index]),
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Text("B "),
+                                    ...List.generate(
+                                      (status.type == MifareClassicType.mini)
+                                          ? 5
+                                          : 16,
+                                      (index) => Padding(
+                                        padding: const EdgeInsets.all(2),
+                                        child: SizedBox(
+                                          width: checkmarkSize,
+                                          height: checkmarkSize,
+                                          child: buildCheckmark(
+                                              status.checkMarks[40 + index]),
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                if (status.type == MifareClassicType.m2k ||
+                                    status.type == MifareClassicType.m4k) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
                                     children: [
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          const Text("     "),
-                                          ...List.generate(
-                                            (status.type ==
-                                                    MifareClassicType.mini)
-                                                ? 5
-                                                : 16,
-                                            (index) => Padding(
-                                              padding: const EdgeInsets.all(2),
-                                              child: SizedBox(
-                                                width: checkmarkSize,
-                                                height: checkmarkSize,
-                                                child: Text("$index"),
-                                              ),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          const Text("A "),
-                                          ...List.generate(
-                                            (status.type ==
-                                                    MifareClassicType.mini)
-                                                ? 5
-                                                : 16,
-                                            (index) => Padding(
-                                              padding: const EdgeInsets.all(2),
-                                              child: SizedBox(
-                                                width: checkmarkSize,
-                                                height: checkmarkSize,
-                                                child: buildCheckmark(
-                                                    status.checkMarks[index]),
-                                              ),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          const Text("B "),
-                                          ...List.generate(
-                                            (status.type ==
-                                                    MifareClassicType.mini)
-                                                ? 5
-                                                : 16,
-                                            (index) => Padding(
-                                              padding: const EdgeInsets.all(2),
-                                              child: SizedBox(
-                                                width: checkmarkSize,
-                                                height: checkmarkSize,
-                                                child: buildCheckmark(status
-                                                    .checkMarks[40 + index]),
-                                              ),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                      ...(status.type ==
-                                                  MifareClassicType.m2k ||
-                                              status.type ==
-                                                  MifareClassicType.m4k)
-                                          ? [
-                                              const SizedBox(height: 8),
-                                              Row(
-                                                children: [
-                                                  const Text("     "),
-                                                  ...List.generate(
-                                                    16,
-                                                    (index) => Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2),
-                                                      child: SizedBox(
-                                                        width: checkmarkSize,
-                                                        height: checkmarkSize,
-                                                        child: Text(
-                                                            "${index + 16}"),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Row(
-                                                children: [
-                                                  const Text("A "),
-                                                  ...List.generate(
-                                                    16,
-                                                    (index) => Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2),
-                                                      child: SizedBox(
-                                                        width: checkmarkSize,
-                                                        height: checkmarkSize,
-                                                        child: buildCheckmark(
-                                                            status.checkMarks[
-                                                                index + 16]),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Row(
-                                                children: [
-                                                  const Text("B "),
-                                                  ...List.generate(
-                                                    16,
-                                                    (index) => Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2),
-                                                      child: SizedBox(
-                                                        width: checkmarkSize,
-                                                        height: checkmarkSize,
-                                                        child: buildCheckmark(
-                                                            status.checkMarks[
-                                                                40 +
-                                                                    index +
-                                                                    16]),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ]
-                                          : [],
-                                      ...(status.type == MifareClassicType.m4k)
-                                          ? [
-                                              Center(
-                                                  child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                    const SizedBox(height: 8),
-                                                    Row(
-                                                      children: [
-                                                        const Text("     "),
-                                                        ...List.generate(
-                                                          8,
-                                                          (index) => Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(2),
-                                                            child: SizedBox(
-                                                              width:
-                                                                  checkmarkSize,
-                                                              height:
-                                                                  checkmarkSize,
-                                                              child: Text(
-                                                                  "${index + 32}"),
-                                                            ),
-                                                          ),
-                                                        )
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 8),
-                                                    Row(
-                                                      children: [
-                                                        const Text("A "),
-                                                        ...List.generate(
-                                                          8,
-                                                          (index) => Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(2),
-                                                            child: SizedBox(
-                                                              width:
-                                                                  checkmarkSize,
-                                                              height:
-                                                                  checkmarkSize,
-                                                              child: buildCheckmark(
-                                                                  status.checkMarks[
-                                                                      index +
-                                                                          32]),
-                                                            ),
-                                                          ),
-                                                        )
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 8),
-                                                    Row(
-                                                      children: [
-                                                        const Text("B "),
-                                                        ...List.generate(
-                                                          8,
-                                                          (index) => Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(2),
-                                                            child: SizedBox(
-                                                              width:
-                                                                  checkmarkSize,
-                                                              height:
-                                                                  checkmarkSize,
-                                                              child: buildCheckmark(
-                                                                  status.checkMarks[
-                                                                      40 +
-                                                                          index +
-                                                                          32]),
-                                                            ),
-                                                          ),
-                                                        )
-                                                      ],
-                                                    ),
-                                                  ]))
-                                            ]
-                                          : []
+                                      const Text("     "),
+                                      ...List.generate(
+                                        16,
+                                        (index) => Padding(
+                                          padding: const EdgeInsets.all(2),
+                                          child: SizedBox(
+                                            width: checkmarkSize,
+                                            height: checkmarkSize,
+                                            child: Text("${index + 16}"),
+                                          ),
+                                        ),
+                                      )
                                     ],
                                   ),
-                                  const Spacer(),
-                                ],
-                              ),
-                              ...(status.recoveryError != "")
-                                  ? [
-                                      const SizedBox(height: 16),
-                                      ErrorMessage(
-                                          errorMessage: status.recoveryError),
-                                    ]
-                                  : [],
-                              const SizedBox(height: 12),
-                              ...(status.dumpProgress != 0)
-                                  ? [
-                                      LinearProgressIndicator(
-                                          value: status.dumpProgress),
-                                      const SizedBox(height: 8)
-                                    ]
-                                  : [],
-                              (status.state ==
-                                          ChameleonMifareClassicState
-                                              .recovery ||
-                                      status.state ==
-                                          ChameleonMifareClassicState
-                                              .recoveryOngoing)
-                                  ? Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                          const SizedBox(height: 8),
-                                          ElevatedButton(
-                                            onPressed: (status.state ==
-                                                    ChameleonMifareClassicState
-                                                        .recovery)
-                                                ? () async {
-                                                    await recoverKeys(appState);
-                                                  }
-                                                : null,
-                                            child: const Text('Recover keys'),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Text("A "),
+                                      ...List.generate(
+                                        16,
+                                        (index) => Padding(
+                                          padding: const EdgeInsets.all(2),
+                                          child: SizedBox(
+                                            width: checkmarkSize,
+                                            height: checkmarkSize,
+                                            child: buildCheckmark(
+                                                status.checkMarks[index + 16]),
                                           ),
-                                          const SizedBox(width: 8),
-                                          ElevatedButton(
-                                            onPressed: (status.state ==
-                                                    ChameleonMifareClassicState
-                                                        .recovery)
-                                                ? () async {
-                                                    await dumpData(appState);
-                                                  }
-                                                : null,
-                                            child:
-                                                const Text('Dump partial data'),
-                                          )
-                                        ])
-                                  : (const Column(children: [])),
-                              (status.state ==
-                                          ChameleonMifareClassicState
-                                              .checkKeys ||
-                                      status.state ==
-                                          ChameleonMifareClassicState
-                                              .checkKeysOngoing)
-                                  ? Column(children: [
-                                      const Text("Additional key dictionary"),
-                                      const SizedBox(height: 4),
-                                      DropdownButton<String>(
-                                        value: status.selectedDictionary!.id,
-                                        items: status.dictionaries.map<
-                                                DropdownMenuItem<String>>(
-                                            (ChameleonDictionary dictionary) {
-                                          return DropdownMenuItem<String>(
-                                            value: dictionary.id,
-                                            child: Text(
-                                                "${dictionary.name} (${dictionary.keys.length} keys)"),
-                                          );
-                                        }).toList(),
-                                        onChanged: (String? newValue) {
-                                          for (var dictionary
-                                              in status.dictionaries) {
-                                            if (dictionary.id == newValue) {
-                                              setState(() {
-                                                status.selectedDictionary =
-                                                    dictionary;
-                                              });
-                                              break;
-                                            }
-                                          }
-                                        },
-                                      ),
-                                      const SizedBox(height: 8),
-                                      ElevatedButton(
-                                        onPressed: (status.state ==
-                                                ChameleonMifareClassicState
-                                                    .checkKeys)
-                                            ? () async {
-                                                await checkKeys(appState);
-                                              }
-                                            : null,
-                                        child: const Text(
-                                            'Check keys from dictionary'),
+                                        ),
                                       )
-                                    ])
-                                  : (const Column(children: [])),
-                              (status.state ==
-                                          ChameleonMifareClassicState.dump ||
-                                      status.state ==
-                                          ChameleonMifareClassicState
-                                              .dumpOngoing)
-                                  ? (Column(children: [
-                                      ElevatedButton(
-                                        onPressed: (status.state ==
-                                                ChameleonMifareClassicState
-                                                    .dump)
-                                            ? () async {
-                                                await dumpData(appState);
-                                              }
-                                            : null,
-                                        child: const Text('Dump card'),
-                                      ),
-                                    ]))
-                                  : (const Column(children: [])),
-                              (status.state == ChameleonMifareClassicState.save)
-                                  ? (Center(
-                                      child: Row(
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Text("B "),
+                                      ...List.generate(
+                                        16,
+                                        (index) => Padding(
+                                          padding: const EdgeInsets.all(2),
+                                          child: SizedBox(
+                                            width: checkmarkSize,
+                                            height: checkmarkSize,
+                                            child: buildCheckmark(status
+                                                .checkMarks[40 + index + 16]),
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ],
+                                if (status.type == MifareClassicType.m4k)
+                                  Center(
+                                      child: Column(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           crossAxisAlignment:
                                               CrossAxisAlignment.center,
                                           children: [
-                                          ElevatedButton(
-                                            onPressed: () async {
-                                              await showDialog(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return AlertDialog(
-                                                    title: const Text(
-                                                        'Enter card name'),
-                                                    content: TextField(
-                                                      onChanged: (value) {
-                                                        setState(() {
-                                                          status.dumpName =
-                                                              value;
-                                                        });
-                                                      },
-                                                    ),
-                                                    actions: [
-                                                      ElevatedButton(
-                                                        onPressed: () async {
-                                                          await saveHFCard(
-                                                              appState);
-                                                          Navigator.pop(
-                                                              context); // Close the modal after saving
-                                                        },
-                                                        child: const Text('OK'),
-                                                      ),
-                                                      ElevatedButton(
-                                                        onPressed: () {
-                                                          Navigator.pop(
-                                                              context); // Close the modal without saving
-                                                        },
-                                                        child: const Text(
-                                                            'Cancel'),
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                              );
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            const Text("     "),
+                                            ...List.generate(
+                                              8,
+                                              (index) => Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2),
+                                                child: SizedBox(
+                                                  width: checkmarkSize,
+                                                  height: checkmarkSize,
+                                                  child: Text("${index + 32}"),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            const Text("A "),
+                                            ...List.generate(
+                                              8,
+                                              (index) => Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2),
+                                                child: SizedBox(
+                                                  width: checkmarkSize,
+                                                  height: checkmarkSize,
+                                                  child: buildCheckmark(status
+                                                      .checkMarks[index + 32]),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            const Text("B "),
+                                            ...List.generate(
+                                              8,
+                                              (index) => Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2),
+                                                child: SizedBox(
+                                                  width: checkmarkSize,
+                                                  height: checkmarkSize,
+                                                  child: buildCheckmark(
+                                                      status.checkMarks[
+                                                          40 + index + 32]),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ]))
+                              ],
+                            ),
+                            const Spacer(),
+                          ],
+                        ),
+                        if (status.recoveryError != "") ...[
+                          const SizedBox(height: 16),
+                          ErrorMessage(errorMessage: status.recoveryError),
+                        ],
+                        const SizedBox(height: 12),
+                        if (status.dumpProgress != 0) ...[
+                          LinearProgressIndicator(value: status.dumpProgress),
+                          const SizedBox(height: 8)
+                        ],
+                        if (status.state ==
+                                ChameleonMifareClassicState.recovery ||
+                            status.state ==
+                                ChameleonMifareClassicState.recoveryOngoing)
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: (status.state ==
+                                          ChameleonMifareClassicState.recovery)
+                                      ? () async {
+                                          await recoverKeys(appState);
+                                        }
+                                      : null,
+                                  child: const Text('Recover keys'),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: (status.state ==
+                                          ChameleonMifareClassicState.recovery)
+                                      ? () async {
+                                          await dumpData(appState);
+                                        }
+                                      : null,
+                                  child: const Text('Dump partial data'),
+                                )
+                              ]),
+                        if (status.state ==
+                                ChameleonMifareClassicState.checkKeys ||
+                            status.state ==
+                                ChameleonMifareClassicState.checkKeysOngoing)
+                          Column(children: [
+                            const Text("Additional key dictionary"),
+                            const SizedBox(height: 4),
+                            DropdownButton<String>(
+                              value: status.selectedDictionary!.id,
+                              items: status.dictionaries
+                                  .map<DropdownMenuItem<String>>(
+                                      (ChameleonDictionary dictionary) {
+                                return DropdownMenuItem<String>(
+                                  value: dictionary.id,
+                                  child: Text(
+                                      "${dictionary.name} (${dictionary.keys.length} keys)"),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                for (var dictionary in status.dictionaries) {
+                                  if (dictionary.id == newValue) {
+                                    setState(() {
+                                      status.selectedDictionary = dictionary;
+                                    });
+                                    break;
+                                  }
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: (status.state ==
+                                      ChameleonMifareClassicState.checkKeys)
+                                  ? () async {
+                                      await checkKeys(appState);
+                                    }
+                                  : null,
+                              child: const Text('Check keys from dictionary'),
+                            )
+                          ]),
+                        if (status.state == ChameleonMifareClassicState.dump ||
+                            status.state ==
+                                ChameleonMifareClassicState.dumpOngoing)
+                          Column(children: [
+                            ElevatedButton(
+                              onPressed: (status.state ==
+                                      ChameleonMifareClassicState.dump)
+                                  ? () async {
+                                      await dumpData(appState);
+                                    }
+                                  : null,
+                              child: const Text('Dump card'),
+                            ),
+                          ]),
+                        if (status.state == ChameleonMifareClassicState.save)
+                          Center(
+                              child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    await showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: const Text('Enter card name'),
+                                          content: TextField(
+                                            onChanged: (value) {
+                                              setState(() {
+                                                status.dumpName = value;
+                                              });
                                             },
-                                            child: const Text('Save'),
                                           ),
-                                          const SizedBox(width: 8),
-                                          ElevatedButton(
-                                            onPressed: () async {
-                                              await saveHFCard(appState,
-                                                  bin: true);
-                                            },
-                                            child: const Text('Save as .bin'),
-                                          ),
-                                        ])))
-                                  : (const Column(children: []))
-                            ]
-                          : []
+                                          actions: [
+                                            ElevatedButton(
+                                              onPressed: () async {
+                                                await saveHFCard(appState);
+                                                Navigator.pop(
+                                                    context); // Close the modal after saving
+                                              },
+                                              child: const Text('OK'),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.pop(
+                                                    context); // Close the modal without saving
+                                              },
+                                              child: const Text('Cancel'),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: const Text('Save'),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    await saveHFCard(appState, bin: true);
+                                  },
+                                  child: const Text('Save as .bin'),
+                                ),
+                              ])),
+                      ]
                     ],
                   ),
                 ),
@@ -1214,14 +1136,12 @@ class ReadCardPageState extends State<ReadCardPage> {
                         style: TextStyle(fontSize: fieldFontSize),
                       ),
                       const SizedBox(height: 16),
-                      ...(status.noLfCard)
-                          ? [
-                              const ErrorMessage(
-                                  errorMessage:
-                                      "No card found. Try to move Chameleon on card"),
-                              const SizedBox(height: 16)
-                            ]
-                          : [],
+                      if (status.noLfCard) ...[
+                        const ErrorMessage(
+                            errorMessage:
+                                "No card found. Try to move Chameleon on card"),
+                        const SizedBox(height: 16)
+                      ],
                       ElevatedButton(
                         onPressed: () async {
                           if (appState.connector.device ==
@@ -1252,48 +1172,46 @@ class ReadCardPageState extends State<ReadCardPage> {
                         },
                         child: const Text('Read'),
                       ),
-                      ...(status.lfUid != "")
-                          ? [
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  await showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: const Text('Enter card name'),
-                                        content: TextField(
-                                          onChanged: (value) {
-                                            setState(() {
-                                              status.dumpName = value;
-                                            });
-                                          },
-                                        ),
-                                        actions: [
-                                          ElevatedButton(
-                                            onPressed: () async {
-                                              await saveLFCard(appState);
-                                              Navigator.pop(
-                                                  context); // Close the modal after saving
-                                            },
-                                            child: const Text('OK'),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              Navigator.pop(
-                                                  context); // Close the modal without saving
-                                            },
-                                            child: const Text('Cancel'),
-                                          ),
-                                        ],
-                                      );
+                      if (status.lfUid != "") ...[
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () async {
+                            await showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: const Text('Enter card name'),
+                                  content: TextField(
+                                    onChanged: (value) {
+                                      setState(() {
+                                        status.dumpName = value;
+                                      });
                                     },
-                                  );
-                                },
-                                child: const Text('Save'),
-                              ),
-                            ]
-                          : [],
+                                  ),
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        await saveLFCard(appState);
+                                        Navigator.pop(
+                                            context); // Close the modal after saving
+                                      },
+                                      child: const Text('OK'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(
+                                            context); // Close the modal without saving
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          child: const Text('Save'),
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -284,101 +284,96 @@ class HomePageState extends State<HomePage> {
                                     fontSize:
                                         MediaQuery.of(context).size.width /
                                             50)),
-                            ...(appState.connector.connectionType !=
-                                    ConnectionType.ble)
-                                ? [
-                                    Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: IconButton(
-                                        onPressed: () async {
-                                          SnackBar snackBar;
-                                          String latestCommit;
+                            if (appState.connector.connectionType !=
+                                ConnectionType.ble)
+                              Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: IconButton(
+                                  onPressed: () async {
+                                    SnackBar snackBar;
+                                    String latestCommit;
 
-                                          try {
-                                            latestCommit =
-                                                await latestAvailableCommit(
-                                                    appState.connector.device);
-                                          } catch (e) {
+                                    try {
+                                      latestCommit =
+                                          await latestAvailableCommit(
+                                              appState.connector.device);
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context)
+                                          .hideCurrentSnackBar();
+                                      snackBar = SnackBar(
+                                        content: Text(
+                                            'Update error: ${e.toString()}'),
+                                        action: SnackBarAction(
+                                          label: 'Close',
+                                          onPressed: () {},
+                                        ),
+                                      );
+
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(snackBar);
+                                      return;
+                                    }
+
+                                    appState.log
+                                        .i("Latest commit: $latestCommit");
+
+                                    if (latestCommit.isEmpty) {
+                                      return;
+                                    }
+
+                                    if (latestCommit.startsWith(fwVersion[1])) {
+                                      snackBar = SnackBar(
+                                        content: Text(
+                                            'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware is up to date'),
+                                        action: SnackBarAction(
+                                          label: 'Close',
+                                          onPressed: () {},
+                                        ),
+                                      );
+
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(snackBar);
+                                    } else {
+                                      snackBar = SnackBar(
+                                        content: Text(
+                                            'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                                        action: SnackBarAction(
+                                          label: 'Close',
+                                          onPressed: () {
                                             ScaffoldMessenger.of(context)
                                                 .hideCurrentSnackBar();
-                                            snackBar = SnackBar(
-                                              content: Text(
-                                                  'Update error: ${e.toString()}'),
-                                              action: SnackBarAction(
-                                                label: 'Close',
-                                                onPressed: () {},
-                                              ),
-                                            );
+                                          },
+                                        ),
+                                      );
 
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(snackBar);
-                                            return;
-                                          }
-
-                                          appState.log.i(
-                                              "Latest commit: $latestCommit");
-
-                                          if (latestCommit.isEmpty) {
-                                            return;
-                                          }
-
-                                          if (latestCommit
-                                              .startsWith(fwVersion[1])) {
-                                            snackBar = SnackBar(
-                                              content: Text(
-                                                  'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware is up to date'),
-                                              action: SnackBarAction(
-                                                label: 'Close',
-                                                onPressed: () {},
-                                              ),
-                                            );
-
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(snackBar);
-                                          } else {
-                                            snackBar = SnackBar(
-                                              content: Text(
-                                                  'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
-                                              action: SnackBarAction(
-                                                label: 'Close',
-                                                onPressed: () {
-                                                  ScaffoldMessenger.of(context)
-                                                      .hideCurrentSnackBar();
-                                                },
-                                              ),
-                                            );
-
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(snackBar);
-                                            try {
-                                              await flashFirmware(appState);
-                                            } catch (e) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(snackBar);
+                                      try {
+                                        await flashFirmware(appState);
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(context)
+                                            .hideCurrentSnackBar();
+                                        snackBar = SnackBar(
+                                          content: Text(
+                                              'Update error: ${e.toString()}'),
+                                          action: SnackBarAction(
+                                            label: 'Close',
+                                            onPressed: () {
                                               ScaffoldMessenger.of(context)
                                                   .hideCurrentSnackBar();
-                                              snackBar = SnackBar(
-                                                content: Text(
-                                                    'Update error: ${e.toString()}'),
-                                                action: SnackBarAction(
-                                                  label: 'Close',
-                                                  onPressed: () {
-                                                    ScaffoldMessenger.of(
-                                                            context)
-                                                        .hideCurrentSnackBar();
-                                                  },
-                                                ),
-                                              );
+                                            },
+                                          ),
+                                        );
 
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(snackBar);
-                                            }
-                                          }
-                                        },
-                                        tooltip: "Check for updates",
-                                        icon: const Icon(Icons.update),
-                                      ),
-                                    )
-                                  ]
-                                : [],
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                      }
+                                    }
+                                  },
+                                  tooltip: "Check for updates",
+                                  icon: const Icon(Icons.update),
+                                ),
+                              ),
                           ],
                         ),
                         Align(
@@ -418,379 +413,381 @@ class HomePageState extends State<HomePage> {
                                 child: IconButton(
                                   onPressed: () => showDialog<String>(
                                       context: context,
-                                      builder:
-                                          (BuildContext dialogContext) =>
-                                              FutureBuilder(
-                                                  future: getSettingsData(),
-                                                  builder: (BuildContext
-                                                          context,
-                                                      AsyncSnapshot snapshot) {
-                                                    if (snapshot
-                                                            .connectionState ==
-                                                        ConnectionState
-                                                            .waiting) {
-                                                      return const AlertDialog(
-                                                          title: Text(
-                                                              'Device Settings'),
-                                                          content:
-                                                              CircularProgressIndicator());
-                                                    } else if (snapshot
-                                                        .hasError) {
-                                                      appState.connector
-                                                          .performDisconnect();
-                                                      return AlertDialog(
-                                                          title: const Text(
-                                                              'Device Settings'),
-                                                          content: Text(
-                                                              'Error: ${snapshot.error.toString()}'));
-                                                    } else {
-                                                      final (
-                                                        animationMode,
-                                                        aButtonMode,
-                                                        bButtonMode
-                                                      ) = snapshot.data;
+                                      builder: (BuildContext dialogContext) =>
+                                          FutureBuilder(
+                                              future: getSettingsData(),
+                                              builder: (BuildContext context,
+                                                  AsyncSnapshot snapshot) {
+                                                if (snapshot.connectionState ==
+                                                    ConnectionState.waiting) {
+                                                  return const AlertDialog(
+                                                      title: Text(
+                                                          'Device Settings'),
+                                                      content:
+                                                          CircularProgressIndicator());
+                                                } else if (snapshot.hasError) {
+                                                  appState.connector
+                                                      .performDisconnect();
+                                                  return AlertDialog(
+                                                      title: const Text(
+                                                          'Device Settings'),
+                                                      content: Text(
+                                                          'Error: ${snapshot.error.toString()}'));
+                                                } else {
+                                                  final (
+                                                    animationMode,
+                                                    aButtonMode,
+                                                    bButtonMode
+                                                  ) = snapshot.data;
 
-                                                      return AlertDialog(
-                                                        title: const Text(
-                                                            'Device Settings'),
-                                                        content: Column(
-                                                          children: [
-                                                            const Text(
-                                                                "Firmware management:"),
-                                                            const SizedBox(
-                                                                height: 10),
-                                                            TextButton(
-                                                                onPressed:
-                                                                    () async {
-                                                                  await appState
-                                                                      .communicator!
-                                                                      .enterDFUMode();
-                                                                  appState
-                                                                      .connector
-                                                                      .performDisconnect();
-                                                                  Navigator.pop(
-                                                                      dialogContext,
-                                                                      'Cancel');
-                                                                  appState
-                                                                      .changesMade();
-                                                                },
-                                                                child:
-                                                                    const Row(
-                                                                  children: [
-                                                                    Icon(Icons
-                                                                        .medical_services_outlined),
-                                                                    Text(
-                                                                        "Enter DFU Mode"),
-                                                                  ],
-                                                                )),
-                                                            ...(appState.connector
-                                                                        .connectionType !=
-                                                                    ConnectionType
-                                                                        .ble)
-                                                                ? [
-                                                                    TextButton(
-                                                                        onPressed:
-                                                                            () async {
-                                                                          Navigator.pop(
-                                                                              dialogContext,
-                                                                              'Cancel');
-                                                                          var snackBar =
-                                                                              SnackBar(
-                                                                            content:
-                                                                                Text('Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
-                                                                            action:
-                                                                                SnackBarAction(
-                                                                              label: 'Close',
-                                                                              onPressed: () {},
-                                                                            ),
-                                                                          );
+                                                  return AlertDialog(
+                                                    title: const Text(
+                                                        'Device Settings'),
+                                                    content: Column(
+                                                      children: [
+                                                        const Text(
+                                                            "Firmware management:"),
+                                                        const SizedBox(
+                                                            height: 10),
+                                                        TextButton(
+                                                            onPressed:
+                                                                () async {
+                                                              await appState
+                                                                  .communicator!
+                                                                  .enterDFUMode();
+                                                              appState.connector
+                                                                  .performDisconnect();
+                                                              Navigator.pop(
+                                                                  dialogContext,
+                                                                  'Cancel');
+                                                              appState
+                                                                  .changesMade();
+                                                            },
+                                                            child: const Row(
+                                                              children: [
+                                                                Icon(Icons
+                                                                    .medical_services_outlined),
+                                                                Text(
+                                                                    "Enter DFU Mode"),
+                                                              ],
+                                                            )),
+                                                        if (appState.connector
+                                                                .connectionType !=
+                                                            ConnectionType
+                                                                .ble) ...[
+                                                          TextButton(
+                                                              onPressed:
+                                                                  () async {
+                                                                Navigator.pop(
+                                                                    dialogContext,
+                                                                    'Cancel');
+                                                                var snackBar =
+                                                                    SnackBar(
+                                                                  content: Text(
+                                                                      'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                                                                  action:
+                                                                      SnackBarAction(
+                                                                    label:
+                                                                        'Close',
+                                                                    onPressed:
+                                                                        () {},
+                                                                  ),
+                                                                );
 
-                                                                          ScaffoldMessenger.of(context)
-                                                                              .showSnackBar(snackBar);
-                                                                          try {
-                                                                            await flashFirmware(appState);
-                                                                          } catch (e) {
-                                                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                                                            snackBar =
-                                                                                SnackBar(
-                                                                              content: Text('Update error: ${e.toString()}'),
-                                                                              action: SnackBarAction(
-                                                                                label: 'Close',
-                                                                                onPressed: () {},
-                                                                              ),
-                                                                            );
-
-                                                                            ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                                                                          }
-                                                                        },
-                                                                        child:
-                                                                            const Row(
-                                                                          children: [
-                                                                            Icon(Icons.system_security_update),
-                                                                            Text("Flash latest FW via DFU"),
-                                                                          ],
-                                                                        )),
-                                                                    TextButton(
-                                                                        onPressed:
-                                                                            () async {
-                                                                          Navigator.pop(
-                                                                              dialogContext,
-                                                                              'Cancel');
-                                                                          await flashFirmwareZip(
-                                                                              appState);
-                                                                        },
-                                                                        child:
-                                                                            const Row(
-                                                                          children: [
-                                                                            Icon(Icons.system_security_update_good),
-                                                                            Text("Flash .zip FW via DFU"),
-                                                                          ],
-                                                                        ))
-                                                                  ]
-                                                                : [],
-                                                            const SizedBox(
-                                                                height: 10),
-                                                            const Text(
-                                                                "Animations:"),
-                                                            const SizedBox(
-                                                                height: 10),
-                                                            ToggleButtonsWrapper(
-                                                                items: const [
-                                                                  'Full',
-                                                                  'Mini',
-                                                                  'None'
-                                                                ],
-                                                                selectedValue:
-                                                                    animationMode
-                                                                        .value,
-                                                                onChange: (int
-                                                                    index) async {
-                                                                  var animation =
-                                                                      AnimationSetting
-                                                                          .full;
-                                                                  if (index ==
-                                                                      1) {
-                                                                    animation =
-                                                                        AnimationSetting
-                                                                            .minimal;
-                                                                  } else if (index ==
-                                                                      2) {
-                                                                    animation =
-                                                                        AnimationSetting
-                                                                            .none;
-                                                                  }
-
-                                                                  await appState
-                                                                      .communicator!
-                                                                      .setAnimationMode(
-                                                                          animation);
-                                                                  await appState
-                                                                      .communicator!
-                                                                      .saveSettings();
-                                                                  setState(
-                                                                      () {});
-                                                                  appState
-                                                                      .changesMade();
-                                                                }),
-                                                            const SizedBox(
-                                                                height: 10),
-                                                            const Text(
-                                                                "Button config:"),
-                                                            const SizedBox(
-                                                                height: 7),
-                                                            const Text(
-                                                                "A button:",
-                                                                textScaleFactor:
-                                                                    0.8),
-                                                            const SizedBox(
-                                                                height: 7),
-                                                            ToggleButtonsWrapper(
-                                                                items: const [
-                                                                  'Disable',
-                                                                  'Forward',
-                                                                  'Backward',
-                                                                  'Clone UID'
-                                                                ],
-                                                                selectedValue:
-                                                                    aButtonMode
-                                                                        .value,
-                                                                onChange: (int
-                                                                    index) async {
-                                                                  var mode =
-                                                                      ButtonPress
-                                                                          .disable;
-                                                                  if (index ==
-                                                                      1) {
-                                                                    mode = ButtonPress
-                                                                        .cycleForward;
-                                                                  } else if (index ==
-                                                                      2) {
-                                                                    mode = ButtonPress
-                                                                        .cycleBackward;
-                                                                  } else if (index ==
-                                                                      3) {
-                                                                    mode = ButtonPress
-                                                                        .cloneUID;
-                                                                  }
-
-                                                                  await appState
-                                                                      .communicator!
-                                                                      .setButtonConfig(
-                                                                          ButtonType
-                                                                              .a,
-                                                                          mode);
-                                                                  await appState
-                                                                      .communicator!
-                                                                      .saveSettings();
-                                                                  setState(
-                                                                      () {});
-                                                                  appState
-                                                                      .changesMade();
-                                                                }),
-                                                            const SizedBox(
-                                                                height: 7),
-                                                            const Text(
-                                                                "B button:",
-                                                                textScaleFactor:
-                                                                    0.8),
-                                                            const SizedBox(
-                                                                height: 7),
-                                                            ToggleButtonsWrapper(
-                                                                items: const [
-                                                                  'Disable',
-                                                                  'Forward',
-                                                                  'Backward',
-                                                                  'Clone UID'
-                                                                ],
-                                                                selectedValue:
-                                                                    bButtonMode
-                                                                        .value,
-                                                                onChange: (int
-                                                                    index) async {
-                                                                  var mode =
-                                                                      ButtonPress
-                                                                          .disable;
-                                                                  if (index ==
-                                                                      1) {
-                                                                    mode = ButtonPress
-                                                                        .cycleForward;
-                                                                  } else if (index ==
-                                                                      2) {
-                                                                    mode = ButtonPress
-                                                                        .cycleBackward;
-                                                                  } else if (index ==
-                                                                      3) {
-                                                                    mode = ButtonPress
-                                                                        .cloneUID;
-                                                                  }
-
-                                                                  await appState
-                                                                      .communicator!
-                                                                      .setButtonConfig(
-                                                                          ButtonType
-                                                                              .b,
-                                                                          mode);
-                                                                  await appState
-                                                                      .communicator!
-                                                                      .saveSettings();
-                                                                  setState(
-                                                                      () {});
-                                                                  appState
-                                                                      .changesMade();
-                                                                }),
-                                                            const SizedBox(
-                                                                height: 10),
-                                                            const Text(
-                                                                "Other:"),
-                                                            const SizedBox(
-                                                                height: 10),
-                                                            TextButton(
-                                                                onPressed:
-                                                                    () async {
-                                                                  await appState
-                                                                      .communicator!
-                                                                      .resetSettings();
-                                                                  Navigator.pop(
-                                                                      dialogContext,
-                                                                      'Cancel');
-                                                                  appState
-                                                                      .changesMade();
-                                                                },
-                                                                child:
-                                                                    const Row(
-                                                                  children: [
-                                                                    Icon(Icons
-                                                                        .lock_reset),
-                                                                    Text(
-                                                                        "Reset settings"),
-                                                                  ],
-                                                                )),
-                                                            TextButton(
-                                                                onPressed:
-                                                                    () async {
-                                                                  // Ask for confirmation
-                                                                  Navigator.pop(
-                                                                      dialogContext,
-                                                                      'Cancel');
-                                                                  showDialog(
-                                                                    context:
-                                                                        context,
-                                                                    builder: (BuildContext
-                                                                            context) =>
-                                                                        AlertDialog(
-                                                                      title: const Text(
-                                                                          'Factory reset'),
-                                                                      content:
-                                                                          const Text(
-                                                                              'Are you sure you want to factory reset your Chameleon?'),
-                                                                      actions: <Widget>[
-                                                                        TextButton(
-                                                                          onPressed:
-                                                                              () async {
-                                                                            await appState.communicator!.factoryReset();
-                                                                            await appState.connector.performDisconnect();
-                                                                            Navigator.pop(context,
-                                                                                'Cancel');
-                                                                            appState.changesMade();
-                                                                          },
-                                                                          child:
-                                                                              const Text('Yes'),
-                                                                        ),
-                                                                        TextButton(
-                                                                          onPressed: () => Navigator.pop(
-                                                                              context,
-                                                                              'Cancel'),
-                                                                          child:
-                                                                              const Text('No'),
-                                                                        ),
-                                                                      ],
+                                                                ScaffoldMessenger.of(
+                                                                        context)
+                                                                    .showSnackBar(
+                                                                        snackBar);
+                                                                try {
+                                                                  await flashFirmware(
+                                                                      appState);
+                                                                } catch (e) {
+                                                                  ScaffoldMessenger.of(
+                                                                          context)
+                                                                      .hideCurrentSnackBar();
+                                                                  snackBar =
+                                                                      SnackBar(
+                                                                    content: Text(
+                                                                        'Update error: ${e.toString()}'),
+                                                                    action:
+                                                                        SnackBarAction(
+                                                                      label:
+                                                                          'Close',
+                                                                      onPressed:
+                                                                          () {},
                                                                     ),
                                                                   );
-                                                                },
-                                                                child:
-                                                                    const Row(
-                                                                  children: [
-                                                                    Icon(Icons
-                                                                        .restore_from_trash_outlined),
-                                                                    Text(
-                                                                        "Factory reset"),
-                                                                  ],
-                                                                )),
-                                                          ],
-                                                        ),
-                                                        actions: <Widget>[
+
+                                                                  ScaffoldMessenger.of(
+                                                                          context)
+                                                                      .showSnackBar(
+                                                                          snackBar);
+                                                                }
+                                                              },
+                                                              child: const Row(
+                                                                children: [
+                                                                  Icon(Icons
+                                                                      .system_security_update),
+                                                                  Text(
+                                                                      "Flash latest FW via DFU"),
+                                                                ],
+                                                              )),
                                                           TextButton(
-                                                            onPressed: () =>
+                                                              onPressed:
+                                                                  () async {
                                                                 Navigator.pop(
-                                                                    context,
-                                                                    'Cancel'),
-                                                            child: const Text(
-                                                                'Cancel'),
-                                                          ),
+                                                                    dialogContext,
+                                                                    'Cancel');
+                                                                await flashFirmwareZip(
+                                                                    appState);
+                                                              },
+                                                              child: const Row(
+                                                                children: [
+                                                                  Icon(Icons
+                                                                      .system_security_update_good),
+                                                                  Text(
+                                                                      "Flash .zip FW via DFU"),
+                                                                ],
+                                                              ))
                                                         ],
-                                                      );
-                                                    }
-                                                  })),
+                                                        const SizedBox(
+                                                            height: 10),
+                                                        const Text(
+                                                            "Animations:"),
+                                                        const SizedBox(
+                                                            height: 10),
+                                                        ToggleButtonsWrapper(
+                                                            items: const [
+                                                              'Full',
+                                                              'Mini',
+                                                              'None'
+                                                            ],
+                                                            selectedValue:
+                                                                animationMode
+                                                                    .value,
+                                                            onChange: (int
+                                                                index) async {
+                                                              var animation =
+                                                                  AnimationSetting
+                                                                      .full;
+                                                              if (index == 1) {
+                                                                animation =
+                                                                    AnimationSetting
+                                                                        .minimal;
+                                                              } else if (index ==
+                                                                  2) {
+                                                                animation =
+                                                                    AnimationSetting
+                                                                        .none;
+                                                              }
+
+                                                              await appState
+                                                                  .communicator!
+                                                                  .setAnimationMode(
+                                                                      animation);
+                                                              await appState
+                                                                  .communicator!
+                                                                  .saveSettings();
+                                                              setState(() {});
+                                                              appState
+                                                                  .changesMade();
+                                                            }),
+                                                        const SizedBox(
+                                                            height: 10),
+                                                        const Text(
+                                                            "Button config:"),
+                                                        const SizedBox(
+                                                            height: 7),
+                                                        const Text("A button:",
+                                                            textScaleFactor:
+                                                                0.8),
+                                                        const SizedBox(
+                                                            height: 7),
+                                                        ToggleButtonsWrapper(
+                                                            items: const [
+                                                              'Disable',
+                                                              'Forward',
+                                                              'Backward',
+                                                              'Clone UID'
+                                                            ],
+                                                            selectedValue:
+                                                                aButtonMode
+                                                                    .value,
+                                                            onChange: (int
+                                                                index) async {
+                                                              var mode =
+                                                                  ButtonPress
+                                                                      .disable;
+                                                              if (index == 1) {
+                                                                mode = ButtonPress
+                                                                    .cycleForward;
+                                                              } else if (index ==
+                                                                  2) {
+                                                                mode = ButtonPress
+                                                                    .cycleBackward;
+                                                              } else if (index ==
+                                                                  3) {
+                                                                mode = ButtonPress
+                                                                    .cloneUID;
+                                                              }
+
+                                                              await appState
+                                                                  .communicator!
+                                                                  .setButtonConfig(
+                                                                      ButtonType
+                                                                          .a,
+                                                                      mode);
+                                                              await appState
+                                                                  .communicator!
+                                                                  .saveSettings();
+                                                              setState(() {});
+                                                              appState
+                                                                  .changesMade();
+                                                            }),
+                                                        const SizedBox(
+                                                            height: 7),
+                                                        const Text("B button:",
+                                                            textScaleFactor:
+                                                                0.8),
+                                                        const SizedBox(
+                                                            height: 7),
+                                                        ToggleButtonsWrapper(
+                                                            items: const [
+                                                              'Disable',
+                                                              'Forward',
+                                                              'Backward',
+                                                              'Clone UID'
+                                                            ],
+                                                            selectedValue:
+                                                                bButtonMode
+                                                                    .value,
+                                                            onChange: (int
+                                                                index) async {
+                                                              var mode =
+                                                                  ButtonPress
+                                                                      .disable;
+                                                              if (index == 1) {
+                                                                mode = ButtonPress
+                                                                    .cycleForward;
+                                                              } else if (index ==
+                                                                  2) {
+                                                                mode = ButtonPress
+                                                                    .cycleBackward;
+                                                              } else if (index ==
+                                                                  3) {
+                                                                mode = ButtonPress
+                                                                    .cloneUID;
+                                                              }
+
+                                                              await appState
+                                                                  .communicator!
+                                                                  .setButtonConfig(
+                                                                      ButtonType
+                                                                          .b,
+                                                                      mode);
+                                                              await appState
+                                                                  .communicator!
+                                                                  .saveSettings();
+                                                              setState(() {});
+                                                              appState
+                                                                  .changesMade();
+                                                            }),
+                                                        const SizedBox(
+                                                            height: 10),
+                                                        const Text("Other:"),
+                                                        const SizedBox(
+                                                            height: 10),
+                                                        TextButton(
+                                                            onPressed:
+                                                                () async {
+                                                              await appState
+                                                                  .communicator!
+                                                                  .resetSettings();
+                                                              Navigator.pop(
+                                                                  dialogContext,
+                                                                  'Cancel');
+                                                              appState
+                                                                  .changesMade();
+                                                            },
+                                                            child: const Row(
+                                                              children: [
+                                                                Icon(Icons
+                                                                    .lock_reset),
+                                                                Text(
+                                                                    "Reset settings"),
+                                                              ],
+                                                            )),
+                                                        TextButton(
+                                                            onPressed:
+                                                                () async {
+                                                              // Ask for confirmation
+                                                              Navigator.pop(
+                                                                  dialogContext,
+                                                                  'Cancel');
+                                                              showDialog(
+                                                                context:
+                                                                    context,
+                                                                builder: (BuildContext
+                                                                        context) =>
+                                                                    AlertDialog(
+                                                                  title: const Text(
+                                                                      'Factory reset'),
+                                                                  content:
+                                                                      const Text(
+                                                                          'Are you sure you want to factory reset your Chameleon?'),
+                                                                  actions: <Widget>[
+                                                                    TextButton(
+                                                                      onPressed:
+                                                                          () async {
+                                                                        await appState
+                                                                            .communicator!
+                                                                            .factoryReset();
+                                                                        await appState
+                                                                            .connector
+                                                                            .performDisconnect();
+                                                                        Navigator.pop(
+                                                                            context,
+                                                                            'Cancel');
+                                                                        appState
+                                                                            .changesMade();
+                                                                      },
+                                                                      child: const Text(
+                                                                          'Yes'),
+                                                                    ),
+                                                                    TextButton(
+                                                                      onPressed: () => Navigator.pop(
+                                                                          context,
+                                                                          'Cancel'),
+                                                                      child: const Text(
+                                                                          'No'),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              );
+                                                            },
+                                                            child: const Row(
+                                                              children: [
+                                                                Icon(Icons
+                                                                    .restore_from_trash_outlined),
+                                                                Text(
+                                                                    "Factory reset"),
+                                                              ],
+                                                            )),
+                                                      ],
+                                                    ),
+                                                    actions: <Widget>[
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                                context,
+                                                                'Cancel'),
+                                                        child: const Text(
+                                                            'Cancel'),
+                                                      ),
+                                                    ],
+                                                  );
+                                                }
+                                              })),
                                   icon: const Icon(Icons.settings),
                                 ),
                               ),

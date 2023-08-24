@@ -226,13 +226,10 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                 );
               },
             ),
-            ...(progress != -1)
-                ? [
-                    LinearProgressIndicator(
-                      value: (progress / 100).toDouble(),
-                    )
-                  ]
-                : []
+            if (progress != -1)
+              LinearProgressIndicator(
+                value: (progress / 100).toDouble(),
+              )
           ],
         ),
       ),
