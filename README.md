@@ -35,9 +35,9 @@ It is also highly recommended to either uninstall or disable ModemManager (`sudo
 You need to pair your Chameleon first before it shows up on the connect page, click on the handshake icon and select the relevant serial devices.
 
 *Known issues*
-- Chameleon Lite's are displayed as Ultra's on the connect page (but are correct after connecting)
-> This is because the Web Serial API is quite limited with the [device information](https://developer.mozilla.org/en-US/docs/Web/API/SerialPort/getInfo) it returns as it only returns an usb vendor id & product id (which are the same for Ultra's & Lite's). So on the connect page any device will be displayed as an Ultra, after you connect to a specific device the correct device type will be detected by checking if the device supports reader mode (=Ultra) or not (=Lite)
-- key recovery is not supported (yet)
+- On the connect page there is no indication if the connected device is a Chameleon Ultra or Lite. After connecting to a device the correct type is displayed
+> This is because the Web Serial API is quite limited with the [device information](https://developer.mozilla.org/en-US/docs/Web/API/SerialPort/getInfo) it returns as it only returns an usb vendor id & product id (which are the same for Ultra's & Lite's). So on the connect page any device will be displayed as just Chameleon, after you connect to a specific device the correct device type will be detected
+- blackside key recovery is not supported (yet)
 - cannot download firmware due to CORS issue with nightly.link
 
 ## Contributing
