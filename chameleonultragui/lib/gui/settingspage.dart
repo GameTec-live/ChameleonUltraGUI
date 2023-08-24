@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/gui/components/togglebuttons.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/helpers/open_collective.dart';
 import 'package:chameleonultragui/main.dart';
@@ -17,8 +18,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
     super.initState();
   }
 
-  Future<String> getFutureData() async {
-    return await fetchOCnames();
+  Future<(String, PackageInfo)> getFutureData() async {
+    return (await fetchOCnames(), await PackageInfo.fromPlatform());
   }
 
   Future<String> fetchOCnames() async {
@@ -187,7 +188,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         } else if (snapshot.hasError) {
                           return Text('Error: ${snapshot.error}');
                         } else {
-                          final (names) = snapshot.data;
+                          final (names, packageInfo) = snapshot.data;
                           return Column(
                             children: [
                               const Text('Chameleon Ultra GUI',
@@ -197,9 +198,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   'A Tool to graphically manage and configure your Chameleon Ultra, written in Flutter and running on Desktop and Mobile.'),
                               const SizedBox(height: 10),
                               const Text('Version:'),
-                              const Text('UNRELEASED',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                  '${packageInfo.version} (Build ${packageInfo.buildNumber})',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
                               const Text('Developed by:'),
                               const Text('Foxushka, Akisame and GameTec_live',
