@@ -63,6 +63,7 @@ dependencies:
   crypto: ^3.0.3
   flutter_colorpicker: ^1.0.3
   package_info_plus: ^4.1.0
+  url_launcher: ^6.1.12
 
 dev_dependencies:
   flutter_test:
