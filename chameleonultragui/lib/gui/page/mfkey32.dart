@@ -107,41 +107,38 @@ class Mfkey32PageState extends State<Mfkey32Page> {
               title: const Text('Mfkey32'),
             ),
             body: Center(
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      const Text(
-                        'Recover keys via Mfkey32',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    const Text(
+                      'Recover keys via Mfkey32',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 25.0),
-                      ElevatedButton(
-                        onPressed: (detectionCount > 0)
-                            ? () async {
-                                await handleMfkeyCalculation();
-                              }
-                            : null,
-                        child:
-                            Text('Recover keys from $detectionCount nonce(s)'),
+                    ),
+                    const SizedBox(height: 25.0),
+                    ElevatedButton(
+                      onPressed: (detectionCount > 0)
+                          ? () async {
+                              await handleMfkeyCalculation();
+                            }
+                          : null,
+                      child: Text('Recover keys from $detectionCount nonce(s)'),
+                    ),
+                    const SizedBox(height: 16.0),
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        readOnly: true,
+                        keyboardType: TextInputType.multiline,
+                        maxLines: null,
                       ),
-                      const SizedBox(height: 16.0),
-                      Expanded(
-                        child: TextField(
-                          controller: controller,
-                          readOnly: true,
-                          keyboardType: TextInputType.multiline,
-                          maxLines: null,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
