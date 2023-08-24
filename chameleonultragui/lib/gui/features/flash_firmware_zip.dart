@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 Future<void> flashFirmwareZip(MyAppState appState, [AbstractSerial? connector]) async {
   connector ??= appState.connector;
 
-  var connection = ChameleonCom(port: connector);
+  var connection = ChameleonCommunicator(port: connector);
   Uint8List applicationDat, applicationBin;
 
   FileResult? file = await pickFile(appState);

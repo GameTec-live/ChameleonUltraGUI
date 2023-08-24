@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/gui/features/flash_firmware_latest.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -11,16 +12,13 @@ import 'package:provider/provider.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
-import 'features/flash_firmware_latest.dart';
-
-class DevPage extends StatelessWidget {
+class DebugPage extends StatelessWidget {
   // Home Page
-  const DevPage({super.key});
+  const DebugPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-    var cml = ChameleonCom(port: appState.connector);
 
     return Center(
       child: Column(
@@ -53,12 +51,14 @@ class DevPage extends StatelessWidget {
           Text('Chameleon device type: ${appState.connector.device}'),
           ElevatedButton(
             onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              var distance = await cml.getMf1NTDistance(50, 0x60,
+              await appState.communicator!.setReaderDeviceMode(true);
+              var distance = await appState.communicator!.getMf1NTDistance(
+                  50,
+                  0x60,
                   Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
               bool found = false;
               for (var i = 0; i < 0xFF && !found; i++) {
-                var nonces = await cml.getMf1NestedNonces(
+                var nonces = await appState.communicator!.getMf1NestedNonces(
                     50,
                     0x60,
                     Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
@@ -79,8 +79,8 @@ class DevPage extends StatelessWidget {
                   appState.log.d("Found keys: $keys. Checking them...");
                   for (var key in keys) {
                     var keyBytes = u64ToBytes(key);
-                    if ((await cml.mf1Auth(
-                            0x03, 0x61, keyBytes.sublist(2, 8))) ==
+                    if ((await appState.communicator!
+                            .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8))) ==
                         true) {
                       appState.log.i(
                           "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
@@ -99,8 +99,9 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              await cml.setReaderDeviceMode(true);
-              var data = await cml.getMf1Darkside(0x03, 0x61, true, 15);
+              await appState.communicator!.setReaderDeviceMode(true);
+              var data = await appState.communicator!
+                  .getMf1Darkside(0x03, 0x61, true, 15);
               var darkside = DarksideDart(uid: data.uid, items: []);
               bool found = false;
 
@@ -108,7 +109,7 @@ class DevPage extends StatelessWidget {
                 darkside.items.add(DarksideItemDart(
                     nt1: data.nt1,
                     ks1: BigInt.from(data.ks1),
-                    par: data.par,
+                    par: BigInt.from(data.par),
                     nr: data.nr,
                     ar: data.ar));
                 var keys = await recovery.darkside(darkside);
@@ -116,8 +117,8 @@ class DevPage extends StatelessWidget {
                   appState.log.d("Found keys: $keys. Checking them...");
                   for (var key in keys) {
                     var keyBytes = u64ToBytes(key);
-                    if ((await cml.mf1Auth(
-                            0x03, 0x61, keyBytes.sublist(2, 8))) ==
+                    if ((await appState.communicator!
+                            .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8))) ==
                         true) {
                       appState.log.i(
                           "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
@@ -127,7 +128,8 @@ class DevPage extends StatelessWidget {
                   }
                 } else {
                   appState.log.d("Can't find keys, retrying...");
-                  data = await cml.getMf1Darkside(0x03, 0x61, false, 15);
+                  data = await appState.communicator!
+                      .getMf1Darkside(0x03, 0x61, false, 15);
                 }
               }
             },
@@ -137,15 +139,15 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              await cml.setReaderDeviceMode(true);
+              await appState.communicator!.setReaderDeviceMode(true);
               appState.log.d(
-                  "Reader mode (should be true): ${await cml.isReaderDeviceMode()}");
-              var card = await cml.scan14443aTag();
+                  "Reader mode (should be true): ${await appState.communicator!.isReaderDeviceMode()}");
+              var card = await appState.communicator!.scan14443aTag();
               appState.log.d('Card UID: ${card.uid}');
               appState.log.d('SAK: ${card.sak}');
               appState.log.d('ATQA: ${card.atqa}');
-              await cml.setReaderDeviceMode(false);
-              await cml.setMf1AntiCollision(card);
+              await appState.communicator!.setReaderDeviceMode(false);
+              await appState.communicator!.setMf1AntiCollision(card);
             },
             child: const Column(children: [
               Text('Copy card UID to emulator'),
@@ -153,12 +155,15 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              await cml.setSlotTagName(1, "test", ChameleonTagFrequency.hf);
-              var name = await cml.getSlotTagName(1, ChameleonTagFrequency.hf);
+              await appState.communicator!
+                  .setSlotTagName(1, "test", TagFrequency.hf);
+              var name = await appState.communicator!
+                  .getSlotTagName(1, TagFrequency.hf);
               appState.log.d(name);
-              await cml.setSlotTagName(
-                  1, "Hello 变色龙!", ChameleonTagFrequency.hf);
-              name = await cml.getSlotTagName(1, ChameleonTagFrequency.hf);
+              await appState.communicator!
+                  .setSlotTagName(1, "Hello 变色龙!", TagFrequency.hf);
+              name = await appState.communicator!
+                  .getSlotTagName(1, TagFrequency.hf);
               appState.log.d(name);
             },
             child: const Column(children: [
@@ -171,13 +176,13 @@ class DevPage extends StatelessWidget {
               darkside.items.add(DarksideItemDart(
                   nt1: 913032415,
                   ks1: BigInt.parse('216745674933338888'), // Use string as this num is bigger then max int value in js
-                  par: 0,
+                  par: BigInt.from(0),
                   nr: 0,
                   ar: 0));
               darkside.items.add(DarksideItemDart(
                   nt1: 913032415,
                   ks1: BigInt.parse('1010230244403446283'),
-                  par: 0,
+                  par: BigInt.from(0),
                   nr: 1,
                   ar: 0));
               var keys = await recovery.darkside(darkside);
@@ -211,14 +216,17 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              var connection = ChameleonCom(port: appState.connector);
               Uint8List applicationDat, applicationBin;
 
               Uint8List content = await fetchFirmware(ChameleonDevice.ultra);
 
               (applicationDat, applicationBin) = await unpackFirmware(content);
 
-              flashFile(connection, appState, applicationDat, applicationBin,
+              flashFile(
+                  appState.communicator,
+                  appState,
+                  applicationDat,
+                  applicationBin,
                   (progress) => appState.log.d("Flashing: $progress%"),
                   firmwareZip: content);
             },
@@ -228,14 +236,17 @@ class DevPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              var connection = ChameleonCom(port: appState.connector);
               Uint8List applicationDat, applicationBin;
 
               Uint8List content = await fetchFirmware(ChameleonDevice.lite);
 
               (applicationDat, applicationBin) = await unpackFirmware(content);
 
-              flashFile(connection, appState, applicationDat, applicationBin,
+              flashFile(
+                  appState.communicator,
+                  appState,
+                  applicationDat,
+                  applicationBin,
                   (progress) => appState.log.d("Flashing: $progress%"),
                   firmwareZip: content);
             },
@@ -246,7 +257,7 @@ class DevPage extends StatelessWidget {
           const SizedBox(height: 10),
           ElevatedButton(
             onPressed: () async {
-              await cml.factoryReset();
+              await appState.communicator!.factoryReset();
             },
             child: const Column(children: [
               Text('✅ Safe option: restart chameleon ✅'),

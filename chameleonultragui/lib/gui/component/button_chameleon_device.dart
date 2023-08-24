@@ -41,13 +41,10 @@ class ButtonChameleonDevice extends StatelessWidget {
                         MainAxisAlignment.end,
                     children: [
                       devicePort.type ==
-                        ChameleonConnectType.ble
+                        ConnectionType.ble
                           ? const Icon(Icons.bluetooth)
                           : const Icon(Icons.usb),
                       Text(devicePort.port),
-                      if (devicePort.type ==
-                        ChameleonConnectType.dfu)
-                          const Text(" (DFU)"),
                     ],
                   )
                 ],

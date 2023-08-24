@@ -51,6 +51,7 @@ Section "Chameleon Ultra GUI (required)"
   File "chameleonultragui\build\windows\runner\Release\serialport.dll"
   File "chameleonultragui\build\windows\runner\Release\file_saver_plugin.dll"
   File "chameleonultragui\build\windows\runner\Release\permission_handler_windows_plugin.dll"
+  File "chameleonultragui\build\windows\runner\Release\url_launcher_windows.dll"
   File "LICENSE"
   File /r "chameleonultragui\build\windows\runner\Release\data"
   

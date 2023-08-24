@@ -79,14 +79,14 @@ class SerialConnector extends AbstractSerial {
         device = ChameleonDevice.ultra;
       }
 
-      connectionType = ChameleonConnectType.ble;
+      connectionType = ConnectionType.ble;
       if (bleDevice.name.startsWith('CU-')) {
-        connectionType = ChameleonConnectType.dfu;
+        connectionType = ConnectionType.dfu;
       }
 
       log.d(
           "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
-      if (!onlyDFU || onlyDFU && connectionType == ChameleonConnectType.dfu) {
+      if (!onlyDFU || onlyDFU && connectionType == ConnectionType.dfu) {
         output.add(ChameleonDevicePort(
             port: bleDevice.id, device: device, type: connectionType));
       }
@@ -102,7 +102,7 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(devicePort) async {
+  Future<bool> connectSpecificDevice(devicePort) async {
     // As BLE is unstable, we try to connect 5 times
     // And fail only then
     bool ret = false;
@@ -119,7 +119,7 @@ class SerialConnector extends AbstractSerial {
   Future<bool> connectSpecificInternal(devicePort) async {
     Completer<bool> completer = Completer<bool>();
     List<Uuid> services = [nrfUUID, uartRX, uartTX];
-    if (chameleonMap[devicePort]!['type'] == ChameleonConnectType.dfu) {
+    if (chameleonMap[devicePort]!['type'] == ConnectionType.dfu) {
       services = [dfuUUID, dfuControl, dfuFirmware];
     }
 
@@ -135,7 +135,7 @@ class SerialConnector extends AbstractSerial {
       if (connectionState.connectionState == DeviceConnectionState.connected) {
         connected = true;
 
-        if (chameleonMap[devicePort]!['type'] == ChameleonConnectType.dfu) {
+        if (chameleonMap[devicePort]!['type'] == ConnectionType.dfu) {
           txCharacteristic = QualifiedCharacteristic(
               serviceId: dfuUUID,
               characteristicId: dfuControl,
@@ -161,7 +161,7 @@ class SerialConnector extends AbstractSerial {
           portName = devicePort;
           device = chameleonMap[devicePort]!['device'];
 
-          connectionType = ChameleonConnectType.dfu;
+          connectionType = ConnectionType.dfu;
         } else {
           txCharacteristic = QualifiedCharacteristic(
               serviceId: nrfUUID,
@@ -169,8 +169,12 @@ class SerialConnector extends AbstractSerial {
               deviceId: connectionState.deviceId);
           receivedDataStream =
               flutterReactiveBle.subscribeToCharacteristic(txCharacteristic!);
-          receivedDataStream!.listen((data) {
-            messagePool.add(Uint8List.fromList(data));
+          receivedDataStream!.listen((data) async {
+            if (messageCallback != null) {
+              await messageCallback!(Uint8List.fromList(data));
+            } else {
+              messagePool.add(Uint8List.fromList(data));
+            }
           }, onError: (dynamic error) {
             log.e(error);
           });
@@ -183,7 +187,7 @@ class SerialConnector extends AbstractSerial {
           portName = devicePort;
           device = chameleonMap[devicePort]!['device'];
 
-          connectionType = ChameleonConnectType.ble;
+          connectionType = ConnectionType.ble;
         }
 
         completer.complete(true);
@@ -201,8 +205,8 @@ class SerialConnector extends AbstractSerial {
 
   @override
   Future<bool> performDisconnect() async {
-    device = ChameleonDevice.none;
-    connectionType = ChameleonConnectType.none;
+    super.performDisconnect();
+
     if (connection != null) {
       await connection!.cancel();
       connected = false;
@@ -232,7 +236,7 @@ class SerialConnector extends AbstractSerial {
     while (true) {
       if (messagePool.isNotEmpty) {
         var message = messagePool[0];
-        messagePool.removeWhere((item) => item == message);
+        messagePool.remove(message);
         completer.complete(message);
         break;
       }

@@ -2,7 +2,7 @@
 class DarksideItemDart {
   int nt1;
   BigInt ks1;
-  int par;
+  BigInt par;
   int nr;
   int ar;
 

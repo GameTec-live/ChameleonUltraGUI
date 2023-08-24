@@ -1,8 +1,12 @@
+import 'package:chameleonultragui/gui/component/developer_list.dart';
+import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
-import 'package:toggle_switch/toggle_switch.dart';
 import 'package:chameleonultragui/helpers/open_collective.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsMainPage extends StatefulWidget {
   const SettingsMainPage({Key? key}) : super(key: key);
@@ -17,17 +21,26 @@ class SettingsMainPageState extends State<SettingsMainPage> {
     super.initState();
   }
 
-  Future<String> getFutureData() async {
-    return await fetchOCnames();
+  Future<(String, List<Map<String, String>>, PackageInfo)>
+      getFutureData() async {
+    return (
+      await fetchOCnames(),
+      await fetchContributors(),
+      await PackageInfo.fromPlatform()
+    );
   }
 
   Future<String> fetchOCnames() async {
-    final List<String> names = await fetchOpenCollectiveHighrollers();
+    final List<String> names = await fetchOpenCollectiveContributors();
     String finalNames = "";
     for (String name in names) {
       finalNames += "$name, ";
     }
     return finalNames.substring(0, finalNames.length - 2);
+  }
+
+  Future<List<Map<String, String>>> fetchContributors() async {
+    return await fetchGitHubContributors();
   }
 
   @override
@@ -44,83 +57,71 @@ class SettingsMainPageState extends State<SettingsMainPage> {
           children: [
             const SizedBox(height: 10),
             const Text("Sidebar Expansion:"),
-            ToggleSwitch(
-              minWidth: 90.0,
-              cornerRadius: 20.0,
-              activeFgColor: Colors.white,
-              inactiveBgColor: Colors.grey,
-              inactiveFgColor: Colors.white,
-              initialLabelIndex:
-                  appState.sharedPreferencesProvider.getSideBarExpandedIndex(),
-              totalSwitches: 3,
-              labels: const ['Expand', 'automatic', 'retract'],
-              radiusStyle: true,
-              onToggle: (index) {
-                if (index == 0) {
-                  appState.sharedPreferencesProvider.setSideBarExpanded(true);
+            const SizedBox(height: 8),
+            ToggleButtonsWrapper(
+                items: const ['Expand', 'Auto', 'Retract'],
+                selectedValue: appState.sharedPreferencesProvider
+                    .getSideBarExpandedIndex(),
+                onChange: (int index) async {
+                  if (index == 0) {
+                    appState.sharedPreferencesProvider.setSideBarExpanded(true);
+                    appState.sharedPreferencesProvider
+                        .setSideBarAutoExpansion(false);
+                  } else if (index == 2) {
+                    appState.sharedPreferencesProvider
+                        .setSideBarExpanded(false);
+                    appState.sharedPreferencesProvider
+                        .setSideBarAutoExpansion(false);
+                  } else {
+                    appState.sharedPreferencesProvider
+                        .setSideBarAutoExpansion(true);
+                  }
                   appState.sharedPreferencesProvider
-                      .setSideBarAutoExpansion(false);
-                } else if (index == 2) {
-                  appState.sharedPreferencesProvider.setSideBarExpanded(false);
-                  appState.sharedPreferencesProvider
-                      .setSideBarAutoExpansion(false);
-                } else {
-                  appState.sharedPreferencesProvider
-                      .setSideBarAutoExpansion(true);
-                }
-                appState.sharedPreferencesProvider
-                    .setSideBarExpandedIndex(index ?? 1);
-                appState.changesMade();
-              },
-            ),
+                      .setSideBarExpandedIndex(index);
+                  appState.changesMade();
+                }),
             const SizedBox(height: 10),
             const Text("Theme:"),
-            ToggleSwitch(
-              minWidth: 90.0,
-              cornerRadius: 20.0,
-              activeFgColor: Colors.white,
-              inactiveBgColor: Colors.grey,
-              inactiveFgColor: Colors.white,
-              initialLabelIndex:
-                  appState.sharedPreferencesProvider.getTheme() ==
-                          ThemeMode.system
-                      ? 0
-                      : appState.sharedPreferencesProvider.getTheme() ==
-                              ThemeMode.dark
-                          ? 2
-                          : 1,
-              totalSwitches: 3,
-              labels: const ['System', 'Light', 'Dark'],
-              radiusStyle: true,
-              onToggle: (index) {
-                if (index == 0) {
-                  appState.sharedPreferencesProvider.setTheme(ThemeMode.system);
-                } else if (index == 2) {
-                  appState.sharedPreferencesProvider.setTheme(ThemeMode.dark);
-                } else {
-                  appState.sharedPreferencesProvider.setTheme(ThemeMode.light);
-                }
-                appState.changesMade();
-                showDialog<String>(
-                  context: context,
-                  builder: (BuildContext context) => AlertDialog(
-                    title: const Text('Restart Required'),
-                    content: const Center(
-                      child: Text('Changes will take effect after a restart',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, 'OK'),
-                        child: const Text('OK'),
+            const SizedBox(height: 8),
+            ToggleButtonsWrapper(
+                items: const ['System', 'Light', 'Dark'],
+                selectedValue: appState.sharedPreferencesProvider.getTheme() ==
+                        ThemeMode.system
+                    ? 0
+                    : appState.sharedPreferencesProvider.getTheme() ==
+                            ThemeMode.dark
+                        ? 2
+                        : 1,
+                onChange: (int index) async {
+                  if (index == 0) {
+                    appState.sharedPreferencesProvider
+                        .setTheme(ThemeMode.system);
+                  } else if (index == 2) {
+                    appState.sharedPreferencesProvider.setTheme(ThemeMode.dark);
+                  } else {
+                    appState.sharedPreferencesProvider
+                        .setTheme(ThemeMode.light);
+                  }
+                  appState.changesMade();
+                  showDialog<String>(
+                    context: context,
+                    builder: (BuildContext context) => AlertDialog(
+                      title: const Text('Restart Required'),
+                      content: const Center(
+                        child: Text('Changes will take effect after a restart',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, 'OK'),
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
             const SizedBox(height: 10),
-            const Text("Color cheme:"),
+            const Text("Color scheme:"),
             DropdownButton(
               value: appState.sharedPreferencesProvider.sharedPreferences
                       .getInt('app_theme_color') ??
@@ -199,8 +200,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         } else if (snapshot.hasError) {
                           return Text('Error: ${snapshot.error}');
                         } else {
-                          final (names) = snapshot.data;
-                          return Column(
+                          final (names, contributors, packageInfo) =
+                              snapshot.data;
+                          return SingleChildScrollView(
+                              child: Column(
                             children: [
                               const Text('Chameleon Ultra GUI',
                                   style:
@@ -209,22 +212,27 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   'A Tool to graphically manage and configure your Chameleon Ultra, written in Flutter and running on Desktop and Mobile.'),
                               const SizedBox(height: 10),
                               const Text('Version:'),
-                              const Text('UNRELEASED',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                  '${packageInfo.version} (Build ${packageInfo.buildNumber})',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
                               const Text('Developed by:'),
-                              const Text('Foxushka, Akisame and GameTec_live',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              DeveloperList(avatars: developers),
                               const SizedBox(height: 10),
                               const Text('License:'),
-                              const Text('GPLV3',
+                              const Text('GNU General Public License v3.0',
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
-                              const Text(
-                                  'https://github.com/GameTec-live/ChameleonUltraGUI'),
+                              GestureDetector(
+                                  onTap: () async {
+                                    await launchUrl(Uri.parse(
+                                        'https://github.com/GameTec-live/ChameleonUltraGUI'));
+                                  },
+                                  child: const Text(
+                                      'https://github.com/GameTec-live/ChameleonUltraGUI')),
                               const SizedBox(height: 30),
                               const Text(
                                   "Thanks to everyone who supports us on Open Collective!"),
@@ -232,8 +240,12 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               Text(names,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              const Text('Code contributors:'),
+                              const SizedBox(height: 10),
+                              DeveloperList(avatars: contributors),
                             ],
-                          );
+                          ));
                         }
                       },
                     ),

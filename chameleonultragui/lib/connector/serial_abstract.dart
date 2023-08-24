@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
 // ChameleonDevice.unknown means we know the device is a Chameleon just not whether its an ultra or lite
@@ -12,12 +13,12 @@ enum ChameleonDevice {
   final String name;
 }
 
-enum ChameleonConnectType { none, usb, ble, dfu }
+enum ConnectionType { none, usb, ble, dfu }
 
 class ChameleonDevicePort {
   String port;
   ChameleonDevice device;
-  ChameleonConnectType type;
+  ConnectionType type;
 
   ChameleonDevicePort({
     required this.port,
@@ -49,25 +50,24 @@ class AbstractSerial {
   Logger log = Logger();
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
+  bool isOpen = false;
   String portName = "None";
-  ChameleonConnectType connectionType = ChameleonConnectType.none;
+  ConnectionType connectionType = ConnectionType.none;
+  Function? messageCallback;
 
-  get deviceName {
-    if (device == ChameleonDevice.ultra) {
-      return 'Chameleon Ultra';
-    }
-    if (device == ChameleonDevice.lite) {
-      return 'Chameleon Lite';
-    }
-
-    return 'Unknown';
-  }
-
-  Future<bool> performConnection() async {
+  Future<bool> performConnect() async {
     return false;
   }
 
+  @protected
+  @mustCallSuper
   Future<bool> performDisconnect() async {
+    // Reset state of connected device
+    isOpen = false;
+    // connected = false; // TODO: should this be unset here too or in child implementations?
+    device = ChameleonDevice.none;
+    connectionType = ConnectionType.none;
+    messageCallback = null;
     return false;
   }
 
@@ -77,7 +77,7 @@ class AbstractSerial {
     return [];
   }
 
-  Future<bool> connectSpecific(devicePort) async {
+  Future<bool> connectSpecificDevice(devicePort) async {
     return false;
   }
 
@@ -96,4 +96,10 @@ class AbstractSerial {
   }
 
   Future<void> finishRead() async {}
+
+  Future<void> initializeThread() async {}
+
+  Future<void> registerCallback(Function callback) async {
+    messageCallback = callback;
+  }
 }

@@ -7,8 +7,8 @@ import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 Future<bool> slotWriteTag({
-  required ChameleonTagSave card,
-  required ChameleonCom connection,
+  required TagSave card,
+  required ChameleonCommunicator communicator,
   required int slotIndex,
   required Function(int) onProgress,
 }) async {
@@ -16,18 +16,24 @@ Future<bool> slotWriteTag({
     return false;
   }
 
-  if (card.tag.frequency == ChameleonTagFrequency.hf) {
+  if (card.tag.frequency == TagFrequency.hf) {
     onProgress(0);
-    await connection.setReaderDeviceMode(false);
-    await connection.enableSlot(slotIndex, true);
-    await connection.activateSlot(slotIndex);
-    await connection.setSlotType(slotIndex, card.tag);
-    await connection.setDefaultDataToSlot(slotIndex, card.tag);
-    var cardData = ChameleonCard(
+
+    var isEV1 = chameleonTagSaveCheckForMifareClassicEV1(card);
+    if (isEV1) {
+      card.tag = TagType.mifare2K;
+    }
+
+    await communicator.setReaderDeviceMode(false);
+    await communicator.enableSlot(slotIndex, true);
+    await communicator.activateSlot(slotIndex);
+    await communicator.setSlotType(slotIndex, card.tag);
+    await communicator.setDefaultDataToSlot(slotIndex, card.tag);
+    var cardData = CardData(
         uid: hexToBytes(card.uid.replaceAll(" ", "")),
         atqa: card.atqa,
         sak: card.sak);
-    await connection.setMf1AntiCollision(cardData);
+    await communicator.setMf1AntiCollision(cardData);
 
     List<int> blockChunk = [];
     int lastSend = 0;
@@ -41,7 +47,7 @@ Future<bool> slotWriteTag({
               card.data[blockOffset].isEmpty) ||
           blockChunk.length >= 128) {
         if (blockChunk.isNotEmpty) {
-          await connection.setMf1BlockData(
+          await communicator.setMf1BlockData(
               lastSend, Uint8List.fromList(blockChunk));
           blockChunk = [];
           lastSend = blockOffset;
@@ -61,39 +67,39 @@ Future<bool> slotWriteTag({
     }
 
     if (blockChunk.isNotEmpty) {
-      await connection.setMf1BlockData(
+      await communicator.setMf1BlockData(
           lastSend, Uint8List.fromList(blockChunk));
     }
 
     onProgress(99);
 
-    await connection.setSlotTagName(
+    await communicator.setSlotTagName(
         slotIndex,
         (card.name.isEmpty) ? "No name" : card.name,
         card.tag.frequency);
-    await connection.saveSlotData();
+    await communicator.saveSlotData();
 
     onProgress(100);
     return true;
   }
   
-  if (card.tag == ChameleonTag.em410X) {
+  if (card.tag == TagType.em410X) {
     onProgress(0);
 
-    await connection.setReaderDeviceMode(false);
-    await connection.enableSlot(slotIndex, true);
-    await connection.activateSlot(slotIndex);
-    await connection.setSlotType(slotIndex, card.tag);
-    await connection.setDefaultDataToSlot(slotIndex, card.tag);
-    await connection.setEM410XEmulatorID(
+    await communicator.setReaderDeviceMode(false);
+    await communicator.enableSlot(slotIndex, true);
+    await communicator.activateSlot(slotIndex);
+    await communicator.setSlotType(slotIndex, card.tag);
+    await communicator.setDefaultDataToSlot(slotIndex, card.tag);
+    await communicator.setEM410XEmulatorID(
         hexToBytes(card.uid.replaceAll(" ", "")));
 
     onProgress(99);
-    await connection.setSlotTagName(
+    await communicator.setSlotTagName(
         slotIndex,
         (card.name.isEmpty) ? "No name" : card.name,
         card.tag.frequency);
-    await connection.saveSlotData();
+    await communicator.saveSlotData();
 
     onProgress(100);
     return true;

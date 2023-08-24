@@ -58,13 +58,14 @@ String resolvePath() {
       if (f.path.endsWith(path)) {
         log.e(
             "THIS HOTFIX IS ONLY FOR TESTS. IF YOU SEE THIS LINE ON DEBUG/RELEASE BUILDS REPORT IT IMMEDIATELY.");
-        log.e("THIS WILL LEAD TO HIGH SECURITY VURNERABILITY.");
+        log.e("THIS WILL LEAD TO HIGH SECURITY VULNERABILITY.");
         log.e("Library test hotfix: found at ${f.path}");
         path = f.path;
         break;
       }
     }
-  } else if (!io.File(path).existsSync() && (Platform.isMacOS || Platform.isIOS)) {
+  } else if (!io.File(path).existsSync() &&
+      (Platform.isMacOS || Platform.isIOS)) {
     return 'recovery.framework/recovery';
   }
   return path;
@@ -132,7 +133,7 @@ Future<SendPort> _helperIsolateSendPort = () async {
             value.ref.ks1 = item.ks1.toInt();
             value.ref.nr = item.nr;
             value.ref.nt1 = item.nt1;
-            value.ref.par = item.par;
+            value.ref.par = item.par.toInt();
             i++;
           }
           pointer.ref.items = itemPointer;

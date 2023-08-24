@@ -78,7 +78,7 @@ Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
 
 Future<void> flashFirmwareLatest(MyAppState appState, [AbstractSerial? connector]) async {
   connector ??= appState.connector;
-  var connection = ChameleonCom(port: connector);
+  var connection = ChameleonCommunicator(port: connector);
   Uint8List applicationDat, applicationBin;
 
   Uint8List content = await fetchFirmware(appState.connector.device);

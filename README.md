@@ -44,13 +44,14 @@ You need to pair your Chameleon first before it shows up on the connect page, cl
 Contributions are welcome, most stuff that needs to be done can either be found in our [issues](https://github.com/GameTec-live/ChameleonUltraGUI/issues) or on the [Project board](https://github.com/users/GameTec-live/projects/2)
 
 ## Screenshots
-![Connect Page](/screenshots/connect.png)
-![Home Page](/screenshots/home.png)
-![Slot Manager Page](/screenshots/smanager.png)
-![Saved Cards Page](/screenshots/saved.png)
-![Read Card Page](/screenshots/rcard.png)
-![Settings Page](/screenshots/settings.png)
-![Dev Page](/screenshots/devpage.png)
+![Connect Page](/screenshots/1.png)
+![Home Page](/screenshots/2.png)
+![Home Page Settings](/screenshots/3.png)
+![Slot Manager Page](/screenshots/4.png)
+![Slot Manager Saved Cards](/screenshots/5.png)
+![Saved Cards Page](/screenshots/6.png)
+![Read Card Page](/screenshots/7.png)
+![Read Card Page Mifare Classic](/screenshots/8.png)
 
 <details>
   <summary>Mac and IOS</summary>
@@ -58,11 +59,7 @@ Contributions are welcome, most stuff that needs to be done can either be found 
   ### Mac and IOS
   Why are there no macOS and iOS builds?
   
-  Currently, we missing two essential parts:
-  1. Apple Developer account
-  2. Recovery library bindings 
-
-  As Flutter apps don't work in VM environment, we unfortunately can't develop and test ourself
+  We are pending Proxgrid permission to use Chameleon Ultra name to complete app review in App Store. This might take ~1 week, we hope apps will be published at start of September.
 </details>
 
 ## Donate

@@ -6,23 +6,11 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:serial/serial.dart';
 
-class DeviceInfo {
+class SerialPortDeviceWeb {
   final SerialPort port;
   final SerialPortInfo info;
   ChameleonDevice _type = ChameleonDevice.unknown;
-
-  DeviceInfo(this.port, this.info);
-
-  get deviceName {
-    if (type == ChameleonDevice.ultra) {
-      return 'Ultra';
-    }
-    if (type == ChameleonDevice.lite) {
-      return 'Lite';
-    }
-
-    return 'Unknown';
-  }
+  SerialPortDeviceWeb(this.port, this.info);
 
   ChameleonDevice get type {
     return _type;
@@ -32,18 +20,21 @@ class DeviceInfo {
     _type = dev
   };
 
-  ChameleonConnectType get connection {
+  ConnectionType get connection {
     if (info.usbVendorId == ChameleonVendor.dfu.value) {
-      return ChameleonConnectType.dfu;
+      return ConnectionType.dfu;
     }
-    return ChameleonConnectType.usb;
+    return ConnectionType.usb;
   }
 }
 
 // Class for WebUSB API Serial Communication
 class SerialConnector extends AbstractSerial {
-  Map<String, DeviceInfo> deviceMap = {};
-  DeviceInfo? currentDevice;
+  Map<String, SerialPortDeviceWeb> deviceMap = {};
+  SerialPortDeviceWeb? currentDevice;
+  List<Uint8List> messagePool = [];
+  ReadableStreamReader? reader;
+  WritableStreamDefaultWriter? writer;
 
   @override
   // ignore: overridden_fields
@@ -71,7 +62,7 @@ class SerialConnector extends AbstractSerial {
       return currentDevice!.connection;
     }
 
-    return ChameleonConnectType.none;
+    return ConnectionType.none;
   }
 
   @override
@@ -85,22 +76,30 @@ class SerialConnector extends AbstractSerial {
 
   @override
   Future<bool> performDisconnect() async {
-    if (currentDevice != null) {
-      final readable = currentDevice!.port.readable;
+    super.performDisconnect();
+    connected = false;
 
-      if (readable.locked) {
-        await readable.cancel();
-      }
-
-      await currentDevice!.port.close();
-
-      connected = false;
-      currentDevice = null;
-      return true;
+    try {
+      await reader!.cancel();
+      reader!.releaseLock();
+    } catch (error) {
+      log.d('performDisconnect:reader', error: error);
     }
 
-    connected = false; // For debug button
-    return false;
+    try {
+      writer!.releaseLock();
+    } catch (error) {
+      log.d('performDisconnect:writer', error: error);
+    }
+
+    await currentDevice!.port.close();
+
+    reader = null;
+    writer = null;
+
+    currentDevice = null;
+    messageCallback = null;
+    return true;
   }
 
   @override
@@ -111,13 +110,13 @@ class SerialConnector extends AbstractSerial {
 
     final pairedDevices = await window.navigator.serial.getPorts();
 
-    pairedDevices.asMap().forEach((index, deviceValue) {
-      SerialPortInfo deviceInfo = deviceValue.getInfo();
+    pairedDevices.asMap().forEach((index, port) {
+      SerialPortInfo deviceInfo = port.getInfo();
 
       if (isChameleonVendor(deviceInfo.usbVendorId)) {
         var portId = '${deviceInfo.usbVendorId!.toRadixString(16)}:${deviceInfo.usbProductId!.toRadixString(16)}:$index';
 
-        deviceMap[portId] = DeviceInfo(deviceValue, deviceInfo);
+        deviceMap[portId] = SerialPortDeviceWeb(port, deviceInfo);
         output.add(portId);
       }
     });
@@ -139,13 +138,13 @@ class SerialConnector extends AbstractSerial {
         log.w("Chameleon is in DFU mode!");
 
         output.add(ChameleonDevicePort(
-            port: devicePort, device: device.type, type: ChameleonConnectType.dfu));
+            port: devicePort, device: device.type, type: ConnectionType.dfu));
       } else if (isChameleonVendor(device.info.usbVendorId, ChameleonVendor.proxgrind)) {
-        log.d("Found Chameleon ${device.deviceName}!");
+        log.d("Found ${device.type.name}!");
 
         if (!onlyDFU) {
           output.add(ChameleonDevicePort(
-              port: devicePort, device: device.type, type: ChameleonConnectType.usb));
+              port: devicePort, device: device.type, type: ConnectionType.usb));
         }
       }
     }
@@ -154,47 +153,88 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(devicePort) async {
+  Future<bool> connectSpecificDevice(devicePort) async {
     await availableDevices();
     connected = false;
 
-    if (deviceMap.containsKey(devicePort)) {
-      var deviceValue = deviceMap[devicePort] as DeviceInfo;
-      var serialPort = deviceValue.port;
+    var serialDevice = deviceMap[devicePort];
+    if (serialDevice == null) {
+      log.d('Port $devicePort not found in device map');
+      return false;
+    }
+  
+    var port = serialDevice.port;
+
+    try {
+      await port.open(
+        baudRate: 115200,
+        dataBits: DataBits.eight,
+        stopBits: StopBits.one,
+        parity: Parity.none,
+        bufferSize: 255,
+        flowControl: FlowControl.none,
+      );
+
+      await port.setSignals(
+        dataTerminalReady: true, // DTS
+        requestToSend: true, // RTS
+        // break: false, // Doesnt work but is default
+      );
+    } catch (e) {
+      // ignore already connected/disconnected errors
+      var ignoreError = false; //e.toString().contains('already');
+      if (!ignoreError) {
+        log.d('Open port error: $e');
+        return false;
+      }
+    }
+
+    connected = true;
+    device = serialDevice.type;
+    currentDevice = serialDevice;
+
+    if (currentDevice!.connection == ConnectionType.dfu) {
+      log.w("Chameleon is in DFU mode! ${currentDevice!.connection}");
+    } else {
+      listen();
+    }
+
+    return connected;
+  }
+
+  Future<void> listen() async {
+    // log.d('Read listener starting: $connected');
+
+    while(connected) { // main read loop
+      // Dont catch error if we cannot get a reader
+      reader = currentDevice!.port.readable.reader;
 
       try {
-        await serialPort.open(
-          baudRate: 115200,
-          dataBits: DataBits.eight,
-          stopBits: StopBits.one,
-          parity: Parity.none,
-        );
-
-        await serialPort.setSignals(
-          dataTerminalReady: true, // DTS
-          requestToSend: true, // RTS
-          // break: false, // Doesnt work
-        );
-      } catch (e) {
-        // ignore already connected/disconnected errors
-        var ignoreError = e.toString().contains('already');
-        if (!ignoreError) {
-          log.d('open port error: $e');
-          return false;
+        // Block the while loop until there is more data to read on the stream
+        // Dont use a timeout here, cause then the app is running the loop
+        // all the time causing high(er) cpu usage
+        final result = await reader!.read();
+        if (result.done) {
+          break;
         }
+
+        if (messageCallback != null) {
+          messageCallback!(result.value);
+        } else {
+          messagePool.add(result.value);
+        }
+      } catch (error) {
+        log.e('Read error $error', error: error);
+
+        if (error.toString().contains('The device has been lost')) {
+          performDisconnect();
+        }
+      } finally {
+        reader!.releaseLock();
       }
-
-      connected = true;
-      device = deviceValue.type;
-      currentDevice = deviceValue;
-
-      if (currentDevice!.connection == ChameleonConnectType.dfu) {
-        log.w("Chameleon is in DFU mode! ${currentDevice!.connection}");
-      }
-
-      return connected;
     }
-    return false;
+
+    // log.d('Read listener stopped');
   }
 
   @override
@@ -204,53 +244,32 @@ class SerialConnector extends AbstractSerial {
     }
 
     try {
-      final writer = currentDevice!.port.writable.writer;
+      writer = currentDevice!.port.writable.writer;
 
-      await writer.ready;
-      await writer.write(command);
-      await writer.close();
-
+      await writer!.ready;
+      await writer!.write(command);
+      writer!.releaseLock();
       return true;
     } catch (e) {
-      log.e('write error: $e');
+      log.e('Write error: $e');
       rethrow;
     }
   }
 
   @override
   Future<Uint8List> read(int length) async {
-    var data = List<int>.empty(growable: true);
-    if (!connected) {
-      return Uint8List.fromList(data);
-    }
-
-    const readTimeout = 10; // wait max 10ms to see if there is more data on the read stream
-    final reader = currentDevice!.port.readable.reader;
+    final completer = Completer<Uint8List>();
 
     while (true) {
-      try {
-        final result = await Future.any<dynamic>([
-          reader.read() as dynamic,
-          asyncSleep(readTimeout) as dynamic,
-        ]);
-
-        if (result is ReadableStreamDefaultReadResult) {
-          if (result.done) {
-            break;
-          }
-
-          data.addAll(result.value);
-        } else {
-          // timed out, no (more) data
-          break;
-        }
-      } catch (e) {
-        log.e('read error: $e', e);
-        rethrow;
+      if (messagePool.isNotEmpty) {
+        var message = messagePool[0];
+        messagePool.remove(message);
+        completer.complete(message);
+        break;
       }
+      await asyncSleep(10);
     }
 
-    reader.releaseLock();
-    return Uint8List.fromList(data);
+    return completer.future;
   }
 }

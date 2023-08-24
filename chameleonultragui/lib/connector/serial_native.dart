@@ -6,6 +6,7 @@ class SerialConnector extends AbstractSerial {
   // Class for PC Serial Communication
   SerialPort? port;
   SerialPort? checkPort;
+  SerialPortReader? reader;
 
   @override
   Future<List> availableDevices() async {
@@ -13,7 +14,7 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<bool> performConnection() async {
+  Future<bool> performConnect() async {
     for (final port in await availableDevices()) {
       if (await connectDevice(port, true)) {
         portName = port;
@@ -26,10 +27,12 @@ class SerialConnector extends AbstractSerial {
 
   @override
   Future<bool> performDisconnect() async {
-    device = ChameleonDevice.none;
-    connectionType = ChameleonConnectType.none;
+    super.performDisconnect();
+
     if (port != null) {
       port?.close();
+      reader?.close();
+      reader = null;
       connected = false;
       return true;
     }
@@ -42,7 +45,7 @@ class SerialConnector extends AbstractSerial {
     List<ChameleonDevicePort> output = [];
     for (final port in await availableDevices()) {
       if (await connectDevice(port, false)) {
-        if (connectionType == ChameleonConnectType.dfu) {
+        if (connectionType == ConnectionType.dfu) {
           output.add(ChameleonDevicePort(
               port: port, device: device, type: connectionType));
         } else if (!onlyDFU) {
@@ -56,7 +59,7 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(devicePort) async {
+  Future<bool> connectSpecificDevice(devicePort) async {
     if (await connectDevice(devicePort, true)) {
       portName = devicePort;
       connected = true;
@@ -97,10 +100,10 @@ class SerialConnector extends AbstractSerial {
         log.d(
             "Found ${device.name}!");
 
-        connectionType = ChameleonConnectType.usb;
+        connectionType = ConnectionType.usb;
 
         if (checkPort!.vendorId == ChameleonVendor.dfu.value) {
-          connectionType = ChameleonConnectType.dfu;
+          connectionType = ConnectionType.dfu;
           log.w("Chameleon is in DFU mode!");
         }
 
@@ -122,6 +125,9 @@ class SerialConnector extends AbstractSerial {
   @override
   Future<void> open() async {
     port!.openReadWrite();
+    if (connectionType != ConnectionType.dfu) {
+      reader = SerialPortReader(port!, timeout: 1000);
+    }
   }
 
   @override
@@ -131,6 +137,9 @@ class SerialConnector extends AbstractSerial {
 
   @override
   Future<Uint8List> read(int length) async {
+    if (reader != null) {
+      throw ("Listener exists, unable to read");
+    }
     Uint8List output = port!.read(length);
     return output;
   }
@@ -138,5 +147,12 @@ class SerialConnector extends AbstractSerial {
   @override
   Future<void> finishRead() async {
     port!.close();
+  }
+
+  @override
+  Future<void> initializeThread() async {
+    reader?.stream.listen((data) async {
+      await messageCallback!(data);
+    });
   }
 }

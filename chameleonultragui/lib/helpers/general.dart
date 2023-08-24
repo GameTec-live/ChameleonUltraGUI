@@ -96,19 +96,19 @@ List<BigInt> generateCRCTable() {
   return crcTable;
 }
 
-ChameleonTag numberToChameleonTag(int type) {
-  for (var tag in ChameleonTag.values) {
+TagType numberToTagType(int type) {
+  for (var tag in TagType.values) {
     if (tag.value == type) {
       return tag;
     }
   }
 
-  return ChameleonTag.unknown;
+  return TagType.unknown;
 }
 
-ChameleonTag getTagTypeByValue(int value) {
-  return ChameleonTag.values.firstWhere((element) => element.value == value,
-      orElse: () => ChameleonTag.unknown);
+TagType getTagTypeByValue(int value) {
+  return TagType.values.firstWhere((element) => element.value == value,
+      orElse: () => TagType.unknown);
 }
 
 String colorToHex(Color color) {

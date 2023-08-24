@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:chameleonultragui/gui/menu/card_edit.dart';
+import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
 import 'package:chameleonultragui/helpers/files.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
@@ -10,9 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:uuid/uuid.dart';
-
-import 'components/cardeditmenu.dart';
-import 'components/dicteditmenu.dart';
 
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
@@ -24,9 +23,7 @@ class SavedCardsPage extends StatefulWidget {
 class SavedCardsPageState extends State<SavedCardsPage> {
   MifareClassicType selectedType = MifareClassicType.m1k;
 
-  Future<void> saveTag(
-      ChameleonTagSave tag, MyAppState appState, bool bin) async {
-
+  Future<void> saveTag(TagSave tag, MyAppState appState, bool bin) async {
     final fileName = tag.name;
     final fileExtension = bin ? 'bin' : 'json';
 
@@ -45,6 +42,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     await saveFile(appState: appState, fileName: fileName, fileExtension: fileExtension, bytes: bytes);
   }
 
+  // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -71,7 +69,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               child: Card(
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
-                  crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 2 : 1,
+                  crossAxisCount:
+                      MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: tags.length + 1,
@@ -81,7 +80,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                         constraints: const BoxConstraints(maxHeight: 100),
                         child: ElevatedButton(
                           onPressed: () async {
-                            FileResult? file = await pickFile(appState);
+                            var file = await pickFile(appState);
                             if (file == null) {
                               return;
                             }
@@ -93,10 +92,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                               var string = file.asText();
                               var tags = appState.sharedPreferencesProvider
                                   .getChameleonTags();
-                              var tag = ChameleonTagSave.fromJson(string);
+                              var tag = TagSave.fromJson(string);
                               tag.id = const Uuid().v4();
                               tags.add(tag);
-
                               appState.sharedPreferencesProvider
                                   .setChameleonTags(tags);
                               appState.changesMade();
@@ -119,15 +117,14 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   text: bytesToHexSpace(uid4atqa));
                               final uid7Controller = TextEditingController(
                                   text: bytesToHexSpace(uid7));
-                              final sak7Controller =
-                                  TextEditingController(text: bytesToHex(
+                              final sak7Controller = TextEditingController(
+                                  text: bytesToHex(
                                       Uint8List.fromList([uid7sak])));
-                              final atqa7Controller =
-                                  TextEditingController(text: bytesToHexSpace(uid7atqa));
+                              final atqa7Controller = TextEditingController(
+                                  text: bytesToHexSpace(uid7atqa));
                               final nameController =
                                   TextEditingController(text: tagName);
 
-                              // ignore: use_build_context_synchronously
                               await showDialog(
                                 context: context,
                                 builder: (BuildContext context) {
@@ -240,7 +237,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           var tags = appState
                                               .sharedPreferencesProvider
                                               .getChameleonTags();
-                                          var tag = ChameleonTagSave(
+                                          var tag = TagSave(
                                             id: const Uuid().v4(),
                                             name: nameController.text,
                                             sak: hexToBytes(sak4Controller
@@ -275,7 +272,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           var tags = appState
                                               .sharedPreferencesProvider
                                               .getChameleonTags();
-                                          var tag = ChameleonTagSave(
+                                          var tag = TagSave(
                                             id: const Uuid().v4(),
                                             name: nameController.text,
                                             sak: hexToBytes(sak7Controller
@@ -293,7 +290,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           appState.sharedPreferencesProvider
                                               .setChameleonTags(tags);
                                           appState.changesMade();
-                                          Navigator.pop(context); // Close the modal after saving
+                                          Navigator.pop(context);
                                         },
                                         child:
                                             const Text('Save as 7 byte UID'),
@@ -337,7 +334,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Text("UID: ${tag.uid}"),
-                                      Text("Tag Type: ${tag.tag.name}"),
+                                      Text(
+                                          "Tag Type: ${tag.tag.name}"),
                                       Text(
                                           "SAK: ${tag.sak == 0 ? "Unavailable" : tag.sak}"),
                                       Text(
@@ -355,7 +353,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         );
                                       },
                                       icon: const Icon(Icons.edit),
-                                      tooltip: 'Edit card',
                                     ),
                                     IconButton(
                                       onPressed: () async {
@@ -392,13 +389,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       },
                                       icon: const Icon(Icons.download_rounded),
                                     ),
-
                                     IconButton(
                                       onPressed: () async {
                                         var tags = appState
                                             .sharedPreferencesProvider
                                             .getChameleonTags();
-                                        List<ChameleonTagSave> output = [];
+                                        List<TagSave> output = [];
                                         for (var tagTest in tags) {
                                           if (tagTest.id != tag.id) {
                                             output.add(tagTest);
@@ -411,12 +407,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       },
                                       icon: const Icon(Icons.delete_outline),
                                     ),
-
                                     ElevatedButton(
                                       onPressed: () {
                                         Navigator.pop(context);
                                       },
-                                      child: const Text('Ok'),
+                                      child: const Text('OK'),
                                     ),
                                   ],
                                 );
@@ -458,7 +453,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               ),
                                             ),
                                             Text(
-                                              tag.tag.name,
+                                              tag.tag.name +
+                                                  ((chameleonTagSaveCheckForMifareClassicEV1(
+                                                          tag))
+                                                      ? " EV1"
+                                                      : ""),
                                               style: const TextStyle(
                                                 fontSize: 24,
                                               ),
@@ -486,7 +485,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         );
                                       },
                                       icon: const Icon(Icons.edit),
-                                      tooltip: 'Edit card',
                                     ),
                                     IconButton(
                                       onPressed: () async {
@@ -527,7 +525,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         var tags = appState
                                             .sharedPreferencesProvider
                                             .getChameleonTags();
-                                        List<ChameleonTagSave> output = [];
+                                        List<TagSave> output = [];
                                         for (var tagTest in tags) {
                                           if (tagTest.id != tag.id) {
                                             output.add(tagTest);
@@ -566,7 +564,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               child: Card(
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
-                  crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 2 : 1,
+                  crossAxisCount:
+                      MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: dictionaries.length + 1,
@@ -581,7 +580,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                               return;
                             }
 
-                            String contents = file.asText();
+                            String contents;
+                            try {
+                              contents = file.asText();
+                            } catch (e) {
+                              return;
+                            }
 
                             List<Uint8List> keys = [];
                             for (var key in contents.split("\n")) {
@@ -623,16 +627,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                         constraints: const BoxConstraints(maxHeight: 100),
                         child: ElevatedButton(
                           onPressed: () {
-                            List<String> displayList = [];
+                            String output = "";
                             for (var key in dictionary.keys) {
-                              displayList.add(bytesToHex(key).toUpperCase());
+                              output += "${bytesToHexSpace(key)}\n";
                             }
-
-                            final Text keyList = Text(
-                              displayList.join('\n'),
-                              style: const TextStyle(fontFamily: 'RobotoMono'),
-                            );
-
+                            output.trim();
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
@@ -641,13 +640,16 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   content: Column(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      Text("Key Count: ${dictionary.keys.length}"),
+                                      Text(
+                                          "Key Count: ${dictionary.keys.length}"),
                                       const SizedBox(height: 10),
                                       SizedBox(
                                         height: 400,
                                         width: 600,
                                         child: ListView(
-                                          children: [keyList],
+                                          children: [
+                                            Text(output),
+                                          ],
                                         ),
                                       )
                                     ],
@@ -658,20 +660,18 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         showDialog(
                                           context: context,
                                           builder: (BuildContext context) {
-                                            return DictEditMenu(
+                                            return DictionaryEditMenu(
                                                 dict: dictionary);
                                           },
                                         );
                                       },
                                       icon: const Icon(Icons.edit),
-                                      tooltip: 'Edit dictionary',
                                     ),
-
                                     IconButton(
                                       onPressed: () async {
                                         await saveFile(
                                           appState: appState,
-                                          fileName: '${dictionary.name}.dic',
+                                          fileName: dictionary.name,
                                           fileExtension: 'dic',
                                           bytes: dictionary.toFile(),
                                         );
@@ -679,7 +679,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       },
                                       icon: const Icon(Icons.download_rounded),
                                     ),
-
                                     IconButton(
                                       onPressed: () async {
                                         var dictionaries = appState
@@ -698,12 +697,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       },
                                       icon: const Icon(Icons.delete_outline),
                                     ),
-
                                     ElevatedButton(
                                       onPressed: () {
                                         Navigator.pop(context);
                                       },
-                                      child: const Text('Ok'),
+                                      child: const Text('OK'),
                                     ),
                                   ],
                                 );
@@ -722,12 +720,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             children: [
                               Row(
                                 children: [
-                                  const Row(
+                                  Row(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Icon(
                                         Icons.key_rounded,
-                                        color: Colors.blue,
+                                        color: dictionary.color,
                                       ),
                                     ],
                                   ),
@@ -768,13 +766,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         showDialog(
                                           context: context,
                                           builder: (BuildContext context) {
-                                            return DictEditMenu(
+                                            return DictionaryEditMenu(
                                                 dict: dictionary);
                                           },
                                         );
                                       },
                                       icon: const Icon(Icons.edit),
-                                      tooltip: 'Edit dictionary',
                                     ),
                                     IconButton(
                                       onPressed: () async {

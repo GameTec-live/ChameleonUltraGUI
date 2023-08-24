@@ -1,4 +1,3 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
@@ -27,16 +26,16 @@ class Mfkey32PageState extends State<Mfkey32Page> {
 
   Future<(bool, int)> getMf1DetectionStatus() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
 
     return (
-      await connection.isMf1DetectionMode(),
-      await connection.getMf1DetectionCount(),
+      await appState.communicator!.isMf1DetectionMode(),
+      await appState.communicator!.getMf1DetectionCount(),
     );
   }
 
   Future<void> updateDetectionStatus() async {
     var (mode, count) = await getMf1DetectionStatus();
+
     setState(() {
       isDetectionMode = mode;
       detectionCount = count;
@@ -45,9 +44,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
 
   Future<void> handleMfkeyCalculation() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
 
-    var detections = await connection.getMf1DetectionResult(0);
+    var detections = await appState.communicator!.getMf1DetectionResult(0);
     for (var item in detections.entries) {
       var uid = item.key;
       for (var item in item.value.entries) {
@@ -70,8 +68,9 @@ class Mfkey32PageState extends State<Mfkey32Page> {
               );
 
               controller.text +=
-                  "\nUID ${bytesToHex(u64ToBytes(uid).sublist(4, 8))} block $block key $key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8))}";
+                  "\nUID: ${bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase()} block $block key $key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8)).toUpperCase()}";
               controller.text = controller.text.trim();
+              appState.forceMfkey32Page = true;
               appState.changesMade();
             }
           }
@@ -95,10 +94,9 @@ class Mfkey32PageState extends State<Mfkey32Page> {
             body: const Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasError) {
-          appState.log.e('Widget build error', snapshot.error, snapshot.stackTrace);
+          appState.log.e('Widget build error', error: snapshot.error);
           return Text('Error: ${snapshot.error}');
         } else {
-          var appState = context.read<MyAppState>();
           if (detectionCount == -1) {
             updateDetectionStatus();
             return Scaffold(
@@ -114,60 +112,38 @@ class Mfkey32PageState extends State<Mfkey32Page> {
               title: const Text('Mfkey32'),
             ),
             body: Center(
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      const Text(
-                        'Recover keys via Mfkey32',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    const Text(
+                      'Recover keys via Mfkey32',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 25.0),
-                      ElevatedButton(
-                        onPressed: () async {
-                          var connection =
-                              ChameleonCom(port: appState.connector);
-                          await connection
-                              .setMf1DetectionStatus(!isDetectionMode);
-                          await updateDetectionStatus();
-                        },
-                        child: Text(isDetectionMode
-                            ? 'Disable Mfkey32 collection'
-                            : 'Enable Mfkey32 collection'),
+                    ),
+                    const SizedBox(height: 25.0),
+                    ElevatedButton(
+                      onPressed: (detectionCount > 0)
+                          ? () async {
+                              await handleMfkeyCalculation();
+                            }
+                          : null,
+                      child: Text('Recover keys from $detectionCount nonce(s)'),
+                    ),
+                    const SizedBox(height: 16.0),
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        readOnly: true,
+                        keyboardType: TextInputType.multiline,
+                        maxLines: null,
                       ),
-                      const SizedBox(height: 16.0),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await updateDetectionStatus();
-                        },
-                        child: const Text('Update'),
-                      ),
-                      const SizedBox(height: 16.0),
-                      ElevatedButton(
-                        onPressed: (detectionCount > 0)
-                            ? () async {
-                                await handleMfkeyCalculation();
-                              }
-                            : null,
-                        child: Text('Calculate $detectionCount keys'),
-                      ),
-                      const SizedBox(height: 16.0),
-                      Expanded(
-                        child: TextField(
-                          controller: controller,
-                          readOnly: true,
-                          keyboardType: TextInputType.multiline,
-                          maxLines: null,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

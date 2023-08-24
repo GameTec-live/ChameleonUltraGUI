@@ -13,6 +13,7 @@ class SerialConnector extends AbstractSerial {
 
   @override
   Future<bool> performDisconnect() async {
+    super.performDisconnect();
     bool ble = await bleSerial.performDisconnect();
     bool otg = await mobileSerial.performDisconnect();
     return (ble || otg);
@@ -23,7 +24,7 @@ class SerialConnector extends AbstractSerial {
     List<ChameleonDevicePort> output = [];
 
     output.addAll(await mobileSerial.availableChameleons(onlyDFU));
-    if (await checkPermissions()) {
+    if (await checkPermissions() && !onlyDFU) {
       output.addAll(await bleSerial.availableChameleons(onlyDFU));
     }
 
@@ -31,12 +32,12 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(devicePort) async {
+  Future<bool> connectSpecificDevice(devicePort) async {
     if (devicePort.contains(":")) {
       log.d(devicePort);
-      return bleSerial.connectSpecific(devicePort);
+      return bleSerial.connectSpecificDevice(devicePort);
     } else {
-      return mobileSerial.connectSpecific(devicePort);
+      return mobileSerial.connectSpecificDevice(devicePort);
     }
   }
 
@@ -92,6 +93,12 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
+  Future<void> registerCallback(dynamic callback) async {
+    bleSerial.messageCallback = callback;
+    mobileSerial.messageCallback = callback;
+  }
+
+  @override
   ChameleonDevice get device =>
       (bleSerial.connected) ? bleSerial.device : mobileSerial.device;
 
@@ -103,7 +110,13 @@ class SerialConnector extends AbstractSerial {
       (bleSerial.connected) ? bleSerial.portName : mobileSerial.portName;
 
   @override
-  ChameleonConnectType get connectionType => (bleSerial.connected)
+  ConnectionType get connectionType => (bleSerial.connected)
       ? bleSerial.connectionType
       : mobileSerial.connectionType;
+
+  @override
+  bool get isOpen => (bleSerial.isOpen || mobileSerial.isOpen);
+
+  @override
+  set isOpen(open) => {bleSerial.isOpen = mobileSerial.isOpen = open};
 }

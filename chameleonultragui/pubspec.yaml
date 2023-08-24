@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0
+version: 0.0.0+0
 
 environment:
   sdk: '>3.0.0'
@@ -30,7 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  toggle_switch: ^2.1.0
   sqflite:
   path:
   async:
@@ -41,7 +40,7 @@ dependencies:
   flutter_libserialport: ^0.3.0
   provider: ^6.0.0
   serial_communication: ^0.0.2
-  logger: ^1.4.0
+  logger: ^2.0.1
   convert: ^3.1.1
   shared_preferences: ^2.1.2
   ffigen: ^8.0.2
@@ -63,6 +62,8 @@ dependencies:
   collection: ^1.17.1
   crypto: ^3.0.3
   flutter_colorpicker: ^1.0.3
+  package_info_plus: ^4.1.0
+  url_launcher: ^6.1.12
   serial: # ^0.0.5 Use git branch until 0.0.5 is released
     git:
       url: https://github.com/xclud/dart_serial

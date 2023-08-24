@@ -20,34 +20,39 @@ class SlotChangerState extends State<SlotChanger> {
 
   Future<List<Icon>> getFutureData() async {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
-    List<(ChameleonTag, ChameleonTag)> usedSlots;
+    List<(TagType, TagType)> usedSlots;
+
     try {
-      usedSlots = await connection.getUsedSlots();
+      usedSlots = await appState.communicator!.getUsedSlots();
     } catch (_) {
       usedSlots = [];
     }
 
-    return await getSlotIcons(connection, usedSlots);
+    return await getSlotIcons(usedSlots);
   }
 
-  Future<List<Icon>> getSlotIcons(ChameleonCom connection,
-      List<(ChameleonTag, ChameleonTag)> usedSlots) async {
+  Future<List<Icon>> getSlotIcons(List<(TagType, TagType)> usedSlots) async {
+    var appState = context.read<MyAppState>();
     List<Icon> icons = [];
+
     try {
-      selectedSlot = await connection.getActiveSlot() + 1;
+      selectedSlot = await appState.communicator!.getActiveSlot() + 1;
     } catch (_) {
       selectedSlot = 1;
     }
+
+    if (usedSlots.isEmpty) {
+      return [const Icon(Icons.warning)];
+    }
+
     for (int i = 1; i < 9; i++) {
       if (i == selectedSlot) {
         icons.add(const Icon(
           Icons.circle_outlined,
           color: Colors.red,
         ));
-      } else if (usedSlots.isNotEmpty && 
-        (usedSlots[i - 1].$1 != ChameleonTag.unknown ||
-          usedSlots[i - 1].$2 != ChameleonTag.unknown)) {
+      } else if (usedSlots[i - 1].$1 != TagType.unknown ||
+          usedSlots[i - 1].$2 != TagType.unknown) {
         icons.add(const Icon(Icons.circle));
       } else {
         icons.add(const Icon(Icons.circle_outlined));
@@ -70,7 +75,6 @@ class SlotChangerState extends State<SlotChanger> {
   @override
   Widget build(BuildContext context) {
     var appState = context.read<MyAppState>();
-    var connection = ChameleonCom(port: appState.connector);
 
     return FutureBuilder(
         future: getFutureData(),
@@ -103,7 +107,8 @@ class SlotChangerState extends State<SlotChanger> {
                 IconButton(
                   onPressed: () async {
                     if (selectedSlot > 1) {
-                      await connection.activateSlot(selectedSlot - 2);
+                      await appState.communicator!
+                          .activateSlot(selectedSlot - 2);
                       setState(() {});
                       appState.changesMade();
                     }
@@ -114,7 +119,7 @@ class SlotChangerState extends State<SlotChanger> {
                 IconButton(
                   onPressed: () async {
                     if (selectedSlot < 8) {
-                      await connection.activateSlot(selectedSlot);
+                      await appState.communicator!.activateSlot(selectedSlot);
                       setState(() {});
                       appState.changesMade();
                     }

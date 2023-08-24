@@ -1,14 +1,14 @@
+import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/component/card_web_pair_devices.dart';
+import 'package:chameleonultragui/gui/component/button_chameleon_device.dart';
+import 'package:chameleonultragui/gui/component/button_dfu_device.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/gui/features/flash_firmware_latest.dart';
 import 'package:chameleonultragui/gui/features/flash_firmware_zip.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import 'features/flash_firmware_latest.dart';
-import 'components/card_web_pair_devices.dart';
-import 'components/button_chameleon_device.dart';
-import 'components/button_dfu_device.dart';
 
 class ConnectPage extends StatelessWidget {
   const ConnectPage({super.key});
@@ -29,7 +29,7 @@ class ConnectPage extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           page = const CircularProgressIndicator();
         } else if (snapshot.hasError) {
-          appState.log.e('${snapshot.error}', snapshot.error, snapshot.stackTrace);
+          appState.log.e('${snapshot.error}', error: snapshot.error, stackTrace: snapshot.stackTrace);
           connector.performDisconnect();
 
           page = Column(
@@ -91,17 +91,17 @@ class ConnectPage extends StatelessWidget {
                           child: SizedBox(
                             width: 300,
                             child: CardWebPairDevices(onPairDevices: () async {
-                              await appState.connector.pairDevices();
+                              await connector.pairDevices();
                               appState.changesMade();
                             })
                           ),
                         ),
                       ...result.map<Widget>((chameleonDevice) {
-                        if (chameleonDevice.type == ChameleonConnectType.dfu) {
+                        if (chameleonDevice.type == ConnectionType.dfu) {
                           return ButtonDfuDevice(
                             devicePort: chameleonDevice,
                             onFirmwareUpdate: (fromZipFile) async {
-                              await appState.connector.connectSpecific(chameleonDevice.port);
+                              await connector.connectSpecificDevice(chameleonDevice.port);
 
                               if (fromZipFile) {
                                 await flashFirmwareZip(appState);
@@ -110,7 +110,7 @@ class ConnectPage extends StatelessWidget {
                               }
 
                               // Give the device some time to restart/reconnect
-                              await asyncSleep(250);
+                              await asyncSleep(500);
 
                               appState.changesMade();
                             },
@@ -120,7 +120,8 @@ class ConnectPage extends StatelessWidget {
                         return ButtonChameleonDevice(
                           devicePort: chameleonDevice,
                           onSelectDevice: () async {
-                            await connector.connectSpecific(chameleonDevice.port);
+                            await connector.connectSpecificDevice(chameleonDevice.port);
+                            appState.communicator = ChameleonCommunicator(port: appState.connector);
                             appState.changesMade();
                           }
                         );

@@ -3,7 +3,8 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:toggle_switch/toggle_switch.dart';
+
+import 'toggle_buttons.dart';
 
 class DialogDeviceSettings extends StatelessWidget {
   final VoidCallback onClose;
@@ -11,12 +12,12 @@ class DialogDeviceSettings extends StatelessWidget {
   final VoidCallback? onFirmwareUpdateLatest;
   final VoidCallback? onFirmwareUpdateFromZip;
   final VoidCallback? onResetSettings;
-  final ChameleonAnimation currentAnimation;
-  final Function(ChameleonAnimation animation)? onUpdateAnimation;
+  final AnimationSetting animationMode;
+  final Function(AnimationSetting animation)? onUpdateAnimation;
 
   const DialogDeviceSettings({
     super.key,
-    required this.currentAnimation,
+    required this.animationMode,
     required this.onClose,
     this.onEnterDFUMode,
     this.onFirmwareUpdateLatest,
@@ -98,24 +99,22 @@ class DialogDeviceSettings extends StatelessWidget {
           if (onUpdateAnimation != null)
             const SizedBox(height: 10),
           if (onUpdateAnimation != null)
-            ToggleSwitch(
-              minWidth: 70.0,
-              cornerRadius: 10.0,
-              activeFgColor: Colors.white,
-              inactiveBgColor: Colors.grey,
-              inactiveFgColor: Colors.white,
-              initialLabelIndex: currentAnimation.value,
-              totalSwitches: 3,
-              labels: const ['Full', 'Mini', 'None'],
-              radiusStyle: true,
-              onToggle: (index) async {
+            ToggleButtonsWrapper(
+              items: const [
+                'Full',
+                'Mini',
+                'None'
+              ],
+              selectedValue:
+                  animationMode.value,
+              onChange: (int index) async {
                 var animation =
-                    ChameleonAnimation.full;
+                    AnimationSetting.full;
                 if (index == 1) {
                   animation =
-                      ChameleonAnimation.minimal;
+                      AnimationSetting.minimal;
                 } else if (index == 2) {
-                  animation = ChameleonAnimation.none;
+                  animation = AnimationSetting.none;
                 }
 
                 onUpdateAnimation!(animation);

@@ -26,8 +26,9 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
     }
 
     final expectedAssetName = "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app";
+    const expectedBranchName = "main";
     for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] == expectedAssetName) {
+      if (artifact["name"] == expectedAssetName && artifact["workflow_run"]["head_branch"] == expectedBranchName) {
         return artifact["workflow_run"]["head_sha"];
       }
     }
@@ -37,14 +38,14 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
     final response = await httpGet("https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases");
     final releases = json.decode(response.body.toString());
 
-    if (releases.containsKey("message")) {
+    if (releases is! List && releases.containsKey("message")) {
       error = releases["message"];
       throw error;
     }
 
     for (var release in releases) {
       if (release["author"]["login"] == "github-actions[bot]") {
-        return release["body"].split("Built from commit ")[1].split("\n")[0];
+        return release["target_commitish"];
       }
     }
   } catch (_) {}
@@ -113,7 +114,7 @@ void validateFiles(Uint8List dat, Uint8List bin) {
 }
 
 Future<void> flashFile(
-    ChameleonCom? connection,
+    ChameleonCommunicator? connection,
     MyAppState appState,
     Uint8List applicationDat,
     Uint8List applicationBin,
@@ -122,7 +123,7 @@ Future<void> flashFile(
     List<int> firmwareZip = const []}) async {
   validateFiles(applicationDat, applicationBin);
 
-  // Flashing Easteregg
+  // Flashing easter egg
   var rng = Random();
   var randomNumber = rng.nextInt(100) + 1;
   appState.easterEgg = false;
@@ -131,7 +132,7 @@ Future<void> flashFile(
   }
 
   bool isBLE = appState.connector.portName.contains(":");
-  bool isConnectedAndDFU = appState.connector.connected && appState.connector.connectionType == ChameleonConnectType.dfu;
+  bool isConnectedAndDFU = appState.connector.connected && appState.connector.connectionType == ConnectionType.dfu;
 
   if (!isConnectedAndDFU) {
     if (enterDFU) {
@@ -162,7 +163,7 @@ Future<void> flashFile(
       throw ("BLE DFU not yet supported");
     }
 
-    await appState.connector.connectSpecific(chameleons[0].port);
+    await appState.connector.connectSpecificDevice(chameleons[0].port);
   }
 
   var dfu = ChameleonDFU(port: appState.connector);
@@ -174,5 +175,6 @@ Future<void> flashFile(
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");
   await appState.connector.performDisconnect();
+  await asyncSleep(500); // allow exit DFU mode
   appState.changesMade();
 }

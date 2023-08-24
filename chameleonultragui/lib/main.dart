@@ -1,9 +1,7 @@
 import 'dart:io';
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/gui/flashing.dart';
-import 'package:chameleonultragui/gui/mfkey32page.dart';
-import 'package:chameleonultragui/gui/readcardpage.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -17,13 +15,17 @@ import 'connector/serial_stub.dart'
   if (Platform.isIOS) 'connector/serial_ble.dart'
   if (dart.library.io) 'connector/serial_native.dart';
 
-// GUI Imports
-import 'package:chameleonultragui/gui/homepage.dart';
-import 'package:chameleonultragui/gui/savedcardspage.dart';
-import 'package:chameleonultragui/gui/settingspage.dart';
-import 'package:chameleonultragui/gui/connectpage.dart';
-import 'package:chameleonultragui/gui/devpage.dart';
-import 'package:chameleonultragui/gui/slotmanagerpage.dart';
+// Page imports
+import 'package:chameleonultragui/gui/page/home.dart';
+import 'package:chameleonultragui/gui/page/saved_cards.dart';
+import 'package:chameleonultragui/gui/page/settings.dart';
+import 'package:chameleonultragui/gui/page/connect.dart';
+import 'package:chameleonultragui/gui/page/debug.dart';
+import 'package:chameleonultragui/gui/page/slot_manager.dart';
+import 'package:chameleonultragui/gui/page/flashing.dart';
+import 'package:chameleonultragui/gui/page/mfkey32.dart';
+import 'package:chameleonultragui/gui/page/read_card.dart';
+import 'package:chameleonultragui/gui/page/write_card.dart';
 
 // Shared Preferences Provider
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -93,21 +95,18 @@ class MyAppState extends ChangeNotifier {
   bool onWeb = kIsWeb;
   bool onAndroid = !kIsWeb && Platform.isAndroid; // Are we on android? (mostly for serial port)
   AbstractSerial connector = SerialConnector(); // Chameleon Object, connected Chameleon
-  bool switchOn = true;
+  ChameleonCommunicator? communicator;
+
   bool devMode = false;
-  double? progress;
-  // Flashing Easteregg
+  double? progress; // DFU
+
+  // Flashing easter egg
   bool easterEgg = false;
 
-  /*void toggleswitch() {
-    setState(() {
-      switchOn = !switchOn;
-    })
-  }
-  // This doesn't work because we aren't working stateful
-  */
-  // maybe via this: https://www.woolha.com/tutorials/flutter-switch-input-widget-example or this https://dev.to/naidanut/adding-expandable-side-bar-using-navigationrail-in-flutter-5ai8
+  bool forceMfkey32Page = false;
+
   Logger log = Logger(); // Logger, App wide logger
+
   void changesMade() {
     notifyListeners();
   }
@@ -153,11 +152,12 @@ class _MyHomePageState extends State<MyHomePage> {
       // If not connected, and not on home, settings or dev page, go to home page
       selectedIndex = 0;
     }
+
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
         if (appState.connector.connected == true) {
-          if (appState.connector.connectionType == ChameleonConnectType.dfu) {
+          if (appState.connector.connectionType == ConnectionType.dfu) {
             page = const FlashingPage();
             selectedIndex = 0;
           } else {
@@ -177,16 +177,21 @@ class _MyHomePageState extends State<MyHomePage> {
         page = const ReadCardPage();
         break;
       case 4:
-        page = const Mfkey32Page();
+        page = const WriteCardPage();
         break;
       case 5:
         page = const SettingsMainPage();
         break;
       case 6:
-        page = const DevPage();
+        page = const DebugPage();
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
+    }
+
+    if (appState.forceMfkey32Page) {
+      appState.forceMfkey32Page = false;
+      page = const Mfkey32Page();
     }
 
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
@@ -197,7 +202,7 @@ class _MyHomePageState extends State<MyHomePage> {
         builder: (context, constraints) {
       final useBottomNavigation = SizerUtil.orientation == Orientation.portrait && SizerUtil.width < 600;
       final useSideNavigation = !useBottomNavigation && 
-        (appState.connector.connectionType != ChameleonConnectType.dfu ||
+        (appState.connector.connectionType != ConnectionType.dfu ||
         !appState.connector.connected);
 
       var bottomIndex = selectedIndex;
@@ -247,7 +252,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       NavigationRailDestination(
                         disabled: appState.connector.connected == false,
                         icon: const Icon(Icons.credit_card),
-                        label: const Text('Mfkey32'),
+                        label: const Text('Write Card'),
                       ),
                       const NavigationRailDestination(
                         icon: Icon(Icons.settings),
@@ -310,7 +315,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       const NavigationDestination(
                         // disabled: ,
                         icon: Icon(Icons.credit_card),
-                        label: 'Mfkey32',
+                        label: 'Write',
+                        tooltip: 'Write Card',
                       ),
                     const NavigationDestination(
                       icon: Icon(Icons.settings),
@@ -354,7 +360,7 @@ class BottomProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     return (appState.connector.connected == true &&
-            appState.connector.connectionType == ChameleonConnectType.dfu &&
+            appState.connector.connectionType == ConnectionType.dfu &&
             (appState.progress != null && appState.progress !> 0))
         ? LinearProgressIndicator(
             value: appState.progress,

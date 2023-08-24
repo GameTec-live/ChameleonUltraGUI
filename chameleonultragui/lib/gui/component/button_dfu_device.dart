@@ -37,7 +37,7 @@ class ButtonDfuDevice extends StatelessWidget {
                         MainAxisAlignment.end,
                     children: [
                       Icon(
-                        devicePort.type == ChameleonConnectType.ble
+                        devicePort.type == ConnectionType.ble
                           ? Icons.bluetooth
                           : Icons.usb,
                         color: Theme.of(context).primaryColor
