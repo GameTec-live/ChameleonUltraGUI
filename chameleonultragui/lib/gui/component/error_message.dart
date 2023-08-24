@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class ErrorBadge extends StatelessWidget {
+class ErrorMessage extends StatelessWidget {
   final String errorMessage;
   final double boxHeight;
   final double boxWidth;
@@ -8,7 +8,7 @@ class ErrorBadge extends StatelessWidget {
   final double iconSize;
   final BorderRadius borderRadius;
 
-  const ErrorBadge({
+  const ErrorMessage({
     super.key,
     required this.errorMessage,
     this.boxHeight = 60.0,

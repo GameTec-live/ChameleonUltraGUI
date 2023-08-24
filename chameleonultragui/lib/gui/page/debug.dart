@@ -11,9 +11,9 @@ import 'package:provider/provider.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
-class DevPage extends StatelessWidget {
+class DebugPage extends StatelessWidget {
   // Home Page
-  const DevPage({super.key});
+  const DebugPage({super.key});
 
   @override
   Widget build(BuildContext context) {

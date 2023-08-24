@@ -3,23 +3,23 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
-import 'package:chameleonultragui/gui/flashing.dart';
-import 'package:chameleonultragui/gui/mfkey32page.dart';
-import 'package:chameleonultragui/gui/readcardpage.dart';
-import 'package:chameleonultragui/gui/writecardpage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'connector/serial_native.dart';
 
-// GUI Imports
-import 'package:chameleonultragui/gui/homepage.dart';
-import 'package:chameleonultragui/gui/savedcardspage.dart';
-import 'package:chameleonultragui/gui/settingspage.dart';
-import 'package:chameleonultragui/gui/connectpage.dart';
-import 'package:chameleonultragui/gui/devpage.dart';
-import 'package:chameleonultragui/gui/slotmanagerpage.dart';
+// Page imports
+import 'package:chameleonultragui/gui/page/home.dart';
+import 'package:chameleonultragui/gui/page/saved_cards.dart';
+import 'package:chameleonultragui/gui/page/settings.dart';
+import 'package:chameleonultragui/gui/page/connect.dart';
+import 'package:chameleonultragui/gui/page/debug.dart';
+import 'package:chameleonultragui/gui/page/slot_manager.dart';
+import 'package:chameleonultragui/gui/page/flashing.dart';
+import 'package:chameleonultragui/gui/page/mfkey32.dart';
+import 'package:chameleonultragui/gui/page/read_card.dart';
+import 'package:chameleonultragui/gui/page/write_card.dart';
 
 // Shared Preferences Provider
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -175,7 +175,7 @@ class _MyHomePageState extends State<MyHomePage> {
         page = const SettingsMainPage();
         break;
       case 6:
-        page = const DevPage();
+        page = const DebugPage();
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');

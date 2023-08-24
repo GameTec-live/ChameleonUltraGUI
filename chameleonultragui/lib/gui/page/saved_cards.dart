@@ -12,8 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:uuid/uuid.dart';
-import 'package:chameleonultragui/gui/components/cardeditmenu.dart';
-import 'package:chameleonultragui/gui/components/dicteditmenu.dart';
+import 'package:chameleonultragui/gui/menu/card_edit.dart';
+import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
 
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
@@ -723,7 +723,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             showDialog(
                                               context: context,
                                               builder: (BuildContext context) {
-                                                return DictEditMenu(
+                                                return DictionaryEditMenu(
                                                     dict: dictionary);
                                               },
                                             );
@@ -852,7 +852,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             showDialog(
                                               context: context,
                                               builder: (BuildContext context) {
-                                                return DictEditMenu(
+                                                return DictionaryEditMenu(
                                                     dict: dictionary);
                                               },
                                             );

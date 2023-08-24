@@ -1,5 +1,5 @@
 import 'package:chameleonultragui/gui/components/developer_list.dart';
-import 'package:chameleonultragui/gui/components/togglebuttons.dart';
+import 'package:chameleonultragui/gui/components/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';

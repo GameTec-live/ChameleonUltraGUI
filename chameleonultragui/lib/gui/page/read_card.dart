@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
-import 'package:chameleonultragui/gui/components/errorbadge.dart';
+import 'package:chameleonultragui/gui/components/error_message.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
@@ -685,7 +685,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                       const SizedBox(height: 16),
                       ...(status.noHfCard)
                           ? [
-                              const ErrorBadge(
+                              const ErrorMessage(
                                   errorMessage:
                                       "No card found. Try to move Chameleon on card"),
                               const SizedBox(height: 16)
@@ -1008,7 +1008,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                               ...(status.recoveryError != "")
                                   ? [
                                       const SizedBox(height: 16),
-                                      ErrorBadge(
+                                      ErrorMessage(
                                           errorMessage: status.recoveryError),
                                     ]
                                   : [],
@@ -1216,7 +1216,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                       const SizedBox(height: 16),
                       ...(status.noLfCard)
                           ? [
-                              const ErrorBadge(
+                              const ErrorMessage(
                                   errorMessage:
                                       "No card found. Try to move Chameleon on card"),
                               const SizedBox(height: 16)

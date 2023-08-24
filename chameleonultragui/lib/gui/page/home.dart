@@ -1,6 +1,6 @@
 import 'dart:io' show File;
 import 'dart:typed_data';
-import 'package:chameleonultragui/gui/components/togglebuttons.dart';
+import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:file_picker/file_picker.dart';
@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
-import 'package:chameleonultragui/gui/components/slotchanger.dart';
+import 'package:chameleonultragui/gui/component/slot_changer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
