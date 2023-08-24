@@ -848,7 +848,7 @@ class ChameleonCommunicator {
     } else if (resp.data[0] == 2) {
       return ButtonPress.cycleBackward;
     } else if (resp.data[0] == 3) {
-      return ButtonPress.cloneHFUID;
+      return ButtonPress.cloneUID;
     } else {
       return ButtonPress.disable;
     }
