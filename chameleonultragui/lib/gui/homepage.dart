@@ -601,7 +601,7 @@ class HomePageState extends State<HomePage> {
                                                                   'Disable',
                                                                   'Forward',
                                                                   'Backward',
-                                                                  'Clone HF'
+                                                                  'Clone UID'
                                                                 ],
                                                                 selectedValue:
                                                                     aButtonMode
@@ -652,7 +652,7 @@ class HomePageState extends State<HomePage> {
                                                                   'Disable',
                                                                   'Forward',
                                                                   'Backward',
-                                                                  'Clone HF'
+                                                                  'Clone UID'
                                                                 ],
                                                                 selectedValue:
                                                                     bButtonMode
