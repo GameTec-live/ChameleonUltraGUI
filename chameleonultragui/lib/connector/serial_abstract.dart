@@ -59,7 +59,6 @@ class AbstractSerial {
     return false;
   }
 
-  @protected
   @mustCallSuper
   Future<bool> performDisconnect() async {
     // Reset state of connected device
