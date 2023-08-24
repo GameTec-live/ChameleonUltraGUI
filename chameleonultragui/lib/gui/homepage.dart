@@ -622,7 +622,7 @@ class HomePageState extends State<HomePage> {
                                                                   } else if (index ==
                                                                       3) {
                                                                     mode = ButtonPress
-                                                                        .cloneHFUID;
+                                                                        .cloneUID;
                                                                   }
 
                                                                   await appState
@@ -673,7 +673,7 @@ class HomePageState extends State<HomePage> {
                                                                   } else if (index ==
                                                                       3) {
                                                                     mode = ButtonPress
-                                                                        .cloneHFUID;
+                                                                        .cloneUID;
                                                                   }
 
                                                                   await appState

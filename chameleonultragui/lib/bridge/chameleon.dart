@@ -146,7 +146,7 @@ enum ButtonPress {
   disable(0),
   cycleForward(1),
   cycleBackward(2),
-  cloneHFUID(3);
+  cloneUID(3);
 
   const ButtonPress(this.value);
   final int value;
