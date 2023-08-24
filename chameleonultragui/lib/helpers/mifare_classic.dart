@@ -81,16 +81,19 @@ final gMifareClassicKeys = gMifareClassicKeysList
     .toList();
 
 MifareClassicType mfClassicGetType(Uint8List atqa, int sak) {
-  if ((atqa[1] == 0x44 || atqa[1] == 0x04)) {
+  if ((atqa[0] == 0x44 || atqa[0] == 0x04)) {
     if ((sak == 0x08 || sak == 0x88)) {
       return MifareClassicType.m1k;
+    } else if ((sak == 0x38)) {
+      return MifareClassicType.m4k;
     } else if (sak == 0x09) {
       return MifareClassicType.mini;
     }
-  } else if ((atqa[1] == 0x01) && (atqa[0] == 0x0F) && (sak == 0x01)) {
-    // skylanders support
+  } else if ((atqa[0] == 0x01) && (atqa[1] == 0x0F) && (sak == 0x01)) {
+    //skylanders support
     return MifareClassicType.m1k;
-  } else if ((atqa[1] == 0x42 || atqa[1] == 0x02) && (sak == 0x18)) {
+  } else if (((atqa[0] == 0x42 || atqa[0] == 0x02) && (sak == 0x18)) ||
+      ((atqa[0] == 0x02 || atqa[0] == 0x08) && (sak == 0x38))) {
     return MifareClassicType.m4k;
   }
   return MifareClassicType.m1k;
