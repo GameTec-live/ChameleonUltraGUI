@@ -7,16 +7,16 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 
-class DictEditMenu extends StatefulWidget {
+class DictionaryEditMenu extends StatefulWidget {
   final ChameleonDictionary dict;
 
-  const DictEditMenu({Key? key, required this.dict}) : super(key: key);
+  const DictionaryEditMenu({Key? key, required this.dict}) : super(key: key);
 
   @override
-  DictEditMenuState createState() => DictEditMenuState();
+  DictionaryEditMenuState createState() => DictionaryEditMenuState();
 }
 
-class DictEditMenuState extends State<DictEditMenu> {
+class DictionaryEditMenuState extends State<DictionaryEditMenu> {
   TextEditingController nameController = TextEditingController();
   TextEditingController keysController = TextEditingController();
   Color pickerColor = Colors.deepOrange;
@@ -64,7 +64,7 @@ class DictEditMenuState extends State<DictEditMenu> {
     var appState = context.watch<MyAppState>();
 
     return AlertDialog(
-      title: const Text('Edit Dictionoary'),
+      title: const Text('Edit Dictionary'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -81,7 +81,7 @@ class DictEditMenuState extends State<DictEditMenu> {
                 },
                 decoration: InputDecoration(
                     labelText: 'Name',
-                    hintText: 'Enter name of Dictionary',
+                    hintText: 'Enter name of dictionary',
                     prefix: IconButton(
                       icon: Icon(Icons.nfc, color: currentColor),
                       onPressed: () async {
@@ -154,7 +154,7 @@ class DictEditMenuState extends State<DictEditMenu> {
             if (!_formKey.currentState!.validate()) {
               return;
             }
-            
+
             ChameleonDictionary dict = ChameleonDictionary(
               id: const Uuid().v4(),
               name: nameController.text,

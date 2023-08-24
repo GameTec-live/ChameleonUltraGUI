@@ -1,8 +1,12 @@
-import 'package:chameleonultragui/gui/components/togglebuttons.dart';
+import 'package:chameleonultragui/gui/component/developer_list.dart';
+import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/helpers/open_collective.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsMainPage extends StatefulWidget {
   const SettingsMainPage({Key? key}) : super(key: key);
@@ -17,8 +21,13 @@ class SettingsMainPageState extends State<SettingsMainPage> {
     super.initState();
   }
 
-  Future<String> getFutureData() async {
-    return await fetchOCnames();
+  Future<(String, List<Map<String, String>>, PackageInfo)>
+      getFutureData() async {
+    return (
+      await fetchOCnames(),
+      await fetchContributors(),
+      await PackageInfo.fromPlatform()
+    );
   }
 
   Future<String> fetchOCnames() async {
@@ -28,6 +37,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
       finalNames += "$name, ";
     }
     return finalNames.substring(0, finalNames.length - 2);
+  }
+
+  Future<List<Map<String, String>>> fetchContributors() async {
+    return await fetchGitHubContributors();
   }
 
   @override
@@ -187,8 +200,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         } else if (snapshot.hasError) {
                           return Text('Error: ${snapshot.error}');
                         } else {
-                          final (names) = snapshot.data;
-                          return Column(
+                          final (names, contributors, packageInfo) =
+                              snapshot.data;
+                          return SingleChildScrollView(
+                              child: Column(
                             children: [
                               const Text('Chameleon Ultra GUI',
                                   style:
@@ -197,22 +212,27 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   'A Tool to graphically manage and configure your Chameleon Ultra, written in Flutter and running on Desktop and Mobile.'),
                               const SizedBox(height: 10),
                               const Text('Version:'),
-                              const Text('UNRELEASED',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                  '${packageInfo.version} (Build ${packageInfo.buildNumber})',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
                               const Text('Developed by:'),
-                              const Text('Foxushka, Akisame and GameTec_live',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              DeveloperList(avatars: developers),
                               const SizedBox(height: 10),
                               const Text('License:'),
                               const Text('GNU General Public License v3.0',
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
-                              const Text(
-                                  'https://github.com/GameTec-live/ChameleonUltraGUI'),
+                              GestureDetector(
+                                  onTap: () async {
+                                    await launchUrl(Uri.parse(
+                                        'https://github.com/GameTec-live/ChameleonUltraGUI'));
+                                  },
+                                  child: const Text(
+                                      'https://github.com/GameTec-live/ChameleonUltraGUI')),
                               const SizedBox(height: 30),
                               const Text(
                                   "Thanks to everyone who supports us on Open Collective!"),
@@ -220,8 +240,12 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               Text(names,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              const Text('Code contributors:'),
+                              const SizedBox(height: 10),
+                              DeveloperList(avatars: contributors),
                             ],
-                          );
+                          ));
                         }
                       },
                     ),

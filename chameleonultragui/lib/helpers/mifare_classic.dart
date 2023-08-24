@@ -158,36 +158,36 @@ int mfClassicGetFirstBlockCountBySector(int sector) {
   }
 }
 
-ChameleonTag mfClassicGetChameleonTagType(MifareClassicType type) {
+TagType mfClassicGetChameleonTagType(MifareClassicType type) {
   if (type == MifareClassicType.m1k) {
-    return ChameleonTag.mifare1K;
+    return TagType.mifare1K;
   } else if (type == MifareClassicType.m2k) {
-    return ChameleonTag.mifare2K;
+    return TagType.mifare2K;
   } else if (type == MifareClassicType.m4k) {
-    return ChameleonTag.mifare4K;
+    return TagType.mifare4K;
   } else if (type == MifareClassicType.mini) {
-    return ChameleonTag.mifareMini;
+    return TagType.mifareMini;
   } else {
-    return ChameleonTag.unknown;
+    return TagType.unknown;
   }
 }
 
-MifareClassicType chameleonTagTypeGetMfClassicType(ChameleonTag type) {
-  if (type == ChameleonTag.mifare1K) {
+MifareClassicType chameleonTagTypeGetMfClassicType(TagType type) {
+  if (type == TagType.mifare1K) {
     return MifareClassicType.m1k;
-  } else if (type == ChameleonTag.mifare2K) {
+  } else if (type == TagType.mifare2K) {
     return MifareClassicType.m2k;
-  } else if (type == ChameleonTag.mifare4K) {
+  } else if (type == TagType.mifare4K) {
     return MifareClassicType.m4k;
-  } else if (type == ChameleonTag.mifareMini) {
+  } else if (type == TagType.mifareMini) {
     return MifareClassicType.mini;
   } else {
     return MifareClassicType.none;
   }
 }
 
-bool chameleonTagSaveCheckForMifareClassicEV1(ChameleonTagSave tag) {
-  return tag.tag == ChameleonTag.mifare1K &&
+bool chameleonTagSaveCheckForMifareClassicEV1(TagSave tag) {
+  return tag.tag == TagType.mifare1K &&
       tag.data.length >= 71 &&
       tag.data[71].isNotEmpty;
 }

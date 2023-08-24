@@ -11,9 +11,9 @@ import 'package:provider/provider.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
-class DevPage extends StatelessWidget {
+class DebugPage extends StatelessWidget {
   // Home Page
-  const DevPage({super.key});
+  const DebugPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +28,7 @@ class DevPage extends StatelessWidget {
             child: IconButton(
               onPressed: () {
                 // Disconnect
-                appState.connector.preformDisconnect();
+                appState.connector.performDisconnect();
                 appState.changesMade();
               },
               icon: const Icon(Icons.close),
@@ -155,14 +155,14 @@ class DevPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await appState.communicator!
-                  .setSlotTagName(1, "test", ChameleonTagFrequency.hf);
+                  .setSlotTagName(1, "test", TagFrequency.hf);
               var name = await appState.communicator!
-                  .getSlotTagName(1, ChameleonTagFrequency.hf);
+                  .getSlotTagName(1, TagFrequency.hf);
               appState.log.d(name);
               await appState.communicator!
-                  .setSlotTagName(1, "Hello 变色龙!", ChameleonTagFrequency.hf);
+                  .setSlotTagName(1, "Hello 变色龙!", TagFrequency.hf);
               name = await appState.communicator!
-                  .getSlotTagName(1, ChameleonTagFrequency.hf);
+                  .getSlotTagName(1, TagFrequency.hf);
               appState.log.d(name);
             },
             child: const Column(children: [

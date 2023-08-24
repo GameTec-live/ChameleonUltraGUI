@@ -62,17 +62,17 @@ class ChameleonDictionary {
       this.color = Colors.deepOrange});
 }
 
-class ChameleonTagSave {
+class TagSave {
   String id;
   String uid;
   int sak;
   Uint8List atqa;
   String name;
-  ChameleonTag tag;
+  TagType tag;
   List<Uint8List> data;
   Color color;
 
-  factory ChameleonTagSave.fromJson(String json) {
+  factory TagSave.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
     final id = data['id'] as String;
     final uid = data['uid'] as String;
@@ -89,7 +89,7 @@ class ChameleonTagSave {
     for (var block in encodedData) {
       tagData.add(Uint8List.fromList(List<int>.from(block)));
     }
-    return ChameleonTagSave(
+    return TagSave(
         id: id,
         uid: uid,
         sak: sak,
@@ -113,7 +113,7 @@ class ChameleonTagSave {
     });
   }
 
-  ChameleonTagSave(
+  TagSave(
       {required this.id,
       required this.uid,
       required this.name,
@@ -246,16 +246,16 @@ class SharedPreferencesProvider extends ChangeNotifier {
     _sharedPreferences.setStringList('dictionaries', output);
   }
 
-  List<ChameleonTagSave> getChameleonTags() {
-    List<ChameleonTagSave> output = [];
+  List<TagSave> getChameleonTags() {
+    List<TagSave> output = [];
     final data = _sharedPreferences.getStringList('cards') ?? [];
     for (var tag in data) {
-      output.add(ChameleonTagSave.fromJson(tag));
+      output.add(TagSave.fromJson(tag));
     }
     return output;
   }
 
-  void setChameleonTags(List<ChameleonTagSave> tags) {
+  void setChameleonTags(List<TagSave> tags) {
     List<String> output = [];
     for (var tag in tags) {
       output.add(tag.toJson());

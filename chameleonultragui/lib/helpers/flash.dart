@@ -213,7 +213,7 @@ Future<void> flashFile(
 
   if (enterDFU) {
     await connection!.enterDFUMode();
-    await appState.connector.preformDisconnect();
+    await appState.connector.performDisconnect();
   }
 
   List chameleons = [];
@@ -231,7 +231,7 @@ Future<void> flashFile(
     throw ("BLE DFU not yet supported");
   }
 
-  await appState.connector.connectSpecific(chameleons[0]['port']);
+  await appState.connector.connectSpecificDevice(chameleons[0]['port']);
   var dfu = ChameleonDFU(port: appState.connector);
   await appState.connector.finishRead();
   await appState.connector.open();
@@ -240,7 +240,7 @@ Future<void> flashFile(
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");
-  appState.connector.preformDisconnect();
+  appState.connector.performDisconnect();
   await asyncSleep(500); // allow exit DFU mode
   appState.changesMade();
 }

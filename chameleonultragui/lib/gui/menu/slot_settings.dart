@@ -1,5 +1,5 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
-import 'package:chameleonultragui/gui/components/togglebuttons.dart';
+import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -22,7 +22,7 @@ class SlotSettingsState extends State<SlotSettings> {
   late bool isGen1a;
   late bool isGen2;
   late bool isAntiColl;
-  late ChameleonMf1WriteMode writeMode;
+  late MifareClassicWriteMode writeMode;
   String hfName = "";
   String lfName = "";
 
@@ -37,7 +37,7 @@ class SlotSettingsState extends State<SlotSettings> {
     if (hfName.isEmpty) {
       try {
         hfName = (await appState.communicator!
-                .getSlotTagName(widget.slot, ChameleonTagFrequency.hf))
+                .getSlotTagName(widget.slot, TagFrequency.hf))
             .trim();
       } catch (_) {}
 
@@ -51,7 +51,7 @@ class SlotSettingsState extends State<SlotSettings> {
     if (lfName.isEmpty) {
       try {
         lfName = (await appState.communicator!
-                .getSlotTagName(widget.slot, ChameleonTagFrequency.lf))
+                .getSlotTagName(widget.slot, TagFrequency.lf))
             .trim();
       } catch (_) {}
 
@@ -90,15 +90,17 @@ class SlotSettingsState extends State<SlotSettings> {
         builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting && !isRun) {
             return const AlertDialog(
-                title: Text('Slot settings'),
+                title: Text('Slot Settings'),
                 content: SingleChildScrollView(
                     child: Column(children: [CircularProgressIndicator()])));
           } else if (snapshot.hasError) {
-            appState.connector.preformDisconnect();
-            return Text('Error: ${snapshot.error.toString()}');
+            appState.connector.performDisconnect();
+            return AlertDialog(
+                title: const Text('Slot Settings'),
+                content: Text('Error: ${snapshot.error.toString()}'));
           } else {
             return AlertDialog(
-                title: const Text('Slot settings'),
+                title: const Text('Slot Settings'),
                 content: SingleChildScrollView(
                     child: Column(children: [
                   Row(
@@ -113,10 +115,10 @@ class SlotSettingsState extends State<SlotSettings> {
                       const SizedBox(width: 8),
                       IconButton(
                         onPressed: () async {
-                          await appState.communicator!.deleteSlotInfo(
-                              widget.slot, ChameleonTagFrequency.hf);
+                          await appState.communicator!
+                              .deleteSlotInfo(widget.slot, TagFrequency.hf);
                           await appState.communicator!.setSlotTagName(
-                              widget.slot, "Empty", ChameleonTagFrequency.hf);
+                              widget.slot, "Empty", TagFrequency.hf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
@@ -142,10 +144,10 @@ class SlotSettingsState extends State<SlotSettings> {
                       const SizedBox(width: 8),
                       IconButton(
                         onPressed: () async {
-                          await appState.communicator!.deleteSlotInfo(
-                              widget.slot, ChameleonTagFrequency.lf);
+                          await appState.communicator!
+                              .deleteSlotInfo(widget.slot, TagFrequency.lf);
                           await appState.communicator!.setSlotTagName(
-                              widget.slot, "Empty", ChameleonTagFrequency.lf);
+                              widget.slot, "Empty", TagFrequency.lf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
@@ -250,7 +252,7 @@ class SlotSettingsState extends State<SlotSettings> {
                                             },
                                             child: const Row(
                                               children: [
-                                                Icon(Icons.card_giftcard),
+                                                Icon(Icons.lock_open),
                                                 Text("Recover keys"),
                                               ],
                                             )),
@@ -273,16 +275,16 @@ class SlotSettingsState extends State<SlotSettings> {
 
                         if (index == 0) {
                           await appState.communicator!
-                              .setMf1WriteMode(ChameleonMf1WriteMode.normal);
+                              .setMf1WriteMode(MifareClassicWriteMode.normal);
                         } else if (index == 1) {
                           await appState.communicator!
-                              .setMf1WriteMode(ChameleonMf1WriteMode.denied);
+                              .setMf1WriteMode(MifareClassicWriteMode.denied);
                         } else if (index == 2) {
                           await appState.communicator!
-                              .setMf1WriteMode(ChameleonMf1WriteMode.deceive);
+                              .setMf1WriteMode(MifareClassicWriteMode.deceive);
                         } else if (index == 3) {
                           await appState.communicator!
-                              .setMf1WriteMode(ChameleonMf1WriteMode.shadow);
+                              .setMf1WriteMode(MifareClassicWriteMode.shadow);
                         }
 
                         widget.refresh(widget.slot);

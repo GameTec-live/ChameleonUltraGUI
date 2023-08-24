@@ -14,7 +14,7 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> preformConnection() async {
+  Future<bool> performConnect() async {
     for (final port in await availableDevices()) {
       if (await connectDevice(port, true)) {
         portName = port;
@@ -26,9 +26,9 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> preformDisconnect() async {
+  Future<bool> performDisconnect() async {
     device = ChameleonDevice.none;
-    connectionType = ChameleonConnectType.none;
+    connectionType = ConnectionType.none;
     isOpen = false;
     messageCallback = null;
     if (port != null) {
@@ -48,7 +48,7 @@ class NativeSerial extends AbstractSerial {
     for (final port in await availableDevices()) {
       if (await connectDevice(port, false)) {
         if (onlyDFU) {
-          if (connectionType == ChameleonConnectType.dfu) {
+          if (connectionType == ConnectionType.dfu) {
             output
                 .add({'port': port, 'device': device, 'type': connectionType});
           }
@@ -62,7 +62,7 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecific(devicePort) async {
+  Future<bool> connectSpecificDevice(devicePort) async {
     if (await connectDevice(devicePort, true)) {
       portName = devicePort;
       connected = true;
@@ -103,10 +103,10 @@ class NativeSerial extends AbstractSerial {
         log.d(
             "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
 
-        connectionType = ChameleonConnectType.usb;
+        connectionType = ConnectionType.usb;
 
         if (checkPort!.vendorId == 0x1915) {
-          connectionType = ChameleonConnectType.dfu;
+          connectionType = ConnectionType.dfu;
           log.w("Chameleon is in DFU mode!");
         }
 
@@ -128,7 +128,7 @@ class NativeSerial extends AbstractSerial {
   @override
   Future<void> open() async {
     port!.openReadWrite();
-    if (connectionType != ChameleonConnectType.dfu) {
+    if (connectionType != ConnectionType.dfu) {
       reader = SerialPortReader(port!, timeout: 1000);
     }
   }
