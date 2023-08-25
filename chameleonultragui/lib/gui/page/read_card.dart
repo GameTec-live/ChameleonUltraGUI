@@ -545,7 +545,7 @@ class ReadCardPageState extends State<ReadCardPage> {
       {bool bin = false, bool skipDump = false}) async {
     List<int> cardDump = [];
 
-    if (skipDump) {
+    if (!skipDump) {
       for (var sector = 0;
           sector < mfClassicGetSectorCount(status.type);
           sector++) {
