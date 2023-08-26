@@ -106,7 +106,7 @@ class MyAppState extends ChangeNotifier {
   /// Force a complete UI refresh
   /// Not needed when changing state, mainly needed to switch UI after connecting devices
   void changesMade() {
-    log.d('changesMade');
+    // log.d('changesMade');
     notifyListeners();
   }
 
