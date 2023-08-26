@@ -6,7 +6,7 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:logger/logger.dart';
 import 'dart:math';
 
-enum ChameleonDFUCommand {
+enum DFUCommand {
   createObject(0x01),
   setPRN(0x02),
   calcChecSum(0x03),
@@ -19,11 +19,11 @@ enum ChameleonDFUCommand {
   getHW(0x0a),
   response(0x60);
 
-  const ChameleonDFUCommand(this.value);
+  const DFUCommand(this.value);
   final int value;
 }
 
-enum ChameleonResponseCode {
+enum DFUResponseCode {
   invalidCode(0x00),
   success(0x01),
   notSupported(0x02),
@@ -36,13 +36,13 @@ enum ChameleonResponseCode {
   operationFailed(0x0A),
   extendedError(0x0B);
 
-  const ChameleonResponseCode(this.value);
+  const DFUResponseCode(this.value);
   final int value;
 
-  static ChameleonResponseCode fromValue(int value) {
-    return ChameleonResponseCode.values.firstWhere(
+  static DFUResponseCode fromValue(int value) {
+    return DFUResponseCode.values.firstWhere(
         (responseCode) => responseCode.value == value,
-        orElse: () => ChameleonResponseCode.invalidCode);
+        orElse: () => DFUResponseCode.invalidCode);
   }
 }
 
@@ -125,7 +125,7 @@ class DFUTransferError implements Exception {
   DFUTransferError(this.cause);
 }
 
-class ChameleonDFU {
+class DFUCommunicator {
   int baudrate = 115200;
   int dataFrameSof = 0x11;
   int dataMaxLength = 512;
@@ -136,7 +136,7 @@ class ChameleonDFU {
 
   Logger log = Logger();
 
-  ChameleonDFU({AbstractSerial? port}) {
+  DFUCommunicator({AbstractSerial? port}) {
     if (port != null) {
       open(port);
     }
@@ -146,7 +146,7 @@ class ChameleonDFU {
     _serialInstance = port;
   }
 
-  Future<Uint8List?> sendCmd(ChameleonDFUCommand cmd, Uint8List data) async {
+  Future<Uint8List?> sendCmd(DFUCommand cmd, Uint8List data) async {
     var packet = Slip.encode(Uint8List.fromList([cmd.value, ...data.toList()]));
 
     if (responseCompleter != null && !responseCompleter!.isCompleted) {
@@ -177,7 +177,7 @@ class ChameleonDFU {
     readBuffer = Slip.decode(Uint8List.fromList(readBuffer)).toList();
     log.d("Slip decoded: ${bytesToHex(Uint8List.fromList(readBuffer))}");
 
-    if (readBuffer[0] != ChameleonDFUCommand.response.value) {
+    if (readBuffer[0] != DFUCommand.response.value) {
       throw ("DFU sent not response");
     }
 
@@ -185,18 +185,18 @@ class ChameleonDFU {
       throw ("DFU sent invalid command response");
     }
 
-    if (readBuffer[2] == ChameleonResponseCode.success.value) {
+    if (readBuffer[2] == DFUResponseCode.success.value) {
       return Uint8List.fromList(readBuffer).sublist(3);
     } else {
-      if (readBuffer[2] == ChameleonResponseCode.extendedError.value) {
-        throw ("DFU error: ${ChameleonResponseCode.fromValue(readBuffer[3])}");
+      if (readBuffer[2] == DFUResponseCode.extendedError.value) {
+        throw ("DFU error: ${DFUResponseCode.fromValue(readBuffer[3])}");
       }
-      throw ("DFU error: ${ChameleonResponseCode.fromValue(readBuffer[2])}");
+      throw ("DFU error: ${DFUResponseCode.fromValue(readBuffer[2])}");
     }
   }
 
   Future<dynamic> selectObject(int objectType) async {
-    var response = (await sendCmd(ChameleonDFUCommand.readObject,
+    var response = (await sendCmd(DFUCommand.readObject,
         Uint8List.fromList([objectType, 0x00, 0x00, 0x00])))!;
     var maxSize = ByteData.view(response.buffer).getUint32(0, Endian.little);
     var offset = ByteData.view(response.buffer).getUint32(4, Endian.little);
@@ -207,23 +207,22 @@ class ChameleonDFU {
   Future<void> createObject(int objectType, int objectSize) async {
     final buffer = Uint8List(4);
     buffer.buffer.asByteData().setUint32(0, objectSize, Endian.little);
-    await sendCmd(ChameleonDFUCommand.createObject,
-        Uint8List.fromList([objectType, ...buffer]));
+    await sendCmd(
+        DFUCommand.createObject, Uint8List.fromList([objectType, ...buffer]));
   }
 
   Future<void> execute() async {
-    await sendCmd(ChameleonDFUCommand.execute, Uint8List(0));
+    await sendCmd(DFUCommand.execute, Uint8List(0));
   }
 
   Future<void> setPRN() async {
-    await sendCmd(ChameleonDFUCommand.setPRN, Uint8List.fromList([0x00]));
+    await sendCmd(DFUCommand.setPRN, Uint8List.fromList([0x00]));
   }
 
   Future<int> getMTU() async {
     try {
       mtu = ByteData.view(
-              (await sendCmd(ChameleonDFUCommand.getSerialMTU, Uint8List(0)))!
-                  .buffer)
+              (await sendCmd(DFUCommand.getSerialMTU, Uint8List(0)))!.buffer)
           .getUint16(0, Endian.little);
     } catch (_) {
       mtu = 2051;
@@ -233,7 +232,7 @@ class ChameleonDFU {
   }
 
   Future<Map<String, int>> calculateChecksum() async {
-    var response = await sendCmd(ChameleonDFUCommand.calcChecSum, Uint8List(0));
+    var response = await sendCmd(DFUCommand.calcChecSum, Uint8List(0));
     var offset = ByteData.view(response!.buffer).getUint32(0, Endian.little);
     var crc = ByteData.view(response.buffer).getUint32(4, Endian.little);
 
@@ -302,8 +301,8 @@ class ChameleonDFU {
       List<int> toTransmit =
           data.sublist(i, min(i + (mtu - 1) ~/ 2 - 1, data.length));
 
-      var packet = Slip.encode(Uint8List.fromList(
-          [ChameleonDFUCommand.writeObject.value, ...toTransmit]));
+      var packet = Slip.encode(
+          Uint8List.fromList([DFUCommand.writeObject.value, ...toTransmit]));
 
       await delayedSend(packet);
 

@@ -232,7 +232,7 @@ Future<void> flashFile(
   }
 
   await appState.connector.connectSpecificDevice(chameleons[0]['port']);
-  var dfu = ChameleonDFU(port: appState.connector);
+  var dfu = DFUCommunicator(port: appState.connector);
   await dfu.setPRN();
   await dfu.getMTU();
   await dfu.flashFirmware(0x01, applicationDat, callback);

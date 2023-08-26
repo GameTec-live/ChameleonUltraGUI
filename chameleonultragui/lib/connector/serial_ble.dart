@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 // Regular
