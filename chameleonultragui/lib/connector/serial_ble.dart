@@ -22,7 +22,7 @@ class BLESerial extends AbstractSerial {
   QualifiedCharacteristic? firmwareCharacteristic;
   Stream<List<int>>? receivedDataStream;
   StreamSubscription<ConnectionStateUpdate>? connection;
-  Map<String, Map> chameleonMap = {};
+  Map<String, Chameleon> chameleonMap = {};
 
   @override
   Future<List> availableDevices() async {
@@ -66,8 +66,8 @@ class BLESerial extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons(bool onlyDFU) async {
-    List output = [];
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
+    List<Chameleon> output = [];
     for (var bleDevice in await availableDevices()) {
       if (bleDevice.name.startsWith('ChameleonUltra')) {
         device = ChameleonDevice.ultra;
@@ -82,20 +82,18 @@ class BLESerial extends AbstractSerial {
       log.d(
           "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
       if (!onlyDFU || onlyDFU && bleDevice.name.startsWith('CU-')) {
-        output.add({
-          'port': bleDevice.id,
-          'device': device,
-          'type': connectionType,
-          'dfu': bleDevice.name.startsWith('CU-')
-        });
+        output.add(Chameleon(
+            port: bleDevice.id,
+            device: device,
+            type: connectionType,
+            dfu: bleDevice.name.startsWith('CU-')));
       }
 
-      chameleonMap[bleDevice.id] = {
-        'port': bleDevice.id,
-        'device': device,
-        'type': connectionType,
-        'dfu': bleDevice.name.startsWith('CU-')
-      };
+      chameleonMap[bleDevice.id] = Chameleon(
+          port: bleDevice.id,
+          device: device,
+          type: connectionType,
+          dfu: bleDevice.name.startsWith('CU-'));
     }
 
     return output;
@@ -119,7 +117,7 @@ class BLESerial extends AbstractSerial {
   Future<bool> connectSpecificInternal(devicePort) async {
     Completer<bool> completer = Completer<bool>();
     List<Uuid> services = [nrfUUID, uartRX, uartTX];
-    if (chameleonMap[devicePort]!['dfu']) {
+    if (chameleonMap[devicePort]!.dfu) {
       services = [dfuUUID, dfuControl, dfuFirmware];
     }
 
@@ -135,7 +133,7 @@ class BLESerial extends AbstractSerial {
       if (connectionState.connectionState == DeviceConnectionState.connected) {
         connected = true;
 
-        if (chameleonMap[devicePort]!['dfu']) {
+        if (chameleonMap[devicePort]!.dfu) {
           txCharacteristic = QualifiedCharacteristic(
               serviceId: dfuUUID,
               characteristicId: dfuControl,
@@ -161,7 +159,7 @@ class BLESerial extends AbstractSerial {
               deviceId: connectionState.deviceId);
 
           portName = devicePort;
-          device = chameleonMap[devicePort]!['device'];
+          device = chameleonMap[devicePort]!.device;
 
           isDFU = true;
         } else {
@@ -185,7 +183,7 @@ class BLESerial extends AbstractSerial {
               deviceId: connectionState.deviceId);
 
           portName = devicePort;
-          device = chameleonMap[devicePort]!['device'];
+          device = chameleonMap[devicePort]!.device;
 
           connectionType = ConnectionType.ble;
         }

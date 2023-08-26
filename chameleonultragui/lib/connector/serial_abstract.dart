@@ -5,6 +5,19 @@ enum ChameleonDevice { none, ultra, lite }
 
 enum ConnectionType { none, usb, ble }
 
+class Chameleon {
+  final dynamic port;
+  final ChameleonDevice device;
+  final ConnectionType type;
+  final bool dfu;
+
+  const Chameleon(
+      {required this.port,
+      required this.device,
+      required this.type,
+      required this.dfu});
+}
+
 class AbstractSerial {
   Logger log = Logger();
   ChameleonDevice device = ChameleonDevice.none;
@@ -31,7 +44,7 @@ class AbstractSerial {
     return false;
   }
 
-  Future<List> availableChameleons(bool onlyDFU) async {
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
     return [];
   }
 

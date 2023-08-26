@@ -19,8 +19,8 @@ class AndroidSerial extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons(bool onlyDFU) async {
-    List output = [];
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
+    List<Chameleon> output = [];
 
     output.addAll(await mobileSerial.availableChameleons(onlyDFU));
     if (await checkPermissions()) {

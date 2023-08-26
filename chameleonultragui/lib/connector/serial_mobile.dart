@@ -41,8 +41,8 @@ class MobileSerial extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons(bool onlyDFU) async {
-    List output = [];
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
+    List<Chameleon> output = [];
     for (var deviceName in await availableDevices()) {
       if (deviceMap[deviceName]!.manufacturerName == "Proxgrind") {
         if (deviceMap[deviceName]!.productName!.startsWith('ChameleonUltra')) {
@@ -58,20 +58,18 @@ class MobileSerial extends AbstractSerial {
 
         if (onlyDFU) {
           if (dfuMode) {
-            output.add({
-              'port': deviceName,
-              'device': device,
-              'type': connectionType,
-              'dfu': dfuMode
-            });
+            output.add(Chameleon(
+                port: deviceName,
+                device: device,
+                type: connectionType,
+                dfu: dfuMode));
           }
         } else {
-          output.add({
-            'port': deviceName,
-            'device': device,
-            'type': connectionType,
-            'dfu': dfuMode
-          });
+          output.add(Chameleon(
+              port: deviceName,
+              device: device,
+              type: connectionType,
+              dfu: dfuMode));
         }
       }
     }

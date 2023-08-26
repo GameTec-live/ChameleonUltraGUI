@@ -239,8 +239,6 @@ Future<void> flashFile(
     appState.easterEgg = true;
   }
 
-  bool isBLE = appState.connector.portName.contains(":");
-
   if (enterDFU) {
     await connection!.enterDFUMode();
     await appState.connector.performDisconnect();
@@ -250,20 +248,32 @@ Future<void> flashFile(
     await appState.connector.performDisconnect();
   }
 
-  List chameleons = [];
+  List<Chameleon> chameleons = [];
 
   while (chameleons.isEmpty) {
     await asyncSleep(250);
     chameleons = await appState.connector.availableChameleons(true);
   }
 
-  if (chameleons.length > 1) {
+  var toFlash = chameleons[0];
+  var isBLE = toFlash.type == ConnectionType.ble;
+  if (toFlash.type == ConnectionType.ble) {
+    for (var chameleon in chameleons) {
+      if (chameleon.type != ConnectionType.ble) {
+        toFlash = chameleon;
+      }
+    }
+  }
+
+  if (chameleons.length > 1 && !isBLE) {
     throw ("More than one Chameleon in DFU. Please connect only one at a time");
   }
 
-  await appState.connector.connectSpecificDevice(chameleons[0]['port']);
+  await appState.connector.connectSpecificDevice(chameleons[0].port);
 
-  var dfu = DFUCommunicator(port: appState.connector, isBLE: isBLE);
+  var dfu = DFUCommunicator(
+      port: appState.connector,
+      isBLE: toFlash.type == ConnectionType.ble); // isBLE shouldn't used here
   await dfu.setPRN();
   await dfu.getMTU();
   appState.changesMade();

@@ -44,26 +44,21 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons(bool onlyDFU) async {
-    List output = [];
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
+    List<Chameleon> output = [];
     for (final port in await availableDevices()) {
       if (await connectDevice(port, false)) {
         if (onlyDFU) {
           if (checkDFU) {
-            output.add({
-              'port': port,
-              'device': device,
-              'type': connectionType,
-              'dfu': checkDFU
-            });
+            output.add(Chameleon(
+                port: port,
+                device: device,
+                type: connectionType,
+                dfu: checkDFU));
           }
         } else {
-          output.add({
-            'port': port,
-            'device': device,
-            'type': connectionType,
-            'dfu': checkDFU
-          });
+          output.add(Chameleon(
+              port: port, device: device, type: connectionType, dfu: checkDFU));
         }
       }
     }
