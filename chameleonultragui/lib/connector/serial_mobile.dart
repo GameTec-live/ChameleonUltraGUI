@@ -54,19 +54,25 @@ class MobileSerial extends AbstractSerial {
         log.d(
             "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
 
-        if (deviceMap[deviceName]!.vid == 0x1915) {
-          connectionType = ConnectionType.dfu;
-          log.w("Chameleon is in DFU mode!");
+        var dfuMode = deviceMap[deviceName]!.vid == 0x1915;
+
+        if (onlyDFU) {
+          if (dfuMode) {
+            output.add({
+              'port': deviceName,
+              'device': device,
+              'type': connectionType,
+              'dfu': dfuMode
+            });
+          }
+        } else {
+          output.add({
+            'port': deviceName,
+            'device': device,
+            'type': connectionType,
+            'dfu': dfuMode
+          });
         }
-      }
-      if (onlyDFU) {
-        if (connectionType == ConnectionType.dfu) {
-          output.add(
-              {'port': deviceName, 'device': device, 'type': connectionType});
-        }
-      } else {
-        output.add(
-            {'port': deviceName, 'device': device, 'type': connectionType});
       }
     }
 
@@ -84,6 +90,7 @@ class MobileSerial extends AbstractSerial {
       } else {
         device = ChameleonDevice.lite;
       }
+
       bool openResult = await port!.open();
       if (!openResult) {
         return false;
@@ -112,11 +119,8 @@ class MobileSerial extends AbstractSerial {
       });
 
       portName = devicePort.substring(devicePort.length - 15); // Limit length
-      connectionType = ConnectionType.usb;
-      if (deviceMap[devicePort]!.vid == 0x1915) {
-        connectionType = ConnectionType.dfu;
-        log.w("Chameleon is in DFU mode!");
-      }
+
+      isDFU = deviceMap[devicePort]!.vid == 0x1915;
       return true;
     }
     return false;

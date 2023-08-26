@@ -63,8 +63,7 @@ class ConnectPage extends StatelessWidget {
                           ...result.map<Widget>((chameleonDevice) {
                             return ElevatedButton(
                               onPressed: () async {
-                                if (chameleonDevice['type'] ==
-                                    ConnectionType.dfu) {
+                                if (chameleonDevice['dfu']) {
                                   showDialog<String>(
                                     context: context,
                                     builder: (BuildContext context) =>
@@ -88,7 +87,7 @@ class ConnectPage extends StatelessWidget {
 
                                             Uint8List content =
                                                 await fetchFirmware(
-                                                    appState.connector.device);
+                                                    chameleonDevice['device']);
 
                                             (applicationDat, applicationBin) =
                                                 await unpackFirmware(content);
@@ -148,8 +147,7 @@ class ConnectPage extends StatelessWidget {
                                                   : const Icon(Icons.usb),
                                               Text(chameleonDevice['port'] ??
                                                   ""),
-                                              if (chameleonDevice['type'] ==
-                                                  ConnectionType.dfu)
+                                              if (chameleonDevice['dfu'])
                                                 const Text(" (DFU)"),
                                             ],
                                           )

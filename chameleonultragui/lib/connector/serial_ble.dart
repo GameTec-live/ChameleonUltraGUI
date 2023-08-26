@@ -78,21 +78,23 @@ class BLESerial extends AbstractSerial {
       }
 
       connectionType = ConnectionType.ble;
-      if (bleDevice.name.startsWith('CU-')) {
-        connectionType = ConnectionType.dfu;
-      }
 
       log.d(
           "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
-      if (!onlyDFU || onlyDFU && connectionType == ConnectionType.dfu) {
-        output.add(
-            {'port': bleDevice.id, 'device': device, 'type': connectionType});
+      if (!onlyDFU || onlyDFU && bleDevice.name.startsWith('CU-')) {
+        output.add({
+          'port': bleDevice.id,
+          'device': device,
+          'type': connectionType,
+          'dfu': bleDevice.name.startsWith('CU-')
+        });
       }
 
       chameleonMap[bleDevice.id] = {
         'port': bleDevice.id,
         'device': device,
-        'type': connectionType
+        'type': connectionType,
+        'dfu': bleDevice.name.startsWith('CU-')
       };
     }
 
@@ -117,7 +119,7 @@ class BLESerial extends AbstractSerial {
   Future<bool> connectSpecificInternal(devicePort) async {
     Completer<bool> completer = Completer<bool>();
     List<Uuid> services = [nrfUUID, uartRX, uartTX];
-    if (chameleonMap[devicePort]!['type'] == ConnectionType.dfu) {
+    if (chameleonMap[devicePort]!['dfu']) {
       services = [dfuUUID, dfuControl, dfuFirmware];
     }
 
@@ -133,7 +135,7 @@ class BLESerial extends AbstractSerial {
       if (connectionState.connectionState == DeviceConnectionState.connected) {
         connected = true;
 
-        if (chameleonMap[devicePort]!['type'] == ConnectionType.dfu) {
+        if (chameleonMap[devicePort]!['dfu']) {
           txCharacteristic = QualifiedCharacteristic(
               serviceId: dfuUUID,
               characteristicId: dfuControl,
@@ -161,7 +163,7 @@ class BLESerial extends AbstractSerial {
           portName = devicePort;
           device = chameleonMap[devicePort]!['device'];
 
-          connectionType = ConnectionType.dfu;
+          isDFU = true;
         } else {
           txCharacteristic = QualifiedCharacteristic(
               serviceId: nrfUUID,

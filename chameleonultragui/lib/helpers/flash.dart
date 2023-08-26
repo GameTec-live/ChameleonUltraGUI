@@ -261,14 +261,12 @@ Future<void> flashFile(
     throw ("More than one Chameleon in DFU. Please connect only one at a time");
   }
 
-  if (isBLE) {
-    throw ("BLE DFU not yet supported");
-  }
-
   await appState.connector.connectSpecificDevice(chameleons[0]['port']);
-  var dfu = DFUCommunicator(port: appState.connector);
+
+  var dfu = DFUCommunicator(port: appState.connector, isBLE: isBLE);
   await dfu.setPRN();
   await dfu.getMTU();
+  appState.changesMade();
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");

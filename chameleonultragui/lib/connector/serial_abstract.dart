@@ -3,13 +3,14 @@ import 'package:logger/logger.dart';
 
 enum ChameleonDevice { none, ultra, lite }
 
-enum ConnectionType { none, usb, ble, dfu }
+enum ConnectionType { none, usb, ble }
 
 class AbstractSerial {
   Logger log = Logger();
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
   bool isOpen = false;
+  bool isDFU = false;
   String portName = "None";
   ConnectionType connectionType = ConnectionType.none;
   dynamic messageCallback;

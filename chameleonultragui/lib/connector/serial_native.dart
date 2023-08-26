@@ -6,6 +6,7 @@ class NativeSerial extends AbstractSerial {
   // Class for PC Serial Communication
   SerialPort? port;
   SerialPort? checkPort;
+  bool checkDFU = true;
   SerialPortReader? reader;
 
   @override
@@ -48,12 +49,21 @@ class NativeSerial extends AbstractSerial {
     for (final port in await availableDevices()) {
       if (await connectDevice(port, false)) {
         if (onlyDFU) {
-          if (connectionType == ConnectionType.dfu) {
-            output
-                .add({'port': port, 'device': device, 'type': connectionType});
+          if (checkDFU) {
+            output.add({
+              'port': port,
+              'device': device,
+              'type': connectionType,
+              'dfu': checkDFU
+            });
           }
         } else {
-          output.add({'port': port, 'device': device, 'type': connectionType});
+          output.add({
+            'port': port,
+            'device': device,
+            'type': connectionType,
+            'dfu': checkDFU
+          });
         }
       }
     }
@@ -105,15 +115,13 @@ class NativeSerial extends AbstractSerial {
 
         connectionType = ConnectionType.usb;
 
-        if (checkPort!.vendorId == 0x1915) {
-          connectionType = ConnectionType.dfu;
-          log.w("Chameleon is in DFU mode!");
-        }
+        checkDFU = checkPort!.vendorId == 0x1915;
 
         checkPort!.close();
 
         if (setPort) {
           port = checkPort;
+          isDFU = checkDFU;
         }
 
         return true;
