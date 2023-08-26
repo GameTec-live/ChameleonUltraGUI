@@ -31,18 +31,32 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     }
   }
 
-  Future<ButtonPress> getButtonConfig(ButtonType type) async {
+  Future<ButtonConfig> getButtonConfig(ButtonType type) async {
     var appState = context.read<MyAppState>();
-    return await appState.communicator!.getButtonConfig(type);
+    try {
+      return await appState.communicator!.getButtonConfig(type);
+    } catch (_) {
+      return ButtonConfig.disable;
+    }
   }
 
-  Future<ButtonPress> getLongButtonConfig(ButtonType type) async {
+  Future<ButtonConfig> getLongButtonConfig(ButtonType type) async {
     var appState = context.read<MyAppState>();
-    return await appState.communicator!.getLongButtonConfig(type);
+    try {
+      return await appState.communicator!.getLongButtonConfig(type);
+    } catch (_) {
+      return ButtonConfig.disable;
+    }
   }
 
-  Future<(AnimationSetting, ButtonPress, ButtonPress, ButtonPress, ButtonPress)>
-      getSettingsData() async {
+  Future<
+      (
+        AnimationSetting,
+        ButtonConfig,
+        ButtonConfig,
+        ButtonConfig,
+        ButtonConfig
+      )> getSettingsData() async {
     return (
       await getAnimationMode(),
       await getButtonConfig(ButtonType.a),
@@ -183,13 +197,13 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         ],
                         selectedValue: aButtonMode.value,
                         onChange: (int index) async {
-                          var mode = ButtonPress.disable;
+                          var mode = ButtonConfig.disable;
                           if (index == 1) {
-                            mode = ButtonPress.cycleForward;
+                            mode = ButtonConfig.cycleForward;
                           } else if (index == 2) {
-                            mode = ButtonPress.cycleBackward;
+                            mode = ButtonConfig.cycleBackward;
                           } else if (index == 3) {
-                            mode = ButtonPress.cloneUID;
+                            mode = ButtonConfig.cloneUID;
                           }
 
                           await appState.communicator!
@@ -210,13 +224,13 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         ],
                         selectedValue: bButtonMode.value,
                         onChange: (int index) async {
-                          var mode = ButtonPress.disable;
+                          var mode = ButtonConfig.disable;
                           if (index == 1) {
-                            mode = ButtonPress.cycleForward;
+                            mode = ButtonConfig.cycleForward;
                           } else if (index == 2) {
-                            mode = ButtonPress.cycleBackward;
+                            mode = ButtonConfig.cycleBackward;
                           } else if (index == 3) {
-                            mode = ButtonPress.cloneUID;
+                            mode = ButtonConfig.cloneUID;
                           }
 
                           await appState.communicator!
@@ -239,13 +253,13 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         ],
                         selectedValue: aLongButtonMode.value,
                         onChange: (int index) async {
-                          var mode = ButtonPress.disable;
+                          var mode = ButtonConfig.disable;
                           if (index == 1) {
-                            mode = ButtonPress.cycleForward;
+                            mode = ButtonConfig.cycleForward;
                           } else if (index == 2) {
-                            mode = ButtonPress.cycleBackward;
+                            mode = ButtonConfig.cycleBackward;
                           } else if (index == 3) {
-                            mode = ButtonPress.cloneUID;
+                            mode = ButtonConfig.cloneUID;
                           }
 
                           await appState.communicator!
@@ -266,13 +280,13 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         ],
                         selectedValue: bLongButtonMode.value,
                         onChange: (int index) async {
-                          var mode = ButtonPress.disable;
+                          var mode = ButtonConfig.disable;
                           if (index == 1) {
-                            mode = ButtonPress.cycleForward;
+                            mode = ButtonConfig.cycleForward;
                           } else if (index == 2) {
-                            mode = ButtonPress.cycleBackward;
+                            mode = ButtonConfig.cycleBackward;
                           } else if (index == 3) {
-                            mode = ButtonPress.cloneUID;
+                            mode = ButtonConfig.cloneUID;
                           }
 
                           await appState.communicator!

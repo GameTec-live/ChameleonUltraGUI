@@ -144,13 +144,13 @@ enum ButtonType {
   final int value;
 }
 
-enum ButtonPress {
+enum ButtonConfig {
   disable(0),
   cycleForward(1),
   cycleBackward(2),
   cloneUID(3);
 
-  const ButtonPress(this.value);
+  const ButtonConfig(this.value);
   final int value;
 }
 
@@ -844,40 +844,40 @@ class ChameleonCommunicator {
     return (_toInt16BE(resp.data.sublist(0, 2)), resp.data[2]);
   }
 
-  Future<ButtonPress> getButtonConfig(ButtonType type) async {
+  Future<ButtonConfig> getButtonConfig(ButtonType type) async {
     var resp = await sendCmd(ChameleonCommand.getButtonPressConfig,
         data: Uint8List.fromList([type.value]));
     if (resp!.data[0] == 1) {
-      return ButtonPress.cycleForward;
+      return ButtonConfig.cycleForward;
     } else if (resp.data[0] == 2) {
-      return ButtonPress.cycleBackward;
+      return ButtonConfig.cycleBackward;
     } else if (resp.data[0] == 3) {
-      return ButtonPress.cloneUID;
+      return ButtonConfig.cloneUID;
     } else {
-      return ButtonPress.disable;
+      return ButtonConfig.disable;
     }
   }
 
-  Future<void> setButtonConfig(ButtonType type, ButtonPress mode) async {
+  Future<void> setButtonConfig(ButtonType type, ButtonConfig mode) async {
     await sendCmd(ChameleonCommand.setButtonPressConfig,
         data: Uint8List.fromList([type.value, mode.value]));
   }
 
-  Future<ButtonPress> getLongButtonConfig(ButtonType type) async {
+  Future<ButtonConfig> getLongButtonConfig(ButtonType type) async {
     var resp = await sendCmd(ChameleonCommand.getLongButtonPressConfig,
         data: Uint8List.fromList([type.value]));
     if (resp!.data[0] == 1) {
-      return ButtonPress.cycleForward;
+      return ButtonConfig.cycleForward;
     } else if (resp.data[0] == 2) {
-      return ButtonPress.cycleBackward;
+      return ButtonConfig.cycleBackward;
     } else if (resp.data[0] == 3) {
-      return ButtonPress.cloneUID;
+      return ButtonConfig.cloneUID;
     } else {
-      return ButtonPress.disable;
+      return ButtonConfig.disable;
     }
   }
 
-  Future<void> setLongButtonConfig(ButtonType type, ButtonPress mode) async {
+  Future<void> setLongButtonConfig(ButtonType type, ButtonConfig mode) async {
     await sendCmd(ChameleonCommand.setLongButtonPressConfig,
         data: Uint8List.fromList([type.value, mode.value]));
   }
