@@ -6,7 +6,7 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:logger/logger.dart';
 import 'dart:math';
 
-enum ChameleonDFUCommand {
+enum DFUCommand {
   createObject(0x01),
   setPRN(0x02),
   calcChecSum(0x03),
@@ -19,11 +19,11 @@ enum ChameleonDFUCommand {
   getHW(0x0a),
   response(0x60);
 
-  const ChameleonDFUCommand(this.value);
+  const DFUCommand(this.value);
   final int value;
 }
 
-enum ChameleonResponseCode {
+enum DFUResponseCode {
   invalidCode(0x00),
   success(0x01),
   notSupported(0x02),
@@ -36,13 +36,13 @@ enum ChameleonResponseCode {
   operationFailed(0x0A),
   extendedError(0x0B);
 
-  const ChameleonResponseCode(this.value);
+  const DFUResponseCode(this.value);
   final int value;
 
-  static ChameleonResponseCode fromValue(int value) {
-    return ChameleonResponseCode.values.firstWhere(
+  static DFUResponseCode fromValue(int value) {
+    return DFUResponseCode.values.firstWhere(
         (responseCode) => responseCode.value == value,
-        orElse: () => ChameleonResponseCode.invalidCode);
+        orElse: () => DFUResponseCode.invalidCode);
   }
 }
 
@@ -73,48 +73,70 @@ class Slip {
     return Uint8List.fromList(newData);
   }
 
-  static List<dynamic> decodeAddByte(
-      int c, List<int> decodedData, int currentState) {
+  static Uint8List decode(Uint8List data) {
     bool finished = false;
+    int state = slipStateDecoding;
+    List<int> decoded = [];
+    for (var byte in data) {
+      (finished, state, decoded) = Slip.decodeAddByte(byte, decoded, state);
+      if (finished) {
+        break;
+      }
+    }
+
+    return Uint8List.fromList(decoded);
+  }
+
+  static (bool, int, List<int>) decodeAddByte(
+      int byte, List<int> previous, int currentState) {
+    bool finished = false;
+    List<int> decoded = previous;
     if (currentState == slipStateDecoding) {
-      if (c == slipByteEnd) {
+      if (byte == slipByteEnd) {
         finished = true;
-      } else if (c == slipByteEsc) {
+      } else if (byte == slipByteEsc) {
         currentState = slipStateEscReceived;
       } else {
-        decodedData.add(c);
+        decoded.add(byte);
       }
     } else if (currentState == slipStateEscReceived) {
-      if (c == slipByteEscEnd) {
-        decodedData.add(slipByteEnd);
+      if (byte == slipByteEscEnd) {
+        decoded.add(slipByteEnd);
         currentState = slipStateDecoding;
-      } else if (c == slipByteEscEsc) {
-        decodedData.add(slipByteEsc);
+      } else if (byte == slipByteEscEsc) {
+        decoded.add(slipByteEsc);
         currentState = slipStateDecoding;
       } else {
         currentState = slipStateClearingInvalidPacket;
       }
     } else if (currentState == slipStateClearingInvalidPacket) {
-      if (c == slipByteEnd) {
+      if (byte == slipByteEnd) {
         currentState = slipStateDecoding;
-        decodedData = [];
+        decoded = [];
       }
     }
 
-    return [finished, currentState, decodedData];
+    return (finished, currentState, decoded);
   }
 }
 
-class ChameleonDFU {
+class DFUTransferError implements Exception {
+  String cause;
+  DFUTransferError(this.cause);
+}
+
+class DFUCommunicator {
   int baudrate = 115200;
   int dataFrameSof = 0x11;
   int dataMaxLength = 512;
   int mtu = 0;
   int prn = 0;
   AbstractSerial? _serialInstance;
+  Completer<List<int>>? responseCompleter;
+
   Logger log = Logger();
 
-  ChameleonDFU({AbstractSerial? port}) {
+  DFUCommunicator({AbstractSerial? port}) {
     if (port != null) {
       open(port);
     }
@@ -124,25 +146,38 @@ class ChameleonDFU {
     _serialInstance = port;
   }
 
-  Future<Uint8List?> sendCmdSync(
-      ChameleonDFUCommand cmd, Uint8List data) async {
+  Future<Uint8List?> sendCmd(DFUCommand cmd, Uint8List data) async {
     var packet = Slip.encode(Uint8List.fromList([cmd.value, ...data.toList()]));
+
+    if (responseCompleter != null && !responseCompleter!.isCompleted) {
+      responseCompleter?.complete([]);
+    }
+
+    responseCompleter = Completer<List<int>>();
+
+    if (!_serialInstance!.isOpen) {
+      await _serialInstance!.open();
+      await _serialInstance!.initializeThread();
+      _serialInstance!.isOpen = true;
+    }
+
+    // we initialize completer each time in DFU, because it being recreated on each message
+    await _serialInstance!.registerCallback(responseCompleter?.complete);
 
     log.d("Sending: ${bytesToHex(packet)}");
     await _serialInstance!.write(packet);
 
-    List<int> readBuffer = [];
+    List<int>? readBuffer = await responseCompleter?.future;
 
-    while (true) {
-      readBuffer.addAll(await _serialInstance!.read(16384));
-      if (readBuffer.isNotEmpty) {
-        break;
-      }
+    if (readBuffer == null || readBuffer.isEmpty) {
+      return null;
     }
 
     log.d("Received: ${bytesToHex(Uint8List.fromList(readBuffer))}");
+    readBuffer = Slip.decode(Uint8List.fromList(readBuffer)).toList();
+    log.d("Slip decoded: ${bytesToHex(Uint8List.fromList(readBuffer))}");
 
-    if (readBuffer[0] != ChameleonDFUCommand.response.value) {
+    if (readBuffer[0] != DFUCommand.response.value) {
       throw ("DFU sent not response");
     }
 
@@ -150,50 +185,44 @@ class ChameleonDFU {
       throw ("DFU sent invalid command response");
     }
 
-    if (readBuffer[2] == ChameleonResponseCode.success.value) {
+    if (readBuffer[2] == DFUResponseCode.success.value) {
       return Uint8List.fromList(readBuffer).sublist(3);
     } else {
-      if (readBuffer[2] == ChameleonResponseCode.extendedError.value) {
-        throw ("DFU error: ${ChameleonResponseCode.fromValue(readBuffer[3])}");
+      if (readBuffer[2] == DFUResponseCode.extendedError.value) {
+        throw ("DFU error: ${DFUResponseCode.fromValue(readBuffer[3])}");
       }
-      throw ("DFU error: ${ChameleonResponseCode.fromValue(readBuffer[2])}");
+      throw ("DFU error: ${DFUResponseCode.fromValue(readBuffer[2])}");
     }
   }
 
   Future<dynamic> selectObject(int objectType) async {
-    var response = (await sendCmdSync(ChameleonDFUCommand.readObject,
+    var response = (await sendCmd(DFUCommand.readObject,
         Uint8List.fromList([objectType, 0x00, 0x00, 0x00])))!;
-    var maxSize =
-        response[0] << 24 | response[1] << 16 | response[2] << 8 | response[3];
-    var offset =
-        response[4] << 24 | response[5] << 16 | response[6] << 8 | response[7];
-    var crc = response[8] << 24 |
-        response[9] << 16 |
-        response[10] << 8 |
-        response[11];
+    var maxSize = ByteData.view(response.buffer).getUint32(0, Endian.little);
+    var offset = ByteData.view(response.buffer).getUint32(4, Endian.little);
+    var crc = ByteData.view(response.buffer).getUint32(8, Endian.little);
     return {'maxSize': maxSize, 'offset': offset, 'crc': crc};
   }
 
   Future<void> createObject(int objectType, int objectSize) async {
     final buffer = Uint8List(4);
     buffer.buffer.asByteData().setUint32(0, objectSize, Endian.little);
-    await sendCmdSync(ChameleonDFUCommand.createObject,
-        Uint8List.fromList([objectType, ...buffer]));
+    await sendCmd(
+        DFUCommand.createObject, Uint8List.fromList([objectType, ...buffer]));
   }
 
   Future<void> execute() async {
-    await sendCmdSync(ChameleonDFUCommand.execute, Uint8List(0));
+    await sendCmd(DFUCommand.execute, Uint8List(0));
   }
 
   Future<void> setPRN() async {
-    await sendCmdSync(ChameleonDFUCommand.setPRN, Uint8List.fromList([0x00]));
+    await sendCmd(DFUCommand.setPRN, Uint8List.fromList([0x00]));
   }
 
   Future<int> getMTU() async {
     try {
-      mtu = ByteData.view((await sendCmdSync(
-                  ChameleonDFUCommand.getSerialMTU, Uint8List(0)))!
-              .buffer)
+      mtu = ByteData.view(
+              (await sendCmd(DFUCommand.getSerialMTU, Uint8List(0)))!.buffer)
           .getUint16(0, Endian.little);
     } catch (_) {
       mtu = 2051;
@@ -203,9 +232,7 @@ class ChameleonDFU {
   }
 
   Future<Map<String, int>> calculateChecksum() async {
-    var response =
-        await sendCmdSync(ChameleonDFUCommand.calcChecSum, Uint8List(0));
-
+    var response = await sendCmd(DFUCommand.calcChecSum, Uint8List(0));
     var offset = ByteData.view(response!.buffer).getUint32(0, Endian.little);
     var crc = ByteData.view(response.buffer).getUint32(4, Endian.little);
 
@@ -215,23 +242,38 @@ class ChameleonDFU {
   Future<void> flashFirmware(int objectType, Uint8List firmwareBytes,
       void Function(int progress) callback) async {
     var object = await selectObject(objectType);
-    if (object['maxSize'] < firmwareBytes.length) {
-      throw ("Firmware can't fit here!");
-    }
-    var crc = 0;
-    var length = ((mtu - 1) ~/ 2 - 1) * 4;
-    for (var offset = 0; offset < firmwareBytes.length; offset += length) {
-      await createObject(
-          objectType, min(firmwareBytes.length - offset, length));
-      crc = await sendFirmware(
-          firmwareBytes.sublist(
-              offset, min(firmwareBytes.length, offset + length)),
-          crc: crc,
-          offset: offset);
-      await execute();
 
-      callback(((offset / firmwareBytes.length) * 100).round());
-      await asyncSleep(3);
+    var crc = 0;
+    var length = object['maxSize'] as int;
+    for (var offset = 0; offset < firmwareBytes.length; offset += length) {
+      var tries = 0;
+      var crcBackup = crc;
+      for (; tries < 10; tries++) {
+        await createObject(
+            objectType, min(firmwareBytes.length - offset, length));
+
+        try {
+          crc = await sendFirmware(
+              firmwareBytes.sublist(
+                  offset, min(firmwareBytes.length, offset + length)),
+              crc: crc,
+              offset: offset);
+        } on DFUTransferError {
+          log.w("Got error, trying ($tries) to recover...");
+          object = await selectObject(objectType);
+          crc = crcBackup;
+          continue;
+        }
+
+        await execute();
+        callback(((offset / firmwareBytes.length) * 100).round());
+        await asyncSleep(1);
+        break;
+      }
+
+      if (tries == 10) {
+        log.e("Unable to recover from DFU");
+      }
     }
   }
 
@@ -242,43 +284,42 @@ class ChameleonDFU {
     Map<String, int> response = {'crc': 0, 'offset': 0};
 
     void validateCrc() {
-      if (crc != response['crc']) {
-        // Yes, always fail
-        log.w(
-            "Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
-      }
       if (offset != response['offset']!) {
         log.w(
             "Failed offset validation. Expected: $offset Received: ${response['offset']}.");
+        throw DFUTransferError("Offset");
+      }
+      if (crc != response['crc']) {
+        log.w(
+            "Failed CRC validation. Expected: $crc Received: ${response['crc']}.");
+        throw DFUTransferError("CRC");
       }
     }
 
+    var currentPrn = 0;
     for (int i = 0; i < data.length; i += (mtu - 1) ~/ 2 - 1) {
       List<int> toTransmit =
           data.sublist(i, min(i + (mtu - 1) ~/ 2 - 1, data.length));
 
-      var packet = Slip.encode(Uint8List.fromList(
-          [ChameleonDFUCommand.writeObject.value, ...toTransmit.toList()]));
+      var packet = Slip.encode(
+          Uint8List.fromList([DFUCommand.writeObject.value, ...toTransmit]));
 
       await delayedSend(packet);
 
       offset += toTransmit.length;
-      crc = (calculateCRC32(toTransmit.sublist(1)).toUnsigned(32) & 0xFFFFFFFF)
-          .toInt();
-      response = await calculateChecksum();
-      validateCrc();
-    }
-
-    if (Platform.isWindows || Platform.isMacOS) {
-      // Transmission errors fix
-      await _serialInstance!.read(16384);
+      crc = calculateCRC32(toTransmit, crc) & 0xFFFFFFFF;
+      currentPrn++;
+      if (currentPrn == prn) {
+        response = await calculateChecksum();
+        validateCrc();
+        currentPrn = 0;
+      }
     }
 
     response = await calculateChecksum();
-
     validateCrc();
 
-    return crc;
+    return response['crc']!;
   }
 
   Future<void> delayedSend(Uint8List packet) async {
@@ -292,7 +333,6 @@ class ChameleonDFU {
             packet.sublist(
                 offset, offset + min(offsetSize, packet.length - offset)),
             firmware: true);
-        await asyncSleep(1);
       }
     } else {
       // Other OS: send as is

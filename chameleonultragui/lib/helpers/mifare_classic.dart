@@ -189,7 +189,7 @@ MifareClassicType chameleonTagTypeGetMfClassicType(TagType type) {
   }
 }
 
-bool chameleonTagSaveCheckForMifareClassicEV1(TagSave tag) {
+bool chameleonTagSaveCheckForMifareClassicEV1(CardSave tag) {
   return tag.tag == TagType.mifare1K &&
       tag.data.length >= 71 &&
       tag.data[71].isNotEmpty;

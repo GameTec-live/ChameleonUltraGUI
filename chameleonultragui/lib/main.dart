@@ -133,7 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    appState.devMode = appState.sharedPreferencesProvider.getDeveloperMode();
+    appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
 
     Widget page; // Set Page
     if (appState.connector.connected == false &&

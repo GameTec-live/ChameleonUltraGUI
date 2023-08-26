@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:collection/collection.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -191,6 +192,35 @@ void validateFiles(Uint8List dat, Uint8List bin) {
   }
 }
 
+Future<void> flashFirmware(MyAppState appState) async {
+  Uint8List applicationDat, applicationBin;
+
+  Uint8List content = await fetchFirmware(appState.connector.device);
+
+  (applicationDat, applicationBin) = await unpackFirmware(content);
+
+  flashFile(appState.communicator, appState, applicationDat, applicationBin,
+      (progress) => appState.setProgressBar(progress / 100),
+      firmwareZip: content);
+}
+
+Future<void> flashFirmwareZip(MyAppState appState) async {
+  Uint8List applicationDat, applicationBin;
+
+  FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+  if (result != null) {
+    File file = File(result.files.single.path!);
+
+    (applicationDat, applicationBin) =
+        await unpackFirmware(await file.readAsBytes());
+
+    flashFile(appState.communicator, appState, applicationDat, applicationBin,
+        (progress) => appState.setProgressBar(progress / 100),
+        firmwareZip: await file.readAsBytes());
+  }
+}
+
 Future<void> flashFile(
     ChameleonCommunicator? connection,
     MyAppState appState,
@@ -216,6 +246,10 @@ Future<void> flashFile(
     await appState.connector.performDisconnect();
   }
 
+  if (appState.connector.isOpen) {
+    await appState.connector.performDisconnect();
+  }
+
   List chameleons = [];
 
   while (chameleons.isEmpty) {
@@ -232,9 +266,7 @@ Future<void> flashFile(
   }
 
   await appState.connector.connectSpecificDevice(chameleons[0]['port']);
-  var dfu = ChameleonDFU(port: appState.connector);
-  await appState.connector.finishRead();
-  await appState.connector.open();
+  var dfu = DFUCommunicator(port: appState.connector);
   await dfu.setPRN();
   await dfu.getMTU();
   await dfu.flashFirmware(0x01, applicationDat, callback);

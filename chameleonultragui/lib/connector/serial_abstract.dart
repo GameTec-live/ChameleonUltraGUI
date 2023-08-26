@@ -40,12 +40,6 @@ class AbstractSerial {
     return false;
   }
 
-  Future<Uint8List> read(int length) async {
-    return Uint8List(0);
-  }
-
-  Future<void> finishRead() async {}
-
   Future<void> initializeThread() async {}
 
   Future<void> registerCallback(dynamic callback) async {
