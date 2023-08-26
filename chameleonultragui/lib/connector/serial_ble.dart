@@ -206,6 +206,7 @@ class BLESerial extends AbstractSerial {
           device = chameleonMap[devicePort]!.device;
 
           connectionType = ConnectionType.ble;
+          isDFU = false;
         }
 
         completer.complete(true);
