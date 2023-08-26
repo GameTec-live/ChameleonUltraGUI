@@ -128,12 +128,14 @@ class NativeSerial extends AbstractSerial {
   @override
   Future<void> open() async {
     port!.openReadWrite();
-    reader = SerialPortReader(port!, timeout: 1000);
+    reader = SerialPortReader(port!, timeout: 2500);
   }
 
   @override
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
-    return port!.write(command) > 1;
+    port!.write(command);
+    port!.drain();
+    return true;
   }
 
   @override

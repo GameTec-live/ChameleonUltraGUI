@@ -246,6 +246,10 @@ Future<void> flashFile(
     await appState.connector.performDisconnect();
   }
 
+  if (appState.connector.isOpen) {
+    await appState.connector.performDisconnect();
+  }
+
   List chameleons = [];
 
   while (chameleons.isEmpty) {

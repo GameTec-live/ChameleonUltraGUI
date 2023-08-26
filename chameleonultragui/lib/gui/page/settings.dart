@@ -271,7 +271,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 builder: (BuildContext context) => AlertDialog(
                   title: const Text('Debug mode?'),
                   content: Text(
-                      'Are you sure you want to ${appState.sharedPreferencesProvider.getDeveloperMode() ? "deactivate" : "activate"} debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms'),
+                      'Are you sure you want to ${appState.sharedPreferencesProvider.isDebugMode() ? "deactivate" : "activate"} debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms'),
                   actions: <Widget>[
                     TextButton(
                       onPressed: () => Navigator.pop(context, 'Cancel'),
@@ -279,15 +279,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     ),
                     TextButton(
                       onPressed: () {
-                        appState.devMode = true;
-                        if (appState.sharedPreferencesProvider
-                            .getDeveloperMode()) {
-                          appState.sharedPreferencesProvider
-                              .setDeveloperMode(false);
-                        } else {
-                          appState.sharedPreferencesProvider
-                              .setDeveloperMode(true);
-                        }
+                        appState.sharedPreferencesProvider.setDebugMode(
+                            !appState.sharedPreferencesProvider.isDebugMode());
                         appState.changesMade();
                         Navigator.pop(context, 'OK');
                       },

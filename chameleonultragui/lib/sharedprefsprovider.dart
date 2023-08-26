@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
-class ChameleonDictionary {
+class Dictionary {
   String id;
   String name;
   List<Uint8List> keys;
   Color color;
 
-  factory ChameleonDictionary.fromJson(String json) {
+  factory Dictionary.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
     final id = data['id'] as String;
     final name = data['name'] as String;
@@ -25,7 +25,7 @@ class ChameleonDictionary {
     for (var key in encodedKeys) {
       keys.add(Uint8List.fromList(List<int>.from(key)));
     }
-    return ChameleonDictionary(id: id, name: name, keys: keys, color: color);
+    return Dictionary(id: id, name: name, keys: keys, color: color);
   }
 
   String toJson() {
@@ -37,14 +37,14 @@ class ChameleonDictionary {
     });
   }
 
-  factory ChameleonDictionary.fromFile(String file, String name) {
+  factory Dictionary.fromFile(String file, String name) {
     final id = const Uuid().v4();
     final lines = file.split("\n");
     List<Uint8List> keys = [];
     for (var key in lines) {
       keys.add(hexToBytes(key));
     }
-    return ChameleonDictionary(id: id, name: name, keys: keys);
+    return Dictionary(id: id, name: name, keys: keys);
   }
 
   Uint8List toFile() {
@@ -55,14 +55,14 @@ class ChameleonDictionary {
     return const Utf8Encoder().convert(output);
   }
 
-  ChameleonDictionary(
+  Dictionary(
       {this.id = "",
       this.name = "",
       this.keys = const [],
       this.color = Colors.deepOrange});
 }
 
-class TagSave {
+class CardSave {
   String id;
   String uid;
   int sak;
@@ -72,7 +72,7 @@ class TagSave {
   List<Uint8List> data;
   Color color;
 
-  factory TagSave.fromJson(String json) {
+  factory CardSave.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
     final id = data['id'] as String;
     final uid = data['uid'] as String;
@@ -89,7 +89,7 @@ class TagSave {
     for (var block in encodedData) {
       tagData.add(Uint8List.fromList(List<int>.from(block)));
     }
-    return TagSave(
+    return CardSave(
         id: id,
         uid: uid,
         sak: sak,
@@ -113,7 +113,7 @@ class TagSave {
     });
   }
 
-  TagSave(
+  CardSave(
       {required this.id,
       required this.uid,
       required this.name,
@@ -218,24 +218,24 @@ class SharedPreferencesProvider extends ChangeNotifier {
     _sharedPreferences.setInt('app_theme_color', color);
   }
 
-  bool getDeveloperMode() {
-    return _sharedPreferences.getBool('developer_mode') ?? false;
+  bool isDebugMode() {
+    return _sharedPreferences.getBool('debug') ?? false;
   }
 
-  void setDeveloperMode(bool value) {
-    _sharedPreferences.setBool('developer_mode', value);
+  void setDebugMode(bool value) {
+    _sharedPreferences.setBool('debug', value);
   }
 
-  List<ChameleonDictionary> getChameleonDictionaries() {
-    List<ChameleonDictionary> output = [];
+  List<Dictionary> getDictionaries() {
+    List<Dictionary> output = [];
     final data = _sharedPreferences.getStringList('dictionaries') ?? [];
     for (var dictionary in data) {
-      output.add(ChameleonDictionary.fromJson(dictionary));
+      output.add(Dictionary.fromJson(dictionary));
     }
     return output;
   }
 
-  void setChameleonDictionaries(List<ChameleonDictionary> dictionaries) {
+  void setDictionaries(List<Dictionary> dictionaries) {
     List<String> output = [];
     for (var dictionary in dictionaries) {
       if (dictionary.id != "") {
@@ -246,19 +246,19 @@ class SharedPreferencesProvider extends ChangeNotifier {
     _sharedPreferences.setStringList('dictionaries', output);
   }
 
-  List<TagSave> getChameleonTags() {
-    List<TagSave> output = [];
+  List<CardSave> getCards() {
+    List<CardSave> output = [];
     final data = _sharedPreferences.getStringList('cards') ?? [];
     for (var tag in data) {
-      output.add(TagSave.fromJson(tag));
+      output.add(CardSave.fromJson(tag));
     }
     return output;
   }
 
-  void setChameleonTags(List<TagSave> tags) {
+  void setCards(List<CardSave> cards) {
     List<String> output = [];
-    for (var tag in tags) {
-      output.add(tag.toJson());
+    for (var card in cards) {
+      output.add(card.toJson());
     }
     _sharedPreferences.setStringList('cards', output);
   }

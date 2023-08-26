@@ -52,8 +52,8 @@ class ChameleonReadTagStatus {
   List<Uint8List> validKeys;
   List<Uint8List> cardData;
   double dumpProgress;
-  List<ChameleonDictionary> dictionaries;
-  ChameleonDictionary? selectedDictionary;
+  List<Dictionary> dictionaries;
+  Dictionary? selectedDictionary;
   ChameleonMifareClassicState state;
 
   ChameleonReadTagStatus(
@@ -577,8 +577,8 @@ class ReadCardPageState extends State<ReadCardPage> {
         }
       }
     } else {
-      var tags = appState.sharedPreferencesProvider.getChameleonTags();
-      tags.add(TagSave(
+      var tags = appState.sharedPreferencesProvider.getCards();
+      tags.add(CardSave(
           id: const Uuid().v4(),
           uid: status.hfUid,
           sak: hexToBytes(status.sak)[0],
@@ -588,13 +588,13 @@ class ReadCardPageState extends State<ReadCardPage> {
               ? TagType.mifare1K
               : mfClassicGetChameleonTagType(status.type),
           data: status.cardData));
-      appState.sharedPreferencesProvider.setChameleonTags(tags);
+      appState.sharedPreferencesProvider.setCards(tags);
     }
   }
 
   Future<void> saveLFCard(MyAppState appState) async {
-    var tags = appState.sharedPreferencesProvider.getChameleonTags();
-    tags.add(TagSave(
+    var tags = appState.sharedPreferencesProvider.getCards();
+    tags.add(CardSave(
         id: const Uuid().v4(),
         uid: status.lfUid,
         sak: 0,
@@ -602,7 +602,7 @@ class ReadCardPageState extends State<ReadCardPage> {
         name: status.dumpName,
         tag: TagType.em410X,
         data: []));
-    appState.sharedPreferencesProvider.setChameleonTags(tags);
+    appState.sharedPreferencesProvider.setCards(tags);
   }
 
   Widget buildFieldRow(String label, String value, double fontSize) {
@@ -642,10 +642,8 @@ class ReadCardPageState extends State<ReadCardPage> {
     double checkmarkSize = isSmallScreen ? 16 : 20;
 
     var appState = context.watch<MyAppState>();
-    status.dictionaries =
-        appState.sharedPreferencesProvider.getChameleonDictionaries();
-    status.dictionaries
-        .insert(0, ChameleonDictionary(id: "", name: "Empty", keys: []));
+    status.dictionaries = appState.sharedPreferencesProvider.getDictionaries();
+    status.dictionaries.insert(0, Dictionary(id: "", name: "Empty", keys: []));
     status.selectedDictionary ??= status.dictionaries[0];
 
     return Scaffold(
@@ -1011,7 +1009,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                               value: status.selectedDictionary!.id,
                               items: status.dictionaries
                                   .map<DropdownMenuItem<String>>(
-                                      (ChameleonDictionary dictionary) {
+                                      (Dictionary dictionary) {
                                 return DropdownMenuItem<String>(
                                   value: dictionary.id,
                                   child: Text(

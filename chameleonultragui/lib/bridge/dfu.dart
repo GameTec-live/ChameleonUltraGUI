@@ -312,6 +312,7 @@ class DFUCommunicator {
       if (currentPrn == prn) {
         response = await calculateChecksum();
         validateCrc();
+        currentPrn = 0;
       }
     }
 
@@ -332,7 +333,6 @@ class DFUCommunicator {
             packet.sublist(
                 offset, offset + min(offsetSize, packet.length - offset)),
             firmware: true);
-        await asyncSleep(1);
       }
     } else {
       // Other OS: send as is
