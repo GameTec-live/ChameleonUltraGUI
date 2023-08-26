@@ -267,7 +267,6 @@ Future<void> flashFile(
     for (var chameleon in chameleons) {
       if (chameleon.type != ConnectionType.ble) {
         toFlash = chameleon;
-        isBLE = false;
         break;
       }
     }
