@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/gui/features/flash_firmware_latest.dart';
-import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:chameleonultragui/gui/features/firmware_flasher.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/recovery/definitions.dart';
@@ -217,19 +216,10 @@ class DebugPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              Uint8List applicationDat, applicationBin;
-
-              Uint8List content = await fetchFirmware(ChameleonDevice.ultra);
-
-              (applicationDat, applicationBin) = await unpackFirmware(content);
-
-              flashFile(
-                  appState.communicator,
-                  appState,
-                  applicationDat,
-                  applicationBin,
-                  (progress) => appState.log.d("Flashing: $progress%"),
-                  firmwareZip: content);
+              FirmwareFlasher flasher = FirmwareFlasher(appState.connector, FirmwareGithubNightlyProvider(ChameleonDevice.ultra));
+              await flasher.flash((progressUpdate) {
+                appState.log.d("Flashing: state: ${progressUpdate.state.description} ${progressUpdate.progress}%");
+              });
             },
             child: const Column(children: [
               Text('💀 DFU flash ultra FW 💀'),
@@ -237,19 +227,10 @@ class DebugPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              Uint8List applicationDat, applicationBin;
-
-              Uint8List content = await fetchFirmware(ChameleonDevice.lite);
-
-              (applicationDat, applicationBin) = await unpackFirmware(content);
-
-              flashFile(
-                  appState.communicator,
-                  appState,
-                  applicationDat,
-                  applicationBin,
-                  (progress) => appState.log.d("Flashing: $progress%"),
-                  firmwareZip: content);
+              FirmwareFlasher flasher = FirmwareFlasher(appState.connector, FirmwareGithubNightlyProvider(ChameleonDevice.lite));
+              await flasher.flash((progressUpdate) {
+                appState.log.d("Flashing: state: ${progressUpdate.state.description} ${progressUpdate.progress}%");
+              });
             },
             child: const Column(children: [
               Text('💀 DFU flash lite FW 💀'),

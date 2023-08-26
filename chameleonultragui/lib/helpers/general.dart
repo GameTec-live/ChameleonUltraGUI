@@ -153,3 +153,22 @@ int calculateCrossAxisCount({ int gridCellWidth = 400 }) {
   // use height instead of width cause they are swapped
   return max(1, (SizerUtil.height / gridCellWidth).floor());
 }
+
+bool isUrl(String url, {
+  List<String> allowedSchemes = const ['https'],
+  bool Function(Uri uri)? more,
+}) {
+  try {
+    var uri = Uri.parse(url);
+
+    final isValid = 
+      allowedSchemes.any((scheme) => uri.isScheme(scheme))
+      && uri.host != ''
+      && uri.path != ''
+      && more!(uri);
+
+    return isValid;
+  } catch (_) {}
+
+  return false;
+}

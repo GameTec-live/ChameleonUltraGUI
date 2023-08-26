@@ -1,0 +1,1 @@
+Business logic that is unaware of any UI/Widget specifics

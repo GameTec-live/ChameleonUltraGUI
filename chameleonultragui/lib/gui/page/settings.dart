@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/gui/component/developer_list.dart';
+import 'package:chameleonultragui/gui/component/helpers/confirm_http_proxy.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
@@ -184,6 +185,14 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               ],
             ),
             const SizedBox(height: 10),
+            ElevatedButton(
+              child: const Text('Update HTTP proxy'),
+              onPressed: () {
+                final sharedPreferences = appState.sharedPreferencesProvider;
+                confirmHttpProxy(context, sharedPreferences, onlyWhenNotSet: false);
+              }
+            ),
+            const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
                 context: context,
@@ -204,6 +213,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               snapshot.data;
                           return SingleChildScrollView(
                               child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               const Text('Chameleon Ultra GUI',
                                   style:

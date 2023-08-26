@@ -3,8 +3,9 @@ import 'package:chameleonultragui/gui/component/card_web_pair_devices.dart';
 import 'package:chameleonultragui/gui/component/button_chameleon_device.dart';
 import 'package:chameleonultragui/gui/component/button_dfu_device.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/gui/features/flash_firmware_latest.dart';
-import 'package:chameleonultragui/gui/features/flash_firmware_zip.dart';
+import 'package:chameleonultragui/gui/component/helpers/confirm_http_proxy.dart';
+import 'package:chameleonultragui/gui/features/firmware_flasher.dart';
+import 'package:chameleonultragui/helpers/files.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -86,7 +87,7 @@ class ConnectPage extends StatelessWidget {
                     ),
                     scrollDirection: Axis.vertical,
                     children: [
-                      if (result.isEmpty)
+                      if (kIsWeb && result.isEmpty)
                         Align(
                           alignment: Alignment.center,
                           child: SizedBox(
@@ -102,16 +103,28 @@ class ConnectPage extends StatelessWidget {
                           return ButtonDfuDevice(
                             devicePort: chameleonDevice,
                             onFirmwareUpdate: (fromZipFile) async {
-                              await connector.connectSpecificDevice(chameleonDevice.port);
-
                               if (fromZipFile) {
-                                await flashFirmwareZip(appState);
-                              } else {
-                                await flashFirmwareLatest(appState);
-                              }
+                                FileResult? file = await pickFile(appState);
+                                if (file == null) {
+                                  appState.log.d("Empty file picked");
+                                  return;
+                                }
 
-                              // Give the device some time to restart/reconnect
-                              await asyncSleep(500);
+                                var flasher = FirmwareFlasher.fromZipFile(connector, file.bytes);
+                                await connector.connectSpecificDevice(chameleonDevice.port);
+                                await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
+                              } else {
+                                if (context.mounted) {
+                                  final canContinue = await confirmHttpProxy(context, appState.sharedPreferencesProvider);
+                                  if (canContinue != false) {
+                                    return;
+                                  }
+                                }
+
+                                var flasher = FirmwareFlasher.fromGithubNightly(connector);
+                                await connector.connectSpecificDevice(chameleonDevice.port);
+                                await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
+                              }
 
                               appState.changesMade();
                             },

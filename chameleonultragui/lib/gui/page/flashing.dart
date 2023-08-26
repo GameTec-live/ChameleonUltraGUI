@@ -42,9 +42,9 @@ class FlashingPage extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              const Text(
-                'Please wait...',
-                style: TextStyle(fontSize: 20),
+              Text(
+                appState.flashProgress?.state.description ?? 'Please wait...',
+                style: const TextStyle(fontSize: 20),
               ),
             ],
           ),

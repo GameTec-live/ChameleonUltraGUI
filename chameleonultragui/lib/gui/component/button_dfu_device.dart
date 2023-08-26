@@ -1,5 +1,4 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 class ButtonDfuDevice extends StatelessWidget {
@@ -99,17 +98,15 @@ class ButtonDfuDevice extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (!kIsWeb)
-                            FilledButton(
-                              onPressed: () async {
-                                if (onFirmwareUpdate != null) {
-                                  await onFirmwareUpdate!(false);
-                                }
-                              },
-                              child: const Text('Flash latest firmware')
-                            ),
-                          if (!kIsWeb)
-                            const SizedBox(height: 8),
+                          FilledButton(
+                            onPressed: () async {
+                              if (onFirmwareUpdate != null) {
+                                await onFirmwareUpdate!(false);
+                              }
+                            },
+                            child: const Text('Flash latest firmware')
+                          ),
+                          const SizedBox(height: 8),
                           FilledButton(
                             onPressed: () async {
                               if (onFirmwareUpdate != null) {

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/gui/features/firmware_flasher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -98,7 +99,7 @@ class MyAppState extends ChangeNotifier {
   ChameleonCommunicator? communicator;
 
   bool devMode = false;
-  double? progress; // DFU
+  FlashFirmwareUpdateProgress? flashProgress; // DFU
 
   // Flashing easter egg
   bool easterEgg = false;
@@ -107,12 +108,17 @@ class MyAppState extends ChangeNotifier {
 
   Logger log = Logger(); // Logger, App wide logger
 
+  /// Force a complete UI refresh
+  /// Not needed when changing state, mainly needed to switch UI after connecting devices
   void changesMade() {
+    log.d('changesMade');
     notifyListeners();
   }
 
-  void setProgressBar(dynamic value) {
-    progress = value;
+  /// Update the firmware flashing state
+  void setFlashProgress(FlashFirmwareUpdateProgress progressUpdate) {
+    flashProgress = progressUpdate;
+    // log.d('setFlashProgress $flashState $value');
     notifyListeners();
   }
 }
@@ -361,9 +367,9 @@ class BottomProgressBar extends StatelessWidget {
     var appState = context.watch<MyAppState>();
     return (appState.connector.connected == true &&
             appState.connector.connectionType == ConnectionType.dfu &&
-            (appState.progress != null && appState.progress !> 0))
+            (appState.flashProgress!.progress != null && appState.flashProgress!.progress !> 0))
         ? LinearProgressIndicator(
-            value: appState.progress,
+            value: appState.flashProgress!.progress,
             backgroundColor: Colors.grey[300],
             valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
           )

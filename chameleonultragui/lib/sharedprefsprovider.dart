@@ -262,4 +262,16 @@ class SharedPreferencesProvider extends ChangeNotifier {
     }
     _sharedPreferences.setStringList('cards', output);
   }
+
+  String? get httpCorsProxy  {
+    return _sharedPreferences.getString('http_cors_proxy');
+  }
+
+  set httpCorsProxy(String? proxy) {
+    if (proxy == null) {
+      _sharedPreferences.remove('http_cors_proxy');
+    } else {
+      _sharedPreferences.setString('http_cors_proxy', proxy);
+    }
+  }
 }

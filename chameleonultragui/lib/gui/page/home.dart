@@ -1,4 +1,6 @@
-import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:chameleonultragui/gui/component/button_check_firmware.dart';
+import 'package:chameleonultragui/gui/features/firmware_flasher.dart';
+import 'package:chameleonultragui/helpers/files.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -7,8 +9,6 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/dialog_device_settings.dart';
 import 'package:chameleonultragui/gui/component/slot_changer.dart';
-import 'package:chameleonultragui/gui/features/flash_firmware_latest.dart';
-import 'package:chameleonultragui/gui/features/flash_firmware_zip.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:sizer_pro/sizer.dart';
 
@@ -271,75 +271,12 @@ class HomePageState extends State<HomePage> {
                         if (appState.connector.connectionType != ConnectionType.ble)
                           Padding(
                             padding: const EdgeInsets.all(4.0),
-                            child: IconButton(
-                              onPressed: () async {
-                                SnackBar snackBar;
-                                String latestCommit;
-
-                                var scaffoldMessenger = ScaffoldMessenger.of(context);
-
-                                try {
-                                  latestCommit = await latestAvailableCommit(
-                                      appState.connector.device);
-                                } catch (e) {
-                                  scaffoldMessenger.hideCurrentSnackBar();
-                                  snackBar = SnackBar(
-                                    content:
-                                        Text('Update error: ${e.toString()}'),
-                                    showCloseIcon: true,
-                                  );
-
-                                  scaffoldMessenger.showSnackBar(snackBar);
-                                  return;
-                                }
-
-                                appState.log.i("Latest commit: $latestCommit");
-
-                                if (latestCommit.isEmpty) {
-                                  return;
-                                }
-
-                                if (latestCommit.startsWith(fwVersion[1])) {
-                                  snackBar = SnackBar(
-                                    content: Text(
-                                        'Your ${appState.connector.device.name} firmware is up to date'),
-                                    showCloseIcon: true,
-                                  );
-
-                                  scaffoldMessenger.showSnackBar(snackBar);
-                                } else {
-                                  var message = 'Downloading and preparing new ${appState.connector.device.name} firmware...';
-                                  if (kIsWeb) {
-                                    message = 'Your ${appState.connector.device.name} firmware is out of date! Automatic updates are not (yet) supported on web, download manually and then update by clicking on the Settings icon';
-                                  }
-
-                                  snackBar = SnackBar(
-                                    content: Text(message),
-                                    showCloseIcon: true,
-                                  );
-
-                                  scaffoldMessenger.showSnackBar(snackBar);
-
-                                  if (!kIsWeb) {
-                                    try {
-                                      await flashFirmwareLatest(appState);
-                                    } catch (e) {
-                                      scaffoldMessenger.hideCurrentSnackBar();
-                                      snackBar = SnackBar(
-                                        content:
-                                            Text('Update error: ${e.toString()}'),
-                                        showCloseIcon: true,
-                                      );
-
-                                      scaffoldMessenger
-                                          .showSnackBar(snackBar);
-                                    }
-                                  }
-                                }
-                              },
-                              tooltip: "Check for updates",
-                              icon: const Icon(Icons.update),
-                            ),
+                            child: ButtonCheckFirmware(
+                              connector: appState.connector,
+                              sharedPreferences: appState.sharedPreferencesProvider,
+                              currentFirmwareVersion: fwVersion[1],
+                              onDeviceChange: () => appState.changesMade(),
+                            )
                           )
                       ],
                     ),
@@ -443,7 +380,8 @@ class HomePageState extends State<HomePage> {
 
                                       scaffoldMessenger.showSnackBar(snackBar);
                                       try {
-                                        await flashFirmwareLatest(appState);
+                                        var flasher = FirmwareFlasher.fromGithubNightly(appState.connector);
+                                        await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
                                       } catch (e) {
                                         snackBar = SnackBar(
                                           content: Text('Update error: ${e.toString()}'),
@@ -458,7 +396,15 @@ class HomePageState extends State<HomePage> {
                                       onClose();
 
                                       try {
-                                        await flashFirmwareZip(appState);
+                                        FileResult? file = await pickFile(appState);
+                                        if (file == null) {
+                                          appState.log.d("Empty file picked");
+                                          return;
+                                        }
+
+                                        var flasher = FirmwareFlasher.fromZipFile(appState.connector, file.bytes);
+                                        await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
+
                                       } catch (e) {
                                         var snackBar = SnackBar(
                                           content: Text('Update error: ${e.toString()}'),

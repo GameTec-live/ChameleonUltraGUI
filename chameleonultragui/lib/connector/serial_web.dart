@@ -195,9 +195,9 @@ class SerialConnector extends AbstractSerial {
 
     if (currentDevice!.connection == ConnectionType.dfu) {
       log.w("Chameleon is in DFU mode! ${currentDevice!.connection}");
-    } else {
-      listen();
     }
+
+    listen();
 
     return connected;
   }
@@ -249,6 +249,7 @@ class SerialConnector extends AbstractSerial {
       await writer!.ready;
       await writer!.write(command);
       writer!.releaseLock();
+
       return true;
     } catch (e) {
       log.e('Write error: $e');
@@ -260,14 +261,19 @@ class SerialConnector extends AbstractSerial {
   Future<Uint8List> read(int length) async {
     final completer = Completer<Uint8List>();
 
-    while (true) {
+    while (connected) {
+      await asyncSleep(10);
+
       if (messagePool.isNotEmpty) {
-        var message = messagePool[0];
-        messagePool.remove(message);
-        completer.complete(message);
+        var message = List<int>.empty(growable: true);
+        for (var msg in messagePool) {
+          message.addAll(msg);
+        }
+        messagePool.clear();
+
+        completer.complete(Uint8List.fromList(message));
         break;
       }
-      await asyncSleep(10);
     }
 
     return completer.future;
