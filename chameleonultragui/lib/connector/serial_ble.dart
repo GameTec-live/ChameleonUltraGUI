@@ -23,9 +23,15 @@ class BLESerial extends AbstractSerial {
   Stream<List<int>>? receivedDataStream;
   StreamSubscription<ConnectionStateUpdate>? connection;
   Map<String, Chameleon> chameleonMap = {};
+  bool inSearch = false;
 
   @override
   Future<List> availableDevices() async {
+    if (inSearch && Platform.isIOS) {
+      log.w("Multiple searches in one time not allowed on iOS");
+      return [];
+    }
+
     List<DiscoveredDevice> foundDevices = [];
     await performDisconnect();
 
@@ -33,6 +39,7 @@ class BLESerial extends AbstractSerial {
         Completer<List<DiscoveredDevice>>();
     StreamSubscription<DiscoveredDevice> subscription;
 
+    inSearch = true;
     subscription = flutterReactiveBle.scanForDevices(
       withServices: [nrfUUID, dfuUUID],
       scanMode: ScanMode.lowLatency,
@@ -47,6 +54,7 @@ class BLESerial extends AbstractSerial {
       }
     }, onError: (e) {
       log.e("Got BLE search error: $e");
+      inSearch = false;
       if (Platform.isIOS) {
         throw (e); // BLE is primary there, throw exception
       } else {
@@ -56,6 +64,7 @@ class BLESerial extends AbstractSerial {
 
     Timer(const Duration(seconds: 2), () {
       subscription.cancel();
+      inSearch = false;
       try {
         completer.complete(foundDevices);
         log.d('Found BLE devices: ${foundDevices.length}');
