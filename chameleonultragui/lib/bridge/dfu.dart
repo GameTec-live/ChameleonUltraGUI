@@ -322,12 +322,14 @@ class DFUCommunicator {
       crc = calculateCRC32(toTransmit, crc) & 0xFFFFFFFF;
       currentPrn++;
       if (currentPrn == prn) {
+        await asyncSleep(1);
         response = await calculateChecksum();
         validateCrc();
         currentPrn = 0;
       }
     }
 
+    await asyncSleep(1);
     response = await calculateChecksum();
     validateCrc();
 
@@ -348,6 +350,10 @@ class DFUCommunicator {
             packet.sublist(
                 offset, offset + min(offsetSize, packet.length - offset)),
             firmware: true);
+      }
+
+      if (Platform.isIOS) {
+        await asyncSleep(10);
       }
     } else {
       // Other OS: send as is
