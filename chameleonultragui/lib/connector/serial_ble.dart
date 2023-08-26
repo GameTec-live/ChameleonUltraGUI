@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 // Regular
@@ -151,7 +152,12 @@ class BLESerial extends AbstractSerial {
               flutterReactiveBle.subscribeToCharacteristic(txCharacteristic!);
           receivedDataStream!.listen((data) async {
             if (messageCallback != null) {
-              await messageCallback(Uint8List.fromList(data));
+              try {
+                await messageCallback(Uint8List.fromList(data));
+              } catch (_) {
+                log.w(
+                    "Received unexpected data: ${bytesToHex(Uint8List.fromList(data))}");
+              }
             }
           }, onError: (dynamic error) {
             log.e(error);
@@ -180,7 +186,12 @@ class BLESerial extends AbstractSerial {
               flutterReactiveBle.subscribeToCharacteristic(txCharacteristic!);
           receivedDataStream!.listen((data) async {
             if (messageCallback != null) {
-              await messageCallback(Uint8List.fromList(data));
+              try {
+                await messageCallback(Uint8List.fromList(data));
+              } catch (_) {
+                log.w(
+                    "Received unexpected data: ${bytesToHex(Uint8List.fromList(data))}");
+              }
             }
           }, onError: (dynamic error) {
             log.e(error);

@@ -100,4 +100,7 @@ class AndroidSerial extends AbstractSerial {
 
   @override
   set isOpen(open) => {bleSerial.isOpen = mobileSerial.isOpen = open};
+
+  @override
+  bool get isDFU => (bleSerial.isDFU || mobileSerial.isDFU);
 }

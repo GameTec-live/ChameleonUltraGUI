@@ -248,6 +248,11 @@ Future<void> flashFile(
     await appState.connector.performDisconnect();
   }
 
+  if (Platform.isAndroid) {
+    // BLE appears bit earlier than USB
+    await asyncSleep(1000);
+  }
+
   List<Chameleon> chameleons = [];
 
   while (chameleons.isEmpty) {
@@ -257,10 +262,13 @@ Future<void> flashFile(
 
   var toFlash = chameleons[0];
   var isBLE = toFlash.type == ConnectionType.ble;
+
   if (toFlash.type == ConnectionType.ble) {
     for (var chameleon in chameleons) {
       if (chameleon.type != ConnectionType.ble) {
         toFlash = chameleon;
+        isBLE = false;
+        break;
       }
     }
   }

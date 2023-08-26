@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/services.dart';
 import 'package:usb_serial/usb_serial.dart';
 
@@ -103,7 +104,11 @@ class MobileSerial extends AbstractSerial {
 
       port!.inputStream!.listen((Uint8List data) async {
         if (messageCallback != null) {
-          await messageCallback(Uint8List.fromList(data));
+          try {
+            await messageCallback(data);
+          } catch (_) {
+            log.w("Received unexpected data: ${bytesToHex(data)}");
+          }
         }
       });
 
@@ -117,8 +122,8 @@ class MobileSerial extends AbstractSerial {
       });
 
       portName = devicePort.substring(devicePort.length - 15); // Limit length
-
       isDFU = deviceMap[devicePort]!.vid == 0x1915;
+
       return true;
     }
     return false;

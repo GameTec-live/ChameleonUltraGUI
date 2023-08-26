@@ -189,7 +189,7 @@ class DFUCommunicator {
     }
 
     if (readBuffer[1] != cmd.value) {
-      throw ("DFU sent invalid command response");
+      throw DFUTransferError("Received unexpected DFU command");
     }
 
     if (readBuffer[2] == DFUResponseCode.success.value) {
@@ -280,7 +280,7 @@ class DFUCommunicator {
       }
 
       if (tries == 10) {
-        log.e("Unable to recover from DFU");
+        throw ("Unable to recover from DFU");
       }
     }
   }
@@ -353,7 +353,7 @@ class DFUCommunicator {
       }
 
       if (Platform.isIOS) {
-        await asyncSleep(10);
+        await asyncSleep(100);
       }
     } else {
       // Other OS: send as is
