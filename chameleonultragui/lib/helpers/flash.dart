@@ -273,7 +273,7 @@ Future<void> flashFile(
 
   var dfu = DFUCommunicator(
       port: appState.connector,
-      isBLE: toFlash.type == ConnectionType.ble); // isBLE shouldn't used here
+      viaBLE: toFlash.type == ConnectionType.ble); // isBLE shouldn't used here
   await dfu.setPRN();
   await dfu.getMTU();
   appState.changesMade();

@@ -137,8 +137,8 @@ class DFUCommunicator {
 
   Logger log = Logger();
 
-  DFUCommunicator({AbstractSerial? port, bool isBLE = false}) {
-    isBLE = isBLE;
+  DFUCommunicator({AbstractSerial? port, bool viaBLE = false}) {
+    isBLE = viaBLE;
     if (port != null) {
       open(port);
     }
@@ -223,7 +223,7 @@ class DFUCommunicator {
   }
 
   Future<void> setPRN() async {
-    await sendCmd(DFUCommand.setPRN, Uint8List.fromList([0x4]));
+    await sendCmd(DFUCommand.setPRN, Uint8List.fromList([0x00]));
   }
 
   Future<int> getMTU() async {
