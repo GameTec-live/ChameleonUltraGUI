@@ -272,7 +272,7 @@ Future<void> flashFile(
     }
   }
 
-  if (chameleons.length > 1 && !isBLE) {
+  if (chameleons.length > 1 && (!isBLE && Platform.isAndroid)) {
     throw ("More than one Chameleon in DFU. Please connect only one at a time");
   }
 
