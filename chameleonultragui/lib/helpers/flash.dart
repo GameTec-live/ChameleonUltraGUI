@@ -250,7 +250,7 @@ Future<void> flashFile(
 
   if (Platform.isAndroid) {
     // BLE appears bit earlier than USB
-    await asyncSleep(1000);
+    await asyncSleep(2500);
   }
 
   List<Chameleon> chameleons = [];
