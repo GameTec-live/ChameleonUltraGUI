@@ -5,7 +5,6 @@ import 'package:chameleonultragui/gui/features/firmware_flasher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:sizer_pro/sizer.dart';
 
@@ -56,8 +55,8 @@ class MyApp extends StatelessWidget {
           create: (context) => MyAppState(_sharedPreferencesProvider),
         ),
       ],
-      child: ScreenUtilInit(
-        builder: (_, child) => MaterialApp(
+      child: Sizer(
+        builder: (_, __, ___) => MaterialApp(
           title: 'Chameleon Ultra GUI', // App Name
           theme: ThemeData(
             useMaterial3: true,
@@ -66,21 +65,16 @@ class MyApp extends StatelessWidget {
                     _sharedPreferencesProvider.getThemeColor()), // Color Scheme
             brightness: Brightness.light, // Light Theme
           ),
-          darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
+          darkTheme: ThemeData.dark().copyWith(
             colorScheme: ColorScheme.fromSeed(
                 seedColor: _sharedPreferencesProvider.getThemeColor(),
                 brightness: Brightness.dark), // Color Scheme
             brightness: Brightness.dark, // Dark Theme
           ),
           themeMode: _sharedPreferencesProvider.getTheme(), // Dark Theme
-          home: child,
-        ),
-        child: Sizer(
-          builder: (context, orientation, deviceType) {
-            return const MyHomePage();
-          }
+          home: const MyHomePage(),
         )
-      ),
+      )
     );
 
     //return ChangeNotifierProvider(
@@ -119,7 +113,7 @@ class MyAppState extends ChangeNotifier {
   /// Update the firmware flashing state
   void setFlashProgress(FlashFirmwareUpdateProgress progressUpdate) {
     flashProgress = progressUpdate;
-    // log.d('setFlashProgress $flashState $value');
+    // log.d('setFlashProgress ${progressUpdate.state} ${progressUpdate.progress}');
     notifyListeners();
   }
 }
@@ -366,7 +360,7 @@ class BottomProgressBar extends StatelessWidget {
     var appState = context.watch<MyAppState>();
     return (appState.connector.connected == true &&
             appState.connector.connectionType == ConnectionType.dfu &&
-            (appState.flashProgress!.progress != null && appState.flashProgress!.progress !> 0))
+            appState.flashProgress!.progress !> 0)
         ? LinearProgressIndicator(
             value: appState.flashProgress!.progress,
             backgroundColor: Colors.grey[300],
