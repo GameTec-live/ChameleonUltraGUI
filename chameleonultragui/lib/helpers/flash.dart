@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:collection/collection.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -188,6 +189,35 @@ void validateFiles(Uint8List dat, Uint8List bin) {
 
   if (!const IterableEquality().equals(expectedHash, actualHash)) {
     throw ("Hashes don't match! expected: ${expectedHash.toList()}, actual: $actualHash");
+  }
+}
+
+Future<void> flashFirmware(MyAppState appState) async {
+  Uint8List applicationDat, applicationBin;
+
+  Uint8List content = await fetchFirmware(appState.connector.device);
+
+  (applicationDat, applicationBin) = await unpackFirmware(content);
+
+  flashFile(appState.communicator, appState, applicationDat, applicationBin,
+      (progress) => appState.setProgressBar(progress / 100),
+      firmwareZip: content);
+}
+
+Future<void> flashFirmwareZip(MyAppState appState) async {
+  Uint8List applicationDat, applicationBin;
+
+  FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+  if (result != null) {
+    File file = File(result.files.single.path!);
+
+    (applicationDat, applicationBin) =
+        await unpackFirmware(await file.readAsBytes());
+
+    flashFile(appState.communicator, appState, applicationDat, applicationBin,
+        (progress) => appState.setProgressBar(progress / 100),
+        firmwareZip: await file.readAsBytes());
   }
 }
 

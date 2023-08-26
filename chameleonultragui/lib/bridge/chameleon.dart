@@ -47,6 +47,8 @@ enum ChameleonCommand {
   // button config
   getButtonPressConfig(1026),
   setButtonPressConfig(1027),
+  getLongButtonPressConfig(1028),
+  setLongButtonPressConfig(1029),
 
   // hf reader commands
   scan14ATag(2000),
@@ -357,12 +359,14 @@ class ChameleonCommunicator {
     }
 
     log.d("Sending: ${bytesToHex(dataFrame)}");
+
     if (skipReceive) {
       try {
         await _serialInstance!.write(Uint8List.fromList(dataFrame));
       } catch (_) {}
       return null;
     }
+
     await _serialInstance!.write(Uint8List.fromList(dataFrame));
 
     while (true) {
@@ -856,6 +860,25 @@ class ChameleonCommunicator {
 
   Future<void> setButtonConfig(ButtonType type, ButtonPress mode) async {
     await sendCmd(ChameleonCommand.setButtonPressConfig,
+        data: Uint8List.fromList([type.value, mode.value]));
+  }
+
+  Future<ButtonPress> getLongButtonConfig(ButtonType type) async {
+    var resp = await sendCmd(ChameleonCommand.getLongButtonPressConfig,
+        data: Uint8List.fromList([type.value]));
+    if (resp!.data[0] == 1) {
+      return ButtonPress.cycleForward;
+    } else if (resp.data[0] == 2) {
+      return ButtonPress.cycleBackward;
+    } else if (resp.data[0] == 3) {
+      return ButtonPress.cloneUID;
+    } else {
+      return ButtonPress.disable;
+    }
+  }
+
+  Future<void> setLongButtonConfig(ButtonType type, ButtonPress mode) async {
+    await sendCmd(ChameleonCommand.setLongButtonPressConfig,
         data: Uint8List.fromList([type.value, mode.value]));
   }
 }
