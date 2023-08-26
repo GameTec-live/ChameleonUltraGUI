@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/gui/component/button_check_firmware.dart';
+import 'package:chameleonultragui/gui/component/dialog_confirm.dart';
 import 'package:chameleonultragui/gui/features/firmware_flasher.dart';
 import 'package:chameleonultragui/helpers/files.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -354,6 +355,25 @@ class HomePageState extends State<HomePage> {
                                       await communicator.resetSettings();
                                       onClose();
                                       appState.changesMade();
+                                    },
+                                    onResetFactorySettings: () async {
+                                      final hasConfirmed = await showDialog(
+                                        context: context,
+                                        builder: (_) => const DialogConfirm(
+                                          title: 'Factory reset',
+                                          cancelTitle: 'No',
+                                          okTitle: 'Yes',
+                                          content: Text('Are you sure you want to factory reset your Chameleon?'),
+                                        ),
+                                      );
+
+                                      if (!hasConfirmed) {
+                                        return;
+                                      }
+
+                                      await communicator.factoryReset();
+                                      await appState.connector.performDisconnect();
+                                      onClose();
                                     },
                                     onUpdateAnimation: (animation) async {
                                       await communicator.setAnimationMode(animation);

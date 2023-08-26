@@ -24,6 +24,7 @@ class DialogDeviceSettings extends StatelessWidget {
   final VoidCallback? onFirmwareUpdateLatest;
   final VoidCallback? onFirmwareUpdateFromZip;
   final VoidCallback? onResetSettings;
+  final VoidCallback? onResetFactorySettings;
   final DeviceSettingsData deviceSettings;
   final Function(AnimationSetting animation)? onUpdateAnimation;
   final Function(ButtonType buttonType, ButtonPress mode)? onUpdateButtonMode;
@@ -36,6 +37,7 @@ class DialogDeviceSettings extends StatelessWidget {
     this.onFirmwareUpdateLatest,
     this.onFirmwareUpdateFromZip,
     this.onResetSettings,
+    this.onResetFactorySettings,
     this.onUpdateAnimation,
     this.onUpdateButtonMode
   }); 
@@ -224,7 +226,20 @@ class DialogDeviceSettings extends StatelessWidget {
                   Icon(Icons.lock_reset),
                   Text("Reset settings"),
                 ],
-              )),
+              )
+          ),
+          TextButton(
+            onPressed: () async {
+              onResetFactorySettings!();
+            },
+            child: const Row(
+              children: [
+                Icon(Icons
+                    .restore_from_trash_outlined),
+                Text(
+                    "Factory reset"),
+              ],
+            )),
         ],
       ),
       actions: <Widget>[
