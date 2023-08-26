@@ -54,8 +54,6 @@ class AbstractSerial {
     return false;
   }
 
-  Future<void> initializeThread() async {}
-
   Future<void> registerCallback(dynamic callback) async {
     messageCallback = callback;
   }

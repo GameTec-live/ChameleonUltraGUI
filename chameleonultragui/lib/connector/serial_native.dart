@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
 import 'serial_abstract.dart';
@@ -132,6 +133,13 @@ class NativeSerial extends AbstractSerial {
   Future<void> open() async {
     port!.openReadWrite();
     reader = SerialPortReader(port!, timeout: 2500);
+    reader?.stream.listen((data) async {
+      try {
+        await messageCallback(data);
+      } catch (_) {
+        log.w("Received unexpected data: ${bytesToHex(data)}");
+      }
+    });
   }
 
   @override
@@ -139,12 +147,5 @@ class NativeSerial extends AbstractSerial {
     port!.write(command);
     port!.drain();
     return true;
-  }
-
-  @override
-  Future<void> initializeThread() async {
-    reader?.stream.listen((data) async {
-      await messageCallback(data);
-    });
   }
 }

@@ -162,7 +162,6 @@ class DFUCommunicator {
 
     if (!_serialInstance!.isOpen) {
       await _serialInstance!.open();
-      await _serialInstance!.initializeThread();
       _serialInstance!.isOpen = true;
     }
 
@@ -224,7 +223,7 @@ class DFUCommunicator {
   }
 
   Future<void> setPRN() async {
-    await sendCmd(DFUCommand.setPRN, Uint8List.fromList([0x00]));
+    await sendCmd(DFUCommand.setPRN, Uint8List.fromList([0x4]));
   }
 
   Future<int> getMTU() async {
@@ -273,6 +272,7 @@ class DFUCommunicator {
           continue;
         }
 
+        await asyncSleep(1);
         await execute();
         callback(((offset / firmwareBytes.length) * 100).round());
         await asyncSleep(1);
@@ -312,7 +312,8 @@ class DFUCommunicator {
       var packet = Uint8List.fromList([...toTransmit]);
 
       if (!isBLE) {
-        packet = Slip.encode(packet);
+        packet = Slip.encode(
+            Uint8List.fromList([DFUCommand.writeObject.value, ...toTransmit]));
       }
 
       await delayedSend(packet);
