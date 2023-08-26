@@ -236,7 +236,9 @@ class HomePageState extends State<HomePage> {
                             appState.connector.device.name,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: SizerUtil.width / 25)),
+                                fontSize: SizerUtil.width / 25
+                            )
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
