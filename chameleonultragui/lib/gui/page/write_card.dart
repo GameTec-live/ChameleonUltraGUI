@@ -19,7 +19,13 @@ class WriteCardPageState extends State<WriteCardPage> {
       appBar: AppBar(
         title: const Text('Write Card'),
       ),
-      body: const Center(child: Text("Not implemented")),
+      body: const Column(
+        children: [
+          Center(
+            child: Text("Not Implemented")
+          ),
+        ],
+      ),
     );
   }
 }
