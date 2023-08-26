@@ -84,7 +84,11 @@ class HomePageState extends State<HomePage> {
 
   Future<ButtonPress> getButtonConfig(ButtonType type) async {
     var appState = context.read<MyAppState>();
-    return await appState.communicator!.getButtonConfig(type);
+    try {
+      return await appState.communicator!.getButtonConfig(type);
+    } catch (_) {
+      return ButtonPress.disable;
+    }
   }
 
   Future<String> getUsedSlotsOut8(List<(TagType, TagType)> usedSlots) async {
