@@ -106,3 +106,27 @@ class DialogConfirmState extends State<DialogConfirm> {
       );
   }
 }
+
+Future<bool?> showConfirmDialog(
+  BuildContext context,
+  {
+    required String title,
+    Widget? content,
+    String? cancelTitle,
+    String? okTitle,
+    Function? onCancel,
+    Function? onOk,
+  }
+) {
+  return showDialog<bool>(
+    context: context,
+    builder: (_) => DialogConfirm(
+      title: title,
+      content: content,
+      cancelTitle: cancelTitle,
+      okTitle: okTitle,
+      onCancel: onCancel,
+      onOk: onOk,
+    )
+  );
+}

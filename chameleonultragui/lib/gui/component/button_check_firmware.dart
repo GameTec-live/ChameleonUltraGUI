@@ -58,22 +58,20 @@ class ButtonCheckFirmware extends StatelessWidget {
           return;
         }
 
-        bool? doAutomaticUpdate = await showDialog(
-          context: context,
-          builder: (BuildContext _) => DialogConfirm(
-            title: 'Firmware update available',
-            cancelTitle: 'No',
-            okTitle: 'Yes',
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Text(
-                  'A newer firmware version is available: ${flasher.availableFirmwareVersion}\n'
-                  'Do you want to download & automatically update this firmware?'
-                ),
-              ]
-            ),
+        var doAutomaticUpdate = await showConfirmDialog(
+          context,
+          title: 'Firmware update available',
+          cancelTitle: 'No',
+          okTitle: 'Yes',
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Text(
+                'A newer firmware version is available: ${flasher.availableFirmwareVersion}\n'
+                'Do you want to download & automatically update this firmware?'
+              ),
+            ]
           )
         );
 

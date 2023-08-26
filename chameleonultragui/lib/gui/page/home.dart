@@ -357,17 +357,15 @@ class HomePageState extends State<HomePage> {
                                       appState.changesMade();
                                     },
                                     onResetFactorySettings: () async {
-                                      final hasConfirmed = await showDialog(
-                                        context: context,
-                                        builder: (_) => const DialogConfirm(
-                                          title: 'Factory reset',
-                                          cancelTitle: 'No',
-                                          okTitle: 'Yes',
-                                          content: Text('Are you sure you want to factory reset your Chameleon?'),
-                                        ),
+                                      final hasConfirmed = await showConfirmDialog(
+                                        context,
+                                        title: 'Factory reset',
+                                        cancelTitle: 'No',
+                                        okTitle: 'Yes',
+                                        content: const Text('Are you sure you want to factory reset your Chameleon?'),
                                       );
 
-                                      if (!hasConfirmed) {
+                                      if (hasConfirmed == null || !hasConfirmed) {
                                         return;
                                       }
 
