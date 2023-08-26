@@ -8,7 +8,6 @@ import 'package:usb_serial/usb_serial.dart';
 // Class for Android Serial Communication
 class MobileSerial extends AbstractSerial {
   Map<String, UsbDevice> deviceMap = {};
-  List<Uint8List> messagePool = [];
   UsbPort? port;
 
   @override
@@ -100,9 +99,7 @@ class MobileSerial extends AbstractSerial {
 
       port!.inputStream!.listen((Uint8List data) async {
         if (messageCallback != null) {
-          await messageCallback(data);
-        } else {
-          messagePool.add(data);
+          await messageCallback(Uint8List.fromList(data));
         }
       });
 
@@ -130,26 +127,5 @@ class MobileSerial extends AbstractSerial {
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
     await port!.write(command);
     return true;
-  }
-
-  @override
-  Future<Uint8List> read(int length) async {
-    final completer = Completer<Uint8List>();
-    while (true) {
-      if (messagePool.isNotEmpty) {
-        var message = messagePool[0];
-        messagePool.remove(message);
-        completer.complete(message);
-        break;
-      }
-      await asyncSleep(10);
-    }
-
-    return completer.future;
-  }
-
-  @override
-  Future<void> finishRead() async {
-    messagePool = [];
   }
 }

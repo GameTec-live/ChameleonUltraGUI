@@ -23,7 +23,6 @@ class BLESerial extends AbstractSerial {
   QualifiedCharacteristic? firmwareCharacteristic;
   Stream<List<int>>? receivedDataStream;
   StreamSubscription<ConnectionStateUpdate>? connection;
-  List<Uint8List> messagePool = [];
   Map<String, Map> chameleonMap = {};
 
   @override
@@ -142,8 +141,10 @@ class BLESerial extends AbstractSerial {
               deviceId: connectionState.deviceId);
           receivedDataStream =
               flutterReactiveBle.subscribeToCharacteristic(txCharacteristic!);
-          receivedDataStream!.listen((data) {
-            messagePool.add(Uint8List.fromList(data));
+          receivedDataStream!.listen((data) async {
+            if (messageCallback != null) {
+              await messageCallback(Uint8List.fromList(data));
+            }
           }, onError: (dynamic error) {
             log.e(error);
           });
@@ -172,8 +173,6 @@ class BLESerial extends AbstractSerial {
           receivedDataStream!.listen((data) async {
             if (messageCallback != null) {
               await messageCallback(Uint8List.fromList(data));
-            } else {
-              messagePool.add(Uint8List.fromList(data));
             }
           }, onError: (dynamic error) {
             log.e(error);
@@ -230,21 +229,5 @@ class BLESerial extends AbstractSerial {
     }
 
     return true;
-  }
-
-  @override
-  Future<Uint8List> read(int length) async {
-    final completer = Completer<Uint8List>();
-    while (true) {
-      if (messagePool.isNotEmpty) {
-        var message = messagePool[0];
-        messagePool.remove(message);
-        completer.complete(message);
-        break;
-      }
-      await asyncSleep(10);
-    }
-
-    return completer.future;
   }
 }

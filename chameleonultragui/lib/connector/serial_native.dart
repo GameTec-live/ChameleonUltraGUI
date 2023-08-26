@@ -128,28 +128,12 @@ class NativeSerial extends AbstractSerial {
   @override
   Future<void> open() async {
     port!.openReadWrite();
-    if (connectionType != ConnectionType.dfu) {
-      reader = SerialPortReader(port!, timeout: 1000);
-    }
+    reader = SerialPortReader(port!, timeout: 1000);
   }
 
   @override
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
     return port!.write(command) > 1;
-  }
-
-  @override
-  Future<Uint8List> read(int length) async {
-    if (reader != null) {
-      throw ("Listener exists, unable to read");
-    }
-    Uint8List output = port!.read(length);
-    return output;
-  }
-
-  @override
-  Future<void> finishRead() async {
-    port!.close();
   }
 
   @override

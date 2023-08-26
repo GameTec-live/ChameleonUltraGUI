@@ -46,33 +46,30 @@ bool isValidHexString(String hexString) {
   return hexPattern.hasMatch(hexString);
 }
 
-int calculateCRC32(List<int> data) {
-  Uint8List bytes = Uint8List.fromList(data);
-  Uint32List crcTable = generateCRCTable();
-  int crc = 0xFFFFFFFF;
+int calculateCRC32(List<int> toTransmit, int crc) {
+  Uint32List crcTable = Uint32List(256);
 
-  for (int i = 0; i < bytes.length; i++) {
-    crc = (crc >> 8) ^ crcTable[(crc ^ bytes[i]) & 0xFF];
+  for (int i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) {
+      if ((c & 1) != 0) {
+        c = 0xEDB88320 ^ (c >> 1);
+      } else {
+        c = c >> 1;
+      }
+    }
+    crcTable[i] = c;
+  }
+
+  crc = 0xFFFFFFFF - crc;
+
+  for (var byte in toTransmit) {
+    crc = (crc >> 8) ^ crcTable[(crc ^ byte) & 0xFF];
   }
 
   crc = crc ^ 0xFFFFFFFF;
-  return crc;
-}
 
-Uint32List generateCRCTable() {
-  Uint32List crcTable = Uint32List(256);
-  for (int i = 0; i < 256; i++) {
-    int crc = i;
-    for (int j = 0; j < 8; j++) {
-      if ((crc & 1) == 1) {
-        crc = (crc >> 1) ^ 0xEDB88320;
-      } else {
-        crc = crc >> 1;
-      }
-    }
-    crcTable[i] = crc;
-  }
-  return crcTable;
+  return crc;
 }
 
 String chameleonTagToString(TagType tag) {

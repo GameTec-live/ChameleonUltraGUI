@@ -74,24 +74,6 @@ class AndroidSerial extends AbstractSerial {
   }
 
   @override
-  Future<Uint8List> read(int length) async {
-    if (bleSerial.connected) {
-      return bleSerial.read(length);
-    } else {
-      return mobileSerial.read(length);
-    }
-  }
-
-  @override
-  Future<void> finishRead() async {
-    if (bleSerial.connected) {
-      return bleSerial.finishRead();
-    } else {
-      return mobileSerial.finishRead();
-    }
-  }
-
-  @override
   Future<void> registerCallback(dynamic callback) async {
     bleSerial.messageCallback = callback;
     mobileSerial.messageCallback = callback;
