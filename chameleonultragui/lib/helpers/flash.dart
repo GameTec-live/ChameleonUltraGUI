@@ -250,7 +250,7 @@ Future<void> flashFile(
 
   if (Platform.isAndroid) {
     // BLE appears bit earlier than USB
-    await asyncSleep(2500);
+    await asyncSleep(1000);
   }
 
   List<Chameleon> chameleons = [];
@@ -261,7 +261,18 @@ Future<void> flashFile(
   }
 
   var toFlash = chameleons[0];
-  var isBLE = toFlash.type == ConnectionType.ble;
+  Map<ConnectionType, bool> connections = {
+    ConnectionType.ble: false,
+    ConnectionType.usb: false
+  };
+
+  for (var chameleon in chameleons) {
+    if (connections[chameleon.type]!) {
+      throw ("More than one Chameleon in DFU. Please connect only one at a time");
+    }
+
+    connections[chameleon.type] = true;
+  }
 
   if (toFlash.type == ConnectionType.ble) {
     for (var chameleon in chameleons) {
@@ -272,15 +283,10 @@ Future<void> flashFile(
     }
   }
 
-  if (chameleons.length > 1 && !(Platform.isAndroid && isBLE)) {
-    throw ("More than one Chameleon in DFU. Please connect only one at a time");
-  }
-
   await appState.connector.connectSpecificDevice(chameleons[0].port);
 
   var dfu = DFUCommunicator(
-      port: appState.connector,
-      viaBLE: toFlash.type == ConnectionType.ble); // isBLE shouldn't used here
+      port: appState.connector, viaBLE: toFlash.type == ConnectionType.ble);
   await dfu.setPRN();
   await dfu.getMTU();
   appState.changesMade();
