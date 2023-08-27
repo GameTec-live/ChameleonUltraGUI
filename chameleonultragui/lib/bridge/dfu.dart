@@ -134,7 +134,7 @@ class DFUCommunicator {
   int prn = 0;
   bool isBLE = false;
   AbstractSerial? _serialInstance;
-  Completer<void>? responseCompleter;
+  Completer<List<int>>? responseCompleter;
 
   Logger log = Logger();
 
@@ -156,10 +156,10 @@ class DFUCommunicator {
     }
 
     if (responseCompleter != null && !responseCompleter!.isCompleted) {
-      responseCompleter?.complete();
+      responseCompleter?.complete([]);
     }
 
-    responseCompleter = Completer<void>();
+    responseCompleter = Completer<List<int>>();
 
     if (!_serialInstance!.isOpen) {
       await _serialInstance!.open();
@@ -167,32 +167,39 @@ class DFUCommunicator {
     }
 
     // we initialize completer each time in DFU, because it being recreated on each message
-    List<int> readBuffer = List<int>.empty(growable: true);
+    List<int>? readBuffer = List<int>.empty(growable: true);
     await _serialInstance!.registerCallback((List<int> bytes) {
-      readBuffer.addAll(bytes);
+      if (kIsWeb) {
+        readBuffer?.addAll(bytes);
+      } else {
+        responseCompleter?.complete(bytes);
+      }
     });
 
     log.d("Sending: ${bytesToHex(packet)}");
     await _serialInstance!.write(packet);
 
-    // Use a while loop to ensure the serial port stream has been
-    // fully drained. E.g. on web there is no good way to check if
-    // the stream is empty but the stream might consist of more then
-    // one chunk, even if the chunk is only a couple bytes
-    var bufferSize = readBuffer.length;
-    while(true) {
-      await asyncSleep(10);
+    if (kIsWeb) {
+      // Use a while loop to ensure the serial port stream has been
+      // fully drained. E.g. on web there is no good way to check if
+      // the stream is empty but the stream might consist of more then
+      // one chunk, even if the chunk is only a couple bytes
+      var bufferSize = readBuffer.length;
+      while(true) {
+        await asyncSleep(10);
 
-      // Stop checking for more data
-      if (bufferSize > 0 && bufferSize == readBuffer.length) {
-        responseCompleter?.complete();
-        break;
+        // Stop checking for more data
+        if (bufferSize > 0 && bufferSize == readBuffer.length) {
+          break;
+        }
+
+        bufferSize = readBuffer.length;
       }
-
-      bufferSize = readBuffer.length;
+    } else {
+      readBuffer = await responseCompleter?.future;
     }
 
-    if (readBuffer.isEmpty) {
+    if (readBuffer == null || readBuffer.isEmpty) {
       return null;
     }
 
