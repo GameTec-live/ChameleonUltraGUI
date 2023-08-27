@@ -53,6 +53,13 @@
             with:
               name: appbundle
               path: chameleonultragui/build/app/outputs/bundle/release/app-release.aab
+          - name: Set up Ruby
+            uses: ruby/setup-ruby@v1
+            with:
+              ruby-version: '3.2'
+          - name: Install dependencies
+            run: bundle install
+            working-directory: "./chameleonultragui/"
           - name: Load Secret
             uses: mobiledevops/secret-to-file-action@v1
             with:

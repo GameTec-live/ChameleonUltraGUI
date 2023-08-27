@@ -22,7 +22,7 @@ platform :android do
   changelogs_dir = "metadata/android/en-US/changelogs"
   changelog_file = changelogs_dir + "/" + "default.txt"
   
-  #sh("mkdir", "-p", changelogs_dir)
+  sh("mkdir", "-p", changelogs_dir)
   File.open(changelog_file, 'w') do |file|
     file.write changelog.truncate(500)
   end
