@@ -21,11 +21,11 @@ class ConnectPage extends StatelessWidget {
 
     var connector = appState.connector;
 
-    return FutureBuilder<List<ChameleonDevicePort>>(
+    return FutureBuilder<List<Chameleon>>(
       future: connector.connected
           ? Future.value([])
           : connector.availableChameleons(false),
-      builder: (BuildContext context, AsyncSnapshot<List<ChameleonDevicePort>> snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<List<Chameleon>> snapshot) {
         Widget? page;
 
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -99,7 +99,7 @@ class ConnectPage extends StatelessWidget {
                           ),
                         ),
                       ...result.map<Widget>((chameleonDevice) {
-                        if (chameleonDevice.type == ConnectionType.dfu) {
+                        if (chameleonDevice.dfu) {
                           return ButtonDfuDevice(
                             devicePort: chameleonDevice,
                             onFirmwareUpdate: (fromZipFile) async {

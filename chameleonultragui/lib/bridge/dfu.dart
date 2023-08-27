@@ -132,12 +132,14 @@ class DFUCommunicator {
   int dataMaxLength = 512;
   int mtu = 0;
   int prn = 0;
+  bool isBLE = false;
   AbstractSerial? _serialInstance;
   Completer<void>? responseCompleter;
 
   Logger log = Logger();
 
-  DFUCommunicator({AbstractSerial? port}) {
+  DFUCommunicator({AbstractSerial? port, bool viaBLE = false}) {
+    isBLE = viaBLE;
     if (port != null) {
       open(port);
     }
@@ -148,7 +150,10 @@ class DFUCommunicator {
   }
 
   Future<Uint8List?> sendCmd(DFUCommand cmd, Uint8List data) async {
-    var packet = Slip.encode(Uint8List.fromList([cmd.value, ...data.toList()]));
+    var packet = Uint8List.fromList([cmd.value, ...data.toList()]);
+    if (!isBLE) {
+      packet = Slip.encode(packet);
+    }
 
     if (responseCompleter != null && !responseCompleter!.isCompleted) {
       responseCompleter?.complete();
@@ -158,7 +163,6 @@ class DFUCommunicator {
 
     if (!_serialInstance!.isOpen) {
       await _serialInstance!.open();
-      await _serialInstance!.initializeThread();
       _serialInstance!.isOpen = true;
     }
 
@@ -193,15 +197,18 @@ class DFUCommunicator {
     }
 
     log.d("Received: ${bytesToHex(Uint8List.fromList(readBuffer))}");
-    readBuffer = Slip.decode(Uint8List.fromList(readBuffer)).toList();
-    log.d("Slip decoded: ${bytesToHex(Uint8List.fromList(readBuffer))}");
+
+    if (!isBLE) {
+      readBuffer = Slip.decode(Uint8List.fromList(readBuffer)).toList();
+      log.d("Slip decoded: ${bytesToHex(Uint8List.fromList(readBuffer))}");
+    }
 
     if (readBuffer[0] != DFUCommand.response.value) {
       throw ("DFU sent not response");
     }
 
     if (readBuffer[1] != cmd.value) {
-      throw ("DFU sent invalid command response");
+      throw DFUTransferError("Received unexpected DFU command");
     }
 
     if (readBuffer[2] == DFUResponseCode.success.value) {
@@ -284,6 +291,7 @@ class DFUCommunicator {
           continue;
         }
 
+        await asyncSleep(1);
         await execute();
         callback(((offset / firmwareBytes.length) * 100).round());
         await asyncSleep(1);
@@ -291,7 +299,7 @@ class DFUCommunicator {
       }
 
       if (tries == 10) {
-        log.e("Unable to recover from DFU");
+        throw ("Unable to recover from DFU");
       }
     }
   }
@@ -320,8 +328,12 @@ class DFUCommunicator {
       List<int> toTransmit =
           data.sublist(i, min(i + (mtu - 1) ~/ 2 - 1, data.length));
 
-      var packet = Slip.encode(
-          Uint8List.fromList([DFUCommand.writeObject.value, ...toTransmit]));
+      var packet = Uint8List.fromList([...toTransmit]);
+
+      if (!isBLE) {
+        packet = Slip.encode(
+            Uint8List.fromList([DFUCommand.writeObject.value, ...toTransmit]));
+      }
 
       await delayedSend(packet);
 
@@ -329,29 +341,38 @@ class DFUCommunicator {
       crc = calculateCRC32(toTransmit, crc) & 0xFFFFFFFF;
       currentPrn++;
       if (currentPrn == prn) {
+        await asyncSleep(1);
         response = await calculateChecksum();
         validateCrc();
         currentPrn = 0;
       }
     }
 
+    await asyncSleep(1);
     response = await calculateChecksum();
     validateCrc();
 
-    return response['crc']!;
+    return crc;
   }
 
   Future<void> delayedSend(Uint8List packet) async {
     // Windows has some issues with transmitting data
     // We work around it by sending message by parts with delay
-    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS)) {
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || isBLE)) {
       var offsetSize = 128;
+      if (isBLE) {
+        offsetSize = 20;
+      }
 
       for (var offset = 0; offset < packet.length; offset += offsetSize) {
         await _serialInstance!.write(
             packet.sublist(
                 offset, offset + min(offsetSize, packet.length - offset)),
             firmware: true);
+      }
+
+      if (Platform.isIOS) {
+        await asyncSleep(100);
       }
     } else {
       // Other OS: send as is

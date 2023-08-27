@@ -14,18 +14,19 @@ enum ChameleonDevice {
   final String name;
 }
 
-enum ConnectionType { none, usb, ble, dfu }
+enum ConnectionType { none, usb, ble }
 
-class ChameleonDevicePort {
-  String port;
-  ChameleonDevice device;
-  ConnectionType type;
+class Chameleon {
+  final dynamic port;
+  final ChameleonDevice device;
+  final ConnectionType type;
+  final bool dfu;
 
-  ChameleonDevicePort({
-    required this.port,
-    required this.device,
-    required this.type
-  });
+  const Chameleon(
+      {required this.port,
+      required this.device,
+      required this.type,
+      required this.dfu});
 }
 
 enum ChameleonVendor {
@@ -52,6 +53,7 @@ class AbstractSerial {
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
   bool isOpen = false;
+  bool isDFU = false;
   String portName = "None";
   ConnectionType connectionType = ConnectionType.none;
   void Function(List<int>)? messageCallback;
@@ -81,7 +83,7 @@ class AbstractSerial {
     return false;
   }
 
-  Future<List<ChameleonDevicePort>> availableChameleons(bool onlyDFU) async {
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
     return [];
   }
 
@@ -90,8 +92,6 @@ class AbstractSerial {
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
     return false;
   }
-
-  Future<void> initializeThread() async {}
 
   Future<void> registerCallback(void Function(List<int>)? callback) async {
     messageCallback = callback;

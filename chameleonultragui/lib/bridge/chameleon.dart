@@ -368,10 +368,10 @@ class ChameleonCommunicator {
       bool skipReceive = false}) async {
     var startTime = DateTime.now();
     var dataFrame = makeDataFrameBytes(cmd, 0x00, data);
+
     if (!_serialInstance!.isOpen) {
       await _serialInstance!.open();
       await _serialInstance!.registerCallback(onSerialMessage);
-      await _serialInstance!.initializeThread();
       _serialInstance!.isOpen = true;
     }
 

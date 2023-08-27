@@ -20,9 +20,6 @@ class SerialPortDeviceWeb {
   };
 
   ConnectionType get connection {
-    if (info.usbVendorId == ChameleonVendor.dfu.value) {
-      return ConnectionType.dfu;
-    }
     return ConnectionType.usb;
   }
 }
@@ -123,8 +120,8 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<List<ChameleonDevicePort>> availableChameleons(bool onlyDFU) async {
-    List<ChameleonDevicePort> output = [];
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
+    List<Chameleon> output = [];
 
     for (var devicePort in await availableDevices()) {
       var device = deviceMap[devicePort];
@@ -135,14 +132,22 @@ class SerialConnector extends AbstractSerial {
       if (isChameleonVendor(device.info.usbVendorId, ChameleonVendor.dfu)) {
         log.w("Chameleon is in DFU mode!");
 
-        output.add(ChameleonDevicePort(
-            port: devicePort, device: device.type, type: ConnectionType.dfu));
+        output.add(Chameleon(
+            port: devicePort,
+            device: device.type,
+            type: ConnectionType.usb,
+            dfu: true))
+        ;
       } else if (isChameleonVendor(device.info.usbVendorId, ChameleonVendor.proxgrind)) {
         log.d("Found ${device.type.name}!");
 
         if (!onlyDFU) {
-          output.add(ChameleonDevicePort(
-              port: devicePort, device: device.type, type: ConnectionType.usb));
+          output.add(Chameleon(
+              port: devicePort,
+              device: device.type,
+              type: ConnectionType.usb,
+              dfu: false)
+          );
         }
       }
     }
@@ -190,8 +195,9 @@ class SerialConnector extends AbstractSerial {
     connected = true;
     device = serialDevice.type;
     currentDevice = serialDevice;
+    isDFU = serialDevice.info.usbVendorId == ChameleonVendor.dfu.value;
 
-    if (currentDevice!.connection == ConnectionType.dfu) {
+    if (isDFU) {
       log.w("Chameleon is in DFU mode! ${currentDevice!.connection}");
     }
 

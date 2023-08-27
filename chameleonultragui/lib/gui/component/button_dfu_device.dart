@@ -2,7 +2,7 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:flutter/material.dart';
 
 class ButtonDfuDevice extends StatelessWidget {
-  final ChameleonDevicePort devicePort;
+  final Chameleon devicePort;
   final Function(bool fromZipFile)? onFirmwareUpdate;
 
   const ButtonDfuDevice({

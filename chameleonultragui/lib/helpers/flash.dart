@@ -239,8 +239,6 @@ Future<void> flashFile(
     appState.easterEgg = true;
   }
 
-  bool isBLE = appState.connector.portName.contains(":");
-
   if (enterDFU) {
     await connection!.enterDFUMode();
     await appState.connector.performDisconnect();
@@ -250,25 +248,48 @@ Future<void> flashFile(
     await appState.connector.performDisconnect();
   }
 
-  List chameleons = [];
+  if (Platform.isAndroid) {
+    // BLE appears bit earlier than USB
+    await asyncSleep(1000);
+  }
+
+  List<Chameleon> chameleons = [];
 
   while (chameleons.isEmpty) {
     await asyncSleep(250);
     chameleons = await appState.connector.availableChameleons(true);
   }
 
-  if (chameleons.length > 1) {
-    throw ("More than one Chameleon in DFU. Please connect only one at a time");
+  var toFlash = chameleons[0];
+  Map<ConnectionType, bool> connections = {
+    ConnectionType.ble: false,
+    ConnectionType.usb: false
+  };
+
+  for (var chameleon in chameleons) {
+    if (connections[chameleon.type]!) {
+      throw ("More than one Chameleon in DFU. Please connect only one at a time");
+    }
+
+    connections[chameleon.type] = true;
   }
 
-  if (isBLE) {
-    throw ("BLE DFU not yet supported");
+  if (toFlash.type == ConnectionType.ble) {
+    for (var chameleon in chameleons) {
+      if (chameleon.type != ConnectionType.ble) {
+        toFlash = chameleon;
+        break;
+      }
+    }
   }
 
-  await appState.connector.connectSpecificDevice(chameleons[0]['port']);
-  var dfu = DFUCommunicator(port: appState.connector);
+  await appState.connector.connectSpecificDevice(chameleons[0].port);
+
+  var dfu = DFUCommunicator(
+      port: appState.connector, viaBLE: toFlash.type == ConnectionType.ble);
   await dfu.setPRN();
   await dfu.getMTU();
+  appState.changesMade();
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log.i("Firmware flashed!");

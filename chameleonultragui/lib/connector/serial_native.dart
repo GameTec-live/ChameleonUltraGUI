@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
 import 'serial_abstract.dart';
@@ -6,6 +7,7 @@ class SerialConnector extends AbstractSerial {
   // Class for PC Serial Communication
   SerialPort? port;
   SerialPort? checkPort;
+  bool checkDFU = true;
   SerialPortReader? reader;
 
   @override
@@ -41,16 +43,21 @@ class SerialConnector extends AbstractSerial {
   }
 
   @override
-  Future<List<ChameleonDevicePort>> availableChameleons(bool onlyDFU) async {
-    List<ChameleonDevicePort> output = [];
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
+    List<Chameleon> output = [];
     for (final port in await availableDevices()) {
       if (await connectDevice(port, false)) {
-        if (connectionType == ConnectionType.dfu) {
-          output.add(ChameleonDevicePort(
-              port: port, device: device, type: connectionType));
-        } else if (!onlyDFU) {
-          output.add(ChameleonDevicePort(
-              port: port, device: device, type: connectionType));
+        if (onlyDFU) {
+          if (checkDFU) {
+            output.add(Chameleon(
+                port: port,
+                device: device,
+                type: connectionType,
+                dfu: checkDFU));
+          }
+        } else {
+          output.add(Chameleon(
+              port: port, device: device, type: connectionType, dfu: checkDFU));
         }
       }
     }
@@ -102,15 +109,13 @@ class SerialConnector extends AbstractSerial {
 
         connectionType = ConnectionType.usb;
 
-        if (checkPort!.vendorId == ChameleonVendor.dfu.value) {
-          connectionType = ConnectionType.dfu;
-          log.w("Chameleon is in DFU mode!");
-        }
+        checkDFU = checkPort!.vendorId == ChameleonVendor.dfu.value;
 
         checkPort!.close();
 
         if (setPort) {
           port = checkPort;
+          isDFU = checkDFU;
         }
 
         return true;
@@ -126,6 +131,13 @@ class SerialConnector extends AbstractSerial {
   Future<void> open() async {
     port!.openReadWrite();
     reader = SerialPortReader(port!, timeout: 2500);
+    reader?.stream.listen((data) async {
+      try {
+        messageCallback!(data);
+      } catch (_) {
+        log.w("Received unexpected data: ${bytesToHex(data)}");
+      }
+    });
   }
 
   @override
@@ -133,12 +145,5 @@ class SerialConnector extends AbstractSerial {
     port!.write(command);
     port!.drain();
     return true;
-  }
-
-  @override
-  Future<void> initializeThread() async {
-    reader?.stream.listen((data) {
-      messageCallback!(data);
-    });
   }
 }

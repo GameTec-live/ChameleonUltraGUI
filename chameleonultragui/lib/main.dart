@@ -145,7 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
     appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
 
     Widget page; // Set Page
-    if (appState.connector.connected == false &&
+    if (!appState.connector.connected &&
         selectedIndex != 0 &&
         selectedIndex != 2 &&
         selectedIndex != 5 &&
@@ -157,10 +157,9 @@ class _MyHomePageState extends State<MyHomePage> {
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
-        if (appState.connector.connected == true) {
-          if (appState.connector.connectionType == ConnectionType.dfu) {
+        if (appState.connector.connected) {
+          if (appState.connector.isDFU) {
             page = const FlashingPage();
-            selectedIndex = 0;
           } else {
             page = const HomePage();
           }
@@ -201,7 +200,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final useBottomNavigation = SizerUtil.orientation == Orientation.portrait && SizerUtil.width < 600;
     final useSideNavigation = !useBottomNavigation &&
-      (appState.connector.connectionType != ConnectionType.dfu ||
+      (!appState.connector.isDFU ||
       !appState.connector.connected);
 
     var bottomIndex = selectedIndex;
@@ -359,7 +358,7 @@ class BottomProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     return (appState.connector.connected == true &&
-            appState.connector.connectionType == ConnectionType.dfu &&
+            appState.connector.isDFU &&
             (appState.flashProgress!.progress != null && appState.flashProgress!.progress !> 0))
         ? LinearProgressIndicator(
             value: appState.flashProgress!.progress,

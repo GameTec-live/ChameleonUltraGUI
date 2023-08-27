@@ -372,7 +372,7 @@ class FirmwareFlasher {
 
   @protected
   Future<bool> enterDFUModeIfNeeded() async {
-    bool isInDFUMode = connector.connectionType == ConnectionType.dfu;
+    bool isInDFUMode = connector.isDFU;
 
     if (connector.connected && !isInDFUMode) {
       var communicator = ChameleonCommunicator(port: connector);
@@ -391,7 +391,7 @@ class FirmwareFlasher {
       await connector.performDisconnect();
     }
 
-    List<ChameleonDevicePort> chameleons = [];
+    List<Chameleon> chameleons = [];
     for (var tries = 0; tries <= timeoutInSeconds * 4; tries++) { // Wait max seconds for a device to enter DFU mode & reconnect
       await asyncSleep(250);
 
