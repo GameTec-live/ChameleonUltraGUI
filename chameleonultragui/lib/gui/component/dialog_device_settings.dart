@@ -113,7 +113,7 @@ class DialogDeviceSettings extends StatelessWidget {
           if (kIsWeb)
             const SizedBox(
               width: 300,
-              child: Text('After entering DFU mode, pair the new DFU device (if needed) and select a download firmware zip', style: TextStyle(fontSize: 12)),
+              child: Text('After entering DFU mode, pair the new DFU device (if needed) and select an choose an update method', style: TextStyle(fontSize: 12)),
             ),
           const SizedBox(height: 10),
           if (onUpdateAnimation != null)
