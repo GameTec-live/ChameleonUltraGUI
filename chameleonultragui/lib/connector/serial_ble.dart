@@ -79,31 +79,36 @@ class BLESerial extends AbstractSerial {
   Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
     List<Chameleon> output = [];
     for (var bleDevice in await availableDevices()) {
+      var dfuMode = false;
       if (bleDevice.name.startsWith('ChameleonUltra')) {
         device = ChameleonDevice.ultra;
       } else if (bleDevice.name.startsWith('ChameleonLite')) {
         device = ChameleonDevice.lite;
       } else if (bleDevice.name.startsWith('CU-')) {
         device = ChameleonDevice.ultra;
+        dfuMode = true;
+      } else if (bleDevice.name.startsWith('CL-')) {
+        device = ChameleonDevice.lite;
+        dfuMode = true;
       }
 
       connectionType = ConnectionType.ble;
 
       log.d(
           "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
-      if (!onlyDFU || onlyDFU && bleDevice.name.startsWith('CU-')) {
+      if (!onlyDFU || onlyDFU && dfuMode) {
         output.add(Chameleon(
             port: bleDevice.id,
             device: device,
             type: connectionType,
-            dfu: bleDevice.name.startsWith('CU-')));
+            dfu: dfuMode));
       }
 
       chameleonMap[bleDevice.id] = Chameleon(
           port: bleDevice.id,
           device: device,
           type: connectionType,
-          dfu: bleDevice.name.startsWith('CU-'));
+          dfu: dfuMode);
     }
 
     return output;
