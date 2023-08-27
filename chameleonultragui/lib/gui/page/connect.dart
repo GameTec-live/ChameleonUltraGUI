@@ -76,71 +76,73 @@ class ConnectPage extends StatelessWidget {
                 )
               ),
               Expanded(
-                child: GridView(
-                    padding: const EdgeInsets.all(20),
-                    gridDelegate:
-                        SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: result!.isEmpty ? 1 : calculateCrossAxisCount(),
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 1,
-                    ),
-                    scrollDirection: Axis.vertical,
-                    children: [
-                      if (kIsWeb && result.isEmpty)
-                        Align(
-                          alignment: Alignment.center,
-                          child: SizedBox(
-                            width: 300,
-                            child: CardWebPairDevices(onPairDevices: () async {
-                              await connector.pairDevices();
-                              appState.changesMade();
-                            })
-                          ),
-                        ),
-                      ...result.map<Widget>((chameleonDevice) {
-                        if (chameleonDevice.dfu) {
-                          return ButtonDfuDevice(
-                            devicePort: chameleonDevice,
-                            onFirmwareUpdate: (fromZipFile) async {
-                              if (fromZipFile) {
-                                FileResult? file = await pickFile(appState);
-                                if (file == null) {
-                                  appState.log.d("Empty file picked");
-                                  return;
-                                }
-
-                                var flasher = FirmwareFlasher.fromZipFile(connector, file.bytes);
-                                await connector.connectSpecificDevice(chameleonDevice.port);
-                                await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
-                              } else {
-                                if (context.mounted) {
-                                  final canContinue = await confirmHttpProxy(context, appState.sharedPreferencesProvider);
-                                  if (canContinue == false) {
+                child: 
+                  kIsWeb && result!.isEmpty
+                  ? Align(
+                      alignment: Alignment.center,
+                      child: SizedBox(
+                        width: 300,
+                        child: CardWebPairDevices(onPairDevices: () async {
+                          await connector.pairDevices();
+                          appState.changesMade();
+                        })
+                      ),
+                    )
+                  : GridView(
+                      padding: const EdgeInsets.all(20),
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: result!.isEmpty ? 1 : calculateCrossAxisCount(),
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1,
+                      ),
+                      scrollDirection: Axis.vertical,
+                      children: [
+                        ...result.map<Widget>((chameleonDevice) {
+                          if (chameleonDevice.dfu) {
+                            return ButtonDfuDevice(
+                              devicePort: chameleonDevice,
+                              onFirmwareUpdate: (fromZipFile) async {
+                                if (fromZipFile) {
+                                  FileResult? file = await pickFile(appState);
+                                  if (file == null) {
+                                    appState.log.d("Empty file picked");
                                     return;
                                   }
+
+                                  var flasher = FirmwareFlasher.fromZipFile(connector, file.bytes);
+                                  await connector.connectSpecificDevice(chameleonDevice.port);
+                                  await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
+                                } else {
+                                  if (context.mounted) {
+                                    final canContinue = await confirmHttpProxy(context, appState.sharedPreferencesProvider);
+                                    if (canContinue == false) {
+                                      return;
+                                    }
+                                  }
+
+                                  var flasher = FirmwareFlasher.fromGithubNightly(connector);
+                                  await connector.connectSpecificDevice(chameleonDevice.port);
+                                  await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
                                 }
 
-                                var flasher = FirmwareFlasher.fromGithubNightly(connector);
-                                await connector.connectSpecificDevice(chameleonDevice.port);
-                                await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
-                              }
-
-                              appState.changesMade();
-                            },
-                          );
-                        }
-
-                        return ButtonChameleonDevice(
-                          devicePort: chameleonDevice,
-                          onSelectDevice: () async {
-                            await connector.connectSpecificDevice(chameleonDevice.port);
-                            appState.communicator = ChameleonCommunicator(port: appState.connector);
-                            appState.changesMade();
+                                appState.changesMade();
+                              },
+                            );
                           }
-                        );
-                      }),
-                    ]),
+
+                          return ButtonChameleonDevice(
+                            devicePort: chameleonDevice,
+                            onSelectDevice: () async {
+                              await connector.connectSpecificDevice(chameleonDevice.port);
+                              appState.communicator = ChameleonCommunicator(port: appState.connector);
+                              appState.changesMade();
+                            }
+                          );
+                        }),
+                      ]
+                    ),
               ),
             ],
           );
