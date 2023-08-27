@@ -12,8 +12,8 @@
 
 # Uncomment the line if you want fastlane to automatically update itself
 # update_fastlane
-require "active_support"
-require "active_support/core_ext"
+fastlane_require "active_support"
+fastlane_require "active_support/core_ext"
 
 default_platform(:android)
 
