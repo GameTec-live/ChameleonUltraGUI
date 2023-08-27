@@ -12,17 +12,19 @@
 
 # Uncomment the line if you want fastlane to automatically update itself
 # update_fastlane
+require "active_support"
+require "active_support/core_ext"
 
 default_platform(:android)
 
 platform :android do
-  changelog = sh "git log --pretty=format:%s --oneline --ancestry-path HEAD~50..HEAD"
+  changelog = sh "git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD"
   changelogs_dir = "metadata/android/en-US/changelogs"
   changelog_file = changelogs_dir + "/" + "default.txt"
   
-  sh("mkdir", "-p", changelogs_dir)
+  #sh("mkdir", "-p", changelogs_dir)
   File.open(changelog_file, 'w') do |file|
-    file.write changelog
+    file.write changelog.truncate(500)
   end
 
   desc "Deploy a new version to the Google Play"
