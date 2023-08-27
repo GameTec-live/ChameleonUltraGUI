@@ -112,14 +112,25 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             Text("Enter DFU Mode"),
                           ],
                         )),
-                    if (appState.connector.connectionType !=
-                        ConnectionType.ble) ...[
-                      TextButton(
-                          onPressed: () async {
-                            Navigator.pop(context, 'Cancel');
-                            var snackBar = SnackBar(
-                              content: Text(
-                                  'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                    TextButton(
+                        onPressed: () async {
+                          Navigator.pop(context, 'Cancel');
+                          var snackBar = SnackBar(
+                            content: Text(
+                                'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                            action: SnackBarAction(
+                              label: 'Close',
+                              onPressed: () {},
+                            ),
+                          );
+
+                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                          try {
+                            await flashFirmware(appState);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            snackBar = SnackBar(
+                              content: Text('Update error: ${e.toString()}'),
                               action: SnackBarAction(
                                 label: 'Close',
                                 onPressed: () {},
@@ -128,41 +139,25 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
 
                             ScaffoldMessenger.of(context)
                                 .showSnackBar(snackBar);
-                            try {
-                              await flashFirmware(appState);
-                            } catch (e) {
-                              ScaffoldMessenger.of(context)
-                                  .hideCurrentSnackBar();
-                              snackBar = SnackBar(
-                                content: Text('Update error: ${e.toString()}'),
-                                action: SnackBarAction(
-                                  label: 'Close',
-                                  onPressed: () {},
-                                ),
-                              );
-
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(snackBar);
-                            }
-                          },
-                          child: const Row(
-                            children: [
-                              Icon(Icons.system_security_update),
-                              Text("Flash latest FW via DFU"),
-                            ],
-                          )),
-                      TextButton(
-                          onPressed: () async {
-                            Navigator.pop(context, 'Cancel');
-                            await flashFirmwareZip(appState);
-                          },
-                          child: const Row(
-                            children: [
-                              Icon(Icons.system_security_update_good),
-                              Text("Flash .zip FW via DFU"),
-                            ],
-                          ))
-                    ],
+                          }
+                        },
+                        child: const Row(
+                          children: [
+                            Icon(Icons.system_security_update),
+                            Text("Flash latest FW via DFU"),
+                          ],
+                        )),
+                    TextButton(
+                        onPressed: () async {
+                          Navigator.pop(context, 'Cancel');
+                          await flashFirmwareZip(appState);
+                        },
+                        child: const Row(
+                          children: [
+                            Icon(Icons.system_security_update_good),
+                            Text("Flash .zip FW via DFU"),
+                          ],
+                        )),
                     const SizedBox(height: 10),
                     const Text("Animations:"),
                     const SizedBox(height: 10),

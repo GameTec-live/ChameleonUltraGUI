@@ -28,7 +28,7 @@ class ConnectPage extends StatelessWidget {
           appState.connector.performDisconnect();
           return Text('Error: ${snapshot.error}');
         } else {
-          final result = snapshot.data;
+          final (result as List<Chameleon>) = snapshot.data;
 
           return Scaffold(
             appBar: AppBar(
@@ -63,8 +63,7 @@ class ConnectPage extends StatelessWidget {
                           ...result.map<Widget>((chameleonDevice) {
                             return ElevatedButton(
                               onPressed: () async {
-                                if (chameleonDevice['type'] ==
-                                    ConnectionType.dfu) {
+                                if (chameleonDevice.dfu) {
                                   showDialog<String>(
                                     context: context,
                                     builder: (BuildContext context) =>
@@ -88,7 +87,7 @@ class ConnectPage extends StatelessWidget {
 
                                             Uint8List content =
                                                 await fetchFirmware(
-                                                    appState.connector.device);
+                                                    chameleonDevice.device);
 
                                             (applicationDat, applicationBin) =
                                                 await unpackFirmware(content);
@@ -113,7 +112,7 @@ class ConnectPage extends StatelessWidget {
                                 } else {
                                   await appState.connector
                                       .connectSpecificDevice(
-                                          chameleonDevice['port']);
+                                          chameleonDevice.port);
                                   appState.communicator = ChameleonCommunicator(
                                       port: appState.connector);
                                   appState.changesMade();
@@ -142,14 +141,12 @@ class ConnectPage extends StatelessWidget {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.end,
                                             children: [
-                                              chameleonDevice['type'] ==
+                                              chameleonDevice.type ==
                                                       ConnectionType.ble
                                                   ? const Icon(Icons.bluetooth)
                                                   : const Icon(Icons.usb),
-                                              Text(chameleonDevice['port'] ??
-                                                  ""),
-                                              if (chameleonDevice['type'] ==
-                                                  ConnectionType.dfu)
+                                              Text(chameleonDevice.port ?? ""),
+                                              if (chameleonDevice.dfu)
                                                 const Text(" (DFU)"),
                                             ],
                                           )
@@ -165,7 +162,7 @@ class ConnectPage extends StatelessWidget {
                                             MainAxisAlignment.start,
                                         children: [
                                           Text(
-                                              "Chameleon ${(chameleonDevice['device'] == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
+                                              "Chameleon ${(chameleonDevice.device == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
                                               style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 20)),
@@ -175,7 +172,7 @@ class ConnectPage extends StatelessWidget {
                                   Expanded(
                                       flex: 1,
                                       child: Image.asset(
-                                        chameleonDevice['device'] ==
+                                        chameleonDevice.device ==
                                                 ChameleonDevice.ultra
                                             ? 'assets/black-ultra-standing-front.png'
                                             : 'assets/black-lite-standing-front.png',

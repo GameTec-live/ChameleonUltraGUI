@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/services.dart';
 import 'package:usb_serial/usb_serial.dart';
 
@@ -41,8 +42,8 @@ class MobileSerial extends AbstractSerial {
   }
 
   @override
-  Future<List> availableChameleons(bool onlyDFU) async {
-    List output = [];
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
+    List<Chameleon> output = [];
     for (var deviceName in await availableDevices()) {
       if (deviceMap[deviceName]!.manufacturerName == "Proxgrind") {
         if (deviceMap[deviceName]!.productName!.startsWith('ChameleonUltra')) {
@@ -54,19 +55,23 @@ class MobileSerial extends AbstractSerial {
         log.d(
             "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
 
-        if (deviceMap[deviceName]!.vid == 0x1915) {
-          connectionType = ConnectionType.dfu;
-          log.w("Chameleon is in DFU mode!");
+        var dfuMode = deviceMap[deviceName]!.vid == 0x1915;
+
+        if (onlyDFU) {
+          if (dfuMode) {
+            output.add(Chameleon(
+                port: deviceName,
+                device: device,
+                type: ConnectionType.usb,
+                dfu: dfuMode));
+          }
+        } else {
+          output.add(Chameleon(
+              port: deviceName,
+              device: device,
+              type: ConnectionType.usb,
+              dfu: dfuMode));
         }
-      }
-      if (onlyDFU) {
-        if (connectionType == ConnectionType.dfu) {
-          output.add(
-              {'port': deviceName, 'device': device, 'type': connectionType});
-        }
-      } else {
-        output.add(
-            {'port': deviceName, 'device': device, 'type': connectionType});
       }
     }
 
@@ -84,6 +89,7 @@ class MobileSerial extends AbstractSerial {
       } else {
         device = ChameleonDevice.lite;
       }
+
       bool openResult = await port!.open();
       if (!openResult) {
         return false;
@@ -98,7 +104,11 @@ class MobileSerial extends AbstractSerial {
 
       port!.inputStream!.listen((Uint8List data) async {
         if (messageCallback != null) {
-          await messageCallback(Uint8List.fromList(data));
+          try {
+            await messageCallback(data);
+          } catch (_) {
+            log.w("Received unexpected data: ${bytesToHex(data)}");
+          }
         }
       });
 
@@ -112,11 +122,8 @@ class MobileSerial extends AbstractSerial {
       });
 
       portName = devicePort.substring(devicePort.length - 15); // Limit length
-      connectionType = ConnectionType.usb;
-      if (deviceMap[devicePort]!.vid == 0x1915) {
-        connectionType = ConnectionType.dfu;
-        log.w("Chameleon is in DFU mode!");
-      }
+      isDFU = deviceMap[devicePort]!.vid == 0x1915;
+
       return true;
     }
     return false;

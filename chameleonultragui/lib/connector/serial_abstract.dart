@@ -3,13 +3,27 @@ import 'package:logger/logger.dart';
 
 enum ChameleonDevice { none, ultra, lite }
 
-enum ConnectionType { none, usb, ble, dfu }
+enum ConnectionType { none, usb, ble }
+
+class Chameleon {
+  final dynamic port;
+  final ChameleonDevice device;
+  final ConnectionType type;
+  final bool dfu;
+
+  const Chameleon(
+      {required this.port,
+      required this.device,
+      required this.type,
+      required this.dfu});
+}
 
 class AbstractSerial {
   Logger log = Logger();
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
   bool isOpen = false;
+  bool isDFU = false;
   String portName = "None";
   ConnectionType connectionType = ConnectionType.none;
   dynamic messageCallback;
@@ -30,7 +44,7 @@ class AbstractSerial {
     return false;
   }
 
-  Future<List> availableChameleons(bool onlyDFU) async {
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
     return [];
   }
 
@@ -39,8 +53,6 @@ class AbstractSerial {
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
     return false;
   }
-
-  Future<void> initializeThread() async {}
 
   Future<void> registerCallback(dynamic callback) async {
     messageCallback = callback;

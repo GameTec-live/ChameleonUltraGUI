@@ -136,7 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
     appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
 
     Widget page; // Set Page
-    if (appState.connector.connected == false &&
+    if (!appState.connector.connected &&
         selectedIndex != 0 &&
         selectedIndex != 2 &&
         selectedIndex != 5 &&
@@ -148,10 +148,9 @@ class _MyHomePageState extends State<MyHomePage> {
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
-        if (appState.connector.connected == true) {
-          if (appState.connector.connectionType == ConnectionType.dfu) {
+        if (appState.connector.connected) {
+          if (appState.connector.isDFU) {
             page = const FlashingPage();
-            selectedIndex = 0;
           } else {
             page = const HomePage();
           }
@@ -195,8 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
       return Scaffold(
           body: Row(
             children: [
-              (appState.connector.connectionType != ConnectionType.dfu ||
-                      !appState.connector.connected)
+              (!appState.connector.isDFU || !appState.connector.connected)
                   ? SafeArea(
                       child: NavigationRail(
                         // Sidebar
@@ -280,8 +278,7 @@ class BottomProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    return (appState.connector.connected == true &&
-            appState.connector.connectionType == ConnectionType.dfu)
+    return (appState.connector.connected == true && appState.connector.isDFU)
         ? LinearProgressIndicator(
             value: appState.progress,
             backgroundColor: Colors.grey[300],
