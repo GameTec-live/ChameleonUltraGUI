@@ -18,6 +18,7 @@ class ConnectPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
 
     var connector = appState.connector;
 
@@ -104,30 +105,43 @@ class ConnectPage extends StatelessWidget {
                             return ButtonDfuDevice(
                               devicePort: chameleonDevice,
                               onFirmwareUpdate: (fromZipFile) async {
-                                if (fromZipFile) {
-                                  FileResult? file = await pickFile(appState);
-                                  if (file == null) {
-                                    appState.log.d("Empty file picked");
-                                    return;
-                                  }
-
-                                  var flasher = FirmwareFlasher.fromZipFile(connector, file.bytes);
-                                  await connector.connectSpecificDevice(chameleonDevice.port);
-                                  await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
-                                } else {
-                                  if (context.mounted) {
-                                    final canContinue = await confirmHttpProxy(context, appState.sharedPreferencesProvider);
-                                    if (canContinue == false) {
+                                try {
+                                  if (fromZipFile) {
+                                    FileResult? file = await pickFile(appState);
+                                    if (file == null) {
+                                      appState.log.d("Empty file picked");
                                       return;
                                     }
+
+                                    var flasher = FirmwareFlasher.fromZipFile(connector, file.bytes);
+                                    await connector.connectSpecificDevice(chameleonDevice.port);
+                                    await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
+                                  } else {
+                                    if (context.mounted) {
+                                      final canContinue = await confirmHttpProxy(context, appState.sharedPreferencesProvider);
+                                      if (canContinue == false) {
+                                        return;
+                                      }
+                                    }
+
+                                    var flasher = FirmwareFlasher.fromGithubNightly(connector);
+                                    await connector.connectSpecificDevice(chameleonDevice.port);
+                                    await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
                                   }
+                                } catch (e) {
+                                  appState.log.e(e);
+                                  await appState.connector.performDisconnect();
 
-                                  var flasher = FirmwareFlasher.fromGithubNightly(connector);
-                                  await connector.connectSpecificDevice(chameleonDevice.port);
-                                  await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
+                                  var snackBar = SnackBar(
+                                    content: Text('Update error: ${e.toString()}'),
+                                    showCloseIcon: true,
+                                  );
+
+                                  scaffoldMessenger.hideCurrentSnackBar();
+                                  scaffoldMessenger.showSnackBar(snackBar);
+                                } finally {
+                                  appState.changesMade();
                                 }
-
-                                appState.changesMade();
                               },
                             );
                           }

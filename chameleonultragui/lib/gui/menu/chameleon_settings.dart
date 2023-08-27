@@ -66,6 +66,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
+    final navigator = Navigator.of(context);
 
     return FutureBuilder(
       future: getSettingsData(),
@@ -94,9 +95,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
           throw ("Empty device settings snapshot");
         }
 
-        onClose() {
-          Navigator.pop(dialogContext, 'Cancel');
-        }
+        onClose() => navigator.pop();
 
         var scaffoldMessenger = ScaffoldMessenger.of(context);
         final communicator = appState.communicator!;
@@ -195,7 +194,6 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
 
               var flasher = FirmwareFlasher.fromZipFile(appState.connector, file.bytes);
               await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
-
             } catch (e) {
               var snackBar = SnackBar(
                 content: Text('Update error: ${e.toString()}'),

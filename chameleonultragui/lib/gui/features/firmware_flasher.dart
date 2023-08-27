@@ -1,4 +1,6 @@
 
+import 'dart:io';
+
 import 'package:archive/archive.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/bridge/dfu.dart';
@@ -391,6 +393,11 @@ class FirmwareFlasher {
       await connector.performDisconnect();
     }
 
+    if (!kIsWeb && Platform.isAndroid) {
+      // BLE appears bit earlier than USB
+      await asyncSleep(1000);
+    }
+
     List<Chameleon> chameleons = [];
     for (var tries = 0; tries <= timeoutInSeconds * 4; tries++) { // Wait max seconds for a device to enter DFU mode & reconnect
       await asyncSleep(250);
@@ -403,17 +410,39 @@ class FirmwareFlasher {
 
     if (chameleons.isEmpty) {
       throw ("No Chameleon in DFU mode after waiting for 10 seconds");
-    } else if (chameleons.length > 1) {
-      throw ("More than one Chameleon in DFU. Please connect only one at a time");
     }
 
-    await connector.connectSpecificDevice(chameleons[0].port);
+    // Ensure only one chameleon connected in DFU mode
+    var deviceToFlash = chameleons[0];
+    Map<ConnectionType, bool> connections = {
+      ConnectionType.ble: false,
+      ConnectionType.usb: false
+    };
+    for (var chameleon in chameleons) {
+      if (connections[chameleon.type]!) {
+        throw ("More than one Chameleon in DFU. Please connect only one at a time");
+      }
+
+      connections[chameleon.type] = true;
+    }
+
+    // Prefer usb/serial connections over BLE
+    if (deviceToFlash.type == ConnectionType.ble) {
+      for (var chameleon in chameleons) {
+        if (chameleon.type != ConnectionType.ble) {
+          deviceToFlash = chameleon;
+          break;
+        }
+      }
+    }
+
+    await connector.connectSpecificDevice(deviceToFlash.port);
   }
 
   @protected
   flashFirmware(Firmware firmware, void Function(int, double) onProgress) async {
-    final dfu = DFUCommunicator(port: connector);
-    await connector.open();
+    final dfu = DFUCommunicator(
+        port: connector, viaBLE: connector.connectionType == ConnectionType.ble);
     await dfu.setPRN();
     await dfu.getMTU();
     await dfu.flashFirmware(0x01, firmware.datFile, (progress) => onProgress(1, progress / 100));
