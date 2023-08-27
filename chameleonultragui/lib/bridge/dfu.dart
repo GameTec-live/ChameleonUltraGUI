@@ -181,7 +181,7 @@ class DFUCommunicator {
     // one chunk, even if the chunk is only a couple bytes
     var bufferSize = readBuffer.length;
     while(true) {
-      await asyncSleep(5);
+      await asyncSleep(10);
 
       // Stop checking for more data
       if (bufferSize > 0 && bufferSize == readBuffer.length) {
