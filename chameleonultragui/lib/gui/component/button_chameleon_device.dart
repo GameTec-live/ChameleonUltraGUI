@@ -44,7 +44,7 @@ class ButtonChameleonDevice extends StatelessWidget {
                         ConnectionType.ble
                           ? const Icon(Icons.bluetooth)
                           : const Icon(Icons.usb),
-                      Text(devicePort.port),
+                      Text(devicePort.port ?? ''),
                     ],
                   )
                 ],

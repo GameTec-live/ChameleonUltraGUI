@@ -1,5 +1,4 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
-import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/dialog_confirm.dart';
 import 'package:chameleonultragui/gui/component/dialog_device_settings.dart';
 import 'package:chameleonultragui/gui/features/firmware_flasher.dart';
@@ -102,7 +101,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
         var scaffoldMessenger = ScaffoldMessenger.of(context);
         final communicator = appState.communicator!;
 
-        var canUpdateLatest = !kIsWeb && appState.connector.connectionType != ConnectionType.ble;
+        var canUpdateLatest = !kIsWeb;
         var canUpdateZip = canUpdateLatest;
 
         return DialogDeviceSettings(
