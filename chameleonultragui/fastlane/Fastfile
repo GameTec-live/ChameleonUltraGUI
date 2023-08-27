@@ -16,7 +16,7 @@
 default_platform(:android)
 
 platform :android do
-  changelog = sh("git", "log", "--pretty=format:%s", "--oneline", "--ancestry-path", "HEAD~50..HEAD")
+  changelog = sh "git log --pretty=format:%s --oneline --ancestry-path HEAD~50..HEAD"
   changelogs_dir = "metadata/android/en-US/changelogs"
   changelog_file = changelogs_dir + "/" + "default.txt"
   
