@@ -60,8 +60,8 @@
           - name: Fastlane Publishing on ${{ github.event.inputs.publish_track }}
             if:  github.event_name == 'workflow_dispatch' && github.event.inputs.publish_track != ''
             run: fastlane ${{ github.event.inputs.publish_track }}
-            working-directory: "./chameleonultragui/android"
+            working-directory: "./chameleonultragui/"
           - name: Fastlane Publishing on production
             if:  github.event_name != 'workflow_dispatch' || github.event.inputs.publish_track == ''
             run: fastlane production
-            working-directory: "./chameleonultragui/android"
+            working-directory: "./chameleonultragui/"
