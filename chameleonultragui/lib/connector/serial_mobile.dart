@@ -62,14 +62,14 @@ class MobileSerial extends AbstractSerial {
             output.add(Chameleon(
                 port: deviceName,
                 device: device,
-                type: connectionType,
+                type: ConnectionType.usb,
                 dfu: dfuMode));
           }
         } else {
           output.add(Chameleon(
               port: deviceName,
               device: device,
-              type: connectionType,
+              type: ConnectionType.usb,
               dfu: dfuMode));
         }
       }
