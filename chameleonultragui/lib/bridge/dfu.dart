@@ -179,6 +179,10 @@ class DFUCommunicator {
 
     log.d("Received: ${bytesToHex(Uint8List.fromList(readBuffer))}");
 
+    return parseCmdResponse(readBuffer, cmd);
+  }
+
+  Uint8List? parseCmdResponse(List<int> readBuffer, DFUCommand cmd) {
     if (!isBLE) {
       readBuffer = Slip.decode(Uint8List.fromList(readBuffer)).toList();
       log.d("Slip decoded: ${bytesToHex(Uint8List.fromList(readBuffer))}");
