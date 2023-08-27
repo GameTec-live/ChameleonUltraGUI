@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 0x6868 / 0x8686: Chameleon Ultra/Lite -->
+    <!-- 0x6868 / 0x8686: Chameleon Ultra -->
     <usb-device vendor-id="6868" product-id="8686" />
+    <!-- 0x6868 / 0x8686: Chameleon Lite -->
+    <usb-device vendor-id="6868" product-id="8787" />
     <!-- 0x1915 / 0x521f: Chameleon in nRF DFU -->
     <usb-device vendor-id="1915" product-id="521f" />
 </resources>

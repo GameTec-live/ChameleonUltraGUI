@@ -100,10 +100,14 @@ class NativeSerial extends AbstractSerial {
       log.d("Manufacturer: ${checkPort!.manufacturer}");
       log.d("Product: ${checkPort!.productName}");
       if (checkPort!.manufacturer == "Proxgrind") {
-        if (checkPort!.productName!.contains('ChameleonUltra')) {
-          device = ChameleonDevice.ultra;
-        } else {
+        if (checkPort!.productId == 0x8787) {
           device = ChameleonDevice.lite;
+        } else {
+          if (checkPort!.productName!.startsWith('ChameleonUltra')) {
+            device = ChameleonDevice.ultra;
+          } else {
+            device = ChameleonDevice.lite;
+          }
         }
 
         log.d(

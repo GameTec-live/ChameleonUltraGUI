@@ -46,10 +46,16 @@ class MobileSerial extends AbstractSerial {
     List<Chameleon> output = [];
     for (var deviceName in await availableDevices()) {
       if (deviceMap[deviceName]!.manufacturerName == "Proxgrind") {
-        if (deviceMap[deviceName]!.productName!.startsWith('ChameleonUltra')) {
-          device = ChameleonDevice.ultra;
-        } else {
+        if (deviceMap[deviceName]!.pid == 0x8787) {
           device = ChameleonDevice.lite;
+        } else {
+          if (deviceMap[deviceName]!
+              .productName!
+              .startsWith('ChameleonUltra')) {
+            device = ChameleonDevice.ultra;
+          } else {
+            device = ChameleonDevice.lite;
+          }
         }
 
         log.d(
@@ -84,10 +90,14 @@ class MobileSerial extends AbstractSerial {
     connected = false;
     if (deviceMap.containsKey(devicePort)) {
       port = (await deviceMap[devicePort]!.create())!;
-      if (deviceMap[devicePort]!.productName!.contains('ChameleonUltra')) {
-        device = ChameleonDevice.ultra;
-      } else {
+      if (deviceMap[devicePort]!.pid == 0x8787) {
         device = ChameleonDevice.lite;
+      } else {
+        if (deviceMap[devicePort]!.productName!.startsWith('ChameleonUltra')) {
+          device = ChameleonDevice.ultra;
+        } else {
+          device = ChameleonDevice.lite;
+        }
       }
 
       bool openResult = await port!.open();
