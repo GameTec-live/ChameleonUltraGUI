@@ -65,35 +65,33 @@ bool isValidHexString(String hexString) {
   return hexPattern.hasMatch(hexString);
 }
 
-int calculateCRC32(List<int> data) {
-  Uint8List bytes = Uint8List.fromList(data);
-  List<BigInt> crcTable = generateCRCTable();
-  BigInt crc = BigInt.from(0xFFFFFFFF);
+int calculateCRC32(List<int> toTransmit, int crcInt) {
+  List<BigInt> crcTable = List<BigInt>.filled(256, BigInt.zero);
+  BigInt two32 = BigInt.from(0xFFFFFFFF);
+  BigInt crc = BigInt.from(crcInt);
 
-  for (int i = 0; i < bytes.length; i++) {
-    crc = (crc >> 8) ^ crcTable[(((crc ^ BigInt.from(bytes[i]))) & BigInt.from(0xFF)).toInt()];
-  }
-
-  crc = crc ^ BigInt.from(0xFFFFFFFF);
-  return crc.toInt();
-}
-
-List<BigInt> generateCRCTable() {
-  var bigOne = BigInt.from(1);
-
-  List<BigInt> crcTable = List.empty(growable: true);
   for (int i = 0; i < 256; i++) {
-    BigInt crc = BigInt.from(i);
-    for (int j = 0; j < 8; j++) {
-      if ((crc & bigOne) == bigOne) {
-        crc = (crc >> 1) ^ BigInt.from(0xEDB88320);
+    var c = i;
+    for (var j = 0; j < 8; j++) {
+      if ((c & 1) != 0) {
+        c = 0xEDB88320 ^ (c >> 1);
       } else {
-        crc = crc >> 1;
+        c = c >> 1;
       }
     }
-    crcTable.add(crc);
+    crcTable[i] = BigInt.from(c);
   }
-  return crcTable;
+
+  crc = two32 - crc;
+
+  for (var byteToTransmit in toTransmit) {
+    var byte = BigInt.from(byteToTransmit);
+    crc = (crc >> 8) ^ crcTable[((crc ^ byte) & BigInt.from(0xFF)).toInt()];
+  }
+
+  crc = crc ^ two32;
+
+  return crc.toInt();
 }
 
 TagType numberToTagType(int type) {

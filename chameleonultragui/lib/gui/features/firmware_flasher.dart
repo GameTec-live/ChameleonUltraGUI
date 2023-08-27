@@ -347,12 +347,6 @@ class FirmwareFlasher {
     if (changedMode) {
       onStateProgress(FlashFirmwareUpdateProgress(FlashFirmwareState.changeDeviceMode, null));
 
-      if (kIsWeb) {
-        // It's not likely we can wait on the DFU device on web as the
-        // user first needs to pair it
-        return;
-      }
-
       // Wait for the device to reconnect
       await waitForDFUDevice();
     }
@@ -393,6 +387,10 @@ class FirmwareFlasher {
 
   @protected
   Future<void> waitForDFUDevice({ int timeoutInSeconds = 10 }) async {
+    if (connector.isOpen) {
+      await connector.performDisconnect();
+    }
+
     List<ChameleonDevicePort> chameleons = [];
     for (var tries = 0; tries <= timeoutInSeconds * 4; tries++) { // Wait max seconds for a device to enter DFU mode & reconnect
       await asyncSleep(250);
@@ -414,8 +412,7 @@ class FirmwareFlasher {
 
   @protected
   flashFirmware(Firmware firmware, void Function(int, double) onProgress) async {
-    final dfu = ChameleonDFU(port: connector);
-    await connector.finishRead();
+    final dfu = DFUCommunicator(port: connector);
     await connector.open();
     await dfu.setPRN();
     await dfu.getMTU();

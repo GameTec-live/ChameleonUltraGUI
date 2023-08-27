@@ -8,7 +8,7 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class CardEditMenu extends StatefulWidget {
-  final TagSave tagSave;
+  final CardSave tagSave;
 
   const CardEditMenu({Key? key, required this.tagSave}) : super(key: key);
 
@@ -239,7 +239,7 @@ class CardEditMenuState extends State<CardEditMenu> {
               return;
             }
 
-            var tag = TagSave(
+            var tag = CardSave(
               id: widget.tagSave.uid,
               name: nameController.text,
               sak: selectedType.frequency == TagFrequency.lf
@@ -252,8 +252,8 @@ class CardEditMenuState extends State<CardEditMenu> {
               color: currentColor,
             );
 
-            var tags = appState.sharedPreferencesProvider.getChameleonTags();
-            List<TagSave> output = [];
+            var tags = appState.sharedPreferencesProvider.getCards();
+            List<CardSave> output = [];
             for (var tagTest in tags) {
               if (tagTest.id != widget.tagSave.id) {
                 output.add(tagTest);
@@ -262,7 +262,7 @@ class CardEditMenuState extends State<CardEditMenu> {
               }
             }
 
-            appState.sharedPreferencesProvider.setChameleonTags(output);
+            appState.sharedPreferencesProvider.setCards(output);
             appState.changesMade();
             Navigator.pop(context);
           },

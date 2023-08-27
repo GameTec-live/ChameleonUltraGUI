@@ -8,7 +8,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 
 class DictionaryEditMenu extends StatefulWidget {
-  final ChameleonDictionary dict;
+  final Dictionary dict;
 
   const DictionaryEditMenu({Key? key, required this.dict}) : super(key: key);
 
@@ -156,7 +156,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               return;
             }
 
-            ChameleonDictionary dict = ChameleonDictionary(
+            Dictionary dict = Dictionary(
               id: const Uuid().v4(),
               name: nameController.text,
               keys: stringToDict(keysController.text),
@@ -164,8 +164,8 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
             );
 
             var dictionaries =
-                appState.sharedPreferencesProvider.getChameleonDictionaries();
-            List<ChameleonDictionary> output = [];
+                appState.sharedPreferencesProvider.getDictionaries();
+            List<Dictionary> output = [];
             for (var dictTest in dictionaries) {
               if (dictTest.id != widget.dict.id) {
                 output.add(dictTest);
@@ -173,7 +173,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
                 output.add(dict);
               }
             }
-            appState.sharedPreferencesProvider.setChameleonDictionaries(output);
+            appState.sharedPreferencesProvider.setDictionaries(output);
             appState.changesMade();
             Navigator.pop(context);
           },

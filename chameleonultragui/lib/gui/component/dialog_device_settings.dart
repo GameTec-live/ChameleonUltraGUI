@@ -8,13 +8,17 @@ import 'toggle_buttons.dart';
 
 class DeviceSettingsData {
   AnimationSetting animationMode;
-  ButtonPress aButtonMode;
-  ButtonPress bButtonMode;
+  ButtonConfig aButtonMode;
+  ButtonConfig bButtonMode;
+  ButtonConfig aLongButtonMode;
+  ButtonConfig bLongButtonMode;
 
   DeviceSettingsData({
     required this.animationMode,
     required this.aButtonMode,
-    required this.bButtonMode
+    required this.bButtonMode,
+    required this.aLongButtonMode,
+    required this.bLongButtonMode,
   });
 }
 
@@ -27,7 +31,8 @@ class DialogDeviceSettings extends StatelessWidget {
   final VoidCallback? onResetFactorySettings;
   final DeviceSettingsData deviceSettings;
   final Function(AnimationSetting animation)? onUpdateAnimation;
-  final Function(ButtonType buttonType, ButtonPress mode)? onUpdateButtonMode;
+  final Function(ButtonType buttonType, ButtonConfig mode)? onUpdateButtonMode;
+  final Function(ButtonType buttonType, ButtonConfig mode)? onUpdateLongButtonMode;
 
   const DialogDeviceSettings({
     super.key,
@@ -39,7 +44,8 @@ class DialogDeviceSettings extends StatelessWidget {
     this.onResetSettings,
     this.onResetFactorySettings,
     this.onUpdateAnimation,
-    this.onUpdateButtonMode
+    this.onUpdateButtonMode,
+    this.onUpdateLongButtonMode
   }); 
 
   @override
@@ -139,82 +145,116 @@ class DialogDeviceSettings extends StatelessWidget {
           if (onUpdateAnimation != null)
             const SizedBox(height: 10),
           if (onUpdateButtonMode != null)
-            const Text(
-                "Button config:"),
-          if (onUpdateButtonMode != null)
-            const SizedBox(height: 7),
-          if (onUpdateButtonMode != null)
-            const Text("A button:",
-                textScaleFactor: 0.8),
-          if (onUpdateButtonMode != null)
-            const SizedBox(height: 7),
-          if (onUpdateButtonMode != null)
-            ToggleButtonsWrapper(
-                items: const [
-                  'Disable',
-                  'Forward',
-                  'Backward',
-                  'Clone UID'
-                ],
-                selectedValue:
-                    deviceSettings.aButtonMode.value,
-                onChange:
-                    (int index) async {
-                  var mode = ButtonPress
-                      .disable;
-                  if (index == 1) {
-                    mode = ButtonPress
-                        .cycleForward;
-                  } else if (index ==
-                      2) {
-                    mode = ButtonPress
-                        .cycleBackward;
-                  } else if (index ==
-                      3) {
-                    mode = ButtonPress
-                        .cloneUID;
-                  }
+            ...[
+              const Text(
+                  "Button config:"),
+              const SizedBox(height: 7),
+              const Text("A button:",
+                  textScaleFactor: 0.8),
+              const SizedBox(height: 7),
+              ToggleButtonsWrapper(
+                  items: const [
+                    'Disable',
+                    'Forward',
+                    'Backward',
+                    'Clone UID'
+                  ],
+                  selectedValue:
+                      deviceSettings.aButtonMode.value,
+                  onChange:
+                      (int index) async {
+                    var mode = ButtonConfig
+                        .disable;
+                    if (index == 1) {
+                      mode = ButtonConfig.cycleForward;
+                    } else if (index ==
+                        2) {
+                      mode = ButtonConfig.cycleBackward;
+                    } else if (index ==
+                        3) {
+                      mode = ButtonConfig.cloneUID;
+                    }
 
-                  onUpdateButtonMode!(ButtonType.a, mode);
-                }),
-          if (onUpdateButtonMode != null)
-            const SizedBox(height: 7),
-          if (onUpdateButtonMode != null)
-            const Text("B button:",
+                    onUpdateButtonMode!(ButtonType.a, mode);
+                  }),
+              const SizedBox(height: 7),
+              const Text("B button:",
                 textScaleFactor: 0.8),
-          if (onUpdateButtonMode != null)
-            const SizedBox(height: 7),
-          if (onUpdateButtonMode != null)
-            ToggleButtonsWrapper(
-                items: const [
-                  'Disable',
-                  'Forward',
-                  'Backward',
-                  'Clone UID'
-                ],
-                selectedValue:
-                    deviceSettings.bButtonMode.value,
-                onChange:
-                    (int index) async {
-                  var mode = ButtonPress
-                      .disable;
-                  if (index == 1) {
-                    mode = ButtonPress
-                        .cycleForward;
-                  } else if (index ==
-                      2) {
-                    mode = ButtonPress
-                        .cycleBackward;
-                  } else if (index ==
-                      3) {
-                    mode = ButtonPress
-                        .cloneUID;
-                  }
+              const SizedBox(height: 7),
+              ToggleButtonsWrapper(
+                  items: const [
+                    'Disable',
+                    'Forward',
+                    'Backward',
+                    'Clone UID'
+                  ],
+                  selectedValue:
+                      deviceSettings.bButtonMode.value,
+                  onChange:
+                      (int index) async {
+                    var mode = ButtonConfig.disable;
+                    if (index == 1) {
+                      mode = ButtonConfig.cycleForward;
+                    } else if (index ==
+                        2) {
+                      mode = ButtonConfig.cycleBackward;
+                    } else if (index ==
+                        3) {
+                      mode = ButtonConfig.cloneUID;
+                    }
 
-                  onUpdateButtonMode!(ButtonType.b, mode);
-                }),
-          if (onUpdateButtonMode != null)
-            const SizedBox(height: 10),
+                    onUpdateButtonMode!(ButtonType.b, mode);
+                  }),
+              const SizedBox(height: 7),
+              const Text("Long press", textScaleFactor: 0.9),
+              const SizedBox(height: 7),
+              const Text("A button:", textScaleFactor: 0.8),
+              const SizedBox(height: 7),
+              ToggleButtonsWrapper(
+                  items: const [
+                    'Disable',
+                    'Forward',
+                    'Backward',
+                    'Clone UID'
+                  ],
+                  selectedValue: deviceSettings.aLongButtonMode.value,
+                  onChange: (int index) async {
+                    var mode = ButtonConfig.disable;
+                    if (index == 1) {
+                      mode = ButtonConfig.cycleForward;
+                    } else if (index == 2) {
+                      mode = ButtonConfig.cycleBackward;
+                    } else if (index == 3) {
+                      mode = ButtonConfig.cloneUID;
+                    }
+
+                    onUpdateLongButtonMode!(ButtonType.a, mode);
+                  }),
+              const SizedBox(height: 7),
+              const Text("B button:", textScaleFactor: 0.8),
+              const SizedBox(height: 7),
+              ToggleButtonsWrapper(
+                  items: const [
+                    'Disable',
+                    'Forward',
+                    'Backward',
+                    'Clone UID'
+                  ],
+                  selectedValue: deviceSettings.bLongButtonMode.value,
+                  onChange: (int index) async {
+                    var mode = ButtonConfig.disable;
+                    if (index == 1) {
+                      mode = ButtonConfig.cycleForward;
+                    } else if (index == 2) {
+                      mode = ButtonConfig.cycleBackward;
+                    } else if (index == 3) {
+                      mode = ButtonConfig.cloneUID;
+                    }
+
+                    onUpdateLongButtonMode!(ButtonType.b, mode);
+                  }),
+              const SizedBox(height: 10),
+            ],
           const Text("Other:"),
           const SizedBox(height: 10),
           TextButton(

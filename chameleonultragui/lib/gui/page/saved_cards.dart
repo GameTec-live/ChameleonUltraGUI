@@ -23,7 +23,7 @@ class SavedCardsPage extends StatefulWidget {
 class SavedCardsPageState extends State<SavedCardsPage> {
   MifareClassicType selectedType = MifareClassicType.m1k;
 
-  Future<void> saveTag(TagSave tag, MyAppState appState, bool bin) async {
+  Future<void> saveTag(CardSave tag, MyAppState appState, bool bin) async {
     final fileName = tag.name;
     final fileExtension = bin ? 'bin' : 'json';
 
@@ -46,9 +46,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    var dictionaries =
-        appState.sharedPreferencesProvider.getChameleonDictionaries();
-    var tags = appState.sharedPreferencesProvider.getChameleonTags();
+    var dictionaries = appState.sharedPreferencesProvider.getDictionaries();
+    var tags = appState.sharedPreferencesProvider.getCards();
 
     return Scaffold(
       appBar: AppBar(
@@ -91,12 +90,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             try {
                               var string = file.asText();
                               var tags = appState.sharedPreferencesProvider
-                                  .getChameleonTags();
-                              var tag = TagSave.fromJson(string);
+                                  .getCards();
+                              var tag = CardSave.fromJson(string);
                               tag.id = const Uuid().v4();
                               tags.add(tag);
                               appState.sharedPreferencesProvider
-                                  .setChameleonTags(tags);
+                                  .setCards(tags);
                               appState.changesMade();
                             } catch (_) {
                               var uid4 = contents.sublist(0, 4);
@@ -236,8 +235,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           }
                                           var tags = appState
                                               .sharedPreferencesProvider
-                                              .getChameleonTags();
-                                          var tag = TagSave(
+                                              .getCards();
+                                          var tag = CardSave(
                                             id: const Uuid().v4(),
                                             name: nameController.text,
                                             sak: hexToBytes(sak4Controller
@@ -253,7 +252,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           );
                                           tags.add(tag);
                                           appState.sharedPreferencesProvider
-                                              .setChameleonTags(tags);
+                                              .setCards(tags);
                                           appState.changesMade();
                                           Navigator.pop(context);
                                         },
@@ -271,8 +270,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           }
                                           var tags = appState
                                               .sharedPreferencesProvider
-                                              .getChameleonTags();
-                                          var tag = TagSave(
+                                              .getCards();
+                                          var tag = CardSave(
                                             id: const Uuid().v4(),
                                             name: nameController.text,
                                             sak: hexToBytes(sak7Controller
@@ -288,7 +287,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           );
                                           tags.add(tag);
                                           appState.sharedPreferencesProvider
-                                              .setChameleonTags(tags);
+                                              .setCards(tags);
                                           appState.changesMade();
                                           Navigator.pop(context);
                                         },
@@ -393,15 +392,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       onPressed: () async {
                                         var tags = appState
                                             .sharedPreferencesProvider
-                                            .getChameleonTags();
-                                        List<TagSave> output = [];
+                                            .getCards();
+                                        List<CardSave> output = [];
                                         for (var tagTest in tags) {
                                           if (tagTest.id != tag.id) {
                                             output.add(tagTest);
                                           }
                                         }
                                         appState.sharedPreferencesProvider
-                                            .setChameleonTags(output);
+                                            .setCards(output);
                                         appState.changesMade();
                                         Navigator.pop(context);
                                       },
@@ -454,7 +453,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             ),
                                             Text(
                                               tag.tag.name +
-                                                  ((chameleonTagSaveCheckForMifareClassicEV1(
+                                                  ((chameleonCardSaveCheckForMifareClassicEV1(
                                                           tag))
                                                       ? " EV1"
                                                       : ""),
@@ -524,15 +523,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       onPressed: () async {
                                         var tags = appState
                                             .sharedPreferencesProvider
-                                            .getChameleonTags();
-                                        List<TagSave> output = [];
+                                            .getCards();
+                                        List<CardSave> output = [];
                                         for (var tagTest in tags) {
                                           if (tagTest.id != tag.id) {
                                             output.add(tagTest);
                                           }
                                         }
                                         appState.sharedPreferencesProvider
-                                            .setChameleonTags(output);
+                                            .setCards(output);
                                         appState.changesMade();
                                       },
                                       icon: const Icon(Icons.delete_outline),
@@ -601,13 +600,13 @@ class SavedCardsPageState extends State<SavedCardsPage> {
 
                             var dictionaries = appState
                                 .sharedPreferencesProvider
-                                .getChameleonDictionaries();
-                            dictionaries.add(ChameleonDictionary(
+                                .getDictionaries();
+                            dictionaries.add(Dictionary(
                                 id: const Uuid().v4(),
                                 name: file.name,
                                 keys: keys));
                             appState.sharedPreferencesProvider
-                                .setChameleonDictionaries(dictionaries);
+                                .setDictionaries(dictionaries);
                             appState.changesMade();
                           },
                           style: ButtonStyle(
@@ -683,15 +682,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       onPressed: () async {
                                         var dictionaries = appState
                                             .sharedPreferencesProvider
-                                            .getChameleonDictionaries();
-                                        List<ChameleonDictionary> output = [];
+                                            .getDictionaries();
+                                        List<Dictionary> output = [];
                                         for (var dict in dictionaries) {
                                           if (dict.id != dictionary.id) {
                                             output.add(dict);
                                           }
                                         }
                                         appState.sharedPreferencesProvider
-                                            .setChameleonDictionaries(output);
+                                            .setDictionaries(output);
                                         appState.changesMade();
                                         Navigator.pop(context);
                                       },
@@ -788,15 +787,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       onPressed: () async {
                                         var dictionaries = appState
                                             .sharedPreferencesProvider
-                                            .getChameleonDictionaries();
-                                        List<ChameleonDictionary> output = [];
+                                            .getDictionaries();
+                                        List<Dictionary> output = [];
                                         for (var dict in dictionaries) {
                                           if (dict.id != dictionary.id) {
                                             output.add(dict);
                                           }
                                         }
                                         appState.sharedPreferencesProvider
-                                            .setChameleonDictionaries(output);
+                                            .setDictionaries(output);
                                         appState.changesMade();
                                       },
                                       icon: const Icon(Icons.delete_outline),

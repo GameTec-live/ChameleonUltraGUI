@@ -7,7 +7,7 @@ import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 Future<bool> slotWriteTag({
-  required TagSave card,
+  required CardSave card,
   required ChameleonCommunicator communicator,
   required int slotIndex,
   required Function(int) onProgress,
@@ -19,7 +19,7 @@ Future<bool> slotWriteTag({
   if (card.tag.frequency == TagFrequency.hf) {
     onProgress(0);
 
-    var isEV1 = chameleonTagSaveCheckForMifareClassicEV1(card);
+    var isEV1 = chameleonCardSaveCheckForMifareClassicEV1(card);
     if (isEV1) {
       card.tag = TagType.mifare2K;
     }

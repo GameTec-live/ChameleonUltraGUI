@@ -1,14 +1,12 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/services.dart';
 import 'package:usb_serial/usb_serial.dart';
 
 // Class for Android Serial Communication
 class SerialConnector extends AbstractSerial {
   Map<String, UsbDevice> deviceMap = {};
-  List<Uint8List> messagePool = [];
   UsbPort? port;
 
   @override
@@ -96,12 +94,8 @@ class SerialConnector extends AbstractSerial {
           115200, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
       connected = true;
 
-      port!.inputStream!.listen((Uint8List data) async {
-        if (messageCallback != null) {
-          await messageCallback!(data);
-        } else {
-          messagePool.add(data);
-        }
+      port!.inputStream!.listen((Uint8List data) {
+        messageCallback!(Uint8List.fromList(data));
       });
 
       UsbSerial.usbEventStream!.listen((event) {
@@ -128,26 +122,5 @@ class SerialConnector extends AbstractSerial {
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
     await port!.write(command);
     return true;
-  }
-
-  @override
-  Future<Uint8List> read(int length) async {
-    final completer = Completer<Uint8List>();
-    while (true) {
-      if (messagePool.isNotEmpty) {
-        var message = messagePool[0];
-        messagePool.remove(message);
-        completer.complete(message);
-        break;
-      }
-      await asyncSleep(10);
-    }
-
-    return completer.future;
-  }
-
-  @override
-  Future<void> finishRead() async {
-    messagePool = [];
   }
 }

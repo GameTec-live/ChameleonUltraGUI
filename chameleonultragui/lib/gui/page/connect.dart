@@ -116,7 +116,7 @@ class ConnectPage extends StatelessWidget {
                               } else {
                                 if (context.mounted) {
                                   final canContinue = await confirmHttpProxy(context, appState.sharedPreferencesProvider);
-                                  if (canContinue != false) {
+                                  if (canContinue == false) {
                                     return;
                                   }
                                 }

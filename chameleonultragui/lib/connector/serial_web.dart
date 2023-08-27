@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:html';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/helpers/general.dart';
 import 'package:serial/serial.dart';
 
 class SerialPortDeviceWeb {
@@ -32,7 +31,6 @@ class SerialPortDeviceWeb {
 class SerialConnector extends AbstractSerial {
   Map<String, SerialPortDeviceWeb> deviceMap = {};
   SerialPortDeviceWeb? currentDevice;
-  List<Uint8List> messagePool = [];
   ReadableStreamReader? reader;
   WritableStreamDefaultWriter? writer;
 
@@ -218,11 +216,7 @@ class SerialConnector extends AbstractSerial {
           break;
         }
 
-        if (messageCallback != null) {
-          messageCallback!(result.value);
-        } else {
-          messagePool.add(result.value);
-        }
+        messageCallback!(result.value);
       } catch (error) {
         log.e('Read error $error', error: error);
 
@@ -255,27 +249,5 @@ class SerialConnector extends AbstractSerial {
       log.e('Write error: $e');
       rethrow;
     }
-  }
-
-  @override
-  Future<Uint8List> read(int length) async {
-    final completer = Completer<Uint8List>();
-
-    while (connected) {
-      await asyncSleep(10);
-
-      if (messagePool.isNotEmpty) {
-        var message = List<int>.empty(growable: true);
-        for (var msg in messagePool) {
-          message.addAll(msg);
-        }
-        messagePool.clear();
-
-        completer.complete(Uint8List.fromList(message));
-        break;
-      }
-    }
-
-    return completer.future;
   }
 }

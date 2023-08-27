@@ -142,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    appState.devMode = appState.sharedPreferencesProvider.getDeveloperMode();
+    appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
 
     Widget page; // Set Page
     if (appState.connector.connected == false &&
@@ -360,7 +360,7 @@ class BottomProgressBar extends StatelessWidget {
     var appState = context.watch<MyAppState>();
     return (appState.connector.connected == true &&
             appState.connector.connectionType == ConnectionType.dfu &&
-            appState.flashProgress!.progress !> 0)
+            (appState.flashProgress!.progress != null && appState.flashProgress!.progress !> 0))
         ? LinearProgressIndicator(
             value: appState.flashProgress!.progress,
             backgroundColor: Colors.grey[300],

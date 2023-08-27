@@ -100,18 +100,14 @@ class ButtonDfuDevice extends StatelessWidget {
                         children: [
                           FilledButton(
                             onPressed: () async {
-                              if (onFirmwareUpdate != null) {
-                                await onFirmwareUpdate!(false);
-                              }
+                              await onFirmwareUpdate!(false);
                             },
                             child: const Text('Flash latest firmware')
                           ),
                           const SizedBox(height: 8),
                           FilledButton(
                             onPressed: () async {
-                              if (onFirmwareUpdate != null) {
-                                await onFirmwareUpdate!(true);
-                              }
+                              await onFirmwareUpdate!(true);
                             },
                             child: const Text('Flash firmware from .zip')
                           )

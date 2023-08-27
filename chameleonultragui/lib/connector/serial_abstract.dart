@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
@@ -52,7 +54,7 @@ class AbstractSerial {
   bool isOpen = false;
   String portName = "None";
   ConnectionType connectionType = ConnectionType.none;
-  Function? messageCallback;
+  void Function(List<int>)? messageCallback;
 
   Future<bool> performConnect() async {
     return false;
@@ -89,15 +91,9 @@ class AbstractSerial {
     return false;
   }
 
-  Future<Uint8List> read(int length) async {
-    return Uint8List(0);
-  }
-
-  Future<void> finishRead() async {}
-
   Future<void> initializeThread() async {}
 
-  Future<void> registerCallback(Function callback) async {
+  Future<void> registerCallback(void Function(List<int>)? callback) async {
     messageCallback = callback;
   }
 }

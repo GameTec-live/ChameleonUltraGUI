@@ -94,13 +94,16 @@ MifareClassicType mfClassicGetType(Uint8List atqa, int sak) {
   if ((atqa[1] == 0x44 || atqa[1] == 0x04)) {
     if ((sak == 0x08 || sak == 0x88)) {
       return MifareClassicType.m1k;
+    } else if ((sak == 0x38)) {
+      return MifareClassicType.m4k;
     } else if (sak == 0x09) {
       return MifareClassicType.mini;
     }
   } else if ((atqa[1] == 0x01) && (atqa[0] == 0x0F) && (sak == 0x01)) {
-    // skylanders support
+    //skylanders support
     return MifareClassicType.m1k;
-  } else if ((atqa[1] == 0x42 || atqa[1] == 0x02) && (sak == 0x18)) {
+  } else if (((atqa[1] == 0x42 || atqa[1] == 0x02) && (sak == 0x18)) ||
+      ((atqa[1] == 0x02 || atqa[1] == 0x08) && (sak == 0x38))) {
     return MifareClassicType.m4k;
   }
   return MifareClassicType.m1k;
@@ -196,8 +199,7 @@ MifareClassicType chameleonTagTypeGetMfClassicType(TagType type) {
   }
 }
 
-// TODO: move this logic into TagSave or TagType class, adding exceptions like this will be unmaintanable in the long run
-bool chameleonTagSaveCheckForMifareClassicEV1(TagSave tag) {
+bool chameleonCardSaveCheckForMifareClassicEV1(CardSave tag) {
   return tag.tag == TagType.mifare1K &&
       tag.data.length >= 71 &&
       tag.data[71].isNotEmpty;

@@ -279,7 +279,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               onPressed: () {
                 if (appState.devMode) {
                   appState.devMode = false;
-                  appState.sharedPreferencesProvider.setDeveloperMode(false);
+                  appState.sharedPreferencesProvider.setDebugMode(false);
                   appState.changesMade();
                   return;
                 }
@@ -289,7 +289,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   builder: (BuildContext context) => AlertDialog(
                     title: const Text('Debug mode?'),
                     content: Text(
-                        'Are you sure you want to ${appState.sharedPreferencesProvider.getDeveloperMode() ? "deactivate" : "activate"} debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms'),
+                        'Are you sure you want to ${appState.sharedPreferencesProvider.isDebugMode() ? "deactivate" : "activate"} debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms'),
                     actions: <Widget>[
                       TextButton(
                         onPressed: () => Navigator.pop(context, 'Cancel'),
@@ -299,12 +299,12 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         onPressed: () {
                           appState.devMode = true;
                           if (appState.sharedPreferencesProvider
-                              .getDeveloperMode()) {
+                              .isDebugMode()) {
                             appState.sharedPreferencesProvider
-                                .setDeveloperMode(false);
+                                .setDebugMode(false);
                           } else {
                             appState.sharedPreferencesProvider
-                                .setDeveloperMode(true);
+                                .setDebugMode(true);
                           }
                           appState.changesMade();
                           Navigator.pop(context, 'OK');

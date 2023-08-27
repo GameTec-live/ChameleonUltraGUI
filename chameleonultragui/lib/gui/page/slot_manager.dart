@@ -240,7 +240,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
   Future<String?> cardSelectDialog(BuildContext context, int gridPosition) {
     var appState = context.read<MyAppState>();
-    var tags = appState.sharedPreferencesProvider.getChameleonTags();
+    var tags = appState.sharedPreferencesProvider.getCards();
 
     // Don't allow user to upload more tags while already uploading dump
     if (progress != -1) {
@@ -260,7 +260,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 enum SearchFilter { all, hf, lf }
 
 class CardSearchDelegate extends SearchDelegate<String> {
-  final List<TagSave> cards;
+  final List<CardSave> cards;
   final int gridPosition;
   final dynamic refresh;
   final dynamic setUploadState;
@@ -379,7 +379,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
           leading: Icon(card.tag.frequency == TagFrequency.hf ? Icons.credit_card : Icons.wifi),
           title: Text(card.name),
           subtitle: Text(card.tag.name +
-              ((chameleonTagSaveCheckForMifareClassicEV1(card)) ? " EV1" : "")),
+              ((chameleonCardSaveCheckForMifareClassicEV1(card)) ? " EV1" : "")),
           onTap: () async {
             close(context, card.name);
 
