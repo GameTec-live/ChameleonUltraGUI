@@ -126,5 +126,5 @@
                         | xargs)
               xcrun productsign --sign "$INSTALLER_CERT_NAME" unsigned.pkg "$PACKAGE_NAME"
               rm -f unsigned.pkg
-              app-store-connect publish --path "$PACKAGE_NAME" --testflight --expire-build-submitted-for-review --app-store --cancel-previous-submissions --release-type=AFTER_APPROVAL --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`"
+              app-store-connect publish --path "$PACKAGE_NAME" --testflight --expire-build-submitted-for-review --app-store --cancel-previous-submissions --release-type=AFTER_APPROVAL --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" --max-build-processing-wait 3600
               keychain use-login
