@@ -185,7 +185,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               ],
             ),
             const SizedBox(height: 10),
-            ElevatedButton(
+            TextButton(
               child: const Text('Update HTTP proxy'),
               onPressed: () {
                 final sharedPreferences = appState.sharedPreferencesProvider;
