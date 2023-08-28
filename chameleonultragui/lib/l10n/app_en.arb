@@ -80,5 +80,6 @@
     "developed_by": "Developed by",
     "license": "License",
     "thanks_for_support": "Thanks to everyone who supports us on Open Collective!",
-    "code_contributors": "Code contributors"
+    "code_contributors": "Code contributors",
+    "not_implemented": "Not Implemented"
 }

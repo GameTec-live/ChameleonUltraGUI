@@ -80,5 +80,6 @@
     "developed_by": "Desarrollador por",
     "license": "Licencia",
     "thanks_for_support": "¡Gracias a todos los que nos apoyan en Open Collective!",
-    "code_contributors": "Colaboradores de código"
+    "code_contributors": "Colaboradores de código",
+    "not_implemented": "No implementado"
 }

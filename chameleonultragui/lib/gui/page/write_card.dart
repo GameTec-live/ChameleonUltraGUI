@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class WriteCardPage extends StatefulWidget {
   const WriteCardPage({Key? key}) : super(key: key);
 
@@ -17,12 +20,12 @@ class WriteCardPageState extends State<WriteCardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Write Card'),
+        title: Text(AppLocalizations.of(context)!.write_card),
       ),
-      body: const Column(
+      body: Column(
         children: [
           Center(
-            child: Text("Not Implemented")
+            child: Text(AppLocalizations.of(context)!.not_implemented)
           ),
         ],
       ),
