@@ -95,8 +95,8 @@ class DebugPage extends StatelessWidget {
                 }
               }
             },
-            child: const Column(children: [
-              Text('Run nested attack on card'),
+            child: Column(children: [
+              Text(AppLocalizations.of(context)!.nested_attack),
             ]),
           ),
           ElevatedButton(
@@ -135,8 +135,8 @@ class DebugPage extends StatelessWidget {
                 }
               }
             },
-            child: const Column(children: [
-              Text('Run darkside attack on card'),
+            child: Column(children: [
+              Text(AppLocalizations.of(context)!.darkside_attack),
             ]),
           ),
           ElevatedButton(
@@ -168,8 +168,8 @@ class DebugPage extends StatelessWidget {
                   .getSlotTagName(1, TagFrequency.hf);
               appState.log.d(name);
             },
-            child: const Column(children: [
-              Text('Test naming'),
+            child: Column(children: [
+              Text(AppLocalizations.of(context)!.test_naming),
             ]),
           ),
           ElevatedButton(
@@ -192,8 +192,8 @@ class DebugPage extends StatelessWidget {
               appState.log.d(
                   "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
             },
-            child: const Column(children: [
-              Text('Test darkside library'),
+            child: Column(children: [
+              Text(AppLocalizations.of(context)!.test_darkside_lib),
             ]),
           ),
           ElevatedButton(
@@ -212,8 +212,8 @@ class DebugPage extends StatelessWidget {
               appState.log.d(
                   "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
             },
-            child: const Column(children: [
-              Text('Test nested library'),
+            child: Column(children: [
+              Text(AppLocalizations.of(context)!.test_nested_lib),
             ]),
           ),
           ElevatedButton(

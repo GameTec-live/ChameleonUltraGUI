@@ -29,7 +29,7 @@ class ConnectPage extends StatelessWidget {
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
           appState.connector.performDisconnect();
-          return Text('Error: ${snapshot.error}');
+          return Text('${AppLocalizations.of(context)!.error}: ${snapshot.error}');
         } else {
           final (result as List<Chameleon>) = snapshot.data;
 
@@ -71,10 +71,10 @@ class ConnectPage extends StatelessWidget {
                                     context: context,
                                     builder: (BuildContext context) =>
                                         AlertDialog(
-                                      title: const Text(
-                                          'Chameleon is in DFU mode'),
-                                      content: const Text(
-                                          'This probably means your firmware is corrupted. Do you want to flash latest FW?'),
+                                      title: Text(
+                                          AppLocalizations.of(context)!.chamaleon_is_dfu),
+                                      content: Text(
+                                          AppLocalizations.of(context)!.firmware_is_corrupted),
                                       actions: <Widget>[
                                         TextButton(
                                           onPressed: () =>
@@ -83,7 +83,7 @@ class ConnectPage extends StatelessWidget {
                                         ),
                                         TextButton(
                                           onPressed: () async {
-                                            Navigator.pop(context, 'Flash');
+                                            Navigator.pop(context, AppLocalizations.of(context)!.flash);
                                             appState.changesMade();
                                             Uint8List applicationDat,
                                                 applicationBin;
@@ -107,7 +107,7 @@ class ConnectPage extends StatelessWidget {
 
                                             appState.changesMade();
                                           },
-                                          child: const Text('Flash'),
+                                          child: Text(AppLocalizations.of(context)!.flash),
                                         ),
                                       ],
                                     ),
@@ -150,7 +150,7 @@ class ConnectPage extends StatelessWidget {
                                                   : const Icon(Icons.usb),
                                               Text(chameleonDevice.port ?? ""),
                                               if (chameleonDevice.dfu)
-                                                const Text(" (DFU)"),
+                                                Text(AppLocalizations.of(context)!.dfu),
                                             ],
                                           )
                                         ],

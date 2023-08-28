@@ -5,6 +5,9 @@ import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class Mfkey32Page extends StatefulWidget {
   const Mfkey32Page({Key? key}) : super(key: key);
 
@@ -90,7 +93,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
             body: const Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
+          return Text('${AppLocalizations.of(context)!.error}: ${snapshot.error}');
         } else {
           if (detectionCount == -1) {
             updateDetectionStatus();
@@ -112,10 +115,10 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    const Text(
-                      'Recover keys via Mfkey32',
+                    Text(
+                      AppLocalizations.of(context)!.recover_keys("Mfkey32"),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
@@ -127,7 +130,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                               await handleMfkeyCalculation();
                             }
                           : null,
-                      child: Text('Recover keys from $detectionCount nonce(s)'),
+                      child: Text(AppLocalizations.of(context)!.recover_keys_nonce(detectionCount)),
                     ),
                     const SizedBox(height: 16.0),
                     Expanded(

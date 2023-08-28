@@ -2,6 +2,7 @@
     "@@locale": "en",
     "ok": "OK",
     "cancel": "Cancel",
+    "close": "Close",
     "connect": "Connect",
     "home": "Home",
     "card": "Card",
@@ -48,5 +49,23 @@
     "dfu_flash_ultra": "DFU Flash Ultra FW",
     "dfu_flash_lite": "DFU Flash Lite FW",
     "safe_option": "Safe Option",
-    "restart_chamaleon": "Restart Chameleon"
+    "restart_chamaleon": "Restart Chameleon",
+    "error": "Error",
+    "chamaleon_is_dfu": "Chameleon is in DFU mode.",
+    "firmware_is_corrupted": "This probably means your firmware is corrupted. Do you want to flash latest FW?",
+    "flash": "Flash",
+    "dfu": " (DFU)",
+    "found_keys": "Found keys",
+    "please_wait": "Please wait",
+    "used_slots": "Used Slots",
+    "firmware_version": "Firmware version",
+    "update_error": "Update error",
+    "up_to_date": "Your Chameleon ${model} firmware is up to date",
+    "downloading_fw": "Downloading and preparing new Chameleon ${model} firmware...",
+    "check_updates": "Check for updates",
+    "emulator_mode": "Go to emulator mode",
+    "reader_mode": "Go to reader mode",
+    "recover_keys": "Recover keys via {mode}",
+    "recover_keys_nonce": "Recover keys from {number} nonce(s)"
+
 }

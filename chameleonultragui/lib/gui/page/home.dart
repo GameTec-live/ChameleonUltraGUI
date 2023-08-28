@@ -8,6 +8,9 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/gui/component/slot_changer.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -119,13 +122,13 @@ class HomePageState extends State<HomePage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Scaffold(
               appBar: AppBar(
-                title: const Text('Home'),
+                title: Text(AppLocalizations.of(context)!.home),
               ),
               body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
             appState.connector.performDisconnect();
-            return Text('Error: ${snapshot.error.toString()}');
+            return Text('${AppLocalizations.of(context)!.error}: ${snapshot.error.toString()}');
           } else {
             final (
               batteryIcon,
@@ -136,7 +139,7 @@ class HomePageState extends State<HomePage> {
 
             return Scaffold(
               appBar: AppBar(
-                title: const Text('Home'),
+                title: Text(AppLocalizations.of(context)!.home),
               ),
               body: Center(
                 child: Column(
@@ -190,7 +193,7 @@ class HomePageState extends State<HomePage> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    Text("Used Slots: $usedSlots/8",
+                    Text("${AppLocalizations.of(context)!.used_slots}: $usedSlots/8",
                         style: TextStyle(
                             fontSize: MediaQuery.of(context).size.width / 50)),
                     const SlotChanger(),
@@ -209,7 +212,7 @@ class HomePageState extends State<HomePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Firmware Version: ",
+                        Text("${AppLocalizations.of(context)!.firmware_version}: ",
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize:
@@ -229,20 +232,22 @@ class HomePageState extends State<HomePage> {
                                 latestCommit = await latestAvailableCommit(
                                     appState.connector.device);
                               } catch (e) {
-                                ScaffoldMessenger.of(context)
-                                    .hideCurrentSnackBar();
-                                snackBar = SnackBar(
-                                  content:
-                                      Text('Update error: ${e.toString()}'),
-                                  action: SnackBarAction(
-                                    label: 'Close',
-                                    onPressed: () {},
-                                  ),
-                                );
+                                  if(context.mounted){
+                                    ScaffoldMessenger.of(context)
+                                        .hideCurrentSnackBar();
+                                    snackBar = SnackBar(
+                                      content:
+                                          Text('${AppLocalizations.of(context)!.update_error}: ${e.toString()}'),
+                                      action: SnackBarAction(
+                                        label: AppLocalizations.of(context)!.close,
+                                        onPressed: () {},
+                                      ),
+                                    );
 
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(snackBar);
-                                return;
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(snackBar);
+                                  }
+                                  return;
                               }
 
                               appState.log.i("Latest commit: $latestCommit");
@@ -251,10 +256,13 @@ class HomePageState extends State<HomePage> {
                                 return;
                               }
 
-                              if (latestCommit.startsWith(fwVersion[1])) {
+                              if (latestCommit.startsWith(fwVersion[1]) && context.mounted) {
                                 snackBar = SnackBar(
-                                  content: Text(
-                                      'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware is up to date'),
+                                  content: Text(AppLocalizations.of(context)!.up_to_date(
+                                        appState.connector.device ==
+                                              ChameleonDevice.ultra
+                                          ? "Ultra"
+                                          : "Lite")),
                                   action: SnackBarAction(
                                     label: 'Close',
                                     onPressed: () {},
@@ -263,10 +271,14 @@ class HomePageState extends State<HomePage> {
 
                                 ScaffoldMessenger.of(context)
                                     .showSnackBar(snackBar);
-                              } else {
+                              } else if(context.mounted) {
                                 snackBar = SnackBar(
                                   content: Text(
-                                      'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                                      AppLocalizations.of(context)!.downloading_fw(
+                                          appState.connector.device ==
+                                                  ChameleonDevice.ultra
+                                              ? "Ultra"
+                                              : "Lite")),
                                   action: SnackBarAction(
                                     label: 'Close',
                                     onPressed: () {
@@ -281,26 +293,28 @@ class HomePageState extends State<HomePage> {
                                 try {
                                   await flashFirmware(appState);
                                 } catch (e) {
-                                  ScaffoldMessenger.of(context)
-                                      .hideCurrentSnackBar();
-                                  snackBar = SnackBar(
-                                    content:
-                                        Text('Update error: ${e.toString()}'),
-                                    action: SnackBarAction(
-                                      label: 'Close',
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context)
-                                            .hideCurrentSnackBar();
-                                      },
-                                    ),
-                                  );
+                                  if(context.mounted){
+                                    ScaffoldMessenger.of(context)
+                                        .hideCurrentSnackBar();
+                                    snackBar = SnackBar(
+                                      content:
+                                          Text('${AppLocalizations.of(context)!.update_error}: ${e.toString()}'),
+                                      action: SnackBarAction(
+                                        label: AppLocalizations.of(context)!.close,
+                                        onPressed: () {
+                                          ScaffoldMessenger.of(context)
+                                              .hideCurrentSnackBar();
+                                        },
+                                      ),
+                                    );
 
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(snackBar);
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(snackBar);
+                                  }
                                 }
                               }
                             },
-                            tooltip: "Check for updates",
+                            tooltip: AppLocalizations.of(context)!.check_updates,
                             icon: const Icon(Icons.update),
                           ),
                         ),
@@ -321,7 +335,8 @@ class HomePageState extends State<HomePage> {
                                       setState(() {});
                                       appState.changesMade();
                                     },
-                                    tooltip: "Go to emulator mode",
+                                    tooltip: AppLocalizations.of(context)!
+                                        .emulator_mode,
                                     icon: const Icon(Icons.nfc_sharp),
                                   ),
                                 )
@@ -334,7 +349,8 @@ class HomePageState extends State<HomePage> {
                                       setState(() {});
                                       appState.changesMade();
                                     },
-                                    tooltip: "Go to reader mode",
+                                    tooltip: AppLocalizations.of(context)!
+                                        .reader_mode,
                                     icon: const Icon(Icons.barcode_reader),
                                   ),
                                 ),
