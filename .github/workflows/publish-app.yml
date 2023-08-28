@@ -74,7 +74,7 @@
             if:  github.event_name != 'workflow_dispatch' || github.event.inputs.publish_track == ''
             run: fastlane production
             working-directory: "./chameleonultragui/"
-      macos-build:
+      build-macos:
         runs-on: macos-latest
         env:
             APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
