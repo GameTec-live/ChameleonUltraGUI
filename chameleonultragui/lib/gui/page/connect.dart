@@ -1,8 +1,11 @@
+import 'dart:math';
+
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/card_web_pair_devices.dart';
 import 'package:chameleonultragui/gui/component/button_chameleon_device.dart';
 import 'package:chameleonultragui/gui/component/button_dfu_device.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/gui/component/dialog_confirm.dart';
 import 'package:chameleonultragui/gui/component/helpers/confirm_http_proxy.dart';
 import 'package:chameleonultragui/gui/features/firmware_flasher.dart';
 import 'package:chameleonultragui/helpers/files.dart';
@@ -11,6 +14,7 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sizer_pro/sizer.dart';
 
 class ConnectPage extends StatelessWidget {
   const ConnectPage({super.key});
@@ -117,15 +121,44 @@ class ConnectPage extends StatelessWidget {
                                     await connector.connectSpecificDevice(chameleonDevice.port);
                                     await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
                                   } else {
-                                    if (context.mounted) {
-                                      final canContinue = await confirmHttpProxy(context, appState.sharedPreferencesProvider);
-                                      if (canContinue == false) {
-                                        return;
-                                      }
+                                    if (!context.mounted) {
+                                      return;
                                     }
 
-                                    var flasher = FirmwareFlasher.fromGithubNightly(connector);
+                                    final canContinue = await confirmHttpProxy(context, appState.sharedPreferencesProvider);
+                                    if (canContinue == false) {
+                                      return;
+                                    }
+
+                                    if (!context.mounted) {
+                                      return;
+                                    }
+
+                                    var device = chameleonDevice.device;
+                                    if (device == ChameleonDevice.unknown) {
+                                      var isChameleonUltra = await showConfirmDialog(
+                                        context,
+                                        title: 'Choose device type',
+                                        content: SizedBox(
+                                          width: min(500, SizerUtil.width),
+                                          child: Text('We could not determine what type of ${ChameleonDevice.unknown.name} is connected, please select the connected device type so the correct firmware will be flashed'),
+                                        ),
+                                        cancelTitle: ChameleonDevice.lite.name,
+                                        okTitle: ChameleonDevice.ultra.name
+                                      );
+
+                                      if (isChameleonUltra == null) {
+                                        return;
+                                      }
+
+                                      device = isChameleonUltra ? ChameleonDevice.ultra : ChameleonDevice.lite;
+                                    }
+
+                                    var flasher = FirmwareFlasher.fromGithubNightly(connector, device: device);
                                     await connector.connectSpecificDevice(chameleonDevice.port);
+                                    if (connector.device == ChameleonDevice.unknown) {
+                                      connector.device = device;
+                                    }
                                     await flasher.flash((progressUpdate) => appState.setFlashProgress(progressUpdate));
                                   }
                                 } catch (e) {

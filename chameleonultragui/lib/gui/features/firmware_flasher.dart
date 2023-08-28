@@ -263,13 +263,15 @@ class FirmwareFlasher {
 
   bool _isReady = false;
 
-  factory FirmwareFlasher.fromGithubNightly(AbstractSerial connector) {
-    final instance = FirmwareFlasher(connector, FirmwareGithubNightlyProvider(connector.device));
+  factory FirmwareFlasher.fromGithubNightly(AbstractSerial connector, { ChameleonDevice? device }) {
+    device ??= connector.device;
+    final instance = FirmwareFlasher(connector, FirmwareGithubNightlyProvider(device));
     return instance;
   }
 
-  factory FirmwareFlasher.fromGithubLatest(AbstractSerial connector) {
-    final instance = FirmwareFlasher(connector, FirmwareGithubReleasesProvider(connector.device));
+  factory FirmwareFlasher.fromGithubLatest(AbstractSerial connector, { ChameleonDevice? device }) {
+    device ??= connector.device;
+    final instance = FirmwareFlasher(connector, FirmwareGithubReleasesProvider(device));
     return instance;
   }
 
