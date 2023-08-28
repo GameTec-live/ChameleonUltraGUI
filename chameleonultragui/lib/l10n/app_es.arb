@@ -31,7 +31,7 @@
     "activate": "Activar",
     "deactivate": "Desactivar",
     "debug_mode": "Modo de depuración",
-    "debug_mode_confirmation": "¿Está seguro que desea activar el modo de depuración? Se ha creado específicamente para que los desarrolladores prueben funciones específicas de la aplicación en plataformas NO SOPORTADAS.",
+    "debug_mode_confirmation": "¿Está seguro que desea {mode} el modo de depuración? Se ha creado específicamente para que los desarrolladores prueben funciones específicas de la aplicación en plataformas NO SOPORTADAS.",
     "debug": "Depurar",
     "debug_page_warning": "Usar este menú puede bloquear su Chameleon PERMANENTEMENTE.",
     "warned": "Has sido advertido.",
@@ -69,5 +69,16 @@
     "recover_keys_nonce": "Recuperar claves a partir de {number} nonce(s)",
     "restart_required": "Reinicio requerido",
     "take_effects": "Los cambios surtirán efecto tras el reinicio",
-    "language": "Idioma"
+    "language": "Idioma",
+    "sidebar_expansion": "Barra lateral",
+    "expand": "Expandida",
+    "retract": "Oculta",
+    "auto": "Auto",
+    "restart_now": "Reiniciar ahora",
+    "about_text": "Una herramienta para gestionar y configurar gráficamente su Chameleon Ultra, escrita en Flutter, funcional en escritorio y móvil.",
+    "version": "Versión",
+    "developed_by": "Desarrollador por",
+    "license": "Licencia",
+    "thanks_for_support": "¡Gracias a todos los que nos apoyan en Open Collective!",
+    "code_contributors": "Colaboradores de código"
 }

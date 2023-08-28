@@ -2,6 +2,7 @@ import 'package:chameleonultragui/gui/component/developer_list.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/helpers/open_collective.dart';
@@ -59,10 +60,12 @@ class SettingsMainPageState extends State<SettingsMainPage> {
           mainAxisAlignment: MainAxisAlignment.center, // Center
           children: [
             const SizedBox(height: 10),
-            const Text("Sidebar Expansion:"),
-            const SizedBox(height: 8),
+            Text(AppLocalizations.of(context)!.sidebar_expansion,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
             ToggleButtonsWrapper(
-                items: const ['Expand', 'Auto', 'Retract'],
+                items: [AppLocalizations.of(context)!.expand, AppLocalizations.of(context)!.auto, AppLocalizations.of(context)!.retract
+                ],
                 selectedValue: appState.sharedPreferencesProvider
                     .getSideBarExpandedIndex(),
                 onChange: (int index) async {
@@ -88,9 +91,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               AppLocalizations.of(context)!.theme,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 5),
             ToggleButtonsWrapper(
-                items: const ['System', 'Light', 'Dark'],
+                items: [AppLocalizations.of(context)!.system, AppLocalizations.of(context)!.light, AppLocalizations.of(context)!.dark],
                 selectedValue: appState.sharedPreferencesProvider.getTheme() ==
                         ThemeMode.system
                     ? 0
@@ -122,6 +125,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           onPressed: () => Navigator.pop(context, AppLocalizations.of(context)!.ok),
                           child: Text(AppLocalizations.of(context)!.ok),
                         ),
+                        TextButton(
+                          onPressed: () => SystemNavigator.pop(),
+                          child: Text(AppLocalizations.of(context)!.restart_now),
+                        ),
                       ],
                     ),
                   );
@@ -131,7 +138,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               AppLocalizations.of(context)!.color_scheme,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 5),
             DropdownButton(
               value: appState.sharedPreferencesProvider.sharedPreferences
                       .getInt('app_theme_color') ??
@@ -153,6 +160,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       TextButton(
                         onPressed: () => Navigator.pop(context, 'OK'),
                         child: Text(AppLocalizations.of(context)!.ok),
+                      ),
+                      TextButton(
+                        onPressed: () => SystemNavigator.pop(),
+                        child: Text(AppLocalizations.of(context)!.restart_now),
                       ),
                     ],
                   ),
@@ -195,7 +206,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
             ),
             const SizedBox(height: 10),
             Text(AppLocalizations.of(context)!.language, style: const TextStyle(fontWeight: FontWeight.bold),),
-            const SizedBox(height: 10),
+            const SizedBox(height: 5),
             DropdownButton(
               value: appState.sharedPreferencesProvider.sharedPreferences
                       .getString('locale') ??
@@ -217,6 +228,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         onPressed: () => Navigator.pop(context, AppLocalizations.of(context)!.ok),
                         child: Text(AppLocalizations.of(context)!.ok),
                       ),
+                      TextButton(
+                        onPressed: () => SystemNavigator.pop(),
+                        child: Text(AppLocalizations.of(context)!.restart_now),
+                      ),
                     ],
                   ),
                 );
@@ -233,7 +248,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               onPressed: () => showDialog<String>(
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
-                  title: const Text('About'),
+                  title: Text(AppLocalizations.of(context)!.about),
                   content: Center(
                     child: FutureBuilder(
                       future: getFutureData(),
@@ -253,20 +268,20 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               const Text('Chameleon Ultra GUI',
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
-                              const Text(
-                                  'A Tool to graphically manage and configure your Chameleon Ultra, written in Flutter and running on Desktop and Mobile.'),
+                              Text(
+                                  AppLocalizations.of(context)!.about_text),
                               const SizedBox(height: 10),
-                              const Text('Version:'),
+                              Text('${AppLocalizations.of(context)!.version}:'),
                               Text(
                                   '${packageInfo.version} (Build ${packageInfo.buildNumber})',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
-                              const Text('Developed by:'),
+                              Text('${AppLocalizations.of(context)!.developed_by}:'),
                               const SizedBox(height: 10),
                               DeveloperList(avatars: developers),
                               const SizedBox(height: 10),
-                              const Text('License:'),
+                              Text('${AppLocalizations.of(context)!.license}:'),
                               const Text('GNU General Public License v3.0',
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
@@ -279,14 +294,14 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   child: const Text(
                                       'https://github.com/GameTec-live/ChameleonUltraGUI')),
                               const SizedBox(height: 30),
-                              const Text(
-                                  "Thanks to everyone who supports us on Open Collective!"),
+                              Text(
+                                  AppLocalizations.of(context)!.thanks_for_support),
                               const SizedBox(height: 10),
                               Text(names,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
-                              const Text('Code contributors:'),
+                              Text('${AppLocalizations.of(context)!.code_contributors}:'),
                               const SizedBox(height: 10),
                               DeveloperList(avatars: contributors),
                             ],
@@ -307,34 +322,37 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ],
                 ),
               ),
-              child: const Text('About'),
+              child: Text(AppLocalizations.of(context)!.about),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
-                  title: const Text('Debug mode?'),
+                  title: Text(AppLocalizations.of(context)!.debug_mode),
                   content: Text(
-                      'Are you sure you want to ${appState.sharedPreferencesProvider.isDebugMode() ? "deactivate" : "activate"} debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms'),
+                      AppLocalizations.of(context)!.debug_mode_confirmation(
+                          appState.sharedPreferencesProvider.isDebugMode()
+                              ? AppLocalizations.of(context)!.deactivate.toLowerCase()
+                              : AppLocalizations.of(context)!.activate.toLowerCase())),
                   actions: <Widget>[
                     TextButton(
-                      onPressed: () => Navigator.pop(context, 'Cancel'),
-                      child: const Text('Cancel'),
+                      onPressed: () => Navigator.pop(context, AppLocalizations.of(context)!.cancel),
+                      child: Text(AppLocalizations.of(context)!.cancel),
                     ),
                     TextButton(
                       onPressed: () {
                         appState.sharedPreferencesProvider.setDebugMode(
                             !appState.sharedPreferencesProvider.isDebugMode());
                         appState.changesMade();
-                        Navigator.pop(context, 'OK');
+                        Navigator.pop(context, AppLocalizations.of(context)!.ok);
                       },
-                      child: const Text('OK'),
+                      child: Text(AppLocalizations.of(context)!.ok),
                     ),
                   ],
                 ),
               ),
-              child: const Text('Activate debug mode'),
+              child: Text("${appState.sharedPreferencesProvider.isDebugMode() ? AppLocalizations.of(context)!.deactivate : AppLocalizations.of(context)!.activate} ${AppLocalizations.of(context)!.debug_mode.toLowerCase()}"),
             )
           ],
         ),

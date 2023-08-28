@@ -31,7 +31,7 @@
     "activate": "Activate",
     "deactivate": "Deactivate",
     "debug_mode": "Debug Mode",
-    "debug_mode_confirmation": "Are you sure you want to activate debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms.",
+    "debug_mode_confirmation": "Are you sure you want to {mode} debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms.",
     "debug": "Debug",
     "debug_page_warning": "Using this menu may brick your Chameleon PERMANENTLY.",
     "warned": "You have been warned.",
@@ -69,6 +69,16 @@
     "recover_keys_nonce": "Recover keys from {number} nonce(s)",
     "restart_required": "Restart required",
     "take_effects": "Changes will take effect after a restart",
-    "language": "Language"
-
+    "language": "Language",
+    "sidebar_expansion": "Sidebar Expansion",
+    "expand": "Expand",
+    "retract": "Retract",
+    "auto": "Auto",
+    "restart_now": "Restart now",
+    "about_text": "A Tool to graphically manage and configure your Chameleon Ultra, written in Flutter and running on Desktop and Mobile.",
+    "version": "Version",
+    "developed_by": "Developed by",
+    "license": "License",
+    "thanks_for_support": "Thanks to everyone who supports us on Open Collective!",
+    "code_contributors": "Code contributors"
 }
