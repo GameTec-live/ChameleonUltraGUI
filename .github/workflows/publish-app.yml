@@ -126,8 +126,12 @@
                         | xargs)
               xcrun productsign --sign "$INSTALLER_CERT_NAME" unsigned.pkg "$PACKAGE_NAME"
               rm -f unsigned.pkg
-              app-store-connect publish --path "$PACKAGE_NAME" --testflight --expire-build-submitted-for-review --app-store --cancel-previous-submissions --release-type=AFTER_APPROVAL --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" --max-build-processing-wait 3600
-          - name: Setup tmate session
-            uses: mxschmitt/action-tmate@v3
-            with:
-              limit-access-to-actor: true
+              app-store-connect publish --path "$PACKAGE_NAME" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" --max-build-processing-wait 3600
+              while [[ -z "$BUILD_ID" ]]; do
+                  BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state PROCESSING | awk '/^Id:/ {print $2}')
+                  if [[ -z "$BUILD_ID" ]]; then
+                      echo "Build is not ready, retrying in 5 seconds..."
+                      sleep 5
+                  fi
+              done
+              app-store-connect builds submit-to-app-store --platform=MAC_OS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
