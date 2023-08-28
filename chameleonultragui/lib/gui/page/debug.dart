@@ -11,6 +11,9 @@ import 'package:provider/provider.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class DebugPage extends StatelessWidget {
   // Home Page
   const DebugPage({super.key});
@@ -38,16 +41,16 @@ class DebugPage extends StatelessWidget {
             '🐞 Chameleon Ultra GUI DEBUG MENU 🐞',
             textScaleFactor: 2,
           ),
-          const Text(
-            'Using this menu may brick your Chameleon PERMANENTLY',
+          Text(
+            AppLocalizations.of(context)!.debug_page_warning,
             textScaleFactor: 2,
           ),
-          const Text('⚠️ YOU HAVE BEEN WARNED ⚠️', textScaleFactor: 3),
-          Text('Platform: ${Platform.operatingSystem}'),
-          Text('Android: ${appState.onAndroid}'),
-          Text('Serial protocol : ${appState.connector}'),
-          Text('Chameleon connected: ${appState.connector.connected}'),
-          Text('Chameleon device type: ${appState.connector.device}'),
+          Text('⚠️ ${AppLocalizations.of(context)!.warned} ⚠️', textScaleFactor: 3),
+          Text('${AppLocalizations.of(context)!.platform}: ${Platform.operatingSystem}'),
+          Text('${AppLocalizations.of(context)!.android}: ${appState.onAndroid}'),
+          Text('${AppLocalizations.of(context)!.serial_protocol}: ${appState.connector}'),
+          Text('${AppLocalizations.of(context)!.chameleon_connected}: ${appState.connector.connected}'),
+          Text('${AppLocalizations.of(context)!.chameleon_device_type}: ${appState.connector.device}'),
           ElevatedButton(
             onPressed: () async {
               await appState.communicator!.setReaderDeviceMode(true);
@@ -148,8 +151,8 @@ class DebugPage extends StatelessWidget {
               await appState.communicator!.setReaderDeviceMode(false);
               await appState.communicator!.setMf1AntiCollision(card);
             },
-            child: const Column(children: [
-              Text('Copy card UID to emulator'),
+            child: Column(children: [
+              Text(AppLocalizations.of(context)!.copy_uid),
             ]),
           ),
           ElevatedButton(
@@ -229,8 +232,8 @@ class DebugPage extends StatelessWidget {
                   (progress) => appState.log.d("Flashing: $progress%"),
                   firmwareZip: content);
             },
-            child: const Column(children: [
-              Text('💀 DFU flash ultra FW 💀'),
+            child: Column(children: [
+              Text('💀 ${AppLocalizations.of(context)!.dfu_flash_ultra} 💀'),
             ]),
           ),
           ElevatedButton(
@@ -249,8 +252,8 @@ class DebugPage extends StatelessWidget {
                   (progress) => appState.log.d("Flashing: $progress%"),
                   firmwareZip: content);
             },
-            child: const Column(children: [
-              Text('💀 DFU flash lite FW 💀'),
+            child: Column(children: [
+              Text('💀 ${AppLocalizations.of(context)!.dfu_flash_lite} 💀'),
             ]),
           ),
           const SizedBox(height: 10),
@@ -258,8 +261,8 @@ class DebugPage extends StatelessWidget {
             onPressed: () async {
               await appState.communicator!.factoryReset();
             },
-            child: const Column(children: [
-              Text('✅ Safe option: restart chameleon ✅'),
+            child: Column(children: [
+              Text('✅ ${AppLocalizations.of(context)!.safe_option}: ${AppLocalizations.of(context)!.restart_chamaleon} ✅'),
             ]),
           ),
         ],

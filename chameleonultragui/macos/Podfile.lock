@@ -1,0 +1,79 @@
+PODS:
+  - file_saver (0.0.1):
+    - FlutterMacOS
+  - flutter_libserialport (0.0.1):
+    - FlutterMacOS
+    - libserialport
+  - FlutterMacOS (1.0.0)
+  - FMDB (2.7.5):
+    - FMDB/standard (= 2.7.5)
+  - FMDB/standard (2.7.5)
+  - libserialport (0.1.1)
+  - package_info_plus (0.0.1):
+    - FlutterMacOS
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - recovery (0.0.1):
+    - FlutterMacOS
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - sqflite (0.0.2):
+    - FlutterMacOS
+    - FMDB (>= 2.7.5)
+  - url_launcher_macos (0.0.1):
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - file_saver (from `Flutter/ephemeral/.symlinks/plugins/file_saver/macos`)
+  - flutter_libserialport (from `Flutter/ephemeral/.symlinks/plugins/flutter_libserialport/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
+  - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
+  - recovery (from `./recovery.podspec`)
+  - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - sqflite (from `Flutter/ephemeral/.symlinks/plugins/sqflite/macos`)
+  - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
+
+SPEC REPOS:
+  trunk:
+    - FMDB
+    - libserialport
+
+EXTERNAL SOURCES:
+  file_saver:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_saver/macos
+  flutter_libserialport:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_libserialport/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  package_info_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos
+  path_provider_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin
+  recovery:
+    :path: "./recovery.podspec"
+  shared_preferences_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
+  sqflite:
+    :path: Flutter/ephemeral/.symlinks/plugins/sqflite/macos
+  url_launcher_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
+
+SPEC CHECKSUMS:
+  file_saver: 44e6fbf666677faf097302460e214e977fdd977b
+  flutter_libserialport: d1a505fd4b05785f7b50cc7c93b361937ea1c5bd
+  FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+  FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
+  libserialport: 1cb25e66ef3c92a8e59c2ea3820302c3fa2268cd
+  package_info_plus: 02d7a575e80f194102bef286361c6c326e4c29ce
+  path_provider_foundation: 29f094ae23ebbca9d3d0cec13889cd9060c0e943
+  recovery: 3dd1b9b85ac8e7f017ef8f6a3caea297d8559924
+  shared_preferences_foundation: 5b919d13b803cadd15ed2dc053125c68730e5126
+  sqflite: a5789cceda41d54d23f31d6de539d65bb14100ea
+  url_launcher_macos: d2691c7dd33ed713bf3544850a623080ec693d95
+
+PODFILE CHECKSUM: 58eeb33b8e458bd5d682f8fe36f300c258f4d19a
+
+COCOAPODS: 1.12.1

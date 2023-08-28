@@ -6,6 +6,9 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class ConnectPage extends StatelessWidget {
   const ConnectPage({super.key});
 
@@ -21,7 +24,7 @@ class ConnectPage extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
               appBar: AppBar(
-                title: const Text('Connect'),
+                title: Text(AppLocalizations.of(context)!.connect),
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
@@ -32,7 +35,7 @@ class ConnectPage extends StatelessWidget {
 
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Connect'),
+              title: Text(AppLocalizations.of(context)!.connect),
             ),
             body: Center(
               child: Column(
@@ -75,8 +78,8 @@ class ConnectPage extends StatelessWidget {
                                       actions: <Widget>[
                                         TextButton(
                                           onPressed: () =>
-                                              Navigator.pop(context, 'Cancel'),
-                                          child: const Text('Cancel'),
+                                              Navigator.pop(context, AppLocalizations.of(context)!.cancel),
+                                          child: Text(AppLocalizations.of(context)!.cancel),
                                         ),
                                         TextButton(
                                           onPressed: () async {
