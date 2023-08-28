@@ -129,4 +129,5 @@
               app-store-connect publish --path "$PACKAGE_NAME" --testflight --expire-build-submitted-for-review --app-store --cancel-previous-submissions --release-type=AFTER_APPROVAL --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" --max-build-processing-wait 3600
           - name: Setup tmate session
             uses: mxschmitt/action-tmate@v3
-            limit-access-to-actor: true
+            with:
+              limit-access-to-actor: true
