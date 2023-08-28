@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:sizer_pro/sizer.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 
 // Comms Imports
 import 'connector/serial_stub.dart'
@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
           create: (context) => MyAppState(_sharedPreferencesProvider),
         ),
       ],
-      child: Sizer(
+      child: ResponsiveSizer(
         builder: (_, __, ___) => MaterialApp(
           title: 'Chameleon Ultra GUI', // App Name
           theme: ThemeData(
@@ -200,7 +200,7 @@ class _MyHomePageState extends State<MyHomePage> {
       statusBarColor: Theme.of(context).colorScheme.surface,
     ));
 
-    final useBottomNavigation = sharedPreferences.enableMobileNavigation && SizerUtil.orientation == Orientation.portrait && SizerUtil.width < 600;
+    final useBottomNavigation = sharedPreferences.enableMobileNavigation && Device.orientation == Orientation.portrait && Device.width < 600;
     final useSideNavigation = !useBottomNavigation &&
       (!appState.connector.isDFU ||
       !appState.connector.connected);

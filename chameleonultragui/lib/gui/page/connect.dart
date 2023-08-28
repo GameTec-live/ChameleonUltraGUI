@@ -14,7 +14,7 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sizer_pro/sizer.dart';
+import 'package:responsive_sizer/responsive_sizer.dart' as sizer;
 
 class ConnectPage extends StatelessWidget {
   const ConnectPage({super.key});
@@ -140,7 +140,7 @@ class ConnectPage extends StatelessWidget {
                                         context,
                                         title: 'Choose device type',
                                         content: SizedBox(
-                                          width: min(500, SizerUtil.width),
+                                          width: min(500, sizer.Device.width),
                                           child: Text('We could not determine what type of ${ChameleonDevice.unknown.name} is connected, please select the connected device type so the correct firmware will be flashed'),
                                         ),
                                         cancelTitle: ChameleonDevice.lite.name,

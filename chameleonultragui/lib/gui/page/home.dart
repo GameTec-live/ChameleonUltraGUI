@@ -8,7 +8,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/slot_changer.dart';
 import 'package:chameleonultragui/main.dart';
-import 'package:sizer_pro/sizer.dart';
+import 'package:responsive_sizer/responsive_sizer.dart' as sizer;
 
 class HomePage extends StatefulWidget {
   const HomePage({ super.key });
@@ -210,7 +210,7 @@ class HomePageState extends State<HomePage> {
                             appState.connector.device.name,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: SizerUtil.width / 25
+                                fontSize: sizer.Device.width / 25
                             )
                         ),
                       ],

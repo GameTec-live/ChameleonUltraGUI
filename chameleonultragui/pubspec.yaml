@@ -68,7 +68,7 @@ dependencies:
     git:
       url: https://github.com/xclud/dart_serial
       ref: main
-  sizer_pro: ^2.1.0
+  responsive_sizer: ^3.2.0
 
 dev_dependencies:
   flutter_test:

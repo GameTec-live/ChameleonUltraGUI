@@ -7,7 +7,7 @@ import 'package:chameleonultragui/helpers/http.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:sizer_pro/sizer.dart';
+import 'package:responsive_sizer/responsive_sizer.dart' as sizer;
 
 Future<bool?> confirmHttpProxy(
   BuildContext context,
@@ -33,7 +33,7 @@ Future<bool?> confirmHttpProxy(
       title: 'Confirm CORS proxy',
       cancelTitle: 'Cancel',
       content: SizedBox(
-        width: min(500, SizerUtil.width),
+        width: min(500, sizer.Device.width),
         child: FormConfirmProxySetting(
           key: key,
           proxyUrl: httpCorsProxy ?? defaultProxyUrl,

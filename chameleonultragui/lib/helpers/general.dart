@@ -5,7 +5,7 @@ import 'dart:io' show Platform;
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:sizer_pro/sizer.dart';
+import 'package:responsive_sizer/responsive_sizer.dart' as sizer;
 
 Future<void> asyncSleep(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
@@ -142,14 +142,8 @@ String numToVerCode(int versionCode) {
 
 /// This method fixes an issue in sizer_pro cause it swaps x/y axis on any platform atm
 /// Default width for gridCell is 400, it's somewhat arbitrary but looks to be a good fit 
-// TODO: remove this fix after https://github.com/jinosh05/sizer_pro/pull/1 is merged
 int calculateCrossAxisCount({ int gridCellWidth = 400 }) {
-  if (kIsWeb || Platform.isAndroid || Platform.isIOS) {
-    return max(1, (SizerUtil.width / gridCellWidth).floor());
-  }
-
-  // use height instead of width cause they are swapped
-  return max(1, (SizerUtil.height / gridCellWidth).floor());
+  return max(1, (sizer.Device.width / gridCellWidth).floor());
 }
 
 bool isUrl(String url, {
