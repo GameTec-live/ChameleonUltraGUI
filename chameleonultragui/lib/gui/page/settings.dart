@@ -8,6 +8,9 @@ import 'package:chameleonultragui/helpers/open_collective.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class SettingsMainPage extends StatefulWidget {
   const SettingsMainPage({Key? key}) : super(key: key);
 
@@ -49,7 +52,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(AppLocalizations.of(context)!.settings),
       ),
       body: Center(
         child: Column(
@@ -81,7 +84,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   appState.changesMade();
                 }),
             const SizedBox(height: 10),
-            const Text("Theme:"),
+                        Text(
+              AppLocalizations.of(context)!.theme,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             ToggleButtonsWrapper(
                 items: const ['System', 'Light', 'Dark'],
@@ -106,22 +112,26 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   showDialog<String>(
                     context: context,
                     builder: (BuildContext context) => AlertDialog(
-                      title: const Text('Restart Required'),
-                      content: const Center(
-                        child: Text('Changes will take effect after a restart',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(AppLocalizations.of(context)!.restart_required),
+                      content: Center(
+                        child: Text(AppLocalizations.of(context)!.take_effects,
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                       actions: <Widget>[
                         TextButton(
-                          onPressed: () => Navigator.pop(context, 'OK'),
-                          child: const Text('OK'),
+                          onPressed: () => Navigator.pop(context, AppLocalizations.of(context)!.ok),
+                          child: Text(AppLocalizations.of(context)!.ok),
                         ),
                       ],
                     ),
                   );
                 }),
             const SizedBox(height: 10),
-            const Text("Color scheme:"),
+            Text(
+              AppLocalizations.of(context)!.color_scheme,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
             DropdownButton(
               value: appState.sharedPreferencesProvider.sharedPreferences
                       .getInt('app_theme_color') ??
@@ -134,54 +144,89 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 showDialog<String>(
                   context: context,
                   builder: (BuildContext context) => AlertDialog(
-                    title: const Text('Restart Required'),
-                    content: const Center(
-                      child: Text('Changes will take effect after a restart',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    title: Text(AppLocalizations.of(context)!.restart_required),
+                    content: Center(
+                      child: Text(AppLocalizations.of(context)!.take_effects,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     actions: <Widget>[
                       TextButton(
                         onPressed: () => Navigator.pop(context, 'OK'),
-                        child: const Text('OK'),
+                        child: Text(AppLocalizations.of(context)!.ok),
                       ),
                     ],
                   ),
                 );
               },
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: 0,
-                  child: Text("Default"),
+                  child: Text(AppLocalizations.of(context)!.def),
                 ),
                 DropdownMenuItem(
                   value: 1,
-                  child: Text("Purple"),
+                  child: Text(AppLocalizations.of(context)!.purple),
                 ),
                 DropdownMenuItem(
                   value: 2,
-                  child: Text("Blue"),
+                  child: Text(AppLocalizations.of(context)!.blue),
                 ),
                 DropdownMenuItem(
                   value: 3,
-                  child: Text("Green"),
+                  child: Text(AppLocalizations.of(context)!.green),
                 ),
                 DropdownMenuItem(
                   value: 4,
-                  child: Text("Indigo"),
+                  child: Text(AppLocalizations.of(context)!.indigo),
                 ),
                 DropdownMenuItem(
                   value: 5,
-                  child: Text("Lime"),
+                  child: Text(AppLocalizations.of(context)!.lime),
                 ),
                 DropdownMenuItem(
                   value: 6,
-                  child: Text("Red"),
+                  child: Text(AppLocalizations.of(context)!.red),
                 ),
                 DropdownMenuItem(
                   value: 7,
-                  child: Text("Yellow"),
+                  child: Text(AppLocalizations.of(context)!.yellow),
                 ),
               ],
+            ),
+            const SizedBox(height: 10),
+            Text(AppLocalizations.of(context)!.language, style: const TextStyle(fontWeight: FontWeight.bold),),
+            const SizedBox(height: 10),
+            DropdownButton(
+              value: appState.sharedPreferencesProvider.sharedPreferences
+                      .getString('locale') ??
+                  'en',
+              onChanged: (value) {
+                appState.sharedPreferencesProvider
+                    .setLocale(Locale(value ?? 'en'));
+                appState.changesMade();
+                showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: Text(AppLocalizations.of(context)!.restart_required),
+                    content: Center(
+                      child: Text(AppLocalizations.of(context)!.take_effects,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, AppLocalizations.of(context)!.ok),
+                        child: Text(AppLocalizations.of(context)!.ok),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              items: AppLocalizations.supportedLocales.map((locale) {
+                return DropdownMenuItem(
+                  value: locale.languageCode,
+                  child: Text(appState.sharedPreferencesProvider.getFlag(locale)),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 10),
             TextButton(

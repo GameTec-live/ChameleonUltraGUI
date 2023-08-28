@@ -66,6 +66,9 @@
     "emulator_mode": "Go to emulator mode",
     "reader_mode": "Go to reader mode",
     "recover_keys": "Recover keys via {mode}",
-    "recover_keys_nonce": "Recover keys from {number} nonce(s)"
+    "recover_keys_nonce": "Recover keys from {number} nonce(s)",
+    "restart_required": "Restart required",
+    "take_effects": "Changes will take effect after a restart",
+    "language": "Language"
 
 }

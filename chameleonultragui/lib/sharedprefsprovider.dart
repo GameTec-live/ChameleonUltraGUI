@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class Dictionary {
   String id;
   String name;
@@ -261,5 +264,36 @@ class SharedPreferencesProvider extends ChangeNotifier {
       output.add(card.toJson());
     }
     _sharedPreferences.setStringList('cards', output);
+  }
+
+  void setLocale(Locale loc) {
+    if (!AppLocalizations.supportedLocales.contains(loc)) return;
+    _sharedPreferences.setString('locale', loc.languageCode);
+    notifyListeners();
+  }
+
+  Locale getLocale() {
+    final loc = _sharedPreferences.getString('locale');
+    if (!AppLocalizations.supportedLocales.contains(Locale(loc.toString()))) {
+      return const Locale('en');
+    }
+    if (loc != null) {
+      return Locale(loc);
+    }
+    return const Locale('en');
+  }
+
+  void clearLocale() {
+    _sharedPreferences.setString('locale', "en");
+    notifyListeners();
+  }
+
+  String getFlag(Locale loc) {
+    switch (loc.languageCode) {
+      case 'es':
+        return '🇪🇸';
+      default:
+        return '🇺🇸';
+    }
   }
 }

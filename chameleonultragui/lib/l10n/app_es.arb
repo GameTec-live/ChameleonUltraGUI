@@ -26,7 +26,7 @@
     "indigo": "Añil",
     "lime": "Lima",
     "red": "Rojo",
-    "yellow": "Yellow",
+    "yellow": "Amarillo",
     "about": "Acerca de",
     "activate": "Activar",
     "deactivate": "Desactivar",
@@ -66,5 +66,8 @@
     "emulator_mode": "Ir a modo emulador",
     "reader_mode": "Ir a modo lector",
     "recover_keys": "Recuperar keys via {mode}",
-    "recover_keys_nonce": "Recuperar claves a partir de {number} nonce(s)"
+    "recover_keys_nonce": "Recuperar claves a partir de {number} nonce(s)",
+    "restart_required": "Reinicio requerido",
+    "take_effects": "Los cambios surtirán efecto tras el reinicio",
+    "language": "Idioma"
 }

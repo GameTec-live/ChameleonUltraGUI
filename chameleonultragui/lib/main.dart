@@ -53,6 +53,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Chameleon Ultra GUI', // App Name
+        locale: _sharedPreferencesProvider.getLocale(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: ThemeData(
