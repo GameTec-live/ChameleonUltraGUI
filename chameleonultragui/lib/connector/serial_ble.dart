@@ -90,6 +90,9 @@ class BLESerial extends AbstractSerial {
       } else if (bleDevice.name.startsWith('CL-')) {
         device = ChameleonDevice.lite;
         dfuMode = true;
+      } else {
+        // regular nRF device with UART
+        continue;
       }
 
       connectionType = ConnectionType.ble;
