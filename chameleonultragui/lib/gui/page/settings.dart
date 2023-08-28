@@ -185,6 +185,17 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               ],
             ),
             const SizedBox(height: 10),
+            const Text("Mobile Navigation:"),
+            ToggleButtonsWrapper(
+                items: const ['Enabled', 'Disabled'],
+                selectedValue: appState.sharedPreferencesProvider.enableMobileNavigation
+                    ? 0
+                    : 1,
+                onChange: (int index) async {
+                  appState.sharedPreferencesProvider.enableMobileNavigation = index == 0;
+                  appState.changesMade();
+                }),
+            const SizedBox(height: 10),
             TextButton(
               child: const Text('Update HTTP proxy'),
               onPressed: () {

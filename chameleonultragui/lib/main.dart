@@ -133,16 +133,18 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-    if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
+    var sharedPreferences = appState.sharedPreferencesProvider;
+
+    if (sharedPreferences.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {
-        appState.sharedPreferencesProvider.setSideBarExpanded(true);
+        sharedPreferences.setSideBarExpanded(true);
       } else {
-        appState.sharedPreferencesProvider.setSideBarExpanded(false);
+        sharedPreferences.setSideBarExpanded(false);
       }
     }
 
-    appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
+    appState.devMode = sharedPreferences.isDebugMode();
 
     Widget page; // Set Page
     if (!appState.connector.connected &&
@@ -198,7 +200,7 @@ class _MyHomePageState extends State<MyHomePage> {
       statusBarColor: Theme.of(context).colorScheme.surface,
     ));
 
-    final useBottomNavigation = SizerUtil.orientation == Orientation.portrait && SizerUtil.width < 600;
+    final useBottomNavigation = sharedPreferences.enableMobileNavigation && SizerUtil.orientation == Orientation.portrait && SizerUtil.width < 600;
     final useSideNavigation = !useBottomNavigation &&
       (!appState.connector.isDFU ||
       !appState.connector.connected);

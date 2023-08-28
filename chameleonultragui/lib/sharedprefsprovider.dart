@@ -274,4 +274,21 @@ class SharedPreferencesProvider extends ChangeNotifier {
       _sharedPreferences.setString('http_cors_proxy', proxy);
     }
   }
+
+  bool get enableMobileNavigation  {
+    var enableMobileNavigation = _sharedPreferences.getBool('enable_mobile_nav');
+    if (enableMobileNavigation == null) {
+      return true;
+    }
+
+    return enableMobileNavigation;
+  }
+
+  set enableMobileNavigation(bool? enableMobileNavigation) {
+    if (enableMobileNavigation == null) {
+      _sharedPreferences.remove('enable_mobile_nav');
+    } else {
+      _sharedPreferences.setBool('enable_mobile_nav', enableMobileNavigation);
+    }
+  }
 }
