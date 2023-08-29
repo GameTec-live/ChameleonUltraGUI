@@ -125,11 +125,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           onPressed: () => Navigator.pop(context, localizations.ok),
                           child: Text(localizations.ok),
                         ),
-                        TextButton(
-                          onPressed: () => SystemChannels.platform
-                              .invokeMethod('SystemNavigator.pop'),
-                          child: Text(localizations.restart_now),
-                        ),
                       ],
                     ),
                   );
@@ -161,11 +156,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       TextButton(
                         onPressed: () => Navigator.pop(context, localizations.ok),
                         child: Text(localizations.ok),
-                      ),
-                      TextButton(
-                        onPressed: () => SystemChannels.platform
-                            .invokeMethod('SystemNavigator.pop'),
-                        child: Text(localizations.restart_now),
                       ),
                     ],
                   ),
@@ -229,11 +219,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       TextButton(
                         onPressed: () => Navigator.pop(context, localizations.ok),
                         child: Text(localizations.ok),
-                      ),
-                      TextButton(
-                        onPressed: () => SystemChannels.platform
-                            .invokeMethod('SystemNavigator.pop'),
-                        child: Text(localizations.restart_now),
                       ),
                     ],
                   ),
