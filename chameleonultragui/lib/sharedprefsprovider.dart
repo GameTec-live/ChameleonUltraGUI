@@ -268,7 +268,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setLocale(Locale loc) {
     for (var locale in AppLocalizations.supportedLocales) {
-      if (locale.toLanguageTag().toLowerCase().replaceAll("-", "_") ==
+      if (locale.toLanguageTag().toLowerCase() ==
           loc.toLanguageTag().toLowerCase()) {
         _sharedPreferences.setString('locale', loc.toLanguageTag());
         notifyListeners();
@@ -279,9 +279,9 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   Locale getLocale() {
     final loc = _sharedPreferences.getString('locale');
-    if (loc != null && loc.contains("_")) {
-      var lcode = loc.toString().split("_").first;
-      var ccode = loc.toString().split("_").last;
+    if (loc != null && loc.contains("-")) {
+      var lcode = loc.toString().split("-").first;
+      var ccode = loc.toString().split("-").last;
       if (!AppLocalizations.supportedLocales.contains(Locale(lcode, ccode))) {
         return const Locale('en');
       }
@@ -306,12 +306,12 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   String getFlag(Locale loc) {
-    switch (loc.toLanguageTag().replaceAll("-", "_")) {
+    switch (loc.toLanguageTag()) {
       case 'es':
         return 'Español';
       case 'de':
         return 'Deutsch';
-      case 'de_AT':
+      case 'de-AT':
         return 'Deutsch (Österreich)';
       case 'ru':
         return 'Русский';

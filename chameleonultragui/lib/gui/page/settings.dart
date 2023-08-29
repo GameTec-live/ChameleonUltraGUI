@@ -240,7 +240,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               items: AppLocalizations.supportedLocales.map((locale) {
                 return DropdownMenuItem(
                   value:
-                      locale.toLanguageTag().replaceAll("-", "_"),
+                      locale.toLanguageTag(),
                   child:
                       Text(appState.sharedPreferencesProvider.getFlag(locale)),
                 );
