@@ -10,7 +10,7 @@ You can download the latest builds from GitHub Actions [here](https://github.com
 App available in those stores:
 - Google Play: https://play.google.com/store/apps/details?id=io.chameleon.ultra
 - F-Store: not yet
-- App Store: https://apps.apple.com/app/chameleon-ultra-gui/id6462919364 (macOS only)
+- App Store: https://apps.apple.com/app/chameleon-ultra-gui/id6462919364
 - Arch Linux (AUR): not yet
 - Flathub: not yet
 - Chocolatey (Windows): not yet
