@@ -7,6 +7,10 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+
 class DictionaryEditMenu extends StatefulWidget {
   final Dictionary dict;
 
@@ -62,9 +66,9 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-
+    var localizations = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: const Text('Edit Dictionary'),
+      title: Text(localizations.edit_dictionary),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -75,13 +79,13 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
                 controller: nameController,
                 validator: (String? value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
+                    return localizations.please_enter_name;
                   }
                   return null;
                 },
                 decoration: InputDecoration(
-                    labelText: 'Name',
-                    hintText: 'Enter name of dictionary',
+                    labelText: localizations.name,
+                    hintText: localizations.enter_dict_name,
                     prefix: IconButton(
                       icon: Icon(Icons.nfc, color: currentColor),
                       onPressed: () async {
@@ -89,7 +93,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
                           context: context,
                           builder: (BuildContext context) {
                             return AlertDialog(
-                              title: const Text('Pick a color!'),
+                              title: Text('${localizations.pick_color}!'),
                               content: SingleChildScrollView(
                                 child: ColorPicker(
                                   pickerColor: pickerColor,
@@ -108,16 +112,16 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
                                         pickerColor = Colors.deepOrange);
                                     Navigator.pop(context);
                                   },
-                                  child: const Text('Reset to default'),
+                                  child: Text(localizations.reset_default),
                                 ),
                                 TextButton(
                                   onPressed: () {
                                     Navigator.pop(context);
                                   },
-                                  child: const Text('Cancel'),
+                                  child: Text(localizations.cancel),
                                 ),
                                 TextButton(
-                                  child: const Text('Ok'),
+                                  child: Text(localizations.ok),
                                   onPressed: () {
                                     setState(() => currentColor = pickerColor);
                                     Navigator.pop(context);
@@ -133,9 +137,9 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               TextFormField(
                 maxLines: null,
                 controller: keysController,
-                decoration: const InputDecoration(
-                  labelText: 'Keys',
-                  hintText: 'Enter keys for dictionary',
+                decoration: InputDecoration(
+                  labelText: localizations.keys,
+                  hintText: localizations.enter_dict_keys,
                 ),
               )
             ],
@@ -147,7 +151,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
           onPressed: () {
             Navigator.pop(context);
           },
-          child: const Text('Cancel'),
+          child: Text(localizations.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -176,7 +180,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
             appState.changesMade();
             Navigator.pop(context);
           },
-          child: const Text('Save'),
+          child: Text(localizations.save),
         ),
       ],
     );

@@ -10,6 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class SlotManagerPage extends StatefulWidget {
   const SlotManagerPage({super.key});
 
@@ -42,7 +45,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
   Future<void> executeNextFunction() async {
     var appState = context.read<MyAppState>();
-
+    var localizations = AppLocalizations.of(context)!;
     if (currentFunctionIndex == 0 || onlyOneSlot) {
       try {
         usedSlots = await appState.communicator!.getUsedSlots();
@@ -74,7 +77,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       }
 
       if (slotData[currentFunctionIndex]['hfName']!.isEmpty) {
-        slotData[currentFunctionIndex]['hfName'] = "Empty";
+        slotData[currentFunctionIndex]['hfName'] = localizations.empty;
       }
 
       for (var i = 0; i < 2; i++) {
@@ -87,7 +90,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       }
 
       if (slotData[currentFunctionIndex]['lfName']!.isEmpty) {
-        slotData[currentFunctionIndex]['lfName'] = "Empty";
+        slotData[currentFunctionIndex]['lfName'] = localizations.empty;
       }
 
       if (!onlyOneSlot) {
@@ -122,9 +125,10 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
   @override
   Widget build(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Slot Manager"),
+        title: Text(localizations.slot_manager),
       ),
       body: Center(
         child: Column(
@@ -169,7 +173,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                             ? Colors.green
                                             : Colors.deepOrange),
                                     const SizedBox(width: 5),
-                                    Text("Slot ${index + 1}")
+                                    Text("${localizations.slot} ${index + 1}")
                                   ],
                                 ),
                                 const SizedBox(height: 10),
@@ -179,7 +183,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                     const Icon(Icons.credit_card),
                                     const SizedBox(width: 5),
                                     Text(
-                                        "${slotData[index]['hfName'] ?? "Unknown"} (${chameleonTagToString(usedSlots[index].$1)})")
+                                        "${slotData[index]['hfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$1)})")
                                   ],
                                 ),
                                 Row(
@@ -192,7 +196,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                           const Icon(Icons.wifi),
                                           const SizedBox(width: 5),
                                           Text(
-                                            "${slotData[index]['lfName'] ?? "Unknown"} (${chameleonTagToString(usedSlots[index].$2)})",
+                                            "${slotData[index]['lfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$2)})",
                                           ),
                                         ],
                                       ),
@@ -267,22 +271,23 @@ class CardSearchDelegate extends SearchDelegate<String> {
 
   @override
   List<Widget> buildActions(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
     return [
       StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
           return DropdownButton(
-            items: const [
+            items: [
               DropdownMenuItem(
                 value: SearchFilter.all,
-                child: Text("All"),
+                child: Text(localizations.all),
               ),
               DropdownMenuItem(
                 value: SearchFilter.hf,
-                child: Text("HF"),
+                child: Text(localizations.hf),
               ),
               DropdownMenuItem(
                 value: SearchFilter.lf,
-                child: Text("LF"),
+                child: Text(localizations.lf),
               ),
             ],
             onChanged: (SearchFilter? value) {
@@ -354,6 +359,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
     final results = cards.where((card) =>
         (((card.name.toLowerCase().contains(query.toLowerCase())) ||
                 (chameleonTagToString(card.tag)
@@ -441,7 +447,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
               setUploadState(100);
 
               await appState.communicator!.setSlotTagName(gridPosition,
-                  (card.name.isEmpty) ? "No name" : card.name, TagFrequency.hf);
+                  (card.name.isEmpty) ? localizations.no_name : card.name, TagFrequency.hf);
               await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);
@@ -456,7 +462,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
               await appState.communicator!.setEM410XEmulatorID(
                   hexToBytes(card.uid.replaceAll(" ", "")));
               await appState.communicator!.setSlotTagName(gridPosition,
-                  (card.name.isEmpty) ? "No name" : card.name, TagFrequency.lf);
+                  (card.name.isEmpty) ? localizations.no_name : card.name, TagFrequency.lf);
               await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);

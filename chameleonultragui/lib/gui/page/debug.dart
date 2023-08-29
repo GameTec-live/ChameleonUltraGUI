@@ -11,6 +11,9 @@ import 'package:provider/provider.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class DebugPage extends StatelessWidget {
   // Home Page
   const DebugPage({super.key});
@@ -18,7 +21,7 @@ class DebugPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-
+    var localizations = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center, // Center
@@ -38,16 +41,16 @@ class DebugPage extends StatelessWidget {
             '🐞 Chameleon Ultra GUI DEBUG MENU 🐞',
             textScaleFactor: 2,
           ),
-          const Text(
-            'Using this menu may brick your Chameleon PERMANENTLY',
+          Text(
+            localizations.debug_page_warning,
             textScaleFactor: 2,
           ),
-          const Text('⚠️ YOU HAVE BEEN WARNED ⚠️', textScaleFactor: 3),
-          Text('Platform: ${Platform.operatingSystem}'),
-          Text('Android: ${appState.onAndroid}'),
-          Text('Serial protocol : ${appState.connector}'),
-          Text('Chameleon connected: ${appState.connector.connected}'),
-          Text('Chameleon device type: ${appState.connector.device}'),
+          Text('⚠️ ${localizations.warned} ⚠️', textScaleFactor: 3),
+          Text('${localizations.platform}: ${Platform.operatingSystem}'),
+          Text('${localizations.android}: ${appState.onAndroid}'),
+          Text('${localizations.serial_protocol}: ${appState.connector}'),
+          Text('${localizations.chameleon_connected}: ${appState.connector.connected}'),
+          Text('${localizations.chameleon_device_type}: ${appState.connector.device}'),
           ElevatedButton(
             onPressed: () async {
               await appState.communicator!.setReaderDeviceMode(true);
@@ -92,8 +95,8 @@ class DebugPage extends StatelessWidget {
                 }
               }
             },
-            child: const Column(children: [
-              Text('Run nested attack on card'),
+            child: Column(children: [
+              Text(localizations.nested_attack),
             ]),
           ),
           ElevatedButton(
@@ -132,8 +135,8 @@ class DebugPage extends StatelessWidget {
                 }
               }
             },
-            child: const Column(children: [
-              Text('Run darkside attack on card'),
+            child: Column(children: [
+              Text(localizations.darkside_attack),
             ]),
           ),
           ElevatedButton(
@@ -148,8 +151,8 @@ class DebugPage extends StatelessWidget {
               await appState.communicator!.setReaderDeviceMode(false);
               await appState.communicator!.setMf1AntiCollision(card);
             },
-            child: const Column(children: [
-              Text('Copy card UID to emulator'),
+            child: Column(children: [
+              Text(localizations.copy_uid),
             ]),
           ),
           ElevatedButton(
@@ -165,8 +168,8 @@ class DebugPage extends StatelessWidget {
                   .getSlotTagName(1, TagFrequency.hf);
               appState.log.d(name);
             },
-            child: const Column(children: [
-              Text('Test naming'),
+            child: Column(children: [
+              Text(localizations.test_naming),
             ]),
           ),
           ElevatedButton(
@@ -189,8 +192,8 @@ class DebugPage extends StatelessWidget {
               appState.log.d(
                   "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
             },
-            child: const Column(children: [
-              Text('Test darkside library'),
+            child: Column(children: [
+              Text(localizations.test_darkside_lib),
             ]),
           ),
           ElevatedButton(
@@ -209,8 +212,8 @@ class DebugPage extends StatelessWidget {
               appState.log.d(
                   "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
             },
-            child: const Column(children: [
-              Text('Test nested library'),
+            child: Column(children: [
+              Text(localizations.test_nested_lib),
             ]),
           ),
           ElevatedButton(
@@ -229,8 +232,8 @@ class DebugPage extends StatelessWidget {
                   (progress) => appState.log.d("Flashing: $progress%"),
                   firmwareZip: content);
             },
-            child: const Column(children: [
-              Text('💀 DFU flash ultra FW 💀'),
+            child: Column(children: [
+              Text('💀 ${localizations.dfu_flash_ultra} 💀'),
             ]),
           ),
           ElevatedButton(
@@ -249,8 +252,8 @@ class DebugPage extends StatelessWidget {
                   (progress) => appState.log.d("Flashing: $progress%"),
                   firmwareZip: content);
             },
-            child: const Column(children: [
-              Text('💀 DFU flash lite FW 💀'),
+            child: Column(children: [
+              Text('💀 ${localizations.dfu_flash_lite} 💀'),
             ]),
           ),
           const SizedBox(height: 10),
@@ -258,8 +261,8 @@ class DebugPage extends StatelessWidget {
             onPressed: () async {
               await appState.communicator!.factoryReset();
             },
-            child: const Column(children: [
-              Text('✅ Safe option: restart chameleon ✅'),
+            child: Column(children: [
+              Text('✅ ${localizations.safe_option}: ${localizations.restart_chamaleon} ✅'),
             ]),
           ),
         ],

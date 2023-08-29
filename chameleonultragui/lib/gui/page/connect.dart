@@ -6,13 +6,16 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class ConnectPage extends StatelessWidget {
   const ConnectPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-
+    var localizations = AppLocalizations.of(context)!;
     return FutureBuilder(
       future: appState.connector.connected
           ? Future.value([])
@@ -21,18 +24,18 @@ class ConnectPage extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
               appBar: AppBar(
-                title: const Text('Connect'),
+                title: Text(localizations.connect),
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
           appState.connector.performDisconnect();
-          return Text('Error: ${snapshot.error}');
+          return Text('${localizations.error}: ${snapshot.error}');
         } else {
           final (result as List<Chameleon>) = snapshot.data;
 
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Connect'),
+              title: Text(localizations.connect),
             ),
             body: Center(
               child: Column(
@@ -68,19 +71,19 @@ class ConnectPage extends StatelessWidget {
                                     context: context,
                                     builder: (BuildContext context) =>
                                         AlertDialog(
-                                      title: const Text(
-                                          'Chameleon is in DFU mode'),
-                                      content: const Text(
-                                          'This probably means your firmware is corrupted. Do you want to flash latest FW?'),
+                                      title: Text(
+                                          localizations.chamaleon_is_dfu),
+                                      content: Text(
+                                          localizations.firmware_is_corrupted),
                                       actions: <Widget>[
                                         TextButton(
                                           onPressed: () =>
-                                              Navigator.pop(context, 'Cancel'),
-                                          child: const Text('Cancel'),
+                                              Navigator.pop(context, localizations.cancel),
+                                          child: Text(localizations.cancel),
                                         ),
                                         TextButton(
                                           onPressed: () async {
-                                            Navigator.pop(context, 'Flash');
+                                            Navigator.pop(context, localizations.flash);
                                             appState.changesMade();
                                             Uint8List applicationDat,
                                                 applicationBin;
@@ -104,7 +107,7 @@ class ConnectPage extends StatelessWidget {
 
                                             appState.changesMade();
                                           },
-                                          child: const Text('Flash'),
+                                          child: Text(localizations.flash),
                                         ),
                                       ],
                                     ),
@@ -147,7 +150,7 @@ class ConnectPage extends StatelessWidget {
                                                   : const Icon(Icons.usb),
                                               Text(chameleonDevice.port ?? ""),
                                               if (chameleonDevice.dfu)
-                                                const Text(" (DFU)"),
+                                                Text(localizations.dfu),
                                             ],
                                           )
                                         ],

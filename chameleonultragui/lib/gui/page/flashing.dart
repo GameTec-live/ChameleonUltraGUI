@@ -3,13 +3,16 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class FlashingPage extends StatelessWidget {
   const FlashingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-
+    var localizations = AppLocalizations.of(context)!;
     return Scaffold(
         appBar: AppBar(
           title: const Text('Chameleon DFU'),
@@ -40,9 +43,9 @@ class FlashingPage extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              const Text(
-                'Please wait...',
-                style: TextStyle(fontSize: 20),
+              Text(
+                localizations.please_wait,
+                style: const TextStyle(fontSize: 20),
               ),
             ],
           ),

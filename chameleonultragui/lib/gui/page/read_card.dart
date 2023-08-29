@@ -18,6 +18,9 @@ import 'package:file_saver/file_saver.dart';
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 import 'package:uuid/uuid.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 enum ChameleonKeyCheckmark { none, found, checking }
 
 enum ChameleonMifareClassicState {
@@ -93,7 +96,6 @@ class ReadCardPage extends StatefulWidget {
 
 class ReadCardPageState extends State<ReadCardPage> {
   ChameleonReadTagStatus status = ChameleonReadTagStatus();
-
   Future<void> readHFInfo(MyAppState appState) async {
     status.validKeys = List.generate(80, (_) => Uint8List(0));
     status.checkMarks = List.generate(80, (_) => ChameleonKeyCheckmark.none);
@@ -188,6 +190,7 @@ class ReadCardPageState extends State<ReadCardPage> {
       }
 
       var mifare = await appState.communicator!.detectMf1Support();
+      var localizations = AppLocalizations.of(context)!;
       if (mifare) {
         // Key check part competed, checking found keys
         bool hasKey = false;
@@ -245,7 +248,7 @@ class ReadCardPageState extends State<ReadCardPage> {
           } else {
             setState(() {
               status.recoveryError =
-                  "No keys and not vulnerable to Darkside attack";
+                  localizations.recovery_error_no_keys_darkside;
               status.state = ChameleonMifareClassicState.recovery;
             });
             return;
@@ -261,7 +264,7 @@ class ReadCardPageState extends State<ReadCardPage> {
           // No hardnested/staticnested implementation yet
           setState(() {
             status.recoveryError =
-                "Key recovery from this card doesn't yet supported";
+                localizations.recovery_error_no_supported;
             status.state = ChameleonMifareClassicState.recovery;
           });
           return;
@@ -359,11 +362,11 @@ class ReadCardPageState extends State<ReadCardPage> {
     setState(() {
       status.state = ChameleonMifareClassicState.checkKeysOngoing;
     });
+    var localizations = AppLocalizations.of(context)!;
     try {
       if (!await appState.communicator!.isReaderDeviceMode()) {
         await appState.communicator!.setReaderDeviceMode(true);
       }
-
       var card = await appState.communicator!.scan14443aTag();
       var mifare = await appState.communicator!.detectMf1Support();
       var mf1Type = MifareClassicType.none;
@@ -450,7 +453,8 @@ class ReadCardPageState extends State<ReadCardPage> {
       }
     } catch (_) {
       setState(() {
-        status.recoveryError = "Something went wrong in dictionary check";
+        status.recoveryError = localizations
+            .recovery_error_dict;
         status.state = ChameleonMifareClassicState.checkKeys;
       });
     }
@@ -460,7 +464,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     setState(() {
       status.state = ChameleonMifareClassicState.dumpOngoing;
     });
-
+    var localizations = AppLocalizations.of(context)!;
     status.cardData = List.generate(256, (_) => Uint8List(0));
     try {
       if (status.isEV1) {
@@ -535,7 +539,7 @@ class ReadCardPageState extends State<ReadCardPage> {
       });
     } catch (_) {
       setState(() {
-        status.recoveryError = "Something went wrong while dumping data";
+        status.recoveryError = localizations.recovery_error_dump_data;
         status.state = ChameleonMifareClassicState.dump;
       });
     }
@@ -544,7 +548,7 @@ class ReadCardPageState extends State<ReadCardPage> {
   Future<void> saveHFCard(MyAppState appState,
       {bool bin = false, bool skipDump = false}) async {
     List<int> cardDump = [];
-
+    var localizations = AppLocalizations.of(context)!;
     if (!skipDump) {
       for (var sector = 0;
           sector < mfClassicGetSectorCount(status.type);
@@ -567,7 +571,7 @@ class ReadCardPageState extends State<ReadCardPage> {
             mimeType: MimeType.other);
       } on UnimplementedError catch (_) {
         String? outputFile = await FilePicker.platform.saveFile(
-          dialogTitle: 'Please select an output file:',
+          dialogTitle: '${localizations.output_file}:',
           fileName: '${status.hfUid.replaceAll(" ", "")}.bin',
         );
 
@@ -636,6 +640,7 @@ class ReadCardPageState extends State<ReadCardPage> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
+    var localizations = AppLocalizations.of(context)!;
     final isSmallScreen = screenSize.width < 800;
 
     double fieldFontSize = isSmallScreen ? 16 : 20;
@@ -643,12 +648,12 @@ class ReadCardPageState extends State<ReadCardPage> {
 
     var appState = context.watch<MyAppState>();
     status.dictionaries = appState.sharedPreferencesProvider.getDictionaries();
-    status.dictionaries.insert(0, Dictionary(id: "", name: "Empty", keys: []));
+    status.dictionaries.insert(0, Dictionary(id: "", name: localizations.empty, keys: []));
     status.selectedDictionary ??= status.dictionaries[0];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Read Card'),
+        title: Text(localizations.read_card),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -661,18 +666,18 @@ class ReadCardPageState extends State<ReadCardPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        'HF Tag Info',
+                      Text(
+                        localizations.hf_tag_info,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      buildFieldRow('UID', status.hfUid, fieldFontSize),
-                      buildFieldRow('SAK', status.sak, fieldFontSize),
-                      buildFieldRow('ATQA', status.atqa, fieldFontSize),
+                      buildFieldRow(localizations.uid, status.hfUid, fieldFontSize),
+                      buildFieldRow(localizations.sak, status.sak, fieldFontSize),
+                      buildFieldRow(localizations.atqa, status.atqa, fieldFontSize),
                       // buildFieldRow('ATS', status.ats, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
@@ -682,9 +687,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                       ),
                       const SizedBox(height: 16),
                       if (status.noHfCard) ...[
-                        const ErrorMessage(
+                        ErrorMessage(
                             errorMessage:
-                                "No card found. Try to move Chameleon on card"),
+                                localizations.no_card_found),
                         const SizedBox(height: 16)
                       ],
                       ElevatedButton(
@@ -697,16 +702,16 @@ class ReadCardPageState extends State<ReadCardPage> {
                             showDialog<String>(
                               context: context,
                               builder: (BuildContext context) => AlertDialog(
-                                title: const Text('Unsupported Action'),
-                                content: const Text(
-                                    'Chameleon Lite does not support reading cards',
+                                title: Text(localizations.no_supported),
+                                content: Text(
+                                    localizations.lite_no_read,
                                     style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
+                                        const TextStyle(fontWeight: FontWeight.bold)),
                                 actions: <Widget>[
                                   TextButton(
                                     onPressed: () =>
-                                        Navigator.pop(context, 'OK'),
-                                    child: const Text('OK'),
+                                        Navigator.pop(context, localizations.ok),
+                                    child: Text(localizations.ok),
                                   ),
                                 ],
                               ),
@@ -715,7 +720,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                             appState.changesMade();
                           }
                         },
-                        child: const Text('Read'),
+                        child: Text(localizations.read),
                       ),
                       if (status.hfUid != "") ...[
                         const SizedBox(height: 16),
@@ -725,7 +730,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: const Text('Enter card name'),
+                                  title: Text(localizations.enter_name),
                                   content: TextField(
                                     onChanged: (value) {
                                       setState(() {
@@ -741,29 +746,29 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         Navigator.pop(
                                             context); // Close the modal after saving
                                       },
-                                      child: const Text('OK'),
+                                      child: Text(localizations.ok),
                                     ),
                                     ElevatedButton(
                                       onPressed: () {
                                         Navigator.pop(
                                             context); // Close the modal without saving
                                       },
-                                      child: const Text('Cancel'),
+                                      child: Text(localizations.cancel),
                                     ),
                                   ],
                                 );
                               },
                             );
                           },
-                          child: const Text('Save only UID'),
+                          child: Text(localizations.save_only_uid),
                         ),
                       ],
                       if (status.type != MifareClassicType.none) ...[
                         const SizedBox(height: 16),
-                        const Text(
-                          'Keys',
+                        Text(
+                          localizations.keys,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
@@ -796,7 +801,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    const Text("A "),
+                                    Text(localizations.letter_space("A")),
                                     ...List.generate(
                                       (status.type == MifareClassicType.mini)
                                           ? 5
@@ -816,7 +821,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    const Text("B "),
+                                    Text(localizations.letter_space("B")),
                                     ...List.generate(
                                       (status.type == MifareClassicType.mini)
                                           ? 5
@@ -855,7 +860,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
-                                      const Text("A "),
+                                      Text(
+                                          localizations.letter_space("A")),
                                       ...List.generate(
                                         16,
                                         (index) => Padding(
@@ -873,7 +879,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
-                                      const Text("B "),
+                                      Text(localizations.letter_space("B")),
                                       ...List.generate(
                                         16,
                                         (index) => Padding(
@@ -918,7 +924,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            const Text("A "),
+                                            Text(localizations
+                                                .letter_space("A")),
                                             ...List.generate(
                                               8,
                                               (index) => Padding(
@@ -937,7 +944,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            const Text("B "),
+                                            Text(localizations
+                                                .letter_space("B")),
                                             ...List.generate(
                                               8,
                                               (index) => Padding(
@@ -985,7 +993,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           await recoverKeys(appState);
                                         }
                                       : null,
-                                  child: const Text('Recover keys'),
+                                  child: Text(localizations.recover_keys),
                                 ),
                                 const SizedBox(width: 8),
                                 ElevatedButton(
@@ -995,7 +1003,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           await dumpData(appState);
                                         }
                                       : null,
-                                  child: const Text('Dump partial data'),
+                                  child: Text(localizations.dump_partial_data),
                                 )
                               ]),
                         if (status.state ==
@@ -1003,7 +1011,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                             status.state ==
                                 ChameleonMifareClassicState.checkKeysOngoing)
                           Column(children: [
-                            const Text("Additional key dictionary"),
+                            Text(localizations.additional_key_dict),
                             const SizedBox(height: 4),
                             DropdownButton<String>(
                               value: status.selectedDictionary!.id,
@@ -1013,7 +1021,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 return DropdownMenuItem<String>(
                                   value: dictionary.id,
                                   child: Text(
-                                      "${dictionary.name} (${dictionary.keys.length} keys)"),
+                                      "${dictionary.name} (${dictionary.keys.length} ${localizations.keys.toLowerCase()})"),
                                 );
                               }).toList(),
                               onChanged: (String? newValue) {
@@ -1035,7 +1043,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       await checkKeys(appState);
                                     }
                                   : null,
-                              child: const Text('Check keys from dictionary'),
+                              child: Text(localizations.check_keys_dict),
                             )
                           ]),
                         if (status.state == ChameleonMifareClassicState.dump ||
@@ -1049,7 +1057,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       await dumpData(appState);
                                     }
                                   : null,
-                              child: const Text('Dump card'),
+                              child: Text(localizations.dump_card),
                             ),
                           ]),
                         if (status.state == ChameleonMifareClassicState.save)
@@ -1064,7 +1072,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       context: context,
                                       builder: (BuildContext context) {
                                         return AlertDialog(
-                                          title: const Text('Enter card name'),
+                                          title: Text(localizations.enter_name),
                                           content: TextField(
                                             onChanged: (value) {
                                               setState(() {
@@ -1079,28 +1087,28 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                 Navigator.pop(
                                                     context); // Close the modal after saving
                                               },
-                                              child: const Text('OK'),
+                                              child: Text(localizations.ok),
                                             ),
                                             ElevatedButton(
                                               onPressed: () {
                                                 Navigator.pop(
                                                     context); // Close the modal without saving
                                               },
-                                              child: const Text('Cancel'),
+                                              child: Text(localizations.cancel),
                                             ),
                                           ],
                                         );
                                       },
                                     );
                                   },
-                                  child: const Text('Save'),
+                                  child: Text(localizations.save),
                                 ),
                                 const SizedBox(width: 8),
                                 ElevatedButton(
                                   onPressed: () async {
                                     await saveHFCard(appState, bin: true);
                                   },
-                                  child: const Text('Save as .bin'),
+                                  child: Text(localizations.save_as(".bin")),
                                 ),
                               ])),
                       ]
@@ -1117,16 +1125,16 @@ class ReadCardPageState extends State<ReadCardPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        'LF Tag Info',
+                      Text(
+                        localizations.lf_tag_info,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      buildFieldRow('UID', status.lfUid, fieldFontSize),
+                      buildFieldRow(localizations.uid, status.lfUid, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
                         'Tech: ${status.lfTech}',
@@ -1135,9 +1143,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                       ),
                       const SizedBox(height: 16),
                       if (status.noLfCard) ...[
-                        const ErrorMessage(
+                        ErrorMessage(
                             errorMessage:
-                                "No card found. Try to move Chameleon on card"),
+                                localizations.no_card_found),
                         const SizedBox(height: 16)
                       ],
                       ElevatedButton(
@@ -1150,16 +1158,16 @@ class ReadCardPageState extends State<ReadCardPage> {
                             showDialog<String>(
                               context: context,
                               builder: (BuildContext context) => AlertDialog(
-                                title: const Text('Unsupported Action'),
-                                content: const Text(
-                                    'Chameleon Lite does not support reading cards',
+                                title: Text(localizations.no_supported),
+                                content: Text(
+                                    localizations.lite_no_read,
                                     style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
+                                        const TextStyle(fontWeight: FontWeight.bold)),
                                 actions: <Widget>[
                                   TextButton(
                                     onPressed: () =>
-                                        Navigator.pop(context, 'OK'),
-                                    child: const Text('OK'),
+                                        Navigator.pop(context, localizations.ok),
+                                    child: Text(localizations.ok),
                                   ),
                                 ],
                               ),
@@ -1168,7 +1176,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                             appState.changesMade();
                           }
                         },
-                        child: const Text('Read'),
+                        child: Text(localizations.read),
                       ),
                       if (status.lfUid != "") ...[
                         const SizedBox(height: 16),
@@ -1178,7 +1186,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: const Text('Enter card name'),
+                                  title: Text(localizations.enter_name),
                                   content: TextField(
                                     onChanged: (value) {
                                       setState(() {
@@ -1193,21 +1201,21 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         Navigator.pop(
                                             context); // Close the modal after saving
                                       },
-                                      child: const Text('OK'),
+                                      child: Text(localizations.ok),
                                     ),
                                     ElevatedButton(
                                       onPressed: () {
                                         Navigator.pop(
                                             context); // Close the modal without saving
                                       },
-                                      child: const Text('Cancel'),
+                                      child: Text(localizations.cancel),
                                     ),
                                   ],
                                 );
                               },
                             );
                           },
-                          child: const Text('Save'),
+                          child: Text(localizations.save),
                         ),
                       ],
                     ],

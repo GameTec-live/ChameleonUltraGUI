@@ -15,6 +15,9 @@ import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
 
@@ -26,6 +29,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
   MifareClassicType selectedType = MifareClassicType.m1k;
 
   Future<void> saveTag(CardSave tag, MyAppState appState, bool bin) async {
+    var localizations = AppLocalizations.of(context)!;
     if (bin) {
       List<int> tagDump = [];
       for (var block in tag.data) {
@@ -39,7 +43,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
             mimeType: MimeType.other);
       } on UnimplementedError catch (_) {
         String? outputFile = await FilePicker.platform.saveFile(
-          dialogTitle: 'Please select an output file:',
+          dialogTitle: '${localizations.output_file}:',
           fileName: '${tag.name}.bin',
         );
 
@@ -57,7 +61,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
             mimeType: MimeType.other);
       } on UnimplementedError catch (_) {
         String? outputFile = await FilePicker.platform.saveFile(
-          dialogTitle: 'Please select an output file:',
+          dialogTitle: '${localizations.output_file}:',
           fileName: '${tag.name}.json',
         );
 
@@ -75,20 +79,20 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     var appState = context.watch<MyAppState>();
     var dictionaries = appState.sharedPreferencesProvider.getDictionaries();
     var tags = appState.sharedPreferencesProvider.getCards();
-
+    var localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Saved Cards'),
+        title: Text(localizations.saved_cards),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(8.0),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
               child: Text(
-                "Cards:",
-                style: TextStyle(fontSize: 20),
+                "${localizations.cards}:",
+                style: const TextStyle(fontSize: 20),
               ),
             ),
             Expanded(
@@ -150,7 +154,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   context: context,
                                   builder: (BuildContext context) {
                                     return AlertDialog(
-                                      title: const Text('Correct tag details'),
+                                      title: Text(localizations.correct_tag_deta),
                                       content: StatefulBuilder(builder:
                                           (BuildContext context,
                                               StateSetter setState) {
@@ -158,61 +162,61 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             child: Column(children: [
                                           Column(children: [
                                             const SizedBox(height: 20),
-                                            const Text('UID 4 byte length'),
+                                            Text(localizations.uid_len(4)),
                                             const SizedBox(height: 10),
                                             TextFormField(
                                               controller: uid4Controller,
-                                              decoration: const InputDecoration(
-                                                  labelText: 'UID',
-                                                  hintText: 'Enter UID'),
+                                              decoration: InputDecoration(
+                                                  labelText: localizations.uid,
+                                                  hintText: localizations.enter_something("UID")),
                                             ),
                                             const SizedBox(height: 20),
                                             TextFormField(
                                               controller: sak4Controller,
-                                              decoration: const InputDecoration(
-                                                  labelText: 'SAK',
-                                                  hintText: 'Enter SAK'),
+                                              decoration: InputDecoration(
+                                                  labelText: localizations.sak,
+                                                  hintText: localizations.enter_something("SAK")),
                                             ),
                                             const SizedBox(height: 20),
                                             TextFormField(
                                               controller: atqa4Controller,
-                                              decoration: const InputDecoration(
-                                                  labelText: 'ATQA',
-                                                  hintText: 'Enter ATQA'),
+                                              decoration: InputDecoration(
+                                                  labelText: localizations.atqa,
+                                                  hintText: localizations.enter_something("ATQA")),
                                             ),
                                             const SizedBox(height: 40),
                                           ]),
                                           Column(children: [
-                                            const Text('UID 7 byte length'),
+                                            Text(localizations.uid_len(7)),
                                             const SizedBox(height: 10),
                                             TextFormField(
                                               controller: uid7Controller,
-                                              decoration: const InputDecoration(
-                                                  labelText: 'UID',
-                                                  hintText: 'Enter UID'),
+                                              decoration: InputDecoration(
+                                                  labelText: localizations.uid,
+                                                  hintText: localizations.enter_something("UID")),
                                             ),
                                             const SizedBox(height: 20),
                                             TextFormField(
                                               controller: sak7Controller,
-                                              decoration: const InputDecoration(
-                                                  labelText: 'SAK',
-                                                  hintText: 'Enter SAK (08)'),
+                                              decoration: InputDecoration(
+                                                  labelText: localizations.sak,
+                                                  hintText: localizations.enter_something("SAK (08)")),
                                             ),
                                             const SizedBox(height: 20),
                                             TextFormField(
                                               controller: atqa7Controller,
-                                              decoration: const InputDecoration(
-                                                  labelText: 'ATQA',
+                                              decoration: InputDecoration(
+                                                  labelText: localizations.atqa,
                                                   hintText:
-                                                      'Enter ATQA (00 44)'),
+                                                      localizations.enter_something("ATQA (00 44)")),
                                             ),
                                             const SizedBox(height: 40)
                                           ]),
                                           TextFormField(
                                             controller: nameController,
-                                            decoration: const InputDecoration(
-                                                labelText: 'Name',
-                                                hintText: 'Enter name of card'),
+                                            decoration: InputDecoration(
+                                                labelText: localizations.name,
+                                                hintText: localizations.enter_name),
                                           ),
                                           DropdownButton<MifareClassicType>(
                                             value: selectedType,
@@ -279,7 +283,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             Navigator.pop(context);
                                           },
                                           child:
-                                              const Text('Save as 4 byte UID'),
+                                              Text(localizations.save_as("4 byte UID")),
                                         ),
                                         ElevatedButton(
                                           onPressed: () async {
@@ -316,14 +320,14 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                 context); // Close the modal after saving
                                           },
                                           child:
-                                              const Text('Save as 7 byte UID'),
+                                              Text(localizations.save_as("7 byte UID")),
                                         ),
                                         ElevatedButton(
                                           onPressed: () {
                                             Navigator.pop(
                                                 context); // Close the modal without saving
                                           },
-                                          child: const Text('Cancel'),
+                                          child: Text(localizations.cancel),
                                         ),
                                       ],
                                     );
@@ -357,13 +361,13 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   content: Column(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      Text("UID: ${tag.uid}"),
+                                      Text("${localizations.uid}: ${tag.uid}"),
                                       Text(
-                                          "Tag Type: ${chameleonTagToString(tag.tag)}"),
+                                          "${localizations.tag_type}: ${chameleonTagToString(tag.tag)}"),
                                       Text(
-                                          "SAK: ${tag.sak == 0 ? "Unavailable" : tag.sak}"),
+                                          "${localizations.sak}: ${tag.sak == 0 ? localizations.unavialable : tag.sak}"),
                                       Text(
-                                          "ATQA: ${tag.atqa.asMap().containsKey(0) ? tag.atqa[0] : ""} ${tag.atqa.asMap().containsKey(1) ? tag.atqa[1] : "Unavailable"}"),
+                                          "${localizations.atqa}: ${tag.atqa.asMap().containsKey(0) ? tag.atqa[0] : ""} ${tag.atqa.asMap().containsKey(1) ? tag.atqa[1] : localizations.unavialable}"),
                                     ],
                                   ),
                                   actions: [
@@ -384,8 +388,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           context: context,
                                           builder: (BuildContext context) {
                                             return AlertDialog(
-                                              title: const Text(
-                                                  'Select save format'),
+                                              title: Text(
+                                                  localizations.select_save_format),
                                               actions: [
                                                 ElevatedButton(
                                                   onPressed: () async {
@@ -393,8 +397,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                         tag, appState, true);
                                                     Navigator.pop(context);
                                                   },
-                                                  child: const Text(
-                                                      'Save as .bin'),
+                                                  child: Text(
+                                                      localizations.save_as(".bin")),
                                                 ),
                                                 ElevatedButton(
                                                   onPressed: () async {
@@ -402,8 +406,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                         tag, appState, false);
                                                     Navigator.pop(context);
                                                   },
-                                                  child: const Text(
-                                                      'Save as .json'),
+                                                  child: Text(
+                                                       localizations
+                                                          .save_as(".json")),
                                                 ),
                                               ],
                                             );
@@ -435,7 +440,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       onPressed: () {
                                         Navigator.pop(context);
                                       },
-                                      child: const Text('OK'),
+                                      child: Text(localizations.ok),
                                     ),
                                   ],
                                 );
@@ -516,8 +521,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           context: context,
                                           builder: (BuildContext context) {
                                             return AlertDialog(
-                                              title: const Text(
-                                                  'Select save format'),
+                                              title: Text(
+                                                  localizations.select_save_format),
                                               actions: [
                                                 ElevatedButton(
                                                   onPressed: () async {
@@ -525,8 +530,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                         tag, appState, true);
                                                     Navigator.pop(context);
                                                   },
-                                                  child: const Text(
-                                                      'Save as .bin'),
+                                                  child: Text(
+                                                      localizations.save_as(".bin")),
                                                 ),
                                                 ElevatedButton(
                                                   onPressed: () async {
@@ -534,8 +539,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                         tag, appState, false);
                                                     Navigator.pop(context);
                                                   },
-                                                  child: const Text(
-                                                      'Save as .json'),
+                                                  child: Text(
+                                                      localizations.save_as(".json")),
                                                 ),
                                               ],
                                             );
@@ -577,11 +582,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                 ),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.all(8.0),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
               child: Text(
-                "Dictionaries:",
-                style: TextStyle(fontSize: 20),
+                "${localizations.dictionaries}:",
+                style: const TextStyle(fontSize: 20),
               ),
             ),
             Expanded(
@@ -667,7 +672,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Text(
-                                          "Key Count: ${dictionary.keys.length}"),
+                                          "${localizations.key_count}: ${dictionary.keys.length}"),
                                       const SizedBox(height: 10),
                                       SizedBox(
                                         height: 400,
@@ -706,7 +711,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               .platform
                                               .saveFile(
                                             dialogTitle:
-                                                'Please select an output file:',
+                                                '${localizations.output_file}:',
                                             fileName: '${dictionary.name}.dic',
                                           );
 
@@ -742,7 +747,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       onPressed: () {
                                         Navigator.pop(context);
                                       },
-                                      child: const Text('OK'),
+                                      child: Text(localizations.ok),
                                     ),
                                   ],
                                 );
@@ -784,7 +789,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               ),
                                             ),
                                             Text(
-                                              "Key count: ${dictionary.keys.length}",
+                                              "${localizations.key_count}: ${dictionary.keys.length}",
                                               style: const TextStyle(
                                                 fontSize: 24,
                                               ),
@@ -827,7 +832,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               .platform
                                               .saveFile(
                                             dialogTitle:
-                                                'Please select an output file:',
+                                                '${localizations.output_file}:',
                                             fileName: '${dictionary.name}.dic',
                                           );
 

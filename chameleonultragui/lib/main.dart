@@ -21,6 +21,9 @@ import 'package:chameleonultragui/gui/page/mfkey32.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/gui/page/write_card.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 // Shared Preferences Provider
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
@@ -50,6 +53,9 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Chameleon Ultra GUI', // App Name
+        locale: _sharedPreferencesProvider.getLocale(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
@@ -202,30 +208,34 @@ class _MyHomePageState extends State<MyHomePage> {
                             .getSideBarExpanded(),
                         destinations: [
                           // Sidebar Items
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.home),
-                            label: Text('Home'),
+                          NavigationRailDestination(
+                            icon: const Icon(Icons.home),
+                            label: Text(
+                                AppLocalizations.of(context)!.home), // Home
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.widgets,
                                 color: appState.connector.connected == false
                                     ? Colors.grey
                                     : null),
-                            label: Text('Slot Manager',
+                            label: Text(
+                                AppLocalizations.of(context)!.slot_manager,
                                 style: appState.connector.connected == false
                                     ? const TextStyle(color: Colors.grey)
                                     : null),
                           ),
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.auto_awesome_motion_outlined),
-                            label: Text('Saved Cards'),
+                          NavigationRailDestination(
+                            icon:
+                                const Icon(Icons.auto_awesome_motion_outlined),
+                            label:
+                                Text(AppLocalizations.of(context)!.saved_cards),
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.wifi,
                                 color: appState.connector.connected == false
                                     ? Colors.grey
                                     : null),
-                            label: Text('Read Card',
+                            label: Text(AppLocalizations.of(context)!.read_card,
                                 style: appState.connector.connected == false
                                     ? const TextStyle(color: Colors.grey)
                                     : null),
@@ -235,19 +245,21 @@ class _MyHomePageState extends State<MyHomePage> {
                                 color: appState.connector.connected == false
                                     ? Colors.grey
                                     : null),
-                            label: Text('Write Card',
+                            label: Text(
+                                AppLocalizations.of(context)!.write_card,
                                 style: appState.connector.connected == false
                                     ? const TextStyle(color: Colors.grey)
                                     : null),
                           ),
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.settings),
-                            label: Text('Settings'),
+                          NavigationRailDestination(
+                            icon: const Icon(Icons.settings),
+                            label: Text(AppLocalizations.of(context)!.settings),
                           ),
                           if (appState.devMode)
-                            const NavigationRailDestination(
-                              icon: Icon(Icons.bug_report),
-                              label: Text('🐞 Debug 🐞'),
+                            NavigationRailDestination(
+                              icon: const Icon(Icons.bug_report),
+                              label: Text(
+                                  '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
                             ),
                         ],
                         selectedIndex: selectedIndex,

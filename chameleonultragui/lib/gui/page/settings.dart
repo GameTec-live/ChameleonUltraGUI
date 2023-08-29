@@ -8,6 +8,9 @@ import 'package:chameleonultragui/helpers/open_collective.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class SettingsMainPage extends StatefulWidget {
   const SettingsMainPage({Key? key}) : super(key: key);
 
@@ -46,20 +49,22 @@ class SettingsMainPageState extends State<SettingsMainPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-
+    var localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(localizations.settings),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center, // Center
           children: [
             const SizedBox(height: 10),
-            const Text("Sidebar Expansion:"),
-            const SizedBox(height: 8),
+            Text(localizations.sidebar_expansion,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
             ToggleButtonsWrapper(
-                items: const ['Expand', 'Auto', 'Retract'],
+                items: [localizations.expand, localizations.auto, localizations.retract
+                ],
                 selectedValue: appState.sharedPreferencesProvider
                     .getSideBarExpandedIndex(),
                 onChange: (int index) async {
@@ -81,10 +86,13 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   appState.changesMade();
                 }),
             const SizedBox(height: 10),
-            const Text("Theme:"),
-            const SizedBox(height: 8),
+                        Text(
+              localizations.theme,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
             ToggleButtonsWrapper(
-                items: const ['System', 'Light', 'Dark'],
+                items: [localizations.system, localizations.light, localizations.dark],
                 selectedValue: appState.sharedPreferencesProvider.getTheme() ==
                         ThemeMode.system
                     ? 0
@@ -106,22 +114,26 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   showDialog<String>(
                     context: context,
                     builder: (BuildContext context) => AlertDialog(
-                      title: const Text('Restart Required'),
-                      content: const Center(
-                        child: Text('Changes will take effect after a restart',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(localizations.restart_required),
+                      content: Center(
+                        child: Text(localizations.take_effects,
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                       actions: <Widget>[
                         TextButton(
-                          onPressed: () => Navigator.pop(context, 'OK'),
-                          child: const Text('OK'),
+                          onPressed: () => Navigator.pop(context, localizations.ok),
+                          child: Text(localizations.ok),
                         ),
                       ],
                     ),
                   );
                 }),
             const SizedBox(height: 10),
-            const Text("Color scheme:"),
+            Text(
+              localizations.color_scheme,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
             DropdownButton(
               value: appState.sharedPreferencesProvider.sharedPreferences
                       .getInt('app_theme_color') ??
@@ -134,61 +146,96 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 showDialog<String>(
                   context: context,
                   builder: (BuildContext context) => AlertDialog(
-                    title: const Text('Restart Required'),
-                    content: const Center(
-                      child: Text('Changes will take effect after a restart',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    title: Text(localizations.restart_required),
+                    content: Center(
+                      child: Text(localizations.take_effects,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     actions: <Widget>[
                       TextButton(
-                        onPressed: () => Navigator.pop(context, 'OK'),
-                        child: const Text('OK'),
+                        onPressed: () => Navigator.pop(context, localizations.ok),
+                        child: Text(localizations.ok),
                       ),
                     ],
                   ),
                 );
               },
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: 0,
-                  child: Text("Default"),
+                  child: Text(localizations.def),
                 ),
                 DropdownMenuItem(
                   value: 1,
-                  child: Text("Purple"),
+                  child: Text(localizations.purple),
                 ),
                 DropdownMenuItem(
                   value: 2,
-                  child: Text("Blue"),
+                  child: Text(localizations.blue),
                 ),
                 DropdownMenuItem(
                   value: 3,
-                  child: Text("Green"),
+                  child: Text(localizations.green),
                 ),
                 DropdownMenuItem(
                   value: 4,
-                  child: Text("Indigo"),
+                  child: Text(localizations.indigo),
                 ),
                 DropdownMenuItem(
                   value: 5,
-                  child: Text("Lime"),
+                  child: Text(localizations.lime),
                 ),
                 DropdownMenuItem(
                   value: 6,
-                  child: Text("Red"),
+                  child: Text(localizations.red),
                 ),
                 DropdownMenuItem(
                   value: 7,
-                  child: Text("Yellow"),
+                  child: Text(localizations.yellow),
                 ),
               ],
+            ),
+            const SizedBox(height: 10),
+            Text(localizations.language, style: const TextStyle(fontWeight: FontWeight.bold),),
+            const SizedBox(height: 5),
+            DropdownButton(
+              value: appState.sharedPreferencesProvider.sharedPreferences
+                      .getString('locale') ??
+                  'en',
+              onChanged: (value) {
+                appState.sharedPreferencesProvider
+                    .setLocale(Locale(value ?? 'en'));
+                appState.changesMade();
+                showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: Text(localizations.restart_required),
+                    content: Center(
+                      child: Text(localizations.take_effects,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, localizations.ok),
+                        child: Text(localizations.ok),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              items: AppLocalizations.supportedLocales.map((locale) {
+                return DropdownMenuItem(
+                  value: locale.languageCode,
+                  child: Text(appState.sharedPreferencesProvider.getFlag(locale)),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
-                  title: const Text('About'),
+                  title: Text(localizations.about),
                   content: Center(
                     child: FutureBuilder(
                       future: getFutureData(),
@@ -208,20 +255,20 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               const Text('Chameleon Ultra GUI',
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
-                              const Text(
-                                  'A Tool to graphically manage and configure your Chameleon Ultra, written in Flutter and running on Desktop and Mobile.'),
+                              Text(
+                                  localizations.about_text),
                               const SizedBox(height: 10),
-                              const Text('Version:'),
+                              Text('${localizations.version}:'),
                               Text(
                                   '${packageInfo.version} (Build ${packageInfo.buildNumber})',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
-                              const Text('Developed by:'),
+                              Text('${localizations.developed_by}:'),
                               const SizedBox(height: 10),
                               DeveloperList(avatars: developers),
                               const SizedBox(height: 10),
-                              const Text('License:'),
+                              Text('${localizations.license}:'),
                               const Text('GNU General Public License v3.0',
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
@@ -234,14 +281,14 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   child: const Text(
                                       'https://github.com/GameTec-live/ChameleonUltraGUI')),
                               const SizedBox(height: 30),
-                              const Text(
-                                  "Thanks to everyone who supports us on Open Collective!"),
+                              Text(
+                                  localizations.thanks_for_support),
                               const SizedBox(height: 10),
                               Text(names,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
-                              const Text('Code contributors:'),
+                              Text('${localizations.code_contributors}:'),
                               const SizedBox(height: 10),
                               DeveloperList(avatars: contributors),
                             ],
@@ -256,40 +303,43 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                             child: const Text('Cancel'),
                           ), */ // A Cancel button on an about widget??
                     TextButton(
-                      onPressed: () => Navigator.pop(context, 'OK'),
-                      child: const Text('OK'),
+                      onPressed: () => Navigator.pop(context, localizations.ok),
+                      child: Text(localizations.ok),
                     ),
                   ],
                 ),
               ),
-              child: const Text('About'),
+              child: Text(localizations.about),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
-                  title: const Text('Debug mode?'),
+                  title: Text(localizations.debug_mode),
                   content: Text(
-                      'Are you sure you want to ${appState.sharedPreferencesProvider.isDebugMode() ? "deactivate" : "activate"} debug mode? It is created specifically for developers to test specific app functions on UNSUPPORTED platforms'),
+                      localizations.debug_mode_confirmation(
+                          appState.sharedPreferencesProvider.isDebugMode()
+                              ? localizations.deactivate.toLowerCase()
+                              : localizations.activate.toLowerCase())),
                   actions: <Widget>[
                     TextButton(
-                      onPressed: () => Navigator.pop(context, 'Cancel'),
-                      child: const Text('Cancel'),
+                      onPressed: () => Navigator.pop(context, localizations.cancel),
+                      child: Text(localizations.cancel),
                     ),
                     TextButton(
                       onPressed: () {
                         appState.sharedPreferencesProvider.setDebugMode(
                             !appState.sharedPreferencesProvider.isDebugMode());
                         appState.changesMade();
-                        Navigator.pop(context, 'OK');
+                        Navigator.pop(context, localizations.ok);
                       },
-                      child: const Text('OK'),
+                      child: Text(localizations.ok),
                     ),
                   ],
                 ),
               ),
-              child: const Text('Activate debug mode'),
+              child: Text("${appState.sharedPreferencesProvider.isDebugMode() ? localizations.deactivate : localizations.activate} ${localizations.debug_mode.toLowerCase()}"),
             )
           ],
         ),
