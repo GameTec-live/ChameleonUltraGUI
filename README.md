@@ -35,7 +35,7 @@ Contributions are welcome, most stuff that needs to be done can either be found 
 
 ## Translations
 
-If you want to collaborate by adding your language to the application, you can do it through [our Crowdin project](https://crowdin.com/project/chamaleonultragui).
+If you want to collaborate by adding your language to the application, you can do it through [our Crowdin project](https://crowdin.com/project/chameleon-ultra-gui).
 
 ## Screenshots
 ![Connect Page](/screenshots/1.png)
