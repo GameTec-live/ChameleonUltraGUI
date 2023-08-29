@@ -4,6 +4,9 @@ import 'dart:io' show Platform;
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:flutter/material.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 Future<void> asyncSleep(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
 }
@@ -131,7 +134,7 @@ Color hexToColor(String hex) {
 
 String platformToPath() {
   if (Platform.isAndroid) {
-    return "android";
+    return "Android";
   } else if (Platform.isIOS) {
     return "iOS";
   } else if (Platform.isLinux) {
