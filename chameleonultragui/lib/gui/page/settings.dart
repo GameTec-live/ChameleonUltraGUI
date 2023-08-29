@@ -63,7 +63,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 5),
             ToggleButtonsWrapper(
-                items: [localizations.expand, localizations.auto, localizations.retract
+                items: [
+                  localizations.expand,
+                  localizations.auto,
+                  localizations.retract
                 ],
                 selectedValue: appState.sharedPreferencesProvider
                     .getSideBarExpandedIndex(),
@@ -86,13 +89,17 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   appState.changesMade();
                 }),
             const SizedBox(height: 10),
-                        Text(
+            Text(
               localizations.theme,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
             ToggleButtonsWrapper(
-                items: [localizations.system, localizations.light, localizations.dark],
+                items: [
+                  localizations.system,
+                  localizations.light,
+                  localizations.dark
+                ],
                 selectedValue: appState.sharedPreferencesProvider.getTheme() ==
                         ThemeMode.system
                     ? 0
@@ -117,11 +124,13 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       title: Text(localizations.restart_required),
                       content: Center(
                         child: Text(localizations.take_effects,
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                       actions: <Widget>[
                         TextButton(
-                          onPressed: () => Navigator.pop(context, localizations.ok),
+                          onPressed: () =>
+                              Navigator.pop(context, localizations.ok),
                           child: Text(localizations.ok),
                         ),
                       ],
@@ -153,7 +162,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     ),
                     actions: <Widget>[
                       TextButton(
-                        onPressed: () => Navigator.pop(context, localizations.ok),
+                        onPressed: () =>
+                            Navigator.pop(context, localizations.ok),
                         child: Text(localizations.ok),
                       ),
                     ],
@@ -196,7 +206,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               ],
             ),
             const SizedBox(height: 10),
-            Text(localizations.language, style: const TextStyle(fontWeight: FontWeight.bold),),
+            Text(
+              localizations.language,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 5),
             DropdownButton(
               value: appState.sharedPreferencesProvider.sharedPreferences
@@ -216,7 +229,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     ),
                     actions: <Widget>[
                       TextButton(
-                        onPressed: () => Navigator.pop(context, localizations.ok),
+                        onPressed: () =>
+                            Navigator.pop(context, localizations.ok),
                         child: Text(localizations.ok),
                       ),
                     ],
@@ -225,8 +239,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               },
               items: AppLocalizations.supportedLocales.map((locale) {
                 return DropdownMenuItem(
-                  value: locale.languageCode,
-                  child: Text(appState.sharedPreferencesProvider.getFlag(locale)),
+                  value:
+                      locale.toLanguageTag(),
+                  child:
+                      Text(appState.sharedPreferencesProvider.getFlag(locale)),
                 );
               }).toList(),
             ),
@@ -255,8 +271,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               const Text('Chameleon Ultra GUI',
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
-                              Text(
-                                  localizations.about_text),
+                              Text(localizations.about_text),
                               const SizedBox(height: 10),
                               Text('${localizations.version}:'),
                               Text(
@@ -281,8 +296,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   child: const Text(
                                       'https://github.com/GameTec-live/ChameleonUltraGUI')),
                               const SizedBox(height: 30),
-                              Text(
-                                  localizations.thanks_for_support),
+                              Text(localizations.thanks_for_support),
                               const SizedBox(height: 10),
                               Text(names,
                                   style: const TextStyle(
@@ -317,14 +331,14 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
                   title: Text(localizations.debug_mode),
-                  content: Text(
-                      localizations.debug_mode_confirmation(
-                          appState.sharedPreferencesProvider.isDebugMode()
-                              ? localizations.deactivate.toLowerCase()
-                              : localizations.activate.toLowerCase())),
+                  content: Text(localizations.debug_mode_confirmation(
+                      appState.sharedPreferencesProvider.isDebugMode()
+                          ? localizations.deactivate.toLowerCase()
+                          : localizations.activate.toLowerCase())),
                   actions: <Widget>[
                     TextButton(
-                      onPressed: () => Navigator.pop(context, localizations.cancel),
+                      onPressed: () =>
+                          Navigator.pop(context, localizations.cancel),
                       child: Text(localizations.cancel),
                     ),
                     TextButton(
@@ -339,7 +353,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ],
                 ),
               ),
-              child: Text("${appState.sharedPreferencesProvider.isDebugMode() ? localizations.deactivate : localizations.activate} ${localizations.debug_mode.toLowerCase()}"),
+              child: Text(
+                  "${appState.sharedPreferencesProvider.isDebugMode() ? localizations.deactivate : localizations.activate} ${localizations.debug_mode.toLowerCase()}"),
             )
           ],
         ),
