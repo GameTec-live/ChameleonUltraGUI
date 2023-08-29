@@ -134,15 +134,15 @@ Color hexToColor(String hex) {
 
 String platformToPath() {
   if (Platform.isAndroid) {
-    return "Android";
+    return "android";
   } else if (Platform.isIOS) {
-    return "iOS";
+    return "ios";
   } else if (Platform.isLinux) {
-    return "Linux";
+    return "linux";
   } else if (Platform.isMacOS) {
-    return "MacOS";
+    return "macos";
   } else if (Platform.isWindows) {
-    return "Windows";
+    return "windows";
   } else {
     return "../";
   }
