@@ -52,3 +52,4 @@ app.*.map.json
 android/fastlane/report.xml
 **/upload-keystore.jks
 **/AuthKey*.p8
+**/cert_key
