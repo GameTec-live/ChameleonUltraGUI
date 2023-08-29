@@ -33,6 +33,10 @@ It is also highly recommended to either uninstall or disable ModemManager (`sudo
 ## Contributing
 Contributions are welcome, most stuff that needs to be done can either be found in our [issues](https://github.com/GameTec-live/ChameleonUltraGUI/issues) or on the [Project board](https://github.com/users/GameTec-live/projects/2)
 
+## Translations
+
+If you want to collaborate by adding your language to the application, you can do it through [our Crowdin project](https://crowdin.com/project/chamaleonultragui).
+
 ## Screenshots
 ![Connect Page](/screenshots/1.png)
 ![Home Page](/screenshots/2.png)
