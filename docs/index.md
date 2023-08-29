@@ -12,6 +12,7 @@
     - [Web](#web)
   - [Usage](#usage)
   - [Contributing](#contributing)
+  - [Translations](#translations)
   - [License](#license)
   - [Credits](#credits)
 
@@ -54,6 +55,16 @@ Download it on Apple App Store: [Chamaleon Ultra GUI - Not available yet](#)
 
 ## Usage
 ## Contributing
+## Translations
+
+To traslate the app to your language, please follow the next steps (example with Spanish):
+1. Go our Crowdin project: [Chamaleon Ultra GUI](https://crowdin.com/project/chameleon-ultra-gui), join it and start translating.
+2. When you finish the translation, [fork the repository](https://github.com/GameTec-live/ChameleonUltraGUI).
+3. On your forked repository, create a new branch with the name of your language in English (e.g. `translate-spanish`).
+4. Download the file with the translations from Crowdin and put it in the `chameleonultragui/lib/l10n` folder. Maybe you need to modify the name of the file to match the name of your language in English (e.g. `app_es.arb`). Inside this file, `@@locale` must be the same as the name of the file (e.g. `es`).
+5. Go `chameleonultragui/sharedprefsprovider.dart` and inside `getFlag` function add a case with your language (e.g. `case 'es': return 'Español';`).
+6. Run `flutter pub add intl:any`
+
 ## License
 ## Credits
 
