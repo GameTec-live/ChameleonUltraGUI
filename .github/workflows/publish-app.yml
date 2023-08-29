@@ -128,7 +128,7 @@
               rm -f unsigned.pkg
               app-store-connect publish --path "$PACKAGE_NAME"
               while [[ -z "$BUILD_ID" ]]; do
-                  BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 10.14" | awk '/^Id:/ {print $2})
+                  BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 10.14" | awk '/^Id:/ {print $2}')
                   if [[ -z "$BUILD_ID" ]]; then
                       echo "Build is not ready, retrying in 5 seconds..."
                       sleep 5
@@ -174,7 +174,7 @@
               flutter build ipa --release --export-options-plist=$HOME/export_options.plist --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
               app-store-connect publish --path $(find $(pwd) -name "*.ipa")
               while [[ -z "$BUILD_ID" ]]; do
-                  BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 11.0" | awk '/^Id:/ {print $2})
+                  BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 11.0" | awk '/^Id:/ {print $2}')
                   if [[ -z "$BUILD_ID" ]]; then
                       echo "Build is not ready, retrying in 30 seconds..."
                       sleep 30
