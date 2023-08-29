@@ -74,3 +74,110 @@
             if:  github.event_name != 'workflow_dispatch' || github.event.inputs.publish_track == ''
             run: fastlane production
             working-directory: "./chameleonultragui/"
+      build-macos:
+        runs-on: macos-latest
+        env:
+            APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+            APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+        steps:
+          - uses: actions/checkout@v3
+            with:
+              fetch-depth: 100
+          - uses: subosito/flutter-action@v2
+            with:
+              flutter-version: '3.10.6' # https://github.com/flutter/flutter/issues/132725
+              channel: 'any'
+          - name: Enable macOS
+            run: flutter config --enable-macos-desktop
+          - name: Install tools
+            run: brew install automake libtool create-dmg
+          - name: Install Codemagic
+            run: pip3 install codemagic-cli-tools
+          - name: Export private key
+            uses: mobiledevops/secret-to-file-action@v1
+            with:
+              base64-encoded-secret: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+              filename: "AuthKey.p8"
+              working-directory: "./chameleonultragui"
+          - name: Export certificate
+            uses: mobiledevops/secret-to-file-action@v1
+            with:
+              base64-encoded-secret: ${{ secrets.APP_STORE_CERTIFICATE }}
+              filename: "cert_key"
+              working-directory: "./chameleonultragui"
+          - name: Build and upload executable
+            working-directory: "./chameleonultragui"
+            run: |
+              export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+              app-store-connect fetch-signing-files run.chameleon.gui --platform MAC_OS  --type MAC_APP_STORE --certificate-key=@file:cert_key --create
+              app-store-connect list-certificates --type MAC_INSTALLER_DISTRIBUTION --certificate-key=@file:cert_key --save
+              keychain initialize
+              keychain add-certificates
+              xcode-project use-profiles
+              flutter build macos --release --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
+              APP_NAME=$(find $(pwd) -name "*.app")
+              PACKAGE_NAME=$(basename "$APP_NAME" .app).pkg
+              xcrun productbuild --component "$APP_NAME" /Applications/ unsigned.pkg
+              INSTALLER_CERT_NAME=$(keychain list-certificates \
+                        | jq '[.[]
+                          | select(.common_name
+                          | contains("Mac Developer Installer"))
+                          | .common_name][0]' \
+                        | xargs)
+              xcrun productsign --sign "$INSTALLER_CERT_NAME" unsigned.pkg "$PACKAGE_NAME"
+              rm -f unsigned.pkg
+              app-store-connect publish --path "$PACKAGE_NAME"
+              while [[ -z "$BUILD_ID" ]]; do
+                  BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 10.14" | awk '/^Id:/ {print $2}')
+                  if [[ -z "$BUILD_ID" ]]; then
+                      echo "Build is not ready, retrying in 5 seconds..."
+                      sleep 5
+                  fi
+              done
+              app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID || true
+      build-ios:
+        runs-on: macos-latest
+        env:
+            APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+            APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+        steps:
+          - uses: actions/checkout@v3
+            with:
+              fetch-depth: 100
+          - uses: subosito/flutter-action@v2
+            with:
+              channel: 'stable'
+          - name: Install tools
+            run: brew install automake libtool create-dmg
+          - name: Install Codemagic
+            run: pip3 install codemagic-cli-tools
+          - name: Export private key
+            uses: mobiledevops/secret-to-file-action@v1
+            with:
+              base64-encoded-secret: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+              filename: "AuthKey.p8"
+              working-directory: "./chameleonultragui"
+          - name: Export certificate
+            uses: mobiledevops/secret-to-file-action@v1
+            with:
+              base64-encoded-secret: ${{ secrets.APP_STORE_CERTIFICATE }}
+              filename: "cert_key"
+              working-directory: "./chameleonultragui"
+          - name: Build and upload executable
+            working-directory: "./chameleonultragui"
+            run: |
+              export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+              app-store-connect fetch-signing-files $(xcode-project detect-bundle-id) --platform IOS --type IOS_APP_STORE --certificate-key=@file:cert_key --create
+              keychain initialize
+              keychain add-certificates
+              xcode-project use-profiles
+              flutter build ipa --release --export-options-plist=$HOME/export_options.plist --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
+              app-store-connect publish --path $(find $(pwd) -name "*.ipa")
+              while [[ -z "$BUILD_ID" ]]; do
+                  BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 11.0" | awk '/^Id:/ {print $2}')
+                  if [[ -z "$BUILD_ID" ]]; then
+                      echo "Build is not ready, retrying in 30 seconds..."
+                      sleep 30
+                  fi
+              done
+              app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=IOS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID || true

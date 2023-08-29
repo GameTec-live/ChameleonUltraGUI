@@ -1,7 +1,7 @@
 # Chameleon Ultra GUI
 A GUI for the Chameleon Ultra/Chameleon Lite written in Flutter for cross platform operation
 
-[![Autobuild](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml) 
+[![Auto build](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml) 
 [![Open collective](https://opencollective.com/chameleon-ultra-gui/tiers/badge.svg)](https://opencollective.com/chameleon-ultra-gui#support)
 
 ## Installation
@@ -10,7 +10,7 @@ You can download the latest builds from GitHub Actions [here](https://github.com
 App available in those stores:
 - Google Play: https://play.google.com/store/apps/details?id=io.chameleon.ultra
 - F-Store: not yet
-- App Store: not yet
+- App Store: https://apps.apple.com/app/chameleon-ultra-gui/id6462919364 (macOS only)
 - Arch Linux (AUR): not yet
 - Flathub: not yet
 - Chocolatey (Windows): not yet
@@ -46,15 +46,6 @@ If you want to collaborate by adding your language to the application, you can d
 ![Saved Cards Page](/screenshots/6.png)
 ![Read Card Page](/screenshots/7.png)
 ![Read Card Page Mifare Classic](/screenshots/8.png)
-
-<details>
-  <summary>Mac and IOS</summary>
-
-  ### Mac and IOS
-  Why are there no macOS and iOS builds?
-  
-  We are pending Proxgrid permission to use Chameleon Ultra name to complete app review in App Store. This might take ~1 week, we hope apps will be published at start of September.
-</details>
 
 ## Donate
 You want to support us and donate? Thank you, you make it possible for us to keep this app free and make it easier to publish this app on the Apple App Store.
