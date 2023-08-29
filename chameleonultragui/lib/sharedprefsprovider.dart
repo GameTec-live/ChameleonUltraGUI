@@ -291,9 +291,9 @@ class SharedPreferencesProvider extends ChangeNotifier {
   String getFlag(Locale loc) {
     switch (loc.languageCode) {
       case 'es':
-        return '🇪🇸';
+        return 'Español';
       default:
-        return '🇺🇸';
+        return 'English';
     }
   }
 }
