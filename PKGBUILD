@@ -1,4 +1,4 @@
-pkgname=chameleonultragui
+pkgname=chameleonultragui-git
 pkgver=0.0.0
 pkgrel=1
 pkgdesc='PKGBUILD for the Chameleon Ultra GUI'
@@ -8,6 +8,11 @@ depends=('gtk3' 'zenity')
 makedepends=('flutter' 'clang' 'cmake' 'ninja' 'pkgconf' 'xz')
 source=("git+https://github.com/GameTec-live/ChameleonUltraGUI.git#branch=main")
 sha256sums=('SKIP')
+
+pkgver() {
+    cd "$pkgname"
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
 
 prepare(){
     cd "ChameleonUltraGUI/chameleonultragui"
