@@ -267,18 +267,35 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   void setLocale(Locale loc) {
-    if (!AppLocalizations.supportedLocales.contains(loc)) return;
-    _sharedPreferences.setString('locale', loc.languageCode);
-    notifyListeners();
+    for (var locale in AppLocalizations.supportedLocales) {
+      if (locale.toLanguageTag().toLowerCase().replaceAll("-", "_") ==
+          loc.toLanguageTag().toLowerCase()) {
+        _sharedPreferences.setString('locale', loc.toLanguageTag());
+        notifyListeners();
+        return;
+      }
+    }
   }
 
   Locale getLocale() {
     final loc = _sharedPreferences.getString('locale');
-    if (!AppLocalizations.supportedLocales.contains(Locale(loc.toString()))) {
-      return const Locale('en');
+    if (loc != null && loc.contains("_")) {
+      var lcode = loc.toString().split("_").first;
+      var ccode = loc.toString().split("_").last;
+      if (!AppLocalizations.supportedLocales.contains(Locale(lcode, ccode))) {
+        return const Locale('en');
+      }
+      else {
+        return Locale(lcode, ccode);
+      }
     }
-    if (loc != null) {
-      return Locale(loc);
+    else if(loc != null) {
+      if (!AppLocalizations.supportedLocales.contains(Locale(loc.toString()))) {
+        return const Locale('en');
+      }
+      else {
+        return Locale(loc.toString());
+      }
     }
     return const Locale('en');
   }
@@ -289,9 +306,15 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   String getFlag(Locale loc) {
-    switch (loc.languageCode) {
+    switch (loc.toLanguageTag().replaceAll("-", "_")) {
       case 'es':
         return 'Español';
+      case 'de':
+        return 'Deutsch';
+      case 'de_AT':
+        return 'Deutsch (Österreich)';
+      case 'ru':
+        return 'Русский';
       default:
         return 'English';
     }
