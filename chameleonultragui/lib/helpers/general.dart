@@ -133,13 +133,13 @@ String platformToPath() {
   if (Platform.isAndroid) {
     return "android";
   } else if (Platform.isIOS) {
-    return "ios";
+    return "iOS";
   } else if (Platform.isLinux) {
-    return "linux";
+    return "Linux";
   } else if (Platform.isMacOS) {
-    return "macos";
+    return "MacOS";
   } else if (Platform.isWindows) {
-    return "windows";
+    return "Windows";
   } else {
     return "../";
   }

@@ -18,14 +18,15 @@ class WriteCardPageState extends State<WriteCardPage> {
 
   @override
   Widget build(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.write_card),
+        title: Text(localizations.write_card),
       ),
       body: Column(
         children: [
           Center(
-            child: Text(AppLocalizations.of(context)!.not_implemented)
+            child: Text(localizations.not_implemented)
           ),
         ],
       ),

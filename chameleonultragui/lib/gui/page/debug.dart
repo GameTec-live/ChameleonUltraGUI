@@ -21,7 +21,7 @@ class DebugPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-
+    var localizations = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center, // Center
@@ -42,15 +42,15 @@ class DebugPage extends StatelessWidget {
             textScaleFactor: 2,
           ),
           Text(
-            AppLocalizations.of(context)!.debug_page_warning,
+            localizations.debug_page_warning,
             textScaleFactor: 2,
           ),
-          Text('⚠️ ${AppLocalizations.of(context)!.warned} ⚠️', textScaleFactor: 3),
-          Text('${AppLocalizations.of(context)!.platform}: ${Platform.operatingSystem}'),
-          Text('${AppLocalizations.of(context)!.android}: ${appState.onAndroid}'),
-          Text('${AppLocalizations.of(context)!.serial_protocol}: ${appState.connector}'),
-          Text('${AppLocalizations.of(context)!.chameleon_connected}: ${appState.connector.connected}'),
-          Text('${AppLocalizations.of(context)!.chameleon_device_type}: ${appState.connector.device}'),
+          Text('⚠️ ${localizations.warned} ⚠️', textScaleFactor: 3),
+          Text('${localizations.platform}: ${Platform.operatingSystem}'),
+          Text('${localizations.android}: ${appState.onAndroid}'),
+          Text('${localizations.serial_protocol}: ${appState.connector}'),
+          Text('${localizations.chameleon_connected}: ${appState.connector.connected}'),
+          Text('${localizations.chameleon_device_type}: ${appState.connector.device}'),
           ElevatedButton(
             onPressed: () async {
               await appState.communicator!.setReaderDeviceMode(true);
@@ -96,7 +96,7 @@ class DebugPage extends StatelessWidget {
               }
             },
             child: Column(children: [
-              Text(AppLocalizations.of(context)!.nested_attack),
+              Text(localizations.nested_attack),
             ]),
           ),
           ElevatedButton(
@@ -136,7 +136,7 @@ class DebugPage extends StatelessWidget {
               }
             },
             child: Column(children: [
-              Text(AppLocalizations.of(context)!.darkside_attack),
+              Text(localizations.darkside_attack),
             ]),
           ),
           ElevatedButton(
@@ -152,7 +152,7 @@ class DebugPage extends StatelessWidget {
               await appState.communicator!.setMf1AntiCollision(card);
             },
             child: Column(children: [
-              Text(AppLocalizations.of(context)!.copy_uid),
+              Text(localizations.copy_uid),
             ]),
           ),
           ElevatedButton(
@@ -169,7 +169,7 @@ class DebugPage extends StatelessWidget {
               appState.log.d(name);
             },
             child: Column(children: [
-              Text(AppLocalizations.of(context)!.test_naming),
+              Text(localizations.test_naming),
             ]),
           ),
           ElevatedButton(
@@ -193,7 +193,7 @@ class DebugPage extends StatelessWidget {
                   "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
             },
             child: Column(children: [
-              Text(AppLocalizations.of(context)!.test_darkside_lib),
+              Text(localizations.test_darkside_lib),
             ]),
           ),
           ElevatedButton(
@@ -213,7 +213,7 @@ class DebugPage extends StatelessWidget {
                   "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
             },
             child: Column(children: [
-              Text(AppLocalizations.of(context)!.test_nested_lib),
+              Text(localizations.test_nested_lib),
             ]),
           ),
           ElevatedButton(
@@ -233,7 +233,7 @@ class DebugPage extends StatelessWidget {
                   firmwareZip: content);
             },
             child: Column(children: [
-              Text('💀 ${AppLocalizations.of(context)!.dfu_flash_ultra} 💀'),
+              Text('💀 ${localizations.dfu_flash_ultra} 💀'),
             ]),
           ),
           ElevatedButton(
@@ -253,7 +253,7 @@ class DebugPage extends StatelessWidget {
                   firmwareZip: content);
             },
             child: Column(children: [
-              Text('💀 ${AppLocalizations.of(context)!.dfu_flash_lite} 💀'),
+              Text('💀 ${localizations.dfu_flash_lite} 💀'),
             ]),
           ),
           const SizedBox(height: 10),
@@ -262,7 +262,7 @@ class DebugPage extends StatelessWidget {
               await appState.communicator!.factoryReset();
             },
             child: Column(children: [
-              Text('✅ ${AppLocalizations.of(context)!.safe_option}: ${AppLocalizations.of(context)!.restart_chamaleon} ✅'),
+              Text('✅ ${localizations.safe_option}: ${localizations.restart_chamaleon} ✅'),
             ]),
           ),
         ],

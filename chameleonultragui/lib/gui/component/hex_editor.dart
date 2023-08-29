@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'dart:typed_data';
+
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class HexEdit extends StatefulWidget {
   final List<Uint8List> data;
 
@@ -19,6 +23,7 @@ class HexEditState extends State<HexEdit> {
 
   @override
   Widget build(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
 
     List<TextField> sectors = [];
 
@@ -35,8 +40,8 @@ class HexEditState extends State<HexEdit> {
             maxLines: null,
             controller: TextEditingController(text: data.toUpperCase()),
             decoration: InputDecoration(
-              labelText: 'Sector $x', 
-              hintText: 'Enter data'
+              labelText: '${localizations.sector} $x', 
+              hintText: localizations.enter_data
             ),
           ),
         );
@@ -44,7 +49,7 @@ class HexEditState extends State<HexEdit> {
     }
 
     return AlertDialog(
-      title: const Text('Edit Data'),
+      title: Text(localizations.edit_data),
       content: SizedBox(
         width:  MediaQuery.of(context).size.width / 4,
         height: MediaQuery.of(context).size.height,

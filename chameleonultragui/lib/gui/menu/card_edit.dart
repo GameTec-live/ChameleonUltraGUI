@@ -7,6 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class CardEditMenu extends StatefulWidget {
   final CardSave tagSave;
 
@@ -48,9 +51,9 @@ class CardEditMenuState extends State<CardEditMenu> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-
+    var localizations = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: const Text('Edit card'),
+      title: Text(localizations.edit_card),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -61,13 +64,13 @@ class CardEditMenuState extends State<CardEditMenu> {
                 controller: nameController,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter name';
+                    return localizations.please_enter_name;
                   }
                   return null;
                 },
                 decoration: InputDecoration(
-                    labelText: 'Name',
-                    hintText: 'Enter name of card',
+                    labelText: localizations.name,
+                    hintText: localizations.enter_name,
                     prefix: IconButton(
                       icon: Icon(Icons.nfc, color: currentColor),
                       onPressed: () async {
@@ -75,7 +78,8 @@ class CardEditMenuState extends State<CardEditMenu> {
                           context: context,
                           builder: (BuildContext context) {
                             return AlertDialog(
-                              title: const Text('Pick a color'),
+                              title: Text(localizations
+                                  .pick_color),
                               content: SingleChildScrollView(
                                 child: ColorPicker(
                                   pickerColor: pickerColor,
@@ -94,16 +98,19 @@ class CardEditMenuState extends State<CardEditMenu> {
                                         pickerColor = Colors.deepOrange);
                                     Navigator.pop(context);
                                   },
-                                  child: const Text('Reset to default'),
+                                  child: Text(localizations
+                                      .reset_default),
                                 ),
                                 TextButton(
                                   onPressed: () {
                                     Navigator.pop(context);
                                   },
-                                  child: const Text('Cancel'),
+                                  child: Text(localizations
+                                      .cancel),
                                 ),
                                 TextButton(
-                                  child: const Text('Ok'),
+                                  child: Text(localizations
+                                      .ok),
                                   onPressed: () {
                                     setState(() => currentColor = pickerColor);
                                     Navigator.pop(context);
@@ -146,22 +153,22 @@ class CardEditMenuState extends State<CardEditMenu> {
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: uidController,
-                  decoration: const InputDecoration(
-                      labelText: 'UID', hintText: 'Enter UID'),
+                  decoration: InputDecoration(
+                      labelText: localizations.uid, hintText: localizations.enter_something("UID")),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter UID';
+                      return localizations.please_enter_something("UID");
                     }
                     if (!(value.replaceAll(" ", "").length == 14 ||
                             value.replaceAll(" ", "").length == 8) &&
                         chameleonTagToFrequency(selectedType) !=
                             TagFrequency.lf) {
-                      return 'UID must be 4 or 7 bytes long';
+                      return localizations.must_or(4, 7, "UID");
                     }
                     if (value.replaceAll(" ", "").length != 10 &&
                         chameleonTagToFrequency(selectedType) ==
                             TagFrequency.lf) {
-                      return 'UID must be 5 bytes long';
+                      return localizations.must_be(5, "UID");
                     }
                     return null;
                   },
@@ -172,19 +179,19 @@ class CardEditMenuState extends State<CardEditMenu> {
                       chameleonTagToFrequency(selectedType) != TagFrequency.lf,
                   child: TextFormField(
                     controller: sak4Controller,
-                    decoration: const InputDecoration(
-                        labelText: 'SAK', hintText: 'Enter SAK'),
+                    decoration: InputDecoration(
+                        labelText: localizations.sak, hintText: localizations.enter_something("SAK")),
                     validator: (value) {
                       if (value == null ||
                           value.isEmpty &&
                               chameleonTagToFrequency(selectedType) !=
                                   TagFrequency.lf) {
-                        return 'Please enter SAK';
+                        return localizations.please_enter_something("SAK");
                       }
                       if (value.replaceAll(" ", "").length != 2 &&
                           chameleonTagToFrequency(selectedType) !=
                               TagFrequency.lf) {
-                        return 'SAK must be 1 byte long';
+                        return localizations.must_be(1, "SAK");
                       }
                       return null;
                     },
@@ -196,19 +203,19 @@ class CardEditMenuState extends State<CardEditMenu> {
                       chameleonTagToFrequency(selectedType) != TagFrequency.lf,
                   child: TextFormField(
                     controller: atqa4Controller,
-                    decoration: const InputDecoration(
-                        labelText: 'ATQA', hintText: 'Enter ATQA'),
+                    decoration: InputDecoration(
+                        labelText: localizations.atqa, hintText: localizations.enter_something("ATQA")),
                     validator: (value) {
                       if (value == null ||
                           value.isEmpty &&
                               chameleonTagToFrequency(selectedType) !=
                                   TagFrequency.lf) {
-                        return 'Please enter ATQA';
+                        return localizations.please_enter_something("ATQA");
                       }
                       if (value.replaceAll(" ", "").length != 4 &&
                           chameleonTagToFrequency(selectedType) !=
                               TagFrequency.lf) {
-                        return 'ATQA must be 2 bytes long';
+                        return localizations.must_be(2, "ATQA");
                       }
                       return null;
                     },
@@ -237,7 +244,7 @@ class CardEditMenuState extends State<CardEditMenu> {
           onPressed: () {
             Navigator.pop(context);
           },
-          child: const Text('Cancel'),
+          child: Text(localizations.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -272,7 +279,7 @@ class CardEditMenuState extends State<CardEditMenu> {
             appState.changesMade();
             Navigator.pop(context);
           },
-          child: const Text('Save'),
+          child: Text(localizations.save),
         ),
       ],
     );

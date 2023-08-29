@@ -12,7 +12,7 @@ class FlashingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-
+    var localizations = AppLocalizations.of(context)!;
     return Scaffold(
         appBar: AppBar(
           title: const Text('Chameleon DFU'),
@@ -44,7 +44,7 @@ class FlashingPage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                AppLocalizations.of(context)!.please_wait,
+                localizations.please_wait,
                 style: const TextStyle(fontSize: 20),
               ),
             ],

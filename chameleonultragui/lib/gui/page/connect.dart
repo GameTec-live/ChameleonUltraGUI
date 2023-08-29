@@ -15,7 +15,7 @@ class ConnectPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-
+    var localizations = AppLocalizations.of(context)!;
     return FutureBuilder(
       future: appState.connector.connected
           ? Future.value([])
@@ -24,18 +24,18 @@ class ConnectPage extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
               appBar: AppBar(
-                title: Text(AppLocalizations.of(context)!.connect),
+                title: Text(localizations.connect),
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
           appState.connector.performDisconnect();
-          return Text('${AppLocalizations.of(context)!.error}: ${snapshot.error}');
+          return Text('${localizations.error}: ${snapshot.error}');
         } else {
           final (result as List<Chameleon>) = snapshot.data;
 
           return Scaffold(
             appBar: AppBar(
-              title: Text(AppLocalizations.of(context)!.connect),
+              title: Text(localizations.connect),
             ),
             body: Center(
               child: Column(
@@ -72,18 +72,18 @@ class ConnectPage extends StatelessWidget {
                                     builder: (BuildContext context) =>
                                         AlertDialog(
                                       title: Text(
-                                          AppLocalizations.of(context)!.chamaleon_is_dfu),
+                                          localizations.chamaleon_is_dfu),
                                       content: Text(
-                                          AppLocalizations.of(context)!.firmware_is_corrupted),
+                                          localizations.firmware_is_corrupted),
                                       actions: <Widget>[
                                         TextButton(
                                           onPressed: () =>
-                                              Navigator.pop(context, AppLocalizations.of(context)!.cancel),
-                                          child: Text(AppLocalizations.of(context)!.cancel),
+                                              Navigator.pop(context, localizations.cancel),
+                                          child: Text(localizations.cancel),
                                         ),
                                         TextButton(
                                           onPressed: () async {
-                                            Navigator.pop(context, AppLocalizations.of(context)!.flash);
+                                            Navigator.pop(context, localizations.flash);
                                             appState.changesMade();
                                             Uint8List applicationDat,
                                                 applicationBin;
@@ -107,7 +107,7 @@ class ConnectPage extends StatelessWidget {
 
                                             appState.changesMade();
                                           },
-                                          child: Text(AppLocalizations.of(context)!.flash),
+                                          child: Text(localizations.flash),
                                         ),
                                       ],
                                     ),
@@ -150,7 +150,7 @@ class ConnectPage extends StatelessWidget {
                                                   : const Icon(Icons.usb),
                                               Text(chameleonDevice.port ?? ""),
                                               if (chameleonDevice.dfu)
-                                                Text(AppLocalizations.of(context)!.dfu),
+                                                Text(localizations.dfu),
                                             ],
                                           )
                                         ],

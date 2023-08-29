@@ -82,6 +82,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
 
   @override
   Widget build(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
     return FutureBuilder(
       future: detectionStatusFuture,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -93,7 +94,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
             body: const Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasError) {
-          return Text('${AppLocalizations.of(context)!.error}: ${snapshot.error}');
+          return Text('${localizations.error}: ${snapshot.error}');
         } else {
           if (detectionCount == -1) {
             updateDetectionStatus();
@@ -116,7 +117,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.recover_keys("Mfkey32"),
+                      localizations.recover_keys_via("Mfkey32"),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 28,
@@ -130,7 +131,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                               await handleMfkeyCalculation();
                             }
                           : null,
-                      child: Text(AppLocalizations.of(context)!.recover_keys_nonce(detectionCount)),
+                      child: Text(localizations.recover_keys_nonce(detectionCount)),
                     ),
                     const SizedBox(height: 16.0),
                     Expanded(

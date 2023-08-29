@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class SlotSettings extends StatefulWidget {
   final int slot;
   final dynamic refresh;
@@ -33,7 +36,7 @@ class SlotSettingsState extends State<SlotSettings> {
 
   Future<void> fetchInfo() async {
     var appState = context.read<MyAppState>();
-
+    var localizations = AppLocalizations.of(context)!;
     if (hfName.isEmpty) {
       try {
         hfName = (await appState.communicator!
@@ -42,7 +45,7 @@ class SlotSettingsState extends State<SlotSettings> {
       } catch (_) {}
 
       if (hfName.isEmpty) {
-        hfName = "Empty";
+        hfName = localizations.empty;
       }
 
       setState(() {});
@@ -56,7 +59,7 @@ class SlotSettingsState extends State<SlotSettings> {
       } catch (_) {}
 
       if (lfName.isEmpty) {
-        lfName = "Empty";
+        lfName = localizations.empty;
       }
 
       setState(() {});
@@ -84,28 +87,29 @@ class SlotSettingsState extends State<SlotSettings> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
+    var localizations = AppLocalizations.of(context)!;
 
     return FutureBuilder(
         future: fetchInfo(),
         builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting && !isRun) {
-            return const AlertDialog(
-                title: Text('Slot Settings'),
-                content: SingleChildScrollView(
+            return AlertDialog(
+                title: Text(localizations.slot_settings),
+                content: const SingleChildScrollView(
                     child: Column(children: [CircularProgressIndicator()])));
           } else if (snapshot.hasError) {
             appState.connector.performDisconnect();
             return AlertDialog(
-                title: const Text('Slot Settings'),
-                content: Text('Error: ${snapshot.error.toString()}'));
+                title: Text(localizations.slot_settings),
+                content: Text('${localizations.error}: ${snapshot.error.toString()}'));
           } else {
             return AlertDialog(
-                title: const Text('Slot Settings'),
+                title: Text(localizations.slot_settings),
                 content: SingleChildScrollView(
                     child: Column(children: [
                   Row(
                     children: [
-                      const Text('HF:'),
+                      Text('${localizations.hf}:'),
                       const SizedBox(width: 8),
                       Expanded(
                           child: OutlinedButton(
@@ -118,7 +122,7 @@ class SlotSettingsState extends State<SlotSettings> {
                           await appState.communicator!
                               .deleteSlotInfo(widget.slot, TagFrequency.hf);
                           await appState.communicator!.setSlotTagName(
-                              widget.slot, "Empty", TagFrequency.hf);
+                              widget.slot, localizations.empty, TagFrequency.hf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
@@ -134,7 +138,7 @@ class SlotSettingsState extends State<SlotSettings> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Text('LF:'),
+                      Text('${localizations.hf}:'),
                       const SizedBox(width: 8),
                       Expanded(
                           child: OutlinedButton(
@@ -147,7 +151,7 @@ class SlotSettingsState extends State<SlotSettings> {
                           await appState.communicator!
                               .deleteSlotInfo(widget.slot, TagFrequency.lf);
                           await appState.communicator!.setSlotTagName(
-                              widget.slot, "Empty", TagFrequency.lf);
+                              widget.slot, localizations.empty, TagFrequency.lf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
@@ -161,10 +165,10 @@ class SlotSettingsState extends State<SlotSettings> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text('Slot status'),
+                  Text(localizations.slot_status),
                   const SizedBox(height: 8),
                   ToggleButtonsWrapper(
-                      items: const ['Enabled', 'Disabled'],
+                      items: [localizations.enabled, localizations.disabled],
                       selectedValue: isEnabled ? 0 : 1,
                       onChange: (int index) async {
                         await appState.communicator!
@@ -173,15 +177,15 @@ class SlotSettingsState extends State<SlotSettings> {
                         widget.refresh(widget.slot);
                       }),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Mifare Classic emulator settings',
+                  Text(
+                    localizations.mifare_clasic_e_s,
                     textScaleFactor: 1.1,
                   ),
                   const SizedBox(height: 8),
-                  const Text('Gen1A magic mode'),
+                  Text(localizations.mode_gen1a),
                   const SizedBox(height: 8),
                   ToggleButtonsWrapper(
-                      items: const ['Yes', 'No'],
+                      items: [localizations.yes, localizations.no],
                       selectedValue: isGen1a ? 0 : 1,
                       onChange: (int index) async {
                         await appState.communicator!.activateSlot(widget.slot);
@@ -191,10 +195,10 @@ class SlotSettingsState extends State<SlotSettings> {
                         widget.refresh(widget.slot);
                       }),
                   const SizedBox(height: 8),
-                  const Text('Gen2 magic mode'),
+                  Text(localizations.mode_gen2),
                   const SizedBox(height: 8),
                   ToggleButtonsWrapper(
-                      items: const ['Yes', 'No'],
+                      items: [localizations.yes, localizations.no],
                       selectedValue: isGen2 ? 0 : 1,
                       onChange: (int index) async {
                         await appState.communicator!.activateSlot(widget.slot);
@@ -204,10 +208,10 @@ class SlotSettingsState extends State<SlotSettings> {
                         widget.refresh(widget.slot);
                       }),
                   const SizedBox(height: 8),
-                  const Text('Use UID/SAK/ATQA from 0 block'),
+                  Text(localizations.use_from_block),
                   const SizedBox(height: 8),
                   ToggleButtonsWrapper(
-                      items: const ['Yes', 'No'],
+                      items: [localizations.yes, localizations.no],
                       selectedValue: isAntiColl ? 0 : 1,
                       onChange: (int index) async {
                         await appState.communicator!.activateSlot(widget.slot);
@@ -217,10 +221,10 @@ class SlotSettingsState extends State<SlotSettings> {
                         widget.refresh(widget.slot);
                       }),
                   const SizedBox(height: 8),
-                  const Text('Collect nonces (Mfkey32)'),
+                  Text(localizations.collect_nonces("Mfkey32")),
                   const SizedBox(height: 8),
                   ToggleButtonsWrapper(
-                      items: const ['Yes', 'No'],
+                      items: [localizations.yes, localizations.no],
                       selectedValue: isDetection ? 0 : 1,
                       onChange: (int index) async {
                         await appState.communicator!.activateSlot(widget.slot);
@@ -234,8 +238,8 @@ class SlotSettingsState extends State<SlotSettings> {
                           ...(detectionCount == 0)
                               ? [
                                   const SizedBox(height: 8),
-                                  const Text(
-                                      "Present Chameleon to reader to recover keys",
+                                  Text(
+                                      localizations.present_cham_reader_keys,
                                       textScaleFactor: 0.8)
                                 ]
                               : [
@@ -250,10 +254,10 @@ class SlotSettingsState extends State<SlotSettings> {
                                               appState.forceMfkey32Page = true;
                                               appState.changesMade();
                                             },
-                                            child: const Row(
+                                            child: Row(
                                               children: [
-                                                Icon(Icons.lock_open),
-                                                Text("Recover keys"),
+                                                const Icon(Icons.lock_open),
+                                                Text(localizations.recover_keys),
                                               ],
                                             )),
                                       ]),
@@ -261,14 +265,14 @@ class SlotSettingsState extends State<SlotSettings> {
                         ]
                       : [
                           const SizedBox(height: 8),
-                          const Text("Enable collection to recover keys",
+                          Text(localizations.ena_coll_recover_keys,
                               textScaleFactor: 0.8)
                         ],
                   const SizedBox(height: 8),
-                  const Text('Write mode'),
+                  Text(localizations.write_mode),
                   const SizedBox(height: 8),
                   ToggleButtonsWrapper(
-                      items: const ['Normal', 'Decline', 'Deceive', 'Shadow'],
+                      items: [localizations.normal, localizations.decline, localizations.deceive, localizations.shadow],
                       selectedValue: writeMode.value,
                       onChange: (int index) async {
                         await appState.communicator!.activateSlot(widget.slot);

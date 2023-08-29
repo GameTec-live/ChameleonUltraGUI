@@ -50,21 +50,21 @@ class SettingsMainPageState extends State<SettingsMainPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get State
-
+    var localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.settings),
+        title: Text(localizations.settings),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center, // Center
           children: [
             const SizedBox(height: 10),
-            Text(AppLocalizations.of(context)!.sidebar_expansion,
+            Text(localizations.sidebar_expansion,
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 5),
             ToggleButtonsWrapper(
-                items: [AppLocalizations.of(context)!.expand, AppLocalizations.of(context)!.auto, AppLocalizations.of(context)!.retract
+                items: [localizations.expand, localizations.auto, localizations.retract
                 ],
                 selectedValue: appState.sharedPreferencesProvider
                     .getSideBarExpandedIndex(),
@@ -88,12 +88,12 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 }),
             const SizedBox(height: 10),
                         Text(
-              AppLocalizations.of(context)!.theme,
+              localizations.theme,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
             ToggleButtonsWrapper(
-                items: [AppLocalizations.of(context)!.system, AppLocalizations.of(context)!.light, AppLocalizations.of(context)!.dark],
+                items: [localizations.system, localizations.light, localizations.dark],
                 selectedValue: appState.sharedPreferencesProvider.getTheme() ==
                         ThemeMode.system
                     ? 0
@@ -115,19 +115,19 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   showDialog<String>(
                     context: context,
                     builder: (BuildContext context) => AlertDialog(
-                      title: Text(AppLocalizations.of(context)!.restart_required),
+                      title: Text(localizations.restart_required),
                       content: Center(
-                        child: Text(AppLocalizations.of(context)!.take_effects,
+                        child: Text(localizations.take_effects,
                             style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                       actions: <Widget>[
                         TextButton(
-                          onPressed: () => Navigator.pop(context, AppLocalizations.of(context)!.ok),
-                          child: Text(AppLocalizations.of(context)!.ok),
+                          onPressed: () => Navigator.pop(context, localizations.ok),
+                          child: Text(localizations.ok),
                         ),
                         TextButton(
                           onPressed: () => SystemNavigator.pop(),
-                          child: Text(AppLocalizations.of(context)!.restart_now),
+                          child: Text(localizations.restart_now),
                         ),
                       ],
                     ),
@@ -135,7 +135,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 }),
             const SizedBox(height: 10),
             Text(
-              AppLocalizations.of(context)!.color_scheme,
+              localizations.color_scheme,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
@@ -151,19 +151,19 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 showDialog<String>(
                   context: context,
                   builder: (BuildContext context) => AlertDialog(
-                    title: Text(AppLocalizations.of(context)!.restart_required),
+                    title: Text(localizations.restart_required),
                     content: Center(
-                      child: Text(AppLocalizations.of(context)!.take_effects,
+                      child: Text(localizations.take_effects,
                           style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     actions: <Widget>[
                       TextButton(
-                        onPressed: () => Navigator.pop(context, 'OK'),
-                        child: Text(AppLocalizations.of(context)!.ok),
+                        onPressed: () => Navigator.pop(context, localizations.ok),
+                        child: Text(localizations.ok),
                       ),
                       TextButton(
                         onPressed: () => SystemNavigator.pop(),
-                        child: Text(AppLocalizations.of(context)!.restart_now),
+                        child: Text(localizations.restart_now),
                       ),
                     ],
                   ),
@@ -172,40 +172,40 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               items: [
                 DropdownMenuItem(
                   value: 0,
-                  child: Text(AppLocalizations.of(context)!.def),
+                  child: Text(localizations.def),
                 ),
                 DropdownMenuItem(
                   value: 1,
-                  child: Text(AppLocalizations.of(context)!.purple),
+                  child: Text(localizations.purple),
                 ),
                 DropdownMenuItem(
                   value: 2,
-                  child: Text(AppLocalizations.of(context)!.blue),
+                  child: Text(localizations.blue),
                 ),
                 DropdownMenuItem(
                   value: 3,
-                  child: Text(AppLocalizations.of(context)!.green),
+                  child: Text(localizations.green),
                 ),
                 DropdownMenuItem(
                   value: 4,
-                  child: Text(AppLocalizations.of(context)!.indigo),
+                  child: Text(localizations.indigo),
                 ),
                 DropdownMenuItem(
                   value: 5,
-                  child: Text(AppLocalizations.of(context)!.lime),
+                  child: Text(localizations.lime),
                 ),
                 DropdownMenuItem(
                   value: 6,
-                  child: Text(AppLocalizations.of(context)!.red),
+                  child: Text(localizations.red),
                 ),
                 DropdownMenuItem(
                   value: 7,
-                  child: Text(AppLocalizations.of(context)!.yellow),
+                  child: Text(localizations.yellow),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            Text(AppLocalizations.of(context)!.language, style: const TextStyle(fontWeight: FontWeight.bold),),
+            Text(localizations.language, style: const TextStyle(fontWeight: FontWeight.bold),),
             const SizedBox(height: 5),
             DropdownButton(
               value: appState.sharedPreferencesProvider.sharedPreferences
@@ -218,19 +218,19 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 showDialog<String>(
                   context: context,
                   builder: (BuildContext context) => AlertDialog(
-                    title: Text(AppLocalizations.of(context)!.restart_required),
+                    title: Text(localizations.restart_required),
                     content: Center(
-                      child: Text(AppLocalizations.of(context)!.take_effects,
+                      child: Text(localizations.take_effects,
                           style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     actions: <Widget>[
                       TextButton(
-                        onPressed: () => Navigator.pop(context, AppLocalizations.of(context)!.ok),
-                        child: Text(AppLocalizations.of(context)!.ok),
+                        onPressed: () => Navigator.pop(context, localizations.ok),
+                        child: Text(localizations.ok),
                       ),
                       TextButton(
                         onPressed: () => SystemNavigator.pop(),
-                        child: Text(AppLocalizations.of(context)!.restart_now),
+                        child: Text(localizations.restart_now),
                       ),
                     ],
                   ),
@@ -248,7 +248,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               onPressed: () => showDialog<String>(
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
-                  title: Text(AppLocalizations.of(context)!.about),
+                  title: Text(localizations.about),
                   content: Center(
                     child: FutureBuilder(
                       future: getFutureData(),
@@ -269,19 +269,19 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
                               Text(
-                                  AppLocalizations.of(context)!.about_text),
+                                  localizations.about_text),
                               const SizedBox(height: 10),
-                              Text('${AppLocalizations.of(context)!.version}:'),
+                              Text('${localizations.version}:'),
                               Text(
                                   '${packageInfo.version} (Build ${packageInfo.buildNumber})',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
-                              Text('${AppLocalizations.of(context)!.developed_by}:'),
+                              Text('${localizations.developed_by}:'),
                               const SizedBox(height: 10),
                               DeveloperList(avatars: developers),
                               const SizedBox(height: 10),
-                              Text('${AppLocalizations.of(context)!.license}:'),
+                              Text('${localizations.license}:'),
                               const Text('GNU General Public License v3.0',
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
@@ -295,13 +295,13 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                       'https://github.com/GameTec-live/ChameleonUltraGUI')),
                               const SizedBox(height: 30),
                               Text(
-                                  AppLocalizations.of(context)!.thanks_for_support),
+                                  localizations.thanks_for_support),
                               const SizedBox(height: 10),
                               Text(names,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
-                              Text('${AppLocalizations.of(context)!.code_contributors}:'),
+                              Text('${localizations.code_contributors}:'),
                               const SizedBox(height: 10),
                               DeveloperList(avatars: contributors),
                             ],
@@ -316,43 +316,43 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                             child: const Text('Cancel'),
                           ), */ // A Cancel button on an about widget??
                     TextButton(
-                      onPressed: () => Navigator.pop(context, 'OK'),
-                      child: const Text('OK'),
+                      onPressed: () => Navigator.pop(context, localizations.ok),
+                      child: Text(localizations.ok),
                     ),
                   ],
                 ),
               ),
-              child: Text(AppLocalizations.of(context)!.about),
+              child: Text(localizations.about),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
-                  title: Text(AppLocalizations.of(context)!.debug_mode),
+                  title: Text(localizations.debug_mode),
                   content: Text(
-                      AppLocalizations.of(context)!.debug_mode_confirmation(
+                      localizations.debug_mode_confirmation(
                           appState.sharedPreferencesProvider.isDebugMode()
-                              ? AppLocalizations.of(context)!.deactivate.toLowerCase()
-                              : AppLocalizations.of(context)!.activate.toLowerCase())),
+                              ? localizations.deactivate.toLowerCase()
+                              : localizations.activate.toLowerCase())),
                   actions: <Widget>[
                     TextButton(
-                      onPressed: () => Navigator.pop(context, AppLocalizations.of(context)!.cancel),
-                      child: Text(AppLocalizations.of(context)!.cancel),
+                      onPressed: () => Navigator.pop(context, localizations.cancel),
+                      child: Text(localizations.cancel),
                     ),
                     TextButton(
                       onPressed: () {
                         appState.sharedPreferencesProvider.setDebugMode(
                             !appState.sharedPreferencesProvider.isDebugMode());
                         appState.changesMade();
-                        Navigator.pop(context, AppLocalizations.of(context)!.ok);
+                        Navigator.pop(context, localizations.ok);
                       },
-                      child: Text(AppLocalizations.of(context)!.ok),
+                      child: Text(localizations.ok),
                     ),
                   ],
                 ),
               ),
-              child: Text("${appState.sharedPreferencesProvider.isDebugMode() ? AppLocalizations.of(context)!.deactivate : AppLocalizations.of(context)!.activate} ${AppLocalizations.of(context)!.debug_mode.toLowerCase()}"),
+              child: Text("${appState.sharedPreferencesProvider.isDebugMode() ? localizations.deactivate : localizations.activate} ${localizations.debug_mode.toLowerCase()}"),
             )
           ],
         ),

@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class ChameleonSettings extends StatefulWidget {
   const ChameleonSettings({super.key});
 
@@ -70,19 +73,19 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-
+    var localizations = AppLocalizations.of(context)!;
     return FutureBuilder(
         future: getSettingsData(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AlertDialog(
-                title: Text('Device Settings'),
-                content: Column(children: [CircularProgressIndicator()]));
+            return AlertDialog(
+                title: Text(localizations.device_settings),
+                content: const Column(children: [CircularProgressIndicator()]));
           } else if (snapshot.hasError) {
             appState.connector.performDisconnect();
             return AlertDialog(
-                title: const Text('Device Settings'),
-                content: Text('Error: ${snapshot.error.toString()}'));
+                title: Text(localizations.device_settings),
+                content: Text('${localizations.error}: ${snapshot.error.toString()}'));
           } else {
             var (
               animationMode,
@@ -93,33 +96,36 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
             ) = snapshot.data;
 
             return AlertDialog(
-                title: const Text('Device Settings'),
+                title: Text(localizations.device_settings),
                 content: SingleChildScrollView(
                     child: Column(
                   children: [
-                    const Text("Firmware management:"),
+                    Text("${localizations.firmware_management}:"),
                     const SizedBox(height: 10),
                     TextButton(
                         onPressed: () async {
                           await appState.communicator!.enterDFUMode();
                           appState.connector.performDisconnect();
-                          Navigator.pop(context, 'Cancel');
+                          Navigator.pop(context, localizations.cancel);
                           appState.changesMade();
                         },
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.medical_services_outlined),
-                            Text("Enter DFU Mode"),
+                            const Icon(Icons.medical_services_outlined),
+                            Text(localizations.enter_dfu),
                           ],
                         )),
                     TextButton(
                         onPressed: () async {
-                          Navigator.pop(context, 'Cancel');
+                          Navigator.pop(context, localizations.cancel);
                           var snackBar = SnackBar(
-                            content: Text(
-                                'Downloading and preparing new Chameleon ${appState.connector.device == ChameleonDevice.ultra ? "Ultra" : "Lite"} firmware...'),
+                            content: Text(localizations.downloading_fw(
+                                appState.connector.device ==
+                                        ChameleonDevice.ultra
+                                    ? "Ultra"
+                                    : "Lite")),
                             action: SnackBarAction(
-                              label: 'Close',
+                              label: localizations.close,
                               onPressed: () {},
                             ),
                           );
@@ -130,9 +136,9 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           } catch (e) {
                             ScaffoldMessenger.of(context).hideCurrentSnackBar();
                             snackBar = SnackBar(
-                              content: Text('Update error: ${e.toString()}'),
+                              content: Text('${localizations.update_error}: ${e.toString()}'),
                               action: SnackBarAction(
-                                label: 'Close',
+                                label: localizations.close,
                                 onPressed: () {},
                               ),
                             );
@@ -141,28 +147,28 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                 .showSnackBar(snackBar);
                           }
                         },
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.system_security_update),
-                            Text("Flash latest FW via DFU"),
+                            const Icon(Icons.system_security_update),
+                            Text(localizations.flash_via_dfu),
                           ],
                         )),
                     TextButton(
                         onPressed: () async {
-                          Navigator.pop(context, 'Cancel');
+                          Navigator.pop(context, localizations.cancel);
                           await flashFirmwareZip(appState);
                         },
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.system_security_update_good),
-                            Text("Flash .zip FW via DFU"),
+                            const Icon(Icons.system_security_update_good),
+                            Text(localizations.flash_zip_dfu),
                           ],
                         )),
                     const SizedBox(height: 10),
-                    const Text("Animations:"),
+                    Text("${localizations.animations}:"),
                     const SizedBox(height: 10),
                     ToggleButtonsWrapper(
-                        items: const ['Full', 'Mini', 'None'],
+                        items: [localizations.full, localizations.mini, localizations.none],
                         selectedValue: animationMode.value,
                         onChange: (int index) async {
                           var animation = AnimationSetting.full;
@@ -179,16 +185,16 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           appState.changesMade();
                         }),
                     const SizedBox(height: 10),
-                    const Text("Button config:"),
+                    Text("${localizations.button_config}:"),
                     const SizedBox(height: 7),
-                    const Text("A button:", textScaleFactor: 0.8),
+                    Text("${localizations.button_x("A")}:", textScaleFactor: 0.8),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
-                        items: const [
-                          'Disable',
-                          'Forward',
-                          'Backward',
-                          'Clone UID'
+                        items: [
+                          localizations.disable,
+                          localizations.forward,
+                          localizations.backward,
+                          localizations.clone_uid
                         ],
                         selectedValue: aButtonMode.value,
                         onChange: (int index) async {
@@ -208,14 +214,14 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           appState.changesMade();
                         }),
                     const SizedBox(height: 7),
-                    const Text("B button:", textScaleFactor: 0.8),
+                    Text("${localizations.button_x("B")}:", textScaleFactor: 0.8),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
-                        items: const [
-                          'Disable',
-                          'Forward',
-                          'Backward',
-                          'Clone UID'
+                        items: [
+                          localizations.disable,
+                          localizations.forward,
+                          localizations.backward,
+                          localizations.clone_uid
                         ],
                         selectedValue: bButtonMode.value,
                         onChange: (int index) async {
@@ -235,16 +241,16 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           appState.changesMade();
                         }),
                     const SizedBox(height: 7),
-                    const Text("Long press", textScaleFactor: 0.9),
+                    Text(localizations.long_press, textScaleFactor: 0.9),
                     const SizedBox(height: 7),
-                    const Text("A button:", textScaleFactor: 0.8),
+                    Text("${localizations.button_x("A")}:", textScaleFactor: 0.8),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
-                        items: const [
-                          'Disable',
-                          'Forward',
-                          'Backward',
-                          'Clone UID'
+                        items: [
+                          localizations.disable,
+                          localizations.forward,
+                          localizations.backward,
+                          localizations.clone_uid
                         ],
                         selectedValue: aLongButtonMode.value,
                         onChange: (int index) async {
@@ -264,14 +270,14 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           appState.changesMade();
                         }),
                     const SizedBox(height: 7),
-                    const Text("B button:", textScaleFactor: 0.8),
+                    Text("${localizations.button_x("B")}:", textScaleFactor: 0.8),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
-                        items: const [
-                          'Disable',
-                          'Forward',
-                          'Backward',
-                          'Clone UID'
+                        items: [
+                          localizations.disable,
+                          localizations.forward,
+                          localizations.backward,
+                          localizations.clone_uid
                         ],
                         selectedValue: bLongButtonMode.value,
                         onChange: (int index) async {
@@ -291,54 +297,54 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           appState.changesMade();
                         }),
                     const SizedBox(height: 10),
-                    const Text("Other:"),
+                    Text("${localizations.other}:"),
                     const SizedBox(height: 10),
                     TextButton(
                         onPressed: () async {
                           await appState.communicator!.resetSettings();
-                          Navigator.pop(context, 'Cancel');
+                          Navigator.pop(context, localizations.cancel);
                           appState.changesMade();
                         },
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.lock_reset),
-                            Text("Reset settings"),
+                            const Icon(Icons.lock_reset),
+                            Text(localizations.reset_settings),
                           ],
                         )),
                     TextButton(
                         onPressed: () async {
                           // Ask for confirmation
-                          Navigator.pop(context, 'Cancel');
+                          Navigator.pop(context, localizations.cancel);
                           showDialog(
                             context: context,
                             builder: (BuildContext context) => AlertDialog(
-                              title: const Text('Factory reset'),
-                              content: const Text(
-                                  'Are you sure you want to factory reset your Chameleon?'),
+                              title: Text(localizations.factory_reset),
+                              content: Text(
+                                  localizations.factory_sure),
                               actions: <Widget>[
                                 TextButton(
                                   onPressed: () async {
                                     await appState.communicator!.factoryReset();
                                     await appState.connector
                                         .performDisconnect();
-                                    Navigator.pop(context, 'Cancel');
+                                    Navigator.pop(context, localizations.cancel);
                                     appState.changesMade();
                                   },
-                                  child: const Text('Yes'),
+                                  child: Text(localizations.yes),
                                 ),
                                 TextButton(
                                   onPressed: () =>
-                                      Navigator.pop(context, 'Cancel'),
-                                  child: const Text('No'),
+                                      Navigator.pop(context, localizations.cancel),
+                                  child: Text(localizations.no),
                                 ),
                               ],
                             ),
                           );
                         },
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.restore_from_trash_outlined),
-                            Text("Factory reset"),
+                            const Icon(Icons.restore_from_trash_outlined),
+                            Text(localizations.factory_reset),
                           ],
                         )),
                   ],
