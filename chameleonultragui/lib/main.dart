@@ -219,15 +219,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                 AppLocalizations.of(context)!.home), // Home
                           ),
                           NavigationRailDestination(
-                            icon: Icon(Icons.widgets,
-                                color: appState.connector.connected == false
-                                    ? Colors.grey
-                                    : null),
+                            disabled: !appState.connector.connected,
+                            icon: const Icon(Icons.widgets),
                             label: Text(
-                                AppLocalizations.of(context)!.slot_manager,
-                                style: appState.connector.connected == false
-                                    ? const TextStyle(color: Colors.grey)
-                                    : null),
+                                AppLocalizations.of(context)!.slot_manager),
                           ),
                           NavigationRailDestination(
                             icon:
@@ -236,25 +231,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                 Text(AppLocalizations.of(context)!.saved_cards),
                           ),
                           NavigationRailDestination(
-                            icon: Icon(Icons.wifi,
-                                color: appState.connector.connected == false
-                                    ? Colors.grey
-                                    : null),
-                            label: Text(AppLocalizations.of(context)!.read_card,
-                                style: appState.connector.connected == false
-                                    ? const TextStyle(color: Colors.grey)
-                                    : null),
+                            disabled: !appState.connector.connected,
+                            icon: const Icon(Icons.wifi),
+                            label:
+                                Text(AppLocalizations.of(context)!.read_card),
                           ),
                           NavigationRailDestination(
-                            icon: Icon(Icons.credit_card,
-                                color: appState.connector.connected == false
-                                    ? Colors.grey
-                                    : null),
-                            label: Text(
-                                AppLocalizations.of(context)!.write_card,
-                                style: appState.connector.connected == false
-                                    ? const TextStyle(color: Colors.grey)
-                                    : null),
+                            disabled: !appState.connector.connected,
+                            icon: const Icon(Icons.credit_card),
+                            label:
+                                Text(AppLocalizations.of(context)!.write_card),
                           ),
                           NavigationRailDestination(
                             icon: const Icon(Icons.settings),
@@ -295,7 +281,7 @@ class BottomProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    return (appState.connector.connected == true && appState.connector.isDFU)
+    return (appState.connector.connected && appState.connector.isDFU)
         ? LinearProgressIndicator(
             value: appState.progress,
             backgroundColor: Colors.grey[300],

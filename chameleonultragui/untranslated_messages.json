@@ -23,11 +23,5 @@
     "connecting_to_ble",
     "default_ble_password",
     "connection_might_take_some_time"
-  ],
-
-  "ru": [
-    "connecting_to_ble",
-    "default_ble_password",
-    "connection_might_take_some_time"
   ]
 }
