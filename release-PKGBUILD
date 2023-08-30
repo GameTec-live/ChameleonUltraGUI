@@ -1,5 +1,5 @@
-pkgname=chameleonultragui-git
-pkgver=0.0.0
+pkgname=chameleonultragui
+pkgver=0.0.1
 pkgrel=1
 pkgdesc='PKGBUILD for the Chameleon Ultra GUI'
 arch=('x86_64')
@@ -8,11 +8,6 @@ depends=('gtk3' 'zenity')
 makedepends=('flutter' 'clang' 'cmake' 'ninja' 'pkgconf' 'xz')
 source=("git+https://github.com/GameTec-live/ChameleonUltraGUI.git#branch=main")
 sha256sums=('SKIP')
-
-pkgver() {
-    cd "$pkgname"
-    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
-}
 
 prepare(){
     cd "ChameleonUltraGUI/chameleonultragui"
@@ -37,5 +32,5 @@ package() {
     # copy the bundled output to /opt
     cp -rdp --no-preserve=ownership . "$pkgdir/opt/$pkgname/"
     # symlink to /usr/bin so the app can be found in PATH
-    ln -s "/opt/$pkgname/chameleonultragui" "$pkgdir/usr/bin/$pkgname"
+    ln -s "/opt/$pkgname/chameleonultragui" "$pkgdir/usr/bin/chameleonultragui"
 }

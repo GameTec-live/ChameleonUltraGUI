@@ -181,3 +181,48 @@
                   fi
               done
               app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=IOS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID || true
+      build-aur:
+        runs-on: ubuntu-latest
+        defaults:
+          run:
+            working-directory: ./chameleonultragui
+        steps:
+          - uses: actions/checkout@v3
+            with:
+              fetch-depth: 100
+          - uses: webfactory/ssh-agent@v0.8.0
+            with:
+              ssh-private-key: ${{ secrets.AUR_KEY }}
+              
+          - name: configure git
+            run: |
+              git config --global user.email "github-actions[bot]@users.noreply.github.com"
+              git config --global user.name "github-actions[bot]"
+          - run: mv release-PKGBUILD PKGBUILD
+            working-directory: "./chameleonultragui/"
+          - name: Arch Linux update package          
+            uses: hapakaien/archlinux-package-action@v2.2.0
+            with:
+              path: ./chameleonultragui/PKGBUILD
+              pkgrel: ${{ github.run_number }}
+              srcinfo: true
+          - name: clone aur
+            run: git -c init.defaultbranch=master clone ssh://aur@aur.archlinux.org/chameleonultragui.git
+            working-directory: "./chameleonultragui/"
+          - name: copy PKGBUILD
+            run: cp ../PKGBUILD ./
+            working-directory: "./chameleonultragui/chameleonultragui/"
+          - name: copy .SRCINFO
+            run: cp ../.SRCINFO ./
+            working-directory: "./chameleonultragui/chameleonultragui/"
+          - name: commit
+            run: |
+              git add PKGBUILD
+              git add .SRCINFO
+              git commit -m "Update to ${{ github.run_number }}"
+            working-directory: "./chameleonultragui/chameleonultragui/"
+          - name: push
+            run: git push
+            working-directory: "./chameleonultragui/chameleonultragui/"
+
+
