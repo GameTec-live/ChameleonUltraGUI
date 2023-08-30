@@ -82,10 +82,11 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 100
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.10.6' # https://github.com/flutter/flutter/issues/132725
