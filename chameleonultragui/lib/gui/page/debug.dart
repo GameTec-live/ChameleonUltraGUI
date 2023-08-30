@@ -49,8 +49,10 @@ class DebugPage extends StatelessWidget {
           Text('${localizations.platform}: ${Platform.operatingSystem}'),
           Text('${localizations.android}: ${appState.onAndroid}'),
           Text('${localizations.serial_protocol}: ${appState.connector}'),
-          Text('${localizations.chameleon_connected}: ${appState.connector.connected}'),
-          Text('${localizations.chameleon_device_type}: ${appState.connector.device}'),
+          Text(
+              '${localizations.chameleon_connected}: ${appState.connector.connected}'),
+          Text(
+              '${localizations.chameleon_device_type}: ${appState.connector.device}'),
           ElevatedButton(
             onPressed: () async {
               await appState.communicator!.setReaderDeviceMode(true);
@@ -262,7 +264,8 @@ class DebugPage extends StatelessWidget {
               await appState.communicator!.factoryReset();
             },
             child: Column(children: [
-              Text('✅ ${localizations.safe_option}: ${localizations.restart_chamaleon} ✅'),
+              Text(
+                  '✅ ${localizations.safe_option}: ${localizations.restart_chameleon} ✅'),
             ]),
           ),
         ],

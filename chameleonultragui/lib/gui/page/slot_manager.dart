@@ -13,6 +13,52 @@ import 'package:provider/provider.dart';
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+class Tile extends StatelessWidget {
+  const Tile({
+    Key? key,
+    required this.index,
+    this.extent,
+    this.backgroundColor,
+    this.bottomSpace,
+  }) : super(key: key);
+
+  final int index;
+  final double? extent;
+  final double? bottomSpace;
+  final Color? backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final child = Container(
+      color: backgroundColor,
+      height: extent,
+      child: Center(
+        child: CircleAvatar(
+          minRadius: 20,
+          maxRadius: 20,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          child: Text('$index', style: const TextStyle(fontSize: 20)),
+        ),
+      ),
+    );
+
+    if (bottomSpace == null) {
+      return child;
+    }
+
+    return Column(
+      children: [
+        Expanded(child: child),
+        Container(
+          height: bottomSpace,
+          color: Colors.green,
+        )
+      ],
+    );
+  }
+}
+
 class SlotManagerPage extends StatefulWidget {
   const SlotManagerPage({super.key});
 
@@ -138,93 +184,90 @@ class SlotManagerPageState extends State<SlotManagerPage> {
               future: executeNextFunction(),
               builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
                 return Expanded(
-                  child: StaggeredGridView.countBuilder(
-                    padding: const EdgeInsets.all(20),
-                    crossAxisCount:
-                        MediaQuery.of(context).size.width >= 600 ? 2 : 1,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    itemCount: 8,
-                    itemBuilder: (BuildContext context, int index) {
-                      return Container(
-                        constraints: const BoxConstraints(maxHeight: 120),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            cardSelectDialog(context, index);
-                          },
-                          style: ButtonStyle(
-                            shape: MaterialStateProperty.all<
-                                RoundedRectangleBorder>(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18.0),
+                  child: AlignedGridView.count(
+                      padding: const EdgeInsets.all(20),
+                      crossAxisCount:
+                          MediaQuery.of(context).size.width >= 600 ? 2 : 1,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      itemCount: 8,
+                      itemBuilder: (BuildContext context, int index) {
+                        return Container(
+                          constraints: const BoxConstraints(maxHeight: 120),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              cardSelectDialog(context, index);
+                            },
+                            style: ButtonStyle(
+                              shape: MaterialStateProperty.all<
+                                  RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18.0),
+                                ),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                  top: 8.0, left: 8.0, bottom: 6.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.nfc,
+                                          color: enabledSlots[index]
+                                              ? Colors.green
+                                              : Colors.deepOrange),
+                                      const SizedBox(width: 5),
+                                      Text("${localizations.slot} ${index + 1}")
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.credit_card),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                          "${slotData[index]['hfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$1)})")
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            const Icon(Icons.wifi),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              "${slotData[index]['lfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$2)})",
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return SlotSettings(
+                                                  slot: index,
+                                                  refresh: refreshSlot);
+                                            },
+                                          );
+                                        },
+                                        icon: const Icon(Icons.settings),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                                top: 8.0, left: 8.0, bottom: 6.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.nfc,
-                                        color: enabledSlots[index]
-                                            ? Colors.green
-                                            : Colors.deepOrange),
-                                    const SizedBox(width: 5),
-                                    Text("${localizations.slot} ${index + 1}")
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    const Icon(Icons.credit_card),
-                                    const SizedBox(width: 5),
-                                    Text(
-                                        "${slotData[index]['hfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$1)})")
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          const Icon(Icons.wifi),
-                                          const SizedBox(width: 5),
-                                          Text(
-                                            "${slotData[index]['lfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$2)})",
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return SlotSettings(
-                                                slot: index,
-                                                refresh: refreshSlot);
-                                          },
-                                        );
-                                      },
-                                      icon: const Icon(Icons.settings),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                    staggeredTileBuilder: (int index) =>
-                        const StaggeredTile.fit(1),
-                  ),
+                        );
+                      }),
                 );
               },
             ),
@@ -446,8 +489,10 @@ class CardSearchDelegate extends SearchDelegate<String> {
 
               setUploadState(100);
 
-              await appState.communicator!.setSlotTagName(gridPosition,
-                  (card.name.isEmpty) ? localizations.no_name : card.name, TagFrequency.hf);
+              await appState.communicator!.setSlotTagName(
+                  gridPosition,
+                  (card.name.isEmpty) ? localizations.no_name : card.name,
+                  TagFrequency.hf);
               await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);
@@ -461,8 +506,10 @@ class CardSearchDelegate extends SearchDelegate<String> {
                   .setDefaultDataToSlot(gridPosition, card.tag);
               await appState.communicator!.setEM410XEmulatorID(
                   hexToBytes(card.uid.replaceAll(" ", "")));
-              await appState.communicator!.setSlotTagName(gridPosition,
-                  (card.name.isEmpty) ? localizations.no_name : card.name, TagFrequency.lf);
+              await appState.communicator!.setSlotTagName(
+                  gridPosition,
+                  (card.name.isEmpty) ? localizations.no_name : card.name,
+                  TagFrequency.lf);
               await appState.communicator!.saveSlotData();
               appState.changesMade();
               refresh(gridPosition);

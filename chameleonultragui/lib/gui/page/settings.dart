@@ -239,8 +239,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               },
               items: AppLocalizations.supportedLocales.map((locale) {
                 return DropdownMenuItem(
-                  value:
-                      locale.toLanguageTag(),
+                  value: locale.toLanguageTag(),
                   child:
                       Text(appState.sharedPreferencesProvider.getFlag(locale)),
                 );
@@ -296,7 +295,13 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   child: const Text(
                                       'https://github.com/GameTec-live/ChameleonUltraGUI')),
                               const SizedBox(height: 30),
-                              Text(localizations.thanks_for_support),
+                              GestureDetector(
+                                  onTap: () async {
+                                    await launchUrl(Uri.parse(
+                                        'https://opencollective.com/chameleon-ultra-gui'));
+                                  },
+                                  child:
+                                      Text(localizations.thanks_for_support)),
                               const SizedBox(height: 10),
                               Text(names,
                                   style: const TextStyle(

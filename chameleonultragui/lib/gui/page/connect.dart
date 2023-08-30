@@ -17,9 +17,10 @@ class ConnectPage extends StatelessWidget {
     var appState = context.watch<MyAppState>(); // Get State
     var localizations = AppLocalizations.of(context)!;
     return FutureBuilder(
-      future: appState.connector.connected
-          ? Future.value([])
-          : appState.connector.availableChameleons(false),
+      future:
+          (appState.connector.connected || appState.connector.pendingConnection)
+              ? Future.value([])
+              : appState.connector.availableChameleons(false),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -71,19 +72,20 @@ class ConnectPage extends StatelessWidget {
                                     context: context,
                                     builder: (BuildContext context) =>
                                         AlertDialog(
-                                      title: Text(
-                                          localizations.chamaleon_is_dfu),
+                                      title:
+                                          Text(localizations.chameleon_is_dfu),
                                       content: Text(
                                           localizations.firmware_is_corrupted),
                                       actions: <Widget>[
                                         TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, localizations.cancel),
+                                          onPressed: () => Navigator.pop(
+                                              context, localizations.cancel),
                                           child: Text(localizations.cancel),
                                         ),
                                         TextButton(
                                           onPressed: () async {
-                                            Navigator.pop(context, localizations.flash);
+                                            Navigator.pop(
+                                                context, localizations.flash);
                                             appState.changesMade();
                                             Uint8List applicationDat,
                                                 applicationBin;
@@ -113,11 +115,17 @@ class ConnectPage extends StatelessWidget {
                                     ),
                                   );
                                 } else {
+                                  if (chameleonDevice.type ==
+                                      ConnectionType.ble) {
+                                    appState.connector.pendingConnection = true;
+                                    appState.changesMade();
+                                  }
                                   await appState.connector
                                       .connectSpecificDevice(
                                           chameleonDevice.port);
                                   appState.communicator = ChameleonCommunicator(
                                       port: appState.connector);
+                                  appState.connector.pendingConnection = false;
                                   appState.changesMade();
                                 }
                               },

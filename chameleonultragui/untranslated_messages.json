@@ -1,1 +1,25 @@
-{}
+{
+  "de": [
+    "connecting_to_ble",
+    "default_ble_password",
+    "connection_might_take_some_time"
+  ],
+
+  "de_AT": [
+    "connecting_to_ble",
+    "default_ble_password",
+    "connection_might_take_some_time"
+  ],
+
+  "es": [
+    "connecting_to_ble",
+    "default_ble_password",
+    "connection_might_take_some_time"
+  ],
+
+  "ru": [
+    "connecting_to_ble",
+    "default_ble_password",
+    "connection_might_take_some_time"
+  ]
+}

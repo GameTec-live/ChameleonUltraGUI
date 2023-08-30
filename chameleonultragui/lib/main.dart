@@ -20,6 +20,7 @@ import 'package:chameleonultragui/gui/page/flashing.dart';
 import 'package:chameleonultragui/gui/page/mfkey32.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/gui/page/write_card.dart';
+import 'package:chameleonultragui/gui/page/pending_connection.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -154,14 +155,18 @@ class _MyHomePageState extends State<MyHomePage> {
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
-        if (appState.connector.connected) {
-          if (appState.connector.isDFU) {
-            page = const FlashingPage();
-          } else {
-            page = const HomePage();
-          }
+        if (appState.connector.pendingConnection) {
+          page = const PendingConnectionPage();
         } else {
-          page = const ConnectPage();
+          if (appState.connector.connected) {
+            if (appState.connector.isDFU) {
+              page = const FlashingPage();
+            } else {
+              page = const HomePage();
+            }
+          } else {
+            page = const ConnectPage();
+          }
         }
         break;
       case 1:
