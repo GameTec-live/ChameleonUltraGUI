@@ -71,19 +71,20 @@ class ConnectPage extends StatelessWidget {
                                     context: context,
                                     builder: (BuildContext context) =>
                                         AlertDialog(
-                                      title: Text(
-                                          localizations.chamaleon_is_dfu),
+                                      title:
+                                          Text(localizations.chameleon_is_dfu),
                                       content: Text(
                                           localizations.firmware_is_corrupted),
                                       actions: <Widget>[
                                         TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, localizations.cancel),
+                                          onPressed: () => Navigator.pop(
+                                              context, localizations.cancel),
                                           child: Text(localizations.cancel),
                                         ),
                                         TextButton(
                                           onPressed: () async {
-                                            Navigator.pop(context, localizations.flash);
+                                            Navigator.pop(
+                                                context, localizations.flash);
                                             appState.changesMade();
                                             Uint8List applicationDat,
                                                 applicationBin;
