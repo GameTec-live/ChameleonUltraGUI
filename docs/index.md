@@ -4,8 +4,7 @@
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Installation](#installation)
-    - [Windows](#windows)
-    - [Linux](#linux)
+    - [Windows, Linux](#windows-linux)
     - [MacOS](#macos)
     - [Android](#android)
     - [iOS / iPadOS](#ios--ipados)
@@ -35,20 +34,17 @@ This section of the documentation will guide you through the process of installi
 
 The installation process is designed to be intuitive and straightforward. We'll provide you with clear instructions and visual aids to help you complete each step efficiently. If you encounter any issues during installation, we've included troubleshooting tips to assist you in resolving common challenges.
 
-### Windows
-**Not available yet**
-
-### Linux
-**Not available yet**
+### Windows, Linux
+[Follow this link](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml) and download the latest build for your system. You can find the installer in the `Artifacts` section of a `Workflow`.
 
 ### MacOS
-**Not available yet**
+Download it on Apple App Store: [Chamaleon Ultra GUI](https://apps.apple.com/app/chameleon-ultra-gui/id6462919364)
 
 ### Android
 Download it on Google Play Store: [Chamaleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra)
 
 ### iOS / iPadOS
-Download it on Apple App Store: [Chamaleon Ultra GUI - Not available yet](#)
+Download it on Apple App Store: [Chamaleon Ultra GUI](https://apps.apple.com/app/chameleon-ultra-gui/id6462919364)
 
 ### Web
 **Not available yet**
@@ -63,7 +59,8 @@ To traslate the app to your language, please follow the next steps (example with
 3. On your forked repository, create a new branch with the name of your language in English (e.g. `translate-spanish`).
 4. Download the file with the translations from Crowdin and put it in the `chameleonultragui/lib/l10n` folder. Maybe you need to modify the name of the file to match the name of your language in English (e.g. `app_es.arb`). Inside this file, `@@locale` must be the same as the name of the file (e.g. `es`).
 5. Go `chameleonultragui/sharedprefsprovider.dart` and inside `getFlag` function add a case with your language (e.g. `case 'es': return 'Español';`).
-6. Run `flutter pub add intl:any`
+6. Remove the files inside `.dart_tool/flutter_gen/gen_i10n` and run `flutter pub add intl:any`
+7. PR your changes to the `main` branch of the original project.
 
 ## License
 ## Credits
