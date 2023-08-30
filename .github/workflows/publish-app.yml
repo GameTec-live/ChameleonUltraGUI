@@ -6,17 +6,6 @@
             branches:
                 - main
         workflow_dispatch:
-          inputs:
-            publish_track:
-              description: 'Publishing Track'
-              required: true
-              default: 'production'
-              type: choice
-              options:
-                - 'production'
-                - 'beta'
-                - 'alpha'
-                - 'internal'
     
     jobs:
       build-android:
@@ -85,7 +74,8 @@
               fetch-depth: 100
           - uses: subosito/flutter-action@v2
             with:
-              channel: 'beta'
+              channel: 'stable'
+          - run: sudo chown -R $USER . && sudo chmod -R a+rwx .
           - name: Enable macOS
             run: flutter config --enable-macos-desktop
           - name: Install tools
@@ -113,7 +103,9 @@
               keychain initialize
               keychain add-certificates
               xcode-project use-profiles
+              sudo chown -R $USER . && sudo chmod -R a+rwx .
               flutter build macos --release --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
+              sudo chown -R $USER . && sudo chmod -R a+rwx .
               APP_NAME=$(find $(pwd) -name "*.app")
               PACKAGE_NAME=$(basename "$APP_NAME" .app).pkg
               xcrun productbuild --component "$APP_NAME" /Applications/ unsigned.pkg
@@ -124,6 +116,7 @@
                           | .common_name][0]' \
                         | xargs)
               xcrun productsign --sign "$INSTALLER_CERT_NAME" unsigned.pkg "$PACKAGE_NAME"
+              sudo chown -R $USER . && sudo chmod -R a+rwx .
               rm -f unsigned.pkg
               app-store-connect publish --path "$PACKAGE_NAME"
               while [[ -z "$BUILD_ID" ]]; do
