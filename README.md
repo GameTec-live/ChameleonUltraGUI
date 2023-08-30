@@ -11,10 +11,9 @@ App available in those stores:
 - Google Play: https://play.google.com/store/apps/details?id=io.chameleon.ultra
 - F-Store: not yet
 - App Store: https://apps.apple.com/app/chameleon-ultra-gui/id6462919364
-- Arch Linux (AUR): not yet
+- Arch Linux (AUR): https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
 - Flathub: not yet
 - Chocolatey (Windows): not yet
-- Web (for Chromium-based browsers): not yet
 
 Note: Under some Linux systems, especially ones running KDE desktop environments, you may need to install the `zenity` package for the file picker to work correctly.
 
@@ -29,6 +28,11 @@ Key:
 #### Note for Linux users:
 You might need to add your user to the `dialout` or, on Arch Linux, to the `uucp` group for the app to talk to the device. If your user is not in this group, you may get serial or permission errors.
 It is also highly recommended to either uninstall or disable ModemManager (`sudo systemctl disable --now modemmanager`) as many distros ship ModemManager and it may interfere with communication.
+
+## Buy a Chameleon Ultra
+- [Sneak Tech](https://sneaktechnology.com/product/chameleon-ultra/)
+- [KSEC](https://labs.ksec.co.uk/product/proxgrind-chameleon-ultra/)
+- [Lab401](https://lab401.com/products/chameleon-ultra)
 
 ## Contributing
 Contributions are welcome, most stuff that needs to be done can either be found in our [issues](https://github.com/GameTec-live/ChameleonUltraGUI/issues) or on the [Project board](https://github.com/users/GameTec-live/projects/2)
