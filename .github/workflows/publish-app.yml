@@ -85,7 +85,7 @@
               fetch-depth: 100
           - uses: subosito/flutter-action@v2
             with:
-              channel: 'stable'
+              channel: 'dev'
           - name: Enable macOS
             run: flutter config --enable-macos-desktop
           - name: Install tools
