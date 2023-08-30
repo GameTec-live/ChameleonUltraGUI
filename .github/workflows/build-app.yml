@@ -80,18 +80,18 @@ jobs:
           name: linux-debian
           path: chameleonultragui/debian/packages
 
-      build-macos:
-        runs-on: macos-latest
-        steps:
-          - uses: actions/checkout@v3
-            with:
-              fetch-depth: 100
-          - uses: subosito/flutter-action@v2
-            with:
-              flutter-version: '3.10.6' # https://github.com/flutter/flutter/issues/132725
-              channel: 'any'
-          - name: Enable macOS
-            run: flutter config --enable-macos-desktop
-          - name: Install tools
-            run: brew install automake libtool create-dmg
-          - run: flutter build macos --release
+    build-macos:
+      runs-on: macos-latest
+      steps:
+        - uses: actions/checkout@v3
+          with:
+            fetch-depth: 100
+        - uses: subosito/flutter-action@v2
+          with:
+            flutter-version: '3.10.6' # https://github.com/flutter/flutter/issues/132725
+            channel: 'any'
+        - name: Enable macOS
+          run: flutter config --enable-macos-desktop
+        - name: Install tools
+          run: brew install automake libtool create-dmg
+        - run: flutter build macos --release
