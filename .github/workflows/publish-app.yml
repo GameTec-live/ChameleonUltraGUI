@@ -193,19 +193,25 @@
           - uses: webfactory/ssh-agent@v0.8.0
             with:
               ssh-private-key: ${{ secrets.AUR_KEY }}
-              
+          - name: configure ssh
+            run: |
+              mkdir -p ~/.ssh
+              ssh-keyscan -t rsa aur.archlinux.org >> ~/.ssh/known_hosts
+              echo -e "Host aur.archlinux.org\n\tStrictHostKeyChecking no\n\tUser aur" >> ~/.ssh/config
           - name: configure git
             run: |
               git config --global user.email "github-actions[bot]@users.noreply.github.com"
               git config --global user.name "github-actions[bot]"
-          - run: mv release-PKGBUILD PKGBUILD
+          - run: cp ../release-PKGBUILD PKGBUILD
             working-directory: "./chameleonultragui/"
-          - name: Arch Linux update package          
-            uses: hapakaien/archlinux-package-action@v2.2.0
-            with:
-              path: ./chameleonultragui/PKGBUILD
-              pkgrel: ${{ github.run_number }}
-              srcinfo: true
+          - run: cp ../release-.SRCINFO .SRCINFO
+            working-directory: "./chameleonultragui/"
+          - name: Update pakagerel in PKGBUILD
+            run: sed -i "s/pkgrel=.*/pkgrel=${{ github.run_number }}/" PKGBUILD
+            working-directory: "./chameleonultragui/"       
+          - name: Update pkgrel in .SRCINFO
+            run: sed -i "s/pkgrel = .*/pkgrel = ${{ github.run_number }}/" .SRCINFO
+            working-directory: "./chameleonultragui/"
           - name: clone aur
             run: git -c init.defaultbranch=master clone ssh://aur@aur.archlinux.org/chameleonultragui.git
             working-directory: "./chameleonultragui/"
