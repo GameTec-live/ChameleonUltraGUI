@@ -317,6 +317,8 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return 'Русский';
       case 'fr':
         return 'Français';
+      case 'ko':
+        return 'Korean';
       default:
         return 'English';
     }
