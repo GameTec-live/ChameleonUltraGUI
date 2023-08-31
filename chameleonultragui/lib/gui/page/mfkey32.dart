@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
@@ -20,6 +22,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   late Future<(bool, int)> detectionStatusFuture;
   bool isDetectionMode = false;
   int detectionCount = -1;
+  List<Uint8List> keys = [];
 
   @override
   void initState() {
@@ -68,6 +71,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                 nr1Enc: item1.nr,
                 ar1Enc: item1.ar,
               );
+              keys.add(
+                  u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8));
               controller.text +=
                   "\nUID: ${bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase()} block $block key $key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8)).toUpperCase()}";
               controller.text = controller.text.trim();
@@ -129,9 +134,55 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                       onPressed: (detectionCount > 0)
                           ? () async {
                               await handleMfkeyCalculation();
+                              print(keys);
+                              showDialog<String>(
+                                  context: context,
+                                  builder: (BuildContext context) =>
+                                      AlertDialog(
+                                          title: Text("Save recovered Keys"),
+                                          content: Center(
+                                              child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                  "Where do you want to save the recovered keys?"),
+                                              const SizedBox(height: 10),
+                                              Row(
+                                                children: [
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text("Cancel"),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text("Save to file"),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(
+                                                        "Append to existing Dictionary"),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(
+                                                        "Save to new Dictionary"),
+                                                  ),
+                                                ],
+                                              )
+                                            ],
+                                          ))));
                             }
                           : null,
-                      child: Text(localizations.recover_keys_nonce(detectionCount)),
+                      child: Text(
+                          localizations.recover_keys_nonce(detectionCount)),
                     ),
                     const SizedBox(height: 16.0),
                     Expanded(
