@@ -33,7 +33,6 @@ class AndroidSerial extends AbstractSerial {
   @override
   Future<bool> connectSpecificDevice(devicePort) async {
     if (devicePort.contains(":")) {
-      log.d(devicePort);
       return bleSerial.connectSpecificDevice(devicePort);
     } else {
       return mobileSerial.connectSpecificDevice(devicePort);
@@ -103,4 +102,11 @@ class AndroidSerial extends AbstractSerial {
 
   @override
   bool get isDFU => (bleSerial.isDFU || mobileSerial.isDFU);
+
+  @override
+  bool get pendingConnection => bleSerial.pendingConnection;
+
+  @override
+  set pendingConnection(pendingConnection) =>
+      {bleSerial.pendingConnection = pendingConnection};
 }

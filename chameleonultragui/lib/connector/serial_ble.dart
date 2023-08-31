@@ -28,8 +28,8 @@ class BLESerial extends AbstractSerial {
 
   @override
   Future<List> availableDevices() async {
-    if (inSearch && Platform.isIOS) {
-      log.w("Multiple searches in one time not allowed on iOS");
+    if (inSearch) {
+      log.w("Multiple searches in one time not allowed! FIXME");
       return [];
     }
 
@@ -140,6 +140,7 @@ class BLESerial extends AbstractSerial {
     }
 
     await performDisconnect();
+    pendingConnection = true;
     connection = flutterReactiveBle
         .connectToAdvertisingDevice(
       id: devicePort,
@@ -149,9 +150,9 @@ class BLESerial extends AbstractSerial {
         .listen((connectionState) async {
       log.w(connectionState);
       if (connectionState.connectionState == DeviceConnectionState.connected) {
-        connected = true;
-
         if (chameleonMap[devicePort]!.dfu) {
+          connected = true;
+          pendingConnection = false;
           txCharacteristic = QualifiedCharacteristic(
               serviceId: dfuUUID,
               characteristicId: dfuControl,
@@ -167,7 +168,8 @@ class BLESerial extends AbstractSerial {
                     "Received unexpected data: ${bytesToHex(Uint8List.fromList(data))}");
               }
             }
-          }, onError: (dynamic error) {
+          }, onError: (dynamic error) async {
+            await performDisconnect();
             log.e(error);
           });
 
@@ -185,6 +187,7 @@ class BLESerial extends AbstractSerial {
           device = chameleonMap[devicePort]!.device;
 
           isDFU = true;
+          completer.complete(true);
         } else {
           txCharacteristic = QualifiedCharacteristic(
               serviceId: nrfUUID,
@@ -201,7 +204,8 @@ class BLESerial extends AbstractSerial {
                     "Received unexpected data: ${bytesToHex(Uint8List.fromList(data))}");
               }
             }
-          }, onError: (dynamic error) {
+          }, onError: (dynamic error) async {
+            await performDisconnect();
             log.e(error);
           });
 
@@ -210,17 +214,31 @@ class BLESerial extends AbstractSerial {
               characteristicId: uartRX,
               deviceId: connectionState.deviceId);
 
-          portName = devicePort;
-          device = chameleonMap[devicePort]!.device;
+          try {
+            await flutterReactiveBle.writeCharacteristicWithResponse(
+                rxCharacteristic!,
+                value: Uint8List(0));
 
-          connectionType = ConnectionType.ble;
-          isDFU = false;
+            connected = true;
+            portName = devicePort;
+            device = chameleonMap[devicePort]!.device;
+
+            connectionType = ConnectionType.ble;
+            isDFU = false;
+
+            completer.complete(true);
+          } catch (_) {
+            try {
+              completer.complete(false);
+            } catch (_) {}
+          }
         }
-
-        completer.complete(true);
       } else if (connectionState.connectionState ==
           DeviceConnectionState.disconnected) {
-        completer.complete(false);
+        await performDisconnect();
+        try {
+          completer.complete(false);
+        } catch (_) {}
       }
     }, onError: (Object error) {
       log.e(error);
@@ -236,6 +254,7 @@ class BLESerial extends AbstractSerial {
     connectionType = ConnectionType.none;
     isOpen = false;
     messageCallback = null;
+    pendingConnection = false;
     if (connection != null) {
       await connection!.cancel();
       connected = false;

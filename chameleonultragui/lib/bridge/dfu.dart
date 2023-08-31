@@ -255,7 +255,7 @@ class DFUCommunicator {
     for (var offset = 0; offset < firmwareBytes.length; offset += length) {
       var tries = 0;
       var crcBackup = crc;
-      for (; tries < 10; tries++) {
+      for (; tries < ((Platform.isIOS) ? 50 : 10); tries++) {
         await createObject(
             objectType, min(firmwareBytes.length - offset, length));
 

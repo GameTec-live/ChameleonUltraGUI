@@ -79,3 +79,19 @@ jobs:
         with:
           name: linux-debian
           path: chameleonultragui/debian/packages
+
+  build-macos:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Enable macOS
+        run: flutter config --enable-macos-desktop
+      - name: Install tools
+        run: brew install automake libtool create-dmg
+      - run: flutter build macos --release

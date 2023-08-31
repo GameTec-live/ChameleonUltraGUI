@@ -24,6 +24,7 @@ class AbstractSerial {
   bool connected = false;
   bool isOpen = false;
   bool isDFU = false;
+  bool pendingConnection = false;
   String portName = "None";
   ConnectionType connectionType = ConnectionType.none;
   dynamic messageCallback;
