@@ -98,4 +98,4 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: macos
-          path: chameleonultragui/build/macos/Build/Products/Release
+          path: chameleonultragui/build/macos/Build/Products/Release/Chamaleon Ultra GUI.app
