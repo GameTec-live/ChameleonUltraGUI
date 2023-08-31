@@ -284,16 +284,13 @@ class SharedPreferencesProvider extends ChangeNotifier {
       var ccode = loc.toString().split("-").last;
       if (!AppLocalizations.supportedLocales.contains(Locale(lcode, ccode))) {
         return const Locale('en');
-      }
-      else {
+      } else {
         return Locale(lcode, ccode);
       }
-    }
-    else if(loc != null) {
+    } else if (loc != null) {
       if (!AppLocalizations.supportedLocales.contains(Locale(loc.toString()))) {
         return const Locale('en');
-      }
-      else {
+      } else {
         return Locale(loc.toString());
       }
     }
@@ -319,6 +316,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return 'Français';
       case 'ko':
         return '한국어';
+
       case 'en':
         return 'English';
       default:

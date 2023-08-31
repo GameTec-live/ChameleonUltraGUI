@@ -1,7 +1,7 @@
 # Chameleon Ultra GUI
 A GUI for the Chameleon Ultra/Chameleon Lite written in Flutter for cross platform operation
 
-[![Auto build](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml) 
+[![Auto build](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml) 
 [![Open collective](https://opencollective.com/chameleon-ultra-gui/tiers/badge.svg)](https://opencollective.com/chameleon-ultra-gui#support)
 
 ## Installation
@@ -10,7 +10,7 @@ You can download the latest builds from GitHub Actions [here](https://github.com
 App available in those stores:
 - Google Play: https://play.google.com/store/apps/details?id=io.chameleon.ultra
 - F-Store: not yet
-- App Store: https://apps.apple.com/app/chameleon-ultra-gui/id6462919364 (macOS only)
+- App Store: https://apps.apple.com/app/chameleon-ultra-gui/id6462919364
 - Arch Linux (AUR): https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
 - Flathub: not yet
 - Chocolatey (Windows): not yet
@@ -39,7 +39,7 @@ Contributions are welcome, most stuff that needs to be done can either be found 
 
 ## Translations
 
-If you want to collaborate by adding your language to the application, you can do it through [our Crowdin project](https://crowdin.com/project/chameleon-ultra-gui).
+If you want to collaborate by adding your language to the application, you can do it through [our Crowdin project](https://crowdin.com/project/chameleon-ultra-gui). Do not contribute files into `chameleonultragui/lib/l100n/app_*.arb`. All translations should be added only to Crowdin. If your language is missing, you can create issue and ask to enable it. "Chameleon Ultra GUI", "Chameleon" and other trademarks should not be translated.
 
 ## Screenshots
 ![Connect Page](/screenshots/1.png)

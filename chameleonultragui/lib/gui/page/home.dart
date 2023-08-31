@@ -28,11 +28,11 @@ class HomePageState extends State<HomePage> {
 
   Future<(Icon, String, List<String>, bool)> getFutureData() async {
     var appState = context.read<MyAppState>();
-    List<(TagType, TagType)> usedSlots;
+    List<(TagType, TagType)> usedSlots = [];
     try {
       usedSlots = await appState.communicator!.getUsedSlots();
-    } catch (_) {
-      usedSlots = [];
+    } catch (e) {
+      appState.log.e(e);
     }
 
     return (
