@@ -3,6 +3,7 @@ import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -101,10 +102,64 @@ class SlotSettingsState extends State<SlotSettings> {
             appState.connector.performDisconnect();
             return AlertDialog(
                 title: Text(localizations.slot_settings),
-                content: Text('${localizations.error}: ${snapshot.error.toString()}'));
+                content: Text(
+                    '${localizations.error}: ${snapshot.error.toString()}'));
           } else {
             return AlertDialog(
-                title: Text(localizations.slot_settings),
+                title: Row(
+                  children: [
+                    Text(localizations.slot_settings),
+                    const Spacer(
+                      flex: 1,
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                            onPressed: () {
+                              showDialog<String>(
+                                context: context,
+                                builder: (BuildContext context) => AlertDialog(
+                                  title: Text("Edit Slot Data"),
+                                  content: Placeholder(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.edit)
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                            onPressed: () {
+                              showDialog<String>(
+                                context: context,
+                                builder: (BuildContext context) => AlertDialog(
+                                  title: Text("Download Slot Data"),
+                                  content: Text(
+                                      "Where do you want to save the data?"),
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: () {},
+                                      child: Text("Save to File"),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                      
+                                      },
+                                      child: Text("Create a new Card"),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {},
+                                      child: Text("Overwrite Card"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.download),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
                 content: SingleChildScrollView(
                     child: Column(children: [
                   Row(
@@ -122,7 +177,9 @@ class SlotSettingsState extends State<SlotSettings> {
                           await appState.communicator!
                               .deleteSlotInfo(widget.slot, TagFrequency.hf);
                           await appState.communicator!.setSlotTagName(
-                              widget.slot, localizations.empty, TagFrequency.hf);
+                              widget.slot,
+                              localizations.empty,
+                              TagFrequency.hf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
@@ -151,7 +208,9 @@ class SlotSettingsState extends State<SlotSettings> {
                           await appState.communicator!
                               .deleteSlotInfo(widget.slot, TagFrequency.lf);
                           await appState.communicator!.setSlotTagName(
-                              widget.slot, localizations.empty, TagFrequency.lf);
+                              widget.slot,
+                              localizations.empty,
+                              TagFrequency.lf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
@@ -238,8 +297,7 @@ class SlotSettingsState extends State<SlotSettings> {
                           ...(detectionCount == 0)
                               ? [
                                   const SizedBox(height: 8),
-                                  Text(
-                                      localizations.present_cham_reader_keys,
+                                  Text(localizations.present_cham_reader_keys,
                                       textScaleFactor: 0.8)
                                 ]
                               : [
@@ -257,7 +315,8 @@ class SlotSettingsState extends State<SlotSettings> {
                                             child: Row(
                                               children: [
                                                 const Icon(Icons.lock_open),
-                                                Text(localizations.recover_keys),
+                                                Text(
+                                                    localizations.recover_keys),
                                               ],
                                             )),
                                       ]),
@@ -272,7 +331,12 @@ class SlotSettingsState extends State<SlotSettings> {
                   Text(localizations.write_mode),
                   const SizedBox(height: 8),
                   ToggleButtonsWrapper(
-                      items: [localizations.normal, localizations.decline, localizations.deceive, localizations.shadow],
+                      items: [
+                        localizations.normal,
+                        localizations.decline,
+                        localizations.deceive,
+                        localizations.shadow
+                      ],
                       selectedValue: writeMode.value,
                       onChange: (int index) async {
                         await appState.communicator!.activateSlot(widget.slot);
