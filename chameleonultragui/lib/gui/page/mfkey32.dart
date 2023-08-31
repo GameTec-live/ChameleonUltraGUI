@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+import 'dart:io';
+import 'dart:convert';
 
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
@@ -6,6 +8,9 @@ import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
+import 'package:uuid/uuid.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -23,6 +28,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   bool isDetectionMode = false;
   int detectionCount = -1;
   List<Uint8List> keys = [];
+  bool saveKeys = false;
 
   @override
   void initState() {
@@ -85,6 +91,28 @@ class Mfkey32PageState extends State<Mfkey32Page> {
     }
   }
 
+  List<Uint8List> deduplicateKeys(List<Uint8List> keys) {
+    List<Uint8List> result = [];
+    Set<String> set = Set<String>();
+    for (Uint8List item in keys) {
+      String str = String.fromCharCodes(item);
+      if (!set.contains(str)) {
+        set.add(str);
+        result.add(item);
+      }
+    }
+    return result;
+  }
+
+  String convertUintToDictFile(List<Uint8List> keys) {
+    List<Uint8List> dekeys = deduplicateKeys(keys);
+    String filecontents = "";
+    for (Uint8List key in dekeys) {
+      filecontents += "${bytesToHex(key).toUpperCase()}\n";
+    }
+    return filecontents;
+  }
+
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
@@ -134,55 +162,69 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                       onPressed: (detectionCount > 0)
                           ? () async {
                               await handleMfkeyCalculation();
-                              print(keys);
-                              showDialog<String>(
-                                  context: context,
-                                  builder: (BuildContext context) =>
-                                      AlertDialog(
-                                          title: Text("Save recovered Keys"),
-                                          content: Center(
-                                              child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                  "Where do you want to save the recovered keys?"),
-                                              const SizedBox(height: 10),
-                                              Row(
-                                                children: [
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: Text("Cancel"),
-                                                  ),
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: Text("Save to file"),
-                                                  ),
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: Text(
-                                                        "Append to existing Dictionary"),
-                                                  ),
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: Text(
-                                                        "Save to new Dictionary"),
-                                                  ),
-                                                ],
-                                              )
-                                            ],
-                                          ))));
+                              setState(() {
+                                saveKeys = true;
+                              });
                             }
                           : null,
                       child: Text(
                           localizations.recover_keys_nonce(detectionCount)),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Visibility(
+                      visible: saveKeys,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          showDialog<String>(
+                              context: context,
+                              builder: (BuildContext context) => AlertDialog(
+                                    title: Text("Save recovered Keys"),
+                                    content: Text(
+                                        "Where do you want to save the recovered keys?"),
+                                    actions: [
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          String filecontents =
+                                              convertUintToDictFile(keys);
+                                          String name = Uuid().v4();
+                                          try {
+                                            await FileSaver.instance.saveAs(
+                                                name: name,
+                                                bytes: const Utf8Encoder().convert(filecontents),
+                                                ext: 'dict',
+                                                mimeType: MimeType.other);
+                                          } on UnimplementedError catch (_) {
+                                            String? outputFile = await FilePicker.platform.saveFile(
+                                              dialogTitle: '${localizations.output_file}:',
+                                              fileName: '${name}.dict',
+                                            );
+                                            if (outputFile != null) {
+                                              var file = File(outputFile);
+                                              await file.writeAsBytes(const Utf8Encoder().convert(filecontents));
+                                            }
+                                          }
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text("Save to file"),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                            "Append to existing Dictionary"),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text("Save to new Dictionary"),
+                                      ),
+                                    ],
+                                  ));
+                        },
+                        child: Text("Save recovered Keys"),
+                      ),
                     ),
                     const SizedBox(height: 16.0),
                     Expanded(
