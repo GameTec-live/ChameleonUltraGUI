@@ -316,8 +316,11 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return 'Français';
       case 'ko':
         return '한국어';
-      default:
+
+      case 'en':
         return 'English';
+      default:
+        return '------';
     }
   }
 }

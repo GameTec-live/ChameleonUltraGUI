@@ -176,5 +176,9 @@
     "select_save_format": "Speicherformat auswählen",
     "key_count": "Schlüssel Anzahl",
     "all": "Alle",
-    "no_name": "Kein Name"
+
+    "no_name": "Kein Name",
+    "connecting_to_ble": "Connecting to BLE device...",
+    "default_ble_password": "Default BLE connection password is 123456",
+    "connection_might_take_some_time": "First connection might take some time"
 }
