@@ -142,7 +142,14 @@ class SlotSettingsState extends State<SlotSettings> {
                                     ),
                                     ElevatedButton(
                                       onPressed: () {
-                                      
+                                        var tag = CardSave(
+                                          id: id,
+                                          uid: uid,
+                                          name: name,
+                                          sak: sak,
+                                          atqa: atqa,
+                                          tag: tag
+                                        );
                                       },
                                       child: Text("Create a new Card"),
                                     ),
