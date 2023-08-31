@@ -269,7 +269,7 @@ class HomePageState extends State<HomePage> {
                                           ? "Ultra"
                                           : "Lite")),
                                   action: SnackBarAction(
-                                    label: 'Close',
+                                    label: localizations.close,
                                     onPressed: () {},
                                   ),
                                 );
@@ -284,7 +284,7 @@ class HomePageState extends State<HomePage> {
                                           ? "Ultra"
                                           : "Lite")),
                                   action: SnackBarAction(
-                                    label: 'Close',
+                                    label: localizations.close,
                                     onPressed: () {
                                       ScaffoldMessenger.of(context)
                                           .hideCurrentSnackBar();
