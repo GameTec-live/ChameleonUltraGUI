@@ -177,7 +177,7 @@
     "key_count": "Nombre de clés",
     "all": "Tout",
     "no_name": "Aucun nom",
-    "connecting_to_ble": "Connecting to BLE device...",
-    "default_ble_password": "Default BLE connection password is 123456",
-    "connection_might_take_some_time": "First connection might take some time"
+    "connecting_to_ble": "Connexion à l'appareil BLE...",
+    "default_ble_password": "Le mot de passe de connexion BLE par défaut est 123456",
+    "connection_might_take_some_time": "La première connexion peut prendre un certain temps"
 }
