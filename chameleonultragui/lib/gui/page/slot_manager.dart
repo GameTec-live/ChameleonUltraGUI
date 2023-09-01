@@ -44,7 +44,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   bool onlyOneSlot = false;
 
   Future<void> executeNextFunction() async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     if (currentFunctionIndex == 0 || onlyOneSlot) {
       try {
@@ -111,7 +111,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       currentFunctionIndex = slot;
       onlyOneSlot = true;
     });
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     appState.changesMade();
   }
 
@@ -119,7 +119,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     setState(() {
       progress = progressBar;
     });
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     appState.changesMade();
   }
 
@@ -236,7 +236,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   }
 
   Future<String?> cardSelectDialog(BuildContext context, int gridPosition) {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     var tags = appState.sharedPreferencesProvider.getCards();
 
     // Don't allow user to upload more tags while already uploading dump
@@ -368,7 +368,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
                 (filter == SearchFilter.lf &&
                     chameleonTagToFrequency(card.tag) == TagFrequency.lf))));
 
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
 
     return ListView.builder(
       itemCount: results.length,

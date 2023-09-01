@@ -35,7 +35,7 @@ class SlotSettingsState extends State<SlotSettings> {
   }
 
   Future<void> fetchInfo() async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     if (hfName.isEmpty) {
       try {
@@ -86,7 +86,7 @@ class SlotSettingsState extends State<SlotSettings> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<ChameleonState>();
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
     return FutureBuilder(

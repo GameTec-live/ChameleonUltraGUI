@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider.value(value: _sharedPreferencesProvider),
         ChangeNotifierProvider(
-          create: (context) => ChameleonState(_sharedPreferencesProvider),
+          create: (context) => ChameleonGUIState(_sharedPreferencesProvider),
         ),
       ],
       child: MaterialApp(
@@ -72,7 +72,7 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark, // Dark Theme
         ),
         themeMode: _sharedPreferencesProvider.getTheme(), // Dark Theme
-        home: const ChameleonPage(),
+        home: const MainPage(),
       ),
     );
 
@@ -83,9 +83,9 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class ChameleonState extends ChangeNotifier {
+class ChameleonGUIState extends ChangeNotifier {
   final SharedPreferencesProvider sharedPreferencesProvider;
-  ChameleonState(this.sharedPreferencesProvider);
+  ChameleonGUIState(this.sharedPreferencesProvider);
 
 // Android uses AndroidSerial, iOS can only use BLESerial
 // The rest (desktops?) can use NativeSerial
@@ -114,21 +114,21 @@ class ChameleonState extends ChangeNotifier {
   }
 }
 
-class ChameleonPage extends StatefulWidget {
+class MainPage extends StatefulWidget {
   // Main Page
-  const ChameleonPage({super.key});
+  const MainPage({super.key});
 
   @override
-  State<ChameleonPage> createState() => _ChameleonPageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
-class _ChameleonPageState extends State<ChameleonPage> {
+class _MainPageState extends State<MainPage> {
   // Main Page State, Sidebar visible, Navigation
   var selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<ChameleonState>(); // Get State
+    var appState = context.watch<ChameleonGUIState>(); // Get State
     if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {
@@ -280,7 +280,7 @@ class BottomProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<ChameleonState>();
+    var appState = context.watch<ChameleonGUIState>();
     return (appState.connector.connected && appState.connector.isDFU)
         ? LinearProgressIndicator(
             value: appState.progress,

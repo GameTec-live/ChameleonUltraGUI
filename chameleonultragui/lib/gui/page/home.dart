@@ -27,7 +27,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<(Icon, String, List<String>, bool)> getFutureData() async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     List<(TagType, TagType)> usedSlots = [];
     try {
       usedSlots = await appState.communicator!.getUsedSlots();
@@ -44,7 +44,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<Icon> getBatteryChargeIcon() async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     int charge = 0;
 
     try {
@@ -91,7 +91,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<List<String>> getVersion() async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     String commitHash = "";
     String firmwareVersion =
         numToVerCode(await appState.communicator!.getFirmwareVersion());
@@ -112,13 +112,13 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<bool> isReaderDeviceMode() async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     return await appState.communicator!.isReaderDeviceMode();
   }
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     return FutureBuilder(
         future: getFutureData(),

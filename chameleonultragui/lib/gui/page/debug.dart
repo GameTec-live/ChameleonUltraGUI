@@ -20,7 +20,7 @@ class DebugPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<ChameleonState>(); // Get State
+    var appState = context.watch<ChameleonGUIState>(); // Get State
     var localizations = AppLocalizations.of(context)!;
     return Center(
       child: Column(

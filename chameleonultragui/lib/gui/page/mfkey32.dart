@@ -28,7 +28,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   }
 
   Future<(bool, int)> getMf1DetectionStatus() async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
 
     return (
       await appState.communicator!.isMf1DetectionMode(),
@@ -46,7 +46,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   }
 
   Future<void> handleMfkeyCalculation() async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
 
     var detections = await appState.communicator!.getMf1DetectionResult(0);
     for (var item in detections.entries) {

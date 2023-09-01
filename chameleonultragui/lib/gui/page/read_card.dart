@@ -96,7 +96,7 @@ class ReadCardPage extends StatefulWidget {
 
 class ReadCardPageState extends State<ReadCardPage> {
   ChameleonReadTagStatus status = ChameleonReadTagStatus();
-  Future<void> readHFInfo(ChameleonState appState) async {
+  Future<void> readHFInfo(ChameleonGUIState appState) async {
     status.validKeys = List.generate(80, (_) => Uint8List(0));
     status.checkMarks = List.generate(80, (_) => ChameleonKeyCheckmark.none);
 
@@ -151,7 +151,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> readLFInfo(ChameleonState appState) async {
+  Future<void> readLFInfo(ChameleonGUIState appState) async {
     try {
       if (!await appState.communicator!.isReaderDeviceMode()) {
         await appState.communicator!.setReaderDeviceMode(true);
@@ -180,7 +180,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> recoverKeys(ChameleonState appState) async {
+  Future<void> recoverKeys(ChameleonGUIState appState) async {
     setState(() {
       status.state = ChameleonMifareClassicState.recoveryOngoing;
     });
@@ -357,7 +357,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     } catch (_) {}
   }
 
-  Future<void> checkKeys(ChameleonState appState) async {
+  Future<void> checkKeys(ChameleonGUIState appState) async {
     setState(() {
       status.state = ChameleonMifareClassicState.checkKeysOngoing;
     });
@@ -458,7 +458,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> dumpData(ChameleonState appState) async {
+  Future<void> dumpData(ChameleonGUIState appState) async {
     setState(() {
       status.state = ChameleonMifareClassicState.dumpOngoing;
     });
@@ -543,7 +543,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> saveHFCard(ChameleonState appState,
+  Future<void> saveHFCard(ChameleonGUIState appState,
       {bool bin = false, bool skipDump = false}) async {
     List<int> cardDump = [];
     var localizations = AppLocalizations.of(context)!;
@@ -594,7 +594,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> saveLFCard(ChameleonState appState) async {
+  Future<void> saveLFCard(ChameleonGUIState appState) async {
     var tags = appState.sharedPreferencesProvider.getCards();
     tags.add(CardSave(
         id: const Uuid().v4(),
@@ -644,7 +644,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     double fieldFontSize = isSmallScreen ? 16 : 20;
     double checkmarkSize = isSmallScreen ? 16 : 20;
 
-    var appState = context.watch<ChameleonState>();
+    var appState = context.watch<ChameleonGUIState>();
     status.dictionaries = appState.sharedPreferencesProvider.getDictionaries();
     status.dictionaries
         .insert(0, Dictionary(id: "", name: localizations.empty, keys: []));

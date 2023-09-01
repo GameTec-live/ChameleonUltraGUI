@@ -25,7 +25,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   }
 
   Future<AnimationSetting> getAnimationMode() async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
 
     try {
       return await appState.communicator!.getAnimationMode();
@@ -35,7 +35,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   }
 
   Future<ButtonConfig> getButtonConfig(ButtonType type) async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     try {
       return await appState.communicator!.getButtonConfig(type);
     } catch (_) {
@@ -44,7 +44,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   }
 
   Future<ButtonConfig> getLongButtonConfig(ButtonType type) async {
-    var appState = context.read<ChameleonState>();
+    var appState = context.read<ChameleonGUIState>();
     try {
       return await appState.communicator!.getLongButtonConfig(type);
     } catch (_) {
@@ -72,7 +72,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<ChameleonState>();
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     return FutureBuilder(
         future: getSettingsData(),

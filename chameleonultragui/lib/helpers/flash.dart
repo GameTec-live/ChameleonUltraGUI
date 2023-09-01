@@ -192,7 +192,7 @@ void validateFiles(Uint8List dat, Uint8List bin) {
   }
 }
 
-Future<void> flashFirmware(ChameleonState appState) async {
+Future<void> flashFirmware(ChameleonGUIState appState) async {
   Uint8List applicationDat, applicationBin;
 
   Uint8List content = await fetchFirmware(appState.connector.device);
@@ -204,7 +204,7 @@ Future<void> flashFirmware(ChameleonState appState) async {
       firmwareZip: content);
 }
 
-Future<void> flashFirmwareZip(ChameleonState appState) async {
+Future<void> flashFirmwareZip(ChameleonGUIState appState) async {
   Uint8List applicationDat, applicationBin;
 
   FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -223,7 +223,7 @@ Future<void> flashFirmwareZip(ChameleonState appState) async {
 
 Future<void> flashFile(
     ChameleonCommunicator? connection,
-    ChameleonState appState,
+    ChameleonGUIState appState,
     Uint8List applicationDat,
     Uint8List applicationBin,
     void Function(int progress) callback,
