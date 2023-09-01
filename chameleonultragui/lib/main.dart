@@ -6,6 +6,7 @@ import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'connector/serial_native.dart';
 
@@ -199,6 +200,8 @@ class _MyHomePageState extends State<MyHomePage> {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Theme.of(context).colorScheme.surface,
     ));
+
+    WakelockPlus.toggle(enable: page is FlashingPage);
 
     return LayoutBuilder(// Build Page
         builder: (context, constraints) {

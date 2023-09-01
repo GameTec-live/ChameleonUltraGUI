@@ -65,6 +65,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: any
+  wakelock_plus: ^1.1.1
   # crowdin_sdk: ^0.3.1
 
 dev_dependencies:
