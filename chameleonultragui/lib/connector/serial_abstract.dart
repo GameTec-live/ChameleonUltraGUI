@@ -19,7 +19,7 @@ class Chameleon {
 }
 
 class AbstractSerial {
-  Logger log = Logger();
+  late Logger log;
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
   bool isOpen = false;
@@ -28,6 +28,8 @@ class AbstractSerial {
   String portName = "None";
   ConnectionType connectionType = ConnectionType.none;
   dynamic messageCallback;
+
+  AbstractSerial({required this.log});
 
   Future<bool> performConnect() async {
     return false;

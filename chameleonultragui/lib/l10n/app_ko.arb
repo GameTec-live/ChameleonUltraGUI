@@ -137,7 +137,7 @@
     "slot_status": "슬롯 상태",
     "hf": "HF",
     "lf": "LF",
-    "mifare_clasic_e_s": "Mifare Classic 에뮬레이터 설정",
+    "mifare_classic_emulator_settings": "Mifare Classic 에뮬레이터 설정",
     "mode_gen1a": "Gen1A 매직 모드",
     "mode_gen2": "Gen2 매직 모드",
     "use_from_block": "0 블록의 UID/SAK/ATQA 사용",

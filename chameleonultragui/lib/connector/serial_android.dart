@@ -8,8 +8,10 @@ import 'package:permission_handler/permission_handler.dart';
 
 // Class combines Android OTG and BLE serial
 class AndroidSerial extends AbstractSerial {
-  BLESerial bleSerial = BLESerial();
-  MobileSerial mobileSerial = MobileSerial();
+  late BLESerial bleSerial = BLESerial(log: log);
+  late MobileSerial mobileSerial = MobileSerial(log: log);
+
+  AndroidSerial({required super.log});
 
   @override
   Future<bool> performDisconnect() async {

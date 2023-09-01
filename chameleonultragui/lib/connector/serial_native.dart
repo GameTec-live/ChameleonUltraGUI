@@ -10,6 +10,8 @@ class NativeSerial extends AbstractSerial {
   bool checkDFU = true;
   SerialPortReader? reader;
 
+  NativeSerial({required super.log});
+
   @override
   Future<List> availableDevices() async {
     return SerialPort.availablePorts;

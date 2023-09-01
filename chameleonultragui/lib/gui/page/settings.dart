@@ -48,7 +48,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<ChameleonGUIState>(); // Get State
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
@@ -56,7 +56,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
       ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // Center
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 10),
             Text(localizations.sidebar_expansion,
@@ -265,10 +265,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     ),
                   ),
                   actions: <Widget>[
-                    /* TextButton(
-                            onPressed: () => Navigator.pop(context, 'Cancel'),
-                            child: const Text('Cancel'),
-                          ), */ // A Cancel button on an about widget??
                     TextButton(
                       onPressed: () => Navigator.pop(context, localizations.ok),
                       child: Text(localizations.ok),

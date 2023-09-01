@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -324,5 +325,29 @@ class SharedPreferencesProvider extends ChangeNotifier {
       default:
         return '------';
     }
+  }
+
+  bool isDebugLogging() {
+    return _sharedPreferences.getBool('debug_logging') ?? false;
+  }
+
+  void setDebugLogging(bool value) {
+    _sharedPreferences.setBool('debug_logging', value);
+  }
+
+  void addLogLine(String value) {
+    List<String> rows =
+        _sharedPreferences.getStringList('debug_logging_value') ?? [];
+    rows.add(value);
+
+    if (rows.length > 2500) {
+      rows.removeAt(0);
+    }
+
+    _sharedPreferences.setStringList('debug_logging_value', rows);
+  }
+
+  List<String> getLogLines() {
+    return _sharedPreferences.getStringList('debug_logging_value') ?? [];
   }
 }

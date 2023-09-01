@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -253,10 +252,10 @@ class ChameleonCommunicator {
   int dataStatus = 0;
   int dataLength = 0;
   List<ChameleonMessage> messageQueue = [];
-  Logger log = Logger();
-  Random random = Random();
 
-  ChameleonCommunicator({AbstractSerial? port}) {
+  final Logger log;
+
+  ChameleonCommunicator(this.log, {AbstractSerial? port}) {
     if (port != null) {
       open(port);
     }

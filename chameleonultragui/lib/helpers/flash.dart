@@ -195,7 +195,7 @@ void validateFiles(Uint8List dat, Uint8List bin) {
 Future<void> flashFirmware(ChameleonGUIState appState) async {
   Uint8List applicationDat, applicationBin;
 
-  Uint8List content = await fetchFirmware(appState.connector.device);
+  Uint8List content = await fetchFirmware(appState.connector!.device);
 
   (applicationDat, applicationBin) = await unpackFirmware(content);
 
@@ -241,11 +241,11 @@ Future<void> flashFile(
 
   if (enterDFU) {
     await connection!.enterDFUMode();
-    await appState.connector.performDisconnect();
+    await appState.connector!.performDisconnect();
   }
 
-  if (appState.connector.isOpen) {
-    await appState.connector.performDisconnect();
+  if (appState.connector!.isOpen) {
+    await appState.connector!.performDisconnect();
   }
 
   if (Platform.isAndroid) {
@@ -257,7 +257,7 @@ Future<void> flashFile(
 
   while (chameleons.isEmpty) {
     await asyncSleep(250);
-    chameleons = await appState.connector.availableChameleons(true);
+    chameleons = await appState.connector!.availableChameleons(true);
   }
 
   var toFlash = chameleons[0];
@@ -283,17 +283,17 @@ Future<void> flashFile(
     }
   }
 
-  await appState.connector.connectSpecificDevice(chameleons[0].port);
+  await appState.connector!.connectSpecificDevice(chameleons[0].port);
 
-  var dfu = DFUCommunicator(
+  var dfu = DFUCommunicator(appState.log!,
       port: appState.connector, viaBLE: toFlash.type == ConnectionType.ble);
   await dfu.setPRN();
   await dfu.getMTU();
   appState.changesMade();
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
-  appState.log.i("Firmware flashed!");
-  appState.connector.performDisconnect();
+  appState.log!.i("Firmware flashed!");
+  appState.connector!.performDisconnect();
   await asyncSleep(500); // allow exit DFU mode
   appState.changesMade();
 }

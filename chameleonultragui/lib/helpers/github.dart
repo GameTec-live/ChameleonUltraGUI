@@ -28,6 +28,12 @@ List<Map<String, String>> developers = [
     'avatarUrl': 'https://avatars.githubusercontent.com/u/61940251',
     'username': 'Akisame-AI'
   },
+  {
+    'name': 'Andrés Ruz Nieto',
+    'description': 'Translator',
+    'avatarUrl': 'https://avatars.githubusercontent.com/u/40019177',
+    'username': 'aruznieto'
+  },
 ];
 
 Future<List<Map<String, String>>> fetchGitHubContributors() async {

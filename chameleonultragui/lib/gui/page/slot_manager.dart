@@ -53,8 +53,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
         try {
           await appState.communicator!.getFirmwareVersion();
         } catch (_) {
-          appState.log.e("Lost connection to Chameleon!");
-          appState.connector.performDisconnect();
+          appState.log!.e("Lost connection to Chameleon!");
+          appState.connector!.performDisconnect();
           appState.changesMade();
         }
       }
@@ -468,7 +468,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
               appState.changesMade();
               refresh(gridPosition);
             } else {
-              appState.log.e("Can't write this card type yet.");
+              appState.log!.e("Can't write this card type yet.");
               close(context, card.name);
             }
           },

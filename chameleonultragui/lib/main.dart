@@ -3,6 +3,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -63,11 +64,12 @@ class ChameleonGUIState extends ChangeNotifier {
   final SharedPreferencesProvider sharedPreferencesProvider;
   ChameleonGUIState(this.sharedPreferencesProvider);
 
-// Android uses AndroidSerial, iOS can only use BLESerial
-// The rest (desktops?) can use NativeSerial
-  AbstractSerial connector = Platform.isAndroid
-      ? AndroidSerial()
-      : (Platform.isIOS ? BLESerial() : NativeSerial());
+  SharedPreferencesProvider? _sharedPreferencesProvider;
+  Logger? log; // Logger
+
+  // Android uses AndroidSerial, iOS can only use BLESerial
+  // The rest (desktops?) can use NativeSerial
+  AbstractSerial? connector;
   ChameleonCommunicator? communicator;
 
   bool devMode = false;
@@ -77,8 +79,6 @@ class ChameleonGUIState extends ChangeNotifier {
   bool easterEgg = false;
 
   bool forceMfkey32Page = false;
-
-  Logger log = Logger(); // Logger, App wide logger
 
   void changesMade() {
     notifyListeners();
@@ -91,7 +91,6 @@ class ChameleonGUIState extends ChangeNotifier {
 }
 
 class MainPage extends StatefulWidget {
-  // Main Page
   const MainPage({super.key, required this.sharedPreferencesProvider});
 
   final SharedPreferencesProvider sharedPreferencesProvider;
@@ -101,12 +100,21 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  // Main Page State, Sidebar visible, Navigation
   var selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<ChameleonGUIState>(); // Get State
+    var appState = context.watch<ChameleonGUIState>();
+    appState._sharedPreferencesProvider = widget.sharedPreferencesProvider;
+    appState.log ??= Logger(
+        output: appState._sharedPreferencesProvider!.isDebugLogging()
+            ? SharedPreferencesLogger(appState._sharedPreferencesProvider!)
+            : ConsoleOutput());
+    appState.connector ??= Platform.isAndroid
+        ? AndroidSerial(log: appState.log!)
+        : (Platform.isIOS
+            ? BLESerial(log: appState.log!)
+            : NativeSerial(log: appState.log!));
     if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {
@@ -119,7 +127,7 @@ class _MainPageState extends State<MainPage> {
     appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
 
     Widget page; // Set Page
-    if (!appState.connector.connected &&
+    if (!appState.connector!.connected &&
         selectedIndex != 0 &&
         selectedIndex != 2 &&
         selectedIndex != 5 &&
@@ -131,11 +139,11 @@ class _MainPageState extends State<MainPage> {
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
-        if (appState.connector.pendingConnection) {
+        if (appState.connector!.pendingConnection) {
           page = const PendingConnectionPage();
         } else {
-          if (appState.connector.connected) {
-            if (appState.connector.isDFU) {
+          if (appState.connector!.connected) {
+            if (appState.connector!.isDFU) {
               page = const FlashingPage();
             } else {
               page = const HomePage();
@@ -203,7 +211,7 @@ class _MainPageState extends State<MainPage> {
         return Scaffold(
             body: Row(
               children: [
-                (!appState.connector.isDFU || !appState.connector.connected)
+                (!appState.connector!.isDFU || !appState.connector!.connected)
                     ? SafeArea(
                         child: NavigationRail(
                           // Sidebar
@@ -217,7 +225,7 @@ class _MainPageState extends State<MainPage> {
                                   AppLocalizations.of(context)!.home), // Home
                             ),
                             NavigationRailDestination(
-                              disabled: !appState.connector.connected,
+                              disabled: !appState.connector!.connected,
                               icon: const Icon(Icons.widgets),
                               label: Text(
                                   AppLocalizations.of(context)!.slot_manager),
@@ -229,13 +237,13 @@ class _MainPageState extends State<MainPage> {
                                   AppLocalizations.of(context)!.saved_cards),
                             ),
                             NavigationRailDestination(
-                              disabled: !appState.connector.connected,
+                              disabled: !appState.connector!.connected,
                               icon: const Icon(Icons.wifi),
                               label:
                                   Text(AppLocalizations.of(context)!.read_card),
                             ),
                             NavigationRailDestination(
-                              disabled: !appState.connector.connected,
+                              disabled: !appState.connector!.connected,
                               icon: const Icon(Icons.credit_card),
                               label: Text(
                                   AppLocalizations.of(context)!.write_card),
@@ -281,7 +289,7 @@ class BottomProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
-    return (appState.connector.connected && appState.connector.isDFU)
+    return (appState.connector!.connected && appState.connector!.isDFU)
         ? LinearProgressIndicator(
             value: appState.progress,
             backgroundColor: Colors.grey[300],
