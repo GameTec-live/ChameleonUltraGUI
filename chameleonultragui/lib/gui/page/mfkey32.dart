@@ -95,17 +95,17 @@ class Mfkey32PageState extends State<Mfkey32Page> {
 
   List<Uint8List> deduplicateKeys(List<Uint8List> keys) {
     return <int, Uint8List>{
-      for (var v in keys) Object.hashAll(v): v
+      for (var key in keys) Object.hashAll(key): key
     }.values.toList();
   }
 
-  String convertUintToDictFile(List<Uint8List> keys) {
+  String convertKeysToDictFile(List<Uint8List> keys) {
     List<Uint8List> dekeys = deduplicateKeys(keys);
-    String filecontents = "";
+    String fileContents = "";
     for (Uint8List key in dekeys) {
-      filecontents += "${bytesToHex(key).toUpperCase()}\n";
+      fileContents += "${bytesToHex(key).toUpperCase()}\n";
     }
-    return filecontents;
+    return fileContents;
   }
 
   @override
@@ -179,23 +179,23 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                     actions: [
                                       ElevatedButton(
                                         onPressed: () async {
-                                          String filecontents =
-                                              convertUintToDictFile(keys);
+                                          String fileContents =
+                                              convertKeysToDictFile(keys);
                                           String name = Uuid().v4();
                                           try {
                                             await FileSaver.instance.saveAs(
                                                 name: name,
-                                                bytes: const Utf8Encoder().convert(filecontents),
-                                                ext: 'dict',
+                                                bytes: const Utf8Encoder().convert(fileContents),
+                                                ext: 'dic',
                                                 mimeType: MimeType.other);
                                           } on UnimplementedError catch (_) {
                                             String? outputFile = await FilePicker.platform.saveFile(
                                               dialogTitle: '${localizations.output_file}:',
-                                              fileName: '${name}.dict',
+                                              fileName: '${name}.dic',
                                             );
                                             if (outputFile != null) {
                                               var file = File(outputFile);
-                                              await file.writeAsBytes(const Utf8Encoder().convert(filecontents));
+                                              await file.writeAsBytes(const Utf8Encoder().convert(fileContents));
                                             }
                                           }
                                           Navigator.pop(context);
@@ -208,7 +208,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                           Navigator.pop(context);
                                         },
                                         child: Text(
-                                            "Append to existing Dictionary"),
+                                            "Add to existing Dictionary"),
                                       ),
                                       ElevatedButton(
                                         onPressed: () async {
@@ -220,12 +220,12 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                           await showDialog<String>(
                                             context: context,
                                             builder: (BuildContext context) {
-                                              return DictionaryEditMenu(dict: dict, isNew: true,);
+                                              return DictionaryEditMenu(dict: dict, isNew: true);
                                             },
                                           );
                                           Navigator.pop(context);
                                         },
-                                        child: Text("Save to new Dictionary"),
+                                        child: Text("Save to new dictionary"),
                                       ),
                                     ],
                                   ));
