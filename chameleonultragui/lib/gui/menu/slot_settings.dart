@@ -138,7 +138,7 @@ class SlotSettingsState extends State<SlotSettings> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('${localizations.hf}:'),
+                      Text('${localizations.lf}:'),
                       const SizedBox(width: 8),
                       Expanded(
                           child: OutlinedButton(
