@@ -54,33 +54,8 @@ class ChameleonGUI extends StatelessWidget {
           create: (context) => ChameleonGUIState(_sharedPreferencesProvider),
         ),
       ],
-      child: MaterialApp(
-        title: 'Chameleon Ultra GUI', // App Name
-        locale: _sharedPreferencesProvider.getLocale(),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-              seedColor:
-                  _sharedPreferencesProvider.getThemeColor()), // Color Scheme
-          brightness: Brightness.light, // Light Theme
-        ),
-        darkTheme: ThemeData.dark().copyWith(
-          colorScheme: ColorScheme.fromSeed(
-              seedColor: _sharedPreferencesProvider.getThemeColor(),
-              brightness: Brightness.dark), // Color Scheme
-          brightness: Brightness.dark, // Dark Theme
-        ),
-        themeMode: _sharedPreferencesProvider.getTheme(), // Dark Theme
-        home: const MainPage(),
-      ),
+      child: MainPage(sharedPreferencesProvider: _sharedPreferencesProvider),
     );
-
-    //return ChangeNotifierProvider(
-    //  create: (context) => MyAppState(),
-    //  child:
-    //);
   }
 }
 
@@ -117,7 +92,9 @@ class ChameleonGUIState extends ChangeNotifier {
 
 class MainPage extends StatefulWidget {
   // Main Page
-  const MainPage({super.key});
+  const MainPage({super.key, required this.sharedPreferencesProvider});
+
+  final SharedPreferencesProvider sharedPreferencesProvider;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -201,78 +178,100 @@ class _MainPageState extends State<MainPage> {
 
     WakelockPlus.toggle(enable: page is FlashingPage);
 
-    return LayoutBuilder(// Build Page
-        builder: (context, constraints) {
-      return Scaffold(
-          body: Row(
-            children: [
-              (!appState.connector.isDFU || !appState.connector.connected)
-                  ? SafeArea(
-                      child: NavigationRail(
-                        // Sidebar
-                        extended: appState.sharedPreferencesProvider
-                            .getSideBarExpanded(),
-                        destinations: [
-                          // Sidebar Items
-                          NavigationRailDestination(
-                            icon: const Icon(Icons.home),
-                            label: Text(
-                                AppLocalizations.of(context)!.home), // Home
-                          ),
-                          NavigationRailDestination(
-                            disabled: !appState.connector.connected,
-                            icon: const Icon(Icons.widgets),
-                            label: Text(
-                                AppLocalizations.of(context)!.slot_manager),
-                          ),
-                          NavigationRailDestination(
-                            icon:
-                                const Icon(Icons.auto_awesome_motion_outlined),
-                            label:
-                                Text(AppLocalizations.of(context)!.saved_cards),
-                          ),
-                          NavigationRailDestination(
-                            disabled: !appState.connector.connected,
-                            icon: const Icon(Icons.wifi),
-                            label:
-                                Text(AppLocalizations.of(context)!.read_card),
-                          ),
-                          NavigationRailDestination(
-                            disabled: !appState.connector.connected,
-                            icon: const Icon(Icons.credit_card),
-                            label:
-                                Text(AppLocalizations.of(context)!.write_card),
-                          ),
-                          NavigationRailDestination(
-                            icon: const Icon(Icons.settings),
-                            label: Text(AppLocalizations.of(context)!.settings),
-                          ),
-                          if (appState.devMode)
+    return MaterialApp(
+      title: 'Chameleon Ultra GUI', // App Name
+      locale: widget.sharedPreferencesProvider.getLocale(),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: widget.sharedPreferencesProvider
+                .getThemeColor()), // Color Scheme
+        brightness: Brightness.light, // Light Theme
+      ),
+      darkTheme: ThemeData.dark().copyWith(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: widget.sharedPreferencesProvider.getThemeColor(),
+            brightness: Brightness.dark), // Color Scheme
+        brightness: Brightness.dark, // Dark Theme
+      ),
+      themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
+      home: LayoutBuilder(// Build Page
+          builder: (context, constraints) {
+        return Scaffold(
+            body: Row(
+              children: [
+                (!appState.connector.isDFU || !appState.connector.connected)
+                    ? SafeArea(
+                        child: NavigationRail(
+                          // Sidebar
+                          extended: appState.sharedPreferencesProvider
+                              .getSideBarExpanded(),
+                          destinations: [
+                            // Sidebar Items
                             NavigationRailDestination(
-                              icon: const Icon(Icons.bug_report),
+                              icon: const Icon(Icons.home),
                               label: Text(
-                                  '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
+                                  AppLocalizations.of(context)!.home), // Home
                             ),
-                        ],
-                        selectedIndex: selectedIndex,
-                        onDestinationSelected: (value) {
-                          setState(() {
-                            selectedIndex = value;
-                          });
-                        },
-                      ),
-                    )
-                  : const SizedBox(),
-              Expanded(
-                child: Container(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  child: page,
+                            NavigationRailDestination(
+                              disabled: !appState.connector.connected,
+                              icon: const Icon(Icons.widgets),
+                              label: Text(
+                                  AppLocalizations.of(context)!.slot_manager),
+                            ),
+                            NavigationRailDestination(
+                              icon: const Icon(
+                                  Icons.auto_awesome_motion_outlined),
+                              label: Text(
+                                  AppLocalizations.of(context)!.saved_cards),
+                            ),
+                            NavigationRailDestination(
+                              disabled: !appState.connector.connected,
+                              icon: const Icon(Icons.wifi),
+                              label:
+                                  Text(AppLocalizations.of(context)!.read_card),
+                            ),
+                            NavigationRailDestination(
+                              disabled: !appState.connector.connected,
+                              icon: const Icon(Icons.credit_card),
+                              label: Text(
+                                  AppLocalizations.of(context)!.write_card),
+                            ),
+                            NavigationRailDestination(
+                              icon: const Icon(Icons.settings),
+                              label:
+                                  Text(AppLocalizations.of(context)!.settings),
+                            ),
+                            if (appState.devMode)
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.bug_report),
+                                label: Text(
+                                    '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
+                              ),
+                          ],
+                          selectedIndex: selectedIndex,
+                          onDestinationSelected: (value) {
+                            setState(() {
+                              selectedIndex = value;
+                            });
+                          },
+                        ),
+                      )
+                    : const SizedBox(),
+                Expanded(
+                  child: Container(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    child: page,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          bottomNavigationBar: const BottomProgressBar());
-    });
+              ],
+            ),
+            bottomNavigationBar: const BottomProgressBar());
+      }),
+    );
   }
 }
 
