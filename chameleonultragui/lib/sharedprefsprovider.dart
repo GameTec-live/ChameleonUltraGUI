@@ -319,6 +319,8 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
       case 'en':
         return 'English';
+      case 'da':
+        return 'Dansk';
       default:
         return '------';
     }

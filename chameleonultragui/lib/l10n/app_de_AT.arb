@@ -176,7 +176,6 @@
     "select_save_format": "Speicherformat wön",
     "key_count": "Schliassl Anzahl",
     "all": "Alle",
-
     "no_name": "Kei Nam",
     "connecting_to_ble": "Connecting to BLE device...",
     "default_ble_password": "Default BLE connection password is 123456",

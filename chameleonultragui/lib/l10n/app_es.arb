@@ -67,7 +67,6 @@
     "keys": "Claves",
     "found_keys": "Claves encontradas",
     "please_wait": "Por favor, espere",
-
     "used_slots": "Ranuras usadas",
     "firmware_version": "Versión de firmware",
     "update_error": "Error de actualización",
@@ -159,7 +158,6 @@
     "output_file": "Seleccione un archivo de salida",
     "hf_tag_info": "HF Tag Info",
     "lf_tag_info": "LF Tag Info",
-
     "no_card_found": "No se ha encontrado ninguna tarjeta. Prueba a moverla sobre el Chameleon",
     "no_supported": "Accion no soportada",
     "lite_no_read": "Chameleon Lite no admite la lectura de tarjetas",
@@ -178,7 +176,6 @@
     "select_save_format": "Seleccione el formato de guardado",
     "key_count": "Contador de claves",
     "all": "Todo",
-
     "no_name": "Sin nombre",
     "connecting_to_ble": "Conectando con el dispositivo BLE...",
     "default_ble_password": "La contraseña de conexión BLE predeterminada es 123456",
