@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:uuid/uuid.dart';
+import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -92,16 +94,9 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   }
 
   List<Uint8List> deduplicateKeys(List<Uint8List> keys) {
-    List<Uint8List> result = [];
-    Set<String> set = Set<String>();
-    for (Uint8List item in keys) {
-      String str = String.fromCharCodes(item);
-      if (!set.contains(str)) {
-        set.add(str);
-        result.add(item);
-      }
-    }
-    return result;
+    return <int, Uint8List>{
+      for (var v in keys) Object.hashAll(v): v
+    }.values.toList();
   }
 
   String convertUintToDictFile(List<Uint8List> keys) {
@@ -208,14 +203,26 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                         child: Text("Save to file"),
                                       ),
                                       ElevatedButton(
-                                        onPressed: () {
+                                        onPressed: () async {
+                                          await dictSelectDialog(context, deduplicateKeys(keys));
                                           Navigator.pop(context);
                                         },
                                         child: Text(
                                             "Append to existing Dictionary"),
                                       ),
                                       ElevatedButton(
-                                        onPressed: () {
+                                        onPressed: () async {
+                                          Dictionary dict = Dictionary(
+                                            name: "Recovered Keys",
+                                            color: Colors.blue,
+                                            keys: deduplicateKeys(keys),
+                                          );
+                                          await showDialog<String>(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return DictionaryEditMenu(dict: dict, isNew: true,);
+                                            },
+                                          );
                                           Navigator.pop(context);
                                         },
                                         child: Text("Save to new Dictionary"),
@@ -241,6 +248,91 @@ class Mfkey32PageState extends State<Mfkey32Page> {
             ),
           );
         }
+      },
+    );
+  }
+
+  Future<String?> dictSelectDialog(BuildContext context, List<Uint8List> keys) {
+    var appState = context.read<ChameleonGUIState>();
+    var dicts = appState.sharedPreferencesProvider.getDictionaries();
+
+
+    dicts.sort((a, b) => a.name.compareTo(b.name));
+
+    return showSearch<String>(
+      context: context,
+      delegate:
+          DictSearchDelegate(dicts, keys),
+    );
+  }
+}
+
+class DictSearchDelegate extends SearchDelegate<String> {
+  final List<Dictionary> dicts;
+  final List<Uint8List> keys;
+
+  DictSearchDelegate(this.dicts, this.keys);
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, '');
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final results = dicts.where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (BuildContext context, int index) {
+        final dict = results.elementAt(index);
+        return ListTile(
+          leading: Icon(Icons.key, color: dict.color),
+          title: Text(dict.name),
+          subtitle: Text("${dict.keys.length.toString()} keys"),
+          onTap: () async {},
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final results = dicts.where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
+
+    var appState = context.read<ChameleonGUIState>();
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (BuildContext context, int index) {
+        final dict = results.elementAt(index);
+        return ListTile(
+          leading: Icon(Icons.key, color: dict.color),
+          title: Text(dict.name),
+          subtitle: Text("${dict.keys.length.toString()} keys"),
+          onTap: () async {
+            dict.keys.addAll(keys);
+            appState.sharedPreferencesProvider.setDictionaries(dicts);
+            appState.changesMade();
+            Navigator.pop(context);
+          },
+        );
       },
     );
   }
