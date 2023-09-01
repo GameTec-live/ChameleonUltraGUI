@@ -225,13 +225,14 @@ class ReadCardPageState extends State<ReadCardPage> {
                   ar: data.ar));
               var keys = await recovery.darkside(darkside);
               if (keys.isNotEmpty) {
-                appState.log.d("Darkside: Found keys: $keys. Checking them...");
+                appState.log!
+                    .d("Darkside: Found keys: $keys. Checking them...");
                 for (var key in keys) {
                   var keyBytes = u64ToBytes(key);
                   await asyncSleep(1); // Let GUI update
                   if ((await appState.communicator!
                       .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8)))) {
-                    appState.log.i(
+                    appState.log!.i(
                         "Darkside: Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                     status.validKeys[40] = keyBytes.sublist(2, 8);
                     status.checkMarks[40] = ChameleonKeyCheckmark.found;
@@ -240,7 +241,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                   }
                 }
               } else {
-                appState.log.d("Can't find keys, retrying...");
+                appState.log!.d("Can't find keys, retrying...");
                 data = await appState.communicator!
                     .getMf1Darkside(0x03, 0x61, false, 15);
               }
@@ -321,7 +322,7 @@ class ReadCardPageState extends State<ReadCardPage> {
 
                 var keys = await recovery.nested(nested);
                 if (keys.isNotEmpty) {
-                  appState.log.d("Found keys: $keys. Checking them...");
+                  appState.log!.d("Found keys: $keys. Checking them...");
                   for (var key in keys) {
                     var keyBytes = u64ToBytes(key);
                     await asyncSleep(1); // Let GUI update
@@ -329,7 +330,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         mfClassicGetSectorTrailerBlockBySector(sector),
                         0x60 + keyType,
                         keyBytes.sublist(2, 8)))) {
-                      appState.log.i(
+                      appState.log!.i(
                           "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                       found = true;
                       status.validKeys[sector + (keyType * 40)] =
@@ -341,7 +342,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                     }
                   }
                 } else {
-                  appState.log.e("Can't find keys, retrying...");
+                  appState.log!.e("Can't find keys, retrying...");
                 }
               }
             }
@@ -372,7 +373,7 @@ class ReadCardPageState extends State<ReadCardPage> {
       if (mifare) {
         mf1Type = mfClassicGetType(card.atqa, card.sak);
       } else {
-        appState.log.e("Not Mifare Classic tag!");
+        appState.log!.e("Not Mifare Classic tag!");
         return;
       }
 
@@ -394,7 +395,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                 ...status.selectedDictionary!.keys,
                 ...gMifareClassicKeys
               ]) {
-                appState.log
+                appState.log!
                     .d("Checking $key on sector $sector, key type $keyType");
                 await asyncSleep(1); // Let GUI update
                 if (await appState.communicator!.mf1Auth(
@@ -481,11 +482,11 @@ class ReadCardPageState extends State<ReadCardPage> {
             block < mfClassicGetBlockCountBySector(sector);
             block++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            appState.log
+            appState.log!
                 .d("Dumping sector $sector, block $block with key $keyType");
 
             if (status.validKeys[sector + (keyType * 40)].isEmpty) {
-              appState.log.w("Skipping missing key");
+              appState.log!.w("Skipping missing key");
               status.cardData[block +
                   mfClassicGetFirstBlockCountBySector(sector)] = Uint8List(16);
               continue;
@@ -694,10 +695,10 @@ class ReadCardPageState extends State<ReadCardPage> {
                       ],
                       ElevatedButton(
                         onPressed: () async {
-                          if (appState.connector.device ==
+                          if (appState.connector!.device ==
                               ChameleonDevice.ultra) {
                             await readHFInfo(appState);
-                          } else if (appState.connector.device ==
+                          } else if (appState.connector!.device ==
                               ChameleonDevice.lite) {
                             showDialog<String>(
                               context: context,
@@ -1147,10 +1148,10 @@ class ReadCardPageState extends State<ReadCardPage> {
                       ],
                       ElevatedButton(
                         onPressed: () async {
-                          if (appState.connector.device ==
+                          if (appState.connector!.device ==
                               ChameleonDevice.ultra) {
                             await readLFInfo(appState);
-                          } else if (appState.connector.device ==
+                          } else if (appState.connector!.device ==
                               ChameleonDevice.lite) {
                             showDialog<String>(
                               context: context,

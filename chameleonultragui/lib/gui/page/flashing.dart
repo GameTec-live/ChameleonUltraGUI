@@ -23,7 +23,7 @@ class FlashingPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Image.asset(
-                appState.connector.device == ChameleonDevice.ultra
+                appState.connector!.device == ChameleonDevice.ultra
                     ? appState.easterEgg
                         ? 'assets/black-ultra-standing-front-flashing.png'
                         : 'assets/black-ultra-standing-front.png'
@@ -36,8 +36,8 @@ class FlashingPage extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 appState.easterEgg
-                    ? 'Your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'} is flashing'
-                    : 'Installing firmware on your Chameleon ${appState.connector.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}',
+                    ? 'Your Chameleon ${appState.connector!.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'} is flashing'
+                    : 'Installing firmware on your Chameleon ${appState.connector!.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}',
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,

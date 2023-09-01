@@ -137,7 +137,7 @@
     "slot_status": "Estado de la ranura",
     "hf": "HF",
     "lf": "LF",
-    "mifare_clasic_e_s": "Ajustes de emulacion Mifare Classic",
+    "mifare_classic_emulator_settings": "Ajustes de emulacion Mifare Classic",
     "mode_gen1a": "Modo Gen1A Magic",
     "mode_gen2": "Modo Gen2 Magic",
     "use_from_block": "Usar UID/SAK/ATQA desde el bloque 0",

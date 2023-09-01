@@ -82,7 +82,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                 title: Text(localizations.device_settings),
                 content: const Column(children: [CircularProgressIndicator()]));
           } else if (snapshot.hasError) {
-            appState.connector.performDisconnect();
+            appState.connector!.performDisconnect();
             return AlertDialog(
                 title: Text(localizations.device_settings),
                 content: Text(
@@ -106,7 +106,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     TextButton(
                         onPressed: () async {
                           await appState.communicator!.enterDFUMode();
-                          appState.connector.performDisconnect();
+                          appState.connector!.performDisconnect();
                           Navigator.pop(context, localizations.cancel);
                           appState.changesMade();
                         },
@@ -121,7 +121,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           Navigator.pop(context, localizations.cancel);
                           var snackBar = SnackBar(
                             content: Text(localizations.downloading_fw(
-                                appState.connector.device ==
+                                appState.connector!.device ==
                                         ChameleonDevice.ultra
                                     ? "Ultra"
                                     : "Lite")),
@@ -334,7 +334,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                 TextButton(
                                   onPressed: () async {
                                     await appState.communicator!.factoryReset();
-                                    await appState.connector
+                                    await appState.connector!
                                         .performDisconnect();
                                     Navigator.pop(
                                         context, localizations.cancel);

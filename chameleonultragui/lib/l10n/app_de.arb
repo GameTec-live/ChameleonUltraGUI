@@ -137,7 +137,7 @@
     "slot_status": "Slot-Status",
     "hf": "HF",
     "lf": "LF",
-    "mifare_clasic_e_s": "Mifare Classic Emulator Einstellungen",
+    "mifare_classic_emulator_settings": "Mifare Classic Emulator Einstellungen",
     "mode_gen1a": "Gen1A Magic Modus",
     "mode_gen2": "Gen2 Magic Modus",
     "use_from_block": "Benutze UID/SAK/ATQA aus 0 Block",

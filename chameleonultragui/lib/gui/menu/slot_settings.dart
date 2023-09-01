@@ -98,7 +98,7 @@ class SlotSettingsState extends State<SlotSettings> {
                 content: const SingleChildScrollView(
                     child: Column(children: [CircularProgressIndicator()])));
           } else if (snapshot.hasError) {
-            appState.connector.performDisconnect();
+            appState.connector!.performDisconnect();
             return AlertDialog(
                 title: Text(localizations.slot_settings),
                 content: Text(
@@ -183,7 +183,7 @@ class SlotSettingsState extends State<SlotSettings> {
                       }),
                   const SizedBox(height: 16),
                   Text(
-                    localizations.mifare_clasic_e_s,
+                    localizations.mifare_classic_emulator_settings,
                     textScaleFactor: 1.1,
                   ),
                   const SizedBox(height: 8),

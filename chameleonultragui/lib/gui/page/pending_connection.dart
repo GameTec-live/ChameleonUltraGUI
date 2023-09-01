@@ -26,7 +26,7 @@ class PendingConnectionPage extends StatelessWidget {
             localizations.connecting_to_ble,
           ),
           const SizedBox(height: 10),
-          if (!appState.connector.connected) ...[
+          if (!appState.connector!.connected) ...[
             Text(
               localizations.default_ble_password,
               style: const TextStyle(fontWeight: FontWeight.bold),

@@ -3,6 +3,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -54,33 +55,8 @@ class ChameleonGUI extends StatelessWidget {
           create: (context) => ChameleonGUIState(_sharedPreferencesProvider),
         ),
       ],
-      child: MaterialApp(
-        title: 'Chameleon Ultra GUI', // App Name
-        locale: _sharedPreferencesProvider.getLocale(),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-              seedColor:
-                  _sharedPreferencesProvider.getThemeColor()), // Color Scheme
-          brightness: Brightness.light, // Light Theme
-        ),
-        darkTheme: ThemeData.dark().copyWith(
-          colorScheme: ColorScheme.fromSeed(
-              seedColor: _sharedPreferencesProvider.getThemeColor(),
-              brightness: Brightness.dark), // Color Scheme
-          brightness: Brightness.dark, // Dark Theme
-        ),
-        themeMode: _sharedPreferencesProvider.getTheme(), // Dark Theme
-        home: const MainPage(),
-      ),
+      child: MainPage(sharedPreferencesProvider: _sharedPreferencesProvider),
     );
-
-    //return ChangeNotifierProvider(
-    //  create: (context) => MyAppState(),
-    //  child:
-    //);
   }
 }
 
@@ -88,11 +64,12 @@ class ChameleonGUIState extends ChangeNotifier {
   final SharedPreferencesProvider sharedPreferencesProvider;
   ChameleonGUIState(this.sharedPreferencesProvider);
 
-// Android uses AndroidSerial, iOS can only use BLESerial
-// The rest (desktops?) can use NativeSerial
-  AbstractSerial connector = Platform.isAndroid
-      ? AndroidSerial()
-      : (Platform.isIOS ? BLESerial() : NativeSerial());
+  SharedPreferencesProvider? _sharedPreferencesProvider;
+  Logger? log; // Logger
+
+  // Android uses AndroidSerial, iOS can only use BLESerial
+  // The rest (desktops?) can use NativeSerial
+  AbstractSerial? connector;
   ChameleonCommunicator? communicator;
 
   bool devMode = false;
@@ -102,8 +79,6 @@ class ChameleonGUIState extends ChangeNotifier {
   bool easterEgg = false;
 
   bool forceMfkey32Page = false;
-
-  Logger log = Logger(); // Logger, App wide logger
 
   void changesMade() {
     notifyListeners();
@@ -116,20 +91,30 @@ class ChameleonGUIState extends ChangeNotifier {
 }
 
 class MainPage extends StatefulWidget {
-  // Main Page
-  const MainPage({super.key});
+  const MainPage({super.key, required this.sharedPreferencesProvider});
+
+  final SharedPreferencesProvider sharedPreferencesProvider;
 
   @override
   State<MainPage> createState() => _MainPageState();
 }
 
 class _MainPageState extends State<MainPage> {
-  // Main Page State, Sidebar visible, Navigation
   var selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<ChameleonGUIState>(); // Get State
+    var appState = context.watch<ChameleonGUIState>();
+    appState._sharedPreferencesProvider = widget.sharedPreferencesProvider;
+    appState.log ??= Logger(
+        output: appState._sharedPreferencesProvider!.isDebugLogging()
+            ? SharedPreferencesLogger(appState._sharedPreferencesProvider!)
+            : ConsoleOutput());
+    appState.connector ??= Platform.isAndroid
+        ? AndroidSerial(log: appState.log!)
+        : (Platform.isIOS
+            ? BLESerial(log: appState.log!)
+            : NativeSerial(log: appState.log!));
     if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {
@@ -142,7 +127,7 @@ class _MainPageState extends State<MainPage> {
     appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
 
     Widget page; // Set Page
-    if (!appState.connector.connected &&
+    if (!appState.connector!.connected &&
         selectedIndex != 0 &&
         selectedIndex != 2 &&
         selectedIndex != 5 &&
@@ -154,11 +139,11 @@ class _MainPageState extends State<MainPage> {
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
-        if (appState.connector.pendingConnection) {
+        if (appState.connector!.pendingConnection) {
           page = const PendingConnectionPage();
         } else {
-          if (appState.connector.connected) {
-            if (appState.connector.isDFU) {
+          if (appState.connector!.connected) {
+            if (appState.connector!.isDFU) {
               page = const FlashingPage();
             } else {
               page = const HomePage();
@@ -201,78 +186,100 @@ class _MainPageState extends State<MainPage> {
 
     WakelockPlus.toggle(enable: page is FlashingPage);
 
-    return LayoutBuilder(// Build Page
-        builder: (context, constraints) {
-      return Scaffold(
-          body: Row(
-            children: [
-              (!appState.connector.isDFU || !appState.connector.connected)
-                  ? SafeArea(
-                      child: NavigationRail(
-                        // Sidebar
-                        extended: appState.sharedPreferencesProvider
-                            .getSideBarExpanded(),
-                        destinations: [
-                          // Sidebar Items
-                          NavigationRailDestination(
-                            icon: const Icon(Icons.home),
-                            label: Text(
-                                AppLocalizations.of(context)!.home), // Home
-                          ),
-                          NavigationRailDestination(
-                            disabled: !appState.connector.connected,
-                            icon: const Icon(Icons.widgets),
-                            label: Text(
-                                AppLocalizations.of(context)!.slot_manager),
-                          ),
-                          NavigationRailDestination(
-                            icon:
-                                const Icon(Icons.auto_awesome_motion_outlined),
-                            label:
-                                Text(AppLocalizations.of(context)!.saved_cards),
-                          ),
-                          NavigationRailDestination(
-                            disabled: !appState.connector.connected,
-                            icon: const Icon(Icons.wifi),
-                            label:
-                                Text(AppLocalizations.of(context)!.read_card),
-                          ),
-                          NavigationRailDestination(
-                            disabled: !appState.connector.connected,
-                            icon: const Icon(Icons.credit_card),
-                            label:
-                                Text(AppLocalizations.of(context)!.write_card),
-                          ),
-                          NavigationRailDestination(
-                            icon: const Icon(Icons.settings),
-                            label: Text(AppLocalizations.of(context)!.settings),
-                          ),
-                          if (appState.devMode)
+    return MaterialApp(
+      title: 'Chameleon Ultra GUI', // App Name
+      locale: widget.sharedPreferencesProvider.getLocale(),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: widget.sharedPreferencesProvider
+                .getThemeColor()), // Color Scheme
+        brightness: Brightness.light, // Light Theme
+      ),
+      darkTheme: ThemeData.dark().copyWith(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: widget.sharedPreferencesProvider.getThemeColor(),
+            brightness: Brightness.dark), // Color Scheme
+        brightness: Brightness.dark, // Dark Theme
+      ),
+      themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
+      home: LayoutBuilder(// Build Page
+          builder: (context, constraints) {
+        return Scaffold(
+            body: Row(
+              children: [
+                (!appState.connector!.isDFU || !appState.connector!.connected)
+                    ? SafeArea(
+                        child: NavigationRail(
+                          // Sidebar
+                          extended: appState.sharedPreferencesProvider
+                              .getSideBarExpanded(),
+                          destinations: [
+                            // Sidebar Items
                             NavigationRailDestination(
-                              icon: const Icon(Icons.bug_report),
+                              icon: const Icon(Icons.home),
                               label: Text(
-                                  '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
+                                  AppLocalizations.of(context)!.home), // Home
                             ),
-                        ],
-                        selectedIndex: selectedIndex,
-                        onDestinationSelected: (value) {
-                          setState(() {
-                            selectedIndex = value;
-                          });
-                        },
-                      ),
-                    )
-                  : const SizedBox(),
-              Expanded(
-                child: Container(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  child: page,
+                            NavigationRailDestination(
+                              disabled: !appState.connector!.connected,
+                              icon: const Icon(Icons.widgets),
+                              label: Text(
+                                  AppLocalizations.of(context)!.slot_manager),
+                            ),
+                            NavigationRailDestination(
+                              icon: const Icon(
+                                  Icons.auto_awesome_motion_outlined),
+                              label: Text(
+                                  AppLocalizations.of(context)!.saved_cards),
+                            ),
+                            NavigationRailDestination(
+                              disabled: !appState.connector!.connected,
+                              icon: const Icon(Icons.wifi),
+                              label:
+                                  Text(AppLocalizations.of(context)!.read_card),
+                            ),
+                            NavigationRailDestination(
+                              disabled: !appState.connector!.connected,
+                              icon: const Icon(Icons.credit_card),
+                              label: Text(
+                                  AppLocalizations.of(context)!.write_card),
+                            ),
+                            NavigationRailDestination(
+                              icon: const Icon(Icons.settings),
+                              label:
+                                  Text(AppLocalizations.of(context)!.settings),
+                            ),
+                            if (appState.devMode)
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.bug_report),
+                                label: Text(
+                                    '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
+                              ),
+                          ],
+                          selectedIndex: selectedIndex,
+                          onDestinationSelected: (value) {
+                            setState(() {
+                              selectedIndex = value;
+                            });
+                          },
+                        ),
+                      )
+                    : const SizedBox(),
+                Expanded(
+                  child: Container(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    child: page,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          bottomNavigationBar: const BottomProgressBar());
-    });
+              ],
+            ),
+            bottomNavigationBar: const BottomProgressBar());
+      }),
+    );
   }
 }
 
@@ -282,7 +289,7 @@ class BottomProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
-    return (appState.connector.connected && appState.connector.isDFU)
+    return (appState.connector!.connected && appState.connector!.isDFU)
         ? LinearProgressIndicator(
             value: appState.progress,
             backgroundColor: Colors.grey[300],
