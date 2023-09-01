@@ -36,13 +36,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferencesProvider = SharedPreferencesProvider();
   await sharedPreferencesProvider.load();
-  runApp(MyApp(sharedPreferencesProvider));
+  runApp(ChameleonGUI(sharedPreferencesProvider));
 }
 
-class MyApp extends StatelessWidget {
+class ChameleonGUI extends StatelessWidget {
   // Root Widget
   final SharedPreferencesProvider _sharedPreferencesProvider;
-  const MyApp(this._sharedPreferencesProvider, {Key? key}) : super(key: key);
+  const ChameleonGUI(this._sharedPreferencesProvider, {Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
