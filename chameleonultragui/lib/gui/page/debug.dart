@@ -282,6 +282,7 @@ class DebugPage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () async {
                   appState.sharedPreferencesProvider.setDebugLogging(true);
+                  await appState.connector!.performDisconnect();
                   appState.log = null;
                   appState.connector = null;
                   appState.changesMade();
@@ -294,6 +295,7 @@ class DebugPage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () async {
                   appState.sharedPreferencesProvider.setDebugLogging(false);
+                  await appState.connector!.performDisconnect();
                   appState.log = null;
                   appState.connector = null;
                   appState.changesMade();
