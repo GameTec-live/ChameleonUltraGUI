@@ -20,7 +20,7 @@ class DebugPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>(); // Get State
+    var appState = context.watch<ChameleonGUIState>(); // Get State
     var localizations = AppLocalizations.of(context)!;
     return Center(
       child: Column(
@@ -47,7 +47,6 @@ class DebugPage extends StatelessWidget {
           ),
           Text('⚠️ ${localizations.warned} ⚠️', textScaleFactor: 3),
           Text('${localizations.platform}: ${Platform.operatingSystem}'),
-          Text('${localizations.android}: ${appState.onAndroid}'),
           Text('${localizations.serial_protocol}: ${appState.connector}'),
           Text(
               '${localizations.chameleon_connected}: ${appState.connector.connected}'),

@@ -96,7 +96,7 @@ class ReadCardPage extends StatefulWidget {
 
 class ReadCardPageState extends State<ReadCardPage> {
   ChameleonReadTagStatus status = ChameleonReadTagStatus();
-  Future<void> readHFInfo(MyAppState appState) async {
+  Future<void> readHFInfo(ChameleonGUIState appState) async {
     status.validKeys = List.generate(80, (_) => Uint8List(0));
     status.checkMarks = List.generate(80, (_) => ChameleonKeyCheckmark.none);
 
@@ -151,7 +151,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> readLFInfo(MyAppState appState) async {
+  Future<void> readLFInfo(ChameleonGUIState appState) async {
     try {
       if (!await appState.communicator!.isReaderDeviceMode()) {
         await appState.communicator!.setReaderDeviceMode(true);
@@ -180,7 +180,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> recoverKeys(MyAppState appState) async {
+  Future<void> recoverKeys(ChameleonGUIState appState) async {
     setState(() {
       status.state = ChameleonMifareClassicState.recoveryOngoing;
     });
@@ -263,8 +263,7 @@ class ReadCardPageState extends State<ReadCardPage> {
         if (prng != NTLevel.weak) {
           // No hardnested/staticnested implementation yet
           setState(() {
-            status.recoveryError =
-                localizations.recovery_error_no_supported;
+            status.recoveryError = localizations.recovery_error_no_supported;
             status.state = ChameleonMifareClassicState.recovery;
           });
           return;
@@ -358,7 +357,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     } catch (_) {}
   }
 
-  Future<void> checkKeys(MyAppState appState) async {
+  Future<void> checkKeys(ChameleonGUIState appState) async {
     setState(() {
       status.state = ChameleonMifareClassicState.checkKeysOngoing;
     });
@@ -453,14 +452,13 @@ class ReadCardPageState extends State<ReadCardPage> {
       }
     } catch (_) {
       setState(() {
-        status.recoveryError = localizations
-            .recovery_error_dict;
+        status.recoveryError = localizations.recovery_error_dict;
         status.state = ChameleonMifareClassicState.checkKeys;
       });
     }
   }
 
-  Future<void> dumpData(MyAppState appState) async {
+  Future<void> dumpData(ChameleonGUIState appState) async {
     setState(() {
       status.state = ChameleonMifareClassicState.dumpOngoing;
     });
@@ -545,7 +543,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> saveHFCard(MyAppState appState,
+  Future<void> saveHFCard(ChameleonGUIState appState,
       {bool bin = false, bool skipDump = false}) async {
     List<int> cardDump = [];
     var localizations = AppLocalizations.of(context)!;
@@ -596,7 +594,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> saveLFCard(MyAppState appState) async {
+  Future<void> saveLFCard(ChameleonGUIState appState) async {
     var tags = appState.sharedPreferencesProvider.getCards();
     tags.add(CardSave(
         id: const Uuid().v4(),
@@ -646,9 +644,10 @@ class ReadCardPageState extends State<ReadCardPage> {
     double fieldFontSize = isSmallScreen ? 16 : 20;
     double checkmarkSize = isSmallScreen ? 16 : 20;
 
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonGUIState>();
     status.dictionaries = appState.sharedPreferencesProvider.getDictionaries();
-    status.dictionaries.insert(0, Dictionary(id: "", name: localizations.empty, keys: []));
+    status.dictionaries
+        .insert(0, Dictionary(id: "", name: localizations.empty, keys: []));
     status.selectedDictionary ??= status.dictionaries[0];
 
     return Scaffold(
@@ -675,9 +674,12 @@ class ReadCardPageState extends State<ReadCardPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      buildFieldRow(localizations.uid, status.hfUid, fieldFontSize),
-                      buildFieldRow(localizations.sak, status.sak, fieldFontSize),
-                      buildFieldRow(localizations.atqa, status.atqa, fieldFontSize),
+                      buildFieldRow(
+                          localizations.uid, status.hfUid, fieldFontSize),
+                      buildFieldRow(
+                          localizations.sak, status.sak, fieldFontSize),
+                      buildFieldRow(
+                          localizations.atqa, status.atqa, fieldFontSize),
                       // buildFieldRow('ATS', status.ats, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
@@ -687,9 +689,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                       ),
                       const SizedBox(height: 16),
                       if (status.noHfCard) ...[
-                        ErrorMessage(
-                            errorMessage:
-                                localizations.no_card_found),
+                        ErrorMessage(errorMessage: localizations.no_card_found),
                         const SizedBox(height: 16)
                       ],
                       ElevatedButton(
@@ -703,14 +703,13 @@ class ReadCardPageState extends State<ReadCardPage> {
                               context: context,
                               builder: (BuildContext context) => AlertDialog(
                                 title: Text(localizations.no_supported),
-                                content: Text(
-                                    localizations.lite_no_read,
-                                    style:
-                                        const TextStyle(fontWeight: FontWeight.bold)),
+                                content: Text(localizations.lite_no_read,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
                                 actions: <Widget>[
                                   TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, localizations.ok),
+                                    onPressed: () => Navigator.pop(
+                                        context, localizations.ok),
                                     child: Text(localizations.ok),
                                   ),
                                 ],
@@ -860,8 +859,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
-                                      Text(
-                                          localizations.letter_space("A")),
+                                      Text(localizations.letter_space("A")),
                                       ...List.generate(
                                         16,
                                         (index) => Padding(
@@ -1134,7 +1132,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      buildFieldRow(localizations.uid, status.lfUid, fieldFontSize),
+                      buildFieldRow(
+                          localizations.uid, status.lfUid, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
                         'Tech: ${status.lfTech}',
@@ -1143,9 +1142,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                       ),
                       const SizedBox(height: 16),
                       if (status.noLfCard) ...[
-                        ErrorMessage(
-                            errorMessage:
-                                localizations.no_card_found),
+                        ErrorMessage(errorMessage: localizations.no_card_found),
                         const SizedBox(height: 16)
                       ],
                       ElevatedButton(
@@ -1159,14 +1156,13 @@ class ReadCardPageState extends State<ReadCardPage> {
                               context: context,
                               builder: (BuildContext context) => AlertDialog(
                                 title: Text(localizations.no_supported),
-                                content: Text(
-                                    localizations.lite_no_read,
-                                    style:
-                                        const TextStyle(fontWeight: FontWeight.bold)),
+                                content: Text(localizations.lite_no_read,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
                                 actions: <Widget>[
                                   TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, localizations.ok),
+                                    onPressed: () => Navigator.pop(
+                                        context, localizations.ok),
                                     child: Text(localizations.ok),
                                   ),
                                 ],

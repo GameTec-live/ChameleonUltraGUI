@@ -48,7 +48,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>(); // Get State
+    var appState = context.watch<ChameleonGUIState>(); // Get State
     var localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(

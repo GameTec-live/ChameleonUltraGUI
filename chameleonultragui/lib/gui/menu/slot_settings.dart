@@ -35,7 +35,7 @@ class SlotSettingsState extends State<SlotSettings> {
   }
 
   Future<void> fetchInfo() async {
-    var appState = context.read<MyAppState>();
+    var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     if (hfName.isEmpty) {
       try {
@@ -86,7 +86,7 @@ class SlotSettingsState extends State<SlotSettings> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
     return FutureBuilder(
@@ -101,7 +101,8 @@ class SlotSettingsState extends State<SlotSettings> {
             appState.connector.performDisconnect();
             return AlertDialog(
                 title: Text(localizations.slot_settings),
-                content: Text('${localizations.error}: ${snapshot.error.toString()}'));
+                content: Text(
+                    '${localizations.error}: ${snapshot.error.toString()}'));
           } else {
             return AlertDialog(
                 title: Text(localizations.slot_settings),
@@ -122,7 +123,9 @@ class SlotSettingsState extends State<SlotSettings> {
                           await appState.communicator!
                               .deleteSlotInfo(widget.slot, TagFrequency.hf);
                           await appState.communicator!.setSlotTagName(
-                              widget.slot, localizations.empty, TagFrequency.hf);
+                              widget.slot,
+                              localizations.empty,
+                              TagFrequency.hf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
@@ -151,7 +154,9 @@ class SlotSettingsState extends State<SlotSettings> {
                           await appState.communicator!
                               .deleteSlotInfo(widget.slot, TagFrequency.lf);
                           await appState.communicator!.setSlotTagName(
-                              widget.slot, localizations.empty, TagFrequency.lf);
+                              widget.slot,
+                              localizations.empty,
+                              TagFrequency.lf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
@@ -238,8 +243,7 @@ class SlotSettingsState extends State<SlotSettings> {
                           ...(detectionCount == 0)
                               ? [
                                   const SizedBox(height: 8),
-                                  Text(
-                                      localizations.present_cham_reader_keys,
+                                  Text(localizations.present_cham_reader_keys,
                                       textScaleFactor: 0.8)
                                 ]
                               : [
@@ -257,7 +261,8 @@ class SlotSettingsState extends State<SlotSettings> {
                                             child: Row(
                                               children: [
                                                 const Icon(Icons.lock_open),
-                                                Text(localizations.recover_keys),
+                                                Text(
+                                                    localizations.recover_keys),
                                               ],
                                             )),
                                       ]),
@@ -272,7 +277,12 @@ class SlotSettingsState extends State<SlotSettings> {
                   Text(localizations.write_mode),
                   const SizedBox(height: 8),
                   ToggleButtonsWrapper(
-                      items: [localizations.normal, localizations.decline, localizations.deceive, localizations.shadow],
+                      items: [
+                        localizations.normal,
+                        localizations.decline,
+                        localizations.deceive,
+                        localizations.shadow
+                      ],
                       selectedValue: writeMode.value,
                       onChange: (int index) async {
                         await appState.communicator!.activateSlot(widget.slot);

@@ -10,7 +10,7 @@ class PendingConnectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
     return Scaffold(

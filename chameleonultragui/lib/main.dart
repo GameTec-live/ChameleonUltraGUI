@@ -6,6 +6,7 @@ import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'connector/serial_native.dart';
 
@@ -35,13 +36,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferencesProvider = SharedPreferencesProvider();
   await sharedPreferencesProvider.load();
-  runApp(MyApp(sharedPreferencesProvider));
+  runApp(ChameleonGUI(sharedPreferencesProvider));
 }
 
-class MyApp extends StatelessWidget {
+class ChameleonGUI extends StatelessWidget {
   // Root Widget
   final SharedPreferencesProvider _sharedPreferencesProvider;
-  const MyApp(this._sharedPreferencesProvider, {Key? key}) : super(key: key);
+  const ChameleonGUI(this._sharedPreferencesProvider, {Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +51,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider.value(value: _sharedPreferencesProvider),
         ChangeNotifierProvider(
-          create: (context) => MyAppState(_sharedPreferencesProvider),
+          create: (context) => ChameleonGUIState(_sharedPreferencesProvider),
         ),
       ],
       child: MaterialApp(
@@ -71,7 +73,7 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark, // Dark Theme
         ),
         themeMode: _sharedPreferencesProvider.getTheme(), // Dark Theme
-        home: const MyHomePage(),
+        home: const MainPage(),
       ),
     );
 
@@ -82,12 +84,9 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyAppState extends ChangeNotifier {
+class ChameleonGUIState extends ChangeNotifier {
   final SharedPreferencesProvider sharedPreferencesProvider;
-  MyAppState(this.sharedPreferencesProvider);
-
-  bool onAndroid =
-      Platform.isAndroid; // Are we on android? (mostly for serial port)
+  ChameleonGUIState(this.sharedPreferencesProvider);
 
 // Android uses AndroidSerial, iOS can only use BLESerial
 // The rest (desktops?) can use NativeSerial
@@ -116,21 +115,21 @@ class MyAppState extends ChangeNotifier {
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class MainPage extends StatefulWidget {
   // Main Page
-  const MyHomePage({super.key});
+  const MainPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MainPageState extends State<MainPage> {
   // Main Page State, Sidebar visible, Navigation
   var selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>(); // Get State
+    var appState = context.watch<ChameleonGUIState>(); // Get State
     if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {
@@ -199,6 +198,8 @@ class _MyHomePageState extends State<MyHomePage> {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Theme.of(context).colorScheme.surface,
     ));
+
+    WakelockPlus.toggle(enable: page is FlashingPage);
 
     return LayoutBuilder(// Build Page
         builder: (context, constraints) {
@@ -280,7 +281,7 @@ class BottomProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonGUIState>();
     return (appState.connector.connected && appState.connector.isDFU)
         ? LinearProgressIndicator(
             value: appState.progress,
