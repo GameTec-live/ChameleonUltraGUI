@@ -10,7 +10,6 @@ import 'package:chameleonultragui/helpers/general.dart';
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-
 class DictionaryEditMenu extends StatefulWidget {
   final Dictionary dict;
 
@@ -65,7 +64,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonState>();
     var localizations = AppLocalizations.of(context)!;
     return AlertDialog(
       title: Text(localizations.edit_dictionary),

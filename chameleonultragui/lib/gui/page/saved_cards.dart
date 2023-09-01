@@ -28,7 +28,7 @@ class SavedCardsPage extends StatefulWidget {
 class SavedCardsPageState extends State<SavedCardsPage> {
   MifareClassicType selectedType = MifareClassicType.m1k;
 
-  Future<void> saveTag(CardSave tag, MyAppState appState, bool bin) async {
+  Future<void> saveTag(CardSave tag, ChameleonState appState, bool bin) async {
     var localizations = AppLocalizations.of(context)!;
     if (bin) {
       List<int> tagDump = [];
@@ -76,7 +76,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
   // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonState>();
     var dictionaries = appState.sharedPreferencesProvider.getDictionaries();
     var tags = appState.sharedPreferencesProvider.getCards();
     var localizations = AppLocalizations.of(context)!;

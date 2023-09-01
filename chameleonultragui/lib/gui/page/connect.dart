@@ -14,7 +14,7 @@ class ConnectPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>(); // Get State
+    var appState = context.watch<ChameleonState>(); // Get State
     var localizations = AppLocalizations.of(context)!;
     return FutureBuilder(
       future:

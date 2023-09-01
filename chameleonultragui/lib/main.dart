@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider.value(value: _sharedPreferencesProvider),
         ChangeNotifierProvider(
-          create: (context) => MyAppState(_sharedPreferencesProvider),
+          create: (context) => ChameleonState(_sharedPreferencesProvider),
         ),
       ],
       child: MaterialApp(
@@ -72,7 +72,7 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark, // Dark Theme
         ),
         themeMode: _sharedPreferencesProvider.getTheme(), // Dark Theme
-        home: const MyHomePage(),
+        home: const ChameleonPage(),
       ),
     );
 
@@ -83,12 +83,9 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyAppState extends ChangeNotifier {
+class ChameleonState extends ChangeNotifier {
   final SharedPreferencesProvider sharedPreferencesProvider;
-  MyAppState(this.sharedPreferencesProvider);
-
-  bool onAndroid =
-      Platform.isAndroid; // Are we on android? (mostly for serial port)
+  ChameleonState(this.sharedPreferencesProvider);
 
 // Android uses AndroidSerial, iOS can only use BLESerial
 // The rest (desktops?) can use NativeSerial
@@ -117,21 +114,21 @@ class MyAppState extends ChangeNotifier {
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class ChameleonPage extends StatefulWidget {
   // Main Page
-  const MyHomePage({super.key});
+  const ChameleonPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<ChameleonPage> createState() => _ChameleonPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _ChameleonPageState extends State<ChameleonPage> {
   // Main Page State, Sidebar visible, Navigation
   var selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>(); // Get State
+    var appState = context.watch<ChameleonState>(); // Get State
     if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {
@@ -283,7 +280,7 @@ class BottomProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonState>();
     return (appState.connector.connected && appState.connector.isDFU)
         ? LinearProgressIndicator(
             value: appState.progress,

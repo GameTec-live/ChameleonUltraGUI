@@ -11,7 +11,7 @@ class FlashingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonState>();
     var localizations = AppLocalizations.of(context)!;
     return Scaffold(
         appBar: AppBar(

@@ -13,52 +13,6 @@ import 'package:provider/provider.dart';
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class Tile extends StatelessWidget {
-  const Tile({
-    Key? key,
-    required this.index,
-    this.extent,
-    this.backgroundColor,
-    this.bottomSpace,
-  }) : super(key: key);
-
-  final int index;
-  final double? extent;
-  final double? bottomSpace;
-  final Color? backgroundColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final child = Container(
-      color: backgroundColor,
-      height: extent,
-      child: Center(
-        child: CircleAvatar(
-          minRadius: 20,
-          maxRadius: 20,
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          child: Text('$index', style: const TextStyle(fontSize: 20)),
-        ),
-      ),
-    );
-
-    if (bottomSpace == null) {
-      return child;
-    }
-
-    return Column(
-      children: [
-        Expanded(child: child),
-        Container(
-          height: bottomSpace,
-          color: Colors.green,
-        )
-      ],
-    );
-  }
-}
-
 class SlotManagerPage extends StatefulWidget {
   const SlotManagerPage({super.key});
 
@@ -90,7 +44,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   bool onlyOneSlot = false;
 
   Future<void> executeNextFunction() async {
-    var appState = context.read<MyAppState>();
+    var appState = context.read<ChameleonState>();
     var localizations = AppLocalizations.of(context)!;
     if (currentFunctionIndex == 0 || onlyOneSlot) {
       try {
@@ -157,7 +111,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       currentFunctionIndex = slot;
       onlyOneSlot = true;
     });
-    var appState = context.read<MyAppState>();
+    var appState = context.read<ChameleonState>();
     appState.changesMade();
   }
 
@@ -165,7 +119,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     setState(() {
       progress = progressBar;
     });
-    var appState = context.read<MyAppState>();
+    var appState = context.read<ChameleonState>();
     appState.changesMade();
   }
 
@@ -282,7 +236,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   }
 
   Future<String?> cardSelectDialog(BuildContext context, int gridPosition) {
-    var appState = context.read<MyAppState>();
+    var appState = context.read<ChameleonState>();
     var tags = appState.sharedPreferencesProvider.getCards();
 
     // Don't allow user to upload more tags while already uploading dump
@@ -414,7 +368,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
                 (filter == SearchFilter.lf &&
                     chameleonTagToFrequency(card.tag) == TagFrequency.lf))));
 
-    var appState = context.read<MyAppState>();
+    var appState = context.read<ChameleonState>();
 
     return ListView.builder(
       itemCount: results.length,

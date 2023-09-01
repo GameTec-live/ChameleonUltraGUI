@@ -25,7 +25,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   }
 
   Future<AnimationSetting> getAnimationMode() async {
-    var appState = context.read<MyAppState>();
+    var appState = context.read<ChameleonState>();
 
     try {
       return await appState.communicator!.getAnimationMode();
@@ -35,7 +35,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   }
 
   Future<ButtonConfig> getButtonConfig(ButtonType type) async {
-    var appState = context.read<MyAppState>();
+    var appState = context.read<ChameleonState>();
     try {
       return await appState.communicator!.getButtonConfig(type);
     } catch (_) {
@@ -44,7 +44,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   }
 
   Future<ButtonConfig> getLongButtonConfig(ButtonType type) async {
-    var appState = context.read<MyAppState>();
+    var appState = context.read<ChameleonState>();
     try {
       return await appState.communicator!.getLongButtonConfig(type);
     } catch (_) {
@@ -72,7 +72,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonState>();
     var localizations = AppLocalizations.of(context)!;
     return FutureBuilder(
         future: getSettingsData(),
@@ -85,7 +85,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
             appState.connector.performDisconnect();
             return AlertDialog(
                 title: Text(localizations.device_settings),
-                content: Text('${localizations.error}: ${snapshot.error.toString()}'));
+                content: Text(
+                    '${localizations.error}: ${snapshot.error.toString()}'));
           } else {
             var (
               animationMode,
@@ -136,7 +137,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           } catch (e) {
                             ScaffoldMessenger.of(context).hideCurrentSnackBar();
                             snackBar = SnackBar(
-                              content: Text('${localizations.update_error}: ${e.toString()}'),
+                              content: Text(
+                                  '${localizations.update_error}: ${e.toString()}'),
                               action: SnackBarAction(
                                 label: localizations.close,
                                 onPressed: () {},
@@ -168,7 +170,11 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     Text("${localizations.animations}:"),
                     const SizedBox(height: 10),
                     ToggleButtonsWrapper(
-                        items: [localizations.full, localizations.mini, localizations.none],
+                        items: [
+                          localizations.full,
+                          localizations.mini,
+                          localizations.none
+                        ],
                         selectedValue: animationMode.value,
                         onChange: (int index) async {
                           var animation = AnimationSetting.full;
@@ -187,7 +193,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     const SizedBox(height: 10),
                     Text("${localizations.button_config}:"),
                     const SizedBox(height: 7),
-                    Text("${localizations.button_x("A")}:", textScaleFactor: 0.8),
+                    Text("${localizations.button_x("A")}:",
+                        textScaleFactor: 0.8),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
                         items: [
@@ -214,7 +221,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           appState.changesMade();
                         }),
                     const SizedBox(height: 7),
-                    Text("${localizations.button_x("B")}:", textScaleFactor: 0.8),
+                    Text("${localizations.button_x("B")}:",
+                        textScaleFactor: 0.8),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
                         items: [
@@ -243,7 +251,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     const SizedBox(height: 7),
                     Text(localizations.long_press, textScaleFactor: 0.9),
                     const SizedBox(height: 7),
-                    Text("${localizations.button_x("A")}:", textScaleFactor: 0.8),
+                    Text("${localizations.button_x("A")}:",
+                        textScaleFactor: 0.8),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
                         items: [
@@ -270,7 +279,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           appState.changesMade();
                         }),
                     const SizedBox(height: 7),
-                    Text("${localizations.button_x("B")}:", textScaleFactor: 0.8),
+                    Text("${localizations.button_x("B")}:",
+                        textScaleFactor: 0.8),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
                         items: [
@@ -319,22 +329,22 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             context: context,
                             builder: (BuildContext context) => AlertDialog(
                               title: Text(localizations.factory_reset),
-                              content: Text(
-                                  localizations.factory_sure),
+                              content: Text(localizations.factory_sure),
                               actions: <Widget>[
                                 TextButton(
                                   onPressed: () async {
                                     await appState.communicator!.factoryReset();
                                     await appState.connector
                                         .performDisconnect();
-                                    Navigator.pop(context, localizations.cancel);
+                                    Navigator.pop(
+                                        context, localizations.cancel);
                                     appState.changesMade();
                                   },
                                   child: Text(localizations.yes),
                                 ),
                                 TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, localizations.cancel),
+                                  onPressed: () => Navigator.pop(
+                                      context, localizations.cancel),
                                   child: Text(localizations.no),
                                 ),
                               ],
