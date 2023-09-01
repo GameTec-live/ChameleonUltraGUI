@@ -95,7 +95,3 @@ jobs:
       - name: Install tools
         run: brew install automake libtool create-dmg
       - run: flutter build macos --release
-      - uses: actions/upload-artifact@v3
-        with:
-          name: macos
-          path: chameleonultragui/build/macos/Build/Products/Release/Chamaleon Ultra GUI.app
