@@ -135,9 +135,9 @@ class DFUCommunicator {
   AbstractSerial? _serialInstance;
   Completer<List<int>>? responseCompleter;
 
-  Logger log = Logger();
+  final Logger log;
 
-  DFUCommunicator({AbstractSerial? port, bool viaBLE = false}) {
+  DFUCommunicator(this.log, {AbstractSerial? port, bool viaBLE = false}) {
     isBLE = viaBLE;
     if (port != null) {
       open(port);

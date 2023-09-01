@@ -11,7 +11,7 @@ class DeveloperList extends StatelessWidget {
     return IntrinsicHeight(
       child: Center(
         child: Wrap(
-          alignment: WrapAlignment.center, // Center the items in each line
+          alignment: WrapAlignment.center,
           children: List.generate(avatars.length, (index) {
             final avatar = avatars[index];
             return GestureDetector(

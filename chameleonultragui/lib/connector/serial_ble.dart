@@ -26,6 +26,8 @@ class BLESerial extends AbstractSerial {
   Map<String, Chameleon> chameleonMap = {};
   bool inSearch = false;
 
+  BLESerial({required super.log});
+
   @override
   Future<List> availableDevices() async {
     if (inSearch) {

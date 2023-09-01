@@ -10,6 +10,8 @@ class MobileSerial extends AbstractSerial {
   Map<String, UsbDevice> deviceMap = {};
   UsbPort? port;
 
+  MobileSerial({required super.log});
+
   @override
   Future<bool> performDisconnect() async {
     device = ChameleonDevice.none;

@@ -137,7 +137,7 @@
     "slot_status": "Slot-Status",
     "hf": "HF",
     "lf": "LF",
-    "mifare_clasic_e_s": "Mifare Classic Emulator Einstellungn",
+    "mifare_classic_emulator_settings": "Mifare Classic Emulator Einstellungn",
     "mode_gen1a": "Gen1A Magic Modus",
     "mode_gen2": "Gen2 Magic Modus",
     "use_from_block": "Nimm UID/SAK/ATQA aus Block Nui",
@@ -176,5 +176,8 @@
     "select_save_format": "Speicherformat wön",
     "key_count": "Schliassl Anzahl",
     "all": "Alle",
-    "no_name": "Kei Nam"
+    "no_name": "Kei Nam",
+    "connecting_to_ble": "Connecting to BLE device...",
+    "default_ble_password": "Default BLE connection password is 123456",
+    "connection_might_take_some_time": "First connection might take some time"
 }

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -8,6 +7,7 @@ import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
@@ -20,256 +20,305 @@ class DebugPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>(); // Get State
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center, // Center
-        children: [
-          Align(
-            alignment: Alignment.topRight,
-            child: IconButton(
-              onPressed: () {
-                // Disconnect
-                appState.connector.performDisconnect();
-                appState.changesMade();
-              },
-              icon: const Icon(Icons.close),
-            ),
-          ),
-          const Text(
-            '🐞 Chameleon Ultra GUI DEBUG MENU 🐞',
-            textScaleFactor: 2,
-          ),
-          Text(
-            localizations.debug_page_warning,
-            textScaleFactor: 2,
-          ),
-          Text('⚠️ ${localizations.warned} ⚠️', textScaleFactor: 3),
-          Text('${localizations.platform}: ${Platform.operatingSystem}'),
-          Text('${localizations.android}: ${appState.onAndroid}'),
-          Text('${localizations.serial_protocol}: ${appState.connector}'),
-          Text(
-              '${localizations.chameleon_connected}: ${appState.connector.connected}'),
-          Text(
-              '${localizations.chameleon_device_type}: ${appState.connector.device}'),
-          ElevatedButton(
-            onPressed: () async {
-              await appState.communicator!.setReaderDeviceMode(true);
-              var distance = await appState.communicator!.getMf1NTDistance(
-                  50,
-                  0x60,
-                  Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
-              bool found = false;
-              for (var i = 0; i < 0xFF && !found; i++) {
-                var nonces = await appState.communicator!.getMf1NestedNonces(
-                    50,
-                    0x60,
-                    Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
-                    0,
-                    0x61);
-                var nested = NestedDart(
-                    uid: distance.uid,
-                    distance: distance.distance,
-                    nt0: nonces.nonces[0].nt,
-                    nt0Enc: nonces.nonces[0].ntEnc,
-                    par0: nonces.nonces[0].parity,
-                    nt1: nonces.nonces[1].nt,
-                    nt1Enc: nonces.nonces[1].ntEnc,
-                    par1: nonces.nonces[1].parity);
-
-                var keys = await recovery.nested(nested);
-                if (keys.isNotEmpty) {
-                  appState.log.d("Found keys: $keys. Checking them...");
-                  for (var key in keys) {
-                    var keyBytes = u64ToBytes(key);
-                    if ((await appState.communicator!
-                            .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8))) ==
-                        true) {
-                      appState.log.i(
-                          "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
-                      found = true;
-                      break;
-                    }
-                  }
-                } else {
-                  appState.log.d("Can't find keys, retrying...");
-                }
-              }
-            },
-            child: Column(children: [
-              Text(localizations.nested_attack),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await appState.communicator!.setReaderDeviceMode(true);
-              var data = await appState.communicator!
-                  .getMf1Darkside(0x03, 0x61, true, 15);
-              var darkside = DarksideDart(uid: data.uid, items: []);
-              bool found = false;
-
-              for (var tries = 0; tries < 0xFF && !found; tries++) {
-                darkside.items.add(DarksideItemDart(
-                    nt1: data.nt1,
-                    ks1: data.ks1,
-                    par: data.par,
-                    nr: data.nr,
-                    ar: data.ar));
-                var keys = await recovery.darkside(darkside);
-                if (keys.isNotEmpty) {
-                  appState.log.d("Found keys: $keys. Checking them...");
-                  for (var key in keys) {
-                    var keyBytes = u64ToBytes(key);
-                    if ((await appState.communicator!
-                            .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8))) ==
-                        true) {
-                      appState.log.i(
-                          "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
-                      found = true;
-                      break;
-                    }
-                  }
-                } else {
-                  appState.log.d("Can't find keys, retrying...");
-                  data = await appState.communicator!
-                      .getMf1Darkside(0x03, 0x61, false, 15);
-                }
-              }
-            },
-            child: Column(children: [
-              Text(localizations.darkside_attack),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await appState.communicator!.setReaderDeviceMode(true);
-              appState.log.d(
-                  "Reader mode (should be true): ${await appState.communicator!.isReaderDeviceMode()}");
-              var card = await appState.communicator!.scan14443aTag();
-              appState.log.d('Card UID: ${card.uid}');
-              appState.log.d('SAK: ${card.sak}');
-              appState.log.d('ATQA: ${card.atqa}');
-              await appState.communicator!.setReaderDeviceMode(false);
-              await appState.communicator!.setMf1AntiCollision(card);
-            },
-            child: Column(children: [
-              Text(localizations.copy_uid),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await appState.communicator!
-                  .setSlotTagName(1, "test", TagFrequency.hf);
-              var name = await appState.communicator!
-                  .getSlotTagName(1, TagFrequency.hf);
-              appState.log.d(name);
-              await appState.communicator!
-                  .setSlotTagName(1, "Hello 变色龙!", TagFrequency.hf);
-              name = await appState.communicator!
-                  .getSlotTagName(1, TagFrequency.hf);
-              appState.log.d(name);
-            },
-            child: Column(children: [
-              Text(localizations.test_naming),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              var darkside = DarksideDart(uid: 2374329723, items: []);
-              darkside.items.add(DarksideItemDart(
-                  nt1: 913032415,
-                  ks1: 216745674933338888,
-                  par: 0,
-                  nr: 0,
-                  ar: 0));
-              darkside.items.add(DarksideItemDart(
-                  nt1: 913032415,
-                  ks1: 1010230244403446283,
-                  par: 0,
-                  nr: 1,
-                  ar: 0));
-              var keys = await recovery.darkside(darkside);
-              appState.log.d("Darkside output: $keys");
-              appState.log.d(
-                  "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
-            },
-            child: Column(children: [
-              Text(localizations.test_darkside_lib),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              var nested = NestedDart(
-                  uid: 2374329723,
-                  distance: 613,
-                  nt0: 1999585272,
-                  nt0Enc: 3173333529,
-                  par0: 3,
-                  nt1: 128306861,
-                  nt1Enc: 2363514210,
-                  par1: 7);
-              var keys = await recovery.nested(nested);
-              appState.log.d("Nested output: $keys");
-              appState.log.d(
-                  "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
-            },
-            child: Column(children: [
-              Text(localizations.test_nested_lib),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Uint8List applicationDat, applicationBin;
-
-              Uint8List content = await fetchFirmware(ChameleonDevice.ultra);
-
-              (applicationDat, applicationBin) = await unpackFirmware(content);
-
-              flashFile(
-                  appState.communicator,
-                  appState,
-                  applicationDat,
-                  applicationBin,
-                  (progress) => appState.log.d("Flashing: $progress%"),
-                  firmwareZip: content);
-            },
-            child: Column(children: [
-              Text('💀 ${localizations.dfu_flash_ultra} 💀'),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Uint8List applicationDat, applicationBin;
-
-              Uint8List content = await fetchFirmware(ChameleonDevice.lite);
-
-              (applicationDat, applicationBin) = await unpackFirmware(content);
-
-              flashFile(
-                  appState.communicator,
-                  appState,
-                  applicationDat,
-                  applicationBin,
-                  (progress) => appState.log.d("Flashing: $progress%"),
-                  firmwareZip: content);
-            },
-            child: Column(children: [
-              Text('💀 ${localizations.dfu_flash_lite} 💀'),
-            ]),
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () async {
-              await appState.communicator!.factoryReset();
-            },
-            child: Column(children: [
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text('🐞'),
+        ),
+        body: SingleChildScrollView(
+            child: Center(
+                child: Card(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  onPressed: () {
+                    // Disconnect
+                    appState.connector!.performDisconnect();
+                    appState.changesMade();
+                  },
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+              const Text(
+                '🐞 Chameleon Ultra GUI DEBUG MENU 🐞',
+                textScaleFactor: 2,
+              ),
               Text(
-                  '✅ ${localizations.safe_option}: ${localizations.restart_chameleon} ✅'),
-            ]),
+                localizations.debug_page_warning,
+                textScaleFactor: 2,
+              ),
+              Text('⚠️ ${localizations.warned} ⚠️', textScaleFactor: 3),
+              Text('${localizations.platform}: ${Platform.operatingSystem}'),
+              Text('${localizations.serial_protocol}: ${appState.connector}'),
+              Text(
+                  '${localizations.chameleon_connected}: ${appState.connector!.connected}'),
+              Text(
+                  '${localizations.chameleon_device_type}: ${appState.connector!.device}'),
+              ElevatedButton(
+                onPressed: () async {
+                  await appState.communicator!.setReaderDeviceMode(true);
+                  var distance = await appState.communicator!.getMf1NTDistance(
+                      50,
+                      0x60,
+                      Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
+                  bool found = false;
+                  for (var i = 0; i < 0xFF && !found; i++) {
+                    var nonces = await appState.communicator!
+                        .getMf1NestedNonces(
+                            50,
+                            0x60,
+                            Uint8List.fromList(
+                                [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
+                            0,
+                            0x61);
+                    var nested = NestedDart(
+                        uid: distance.uid,
+                        distance: distance.distance,
+                        nt0: nonces.nonces[0].nt,
+                        nt0Enc: nonces.nonces[0].ntEnc,
+                        par0: nonces.nonces[0].parity,
+                        nt1: nonces.nonces[1].nt,
+                        nt1Enc: nonces.nonces[1].ntEnc,
+                        par1: nonces.nonces[1].parity);
+
+                    var keys = await recovery.nested(nested);
+                    if (keys.isNotEmpty) {
+                      appState.log!.d("Found keys: $keys. Checking them...");
+                      for (var key in keys) {
+                        var keyBytes = u64ToBytes(key);
+                        if ((await appState.communicator!
+                                .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8))) ==
+                            true) {
+                          appState.log!.i(
+                              "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
+                          found = true;
+                          break;
+                        }
+                      }
+                    } else {
+                      appState.log!.d("Can't find keys, retrying...");
+                    }
+                  }
+                },
+                child: Column(children: [
+                  Text(localizations.nested_attack),
+                ]),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  await appState.communicator!.setReaderDeviceMode(true);
+                  var data = await appState.communicator!
+                      .getMf1Darkside(0x03, 0x61, true, 15);
+                  var darkside = DarksideDart(uid: data.uid, items: []);
+                  bool found = false;
+
+                  for (var tries = 0; tries < 0xFF && !found; tries++) {
+                    darkside.items.add(DarksideItemDart(
+                        nt1: data.nt1,
+                        ks1: data.ks1,
+                        par: data.par,
+                        nr: data.nr,
+                        ar: data.ar));
+                    var keys = await recovery.darkside(darkside);
+                    if (keys.isNotEmpty) {
+                      appState.log!.d("Found keys: $keys. Checking them...");
+                      for (var key in keys) {
+                        var keyBytes = u64ToBytes(key);
+                        if ((await appState.communicator!
+                                .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8))) ==
+                            true) {
+                          appState.log!.i(
+                              "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
+                          found = true;
+                          break;
+                        }
+                      }
+                    } else {
+                      appState.log!.d("Can't find keys, retrying...");
+                      data = await appState.communicator!
+                          .getMf1Darkside(0x03, 0x61, false, 15);
+                    }
+                  }
+                },
+                child: Column(children: [
+                  Text(localizations.darkside_attack),
+                ]),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  await appState.communicator!.setReaderDeviceMode(true);
+                  appState.log!.d(
+                      "Reader mode (should be true): ${await appState.communicator!.isReaderDeviceMode()}");
+                  var card = await appState.communicator!.scan14443aTag();
+                  appState.log!.d('Card UID: ${card.uid}');
+                  appState.log!.d('SAK: ${card.sak}');
+                  appState.log!.d('ATQA: ${card.atqa}');
+                  await appState.communicator!.setReaderDeviceMode(false);
+                  await appState.communicator!.setMf1AntiCollision(card);
+                },
+                child: Column(children: [
+                  Text(localizations.copy_uid),
+                ]),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  await appState.communicator!
+                      .setSlotTagName(1, "test", TagFrequency.hf);
+                  var name = await appState.communicator!
+                      .getSlotTagName(1, TagFrequency.hf);
+                  appState.log!.d(name);
+                  await appState.communicator!
+                      .setSlotTagName(1, "Hello 变色龙!", TagFrequency.hf);
+                  name = await appState.communicator!
+                      .getSlotTagName(1, TagFrequency.hf);
+                  appState.log!.d(name);
+                },
+                child: Column(children: [
+                  Text(localizations.test_naming),
+                ]),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  var darkside = DarksideDart(uid: 2374329723, items: []);
+                  darkside.items.add(DarksideItemDart(
+                      nt1: 913032415,
+                      ks1: 216745674933338888,
+                      par: 0,
+                      nr: 0,
+                      ar: 0));
+                  darkside.items.add(DarksideItemDart(
+                      nt1: 913032415,
+                      ks1: 1010230244403446283,
+                      par: 0,
+                      nr: 1,
+                      ar: 0));
+                  var keys = await recovery.darkside(darkside);
+                  appState.log!.d("Darkside output: $keys");
+                  appState.log!.d(
+                      "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
+                },
+                child: Column(children: [
+                  Text(localizations.test_darkside_lib),
+                ]),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  var nested = NestedDart(
+                      uid: 2374329723,
+                      distance: 613,
+                      nt0: 1999585272,
+                      nt0Enc: 3173333529,
+                      par0: 3,
+                      nt1: 128306861,
+                      nt1Enc: 2363514210,
+                      par1: 7);
+                  var keys = await recovery.nested(nested);
+                  appState.log!.d("Nested output: $keys");
+                  appState.log!.d(
+                      "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
+                },
+                child: Column(children: [
+                  Text(localizations.test_nested_lib),
+                ]),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Uint8List applicationDat, applicationBin;
+
+                  Uint8List content =
+                      await fetchFirmware(ChameleonDevice.ultra);
+
+                  (applicationDat, applicationBin) =
+                      await unpackFirmware(content);
+
+                  flashFile(
+                      appState.communicator,
+                      appState,
+                      applicationDat,
+                      applicationBin,
+                      (progress) => appState.log!.d("Flashing: $progress%"),
+                      firmwareZip: content);
+                },
+                child: Column(children: [
+                  Text('💀 ${localizations.dfu_flash_ultra} 💀'),
+                ]),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Uint8List applicationDat, applicationBin;
+
+                  Uint8List content = await fetchFirmware(ChameleonDevice.lite);
+
+                  (applicationDat, applicationBin) =
+                      await unpackFirmware(content);
+
+                  flashFile(
+                      appState.communicator,
+                      appState,
+                      applicationDat,
+                      applicationBin,
+                      (progress) => appState.log!.d("Flashing: $progress%"),
+                      firmwareZip: content);
+                },
+                child: Column(children: [
+                  Text('💀 ${localizations.dfu_flash_lite} 💀'),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  await appState.communicator!.factoryReset();
+                },
+                child: Column(children: [
+                  Text(
+                      '✅ ${localizations.safe_option}: ${localizations.restart_chameleon} ✅'),
+                ]),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () async {
+                  appState.sharedPreferencesProvider.setDebugLogging(true);
+                  await appState.connector!.performDisconnect();
+                  appState.log = null;
+                  appState.connector = null;
+                  appState.changesMade();
+                },
+                child: const Column(children: [
+                  Text('Enable production logging'),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  appState.sharedPreferencesProvider.setDebugLogging(false);
+                  await appState.connector!.performDisconnect();
+                  appState.log = null;
+                  appState.connector = null;
+                  appState.changesMade();
+                },
+                child: const Column(children: [
+                  Text('Disable production logging'),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(
+                      text: appState.sharedPreferencesProvider
+                          .getLogLines()
+                          .join("\n")));
+                },
+                child: const Column(children: [
+                  Text('Copy logs to clipboard'),
+                ]),
+              ),
+              const SizedBox(height: 10),
+            ],
           ),
-        ],
-      ),
-    );
+        ))));
   }
 }

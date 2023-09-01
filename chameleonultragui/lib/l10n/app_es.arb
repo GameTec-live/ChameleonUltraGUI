@@ -67,7 +67,7 @@
     "keys": "Claves",
     "found_keys": "Claves encontradas",
     "please_wait": "Por favor, espere",
-    "used_slots" : "Ranuras usadas",
+    "used_slots": "Ranuras usadas",
     "firmware_version": "Versión de firmware",
     "update_error": "Error de actualización",
     "up_to_date": "El firmware de tu Chameleon {model} está actualizado.",
@@ -137,7 +137,7 @@
     "slot_status": "Estado de la ranura",
     "hf": "HF",
     "lf": "LF",
-    "mifare_clasic_e_s": "Ajustes de emulacion Mifare Classic",
+    "mifare_classic_emulator_settings": "Ajustes de emulacion Mifare Classic",
     "mode_gen1a": "Modo Gen1A Magic",
     "mode_gen2": "Modo Gen2 Magic",
     "use_from_block": "Usar UID/SAK/ATQA desde el bloque 0",
@@ -158,7 +158,7 @@
     "output_file": "Seleccione un archivo de salida",
     "hf_tag_info": "HF Tag Info",
     "lf_tag_info": "LF Tag Info",
-    "no_card_found": "No se ha encontrado ninguna tarjeta. Prueba a moverla sobre el Chamaleon",
+    "no_card_found": "No se ha encontrado ninguna tarjeta. Prueba a moverla sobre el Chameleon",
     "no_supported": "Accion no soportada",
     "lite_no_read": "Chameleon Lite no admite la lectura de tarjetas",
     "read": "Leer",
@@ -176,5 +176,8 @@
     "select_save_format": "Seleccione el formato de guardado",
     "key_count": "Contador de claves",
     "all": "Todo",
-    "no_name": "Sin nombre"
+    "no_name": "Sin nombre",
+    "connecting_to_ble": "Conectando con el dispositivo BLE...",
+    "default_ble_password": "La contraseña de conexión BLE predeterminada es 123456",
+    "connection_might_take_some_time": "La primera conexión puede tardar algún tiempo"
 }

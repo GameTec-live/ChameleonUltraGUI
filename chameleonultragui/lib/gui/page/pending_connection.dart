@@ -10,7 +10,7 @@ class PendingConnectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -26,7 +26,7 @@ class PendingConnectionPage extends StatelessWidget {
             localizations.connecting_to_ble,
           ),
           const SizedBox(height: 10),
-          if (!appState.connector.connected) ...[
+          if (!appState.connector!.connected) ...[
             Text(
               localizations.default_ble_password,
               style: const TextStyle(fontWeight: FontWeight.bold),

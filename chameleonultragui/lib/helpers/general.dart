@@ -2,7 +2,9 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:io' show Platform;
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 
 Future<void> asyncSleep(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
@@ -156,5 +158,18 @@ TagFrequency chameleonTagToFrequency(TagType tag) {
     return TagFrequency.lf;
   } else {
     return TagFrequency.hf;
+  }
+}
+
+class SharedPreferencesLogger extends LogOutput {
+  SharedPreferencesProvider? provider;
+
+  SharedPreferencesLogger(this.provider);
+
+  @override
+  void output(OutputEvent event) {
+    for (var line in event.lines) {
+      provider?.addLogLine(line);
+    }
   }
 }

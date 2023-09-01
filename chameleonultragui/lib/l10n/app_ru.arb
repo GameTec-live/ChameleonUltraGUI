@@ -137,7 +137,7 @@
     "slot_status": "Статус слота",
     "hf": "ВЧ",
     "lf": "НЧ",
-    "mifare_clasic_e_s": "Настройка эмулятора Mifare Classic",
+    "mifare_classic_emulator_settings": "Настройка эмулятора Mifare Classic",
     "mode_gen1a": "Режим Gen1A",
     "mode_gen2": "Режим Gen2",
     "use_from_block": "Использовать UID/SAK/ATQA из 0 блока",

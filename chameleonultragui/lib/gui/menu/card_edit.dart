@@ -50,7 +50,7 @@ class CardEditMenuState extends State<CardEditMenu> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     return AlertDialog(
       title: Text(localizations.edit_card),
@@ -78,8 +78,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                           context: context,
                           builder: (BuildContext context) {
                             return AlertDialog(
-                              title: Text(localizations
-                                  .pick_color),
+                              title: Text(localizations.pick_color),
                               content: SingleChildScrollView(
                                 child: ColorPicker(
                                   pickerColor: pickerColor,
@@ -98,19 +97,16 @@ class CardEditMenuState extends State<CardEditMenu> {
                                         pickerColor = Colors.deepOrange);
                                     Navigator.pop(context);
                                   },
-                                  child: Text(localizations
-                                      .reset_default),
+                                  child: Text(localizations.reset_default),
                                 ),
                                 TextButton(
                                   onPressed: () {
                                     Navigator.pop(context);
                                   },
-                                  child: Text(localizations
-                                      .cancel),
+                                  child: Text(localizations.cancel),
                                 ),
                                 TextButton(
-                                  child: Text(localizations
-                                      .ok),
+                                  child: Text(localizations.ok),
                                   onPressed: () {
                                     setState(() => currentColor = pickerColor);
                                     Navigator.pop(context);
@@ -154,7 +150,8 @@ class CardEditMenuState extends State<CardEditMenu> {
                 TextFormField(
                   controller: uidController,
                   decoration: InputDecoration(
-                      labelText: localizations.uid, hintText: localizations.enter_something("UID")),
+                      labelText: localizations.uid,
+                      hintText: localizations.enter_something("UID")),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return localizations.please_enter_something("UID");
@@ -180,7 +177,8 @@ class CardEditMenuState extends State<CardEditMenu> {
                   child: TextFormField(
                     controller: sak4Controller,
                     decoration: InputDecoration(
-                        labelText: localizations.sak, hintText: localizations.enter_something("SAK")),
+                        labelText: localizations.sak,
+                        hintText: localizations.enter_something("SAK")),
                     validator: (value) {
                       if (value == null ||
                           value.isEmpty &&
@@ -204,7 +202,8 @@ class CardEditMenuState extends State<CardEditMenu> {
                   child: TextFormField(
                     controller: atqa4Controller,
                     decoration: InputDecoration(
-                        labelText: localizations.atqa, hintText: localizations.enter_something("ATQA")),
+                        labelText: localizations.atqa,
+                        hintText: localizations.enter_something("ATQA")),
                     validator: (value) {
                       if (value == null ||
                           value.isEmpty &&
