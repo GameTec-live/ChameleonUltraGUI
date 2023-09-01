@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -317,7 +316,6 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return 'Français';
       case 'ko':
         return '한국어';
-
       case 'en':
         return 'English';
       case 'da':
