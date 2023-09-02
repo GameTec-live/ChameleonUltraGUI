@@ -39,4 +39,6 @@ for language in progressbar(request('GET', 'https://crowdin.com/api/v2/languages
                               {"targetLanguageId": language["data"]["id"], "format": "arb-export",
                                "skipUntranslatedStrings": True, "fileIds": [9]})
         export = urlopen(Request(translation['data']['url'], method='GET')).read()
-        open(f"app_{language['data']['osxLocale']}.arb", "wb+").write(export)
+        translations = json.loads(export.decode())
+        translations['@@locale'] = language['data']['osxLocale']
+        json.dump(translations, open(f"app_{language['data']['osxLocale']}.arb", "wb+"), indent=2)
