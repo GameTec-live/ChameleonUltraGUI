@@ -1,0 +1,19 @@
+{
+  "@@locale": "it-IT",
+  "ok": "OK",
+  "cancel": "Annulla",
+  "close": "Chiudi",
+  "save": "Salva",
+  "no": "No",
+  "yes": "Si",
+  "enabled": "Abilitato",
+  "disabled": "Disabilitato",
+  "available": "Disponibile",
+  "connect": "Connetti",
+  "home": "Homepage",
+  "dictionary": "Dizionario",
+  "dictionaries": "Dizionari",
+  "slot": "Slot",
+  "slots": "Slots",
+  "slot_manager": "Gestore Slot"
+}
