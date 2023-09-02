@@ -5,7 +5,7 @@ import urllib.error
 from urllib.request import Request, urlopen
 
 
-def progressbar(it, prefix="", size=60, out=sys.stdout):
+def progressbar(it, prefix='', size=60, out=sys.stdout):
     count = len(it)
 
     def show(j):
@@ -16,7 +16,7 @@ def progressbar(it, prefix="", size=60, out=sys.stdout):
     for i, item in enumerate(it):
         yield item
         show(i + 1)
-    print("\n", flush=True, file=out)
+    print('\n', flush=True, file=out)
 
 
 def request(method, url, data=None):
@@ -28,15 +28,24 @@ def request(method, url, data=None):
                                                'Content-Type': 'application/json'})).read().decode())
 
 
-for language in progressbar(request('GET', 'https://crowdin.com/api/v2/languages?limit=500')['data']):
+LANGUAGES = request('GET', 'https://crowdin.com/api/v2/languages?limit=500')['data']
+
+for language in progressbar(
+        request('GET', 'https://crowdin.com/api/v2/projects/610545/files/9/languages/progress?limit=500')['data']):
     try:
         progress = request('GET',
-                           f'https://crowdin.com/api/v2/projects/610545/languages/{language["data"]["id"]}/progress')
+                           f"https://crowdin.com/api/v2/projects/610545/languages/{language['data']['languageId']}/progress")
     except urllib.error.HTTPError:
         continue
     if progress['data'][0]['data']['words']['translated']:
-        translation = request("POST", "https://crowdin.com/api/v2/projects/610545/translations/exports",
-                              {"targetLanguageId": language["data"]["id"], "format": "arb-export",
-                               "skipUntranslatedStrings": True, "fileIds": [9]})
+        translation = request('POST', 'https://crowdin.com/api/v2/projects/610545/translations/exports',
+                              {'targetLanguageId': language['data']['languageId'], 'format': 'arb-export',
+                               'skipUntranslatedStrings': True, 'fileIds': [9]})
         export = urlopen(Request(translation['data']['url'], method='GET')).read()
-        open(f"app_{language['data']['osxLocale']}.arb", "wb+").write(export)
+        translations = json.loads(export.decode())
+        locale = None
+        for lang in LANGUAGES:
+            if lang['data']['id'] == language['data']['languageId']:
+                locale = lang['data']['osxLocale']
+        translations['@@locale'] = locale
+        json.dump(translations, open(f'app_{locale}.arb', 'w+'), indent=2)
