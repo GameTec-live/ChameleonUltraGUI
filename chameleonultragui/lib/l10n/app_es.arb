@@ -96,6 +96,7 @@
   "sector": "Sector",
   "edit_card": "Editar tarjeta",
   "please_enter_name": "Por favor, introduzca un nombre",
+  "too_long_name": "El nombre es muy largo",
   "name": "Nombre",
   "enter_name": "Introduzca el nombre de la tarjeta",
   "pick_color": "Elija un color",

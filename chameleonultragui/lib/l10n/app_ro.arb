@@ -95,6 +95,7 @@
   "sector": "Sector",
   "edit_card": "Editare card",
   "please_enter_name": "Introduce\u021bi un nume",
+  "too_long_name": "Numele este prea lung",
   "name": "Nume",
   "enter_name": "Introduce\u021bi numele cardului",
   "pick_color": "Alege\u021bi o culoare",

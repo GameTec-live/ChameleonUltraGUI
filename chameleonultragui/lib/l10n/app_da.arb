@@ -95,6 +95,7 @@
   "sector": "Sektor",
   "edit_card": "Rediger kort",
   "please_enter_name": "Indtast et navn",
+  "too_long_name": "Navnet er for langt",
   "name": "Navn",
   "enter_name": "Indtast navn p\u00e5 kort",
   "pick_color": "V\u00e6lg en farve",

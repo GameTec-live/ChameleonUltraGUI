@@ -98,6 +98,7 @@
   "sector": "Sector",
   "edit_card": "Edit Card",
   "please_enter_name": "Please enter a name",
+  "too_long_name": "The name is too long",
   "name": "Name",
   "enter_name": "Enter name of card",
   "pick_color": "Pick a color",

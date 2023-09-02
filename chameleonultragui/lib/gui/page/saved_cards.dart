@@ -108,7 +108,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                   itemBuilder: (BuildContext context, int index) {
                     if (index == 0) {
                       return Container(
-                        constraints: const BoxConstraints(maxHeight: 100),
+                        constraints: const BoxConstraints(minHeight: 80, maxHeight: 150),
                         child: ElevatedButton(
                           onPressed: () async {
                             FilePickerResult? result =
@@ -360,14 +360,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                     } else {
                       final tag = tags[index - 1];
                       return Container(
-                        constraints: const BoxConstraints(maxHeight: 100),
+                        constraints: const BoxConstraints(minHeight: 80, maxHeight: 150),
                         child: ElevatedButton(
                           onPressed: () {
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: Text(tag.name),
+                                  
+                                  title: Expanded(child: Text(tag.name, maxLines: 3, overflow: TextOverflow.ellipsis)),
                                   content: Column(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
@@ -462,6 +463,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                               RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(18.0),
                               ),
+                              
                             ),
                           ),
                           child: Stack(
@@ -479,17 +481,21 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   ),
                                   Expanded(
                                     flex: 1,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
+                                    child: Wrap(
+                                      //mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         Column(
                                           children: [
                                             Text(
                                               tag.name,
                                               style: const TextStyle(
-                                                fontSize: 24,
+                                                fontSize: 16,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
+                                              maxLines: 3,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
+                                            
                                             Text(
                                               chameleonTagToString(tag.tag) +
                                                   ((chameleonTagSaveCheckForMifareClassicEV1(
@@ -497,12 +503,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                       ? " EV1"
                                                       : ""),
                                               style: const TextStyle(
-                                                fontSize: 24,
+                                                fontSize: 16,
                                               ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                          ],
+                                          ], 
                                         ),
                                       ],
+                                      
                                     ),
                                   ),
                                 ],
@@ -603,14 +612,14 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
                   crossAxisCount:
-                      MediaQuery.of(context).size.width >= 600 ? 2 : 1,
+                      MediaQuery.of(context).size.width >= 700 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: dictionaries.length + 1,
                   itemBuilder: (BuildContext context, int index) {
                     if (index == 0) {
                       return Container(
-                        constraints: const BoxConstraints(maxHeight: 100),
+                        constraints: const BoxConstraints(maxHeight: 150),
                         child: ElevatedButton(
                           onPressed: () async {
                             FilePickerResult? result =
