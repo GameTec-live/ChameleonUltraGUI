@@ -28,7 +28,7 @@ def request(method, url, data=None):
                                                'Content-Type': 'application/json'})).read().decode())
 
 
-for language in progressbar(request('GET', 'https://crowdin.com/api/v2/languages?limit=500')['data']):
+for language in progressbar(request('GET', 'https://crowdin.com/api/v2/projects/610545/files/9/languages/progress?limit=500')['data']):
     try:
         progress = request('GET',
                            f'https://crowdin.com/api/v2/projects/610545/languages/{language["data"]["id"]}/progress')
