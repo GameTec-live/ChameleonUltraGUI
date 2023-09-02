@@ -1,0 +1,19 @@
+{
+  "@@locale": "nl-NL",
+  "ok": "OK",
+  "cancel": "Annuleeren",
+  "close": "Afsluiten",
+  "save": "Opslaan",
+  "no": "Nee",
+  "yes": "Ja",
+  "enabled": "Ingeschakeld",
+  "disabled": "Uitgeschakeld",
+  "available": "Voorhanden",
+  "unavailable": "Onbereikbaar",
+  "connect": "Verbinden",
+  "home": "Home",
+  "card": "Kaart",
+  "cards": "Kaarten",
+  "dictionary": "Woordenboek",
+  "dictionaries": "Woordenboeken"
+}
