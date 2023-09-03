@@ -152,7 +152,10 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         child: Row(
                           children: [
                             const Icon(Icons.system_security_update),
-                            Text(localizations.flash_via_dfu),
+                            Expanded( child: Text(localizations.flash_via_dfu,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,),
+                            ),
                           ],
                         )),
                     TextButton(
@@ -163,13 +166,18 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         child: Row(
                           children: [
                             const Icon(Icons.system_security_update_good),
-                            Text(localizations.flash_zip_dfu),
+                            Expanded( child: Text(localizations.flash_zip_dfu, 
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,),
+                            ),
                           ],
                         )),
                     const SizedBox(height: 10),
                     Text("${localizations.animations}:"),
                     const SizedBox(height: 10),
-                    ToggleButtonsWrapper(
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: ToggleButtonsWrapper(
                         items: [
                           localizations.full,
                           localizations.mini,
@@ -190,13 +198,16 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           setState(() {});
                           appState.changesMade();
                         }),
+                    ),
                     const SizedBox(height: 10),
                     Text("${localizations.button_config}:"),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("A")}:",
                         textScaleFactor: 0.8),
                     const SizedBox(height: 7),
-                    ToggleButtonsWrapper(
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: ToggleButtonsWrapper(
                         items: [
                           localizations.disable,
                           localizations.forward,
@@ -220,11 +231,14 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           setState(() {});
                           appState.changesMade();
                         }),
+                    ),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("B")}:",
                         textScaleFactor: 0.8),
                     const SizedBox(height: 7),
-                    ToggleButtonsWrapper(
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: ToggleButtonsWrapper(
                         items: [
                           localizations.disable,
                           localizations.forward,
@@ -248,13 +262,16 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           setState(() {});
                           appState.changesMade();
                         }),
+                    ),
                     const SizedBox(height: 7),
                     Text(localizations.long_press, textScaleFactor: 0.9),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("A")}:",
                         textScaleFactor: 0.8),
                     const SizedBox(height: 7),
-                    ToggleButtonsWrapper(
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: ToggleButtonsWrapper(
                         items: [
                           localizations.disable,
                           localizations.forward,
@@ -278,11 +295,14 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           setState(() {});
                           appState.changesMade();
                         }),
+                    ),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("B")}:",
                         textScaleFactor: 0.8),
                     const SizedBox(height: 7),
-                    ToggleButtonsWrapper(
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: ToggleButtonsWrapper(
                         items: [
                           localizations.disable,
                           localizations.forward,
@@ -306,6 +326,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           setState(() {});
                           appState.changesMade();
                         }),
+                    ),
                     const SizedBox(height: 10),
                     Text("${localizations.other}:"),
                     const SizedBox(height: 10),
