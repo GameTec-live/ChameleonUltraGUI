@@ -7,6 +7,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/gui/component/slot_changer.dart';
+import 'dart:math';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -193,13 +194,20 @@ class HomePageState extends State<HomePage> {
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize:
-                                    MediaQuery.of(context).size.width / 25)),
+                                    min(
+                                    MediaQuery.of(context).size.width / 25,
+                                    MediaQuery.of(context).size.height / 20,
+                                      ),
+                                    )),
                       ],
                     ),
                     const SizedBox(height: 20),
                     Text("${localizations.used_slots}: $usedSlots/8",
                         style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width / 50)),
+                            fontSize: min(
+                                    MediaQuery.of(context).size.width / 35,
+                                    MediaQuery.of(context).size.height / 20,
+                                      ),)),
                     const SlotChanger(),
                     Expanded(
                       child: FractionallySizedBox(
@@ -220,11 +228,19 @@ class HomePageState extends State<HomePage> {
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize:
-                                    MediaQuery.of(context).size.width / 50)),
+                                  min(
+                                    MediaQuery.of(context).size.width / 50,
+                                    MediaQuery.of(context).size.height / 30,
+                                      ),
+                                    )),
                         Text(fwVersion[0],
                             style: TextStyle(
                                 fontSize:
-                                    MediaQuery.of(context).size.width / 50)),
+                                    min(
+                                    MediaQuery.of(context).size.width / 50,
+                                    MediaQuery.of(context).size.height / 30,
+                                      ),
+                                      )),
                         Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: IconButton(

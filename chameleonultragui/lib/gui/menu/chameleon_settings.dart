@@ -113,7 +113,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         child: Row(
                           children: [
                             const Icon(Icons.medical_services_outlined),
-                            Text(localizations.enter_dfu),
+                            Expanded(
+                              child: Text(localizations.enter_dfu,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         )),
                     TextButton(
@@ -339,7 +344,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         child: Row(
                           children: [
                             const Icon(Icons.lock_reset),
-                            Text(localizations.reset_settings),
+                            Expanded(
+                              child: Text(localizations.reset_settings,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         )),
                     TextButton(
@@ -375,7 +385,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         child: Row(
                           children: [
                             const Icon(Icons.restore_from_trash_outlined),
-                            Text(localizations.factory_reset),
+                            Expanded(
+                              child: Text(localizations.factory_reset,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         )),
                   ],

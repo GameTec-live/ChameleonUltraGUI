@@ -62,7 +62,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
             Text(localizations.sidebar_expansion,
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 5),
-            ToggleButtonsWrapper(
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: ToggleButtonsWrapper(
                 items: [
                   localizations.expand,
                   localizations.auto,
@@ -88,13 +90,16 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       .setSideBarExpandedIndex(index);
                   appState.changesMade();
                 }),
+            ),
             const SizedBox(height: 10),
             Text(
               localizations.theme,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
-            ToggleButtonsWrapper(
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: ToggleButtonsWrapper(
                 items: [
                   localizations.system,
                   localizations.light,
@@ -119,6 +124,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   }
                   appState.changesMade();
                 }),
+            ),
             const SizedBox(height: 10),
             Text(
               localizations.color_scheme,
@@ -176,7 +182,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
-            DropdownButton(
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: DropdownButton(
               value: appState.sharedPreferencesProvider.sharedPreferences
                       .getString('locale') ??
                   'en',
@@ -192,6 +200,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       Text(appState.sharedPreferencesProvider.getFlag(locale)),
                 );
               }).toList(),
+            ),
             ),
             const SizedBox(height: 10),
             TextButton(
