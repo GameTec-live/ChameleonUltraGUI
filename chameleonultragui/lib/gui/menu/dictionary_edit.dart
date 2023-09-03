@@ -12,8 +12,9 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DictionaryEditMenu extends StatefulWidget {
   final Dictionary dict;
+  final bool isNew;
 
-  const DictionaryEditMenu({Key? key, required this.dict}) : super(key: key);
+  const DictionaryEditMenu({Key? key, required this.dict, this.isNew = false}) : super(key: key);
 
   @override
   DictionaryEditMenuState createState() => DictionaryEditMenuState();
@@ -168,13 +169,20 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
             var dictionaries =
                 appState.sharedPreferencesProvider.getDictionaries();
             List<Dictionary> output = [];
-            for (var dictTest in dictionaries) {
-              if (dictTest.id != widget.dict.id) {
-                output.add(dictTest);
-              } else {
-                output.add(dict);
+
+            if (widget.isNew) {
+              output = dictionaries;
+              output.add(dict);
+            } else {
+              for (var dictTest in dictionaries) {
+                if (dictTest.id != widget.dict.id) {
+                  output.add(dictTest);
+                } else {
+                  output.add(dict);
+                }
               }
             }
+
             appState.sharedPreferencesProvider.setDictionaries(output);
             appState.changesMade();
             Navigator.pop(context);
