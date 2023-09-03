@@ -10,6 +10,7 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
@@ -98,17 +99,18 @@ class SavedCardsPageState extends State<SavedCardsPage> {
             ),
             Expanded(
               child: Card(
+                child: Expanded(
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
                   crossAxisCount:
-                      MediaQuery.of(context).size.width >= 600 ? 2 : 1,
+                      MediaQuery.of(context).size.width >= 700 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: tags.length + 1,
                   itemBuilder: (BuildContext context, int index) {
                     if (index == 0) {
                       return Container(
-                        constraints: const BoxConstraints(minHeight: 80, maxHeight: 150),
+                        constraints: const BoxConstraints(minHeight: 80),
                         child: ElevatedButton(
                           onPressed: () async {
                             FilePickerResult? result =
@@ -365,7 +367,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                     } else {
                       final tag = tags[index - 1];
                       return Container(
-                        constraints: const BoxConstraints(minHeight: 80, maxHeight: 150),
+                        constraints: const BoxConstraints(minHeight: 80),
                         child: ElevatedButton(
                           
                           onPressed: () {
@@ -613,6 +615,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           ? 2
                           : 1), // 2 for the "Add" button, 1 for others
                 ),
+                ),
               ),
             ),
             Padding(
@@ -624,7 +627,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
             ),
             Expanded(
               child: Card(
-                child: StaggeredGridView.countBuilder(
+                child: Expanded(
+                child: AlignedGridView.count(
                   padding: const EdgeInsets.all(20),
                   crossAxisCount:
                       MediaQuery.of(context).size.width >= 700 ? 2 : 1,
@@ -634,7 +638,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                   itemBuilder: (BuildContext context, int index) {
                     if (index == 0) {
                       return Container(
-                        constraints: const BoxConstraints(maxHeight: 150),
+                        constraints: const BoxConstraints(minHeight: 80),
                         child: ElevatedButton(
                           onPressed: () async {
                             FilePickerResult? result =
@@ -675,6 +679,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             }
                           },
                           style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                              (Set<MaterialState> states) {
+                                return appState.sharedPreferencesProvider.getThemeComplementaryColor(); 
+                              },
+                            ),
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(
                               RoundedRectangleBorder(
@@ -788,6 +797,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             );
                           },
                           style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                              (Set<MaterialState> states) {
+                                return appState.sharedPreferencesProvider.getThemeComplementaryColor(); 
+                              },
+                            ),
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(
                               RoundedRectangleBorder(
@@ -904,10 +918,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       );
                     }
                   },
-                  staggeredTileBuilder: (int index) => StaggeredTile.fit(
-                      index == 0
-                          ? 2
-                          : 1), // 2 for the "Add" button, 1 for others
+                  //staggeredTileBuilder: (int index) => StaggeredTile.fit(
+                  //    index == 0
+                  //        ? 2
+                  //        : 1), // 2 for the "Add" button, 1 for others
+                ),
                 ),
               ),
             ),
