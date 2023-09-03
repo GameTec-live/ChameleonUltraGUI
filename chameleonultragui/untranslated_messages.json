@@ -1,1 +1,64 @@
-{}
+{
+  "da": [
+    "save_recovered_keys",
+    "save_recovered_keys_where",
+    "save_recovered_keys_to_file",
+    "add_recovered_keys_to_existing_dict",
+    "create_new_dict_with_recovered_keys",
+    "recovery_in_progress"
+  ],
+
+  "de": [
+    "save_recovered_keys",
+    "save_recovered_keys_where",
+    "save_recovered_keys_to_file",
+    "add_recovered_keys_to_existing_dict",
+    "create_new_dict_with_recovered_keys",
+    "recovery_in_progress"
+  ],
+
+  "de_AT": [
+    "save_recovered_keys",
+    "save_recovered_keys_where",
+    "save_recovered_keys_to_file",
+    "add_recovered_keys_to_existing_dict",
+    "create_new_dict_with_recovered_keys",
+    "recovery_in_progress"
+  ],
+
+  "es": [
+    "save_recovered_keys",
+    "save_recovered_keys_where",
+    "save_recovered_keys_to_file",
+    "add_recovered_keys_to_existing_dict",
+    "create_new_dict_with_recovered_keys",
+    "recovery_in_progress"
+  ],
+
+  "fr": [
+    "save_recovered_keys",
+    "save_recovered_keys_where",
+    "save_recovered_keys_to_file",
+    "add_recovered_keys_to_existing_dict",
+    "create_new_dict_with_recovered_keys",
+    "recovery_in_progress"
+  ],
+
+  "ko": [
+    "save_recovered_keys",
+    "save_recovered_keys_where",
+    "save_recovered_keys_to_file",
+    "add_recovered_keys_to_existing_dict",
+    "create_new_dict_with_recovered_keys",
+    "recovery_in_progress"
+  ],
+
+  "ru": [
+    "save_recovered_keys",
+    "save_recovered_keys_where",
+    "save_recovered_keys_to_file",
+    "add_recovered_keys_to_existing_dict",
+    "create_new_dict_with_recovered_keys",
+    "recovery_in_progress"
+  ]
+}

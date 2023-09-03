@@ -16,7 +16,6 @@
   "cards": "Tarjetas",
   "dictionary": "Diccionario",
   "dictionaries": "Diccionarios",
-  "slot": "Ranura",
   "slots": "Ranuras",
   "slot_manager": "Gestor de ranuras",
   "saved_cards": "Tarjetas guardadas",
@@ -40,6 +39,7 @@
   "activate": "Activar",
   "deactivate": "Desactivar",
   "debug_mode": "Modo de depuraci\u00f3n",
+  "debug_mode_confirmation": "\u00bfEst\u00e1 seguro que desea {mode} el modo de depuraci\u00f3n? Se ha creado espec\u00edficamente para que los desarrolladores prueben funciones espec\u00edficas de la aplicaci\u00f3n en plataformas NO SOPORTADAS.",
   "debug": "Depurar",
   "debug_page_warning": "Usar este men\u00fa puede bloquear su Chameleon PERMANENTEMENTE.",
   "warned": "Has sido advertido.",
@@ -60,7 +60,8 @@
   "restart_chameleon": "Reiniciar Chameleon",
   "error": "Error",
   "chameleon_is_dfu": "Chameleon est\u00e1 en modo DFU.",
-  "flash": "Flash",
+  "firmware_is_corrupted": "Esto probablemente significa que su firmware est\u00e1 da\u00f1ado. \u00bfQuieres flashear el \u00faltimo firmware?",
+  "flash": "Flashear",
   "dfu": " (DFU)",
   "keys": "Claves",
   "found_keys": "Claves encontradas",
@@ -156,6 +157,7 @@
   "output_file": "Seleccione un archivo de salida",
   "hf_tag_info": "HF Tag Info",
   "lf_tag_info": "LF Tag Info",
+  "no_card_found": "No se ha encontrado ninguna tarjeta. Prueba a moverla sobre el Chameleon",
   "no_supported": "Accion no soportada",
   "lite_no_read": "Chameleon Lite no admite la lectura de tarjetas",
   "read": "Leer",
@@ -176,5 +178,7 @@
   "no_name": "Sin nombre",
   "connecting_to_ble": "Conectando con el dispositivo BLE...",
   "default_ble_password": "La contrase\u00f1a de conexi\u00f3n BLE predeterminada es 123456",
-  "connection_might_take_some_time": "La primera conexi\u00f3n puede tardar alg\u00fan tiempo"
+  "connection_might_take_some_time": "La primera conexi\u00f3n puede tardar alg\u00fan tiempo",
+  "too_long_name": "El nombre es demasiado largo",
+  "slot": "Ranura"
 }

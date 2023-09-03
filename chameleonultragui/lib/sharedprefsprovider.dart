@@ -326,24 +326,70 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   String getFlag(Locale loc) {
     switch (loc.toLanguageTag()) {
+      case 'en':
+        return 'English';
+      case 'zh':
+        return '中文';
       case 'es':
         return 'Español';
+      case 'fr':
+        return 'Français';
       case 'de':
         return 'Deutsch';
       case 'de-AT':
         return 'Deutsch (Österreich)';
+      case 'pt':
+        return 'Português';
       case 'ru':
         return 'Русский';
-      case 'fr':
-        return 'Français';
+      case 'it':
+        return 'Italiano';
+      case 'ja':
+        return '日本語';
       case 'ko':
         return '한국어';
-      case 'en':
-        return 'English';
+      case 'nl':
+        return 'Dutch';
+      case 'ar':
+        return 'العربية ';
+      case 'tr':
+        return 'Türkçe';
+      case 'pl':
+        return 'Polski';
+      case 'sv':
+        return 'Svenska';
       case 'da':
         return 'Dansk';
+      case 'no':
+        return 'Norsk';
+      case 'fi':
+        return 'Suomi';
+      case 'cs':
+        return 'Čeština';
+      case 'hu':
+        return 'Magyar';
+      case 'el':
+        return 'Ελληνικά';
+      case 'he':
+        return 'עברית ';
+      case 'th':
+        return 'ไทย ';
+      case 'id':
+        return 'Bahasa Indonesia';
+      case 'uk':
+        return 'Українська';
+      case 'ro':
+        return 'Română';
+      case 'ms':
+        return 'Bahasa Melayu';
+      case 'hi':
+        return 'हिन्दी';
+      case 'vi':
+        return 'Tiếng Việt';
+      case 'ca':
+        return 'Català';
       default:
-        return '------';
+        return 'Unknown';
     }
   }
 
