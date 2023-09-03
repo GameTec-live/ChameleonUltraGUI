@@ -1,0 +1,29 @@
+name: Add Crowdin Translation Strings
+
+on:
+  pull_request:
+    branches: [ main ]
+    types:
+      - closed
+
+jobs:
+  check_changes:
+    runs-on: ubuntu-latest
+    env:
+      CROWDIN_API: ${{ secrets.CROWDIN_API }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Run Python script
+        run: |
+          CHANGED_FILES=$(git diff --name-only -r HEAD^1 HEAD)
+          # Check if the specific file is in the changed files list
+          if echo "$CHANGED_FILES" | grep -q 'app_en.arb'; then
+            FILE=$(git diff HEAD^1:chameleonultragui/lib/l10n/app_en.arb HEAD:chameleonultragui/lib/l10n/app_en.arb --no-ext-diff --unified=0 -a --no-prefix | egrep "^\+")
+            python chameleonultragui/lib/l10n/updateCrowdin.py "$FILE"
+          else
+            echo "The file 'app_en.arb' has not changed."
+          fi
