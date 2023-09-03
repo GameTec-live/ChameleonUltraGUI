@@ -178,5 +178,7 @@
   "no_name": "Kein Name",
   "connecting_to_ble": "Verbinde mit Bluetooth Ger\u00e4t...",
   "default_ble_password": "Der Standard BLE Kopplungspin ist 123456",
-  "connection_might_take_some_time": "Erste Verbindung kann einige Zeit dauern"
+  "connection_might_take_some_time": "Erste Verbindung kann einige Zeit dauern",
+  "too_long_name": "Der Name ist zu lang",
+  "slot": "Slot"
 }

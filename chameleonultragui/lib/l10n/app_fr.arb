@@ -179,5 +179,6 @@
   "connecting_to_ble": "Connexion \u00e0 l'appareil BLE...",
   "default_ble_password": "Le mot de passe de connexion BLE par d\u00e9faut est 123456",
   "connection_might_take_some_time": "La premi\u00e8re connexion peut prendre un certain temps",
-  "too_long_name": "Le nom est trop long"
+  "too_long_name": "Le nom est trop long",
+  "slot": "Emplacement"
 }

@@ -179,5 +179,6 @@
   "connecting_to_ble": "Conectando con el dispositivo BLE...",
   "default_ble_password": "La contrase\u00f1a de conexi\u00f3n BLE predeterminada es 123456",
   "connection_might_take_some_time": "La primera conexi\u00f3n puede tardar alg\u00fan tiempo",
-  "too_long_name": "El nombre es demasiado largo"
+  "too_long_name": "El nombre es demasiado largo",
+  "slot": "Ranura"
 }
