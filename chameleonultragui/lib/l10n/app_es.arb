@@ -16,7 +16,6 @@
   "cards": "Tarjetas",
   "dictionary": "Diccionario",
   "dictionaries": "Diccionarios",
-  "slot": "Ranura",
   "slots": "Ranuras",
   "slot_manager": "Gestor de ranuras",
   "saved_cards": "Tarjetas guardadas",
@@ -62,7 +61,7 @@
   "error": "Error",
   "chameleon_is_dfu": "Chameleon est\u00e1 en modo DFU.",
   "firmware_is_corrupted": "Esto probablemente significa que su firmware est\u00e1 da\u00f1ado. \u00bfQuieres flashear el \u00faltimo firmware?",
-  "flash": "Flash",
+  "flash": "Flashear",
   "dfu": " (DFU)",
   "keys": "Claves",
   "found_keys": "Claves encontradas",
@@ -179,5 +178,6 @@
   "no_name": "Sin nombre",
   "connecting_to_ble": "Conectando con el dispositivo BLE...",
   "default_ble_password": "La contrase\u00f1a de conexi\u00f3n BLE predeterminada es 123456",
-  "connection_might_take_some_time": "La primera conexi\u00f3n puede tardar alg\u00fan tiempo"
+  "connection_might_take_some_time": "La primera conexi\u00f3n puede tardar alg\u00fan tiempo",
+  "too_long_name": "El nombre es demasiado largo"
 }
