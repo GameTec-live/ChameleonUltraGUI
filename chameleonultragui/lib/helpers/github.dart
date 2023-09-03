@@ -11,10 +11,16 @@ List<Map<String, String>> developers = [
     'username': 'GameTec-live'
   },
   {
+    'name': 'Augusto Zanellato',
+    'description': 'Developer',
+    'avatarUrl': 'https://avatars.githubusercontent.com/u/13242738',
+    'username': 'auguzanellato'
+  },
+  {
     'name': 'Foxushka',
-    'description': 'Lead Developer 🦊',
+    'description': 'Developer 🦊',
     'avatarUrl': 'https://avatars.githubusercontent.com/u/135865149',
-    'username': 'Foxushka'
+    'username': 'augustozanellato'
   },
   {
     'name': 'Thomas Cannon',
@@ -24,7 +30,7 @@ List<Map<String, String>> developers = [
   },
   {
     'name': 'Akisame',
-    'description': 'Developer',
+    'description': 'Schrödingers Developer',
     'avatarUrl': 'https://avatars.githubusercontent.com/u/61940251',
     'username': 'Akisame-AI'
   },

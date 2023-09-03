@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
-import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
@@ -88,9 +87,6 @@ class Mfkey32PageState extends State<Mfkey32Page> {
               keys.add(
                   u64ToBytes((recoveredKey)[0]).sublist(2, 8));
               outputUid = bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase();
-              //controller.text +=
-              //    "\nUID: ${bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase()} block $block key $key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8)).toUpperCase()}";
-              //controller.text = controller.text.trim();
               if (!displayedKeys.contains(Object.hashAll(u64ToBytes((recoveredKey)[0]).sublist(4, 8)))) {
                 displayKeys.add(
                   Row(
@@ -143,6 +139,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
     return fileContents;
   }
 
+  // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
@@ -214,9 +211,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                           showDialog<String>(
                               context: context,
                               builder: (BuildContext context) => AlertDialog(
-                                    title: Text("Save recovered Keys"),
-                                    content: Text(
-                                        "Where do you want to save the recovered keys?"),
+                                    title: Text(localizations.save_recovered_keys),
+                                    content: Text(localizations.save_recovered_keys_where),
                                     actions: [
                                       ElevatedButton(
                                         onPressed: () async {
@@ -240,15 +236,14 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                           }
                                           Navigator.pop(context);
                                         },
-                                        child: Text("Save to file"),
+                                        child: Text(localizations.save_recovered_keys_to_file),
                                       ),
                                       ElevatedButton(
                                         onPressed: () async {
                                           await dictSelectDialog(context, deduplicateKeys(keys));
                                           Navigator.pop(context);
                                         },
-                                        child: Text(
-                                            "Add to existing Dictionary"),
+                                        child: Text(localizations.add_recovered_keys_to_existing_dict),
                                       ),
                                       ElevatedButton(
                                         onPressed: () async {
@@ -265,12 +260,12 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                           );
                                           Navigator.pop(context);
                                         },
-                                        child: Text("Save to new dictionary"),
+                                        child: Text(localizations.create_new_dict_with_recovered_keys),
                                       ),
                                     ],
                                   ));
                         },
-                        child: Text("Save recovered Keys"),
+                        child: Text(localizations.save_recovered_keys),
                       ),
                     ),
                     const SizedBox(height: 16.0),
@@ -280,7 +275,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                           ...displayKeys,
                           loading ? const Center(child: CircularProgressIndicator()) : const SizedBox(),
                           loading ? const SizedBox(height: 8.0) : const SizedBox(),
-                          loading ? const Center(child: Text("Recovering Keys, please wait...")) : const SizedBox(),
+                          loading ? Center(child: Text(localizations.recovery_in_progress)) : const SizedBox(),
                         ],
                       ),
                     ),

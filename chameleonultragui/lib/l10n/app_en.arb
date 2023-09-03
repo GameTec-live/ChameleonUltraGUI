@@ -179,5 +179,11 @@
     "no_name": "No name",
     "connecting_to_ble": "Connecting to BLE device...",
     "default_ble_password": "Default BLE connection password is 123456",
-    "connection_might_take_some_time": "First connection might take some time"
+    "connection_might_take_some_time": "First connection might take some time",
+    "save_recovered_keys": "Save recovered keys",
+    "save_recovered_keys_where": "Where do you want to save the recovered keys?",
+    "save_recovered_keys_to_file": "Save recovered keys to file",
+    "add_recovered_keys_to_existing_dict": "Add recovered keys to existing dictionary",
+    "create_new_dict_with_recovered_keys": "Create new dictionary with recovered keys",
+    "recovery_in_progress": "Key recovery in progress, please wait..."
 }
