@@ -31,16 +31,16 @@ def request(method, url, data=None):
 LANGUAGES = request('GET', 'https://crowdin.com/api/v2/languages?limit=500')['data']
 
 for language in progressbar(
-        request('GET', 'https://crowdin.com/api/v2/projects/610545/files/9/languages/progress?limit=500')['data']):
+        request('GET', 'https://crowdin.com/api/v2/projects/611911/files/33/languages/progress?limit=500')['data']):
     try:
         progress = request('GET',
-                           f"https://crowdin.com/api/v2/projects/610545/languages/{language['data']['languageId']}/progress")
+                           f"https://crowdin.com/api/v2/projects/611911/languages/{language['data']['languageId']}/progress")
     except urllib.error.HTTPError:
         continue
-    if progress['data'][0]['data']['words']['translated']:
-        translation = request('POST', 'https://crowdin.com/api/v2/projects/610545/translations/exports',
+    if progress['data'][0]['data']['words']['translated']/progress['data'][0]['data']['words']['total'] >= 0.7:
+        translation = request('POST', 'https://crowdin.com/api/v2/projects/611911/translations/exports',
                               {'targetLanguageId': language['data']['languageId'], 'format': 'arb-export',
-                               'skipUntranslatedStrings': True, 'fileIds': [9]})
+                               'skipUntranslatedStrings': True, 'fileIds': [33]})
         export = urlopen(Request(translation['data']['url'], method='GET')).read()
         translations = json.loads(export.decode())
         locale = None

@@ -16,7 +16,6 @@
   "cards": "Cards",
   "dictionary": "Dictionary",
   "dictionaries": "Dictionaries",
-  "slot": "Slot",
   "slots": "Slots",
   "slot_manager": "Slot Manager",
   "saved_cards": "Saved Cards",
@@ -179,5 +178,7 @@
   "no_name": "No name",
   "connecting_to_ble": "Connecting to BLE device...",
   "default_ble_password": "Default BLE connection password is 123456",
-  "connection_might_take_some_time": "First connection might take some time"
+  "connection_might_take_some_time": "First connection might take some time",
+  "too_long_name": "The name is too long",
+  "slot": "Slot"
 }
