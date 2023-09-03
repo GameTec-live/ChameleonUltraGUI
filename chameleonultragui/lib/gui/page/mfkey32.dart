@@ -31,6 +31,11 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   int detectionCount = -1;
   List<Uint8List> keys = [];
   bool saveKeys = false;
+  bool loading = false;
+  String outputUid = "";
+  List<Row> displayKeys = [];
+  List<int> displayedKeys = [];
+  int progress = -1;
 
   @override
   void initState() {
@@ -79,11 +84,41 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                 nr1Enc: item1.nr,
                 ar1Enc: item1.ar,
               );
+              var recoveredKey = await recovery.mfkey32(mfkey);
               keys.add(
-                  u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8));
-              controller.text +=
-                  "\nUID: ${bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase()} block $block key $key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8)).toUpperCase()}";
-              controller.text = controller.text.trim();
+                  u64ToBytes((recoveredKey)[0]).sublist(2, 8));
+              outputUid = bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase();
+              //controller.text +=
+              //    "\nUID: ${bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase()} block $block key $key: ${bytesToHex(u64ToBytes((await recovery.mfkey32(mfkey))[0]).sublist(2, 8)).toUpperCase()}";
+              //controller.text = controller.text.trim();
+              if (!displayedKeys.contains(Object.hashAll(u64ToBytes((recoveredKey)[0]).sublist(4, 8)))) {
+                displayKeys.add(
+                  Row(
+                    children: [
+                      Text(
+                        bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Text(
+                        "block $block key $key: ${bytesToHex(u64ToBytes((recoveredKey)[0]).sublist(2, 8)).toUpperCase()}",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  )
+                );
+                displayedKeys.add(Object.hashAll(u64ToBytes((recoveredKey)[0]).sublist(4, 8)));
+              }
+              setState(() {
+                displayKeys = displayKeys;
+                progress = (i * 100 / item.value.length).round();
+              });
               appState.forceMfkey32Page = true;
               appState.changesMade();
             }
@@ -153,12 +188,18 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                       ),
                     ),
                     const SizedBox(height: 25.0),
+                    loading ? OutlinedButton(onPressed: null, child: Text(localizations.recover_keys_nonce(detectionCount)),) :
                     ElevatedButton(
                       onPressed: (detectionCount > 0)
                           ? () async {
+                              setState(() {
+                                loading = true;
+                              });
                               await handleMfkeyCalculation();
                               setState(() {
                                 saveKeys = true;
+                                loading = false;
+                                progress = -1;
                               });
                             }
                           : null,
@@ -181,17 +222,16 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                         onPressed: () async {
                                           String fileContents =
                                               convertKeysToDictFile(keys);
-                                          String name = Uuid().v4();
                                           try {
                                             await FileSaver.instance.saveAs(
-                                                name: name,
+                                                name: outputUid,
                                                 bytes: const Utf8Encoder().convert(fileContents),
                                                 ext: 'dic',
                                                 mimeType: MimeType.other);
                                           } on UnimplementedError catch (_) {
                                             String? outputFile = await FilePicker.platform.saveFile(
                                               dialogTitle: '${localizations.output_file}:',
-                                              fileName: '${name}.dic',
+                                              fileName: '$outputUid.dic',
                                             );
                                             if (outputFile != null) {
                                               var file = File(outputFile);
@@ -213,7 +253,7 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                       ElevatedButton(
                                         onPressed: () async {
                                           Dictionary dict = Dictionary(
-                                            name: "Recovered Keys",
+                                            name: outputUid,
                                             color: Colors.blue,
                                             keys: deduplicateKeys(keys),
                                           );
@@ -235,13 +275,19 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                     ),
                     const SizedBox(height: 16.0),
                     Expanded(
-                      child: TextField(
-                        controller: controller,
-                        readOnly: true,
-                        keyboardType: TextInputType.multiline,
-                        maxLines: null,
+                      child: ListView(
+                        children: [
+                          ...displayKeys,
+                          loading ? const Center(child: CircularProgressIndicator()) : const SizedBox(),
+                          loading ? const SizedBox(height: 8.0) : const SizedBox(),
+                          loading ? const Center(child: Text("Recovering Keys, please wait...")) : const SizedBox(),
+                        ],
                       ),
                     ),
+                    if (progress != -1)
+                      LinearProgressIndicator(
+                        value: (progress / 100).toDouble(),
+                      )
                   ],
                 ),
               ),
