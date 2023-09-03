@@ -3,10 +3,6 @@ import os
 import json
 from urllib.request import Request, urlopen
 
-api_token = os.getenv('CROWDIN_API')
-projectId =  611911
-sourceId = 33
-
 def progressbar(it, prefix='', size=60, out=sys.stdout):
     count = len(it)
 
@@ -26,28 +22,26 @@ def request(method, url, data=None):
         data = {}
     return json.loads(urlopen(Request(url, method=method, data=json.dumps(data).encode(),
                                       headers={'Accept': 'application/json',
-                                               'Authorization': 'Bearer ' + api_token,
+                                               'Authorization': 'Bearer ' + str(os.getenv('CROWDIN_API')),
                                                'Content-Type': 'application/json'})).read().decode())
 
-def add_string_to_source(string, context=None, type='text'):
+def add_string_to_source(string):
+    projectId =  611911
+    sourceId = 33
 
-    headers={'Accept': 'application/json',
-             'Authorization': 'Bearer ' + api_token,
-             'Content-Type': 'application/json'}
-    
     try:
-        string_parsed = string.split('\n', 1)[1].replace(' ', '').replace(',', '').replace('\n','').split('+')[1:]
+        string_parsed = string.split('+++ chameleonultragui/lib/l10n/app_en.arb ', 1)[1].replace(' ', '').replace(',', '').replace('\n','').split('+')[1:]
         for s in string_parsed:
             data = {'identifier': key.replace('"', ''), 'text': value.replace('"', ''), 'fileId': sourceId}
             try:
                 key, value = s.split(':')
                 request('POST', f"https://api.crowdin.com/api/v2/projects/{projectId}/strings", data)
                 print("Added: ", key)
-            except:
-                print("This string already exist: ", key)
+            except Exception as e:
+                print(e)
 
     except:
-        print("Error adding:", string)
+        print(e)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

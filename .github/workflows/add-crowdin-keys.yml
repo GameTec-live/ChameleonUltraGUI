@@ -8,6 +8,7 @@ on:
 
 jobs:
   check_changes:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
       CROWDIN_API: ${{ secrets.CROWDIN_API }}
@@ -16,8 +17,11 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 2
-
-      - name: Run Python script
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
+      - name: Watching for changes in app_en.arb and run Python script
         run: |
           CHANGED_FILES=$(git diff --name-only -r HEAD^1 HEAD)
           # Check if the specific file is in the changed files list
