@@ -347,6 +347,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             }
                           },
                           style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                              (Set<MaterialState> states) {
+                                return appState.sharedPreferencesProvider.getThemeComplementaryColor(); 
+                              },
+                            ),
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(
                               RoundedRectangleBorder(
@@ -362,6 +367,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       return Container(
                         constraints: const BoxConstraints(minHeight: 80, maxHeight: 150),
                         child: ElevatedButton(
+                          
                           onPressed: () {
                             showDialog(
                               context: context,
@@ -458,6 +464,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             );
                           },
                           style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                              (Set<MaterialState> states) {
+                                return appState.sharedPreferencesProvider.getThemeComplementaryColor(); 
+                              },
+                            ),
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(
                               RoundedRectangleBorder(
@@ -479,7 +490,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       ),
                                     ],
                                   ),
-                                  Expanded(
+                                  Positioned(top: 0,right: 0,
+                                  child: SizedBox(child: ConstrainedBox(constraints: BoxConstraints(minHeight: 80,),
+                                  child: Expanded(
                                     flex: 1,
                                     child: Wrap(
                                       //mainAxisAlignment: MainAxisAlignment.end,
@@ -514,6 +527,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       
                                     ),
                                   ),
+                                  ),
+                                  ),),
                                 ],
                               ),
                               Positioned(

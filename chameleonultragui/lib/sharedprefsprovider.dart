@@ -217,6 +217,28 @@ class SharedPreferencesProvider extends ChangeNotifier {
     }
   }
 
+    Color getThemeComplementaryColor() {
+    final themeValue = _sharedPreferences.getInt('app_theme_color') ?? 0;
+    switch (themeValue) {
+      case 1:
+        return Color.fromARGB(30, 116, 58, 183);
+      case 2:
+        return Color.fromARGB(44, 62, 216, 243);
+      case 3:
+        return Color.fromARGB(50, 175, 76, 172);
+      case 4:
+        return Color.fromARGB(46, 130, 51, 196);
+      case 5:
+        return Color.fromARGB(48, 110, 116, 29);
+      case 6:
+        return Color.fromARGB(47, 188, 43, 201);
+      case 7:
+        return Color.fromARGB(44, 58, 104, 202);
+      default:
+        return Color.fromARGB(16, 202, 43, 43);
+    }
+  }
+
   void setThemeColor(int color) {
     _sharedPreferences.setInt('app_theme_color', color);
   }
