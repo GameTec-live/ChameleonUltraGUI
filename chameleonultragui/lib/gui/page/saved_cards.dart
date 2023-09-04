@@ -10,7 +10,6 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
@@ -99,11 +98,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
             ),
             Expanded(
               child: Card(
-                child: Expanded(
                 child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
                   crossAxisCount:
-                      MediaQuery.of(context).size.width >= 700 ? 2 : 1,
+                      MediaQuery.of(context).size.width >= 750 ? 2 : 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   itemCount: tags.length + 1,
@@ -492,16 +490,16 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       ),
                                     ],
                                   ),
-                                  Positioned(top: 0,right: 0,
-                                  child: SizedBox(child: ConstrainedBox(constraints: BoxConstraints(minHeight: 80,),
-                                  child: Expanded(
-                                    flex: 1,
+                                  //Positioned(top: 0,right: 0,
+                                  //child: 
+                                  SizedBox(
+                                    child: ConstrainedBox(constraints: BoxConstraints(minHeight: 80,),
                                     child: Wrap(
                                       //mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         Column(
                                           children: [
-                                            Text(
+                                            Text( //This needs to be put in an Expanded but that seems to break the saved_cards page. Need to work on this.
                                               tag.name,
                                               style: const TextStyle(
                                                 fontSize: 16,
@@ -528,9 +526,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       ],
                                       
                                     ),
+                                  //),
                                   ),
-                                  ),
-                                  ),),
+                                  ),//),
                                 ],
                               ),
                               Positioned(
@@ -615,7 +613,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           ? 2
                           : 1), // 2 for the "Add" button, 1 for others
                 ),
-                ),
               ),
             ),
             Padding(
@@ -627,8 +624,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
             ),
             Expanded(
               child: Card(
-                child: Expanded(
-                child: AlignedGridView.count(
+                child: StaggeredGridView.countBuilder(
                   padding: const EdgeInsets.all(20),
                   crossAxisCount:
                       MediaQuery.of(context).size.width >= 700 ? 2 : 1,
@@ -832,13 +828,13 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             Text(
                                               dictionary.name,
                                               style: const TextStyle(
-                                                fontSize: 24,
+                                                fontSize: 16,
                                               ),
                                             ),
                                             Text(
                                               "${localizations.key_count}: ${dictionary.keys.length}",
                                               style: const TextStyle(
-                                                fontSize: 24,
+                                                fontSize: 16,
                                               ),
                                             ),
                                           ],
@@ -918,11 +914,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       );
                     }
                   },
-                  //staggeredTileBuilder: (int index) => StaggeredTile.fit(
-                  //    index == 0
-                  //        ? 2
-                  //        : 1), // 2 for the "Add" button, 1 for others
-                ),
+                  staggeredTileBuilder: (int index) => StaggeredTile.fit(
+                      index == 0
+                          ? 2
+                          : 1), // 2 for the "Add" button, 1 for others
                 ),
               ),
             ),
