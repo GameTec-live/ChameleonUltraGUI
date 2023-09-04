@@ -16,6 +16,7 @@
   "cards": "Koardn",
   "dictionary": "W\u00e4rdabuach",
   "dictionaries": "W\u00e4rdabiacher",
+  "slot": "Slot",
   "slots": "Slots",
   "slot_manager": "Slot verwoiter",
   "saved_cards": "Gepeicherte Koarten",
@@ -179,6 +180,5 @@
   "connecting_to_ble": "Verbindn mit Bluetooth Gr\u00e4t...",
   "default_ble_password": "Des stondard password is 123456",
   "connection_might_take_some_time": "Erste moi verbindn kon a bisl dauan",
-  "too_long_name": "Der Name ist zu lang",
-  "slot": "Slot"
+  "too_long_name": "Der Name ist zu lang"
 }
