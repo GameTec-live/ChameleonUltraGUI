@@ -52,13 +52,13 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     }
   }
 
-  Future<int> getBLEpin() async {
+  Future<String> getBLEConnectionKey() async {
     var appState = context.read<ChameleonGUIState>();
 
     try {
-      return await appState.communicator!.getBLEpin();
+      return await appState.communicator!.getBLEConnectionKey();
     } catch (_) {
-      return 0;
+      return "123456";
     }
   }
 
@@ -69,7 +69,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
         ButtonConfig,
         ButtonConfig,
         ButtonConfig,
-        int
+        String
       )> getSettingsData() async {
     return (
       await getAnimationMode(),
@@ -77,7 +77,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
       await getButtonConfig(ButtonType.b),
       await getLongButtonConfig(ButtonType.a),
       await getLongButtonConfig(ButtonType.b),
-      await getBLEpin()
+      await getBLEConnectionKey()
     );
   }
 
@@ -86,7 +86,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
-    final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     return FutureBuilder(
         future: getSettingsData(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -107,9 +107,10 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
               bButtonMode,
               aLongButtonMode,
               bLongButtonMode,
-              BLEpin
+              connectionKey
             ) = snapshot.data;
-            TextEditingController blePinController = TextEditingController(text: BLEpin.toString());
+            TextEditingController bleKeyController =
+                TextEditingController(text: connectionKey);
             return AlertDialog(
                 title: Text(localizations.device_settings),
                 content: SingleChildScrollView(
@@ -117,69 +118,80 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                   children: [
                     Text("${localizations.firmware_management}:"),
                     const SizedBox(height: 10),
-                    TextButton(
-                        onPressed: () async {
-                          await appState.communicator!.enterDFUMode();
-                          appState.connector!.performDisconnect();
-                          Navigator.pop(context, localizations.cancel);
-                          appState.changesMade();
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.medical_services_outlined),
-                            Text(localizations.enter_dfu),
-                          ],
-                        )),
-                    TextButton(
-                        onPressed: () async {
-                          Navigator.pop(context, localizations.cancel);
-                          var snackBar = SnackBar(
-                            content: Text(localizations.downloading_fw(
-                                appState.connector!.device ==
-                                        ChameleonDevice.ultra
-                                    ? "Ultra"
-                                    : "Lite")),
-                            action: SnackBarAction(
-                              label: localizations.close,
-                              onPressed: () {},
-                            ),
-                          );
+                    FittedBox(
+                        alignment: Alignment.centerRight,
+                        fit: BoxFit.scaleDown,
+                        child: TextButton(
+                            onPressed: () async {
+                              await appState.communicator!.enterDFUMode();
+                              appState.connector!.performDisconnect();
+                              Navigator.pop(context, localizations.cancel);
+                              appState.changesMade();
+                            },
+                            child: Row(
+                              children: [
+                                const Icon(Icons.medical_services_outlined),
+                                Text(localizations.enter_dfu),
+                              ],
+                            ))),
+                    FittedBox(
+                        alignment: Alignment.centerRight,
+                        fit: BoxFit.scaleDown,
+                        child: TextButton(
+                            onPressed: () async {
+                              Navigator.pop(context, localizations.cancel);
+                              var snackBar = SnackBar(
+                                content: Text(localizations.downloading_fw(
+                                    appState.connector!.device ==
+                                            ChameleonDevice.ultra
+                                        ? "Ultra"
+                                        : "Lite")),
+                                action: SnackBarAction(
+                                  label: localizations.close,
+                                  onPressed: () {},
+                                ),
+                              );
 
-                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                          try {
-                            await flashFirmware(appState);
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            snackBar = SnackBar(
-                              content: Text(
-                                  '${localizations.update_error}: ${e.toString()}'),
-                              action: SnackBarAction(
-                                label: localizations.close,
-                                onPressed: () {},
-                              ),
-                            );
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(snackBar);
+                              try {
+                                await flashFirmware(appState);
+                              } catch (e) {
+                                ScaffoldMessenger.of(context)
+                                    .hideCurrentSnackBar();
+                                snackBar = SnackBar(
+                                  content: Text(
+                                      '${localizations.update_error}: ${e.toString()}'),
+                                  action: SnackBarAction(
+                                    label: localizations.close,
+                                    onPressed: () {},
+                                  ),
+                                );
 
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(snackBar);
-                          }
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.system_security_update),
-                            Text(localizations.flash_via_dfu),
-                          ],
-                        )),
-                    TextButton(
-                        onPressed: () async {
-                          Navigator.pop(context, localizations.cancel);
-                          await flashFirmwareZip(appState);
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.system_security_update_good),
-                            Text(localizations.flash_zip_dfu),
-                          ],
-                        )),
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(snackBar);
+                              }
+                            },
+                            child: Row(
+                              children: [
+                                const Icon(Icons.system_security_update),
+                                Text(localizations.flash_via_dfu),
+                              ],
+                            ))),
+                    FittedBox(
+                        alignment: Alignment.centerRight,
+                        fit: BoxFit.scaleDown,
+                        child: TextButton(
+                            onPressed: () async {
+                              Navigator.pop(context, localizations.cancel);
+                              await flashFirmwareZip(appState);
+                            },
+                            child: Row(
+                              children: [
+                                const Icon(Icons.system_security_update_good),
+                                Text(localizations.flash_zip_dfu),
+                              ],
+                            ))),
                     const SizedBox(height: 10),
                     Text("${localizations.animations}:"),
                     const SizedBox(height: 10),
@@ -321,103 +333,153 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           appState.changesMade();
                         }),
                     const SizedBox(height: 10),
+                    const Text("BLE:"),
+                    const SizedBox(height: 10),
+                    FittedBox(
+                        alignment: Alignment.centerRight,
+                        fit: BoxFit.scaleDown,
+                        child: TextButton(
+                            onPressed: () async {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) => AlertDialog(
+                                  title: Text(localizations.clear_ble_bonds),
+                                  content: Text(localizations
+                                      .clear_ble_bonds_confirmation),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () async {
+                                        await appState.communicator!
+                                            .clearBLEBoundedDevices();
+                                        if (appState
+                                                .connector!.connectionType ==
+                                            ConnectionType.ble) {
+                                          await appState.connector!
+                                              .performDisconnect();
+                                        }
+                                        Navigator.pop(
+                                            context, localizations.cancel);
+                                        appState.changesMade();
+                                      },
+                                      child: Text(localizations.yes),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(
+                                          context, localizations.cancel),
+                                      child: Text(localizations.no),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            child: Row(
+                              children: [
+                                const Icon(Icons.settings_bluetooth),
+                                Text(localizations.clear_ble_bonds),
+                              ],
+                            ))),
+                    Form(
+                        key: formKey,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                  controller: bleKeyController,
+                                  maxLength: 6,
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.isEmpty ||
+                                        value.length != 6 ||
+                                        double.tryParse(value) == null) {
+                                      return localizations.pin_must_be_6_digits;
+                                    }
+
+                                    if (0 < double.tryParse(value)! &&
+                                        double.tryParse(value)! > 0xFFFFFFFF) {
+                                      return localizations.pin_must_be_6_digits;
+                                    }
+
+                                    return null;
+                                  },
+                                  decoration: InputDecoration(
+                                    labelText: localizations.ble_pin,
+                                    hintText: localizations.enter_pin,
+                                  )),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                if (formKey.currentState!.validate()) {
+                                  await appState.communicator!
+                                      .setBLEConnectKey(bleKeyController.text);
+                                  await appState.communicator!.saveSettings();
+                                  Navigator.pop(context, localizations.cancel);
+                                  appState.changesMade();
+                                }
+                              },
+                              child: Text(localizations.save),
+                            ),
+                          ],
+                        )),
+                    const SizedBox(height: 10),
                     Text("${localizations.other}:"),
                     const SizedBox(height: 10),
-                    TextButton(
-                        onPressed: () async {
-                          await appState.communicator!.resetSettings();
-                          Navigator.pop(context, localizations.cancel);
-                          appState.changesMade();
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.lock_reset),
-                            Text(localizations.reset_settings),
-                          ],
-                        )),
-                    TextButton(
-                        onPressed: () async {
-                          // Ask for confirmation
-                          Navigator.pop(context, localizations.cancel);
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) => AlertDialog(
-                              title: Text(localizations.factory_reset),
-                              content: Text(localizations.factory_sure),
-                              actions: <Widget>[
-                                TextButton(
-                                  onPressed: () async {
-                                    await appState.communicator!.factoryReset();
-                                    await appState.connector!
-                                        .performDisconnect();
-                                    Navigator.pop(
-                                        context, localizations.cancel);
-                                    appState.changesMade();
-                                  },
-                                  child: Text(localizations.yes),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(
-                                      context, localizations.cancel),
-                                  child: Text(localizations.no),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.restore_from_trash_outlined),
-                            Text(localizations.factory_reset),
-                          ],
-                        )),
-                    TextButton(
-                        onPressed: () async {
-                          await appState.communicator!.clearBLEbondDevices();
-                          Navigator.pop(context, localizations.cancel);
-                          appState.changesMade();
-                        },
-                      child: Row(
-                          children: [
-                            const Icon(Icons.settings_bluetooth),
-                            Text(localizations.clear_BLE_bonds),
-                          ],
-                        )),
-                    Form(
-                      key: _formKey,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 200,
-                            child: TextFormField(
-                              controller: blePinController,
-                              validator: (value) {
-                                if (value == null || value.isEmpty || value.length != 6) {
-                                  return localizations.pin_must_be_6_digits;
-                                }
-                                return null;
-                              },
-                              decoration: InputDecoration(
-                                labelText: localizations.ble_pin,
-                                hintText: localizations.enter_pin,
-                              )
-                            ),
-                          ),
-                          TextButton(
+                    FittedBox(
+                        alignment: Alignment.centerRight,
+                        fit: BoxFit.scaleDown,
+                        child: TextButton(
                             onPressed: () async {
-                              if (_formKey.currentState!.validate()) {
-                                await appState.communicator!.setBLEpin(int.parse(blePinController.text));
-                                await appState.communicator!.saveSettings();
-                                Navigator.pop(context, localizations.cancel);
-                                appState.changesMade();
-                              }
+                              await appState.communicator!.resetSettings();
+                              Navigator.pop(context, localizations.cancel);
+                              appState.changesMade();
                             },
-                            child: Text(localizations.save),
-                          ),
-                        ],
-                      )
-                    ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.lock_reset),
+                                Text(localizations.reset_settings),
+                              ],
+                            ))),
+                    FittedBox(
+                        alignment: Alignment.centerRight,
+                        fit: BoxFit.scaleDown,
+                        child: TextButton(
+                            onPressed: () async {
+                              // Ask for confirmation
+                              Navigator.pop(context, localizations.cancel);
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) => AlertDialog(
+                                  title: Text(localizations.factory_reset),
+                                  content: Text(
+                                      localizations.factory_reset_confirmation),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () async {
+                                        await appState.communicator!
+                                            .factoryReset();
+                                        await appState.connector!
+                                            .performDisconnect();
+                                        Navigator.pop(
+                                            context, localizations.cancel);
+                                        appState.changesMade();
+                                      },
+                                      child: Text(localizations.yes),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(
+                                          context, localizations.cancel),
+                                      child: Text(localizations.no),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            child: Row(
+                              children: [
+                                const Icon(Icons.restore_from_trash_outlined),
+                                Text(localizations.factory_reset),
+                              ],
+                            ))),
                   ],
                 )));
           }

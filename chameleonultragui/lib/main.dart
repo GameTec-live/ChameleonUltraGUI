@@ -103,6 +103,15 @@ class _MainPageState extends State<MainPage> {
   var selectedIndex = 0;
 
   @override
+  void reassemble() {
+    super.reassemble();
+
+    // Disconnect on reload
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+    appState.connector?.performDisconnect();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     appState._sharedPreferencesProvider = widget.sharedPreferencesProvider;

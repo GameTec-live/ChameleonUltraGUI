@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/widget/staggered_grid_view.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
@@ -472,7 +473,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Icon(
-                                        Icons.nfc_sharp,
+                                        (chameleonTagToFrequency(tag.tag) ==
+                                                TagFrequency.hf)
+                                            ? Icons.credit_card
+                                            : Icons.wifi,
                                         color: tag.color,
                                       ),
                                     ],
@@ -832,9 +836,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       onPressed: () async {
                                         try {
                                           await FileSaver.instance.saveAs(
-                                              name: '${dictionary.name}.dic',
+                                              name: dictionary.name,
                                               bytes: dictionary.toFile(),
-                                              ext: 'bin',
+                                              ext: 'dic',
                                               mimeType: MimeType.other);
                                         } on UnimplementedError catch (_) {
                                           String? outputFile = await FilePicker
