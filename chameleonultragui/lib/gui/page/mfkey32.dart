@@ -12,6 +12,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/services.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -99,13 +100,20 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                         ),
                       ),
                       const SizedBox(width: 8.0),
-                      Text(
-                        "block $block key $key: ${bytesToHex(u64ToBytes((recoveredKey)[0]).sublist(2, 8)).toUpperCase()}",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      TextButton(
+                        onPressed: () async {
+                          ClipboardData data = ClipboardData(text: bytesToHex(u64ToBytes((recoveredKey)[0]).sublist(2, 8)).toUpperCase());
+                          await Clipboard.setData(data);
+                        },
+                        child: Text(
+                          "block $block key $key: ${bytesToHex(u64ToBytes((recoveredKey)[0]).sublist(2, 8)).toUpperCase()}",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
+
                     ],
                   )
                 );
