@@ -1,7 +1,6 @@
-name: "Pull Request Triage"
+name: "Pull Request/Issues Triage"
 on:
   pull_request:
-    types: [opened, reopened, edited]
 
 jobs:
   labels:
@@ -27,6 +26,7 @@ jobs:
             - '!chameleonultragui/lib/l10n/*en.arb'
             - 'chameleonultragui/lib/l10n/*.arb'
     - name: Remove unnecesary files
+      id: removed
       if: steps.files_changed.outputs.langs == 'true'
       working-directory: chameleonultragui/lib/l10n
       run: |
@@ -40,15 +40,13 @@ jobs:
         done
     - name: Create commit
       uses: stefanzweifel/git-auto-commit-action@v4
-      if: steps.files_changed.outputs.langs == 'true'
       with:
         commit_message: Uncommitted translation files
         commit_options: '--no-verify'
         status_options: '--untracked-files=no'
         add_options: '-u'
         push_options: '--force'
-        skip_dirty_check: true
+        skip_dirty_check: false
         skip_fetch: true
         skip_checkout: true
         disable_globbing: true
-        create_branch: true
