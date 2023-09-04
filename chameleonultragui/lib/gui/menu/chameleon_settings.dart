@@ -52,20 +52,32 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     }
   }
 
+  Future<int> getBLEpin() async {
+    var appState = context.read<ChameleonGUIState>();
+
+    try {
+      return await appState.communicator!.getBLEpin();
+    } catch (_) {
+      return 0;
+    }
+  }
+
   Future<
       (
         AnimationSetting,
         ButtonConfig,
         ButtonConfig,
         ButtonConfig,
-        ButtonConfig
+        ButtonConfig,
+        int
       )> getSettingsData() async {
     return (
       await getAnimationMode(),
       await getButtonConfig(ButtonType.a),
       await getButtonConfig(ButtonType.b),
       await getLongButtonConfig(ButtonType.a),
-      await getLongButtonConfig(ButtonType.b)
+      await getLongButtonConfig(ButtonType.b),
+      await getBLEpin()
     );
   }
 
@@ -74,6 +86,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+    final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
     return FutureBuilder(
         future: getSettingsData(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -93,9 +106,10 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
               aButtonMode,
               bButtonMode,
               aLongButtonMode,
-              bLongButtonMode
+              bLongButtonMode,
+              BLEpin
             ) = snapshot.data;
-
+            TextEditingController blePinController = TextEditingController(text: BLEpin.toString());
             return AlertDialog(
                 title: Text(localizations.device_settings),
                 content: SingleChildScrollView(
@@ -357,6 +371,53 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             Text(localizations.factory_reset),
                           ],
                         )),
+                    TextButton(
+                        onPressed: () async {
+                          await appState.communicator!.clearBLEbondDevices();
+                          Navigator.pop(context, localizations.cancel);
+                          appState.changesMade();
+                        },
+                      child: Row(
+                          children: [
+                            const Icon(Icons.settings_bluetooth),
+                            Text(localizations.clear_BLE_bonds),
+                          ],
+                        )),
+                    Form(
+                      key: _formKey,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 200,
+                            child: TextFormField(
+                              controller: blePinController,
+                              validator: (value) {
+                                if (value == null || value.isEmpty || value.length != 6) {
+                                  return localizations.pin_must_be_6_digits;
+                                }
+                                return null;
+                              },
+                              decoration: InputDecoration(
+                                labelText: localizations.ble_pin,
+                                hintText: localizations.enter_pin,
+                              )
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              if (_formKey.currentState!.validate()) {
+                                await appState.communicator!.setBLEpin(int.parse(blePinController.text));
+                                await appState.communicator!.saveSettings();
+                                Navigator.pop(context, localizations.cancel);
+                                appState.changesMade();
+                              }
+                            },
+                            child: Text(localizations.save),
+                          ),
+                        ],
+                      )
+                    ),
                   ],
                 )));
           }

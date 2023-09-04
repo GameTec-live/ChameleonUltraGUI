@@ -86,7 +86,12 @@ enum ChameleonCommand {
   mf1SetWriteMode(4017),
 
   // lf emulator
-  setEM410XemulatorID(5000);
+  setEM410XemulatorID(5000),
+
+  // BLE
+  bleClearBondedDevices(1032),
+  bleSetConnectKey(1030),
+  bleGetConnectKey(1031);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -879,5 +884,19 @@ class ChameleonCommunicator {
   Future<void> setLongButtonConfig(ButtonType type, ButtonConfig mode) async {
     await sendCmd(ChameleonCommand.setLongButtonPressConfig,
         data: Uint8List.fromList([type.value, mode.value]));
+  }
+
+  Future<void> clearBLEbondDevices() async {
+    await sendCmd(ChameleonCommand.bleClearBondedDevices, skipReceive: true);
+  }
+
+  Future<int> getBLEpin() async {
+    var resp = await sendCmd(ChameleonCommand.bleGetConnectKey);
+    return resp!.data[0];
+  }
+
+  Future<void> setBLEpin(int pin) async {
+    await sendCmd(ChameleonCommand.bleSetConnectKey, // TODO: PLS FIX
+        data: Uint8List.fromList([pin]));
   }
 }

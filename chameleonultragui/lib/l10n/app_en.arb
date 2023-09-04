@@ -186,5 +186,9 @@
   "save_recovered_keys_to_file": "Save recovered keys to file",
   "add_recovered_keys_to_existing_dict": "Add recovered keys to existing dictionary",
   "create_new_dict_with_recovered_keys": "Create new dictionary with recovered keys",
-  "recovery_in_progress": "Key recovery in progress, please wait..."
+  "recovery_in_progress": "Key recovery in progress, please wait...",
+  "clear_BLE_bonds": "Clear BLE Bonds",
+  "ble_pin": "BLE PIN",
+  "enter_pin": "Enter PIN",
+  "pin_must_be_6_digits": "PIN must be 6 digits"
 }
