@@ -16,6 +16,7 @@
   "cards": "Tarjetas",
   "dictionary": "Diccionario",
   "dictionaries": "Diccionarios",
+  "slot": "Ranura",
   "slots": "Ranuras",
   "slot_manager": "Gestor de ranuras",
   "saved_cards": "Tarjetas guardadas",
@@ -180,5 +181,10 @@
   "default_ble_password": "La contrase\u00f1a de conexi\u00f3n BLE predeterminada es 123456",
   "connection_might_take_some_time": "La primera conexi\u00f3n puede tardar alg\u00fan tiempo",
   "too_long_name": "El nombre es demasiado largo",
-  "slot": "Ranura"
+  "save_recovered_keys": "Guardar claves recuperadas",
+  "save_recovered_keys_where": "\u00bfD\u00f3nde desea guardar las claves recuperadas?",
+  "save_recovered_keys_to_file": "Guardar claves recuperadas en un archivo",
+  "add_recovered_keys_to_existing_dict": "A\u00f1adir claves recuperadas al diccionario existente",
+  "create_new_dict_with_recovered_keys": "Crear nuevo diccionario con claves recuperadas",
+  "recovery_in_progress": "Recuperaci\u00f3n de clave en curso, por favor espere..."
 }

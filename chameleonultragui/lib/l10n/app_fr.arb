@@ -16,6 +16,7 @@
   "cards": "Cartes",
   "dictionary": "Dictionnaire",
   "dictionaries": "Dictionnaires",
+  "slot": "Emplacement",
   "slots": "Emplacements",
   "slot_manager": "Gestion Emplacement",
   "saved_cards": "Cartes Enregistr\u00e9es",
@@ -180,5 +181,10 @@
   "default_ble_password": "Le mot de passe de connexion BLE par d\u00e9faut est 123456",
   "connection_might_take_some_time": "La premi\u00e8re connexion peut prendre un certain temps",
   "too_long_name": "Le nom est trop long",
-  "slot": "Emplacement"
+  "save_recovered_keys": "Enregistrer les cl\u00e9s r\u00e9cup\u00e9r\u00e9es",
+  "save_recovered_keys_where": "O\u00f9 voulez-vous enregistrer les cl\u00e9s r\u00e9cup\u00e9r\u00e9es ?",
+  "save_recovered_keys_to_file": "Enregistrer les cl\u00e9s r\u00e9cup\u00e9r\u00e9es dans un fichier",
+  "add_recovered_keys_to_existing_dict": "Ajouter les cl\u00e9s r\u00e9cup\u00e9r\u00e9es au dictionnaire existant",
+  "create_new_dict_with_recovered_keys": "Cr\u00e9er un nouveau dictionnaire avec les cl\u00e9s r\u00e9cup\u00e9r\u00e9es",
+  "recovery_in_progress": "R\u00e9cup\u00e9ration de la cl\u00e9 en cours, veuillez patienter..."
 }
