@@ -26,6 +26,7 @@ def request(method, url, data=None):
                                                'Content-Type': 'application/json'})).read().decode())
 
 def add_string_to_source(string):
+    print(string)
     projectId =  611911
     sourceId = 33
 
