@@ -1,8 +1,6 @@
-name: "Pull Request/Issues Triage"
+name: "Pull Request Triage"
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited]
-  issues:
     types: [opened, reopened, edited]
 
 jobs:
@@ -10,23 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      issues: write
       pull-requests: write
     steps:
     - name: Pull Request Labeler
       if: github.event.pull_request
       uses: actions/labeler@v4
-    
-    - name: Issue Labeler
-      if: github.event.issue
-      uses: github/issue-labeler@v3.2
-      with:
-        enable-versioned-regex: 0
-        configuration-path: .github/issue-labeler.yml
   remove-unnecesary-files:
     runs-on: ubuntu-latest
     steps:
-    - name: Remove Unnecessary Files
+    - name: Checkout the repo 
+      uses: actions/checkout@v3
+    - name: Detect changed languages files
       uses: dorny/paths-filter@v2
       id: files_changed
       with:
@@ -34,3 +26,29 @@ jobs:
           langs: 
             - '!chameleonultragui/lib/l10n/*en.arb'
             - 'chameleonultragui/lib/l10n/*.arb'
+    - name: Remove unnecesary files
+      if: steps.files_changed.outputs.langs == 'true'
+      working-directory: chameleonultragui/lib/l10n
+      run: |
+        git fetch origin
+        git config user.email "actions@github.com"
+        git config user.name "GitHub Actions"
+        for file in $(ls *.arb); do
+          if [[ "$file" != "app_en.arb" ]]; then
+            git checkout origin/main -- $file
+          fi
+        done
+    - name: Create commit
+      uses: stefanzweifel/git-auto-commit-action@v4
+      if: steps.files_changed.outputs.langs == 'true'
+      with:
+        commit_message: Uncommitted translation files
+        commit_options: '--no-verify'
+        status_options: '--untracked-files=no'
+        add_options: '-u'
+        push_options: '--force'
+        skip_dirty_check: true
+        skip_fetch: true
+        skip_checkout: true
+        disable_globbing: true
+        create_branch: true
