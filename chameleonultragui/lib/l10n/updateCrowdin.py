@@ -31,7 +31,7 @@ def add_string_to_source(string):
     sourceId = 33
 
     try:
-        string_parsed = string.split('+++ chameleonultragui/lib/l10n/app_en.arb ', 1)[1].replace(' ', '').replace(',', '').replace('\n','').split('+')[1:]
+        string_parsed = string.split('app_en.arb', 1)[1].replace(' ', '').replace(',', '').replace('\n','').split('+')[1:]
         for s in string_parsed:
             data = {'identifier': key.replace('"', ''), 'text': value.replace('"', ''), 'fileId': sourceId}
             try:
@@ -41,7 +41,7 @@ def add_string_to_source(string):
             except Exception as e:
                 print(e)
 
-    except:
+    except Exception as e:
         print(e)
 
 if __name__ == "__main__":
