@@ -198,7 +198,7 @@ class _MainPageState extends State<MainPage> {
                 .getThemeColor()), // Color Scheme
         brightness: Brightness.light, // Light Theme
       ),
-      darkTheme: ThemeData.dark().copyWith(
+      darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
             seedColor: widget.sharedPreferencesProvider.getThemeColor(),
