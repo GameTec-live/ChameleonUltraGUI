@@ -16,6 +16,7 @@
     "uid",
     "sak",
     "atqa",
+    "factory_reset_confirmation",
     "mini",
     "hf",
     "lf",
@@ -33,25 +34,60 @@
     "save_recovered_keys_to_file",
     "add_recovered_keys_to_existing_dict",
     "create_new_dict_with_recovered_keys",
-    "recovery_in_progress"
+    "recovery_in_progress",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation"
   ],
 
   "de": [
+    "factory_reset_confirmation",
     "save_recovered_keys",
     "save_recovered_keys_where",
     "save_recovered_keys_to_file",
     "add_recovered_keys_to_existing_dict",
     "create_new_dict_with_recovered_keys",
-    "recovery_in_progress"
+    "recovery_in_progress",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation"
   ],
 
   "de_AT": [
+    "factory_reset_confirmation",
     "save_recovered_keys",
     "save_recovered_keys_where",
     "save_recovered_keys_to_file",
     "add_recovered_keys_to_existing_dict",
     "create_new_dict_with_recovered_keys",
-    "recovery_in_progress"
+    "recovery_in_progress",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation"
+  ],
+
+  "es": [
+    "factory_reset_confirmation",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation"
+  ],
+
+  "fr": [
+    "factory_reset_confirmation",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation"
   ],
 
   "ko": [
@@ -63,6 +99,7 @@
     "uid",
     "sak",
     "atqa",
+    "factory_reset_confirmation",
     "hf",
     "lf",
     "mifare_classic_emulator_settings",
@@ -75,7 +112,21 @@
     "save_recovered_keys_to_file",
     "add_recovered_keys_to_existing_dict",
     "create_new_dict_with_recovered_keys",
-    "recovery_in_progress"
+    "recovery_in_progress",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation"
+  ],
+
+  "nl": [
+    "factory_reset_confirmation",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation"
   ],
 
   "ro": [
@@ -95,6 +146,7 @@
     "uid",
     "sak",
     "atqa",
+    "factory_reset_confirmation",
     "mini",
     "hf",
     "lf",
@@ -110,16 +162,27 @@
     "save_recovered_keys_to_file",
     "add_recovered_keys_to_existing_dict",
     "create_new_dict_with_recovered_keys",
-    "recovery_in_progress"
+    "recovery_in_progress",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation"
   ],
 
   "ru": [
+    "factory_reset_confirmation",
     "too_long_name",
     "save_recovered_keys",
     "save_recovered_keys_where",
     "save_recovered_keys_to_file",
     "add_recovered_keys_to_existing_dict",
     "create_new_dict_with_recovered_keys",
-    "recovery_in_progress"
+    "recovery_in_progress",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation"
   ]
 }

@@ -49,6 +49,11 @@ enum ChameleonCommand {
   getLongButtonPressConfig(1028),
   setLongButtonPressConfig(1029),
 
+  // BLE
+  bleSetConnectKey(1030),
+  bleGetConnectKey(1031),
+  bleClearBondedDevices(1032),
+
   // hf reader commands
   scan14ATag(2000),
   mf1SupportDetect(2001),
@@ -879,5 +884,19 @@ class ChameleonCommunicator {
   Future<void> setLongButtonConfig(ButtonType type, ButtonConfig mode) async {
     await sendCmd(ChameleonCommand.setLongButtonPressConfig,
         data: Uint8List.fromList([type.value, mode.value]));
+  }
+
+  Future<void> clearBLEBoundedDevices() async {
+    await sendCmd(ChameleonCommand.bleClearBondedDevices, skipReceive: true);
+  }
+
+  Future<String> getBLEConnectionKey() async {
+    var resp = await sendCmd(ChameleonCommand.bleGetConnectKey);
+    return utf8.decode(resp!.data, allowMalformed: true);
+  }
+
+  Future<void> setBLEConnectKey(String key) async {
+    await sendCmd(ChameleonCommand.bleSetConnectKey,
+        data: Uint8List.fromList(utf8.encode(key)));
   }
 }

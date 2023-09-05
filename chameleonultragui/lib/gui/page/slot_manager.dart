@@ -342,7 +342,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
                 Navigator.pop(context);
               },
               child: ListTile(
-                leading: const Icon(Icons.credit_card),
+                leading: Icon(
+                    (chameleonTagToFrequency(card.tag) == TagFrequency.hf)
+                        ? Icons.credit_card
+                        : Icons.wifi,
+                    color: card.color),
                 title: Text(card.name),
                 subtitle: Text(chameleonTagToString(card.tag)),
               ),
@@ -375,7 +379,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
       itemBuilder: (BuildContext context, int index) {
         final card = results.elementAt(index);
         return ListTile(
-          leading: const Icon(Icons.credit_card),
+          leading: Icon(
+              (chameleonTagToFrequency(card.tag) == TagFrequency.hf)
+                  ? Icons.credit_card
+                  : Icons.wifi,
+              color: card.color),
           title: Text(card.name),
           subtitle: Text(chameleonTagToString(card.tag) +
               ((chameleonTagSaveCheckForMifareClassicEV1(card)) ? " EV1" : "")),
