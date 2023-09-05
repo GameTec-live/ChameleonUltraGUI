@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:typed_data';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -14,7 +15,8 @@ class DictionaryEditMenu extends StatefulWidget {
   final Dictionary dict;
   final bool isNew;
 
-  const DictionaryEditMenu({Key? key, required this.dict, this.isNew = false}) : super(key: key);
+  const DictionaryEditMenu({Key? key, required this.dict, this.isNew = false})
+      : super(key: key);
 
   @override
   DictionaryEditMenuState createState() => DictionaryEditMenuState();
@@ -87,7 +89,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
                     labelText: localizations.name,
                     hintText: localizations.enter_dict_name,
                     prefix: IconButton(
-                      icon: Icon(Icons.nfc, color: currentColor),
+                      icon: Icon(Icons.key, color: currentColor),
                       onPressed: () async {
                         showDialog(
                           context: context,
@@ -137,6 +139,9 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               TextFormField(
                 maxLines: null,
                 controller: keysController,
+                style: GoogleFonts.robotoMono(
+                  fontSize: 16.0,
+                ),
                 decoration: InputDecoration(
                   labelText: localizations.keys,
                   hintText: localizations.enter_dict_keys,

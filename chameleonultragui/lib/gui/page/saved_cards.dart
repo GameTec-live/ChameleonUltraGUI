@@ -10,6 +10,7 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
@@ -688,7 +689,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         width: 600,
                                         child: ListView(
                                           children: [
-                                            Text(output),
+                                            Text(
+                                              output,
+                                              style: GoogleFonts.robotoMono(
+                                                fontSize: 16.0,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       )
@@ -697,7 +703,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   actions: [
                                     IconButton(
                                       onPressed: () async {
-                                        await dictMergeDialog(context, dictionary);
+                                        await dictMergeDialog(
+                                            context, dictionary);
                                         Navigator.pop(context);
                                       },
                                       icon: const Icon(Icons.merge),
@@ -904,13 +911,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     var appState = context.read<ChameleonGUIState>();
     var dicts = appState.sharedPreferencesProvider.getDictionaries();
 
-
     dicts.sort((a, b) => a.name.compareTo(b.name));
 
     return showSearch<String>(
       context: context,
-      delegate:
-          DictMergeDelegate(dicts, mergeDict),
+      delegate: DictMergeDelegate(dicts, mergeDict),
     );
   }
 }
@@ -947,14 +952,16 @@ class DictMergeDelegate extends SearchDelegate<String> {
               selectedForMerge.add(dicts[i]);
             }
           }
-          
+
           // Merge
           for (var dict in selectedForMerge) {
             mergeDict.keys = mergeDict.keys + dict.keys;
           }
-          
+
           // Deduplicate
-          mergeDict.keys = <int, Uint8List>{for (var key in mergeDict.keys) Object.hashAll(key): key}.values.toList();
+          mergeDict.keys = <int, Uint8List>{
+            for (var key in mergeDict.keys) Object.hashAll(key): key
+          }.values.toList();
 
           // Replace
           for (var i = 0; i < output.length; i++) {
@@ -984,9 +991,10 @@ class DictMergeDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    final results = dicts.where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
+    final results = dicts
+        .where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
 
-        return ListView.builder(
+    return ListView.builder(
       itemCount: results.length,
       itemBuilder: (BuildContext context, int index) {
         final dict = results.elementAt(index);
@@ -1006,9 +1014,9 @@ class DictMergeDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final results = dicts.where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
+    final results = dicts
+        .where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
 
-    
     return ListView.builder(
       itemCount: results.length,
       itemBuilder: (BuildContext context, int index) {
