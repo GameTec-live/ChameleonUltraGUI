@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'dart:typed_data';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -139,9 +138,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               TextFormField(
                 maxLines: null,
                 controller: keysController,
-                style: GoogleFonts.robotoMono(
-                  fontSize: 16.0,
-                ),
+                style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
                 decoration: InputDecoration(
                   labelText: localizations.keys,
                   hintText: localizations.enter_dict_keys,
