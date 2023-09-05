@@ -30,7 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  sqflite:
   path:
   async:
 
@@ -113,6 +112,11 @@ flutter:
     - assets/logo.png
     - assets/black-ultra-standing-front-flashing.png
     - assets/black-lite-standing-front-flashing.png
+
+  fonts:
+    - family: RobotoMono
+      fonts:
+        - asset: assets/fonts/RobotoMono-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
