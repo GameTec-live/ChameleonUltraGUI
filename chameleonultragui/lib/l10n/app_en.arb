@@ -191,5 +191,17 @@
   "ble_pin": "BLE PIN",
   "enter_pin": "Enter PIN",
   "pin_must_be_6_digits": "PIN must be 6 digits",
-  "clear_ble_bonds_confirmation": "Are you sure you want to clear BLE bounded devices? This will require you to remove bounded Chameleon in your mobile device settings before reconnecting."
+  "clear_ble_bonds_confirmation": "Are you sure you want to clear BLE bounded devices? This will require you to remove bounded Chameleon in your mobile device settings before reconnecting.",
+  "ble_need_to_remove_pair": "If you changed password or unpaired all devices and can't connect you need to remove Chameleon in your device Bluetooth settings",
+  "shared_preferences_logging": "Shared preferences logging",
+  "production_logging": "Production logging",
+  "slow_down_warning": "Will slow down app, use with caution",
+  "enable_production_logging": "Enable production logging",
+  "disable_production_logging": "Disable production logging",
+  "clear_logs": "Clear logs",
+  "copy_logs_to_clipboard": "Copy logs to clipboard",
+  "recovery_library": "Recovery library",
+  "force_flashing": "Force flashing",
+  "chameleon_flashing_title_easter_egg": "Your Chameleon {model} is flashing",
+  "chameleon_flashing_title": "Installing firmware on your Chameleon {model}"
 }

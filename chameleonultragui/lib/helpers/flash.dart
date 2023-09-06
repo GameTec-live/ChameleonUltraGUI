@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -192,19 +193,23 @@ void validateFiles(Uint8List dat, Uint8List bin) {
   }
 }
 
-Future<void> flashFirmware(ChameleonGUIState appState) async {
+Future<void> flashFirmware(ChameleonGUIState appState,
+    {ScaffoldMessengerState? scaffoldMessenger,
+    ChameleonDevice? device}) async {
   Uint8List applicationDat, applicationBin;
 
-  Uint8List content = await fetchFirmware(appState.connector!.device);
+  Uint8List content = await fetchFirmware(
+      (device != null) ? device : appState.connector!.device);
 
   (applicationDat, applicationBin) = await unpackFirmware(content);
 
   flashFile(appState.communicator, appState, applicationDat, applicationBin,
       (progress) => appState.setProgressBar(progress / 100),
-      firmwareZip: content);
+      firmwareZip: content, scaffoldMessenger: scaffoldMessenger);
 }
 
-Future<void> flashFirmwareZip(ChameleonGUIState appState) async {
+Future<void> flashFirmwareZip(ChameleonGUIState appState,
+    {ScaffoldMessengerState? scaffoldMessenger}) async {
   Uint8List applicationDat, applicationBin;
 
   FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -217,7 +222,8 @@ Future<void> flashFirmwareZip(ChameleonGUIState appState) async {
 
     flashFile(appState.communicator, appState, applicationDat, applicationBin,
         (progress) => appState.setProgressBar(progress / 100),
-        firmwareZip: await file.readAsBytes());
+        firmwareZip: await file.readAsBytes(),
+        scaffoldMessenger: scaffoldMessenger);
   }
 }
 
@@ -228,7 +234,8 @@ Future<void> flashFile(
     Uint8List applicationBin,
     void Function(int progress) callback,
     {bool enterDFU = true,
-    List<int> firmwareZip = const []}) async {
+    List<int> firmwareZip = const [],
+    ScaffoldMessengerState? scaffoldMessenger}) async {
   validateFiles(applicationDat, applicationBin);
 
   // Flashing easter egg
@@ -285,11 +292,15 @@ Future<void> flashFile(
 
   await appState.connector!.connectSpecificDevice(chameleons[0].port);
 
+  if (scaffoldMessenger != null) {
+    scaffoldMessenger.removeCurrentSnackBar();
+  }
+
   var dfu = DFUCommunicator(appState.log!,
       port: appState.connector, viaBLE: toFlash.type == ConnectionType.ble);
+  appState.changesMade();
   await dfu.setPRN();
   await dfu.getMTU();
-  appState.changesMade();
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log!.i("Firmware flashed!");

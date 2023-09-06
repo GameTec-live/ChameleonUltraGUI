@@ -40,7 +40,7 @@ Contributions are welcome, most stuff that needs to be done can either be found 
 
 ## Translations
 
-If you want to collaborate by adding your language to the application, you can do it through [our Crowdin project](https://crowdin.com/project/chameleonultragui). Do not contribute files into `chameleonultragui/lib/l100n/app_*.arb`. All translations should be added only to Crowdin. If your language is missing, you can create issue and ask to enable it. "Chameleon Ultra GUI", "Chameleon" and other trademarks should not be translated.
+If you want to collaborate by adding your language to the application, you can do it through [our Crowdin project](https://crowdin.com/project/chameleonultragui). Do not contribute files into `chameleonultragui/lib/l10n/app_*.arb`. All translations should be added only to Crowdin. If your language is missing, you can create issue and ask to enable it. "Chameleon Ultra GUI", "Chameleon" and other trademarks should not be translated.
 
 ## Screenshots
 ![Connect Page](/screenshots/1.png)
@@ -57,7 +57,7 @@ You want to support us and donate? Thank you, you make it possible for us to kee
 
 You have the following options:
 
-Open Collective: [ChameleonUltraGUI](https://opencollective.com/chameleon-ultra-gui)
+Open Collective: [Chameleon Ultra GUI](https://opencollective.com/chameleon-ultra-gui)
 
 Crypto Currencies if your into that jam (Although open collective is preferred):
 - BTC: bc1qrcd4ctxagaxsetyhpzc08d2upl0mh498gp3lkl

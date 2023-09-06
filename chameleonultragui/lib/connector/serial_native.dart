@@ -108,8 +108,7 @@ class NativeSerial extends AbstractSerial {
           device = ChameleonDevice.lite;
         }
 
-        log.d(
-            "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
+        log.d("Found Chameleon ${chameleonDeviceName(device)}!");
 
         connectionType = ConnectionType.usb;
 

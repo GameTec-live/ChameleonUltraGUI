@@ -118,7 +118,12 @@ class _MainPageState extends State<MainPage> {
     appState.log ??= Logger(
         output: appState._sharedPreferencesProvider!.isDebugLogging()
             ? SharedPreferencesLogger(appState._sharedPreferencesProvider!)
-            : ConsoleOutput());
+            : ConsoleOutput(),
+        printer: PrettyPrinter(
+          noBoxingByDefault:
+              appState._sharedPreferencesProvider!.isDebugLogging(),
+        ),
+        filter: ChameleonLogFilter());
     appState.connector ??= Platform.isAndroid
         ? AndroidSerial(log: appState.log!)
         : (Platform.isIOS

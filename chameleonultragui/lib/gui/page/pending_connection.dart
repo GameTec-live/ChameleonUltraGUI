@@ -35,6 +35,11 @@ class PendingConnectionPage extends StatelessWidget {
             Text(
               localizations.connection_might_take_some_time,
               style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              localizations.ble_need_to_remove_pair,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             )
           ],
         ])));

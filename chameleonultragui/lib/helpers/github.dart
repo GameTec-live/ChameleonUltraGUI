@@ -11,15 +11,15 @@ List<Map<String, String>> developers = [
     'username': 'GameTec-live'
   },
   {
+    'name': 'Foxushka',
+    'description': 'Lead Developer 🦊',
+    'avatarUrl': 'https://avatars.githubusercontent.com/u/135865149',
+    'username': 'Foxushka'
+  },
+  {
     'name': 'Augusto Zanellato',
     'description': 'Developer',
     'avatarUrl': 'https://avatars.githubusercontent.com/u/13242738',
-    'username': 'auguzanellato'
-  },
-  {
-    'name': 'Foxushka',
-    'description': 'Developer 🦊',
-    'avatarUrl': 'https://avatars.githubusercontent.com/u/135865149',
     'username': 'augustozanellato'
   },
   {
@@ -52,8 +52,9 @@ Future<List<Map<String, String>>> fetchGitHubContributors() async {
     if (response is List) {
       List<Map<String, String>> contributors = [];
       for (var contributor in response) {
-        if (!developers.any(
-            (developer) => developer['username'] == contributor['login'])) {
+        if (contributor['login'] != 'github-actions[bot]' &&
+            !developers.any(
+                (developer) => developer['username'] == contributor['login'])) {
           contributors.add({
             'name': contributor['login'],
             'description': '',

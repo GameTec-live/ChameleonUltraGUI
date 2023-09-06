@@ -120,6 +120,7 @@ class HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
     return FutureBuilder(
         future: getFutureData(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -189,7 +190,7 @@ class HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                            "Chameleon ${appState.connector!.device == ChameleonDevice.ultra ? "Ultra" : "Lite"}",
+                            "Chameleon ${chameleonDeviceName(appState.connector!.device)}",
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize:
@@ -237,8 +238,7 @@ class HomePageState extends State<HomePage> {
                                     appState.connector!.device);
                               } catch (e) {
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context)
-                                      .hideCurrentSnackBar();
+                                  scaffoldMessenger.hideCurrentSnackBar();
                                   snackBar = SnackBar(
                                     content: Text(
                                         '${localizations.update_error}: ${e.toString()}'),
@@ -248,8 +248,7 @@ class HomePageState extends State<HomePage> {
                                     ),
                                   );
 
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(snackBar);
+                                  scaffoldMessenger.showSnackBar(snackBar);
                                 }
                                 return;
                               }
@@ -264,56 +263,48 @@ class HomePageState extends State<HomePage> {
                                   context.mounted) {
                                 snackBar = SnackBar(
                                   content: Text(localizations.up_to_date(
-                                      appState.connector!.device ==
-                                              ChameleonDevice.ultra
-                                          ? "Ultra"
-                                          : "Lite")),
+                                      chameleonDeviceName(
+                                          appState.connector!.device))),
                                   action: SnackBarAction(
                                     label: localizations.close,
                                     onPressed: () {},
                                   ),
                                 );
 
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(snackBar);
+                                scaffoldMessenger.showSnackBar(snackBar);
                               } else if (context.mounted) {
                                 snackBar = SnackBar(
                                   content: Text(localizations.downloading_fw(
-                                      appState.connector!.device ==
-                                              ChameleonDevice.ultra
-                                          ? "Ultra"
-                                          : "Lite")),
+                                      chameleonDeviceName(
+                                          appState.connector!.device))),
                                   action: SnackBarAction(
                                     label: localizations.close,
                                     onPressed: () {
-                                      ScaffoldMessenger.of(context)
-                                          .hideCurrentSnackBar();
+                                      scaffoldMessenger.hideCurrentSnackBar();
                                     },
                                   ),
                                 );
 
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(snackBar);
+                                scaffoldMessenger.showSnackBar(snackBar);
                                 try {
-                                  await flashFirmware(appState);
+                                  await flashFirmware(appState,
+                                      scaffoldMessenger: scaffoldMessenger);
                                 } catch (e) {
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context)
-                                        .hideCurrentSnackBar();
+                                    scaffoldMessenger.hideCurrentSnackBar();
                                     snackBar = SnackBar(
                                       content: Text(
                                           '${localizations.update_error}: ${e.toString()}'),
                                       action: SnackBarAction(
                                         label: localizations.close,
                                         onPressed: () {
-                                          ScaffoldMessenger.of(context)
+                                          scaffoldMessenger
                                               .hideCurrentSnackBar();
                                         },
                                       ),
                                     );
 
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(snackBar);
+                                    scaffoldMessenger.showSnackBar(snackBar);
                                   }
                                 }
                               }
