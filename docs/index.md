@@ -1,6 +1,6 @@
-# ChamaleonUltraGUI Documentation
+# Chamaleon Ultra GUI Documentation
 ## Table of Contents
-- [ChamaleonUltraGUI Documentation](#chamaleonultragui-documentation)
+- [Chamaleon Ultra GUI Documentation](#chamaleonultragui-documentation)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Installation](#installation)
