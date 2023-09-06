@@ -46,7 +46,7 @@ def add_string_to_source(string):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Uso: python script.py <cadena_a_agregar>")
+        print("Usage: python updateCrowdin.py <string>")
         sys.exit(1)
 
     string_to_be_added = sys.argv[1]

@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
@@ -16,6 +15,7 @@ class ConnectPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
     return FutureBuilder(
       future: (appState.connector!.connected ||
               appState.connector!.pendingConnection)
@@ -87,25 +87,34 @@ class ConnectPage extends StatelessWidget {
                                             Navigator.pop(
                                                 context, localizations.flash);
                                             appState.changesMade();
-                                            Uint8List applicationDat,
-                                                applicationBin;
 
-                                            Uint8List content =
-                                                await fetchFirmware(
-                                                    chameleonDevice.device);
+                                            scaffoldMessenger
+                                                .hideCurrentSnackBar();
 
-                                            (applicationDat, applicationBin) =
-                                                await unpackFirmware(content);
+                                            var snackBar = SnackBar(
+                                              content: Text(
+                                                  localizations.downloading_fw(
+                                                      chameleonDevice.device ==
+                                                              ChameleonDevice
+                                                                  .ultra
+                                                          ? "Ultra"
+                                                          : "Lite")),
+                                              action: SnackBarAction(
+                                                label: localizations.close,
+                                                onPressed: () {
+                                                  scaffoldMessenger
+                                                      .hideCurrentSnackBar();
+                                                },
+                                              ),
+                                            );
 
-                                            flashFile(
-                                                null,
-                                                appState,
-                                                applicationDat,
-                                                applicationBin,
-                                                (progress) =>
-                                                    appState.setProgressBar(
-                                                        progress / 100),
-                                                enterDFU: false);
+                                            scaffoldMessenger
+                                                .showSnackBar(snackBar);
+
+                                            await flashFirmware(appState,
+                                                scaffoldMessenger:
+                                                    scaffoldMessenger,
+                                                device: chameleonDevice.device);
 
                                             appState.changesMade();
                                           },

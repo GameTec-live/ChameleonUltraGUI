@@ -86,10 +86,11 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     return FutureBuilder(
         future: getSettingsData(),
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
+        builder: (BuildContext buildContext, AsyncSnapshot snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return AlertDialog(
                 title: Text(localizations.device_settings),
@@ -125,7 +126,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             onPressed: () async {
                               await appState.communicator!.enterDFUMode();
                               appState.connector!.performDisconnect();
-                              Navigator.pop(context, localizations.cancel);
+                              Navigator.pop(buildContext, localizations.cancel);
                               appState.changesMade();
                             },
                             child: Row(
@@ -139,7 +140,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         fit: BoxFit.scaleDown,
                         child: TextButton(
                             onPressed: () async {
-                              Navigator.pop(context, localizations.cancel);
+                              Navigator.pop(buildContext, localizations.cancel);
                               var snackBar = SnackBar(
                                 content: Text(localizations.downloading_fw(
                                     appState.connector!.device ==
@@ -152,13 +153,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                 ),
                               );
 
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(snackBar);
+                              scaffoldMessenger.showSnackBar(snackBar);
                               try {
-                                await flashFirmware(appState);
+                                await flashFirmware(appState,
+                                    scaffoldMessenger: scaffoldMessenger);
                               } catch (e) {
-                                ScaffoldMessenger.of(context)
-                                    .hideCurrentSnackBar();
+                                scaffoldMessenger.hideCurrentSnackBar();
                                 snackBar = SnackBar(
                                   content: Text(
                                       '${localizations.update_error}: ${e.toString()}'),
@@ -168,8 +168,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                   ),
                                 );
 
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(snackBar);
+                                scaffoldMessenger.showSnackBar(snackBar);
                               }
                             },
                             child: Row(
@@ -183,8 +182,9 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         fit: BoxFit.scaleDown,
                         child: TextButton(
                             onPressed: () async {
-                              Navigator.pop(context, localizations.cancel);
-                              await flashFirmwareZip(appState);
+                              Navigator.pop(buildContext, localizations.cancel);
+                              await flashFirmwareZip(appState,
+                                  scaffoldMessenger: scaffoldMessenger);
                             },
                             child: Row(
                               children: [

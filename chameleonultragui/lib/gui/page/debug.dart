@@ -1,8 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +13,8 @@ import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+import 'package:http/http.dart' as http;
 
 class DebugPage extends StatelessWidget {
   // Home Page
@@ -57,6 +59,99 @@ class DebugPage extends StatelessWidget {
                   '${localizations.chameleon_connected}: ${appState.connector!.connected}'),
               Text(
                   '${localizations.chameleon_device_type}: ${appState.connector!.device}'),
+              Text(
+                  'Shared preferences logging: ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines'),
+              const SizedBox(height: 10),
+              const Text("Production logging", textScaleFactor: 1.5),
+              const SizedBox(height: 5),
+              const Text("Will slow down app, use with caution",
+                  textScaleFactor: 0.9),
+              const SizedBox(height: 10),
+              if (!appState.sharedPreferencesProvider.isDebugLogging())
+                ElevatedButton(
+                  onPressed: () async {
+                    appState.sharedPreferencesProvider.setDebugLogging(true);
+                    await appState.connector!.performDisconnect();
+                    appState.log = null;
+                    appState.connector = null;
+                    appState.changesMade();
+                  },
+                  child: const Column(children: [
+                    Text('Enable production logging'),
+                  ]),
+                ),
+              if (appState.sharedPreferencesProvider.isDebugLogging())
+                ElevatedButton(
+                  onPressed: () async {
+                    appState.sharedPreferencesProvider.setDebugLogging(false);
+                    await appState.connector!.performDisconnect();
+                    appState.log = null;
+                    appState.connector = null;
+                    appState.changesMade();
+                  },
+                  child: const Column(children: [
+                    Text('Disable production logging'),
+                  ]),
+                ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  appState.sharedPreferencesProvider.clearLogLines();
+                  appState.changesMade();
+                },
+                child: const Column(children: [
+                  Text('Clear logs'),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(
+                      text: appState.sharedPreferencesProvider
+                          .getLogLines()
+                          .join("\n")));
+                },
+                child: const Column(children: [
+                  Text('Copy logs to clipboard'),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  var resp = json.decode((await http.post(
+                    Uri.parse('https://hastebin.skyra.pw/documents'),
+                    headers: <String, String>{
+                      'User-Agent':
+                          'Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/115.0',
+                    },
+                    body: appState.sharedPreferencesProvider
+                        .getLogLines()
+                        .join("\n"),
+                  ))
+                      .body
+                      .toString());
+                  await Clipboard.setData(ClipboardData(
+                      text: "https://hastebin.skyra.pw/${resp["key"]}"));
+                  var snackBar = SnackBar(
+                    content: Text(
+                        "Uploaded to https://hastebin.skyra.pw/${resp["key"]} (copied to clipboard)"),
+                    action: SnackBarAction(
+                      label: localizations.close,
+                      onPressed: () {},
+                    ),
+                  );
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                  }
+                },
+                child: const Column(children: [
+                  Text('Upload logs to hastebin.skyra.pw'),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              const Text("Recovery library", textScaleFactor: 1.5),
+              const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
                   await appState.communicator!.setReaderDeviceMode(true);
@@ -107,6 +202,7 @@ class DebugPage extends StatelessWidget {
                   Text(localizations.nested_attack),
                 ]),
               ),
+              const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
                   await appState.communicator!.setReaderDeviceMode(true);
@@ -147,39 +243,7 @@ class DebugPage extends StatelessWidget {
                   Text(localizations.darkside_attack),
                 ]),
               ),
-              ElevatedButton(
-                onPressed: () async {
-                  await appState.communicator!.setReaderDeviceMode(true);
-                  appState.log!.d(
-                      "Reader mode (should be true): ${await appState.communicator!.isReaderDeviceMode()}");
-                  var card = await appState.communicator!.scan14443aTag();
-                  appState.log!.d('Card UID: ${card.uid}');
-                  appState.log!.d('SAK: ${card.sak}');
-                  appState.log!.d('ATQA: ${card.atqa}');
-                  await appState.communicator!.setReaderDeviceMode(false);
-                  await appState.communicator!.setMf1AntiCollision(card);
-                },
-                child: Column(children: [
-                  Text(localizations.copy_uid),
-                ]),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  await appState.communicator!
-                      .setSlotTagName(1, "test", TagFrequency.hf);
-                  var name = await appState.communicator!
-                      .getSlotTagName(1, TagFrequency.hf);
-                  appState.log!.d(name);
-                  await appState.communicator!
-                      .setSlotTagName(1, "Hello 变色龙!", TagFrequency.hf);
-                  name = await appState.communicator!
-                      .getSlotTagName(1, TagFrequency.hf);
-                  appState.log!.d(name);
-                },
-                child: Column(children: [
-                  Text(localizations.test_naming),
-                ]),
-              ),
+              const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
                   var darkside = DarksideDart(uid: 2374329723, items: []);
@@ -204,6 +268,7 @@ class DebugPage extends StatelessWidget {
                   Text(localizations.test_darkside_lib),
                 ]),
               ),
+              const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
                   var nested = NestedDart(
@@ -224,49 +289,28 @@ class DebugPage extends StatelessWidget {
                   Text(localizations.test_nested_lib),
                 ]),
               ),
+              const SizedBox(height: 10),
+              const Text("Force flashing", textScaleFactor: 1.5),
+              const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
-                  Uint8List applicationDat, applicationBin;
-
-                  Uint8List content =
-                      await fetchFirmware(ChameleonDevice.ultra);
-
-                  (applicationDat, applicationBin) =
-                      await unpackFirmware(content);
-
-                  flashFile(
-                      appState.communicator,
-                      appState,
-                      applicationDat,
-                      applicationBin,
-                      (progress) => appState.log!.d("Flashing: $progress%"),
-                      firmwareZip: content);
+                  await flashFirmware(appState, device: ChameleonDevice.ultra);
                 },
                 child: Column(children: [
                   Text('💀 ${localizations.dfu_flash_ultra} 💀'),
                 ]),
               ),
+              const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
-                  Uint8List applicationDat, applicationBin;
-
-                  Uint8List content = await fetchFirmware(ChameleonDevice.lite);
-
-                  (applicationDat, applicationBin) =
-                      await unpackFirmware(content);
-
-                  flashFile(
-                      appState.communicator,
-                      appState,
-                      applicationDat,
-                      applicationBin,
-                      (progress) => appState.log!.d("Flashing: $progress%"),
-                      firmwareZip: content);
+                  await flashFirmware(appState, device: ChameleonDevice.lite);
                 },
                 child: Column(children: [
                   Text('💀 ${localizations.dfu_flash_lite} 💀'),
                 ]),
               ),
+              const SizedBox(height: 10),
+              Text(localizations.other, textScaleFactor: 1.5),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
@@ -277,42 +321,19 @@ class DebugPage extends StatelessWidget {
                       '✅ ${localizations.safe_option}: ${localizations.restart_chameleon} ✅'),
                 ]),
               ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () async {
-                  appState.sharedPreferencesProvider.setDebugLogging(true);
-                  await appState.connector!.performDisconnect();
-                  appState.log = null;
-                  appState.connector = null;
-                  appState.changesMade();
-                },
-                child: const Column(children: [
-                  Text('Enable production logging'),
-                ]),
-              ),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
-                  appState.sharedPreferencesProvider.setDebugLogging(false);
-                  await appState.connector!.performDisconnect();
-                  appState.log = null;
-                  appState.connector = null;
-                  appState.changesMade();
+                  await appState.communicator!.setReaderDeviceMode(true);
+                  var card = await appState.communicator!.scan14443aTag();
+                  appState.log!.d('Card UID: ${card.uid}');
+                  appState.log!.d('SAK: ${card.sak}');
+                  appState.log!.d('ATQA: ${card.atqa}');
+                  await appState.communicator!.setReaderDeviceMode(false);
+                  await appState.communicator!.setMf1AntiCollision(card);
                 },
-                child: const Column(children: [
-                  Text('Disable production logging'),
-                ]),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () async {
-                  await Clipboard.setData(ClipboardData(
-                      text: appState.sharedPreferencesProvider
-                          .getLogLines()
-                          .join("\n")));
-                },
-                child: const Column(children: [
-                  Text('Copy logs to clipboard'),
+                child: Column(children: [
+                  Text(localizations.copy_uid),
                 ]),
               ),
               const SizedBox(height: 10),
