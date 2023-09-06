@@ -33,9 +33,9 @@ def add_string_to_source(string):
     try:
         string_parsed = string.split('app_en.arb', 1)[1].replace(' ', '').replace(',', '').replace('\n','').split('+')[1:]
         for s in string_parsed:
-            data = {'identifier': key.replace('"', ''), 'text': value.replace('"', ''), 'fileId': sourceId}
             try:
                 key, value = s.split(':')
+                data = {'identifier': key.replace('"', ''), 'text': value.replace('"', ''), 'fileId': sourceId}
                 request('POST', f"https://api.crowdin.com/api/v2/projects/{projectId}/strings", data)
                 print("Added: ", key)
             except Exception as e:
