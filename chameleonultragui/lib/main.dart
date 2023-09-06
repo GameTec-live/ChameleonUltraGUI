@@ -193,7 +193,9 @@ class _MainPageState extends State<MainPage> {
       statusBarColor: Theme.of(context).colorScheme.surface,
     ));
 
-    WakelockPlus.toggle(enable: page is FlashingPage);
+    try {
+      WakelockPlus.toggle(enable: page is FlashingPage);
+    } catch (_) {}
 
     return MaterialApp(
       title: 'Chameleon Ultra GUI', // App Name
