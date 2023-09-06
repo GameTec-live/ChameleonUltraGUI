@@ -6,13 +6,28 @@ A GUI for the Chameleon Ultra/Chameleon Lite written in Flutter for cross platfo
 [![Crowdin](https://badges.crowdin.net/chameleonultragui/localized.svg)](https://crowdin.com/project/chameleonultragui)
 
 ## Installation
-You can download the latest builds from GitHub Actions [here](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml?query=branch%3Amain) under the artifacts section.
 
-App available in those stores:
-- Google Play: https://play.google.com/store/apps/details?id=io.chameleon.ultra
+#### Windows
+Download the installer [following this link](https://chameleonultragui.dev/windows)
+
+#### Linux
+
+Download the Linux build [following this link](https://chameleonultragui.dev/linux)
+
+- Debian: https://chameleonultragui.dev/linux-debian
+- Arch: https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
+
+#### MacOS
+Download it on Apple App Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/macos)
+
+#### Android
+Download it on Google Play Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/android)
+
+#### iOS / iPadOS
+Download it on Apple App Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/ios)
+
+Pending stores:
 - F-Store: not yet
-- App Store: https://apps.apple.com/app/chameleon-ultra-gui/id6462919364
-- Arch Linux (AUR): https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
 - Flathub: not yet
 - Chocolatey (Windows): not yet
 
