@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -36,8 +37,10 @@ class FlashingPage extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 appState.easterEgg
-                    ? 'Your Chameleon ${appState.connector!.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'} is flashing'
-                    : 'Installing firmware on your Chameleon ${appState.connector!.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}',
+                    ? localizations.chameleon_flashing_title_easter_egg(
+                        chameleonDeviceName(ChameleonDevice.ultra))
+                    : localizations.chameleon_flashing_title(
+                        chameleonDeviceName(ChameleonDevice.ultra)),
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,

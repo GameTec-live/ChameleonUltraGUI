@@ -60,12 +60,11 @@ class DebugPage extends StatelessWidget {
               Text(
                   '${localizations.chameleon_device_type}: ${appState.connector!.device}'),
               Text(
-                  'Shared preferences logging: ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines'),
+                  '${localizations.shared_preferences_logging}: ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines'),
               const SizedBox(height: 10),
-              const Text("Production logging", textScaleFactor: 1.5),
+              Text(localizations.production_logging, textScaleFactor: 1.5),
               const SizedBox(height: 5),
-              const Text("Will slow down app, use with caution",
-                  textScaleFactor: 0.9),
+              Text(localizations.slow_down_warning, textScaleFactor: 0.9),
               const SizedBox(height: 10),
               if (!appState.sharedPreferencesProvider.isDebugLogging())
                 ElevatedButton(
@@ -76,8 +75,8 @@ class DebugPage extends StatelessWidget {
                     appState.connector = null;
                     appState.changesMade();
                   },
-                  child: const Column(children: [
-                    Text('Enable production logging'),
+                  child: Column(children: [
+                    Text(localizations.enable_production_logging),
                   ]),
                 ),
               if (appState.sharedPreferencesProvider.isDebugLogging())
@@ -89,8 +88,8 @@ class DebugPage extends StatelessWidget {
                     appState.connector = null;
                     appState.changesMade();
                   },
-                  child: const Column(children: [
-                    Text('Disable production logging'),
+                  child: Column(children: [
+                    Text(localizations.disable_production_logging),
                   ]),
                 ),
               const SizedBox(height: 10),
@@ -99,8 +98,8 @@ class DebugPage extends StatelessWidget {
                   appState.sharedPreferencesProvider.clearLogLines();
                   appState.changesMade();
                 },
-                child: const Column(children: [
-                  Text('Clear logs'),
+                child: Column(children: [
+                  Text(localizations.disable_production_logging),
                 ]),
               ),
               const SizedBox(height: 10),
@@ -111,8 +110,8 @@ class DebugPage extends StatelessWidget {
                           .getLogLines()
                           .join("\n")));
                 },
-                child: const Column(children: [
-                  Text('Copy logs to clipboard'),
+                child: Column(children: [
+                  Text(localizations.copy_logs_to_clipboard),
                 ]),
               ),
               const SizedBox(height: 10),
@@ -133,8 +132,8 @@ class DebugPage extends StatelessWidget {
                   await Clipboard.setData(ClipboardData(
                       text: "https://hastebin.skyra.pw/${resp["key"]}"));
                   var snackBar = SnackBar(
-                    content: Text(
-                        "Uploaded to https://hastebin.skyra.pw/${resp["key"]} (copied to clipboard)"),
+                    content:
+                        Text(localizations.upload_logs_success(resp["key"])),
                     action: SnackBarAction(
                       label: localizations.close,
                       onPressed: () {},
@@ -145,12 +144,12 @@ class DebugPage extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(snackBar);
                   }
                 },
-                child: const Column(children: [
-                  Text('Upload logs to hastebin.skyra.pw'),
+                child: Column(children: [
+                  Text(localizations.upload_logs_to_hastebin),
                 ]),
               ),
               const SizedBox(height: 10),
-              const Text("Recovery library", textScaleFactor: 1.5),
+              Text(localizations.recovery_library, textScaleFactor: 1.5),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
@@ -290,7 +289,7 @@ class DebugPage extends StatelessWidget {
                 ]),
               ),
               const SizedBox(height: 10),
-              const Text("Force flashing", textScaleFactor: 1.5),
+              Text(localizations.force_flashing, textScaleFactor: 1.5),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {

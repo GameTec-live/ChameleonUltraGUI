@@ -39,7 +39,21 @@
     "ble_pin",
     "enter_pin",
     "pin_must_be_6_digits",
-    "clear_ble_bonds_confirmation"
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "upload_logs_to_hastebin",
+    "upload_logs_success",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title"
   ],
 
   "de": [
@@ -54,7 +68,21 @@
     "ble_pin",
     "enter_pin",
     "pin_must_be_6_digits",
-    "clear_ble_bonds_confirmation"
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "upload_logs_to_hastebin",
+    "upload_logs_success",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title"
   ],
 
   "de_AT": [
@@ -69,7 +97,21 @@
     "ble_pin",
     "enter_pin",
     "pin_must_be_6_digits",
-    "clear_ble_bonds_confirmation"
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "upload_logs_to_hastebin",
+    "upload_logs_success",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title"
   ],
 
   "es": [
@@ -78,7 +120,21 @@
     "ble_pin",
     "enter_pin",
     "pin_must_be_6_digits",
-    "clear_ble_bonds_confirmation"
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "upload_logs_to_hastebin",
+    "upload_logs_success",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title"
   ],
 
   "fr": [
@@ -87,7 +143,21 @@
     "ble_pin",
     "enter_pin",
     "pin_must_be_6_digits",
-    "clear_ble_bonds_confirmation"
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "upload_logs_to_hastebin",
+    "upload_logs_success",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title"
   ],
 
   "ko": [
@@ -117,7 +187,21 @@
     "ble_pin",
     "enter_pin",
     "pin_must_be_6_digits",
-    "clear_ble_bonds_confirmation"
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "upload_logs_to_hastebin",
+    "upload_logs_success",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title"
   ],
 
   "nl": [
@@ -126,7 +210,21 @@
     "ble_pin",
     "enter_pin",
     "pin_must_be_6_digits",
-    "clear_ble_bonds_confirmation"
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "upload_logs_to_hastebin",
+    "upload_logs_success",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title"
   ],
 
   "ro": [
@@ -167,7 +265,21 @@
     "ble_pin",
     "enter_pin",
     "pin_must_be_6_digits",
-    "clear_ble_bonds_confirmation"
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "upload_logs_to_hastebin",
+    "upload_logs_success",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title"
   ],
 
   "ru": [
@@ -183,6 +295,20 @@
     "ble_pin",
     "enter_pin",
     "pin_must_be_6_digits",
-    "clear_ble_bonds_confirmation"
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "upload_logs_to_hastebin",
+    "upload_logs_success",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title"
   ]
 }

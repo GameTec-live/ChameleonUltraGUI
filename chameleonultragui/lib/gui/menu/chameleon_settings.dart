@@ -2,6 +2,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -143,10 +144,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                               Navigator.pop(buildContext, localizations.cancel);
                               var snackBar = SnackBar(
                                 content: Text(localizations.downloading_fw(
-                                    appState.connector!.device ==
-                                            ChameleonDevice.ultra
-                                        ? "Ultra"
-                                        : "Lite")),
+                                    chameleonDeviceName(
+                                        appState.connector!.device))),
                                 action: SnackBarAction(
                                   label: localizations.close,
                                   onPressed: () {},

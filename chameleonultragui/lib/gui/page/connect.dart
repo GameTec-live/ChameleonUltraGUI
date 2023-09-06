@@ -1,6 +1,7 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -94,11 +95,9 @@ class ConnectPage extends StatelessWidget {
                                             var snackBar = SnackBar(
                                               content: Text(
                                                   localizations.downloading_fw(
-                                                      chameleonDevice.device ==
-                                                              ChameleonDevice
-                                                                  .ultra
-                                                          ? "Ultra"
-                                                          : "Lite")),
+                                                      chameleonDeviceName(
+                                                          chameleonDevice
+                                                              .device))),
                                               action: SnackBarAction(
                                                 label: localizations.close,
                                                 onPressed: () {
@@ -184,7 +183,7 @@ class ConnectPage extends StatelessWidget {
                                             MainAxisAlignment.start,
                                         children: [
                                           Text(
-                                              "Chameleon ${(chameleonDevice.device == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
+                                              "Chameleon ${chameleonDeviceName(chameleonDevice.device)}",
                                               style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 20)),

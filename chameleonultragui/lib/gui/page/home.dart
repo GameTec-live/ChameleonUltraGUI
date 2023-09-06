@@ -190,7 +190,7 @@ class HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                            "Chameleon ${appState.connector!.device == ChameleonDevice.ultra ? "Ultra" : "Lite"}",
+                            "Chameleon ${chameleonDeviceName(appState.connector!.device)}",
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize:
@@ -263,10 +263,8 @@ class HomePageState extends State<HomePage> {
                                   context.mounted) {
                                 snackBar = SnackBar(
                                   content: Text(localizations.up_to_date(
-                                      appState.connector!.device ==
-                                              ChameleonDevice.ultra
-                                          ? "Ultra"
-                                          : "Lite")),
+                                      chameleonDeviceName(
+                                          appState.connector!.device))),
                                   action: SnackBarAction(
                                     label: localizations.close,
                                     onPressed: () {},
@@ -277,10 +275,8 @@ class HomePageState extends State<HomePage> {
                               } else if (context.mounted) {
                                 snackBar = SnackBar(
                                   content: Text(localizations.downloading_fw(
-                                      appState.connector!.device ==
-                                              ChameleonDevice.ultra
-                                          ? "Ultra"
-                                          : "Lite")),
+                                      chameleonDeviceName(
+                                          appState.connector!.device))),
                                   action: SnackBarAction(
                                     label: localizations.close,
                                     onPressed: () {

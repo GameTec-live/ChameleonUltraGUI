@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:io' show Platform;
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
@@ -172,4 +173,8 @@ class SharedPreferencesLogger extends LogOutput {
       provider?.addLogLine(line);
     }
   }
+}
+
+String chameleonDeviceName(ChameleonDevice device) {
+  return (device == ChameleonDevice.ultra) ? "Ultra" : "Lite";
 }
