@@ -122,7 +122,7 @@ Contributions are welcome, most stuff that needs to be done can either be found 
 
 To traslate the app to your language, go our Crowdin project: [Chamaleon Ultra GUI](https://crowdin.com/project/chameleon-ultra-gui), join it and start translating.
 
-Do not contribute files to `chameleonultragui/lib/l100n/app_*.arb` as they will be automatically deleted. All translations should be added only to Crowdin. If your language is missing, you can create issue and ask to enable it. 
+Do not contribute files to `chameleonultragui/lib/l10n/app_*.arb` as they will be automatically deleted. All translations should be added only to Crowdin. If your language is missing, you can create issue and ask to enable it. 
 
 "**Chameleon Ultra GUI**", "**Chameleon**" and other trademarks should not be translated. 
 

@@ -28,7 +28,6 @@ class DebugPage extends StatelessWidget {
         ),
         body: SingleChildScrollView(
             child: Center(
-                child: Card(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -319,6 +318,6 @@ class DebugPage extends StatelessWidget {
               const SizedBox(height: 10),
             ],
           ),
-        ))));
+        )));
   }
 }
