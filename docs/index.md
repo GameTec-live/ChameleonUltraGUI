@@ -96,7 +96,7 @@ And clicking on the settings button will open the slot settings. Where you can e
 
 On this screen you can read the cards by bringing them close to the Chameleon.
 
-![Chamaleon Ultra GUI - Read Cards](assets/read_card.jpg)
+![Chamaleon Ultra GUI - Read Cards](assets/read_card.JPG)
 
 ![Chamaleon Ultra GUI - Read Cards](assets/read_card_result.png)
 
