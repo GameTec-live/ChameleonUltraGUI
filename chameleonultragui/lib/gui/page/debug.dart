@@ -118,10 +118,10 @@ class DebugPage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () async {
                   var resp = json.decode((await http.post(
-                    Uri.parse('https://hastebin.skyra.pw/documents'),
+                    Uri.parse('https://api.nft.storage/upload'),
                     headers: <String, String>{
-                      'User-Agent':
-                          'Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/115.0',
+                      'Authorization':
+                          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDE0ZDFjYzcyOTJlZmYzMTU5YjQ1MUQ1ZURDRkJFMUJBMkVBN2QzMTkiLCJpc3MiOiJuZnQtc3RvcmFnZSIsImlhdCI6MTY1MjUzMjg3MzA0NCwibmFtZSI6IkNoYWlubGlua1JvYm90In0.EFZXqd1hOicty_qpWo-yv5lZgsC0J6HKC9aCJKF-Pek',
                     },
                     body: appState.sharedPreferencesProvider
                         .getLogLines()
@@ -130,10 +130,11 @@ class DebugPage extends StatelessWidget {
                       .body
                       .toString());
                   await Clipboard.setData(ClipboardData(
-                      text: "https://hastebin.skyra.pw/${resp["key"]}"));
+                      text:
+                          "https://cloudflare-ipfs.com/ipfs/${resp["value"]["cid"]}/"));
                   var snackBar = SnackBar(
-                    content:
-                        Text(localizations.upload_logs_success(resp["key"])),
+                    content: Text(localizations
+                        .upload_logs_success(resp["value"]["cid"])),
                     action: SnackBarAction(
                       label: localizations.close,
                       onPressed: () {},
@@ -145,7 +146,7 @@ class DebugPage extends StatelessWidget {
                   }
                 },
                 child: Column(children: [
-                  Text(localizations.upload_logs_to_hastebin),
+                  Text(localizations.upload_logs_to_ipfs),
                 ]),
               ),
               const SizedBox(height: 10),
