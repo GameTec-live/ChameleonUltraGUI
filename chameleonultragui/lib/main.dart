@@ -116,13 +116,14 @@ class _MainPageState extends State<MainPage> {
     var appState = context.watch<ChameleonGUIState>();
     appState._sharedPreferencesProvider = widget.sharedPreferencesProvider;
     appState.log ??= Logger(
-      output: appState._sharedPreferencesProvider!.isDebugLogging()
-          ? SharedPreferencesLogger(appState._sharedPreferencesProvider!)
-          : ConsoleOutput(),
-      printer: PrettyPrinter(
+        output: appState._sharedPreferencesProvider!.isDebugLogging()
+            ? SharedPreferencesLogger(appState._sharedPreferencesProvider!)
+            : ConsoleOutput(),
+        printer: PrettyPrinter(
           noBoxingByDefault:
-              appState._sharedPreferencesProvider!.isDebugLogging()),
-    );
+              appState._sharedPreferencesProvider!.isDebugLogging(),
+        ),
+        filter: ChameleonLogFilter());
     appState.connector ??= Platform.isAndroid
         ? AndroidSerial(log: appState.log!)
         : (Platform.isIOS

@@ -178,3 +178,10 @@ class SharedPreferencesLogger extends LogOutput {
 String chameleonDeviceName(ChameleonDevice device) {
   return (device == ChameleonDevice.ultra) ? "Ultra" : "Lite";
 }
+
+class ChameleonLogFilter extends LogFilter {
+  @override
+  bool shouldLog(LogEvent event) {
+    return true;
+  }
+}

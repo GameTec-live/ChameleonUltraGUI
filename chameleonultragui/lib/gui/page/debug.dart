@@ -99,7 +99,7 @@ class DebugPage extends StatelessWidget {
                   appState.changesMade();
                 },
                 child: Column(children: [
-                  Text(localizations.disable_production_logging),
+                  Text(localizations.clear_logs),
                 ]),
               ),
               const SizedBox(height: 10),
