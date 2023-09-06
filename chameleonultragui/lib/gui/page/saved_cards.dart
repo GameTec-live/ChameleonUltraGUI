@@ -327,8 +327,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                 .setCards(tags);
                                             appState.changesMade();
                                             Navigator.pop(context);
-                                            Navigator.pop(
-                                                context); // Close the modal after saving
                                           },
                                           child: Text(localizations
                                               .save_as("7 byte UID")),
