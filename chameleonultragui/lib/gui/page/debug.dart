@@ -115,41 +115,6 @@ class DebugPage extends StatelessWidget {
                 ]),
               ),
               const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () async {
-                  var resp = json.decode((await http.post(
-                    Uri.parse('https://api.nft.storage/upload'),
-                    headers: <String, String>{
-                      'Authorization':
-                          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDE0ZDFjYzcyOTJlZmYzMTU5YjQ1MUQ1ZURDRkJFMUJBMkVBN2QzMTkiLCJpc3MiOiJuZnQtc3RvcmFnZSIsImlhdCI6MTY1MjUzMjg3MzA0NCwibmFtZSI6IkNoYWlubGlua1JvYm90In0.EFZXqd1hOicty_qpWo-yv5lZgsC0J6HKC9aCJKF-Pek',
-                    },
-                    body: appState.sharedPreferencesProvider
-                        .getLogLines()
-                        .join("\n"),
-                  ))
-                      .body
-                      .toString());
-                  await Clipboard.setData(ClipboardData(
-                      text:
-                          "https://cloudflare-ipfs.com/ipfs/${resp["value"]["cid"]}/"));
-                  var snackBar = SnackBar(
-                    content: Text(localizations
-                        .upload_logs_success(resp["value"]["cid"])),
-                    action: SnackBarAction(
-                      label: localizations.close,
-                      onPressed: () {},
-                    ),
-                  );
-
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                  }
-                },
-                child: Column(children: [
-                  Text(localizations.upload_logs_to_ipfs),
-                ]),
-              ),
-              const SizedBox(height: 10),
               Text(localizations.recovery_library, textScaleFactor: 1.5),
               const SizedBox(height: 10),
               ElevatedButton(
