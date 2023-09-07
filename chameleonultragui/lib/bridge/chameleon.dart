@@ -42,6 +42,9 @@ enum ChameleonCommand {
   getAnimationMode(1016),
 
   factoryReset(1020), // WARNING: ERASES ALL
+  getDeviceType(1033),
+  getDeviceSettings(1034),
+  getDeviceCapabilities(1035),
 
   // button config
   getButtonPressConfig(1026),
@@ -53,6 +56,8 @@ enum ChameleonCommand {
   bleSetConnectKey(1030),
   bleGetConnectKey(1031),
   bleClearBondedDevices(1032),
+  bleGetPairEnable(1036),
+  bleSetPairEnable(1037),
 
   // hf reader commands
   scan14ATag(2000),
@@ -90,8 +95,13 @@ enum ChameleonCommand {
   mf1GetWriteMode(4016),
   mf1SetWriteMode(4017),
 
+  // read slot info
+  mf1GetBlockData(4008),
+  mf1GetAntiCollData(4018),
+
   // lf emulator
-  setEM410XemulatorID(5000);
+  setEM410XemulatorID(5000),
+  getEM410XemulatorID(5001);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -898,5 +908,122 @@ class ChameleonCommunicator {
   Future<void> setBLEConnectKey(String key) async {
     await sendCmd(ChameleonCommand.bleSetConnectKey,
         data: Uint8List.fromList(utf8.encode(key)));
+  }
+
+  Future<bool> isBLEPairEnabled() async {
+    var resp = await sendCmd(ChameleonCommand.bleGetPairEnable);
+    return resp!.data[0] == 1;
+  }
+
+  Future<void> setBLEPairEnabled(bool status) async {
+    await sendCmd(ChameleonCommand.bleSetPairEnable,
+        data: Uint8List.fromList([status ? 1 : 0]));
+  }
+
+  Future<ChameleonDevice> getDeviceType() async {
+    return (await sendCmd(ChameleonCommand.getDeviceType))!.data[0] == 1
+        ? ChameleonDevice.ultra
+        : ChameleonDevice.lite;
+  }
+
+  Future<Uint8List> mf1GetEmulatorBlock(int startBlock, int blockCount) async {
+    return (await sendCmd(ChameleonCommand.mf1GetBlockData,
+            data: Uint8List.fromList([startBlock, blockCount])))!
+        .data;
+  }
+
+  Future<CardData> mf1GetAntiCollData(int startBlock, int blockCount) async {
+    var resp = await sendCmd(ChameleonCommand.mf1GetAntiCollData);
+
+    if (resp!.data.isNotEmpty) {
+      return CardData(
+          uid: resp.data.sublist(0, resp.data[10]),
+          sak: resp.data[12],
+          atqa:
+              Uint8List.fromList(resp.data.sublist(13, 15).reversed.toList()));
+    } else {
+      throw ("Invalid data length");
+    }
+  }
+
+  Future<Uint8List> getEM410XEmulatorID() async {
+    return (await sendCmd(ChameleonCommand.getEM410XemulatorID))!.data;
+  }
+
+  Future<
+      (
+        AnimationSetting,
+        ButtonConfig,
+        ButtonConfig,
+        ButtonConfig,
+        ButtonConfig,
+        bool,
+        Uint8List
+      )> getDeviceSettings() async {
+    var resp = (await sendCmd(ChameleonCommand.getDeviceSettings))!.data;
+    if (resp[0] != 5) {
+      throw ("Invalid settings version");
+    }
+
+    AnimationSetting animationMode;
+    ButtonConfig aPress, bPress, aLongPress, bLongPress;
+
+    if (resp[1] == 0) {
+      animationMode = AnimationSetting.full;
+    } else if (resp[1] == 1) {
+      animationMode = AnimationSetting.minimal;
+    } else {
+      animationMode = AnimationSetting.none;
+    }
+
+    if (resp[2] == 1) {
+      aPress = ButtonConfig.cycleForward;
+    } else if (resp[2] == 2) {
+      aPress = ButtonConfig.cycleBackward;
+    } else if (resp[2] == 3) {
+      aPress = ButtonConfig.cloneUID;
+    } else {
+      aPress = ButtonConfig.disable;
+    }
+
+    if (resp[3] == 1) {
+      bPress = ButtonConfig.cycleForward;
+    } else if (resp[3] == 2) {
+      bPress = ButtonConfig.cycleBackward;
+    } else if (resp[3] == 3) {
+      bPress = ButtonConfig.cloneUID;
+    } else {
+      bPress = ButtonConfig.disable;
+    }
+
+    if (resp[4] == 1) {
+      aLongPress = ButtonConfig.cycleForward;
+    } else if (resp[4] == 2) {
+      aLongPress = ButtonConfig.cycleBackward;
+    } else if (resp[4] == 3) {
+      aLongPress = ButtonConfig.cloneUID;
+    } else {
+      aLongPress = ButtonConfig.disable;
+    }
+
+    if (resp[5] == 1) {
+      bLongPress = ButtonConfig.cycleForward;
+    } else if (resp[5] == 2) {
+      bLongPress = ButtonConfig.cycleBackward;
+    } else if (resp[5] == 3) {
+      bLongPress = ButtonConfig.cloneUID;
+    } else {
+      bLongPress = ButtonConfig.disable;
+    }
+
+    return (
+      animationMode,
+      aPress,
+      bPress,
+      aLongPress,
+      bLongPress,
+      resp[6] == 1,
+      resp.sublist(7, 13)
+    );
   }
 }

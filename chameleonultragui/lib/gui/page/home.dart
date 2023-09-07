@@ -1,6 +1,7 @@
 import 'package:chameleonultragui/gui/menu/chameleon_settings.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';

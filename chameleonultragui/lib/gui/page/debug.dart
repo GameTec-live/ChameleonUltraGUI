@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
