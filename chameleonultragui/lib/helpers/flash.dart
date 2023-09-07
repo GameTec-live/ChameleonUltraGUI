@@ -195,7 +195,8 @@ void validateFiles(Uint8List dat, Uint8List bin) {
 
 Future<void> flashFirmware(ChameleonGUIState appState,
     {ScaffoldMessengerState? scaffoldMessenger,
-    ChameleonDevice? device}) async {
+    ChameleonDevice? device,
+    bool enterDFU = true}) async {
   Uint8List applicationDat, applicationBin;
 
   Uint8List content = await fetchFirmware(
@@ -205,11 +206,13 @@ Future<void> flashFirmware(ChameleonGUIState appState,
 
   flashFile(appState.communicator, appState, applicationDat, applicationBin,
       (progress) => appState.setProgressBar(progress / 100),
-      firmwareZip: content, scaffoldMessenger: scaffoldMessenger);
+      firmwareZip: content,
+      scaffoldMessenger: scaffoldMessenger,
+      enterDFU: enterDFU);
 }
 
 Future<void> flashFirmwareZip(ChameleonGUIState appState,
-    {ScaffoldMessengerState? scaffoldMessenger}) async {
+    {ScaffoldMessengerState? scaffoldMessenger, bool enterDFU = true}) async {
   Uint8List applicationDat, applicationBin;
 
   FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -223,7 +226,8 @@ Future<void> flashFirmwareZip(ChameleonGUIState appState,
     flashFile(appState.communicator, appState, applicationDat, applicationBin,
         (progress) => appState.setProgressBar(progress / 100),
         firmwareZip: await file.readAsBytes(),
-        scaffoldMessenger: scaffoldMessenger);
+        scaffoldMessenger: scaffoldMessenger,
+        enterDFU: enterDFU);
   }
 }
 
@@ -247,8 +251,8 @@ Future<void> flashFile(
   }
 
   if (enterDFU) {
-    await connection!.enterDFUMode();
-    await appState.connector!.performDisconnect();
+    await connection?.enterDFUMode();
+    await appState.connector?.performDisconnect();
   }
 
   if (appState.connector!.isOpen) {
