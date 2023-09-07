@@ -185,3 +185,25 @@ class ChameleonLogFilter extends LogFilter {
     return true;
   }
 }
+
+ButtonConfig getButtonConfigType(int value) {
+  if (value == 1) {
+    return ButtonConfig.cycleForward;
+  } else if (value == 2) {
+    return ButtonConfig.cycleBackward;
+  } else if (value == 3) {
+    return ButtonConfig.cloneUID;
+  } else {
+    return ButtonConfig.disable;
+  }
+}
+
+AnimationSetting getAnimationModeType(int value) {
+  if (value == 0) {
+    return AnimationSetting.full;
+  } else if (value == 1) {
+    return AnimationSetting.minimal;
+  } else {
+    return AnimationSetting.none;
+  }
+}

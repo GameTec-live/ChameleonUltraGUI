@@ -738,13 +738,7 @@ class ChameleonCommunicator {
 
   Future<AnimationSetting> getAnimationMode() async {
     var resp = await sendCmd(ChameleonCommand.getAnimationMode);
-    if (resp!.data[0] == 0) {
-      return AnimationSetting.full;
-    } else if (resp.data[0] == 1) {
-      return AnimationSetting.minimal;
-    } else {
-      return AnimationSetting.none;
-    }
+    return getAnimationModeType(resp!.data[0]);
   }
 
   Future<String> getGitCommitHash() async {
@@ -965,56 +959,11 @@ class ChameleonCommunicator {
       throw ("Invalid settings version");
     }
 
-    AnimationSetting animationMode;
-    ButtonConfig aPress, bPress, aLongPress, bLongPress;
-
-    if (resp[1] == 0) {
-      animationMode = AnimationSetting.full;
-    } else if (resp[1] == 1) {
-      animationMode = AnimationSetting.minimal;
-    } else {
-      animationMode = AnimationSetting.none;
-    }
-
-    if (resp[2] == 1) {
-      aPress = ButtonConfig.cycleForward;
-    } else if (resp[2] == 2) {
-      aPress = ButtonConfig.cycleBackward;
-    } else if (resp[2] == 3) {
-      aPress = ButtonConfig.cloneUID;
-    } else {
-      aPress = ButtonConfig.disable;
-    }
-
-    if (resp[3] == 1) {
-      bPress = ButtonConfig.cycleForward;
-    } else if (resp[3] == 2) {
-      bPress = ButtonConfig.cycleBackward;
-    } else if (resp[3] == 3) {
-      bPress = ButtonConfig.cloneUID;
-    } else {
-      bPress = ButtonConfig.disable;
-    }
-
-    if (resp[4] == 1) {
-      aLongPress = ButtonConfig.cycleForward;
-    } else if (resp[4] == 2) {
-      aLongPress = ButtonConfig.cycleBackward;
-    } else if (resp[4] == 3) {
-      aLongPress = ButtonConfig.cloneUID;
-    } else {
-      aLongPress = ButtonConfig.disable;
-    }
-
-    if (resp[5] == 1) {
-      bLongPress = ButtonConfig.cycleForward;
-    } else if (resp[5] == 2) {
-      bLongPress = ButtonConfig.cycleBackward;
-    } else if (resp[5] == 3) {
-      bLongPress = ButtonConfig.cloneUID;
-    } else {
-      bLongPress = ButtonConfig.disable;
-    }
+    AnimationSetting animationMode = getAnimationModeType(resp[1]);
+    ButtonConfig aPress = getButtonConfigType(resp[2]),
+        bPress = getButtonConfigType(resp[3]),
+        aLongPress = getButtonConfigType(resp[4]),
+        bLongPress = getButtonConfigType(resp[5]);
 
     return (
       animationMode,
