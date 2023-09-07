@@ -125,6 +125,7 @@
   "other": "Autre",
   "reset_settings": "R\u00e9initialiser param\u00e8tres",
   "factory_reset": "R\u00e9initialisation d'usine",
+  "factory_reset_confirmation": "\u00cates-vous s\u00fbr de vouloir r\u00e9initialiser votre Chameleon?",
   "full": "Compl\u00e8te",
   "mini": "Mini",
   "none": "Aucune",
@@ -185,5 +186,19 @@
   "save_recovered_keys_to_file": "Enregistrer les cl\u00e9s r\u00e9cup\u00e9r\u00e9es dans un fichier",
   "add_recovered_keys_to_existing_dict": "Ajouter les cl\u00e9s r\u00e9cup\u00e9r\u00e9es au dictionnaire existant",
   "create_new_dict_with_recovered_keys": "Cr\u00e9er un nouveau dictionnaire avec les cl\u00e9s r\u00e9cup\u00e9r\u00e9es",
-  "recovery_in_progress": "R\u00e9cup\u00e9ration de la cl\u00e9 en cours, veuillez patienter..."
+  "recovery_in_progress": "R\u00e9cup\u00e9ration de la cl\u00e9 en cours, veuillez patienter...",
+  "clear_ble_bonds": "Effacer les appareils associ\u00e9s",
+  "ble_pin": "BLE PIN",
+  "enter_pin": "Saisir le code PIN",
+  "pin_must_be_6_digits": "Le code PIN doit avoir 6 chiffres",
+  "clear_ble_bonds_confirmation": "\u00cates-vous s\u00fbr de vouloir vider les p\u00e9riph\u00e9riques BLE ? Cela vous demandera de supprimer le Chameleon dans les param\u00e8tres de votre appareil mobile avant de se reconnecter.",
+  "ble_need_to_remove_pair": "Si vous avez chang\u00e9 de mot de passe ou d\u00e9sappair\u00e9 tous les appareils et que vous ne pouvez pas vous connecter, vous devez supprimer Chameleon dans les param\u00e8tres Bluetooth de votre appareil",
+  "slow_down_warning": "Cela ralentira l'application, utilisera avec pr\u00e9caution",
+  "enable_production_logging": "Activer le journal de production",
+  "disable_production_logging": "D\u00e9sactiver le journal de production",
+  "clear_logs": "Effacer le journal",
+  "copy_logs_to_clipboard": "Copier les journaux dans le presse-papiers",
+  "recovery_library": "Librairie de r\u00e9cup\u00e9ration",
+  "force_flashing": "Forcer la mise \u00e0 jour",
+  "chameleon_flashing_title": "Installation du firmware sur votre Chameleon {model}"
 }
