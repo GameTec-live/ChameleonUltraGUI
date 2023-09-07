@@ -6,9 +6,8 @@
   - [Installation](#installation)
       - [Windows](#windows)
       - [Linux](#linux)
-      - [MacOS](#macos)
+      - [macOS / iOS / iPadOS](#macos--ios--ipados)
       - [Android](#android)
-      - [iOS / iPadOS](#ios--ipados)
   - [Usage](#usage)
       - [Home](#home)
       - [Slot manager](#slot-manager)
@@ -40,22 +39,28 @@ This section of the documentation will guide you through the process of installi
 The installation process is designed to be intuitive and straightforward. We'll provide you with clear instructions and visual aids to help you complete each step efficiently. If you encounter any issues during installation, we've included troubleshooting tips to assist you in resolving common challenges.
 
 #### Windows
-Download the installer [following this link](https://chameleonultragui.dev/windows)
+
+Download the installer: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows-installer.zip
+
+Or, without installer: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows.zip
 
 #### Linux
-Download the installer [following this link](https://chameleonultragui.dev/linux)
 
-- Debian: https://chameleonultragui.dev/linux-debian
-- Arch: https://aur.archlinux.org/packages/chameleonultragui 
+Download the Linux build
 
-#### MacOS
-Download it on Apple App Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/macos)
+- Debian-based (.deb): https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux-debian.zip
+- Arch-based: https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
+- Other: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux.zip
+
+#### macOS / iOS / iPadOS
+
+Download it from Apple App Store: [Chameleon Ultra GUI](https://apps.apple.com/app/chameleon-ultra-gui/id6462919364)
 
 #### Android
-Download it on Google Play Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/android)
 
-#### iOS / iPadOS
-Download it on Apple App Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/ios)
+Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra)
+
+Or, plain APK: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/apk.zip
 
 ## Usage
 
