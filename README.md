@@ -9,7 +9,7 @@ A GUI for the Chameleon Ultra/Chameleon Lite written in Flutter for cross platfo
 
 #### Windows
 
-Download the installer: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows-installer.zip
+Download the installer: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows-installer.zip (Quicklink for sharing: https://chameleonultragui.dev/windows)
 
 Or, without installer: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows.zip
 
@@ -17,17 +17,17 @@ Or, without installer: https://nightly.link/GameTec-live/ChameleonUltraGUI/workf
 
 Download the Linux build
 
-- Debian-based (.deb): https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux-debian.zip
+- Debian-based (.deb): https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux-debian.zip (Quicklink for sharing: https://chameleonultragui.dev/linux-debian)
 - Arch-based: https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
-- Other: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux.zip
+- Other: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux.zip (Quicklink for sharing: https://chameleonultragui.dev/linux)
 
 #### macOS / iOS / iPadOS
 
-Download it from Apple App Store: [Chameleon Ultra GUI](https://apps.apple.com/app/chameleon-ultra-gui/id6462919364)
+Download it from Apple App Store: [Chameleon Ultra GUI](https://apps.apple.com/app/chameleon-ultra-gui/id6462919364) (Quicklink for sharing: https://chameleonultragui.dev/macos)
 
 #### Android
 
-Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra)
+Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra) (Quicklink for sharing: https://chameleonultragui.dev/android)
 
 Or, plain APK: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/apk.zip
 
