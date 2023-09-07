@@ -113,7 +113,8 @@ class ConnectPage extends StatelessWidget {
                                             await flashFirmware(appState,
                                                 scaffoldMessenger:
                                                     scaffoldMessenger,
-                                                device: chameleonDevice.device);
+                                                device: chameleonDevice.device,
+                                                enterDFU: false);
 
                                             appState.changesMade();
                                           },
