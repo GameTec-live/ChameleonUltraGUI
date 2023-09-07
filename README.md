@@ -8,30 +8,25 @@ A GUI for the Chameleon Ultra/Chameleon Lite written in Flutter for cross platfo
 ## Installation
 
 #### Windows
-
-Download the installer: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows-installer.zip
-
-Or, without installer: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows.zip
+Download the installer [following this link](https://chameleonultragui.dev/windows)
 
 #### Linux
 
-Download the Linux build
+Download the Linux build [following this link](https://chameleonultragui.dev/linux)
 
-- Debian-based (.deb): https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux-debian.zip
-- Arch-based: https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
-- Other: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux.zip
+- Debian: https://chameleonultragui.dev/linux-debian
+- Arch: https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
 
-#### macOS / iOS / iPadOS
-
-Download it from Apple App Store: [Chameleon Ultra GUI](https://apps.apple.com/app/chameleon-ultra-gui/id6462919364)
+#### MacOS
+Download it on Apple App Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/macos)
 
 #### Android
+Download it on Google Play Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/android)
 
-Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra)
+#### iOS / iPadOS
+Download it on Apple App Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/ios)
 
-Or, plain APK: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/apk.zip
-
-#### Pending stores:
+Pending stores:
 - F-Store: not yet
 - Flathub: not yet
 - Chocolatey (Windows): not yet
@@ -40,6 +35,7 @@ Note: Under some Linux systems, especially ones running KDE desktop environments
 
 Key:
 - apk: Android APK, download and install either via ADB or your app/file manager of choice
+- appbundle: Android Appbundle, unsigned Appbundle, used for Google Play publishing
 - linux: zip file containing the linux build, either run the binary manually or install using cmake
 - linux-debian: Debain Auto Packaging, Download and install with either apt, apt-get or dpkg.
 - windows: zip file containing windows build, run the binary manually
