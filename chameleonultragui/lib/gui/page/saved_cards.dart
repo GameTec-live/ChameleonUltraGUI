@@ -400,15 +400,16 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               title: Text(localizations
                                                   .select_save_format),
                                               actions: [
-                                                ElevatedButton(
-                                                  onPressed: () async {
-                                                    await saveTag(
-                                                        tag, appState, true);
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(localizations
-                                                      .save_as(".bin")),
-                                                ),
+                                                if (isMifareClassic(tag.tag))
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      await saveTag(
+                                                          tag, appState, true);
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(localizations
+                                                        .save_as(".bin")),
+                                                  ),
                                                 ElevatedButton(
                                                   onPressed: () async {
                                                     await saveTag(
@@ -535,15 +536,16 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               title: Text(localizations
                                                   .select_save_format),
                                               actions: [
-                                                ElevatedButton(
-                                                  onPressed: () async {
-                                                    await saveTag(
-                                                        tag, appState, true);
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(localizations
-                                                      .save_as(".bin")),
-                                                ),
+                                                if (isMifareClassic(tag.tag))
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      await saveTag(
+                                                          tag, appState, true);
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(localizations
+                                                        .save_as(".bin")),
+                                                  ),
                                                 ElevatedButton(
                                                   onPressed: () async {
                                                     await saveTag(
@@ -692,7 +694,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           children: [
                                             Text(
                                               output,
-                                              style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
+                                              style: const TextStyle(
+                                                  fontFamily: 'RobotoMono',
+                                                  fontSize: 16.0),
                                             ),
                                           ],
                                         ),
