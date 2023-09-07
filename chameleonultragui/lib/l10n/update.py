@@ -46,6 +46,6 @@ for language in progressbar(
         locale = None
         for lang in LANGUAGES:
             if lang['data']['id'] == language['data']['languageId']:
-                locale = lang['data']['osxLocale']
+                locale = lang['data']['osxLocale'].replace('-', '_')
         translations['@@locale'] = locale
         json.dump(translations, open(f'app_{locale}.arb', 'w+'), indent=2)
