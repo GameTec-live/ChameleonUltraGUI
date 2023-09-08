@@ -5,28 +5,36 @@ A GUI for the Chameleon Ultra/Chameleon Lite written in Flutter for cross platfo
 [![Open collective](https://opencollective.com/chameleon-ultra-gui/tiers/badge.svg)](https://opencollective.com/chameleon-ultra-gui#support)
 [![Crowdin](https://badges.crowdin.net/chameleonultragui/localized.svg)](https://crowdin.com/project/chameleonultragui)
 
+### [Full documentation here](https://docs.chameleonultragui.dev)
+
 ## Installation
 
 #### Windows
-Download the installer [following this link](https://chameleonultragui.dev/windows)
+
+Download the installer [here](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows-installer.zip). Quickshare link: https://chameleonultragui.dev/windows
+
+Or, [portable version](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows.zip). Quickshare link: https://chameleonultragui.dev/windows-portable
+
 
 #### Linux
 
-Download the Linux build [following this link](https://chameleonultragui.dev/linux)
+Download the Linux build
 
-- Debian: https://chameleonultragui.dev/linux-debian
-- Arch: https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
+- [Debian-based (.deb)](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux-debian.zip). Quickshare link: https://chameleonultragui.dev/linux-debian
+- [Arch-based](https://aur.archlinux.org/packages/chameleonultragui) / [Arch-based-GIT](https://aur.archlinux.org/packages/chameleonultragui-git). Quickshare link: https://chameleonultragui.dev/linux-arch
+- [Other](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux.zip). Quickshare link: https://chameleonultragui.dev/linux
 
-#### MacOS
-Download it on Apple App Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/macos)
+#### macOS / iOS / iPadOS
+
+Download it from Apple App Store: [Chameleon Ultra GUI](https://apps.apple.com/app/chameleon-ultra-gui/id6462919364). Quickshare link: https://chameleonultragui.dev/ios
 
 #### Android
-Download it on Google Play Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/android)
 
-#### iOS / iPadOS
-Download it on Apple App Store: [Chameleon Ultra GUI](https://chameleonultragui.dev/ios)
+Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra). Quickshare link: https://chameleonultragui.dev/android
 
-Pending stores:
+Or, plain [APK](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/apk.zip). Quickshare link: https://chameleonultragui.dev/android-apk
+
+#### Pending stores:
 - F-Store: not yet
 - Flathub: not yet
 - Chocolatey (Windows): not yet
@@ -35,7 +43,6 @@ Note: Under some Linux systems, especially ones running KDE desktop environments
 
 Key:
 - apk: Android APK, download and install either via ADB or your app/file manager of choice
-- appbundle: Android Appbundle, unsigned Appbundle, used for Google Play publishing
 - linux: zip file containing the linux build, either run the binary manually or install using cmake
 - linux-debian: Debain Auto Packaging, Download and install with either apt, apt-get or dpkg.
 - windows: zip file containing windows build, run the binary manually

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
@@ -257,7 +256,9 @@ class DebugPage extends StatelessWidget {
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
-                  await flashFirmware(appState, device: ChameleonDevice.ultra);
+                  await flashFirmware(appState,
+                      device: ChameleonDevice.ultra,
+                      enterDFU: appState.connector!.connected);
                 },
                 child: Column(children: [
                   Text('💀 ${localizations.dfu_flash_ultra} 💀'),
@@ -266,7 +267,9 @@ class DebugPage extends StatelessWidget {
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
-                  await flashFirmware(appState, device: ChameleonDevice.lite);
+                  await flashFirmware(appState,
+                      device: ChameleonDevice.lite,
+                      enterDFU: appState.connector!.connected);
                 },
                 child: Column(children: [
                   Text('💀 ${localizations.dfu_flash_lite} 💀'),

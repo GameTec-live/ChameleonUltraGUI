@@ -194,3 +194,12 @@ bool chameleonTagSaveCheckForMifareClassicEV1(CardSave tag) {
       tag.data.length >= 71 &&
       tag.data[71].isNotEmpty;
 }
+
+bool isMifareClassic(TagType type) {
+  return [
+    TagType.mifare1K,
+    TagType.mifare2K,
+    TagType.mifare4K,
+    TagType.mifareMini
+  ].contains(type);
+}
