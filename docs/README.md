@@ -1,6 +1,6 @@
 # Chameleon Ultra GUI Documentation
 ## Table of Contents
-- [Chameleon Ultra GUI Documentation](#chamaleonultragui-documentation)
+- [Chameleon Ultra GUI Documentation](#chameleon-ultra-gui-documentation)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Installation](#installation)
@@ -17,6 +17,7 @@
       - [Settings](#settings)
   - [Contributing](#contributing)
   - [Translations](#translations)
+  - [Donate](#donate)
   - [License](#license)
 
 ## Introduction
@@ -40,27 +41,28 @@ The installation process is designed to be intuitive and straightforward. We'll 
 
 #### Windows
 
-Download the installer: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows-installer.zip
+Download the installer [here](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows-installer.zip). Quickshare link: https://chameleonultragui.dev/windows
 
-Or, without installer: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows.zip
+Or, [portable version](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows.zip). Quickshare link: https://chameleonultragui.dev/windows-portable
+
 
 #### Linux
 
 Download the Linux build
 
-- Debian-based (.deb): https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux-debian.zip
-- Arch-based: https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
-- Other: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux.zip
+- [Debian-based (.deb)](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux-debian.zip). Quickshare link: https://chameleonultragui.dev/linux-debian
+- [Arch-based](https://aur.archlinux.org/packages/chameleonultragui) / [Arch-based-GIT](https://aur.archlinux.org/packages/chameleonultragui-git). Quickshare link: https://chameleonultragui.dev/linux-arch
+- [Other](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux.zip). Quickshare link: https://chameleonultragui.dev/linux
 
 #### macOS / iOS / iPadOS
 
-Download it from Apple App Store: [Chameleon Ultra GUI](https://apps.apple.com/app/chameleon-ultra-gui/id6462919364)
+Download it from Apple App Store: [Chameleon Ultra GUI](https://apps.apple.com/app/chameleon-ultra-gui/id6462919364). Quickshare link: https://chameleonultragui.dev/ios
 
 #### Android
 
-Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra)
+Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra). Quickshare link: https://chameleonultragui.dev/android
 
-Or, plain APK: https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/apk.zip
+Or, plain [APK](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/apk.zip). Quickshare link: https://chameleonultragui.dev/android-apk
 
 ## Usage
 
@@ -125,13 +127,18 @@ Contributions are welcome, most stuff that needs to be done can either be found 
 
 ## Translations
 
-To translate the app to your language, go our Crowdin project: [Chameleon Ultra GUI](https://crowdin.com/project/chameleon-ultra-gui), join it and start translating.
+To translate the app to your language, go our Crowdin project: [Chameleon Ultra GUI](https://translate.chameleonultragui.dev), join it and start translating.
 
 Do not contribute files to `chameleonultragui/lib/l10n/app_*.arb` as they will be automatically deleted. All translations should be added only to Crowdin. If your language is missing, you can create issue and ask to enable it. 
 
 "**Chameleon Ultra GUI**", "**Chameleon**" and other trademarks should not be translated. 
 
 Languages that are at least **70%** translated will be automatically deployed within the application.
+
+## Donate
+You want to support us and donate? Thank you, you make it possible for us to keep this app free and make it easier to publish this app on the Apple App Store.
+
+Open Collective: [Chameleon Ultra GUI](https://opencollective.com/chameleon-ultra-gui). Quickshare link: https://chameleonultragui.dev/oc
 
 ## License
 
