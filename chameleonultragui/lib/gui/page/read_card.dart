@@ -23,7 +23,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 enum ChameleonKeyCheckmark { none, found, checking }
 
-enum ChameleonMifareClassicState {
+enum MifareClassicState {
   none,
   checkKeys,
   checkKeysOngoing,
@@ -34,57 +34,67 @@ enum ChameleonMifareClassicState {
   save
 }
 
-// Refactor this
-
-class ChameleonReadTagStatus {
-  String hfUid;
-  String lfUid;
+// cardExist true because we don't show error to user if nothing is done
+class HFCardInfo {
+  String uid;
   String sak;
   String atqa;
-  String ats;
-  String hfTech;
-  String lfTech;
-  String dumpName;
-  String recoveryError;
-  bool noHfCard;
-  bool noLfCard;
-  bool allKeysExists;
-  bool isEV1;
-  MifareClassicType type;
-  List<ChameleonKeyCheckmark> checkMarks;
-  List<Uint8List> validKeys;
-  List<Uint8List> cardData;
-  double dumpProgress;
-  List<Dictionary> dictionaries;
-  Dictionary? selectedDictionary;
-  ChameleonMifareClassicState state;
+  String tech;
+  bool cardExist;
 
-  ChameleonReadTagStatus(
-      {this.hfUid = '',
-      this.lfUid = '',
+  HFCardInfo(
+      {this.uid = '',
       this.sak = '',
       this.atqa = '',
-      this.ats = '',
-      this.hfTech = '',
-      this.lfTech = '',
-      this.dumpName = '',
-      this.recoveryError = '',
-      this.noHfCard = false,
-      this.noLfCard = false,
-      this.allKeysExists = false,
-      this.isEV1 = false,
+      this.tech = '',
+      this.cardExist = true});
+}
+
+class LFCardInfo {
+  String uid;
+  String tech;
+  bool cardExist;
+
+  LFCardInfo({this.uid = '', this.tech = '', this.cardExist = true});
+}
+
+class MifareClassicInfo {
+  bool isEV1;
+  double dumpProgress;
+  MifareClassicRecoveryInfo recovery;
+  MifareClassicType type;
+  MifareClassicState state;
+  List<Uint8List> cardData;
+
+  MifareClassicInfo(
+      {this.isEV1 = false,
+      this.dumpProgress = 0,
       this.type = MifareClassicType.none,
+      this.state = MifareClassicState.none,
+      MifareClassicRecoveryInfo? recovery,
+      List<Uint8List>? cardData})
+      : recovery = recovery ?? MifareClassicRecoveryInfo(),
+        cardData = cardData ?? List.generate(0xFF, (_) => Uint8List(0));
+}
+
+class MifareClassicRecoveryInfo {
+  String error;
+  bool allKeysExists;
+  List<Dictionary> dictionaries;
+  Dictionary? selectedDictionary;
+  List<ChameleonKeyCheckmark> checkMarks;
+  List<Uint8List> validKeys;
+
+  MifareClassicRecoveryInfo(
+      {this.error = '',
+      this.allKeysExists = false,
       this.dictionaries = const [],
       this.selectedDictionary,
       List<ChameleonKeyCheckmark>? checkMarks,
-      List<Uint8List>? validKeys,
-      List<Uint8List>? cardData,
-      this.dumpProgress = 0,
-      this.state = ChameleonMifareClassicState.none})
-      : validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
-        checkMarks =
+      List<Uint8List>? validKeys})
+      : checkMarks =
             checkMarks ?? List.generate(80, (_) => ChameleonKeyCheckmark.none),
-        cardData = cardData ?? List.generate(0xFF, (_) => Uint8List(0));
+        validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0));
 }
 
 class ReadCardPage extends StatefulWidget {
@@ -95,10 +105,17 @@ class ReadCardPage extends StatefulWidget {
 }
 
 class ReadCardPageState extends State<ReadCardPage> {
-  ChameleonReadTagStatus status = ChameleonReadTagStatus();
+  String dumpName = "";
+  HFCardInfo hfInfo = HFCardInfo();
+  LFCardInfo lfInfo = LFCardInfo();
+  MifareClassicInfo mfcInfo = MifareClassicInfo();
+
   Future<void> readHFInfo(ChameleonGUIState appState) async {
-    status.validKeys = List.generate(80, (_) => Uint8List(0));
-    status.checkMarks = List.generate(80, (_) => ChameleonKeyCheckmark.none);
+    bool isEV1 = false;
+    setState(() {
+      hfInfo = HFCardInfo();
+      mfcInfo = MifareClassicInfo();
+    });
 
     try {
       if (!await appState.communicator!.isReaderDeviceMode()) {
@@ -108,97 +125,82 @@ class ReadCardPageState extends State<ReadCardPage> {
       var card = await appState.communicator!.scan14443aTag();
       var mifare = await appState.communicator!.detectMf1Support();
       var mf1Type = MifareClassicType.none;
-      bool isEV1 = false;
+
       if (mifare) {
         mf1Type = mfClassicGetType(card.atqa, card.sak);
         isEV1 = (await appState.communicator!
             .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]));
       }
+
       setState(() {
-        status.hfUid = bytesToHexSpace(card.uid);
-        status.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
-        status.atqa = bytesToHexSpace(card.atqa);
-        status.ats = "Unavailable";
-        status.hfTech = mifare
+        hfInfo.uid = bytesToHexSpace(card.uid);
+        hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
+        hfInfo.atqa = bytesToHexSpace(card.atqa);
+        hfInfo.tech = mifare
             ? "Mifare Classic ${mfClassicGetName(mf1Type)}${(isEV1) ? " EV1" : ""}"
             : "Other";
-        status.isEV1 = isEV1;
-        status.recoveryError = "";
-        status.checkMarks =
-            List.generate(80, (_) => ChameleonKeyCheckmark.none);
-        status.type = mf1Type;
-        status.state = (mf1Type != MifareClassicType.none)
-            ? ChameleonMifareClassicState.checkKeys
-            : ChameleonMifareClassicState.none;
-        status.allKeysExists = false;
-        status.noHfCard = false;
-        status.dumpProgress = 0;
+        mfcInfo.isEV1 = isEV1;
+        mfcInfo.type = mf1Type;
+        mfcInfo.state = (mf1Type != MifareClassicType.none)
+            ? MifareClassicState.checkKeys
+            : MifareClassicState.none;
       });
     } catch (_) {
       setState(() {
-        status.hfUid = "";
-        status.sak = "";
-        status.atqa = "";
-        status.ats = "";
-        status.hfTech = "";
-        status.recoveryError = "";
-        status.type = MifareClassicType.none;
-        status.state = ChameleonMifareClassicState.none;
-        status.allKeysExists = false;
-        status.noHfCard = true;
-        status.isEV1 = false;
+        hfInfo.cardExist = false;
       });
     }
   }
 
   Future<void> readLFInfo(ChameleonGUIState appState) async {
     try {
+      setState(() {
+        lfInfo = LFCardInfo();
+      });
+
       if (!await appState.communicator!.isReaderDeviceMode()) {
         await appState.communicator!.setReaderDeviceMode(true);
       }
 
       var card = await appState.communicator!.readEM410X();
-      if (card == "00 00 00 00 00") {
+      if (card != "00 00 00 00 00") {
         setState(() {
-          status.lfUid = "";
-          status.lfTech = "";
-          status.noLfCard = true;
+          lfInfo.uid = card;
+          lfInfo.tech = "EM-Marin EM4100/EM4102";
         });
       } else {
         setState(() {
-          status.lfUid = card;
-          status.lfTech = "EM-Marin EM4100/EM4102";
-          status.noLfCard = false;
+          lfInfo.cardExist = false;
         });
       }
-    } catch (_) {
-      setState(() {
-        status.lfUid = "";
-        status.lfTech = "";
-        status.noLfCard = true;
-      });
-    }
+    } catch (_) {}
   }
 
   Future<void> recoverKeys(ChameleonGUIState appState) async {
     setState(() {
-      status.state = ChameleonMifareClassicState.recoveryOngoing;
+      mfcInfo.state = MifareClassicState.recoveryOngoing;
     });
+
     try {
       if (!await appState.communicator!.isReaderDeviceMode()) {
         await appState.communicator!.setReaderDeviceMode(true);
       }
 
       var mifare = await appState.communicator!.detectMf1Support();
+
+      if (!context.mounted) {
+        return;
+      }
+
       var localizations = AppLocalizations.of(context)!;
       if (mifare) {
         // Key check part competed, checking found keys
         bool hasKey = false;
         for (var sector = 0;
-            sector < mfClassicGetSectorCount(status.type) && !hasKey;
+            sector < mfClassicGetSectorCount(mfcInfo.type) && !hasKey;
             sector++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            if (status.checkMarks[sector + (keyType * 40)] ==
+            if (mfcInfo.recovery.checkMarks[sector + (keyType * 40)] ==
                 ChameleonKeyCheckmark.found) {
               hasKey = true;
               break;
@@ -213,7 +215,7 @@ class ReadCardPageState extends State<ReadCardPage> {
             var data = await appState.communicator!
                 .getMf1Darkside(0x03, 0x61, true, 15);
             var darkside = DarksideDart(uid: data.uid, items: []);
-            status.checkMarks[40] = ChameleonKeyCheckmark.checking;
+            mfcInfo.recovery.checkMarks[40] = ChameleonKeyCheckmark.checking;
             bool found = false;
 
             for (var tries = 0; tries < 0xFF && !found; tries++) {
@@ -234,8 +236,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                       .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8)))) {
                     appState.log!.i(
                         "Darkside: Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
-                    status.validKeys[40] = keyBytes.sublist(2, 8);
-                    status.checkMarks[40] = ChameleonKeyCheckmark.found;
+                    mfcInfo.recovery.validKeys[40] = keyBytes.sublist(2, 8);
+                    mfcInfo.recovery.checkMarks[40] =
+                        ChameleonKeyCheckmark.found;
                     found = true;
                     break;
                   }
@@ -248,24 +251,24 @@ class ReadCardPageState extends State<ReadCardPage> {
             }
           } else {
             setState(() {
-              status.recoveryError =
+              mfcInfo.recovery.error =
                   localizations.recovery_error_no_keys_darkside;
-              status.state = ChameleonMifareClassicState.recovery;
+              mfcInfo.state = MifareClassicState.recovery;
             });
             return;
           }
         }
 
         setState(() {
-          status.checkMarks = status.checkMarks;
+          mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
         });
 
         var prng = await appState.communicator!.getMf1NTLevel();
         if (prng != NTLevel.weak) {
           // No hardnested/staticnested implementation yet
           setState(() {
-            status.recoveryError = localizations.recovery_error_no_supported;
-            status.state = ChameleonMifareClassicState.recovery;
+            mfcInfo.recovery.error = localizations.recovery_error_no_supported;
+            mfcInfo.state = MifareClassicState.recovery;
           });
           return;
         }
@@ -275,12 +278,12 @@ class ReadCardPageState extends State<ReadCardPage> {
         var validKeyType = 0;
 
         for (var sector = 0;
-            sector < mfClassicGetSectorCount(status.type);
+            sector < mfClassicGetSectorCount(mfcInfo.type);
             sector++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            if (status.checkMarks[sector + (keyType * 40)] ==
+            if (mfcInfo.recovery.checkMarks[sector + (keyType * 40)] ==
                 ChameleonKeyCheckmark.found) {
-              validKey = status.validKeys[sector + (keyType * 40)];
+              validKey = mfcInfo.recovery.validKeys[sector + (keyType * 40)];
               validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
               validKeyType = keyType;
               break;
@@ -289,16 +292,16 @@ class ReadCardPageState extends State<ReadCardPage> {
         }
 
         for (var sector = 0;
-            sector < mfClassicGetSectorCount(status.type);
+            sector < mfClassicGetSectorCount(mfcInfo.type);
             sector++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            if (status.checkMarks[sector + (keyType * 40)] ==
+            if (mfcInfo.recovery.checkMarks[sector + (keyType * 40)] ==
                 ChameleonKeyCheckmark.none) {
-              status.checkMarks[sector + (keyType * 40)] =
+              mfcInfo.recovery.checkMarks[sector + (keyType * 40)] =
                   ChameleonKeyCheckmark.checking;
               await asyncSleep(1); // Let GUI update
               setState(() {
-                status.checkMarks = status.checkMarks;
+                mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
               });
               var distance = await appState.communicator!.getMf1NTDistance(
                   validKeyBlock, 0x60 + validKeyType, validKey);
@@ -333,9 +336,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                       appState.log!.i(
                           "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                       found = true;
-                      status.validKeys[sector + (keyType * 40)] =
+                      mfcInfo.recovery.validKeys[sector + (keyType * 40)] =
                           keyBytes.sublist(2, 8);
-                      status.checkMarks[sector + (keyType * 40)] =
+                      mfcInfo.recovery.checkMarks[sector + (keyType * 40)] =
                           ChameleonKeyCheckmark.found;
                       await asyncSleep(1); // Let GUI update
                       break;
@@ -350,9 +353,9 @@ class ReadCardPageState extends State<ReadCardPage> {
         }
 
         setState(() {
-          status.checkMarks = status.checkMarks;
-          status.allKeysExists = true;
-          status.state = ChameleonMifareClassicState.dump;
+          mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
+          mfcInfo.recovery.allKeysExists = true;
+          mfcInfo.state = MifareClassicState.dump;
         });
       }
     } catch (_) {}
@@ -360,8 +363,9 @@ class ReadCardPageState extends State<ReadCardPage> {
 
   Future<void> checkKeys(ChameleonGUIState appState) async {
     setState(() {
-      status.state = ChameleonMifareClassicState.checkKeysOngoing;
+      mfcInfo.state = MifareClassicState.checkKeysOngoing;
     });
+
     var localizations = AppLocalizations.of(context)!;
     try {
       if (!await appState.communicator!.isReaderDeviceMode()) {
@@ -377,22 +381,22 @@ class ReadCardPageState extends State<ReadCardPage> {
         return;
       }
 
-      status.validKeys = List.generate(80, (_) => Uint8List(0));
+      mfcInfo.recovery.validKeys = List.generate(80, (_) => Uint8List(0));
       if (mifare) {
         for (var sector = 0;
             sector < mfClassicGetSectorCount(mf1Type);
             sector++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            if (status.checkMarks[sector + (keyType * 40)] ==
+            if (mfcInfo.recovery.checkMarks[sector + (keyType * 40)] ==
                 ChameleonKeyCheckmark.none) {
               // We are missing key, check from dictionary
-              status.checkMarks[sector + (keyType * 40)] =
+              mfcInfo.recovery.checkMarks[sector + (keyType * 40)] =
                   ChameleonKeyCheckmark.checking;
               setState(() {
-                status.checkMarks = status.checkMarks;
+                mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
               });
               for (var key in [
-                ...status.selectedDictionary!.keys,
+                ...mfcInfo.recovery.selectedDictionary!.keys,
                 ...gMifareClassicKeys
               ]) {
                 appState.log!
@@ -403,21 +407,21 @@ class ReadCardPageState extends State<ReadCardPage> {
                     0x60 + keyType,
                     key)) {
                   // Found valid key
-                  status.validKeys[sector + (keyType * 40)] = key;
-                  status.checkMarks[sector + (keyType * 40)] =
+                  mfcInfo.recovery.validKeys[sector + (keyType * 40)] = key;
+                  mfcInfo.recovery.checkMarks[sector + (keyType * 40)] =
                       ChameleonKeyCheckmark.found;
                   setState(() {
-                    status.checkMarks = status.checkMarks;
+                    mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
                   });
                   break;
                 }
               }
-              if (status.checkMarks[sector + (keyType * 40)] ==
+              if (mfcInfo.recovery.checkMarks[sector + (keyType * 40)] ==
                   ChameleonKeyCheckmark.checking) {
-                status.checkMarks[sector + (keyType * 40)] =
+                mfcInfo.recovery.checkMarks[sector + (keyType * 40)] =
                     ChameleonKeyCheckmark.none;
                 setState(() {
-                  status.checkMarks = status.checkMarks;
+                  mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
                 });
               }
             }
@@ -427,10 +431,10 @@ class ReadCardPageState extends State<ReadCardPage> {
         // Key check part competed, checking found keys
         bool hasAllKeys = true;
         for (var sector = 0;
-            sector < mfClassicGetSectorCount(status.type);
+            sector < mfClassicGetSectorCount(mfcInfo.type);
             sector++) {
           for (var keyType = 0; keyType < 2; keyType++) {
-            if (status.checkMarks[sector + (keyType * 40)] !=
+            if (mfcInfo.recovery.checkMarks[sector + (keyType * 40)] !=
                 ChameleonKeyCheckmark.found) {
               hasAllKeys = false;
             }
@@ -440,43 +444,46 @@ class ReadCardPageState extends State<ReadCardPage> {
         if (hasAllKeys) {
           // all keys exists
           setState(() {
-            status.allKeysExists = true;
-            status.state = ChameleonMifareClassicState.dump;
+            mfcInfo.recovery.allKeysExists = true;
+            mfcInfo.state = MifareClassicState.dump;
           });
           return;
         } else {
           setState(() {
-            status.allKeysExists = false;
-            status.state = ChameleonMifareClassicState.recovery;
+            mfcInfo.recovery.allKeysExists = false;
+            mfcInfo.state = MifareClassicState.recovery;
           });
         }
       }
     } catch (_) {
       setState(() {
-        status.recoveryError = localizations.recovery_error_dict;
-        status.state = ChameleonMifareClassicState.checkKeys;
+        mfcInfo.recovery.error = localizations.recovery_error_dict;
+        mfcInfo.state = MifareClassicState.checkKeys;
       });
     }
   }
 
   Future<void> dumpData(ChameleonGUIState appState) async {
     setState(() {
-      status.state = ChameleonMifareClassicState.dumpOngoing;
+      mfcInfo.state = MifareClassicState.dumpOngoing;
     });
+
     var localizations = AppLocalizations.of(context)!;
-    status.cardData = List.generate(256, (_) => Uint8List(0));
+    mfcInfo.cardData = List.generate(256, (_) => Uint8List(0));
     try {
-      if (status.isEV1) {
-        status.validKeys[16] = gMifareClassicKeys[4]; // MFC EV1 SIGNATURE 16 A
-        status.validKeys[16 + 40] =
+      if (mfcInfo.isEV1) {
+        mfcInfo.recovery.validKeys[16] =
+            gMifareClassicKeys[4]; // MFC EV1 SIGNATURE 16 A
+        mfcInfo.recovery.validKeys[16 + 40] =
             gMifareClassicKeys[5]; // MFC EV1 SIGNATURE 16 B
-        status.validKeys[17] = gMifareClassicKeys[6]; // MFC EV1 SIGNATURE 17 A
-        status.validKeys[17 + 40] =
+        mfcInfo.recovery.validKeys[17] =
+            gMifareClassicKeys[6]; // MFC EV1 SIGNATURE 17 A
+        mfcInfo.recovery.validKeys[17 + 40] =
             gMifareClassicKeys[3]; // MFC EV1 SIGNATURE 17 B
       }
 
       for (var sector = 0;
-          sector < mfClassicGetSectorCount(status.type, isEV1: status.isEV1);
+          sector < mfClassicGetSectorCount(mfcInfo.type, isEV1: mfcInfo.isEV1);
           sector++) {
         for (var block = 0;
             block < mfClassicGetBlockCountBySector(sector);
@@ -485,9 +492,9 @@ class ReadCardPageState extends State<ReadCardPage> {
             appState.log!
                 .d("Dumping sector $sector, block $block with key $keyType");
 
-            if (status.validKeys[sector + (keyType * 40)].isEmpty) {
+            if (mfcInfo.recovery.validKeys[sector + (keyType * 40)].isEmpty) {
               appState.log!.w("Skipping missing key");
-              status.cardData[block +
+              mfcInfo.cardData[block +
                   mfClassicGetFirstBlockCountBySector(sector)] = Uint8List(16);
               continue;
             }
@@ -495,7 +502,7 @@ class ReadCardPageState extends State<ReadCardPage> {
             var blockData = await appState.communicator!.mf1ReadBlock(
                 block + mfClassicGetFirstBlockCountBySector(sector),
                 0x60 + keyType,
-                status.validKeys[sector + (keyType * 40)]);
+                mfcInfo.recovery.validKeys[sector + (keyType * 40)]);
 
             if (blockData.isEmpty) {
               if (keyType == 1) {
@@ -508,22 +515,23 @@ class ReadCardPageState extends State<ReadCardPage> {
             if (mfClassicGetSectorTrailerBlockBySector(sector) ==
                 block + mfClassicGetFirstBlockCountBySector(sector)) {
               // set keys in sector trailer
-              if (status.validKeys[sector].isNotEmpty) {
-                blockData.setRange(0, 6, status.validKeys[sector]);
+              if (mfcInfo.recovery.validKeys[sector].isNotEmpty) {
+                blockData.setRange(0, 6, mfcInfo.recovery.validKeys[sector]);
               }
 
-              if (status.validKeys[sector + 40].isNotEmpty) {
-                blockData.setRange(10, 16, status.validKeys[sector + 40]);
+              if (mfcInfo.recovery.validKeys[sector + 40].isNotEmpty) {
+                blockData.setRange(
+                    10, 16, mfcInfo.recovery.validKeys[sector + 40]);
               }
             }
 
-            status.cardData[block +
+            mfcInfo.cardData[block +
                 mfClassicGetFirstBlockCountBySector(sector)] = blockData;
 
             setState(() {
-              status.dumpProgress =
+              mfcInfo.dumpProgress =
                   (block + mfClassicGetFirstBlockCountBySector(sector)) /
-                      (mfClassicGetBlockCount(status.type));
+                      (mfClassicGetBlockCount(mfcInfo.type));
             });
 
             await asyncSleep(1); // Let GUI update
@@ -533,13 +541,13 @@ class ReadCardPageState extends State<ReadCardPage> {
       }
 
       setState(() {
-        status.dumpProgress = 0;
-        status.state = ChameleonMifareClassicState.save;
+        mfcInfo.dumpProgress = 0;
+        mfcInfo.state = MifareClassicState.save;
       });
     } catch (_) {
       setState(() {
-        status.recoveryError = localizations.recovery_error_dump_data;
-        status.state = ChameleonMifareClassicState.dump;
+        mfcInfo.recovery.error = localizations.recovery_error_dump_data;
+        mfcInfo.state = MifareClassicState.dump;
       });
     }
   }
@@ -550,12 +558,12 @@ class ReadCardPageState extends State<ReadCardPage> {
     var localizations = AppLocalizations.of(context)!;
     if (!skipDump) {
       for (var sector = 0;
-          sector < mfClassicGetSectorCount(status.type);
+          sector < mfClassicGetSectorCount(mfcInfo.type);
           sector++) {
         for (var block = 0;
             block < mfClassicGetBlockCountBySector(sector);
             block++) {
-          cardDump.addAll(status
+          cardDump.addAll(mfcInfo
               .cardData[block + mfClassicGetFirstBlockCountBySector(sector)]);
         }
       }
@@ -564,14 +572,14 @@ class ReadCardPageState extends State<ReadCardPage> {
     if (bin) {
       try {
         await FileSaver.instance.saveAs(
-            name: status.hfUid.replaceAll(" ", ""),
+            name: hfInfo.uid.replaceAll(" ", ""),
             bytes: Uint8List.fromList(cardDump),
             ext: 'bin',
             mimeType: MimeType.other);
       } on UnimplementedError catch (_) {
         String? outputFile = await FilePicker.platform.saveFile(
           dialogTitle: '${localizations.output_file}:',
-          fileName: '${status.hfUid.replaceAll(" ", "")}.bin',
+          fileName: '${hfInfo.uid.replaceAll(" ", "")}.bin',
         );
 
         if (outputFile != null) {
@@ -583,14 +591,14 @@ class ReadCardPageState extends State<ReadCardPage> {
       var tags = appState.sharedPreferencesProvider.getCards();
       tags.add(CardSave(
           id: const Uuid().v4(),
-          uid: status.hfUid,
-          sak: hexToBytes(status.sak)[0],
-          atqa: hexToBytes(status.atqa.replaceAll(" ", "")),
-          name: status.dumpName,
+          uid: hfInfo.uid,
+          sak: hexToBytes(hfInfo.sak)[0],
+          atqa: hexToBytes(hfInfo.atqa.replaceAll(" ", "")),
+          name: dumpName,
           tag: (skipDump)
               ? TagType.mifare1K
-              : mfClassicGetChameleonTagType(status.type),
-          data: status.cardData));
+              : mfClassicGetChameleonTagType(mfcInfo.type),
+          data: mfcInfo.cardData));
       appState.sharedPreferencesProvider.setCards(tags);
     }
   }
@@ -599,10 +607,10 @@ class ReadCardPageState extends State<ReadCardPage> {
     var tags = appState.sharedPreferencesProvider.getCards();
     tags.add(CardSave(
         id: const Uuid().v4(),
-        uid: status.lfUid,
+        uid: lfInfo.uid,
         sak: 0,
         atqa: Uint8List(0),
-        name: status.dumpName,
+        name: dumpName,
         tag: TagType.em410X,
         data: []));
     appState.sharedPreferencesProvider.setCards(tags);
@@ -635,7 +643,6 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -646,10 +653,11 @@ class ReadCardPageState extends State<ReadCardPage> {
     double checkmarkSize = isSmallScreen ? 16 : 20;
 
     var appState = context.watch<ChameleonGUIState>();
-    status.dictionaries = appState.sharedPreferencesProvider.getDictionaries();
-    status.dictionaries
+    mfcInfo.recovery.dictionaries =
+        appState.sharedPreferencesProvider.getDictionaries();
+    mfcInfo.recovery.dictionaries
         .insert(0, Dictionary(id: "", name: localizations.empty, keys: []));
-    status.selectedDictionary ??= status.dictionaries[0];
+    mfcInfo.recovery.selectedDictionary ??= mfcInfo.recovery.dictionaries[0];
 
     return Scaffold(
       appBar: AppBar(
@@ -676,20 +684,19 @@ class ReadCardPageState extends State<ReadCardPage> {
                       ),
                       const SizedBox(height: 8),
                       buildFieldRow(
-                          localizations.uid, status.hfUid, fieldFontSize),
+                          localizations.uid, hfInfo.uid, fieldFontSize),
                       buildFieldRow(
-                          localizations.sak, status.sak, fieldFontSize),
+                          localizations.sak, hfInfo.sak, fieldFontSize),
                       buildFieldRow(
-                          localizations.atqa, status.atqa, fieldFontSize),
-                      // buildFieldRow('ATS', status.ats, fieldFontSize),
+                          localizations.atqa, hfInfo.atqa, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
-                        'Tech: ${status.hfTech}',
+                        'Tech: ${hfInfo.tech}',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: fieldFontSize),
                       ),
                       const SizedBox(height: 16),
-                      if (status.noHfCard) ...[
+                      if (!hfInfo.cardExist) ...[
                         ErrorMessage(errorMessage: localizations.no_card_found),
                         const SizedBox(height: 16)
                       ],
@@ -722,7 +729,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         },
                         child: Text(localizations.read),
                       ),
-                      if (status.hfUid != "") ...[
+                      if (hfInfo.uid != "") ...[
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () async {
@@ -734,7 +741,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   content: TextField(
                                     onChanged: (value) {
                                       setState(() {
-                                        status.dumpName = value;
+                                        dumpName = value;
                                       });
                                     },
                                   ),
@@ -743,8 +750,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       onPressed: () async {
                                         await saveHFCard(appState,
                                             skipDump: true);
-                                        Navigator.pop(
-                                            context); // Close the modal after saving
+                                        if (context.mounted) {
+                                          Navigator.pop(context);
+                                        }
                                       },
                                       child: Text(localizations.ok),
                                     ),
@@ -763,7 +771,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                           child: Text(localizations.save_only_uid),
                         ),
                       ],
-                      if (status.type != MifareClassicType.none) ...[
+                      if (mfcInfo.type != MifareClassicType.none) ...[
                         const SizedBox(height: 16),
                         Text(
                           localizations.keys,
@@ -784,7 +792,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   children: [
                                     const Text("     "),
                                     ...List.generate(
-                                      (status.type == MifareClassicType.mini)
+                                      (mfcInfo.type == MifareClassicType.mini)
                                           ? 5
                                           : 16,
                                       (index) => Padding(
@@ -803,7 +811,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   children: [
                                     Text(localizations.letter_space("A")),
                                     ...List.generate(
-                                      (status.type == MifareClassicType.mini)
+                                      (mfcInfo.type == MifareClassicType.mini)
                                           ? 5
                                           : 16,
                                       (index) => Padding(
@@ -811,8 +819,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         child: SizedBox(
                                           width: checkmarkSize,
                                           height: checkmarkSize,
-                                          child: buildCheckmark(
-                                              status.checkMarks[index]),
+                                          child: buildCheckmark(mfcInfo
+                                              .recovery.checkMarks[index]),
                                         ),
                                       ),
                                     )
@@ -823,7 +831,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   children: [
                                     Text(localizations.letter_space("B")),
                                     ...List.generate(
-                                      (status.type == MifareClassicType.mini)
+                                      (mfcInfo.type == MifareClassicType.mini)
                                           ? 5
                                           : 16,
                                       (index) => Padding(
@@ -831,15 +839,15 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         child: SizedBox(
                                           width: checkmarkSize,
                                           height: checkmarkSize,
-                                          child: buildCheckmark(
-                                              status.checkMarks[40 + index]),
+                                          child: buildCheckmark(mfcInfo
+                                              .recovery.checkMarks[40 + index]),
                                         ),
                                       ),
                                     )
                                   ],
                                 ),
-                                if (status.type == MifareClassicType.m2k ||
-                                    status.type == MifareClassicType.m4k) ...[
+                                if (mfcInfo.type == MifareClassicType.m2k ||
+                                    mfcInfo.type == MifareClassicType.m4k) ...[
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
@@ -868,8 +876,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           child: SizedBox(
                                             width: checkmarkSize,
                                             height: checkmarkSize,
-                                            child: buildCheckmark(
-                                                status.checkMarks[index + 16]),
+                                            child: buildCheckmark(mfcInfo
+                                                .recovery
+                                                .checkMarks[index + 16]),
                                           ),
                                         ),
                                       )
@@ -886,7 +895,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           child: SizedBox(
                                             width: checkmarkSize,
                                             height: checkmarkSize,
-                                            child: buildCheckmark(status
+                                            child: buildCheckmark(mfcInfo
+                                                .recovery
                                                 .checkMarks[40 + index + 16]),
                                           ),
                                         ),
@@ -894,7 +904,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                     ],
                                   ),
                                 ],
-                                if (status.type == MifareClassicType.m4k)
+                                if (mfcInfo.type == MifareClassicType.m4k)
                                   Center(
                                       child: Column(
                                           mainAxisAlignment:
@@ -933,7 +943,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                 child: SizedBox(
                                                   width: checkmarkSize,
                                                   height: checkmarkSize,
-                                                  child: buildCheckmark(status
+                                                  child: buildCheckmark(mfcInfo
+                                                      .recovery
                                                       .checkMarks[index + 32]),
                                                 ),
                                               ),
@@ -953,9 +964,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                 child: SizedBox(
                                                   width: checkmarkSize,
                                                   height: checkmarkSize,
-                                                  child: buildCheckmark(
-                                                      status.checkMarks[
-                                                          40 + index + 32]),
+                                                  child: buildCheckmark(mfcInfo
+                                                          .recovery.checkMarks[
+                                                      40 + index + 32]),
                                                 ),
                                               ),
                                             )
@@ -967,27 +978,25 @@ class ReadCardPageState extends State<ReadCardPage> {
                             const Spacer(),
                           ],
                         ),
-                        if (status.recoveryError != "") ...[
+                        if (mfcInfo.recovery.error != "") ...[
                           const SizedBox(height: 16),
-                          ErrorMessage(errorMessage: status.recoveryError),
+                          ErrorMessage(errorMessage: mfcInfo.recovery.error),
                         ],
                         const SizedBox(height: 12),
-                        if (status.dumpProgress != 0) ...[
-                          LinearProgressIndicator(value: status.dumpProgress),
+                        if (mfcInfo.dumpProgress != 0) ...[
+                          LinearProgressIndicator(value: mfcInfo.dumpProgress),
                           const SizedBox(height: 8)
                         ],
-                        if (status.state ==
-                                ChameleonMifareClassicState.recovery ||
-                            status.state ==
-                                ChameleonMifareClassicState.recoveryOngoing)
+                        if (mfcInfo.state == MifareClassicState.recovery ||
+                            mfcInfo.state == MifareClassicState.recoveryOngoing)
                           Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 const SizedBox(height: 8),
                                 ElevatedButton(
-                                  onPressed: (status.state ==
-                                          ChameleonMifareClassicState.recovery)
+                                  onPressed: (mfcInfo.state ==
+                                          MifareClassicState.recovery)
                                       ? () async {
                                           await recoverKeys(appState);
                                         }
@@ -996,8 +1005,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 ElevatedButton(
-                                  onPressed: (status.state ==
-                                          ChameleonMifareClassicState.recovery)
+                                  onPressed: (mfcInfo.state ==
+                                          MifareClassicState.recovery)
                                       ? () async {
                                           await dumpData(appState);
                                         }
@@ -1005,16 +1014,15 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   child: Text(localizations.dump_partial_data),
                                 )
                               ]),
-                        if (status.state ==
-                                ChameleonMifareClassicState.checkKeys ||
-                            status.state ==
-                                ChameleonMifareClassicState.checkKeysOngoing)
+                        if (mfcInfo.state == MifareClassicState.checkKeys ||
+                            mfcInfo.state ==
+                                MifareClassicState.checkKeysOngoing)
                           Column(children: [
                             Text(localizations.additional_key_dict),
                             const SizedBox(height: 4),
                             DropdownButton<String>(
-                              value: status.selectedDictionary!.id,
-                              items: status.dictionaries
+                              value: mfcInfo.recovery.selectedDictionary!.id,
+                              items: mfcInfo.recovery.dictionaries
                                   .map<DropdownMenuItem<String>>(
                                       (Dictionary dictionary) {
                                 return DropdownMenuItem<String>(
@@ -1024,10 +1032,12 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 );
                               }).toList(),
                               onChanged: (String? newValue) {
-                                for (var dictionary in status.dictionaries) {
+                                for (var dictionary
+                                    in mfcInfo.recovery.dictionaries) {
                                   if (dictionary.id == newValue) {
                                     setState(() {
-                                      status.selectedDictionary = dictionary;
+                                      mfcInfo.recovery.selectedDictionary =
+                                          dictionary;
                                     });
                                     break;
                                   }
@@ -1036,8 +1046,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                             ),
                             const SizedBox(height: 8),
                             ElevatedButton(
-                              onPressed: (status.state ==
-                                      ChameleonMifareClassicState.checkKeys)
+                              onPressed: (mfcInfo.state ==
+                                      MifareClassicState.checkKeys)
                                   ? () async {
                                       await checkKeys(appState);
                                     }
@@ -1045,21 +1055,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                               child: Text(localizations.check_keys_dict),
                             )
                           ]),
-                        if (status.state == ChameleonMifareClassicState.dump ||
-                            status.state ==
-                                ChameleonMifareClassicState.dumpOngoing)
+                        if (mfcInfo.state == MifareClassicState.dump ||
+                            mfcInfo.state == MifareClassicState.dumpOngoing)
                           Column(children: [
                             ElevatedButton(
-                              onPressed: (status.state ==
-                                      ChameleonMifareClassicState.dump)
-                                  ? () async {
-                                      await dumpData(appState);
-                                    }
-                                  : null,
+                              onPressed:
+                                  (mfcInfo.state == MifareClassicState.dump)
+                                      ? () async {
+                                          await dumpData(appState);
+                                        }
+                                      : null,
                               child: Text(localizations.dump_card),
                             ),
                           ]),
-                        if (status.state == ChameleonMifareClassicState.save)
+                        if (mfcInfo.state == MifareClassicState.save)
                           Center(
                               child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1075,7 +1084,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           content: TextField(
                                             onChanged: (value) {
                                               setState(() {
-                                                status.dumpName = value;
+                                                dumpName = value;
                                               });
                                             },
                                           ),
@@ -1083,8 +1092,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                                             ElevatedButton(
                                               onPressed: () async {
                                                 await saveHFCard(appState);
-                                                Navigator.pop(
-                                                    context); // Close the modal after saving
+                                                if (context.mounted) {
+                                                  Navigator.pop(context);
+                                                }
                                               },
                                               child: Text(localizations.ok),
                                             ),
@@ -1134,15 +1144,15 @@ class ReadCardPageState extends State<ReadCardPage> {
                       ),
                       const SizedBox(height: 8),
                       buildFieldRow(
-                          localizations.uid, status.lfUid, fieldFontSize),
+                          localizations.uid, lfInfo.uid, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
-                        'Tech: ${status.lfTech}',
+                        'Tech: ${lfInfo.tech}',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: fieldFontSize),
                       ),
                       const SizedBox(height: 16),
-                      if (status.noLfCard) ...[
+                      if (!lfInfo.cardExist) ...[
                         ErrorMessage(errorMessage: localizations.no_card_found),
                         const SizedBox(height: 16)
                       ],
@@ -1175,7 +1185,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         },
                         child: Text(localizations.read),
                       ),
-                      if (status.lfUid != "") ...[
+                      if (lfInfo.uid != "") ...[
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () async {
@@ -1187,7 +1197,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   content: TextField(
                                     onChanged: (value) {
                                       setState(() {
-                                        status.dumpName = value;
+                                        dumpName = value;
                                       });
                                     },
                                   ),
@@ -1195,8 +1205,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                                     ElevatedButton(
                                       onPressed: () async {
                                         await saveLFCard(appState);
-                                        Navigator.pop(
-                                            context); // Close the modal after saving
+                                        if (context.mounted) {
+                                          Navigator.pop(context);
+                                        }
                                       },
                                       child: Text(localizations.ok),
                                     ),
