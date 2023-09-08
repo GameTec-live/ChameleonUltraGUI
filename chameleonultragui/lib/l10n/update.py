@@ -28,6 +28,8 @@ def request(method, url, data=None):
                                                'Content-Type': 'application/json'})).read().decode())
 
 
+LANGUAGES = request('GET', 'https://crowdin.com/api/v2/languages?limit=500')['data']
+
 for language in progressbar(
         request('GET', 'https://crowdin.com/api/v2/projects/611911/files/33/languages/progress?limit=500')['data']):
     try:
@@ -41,5 +43,9 @@ for language in progressbar(
                                'skipUntranslatedStrings': True, 'fileIds': [33]})
         export = urlopen(Request(translation['data']['url'], method='GET')).read()
         translations = json.loads(export.decode())
-        locale = translations['@@locale']
+        locale = None
+        for lang in LANGUAGES:
+            if lang['data']['id'] == language['data']['languageId']:
+                locale = lang['data']['osxLocale'].replace('-', '_')
+        translations['@@locale'] = locale
         json.dump(translations, open(f'app_{locale}.arb', 'w+'), indent=2)
