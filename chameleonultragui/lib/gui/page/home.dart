@@ -208,8 +208,8 @@ class HomePageState extends State<HomePage> {
                         widthFactor: 0.4,
                         child: Image.asset(
                           appState.connector!.device == ChameleonDevice.ultra
-                              ? 'assets/black-ultra-standing-front.webp'
-                              : 'assets/black-lite-standing-front.webp',
+                              ? 'assets/black-ultra-standing-front.png'
+                              : 'assets/black-lite-standing-front.png',
                           fit: BoxFit.contain,
                         ),
                       ),

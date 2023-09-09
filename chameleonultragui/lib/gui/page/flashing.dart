@@ -26,11 +26,11 @@ class FlashingPage extends StatelessWidget {
               Image.asset(
                 appState.connector!.device == ChameleonDevice.ultra
                     ? appState.easterEgg
-                        ? 'assets/black-ultra-standing-front-flashing.webp'
-                        : 'assets/black-ultra-standing-front.webp'
+                        ? 'assets/black-ultra-standing-front-flashing.png'
+                        : 'assets/black-ultra-standing-front.png'
                     : appState.easterEgg
-                        ? 'assets/black-lite-standing-front-flashing.webp'
-                        : 'assets/black-lite-standing-front.webp',
+                        ? 'assets/black-lite-standing-front-flashing.png'
+                        : 'assets/black-lite-standing-front.png',
                 width: 300,
                 height: 300,
               ),
