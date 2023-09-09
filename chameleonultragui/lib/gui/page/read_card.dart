@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -1078,17 +1079,24 @@ class KeyCheckMarks extends StatelessWidget {
               child: SizedBox(
                 width: checkmarkSize,
                 height: checkmarkSize,
-                child: Text("${checkmarkIndex + index}",
-                    style: TextStyle(fontSize: fontSize)),
+                child: Center(
+                    child: Text("${checkmarkIndex + index} ",
+                        style: TextStyle(fontSize: fontSize))),
               ),
             ),
           )
         ],
       ),
-      const SizedBox(height: 8),
+      const SizedBox(height: 4),
       Row(
         children: [
-          const Text("A"),
+          Transform(
+            transform: Matrix4.translationValues(0.0, 1.0, 0.0),
+            child: Text(
+              "A",
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
           ...List.generate(
             count,
             (index) => Padding(
@@ -1105,7 +1113,13 @@ class KeyCheckMarks extends StatelessWidget {
       const SizedBox(height: 8),
       Row(
         children: [
-          const Text("B"),
+          Transform(
+            transform: Matrix4.translationValues(0.0, 1.0, 0.0),
+            child: Text(
+              "B",
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
           ...List.generate(
             count,
             (index) => Padding(
@@ -1126,7 +1140,9 @@ class KeyCheckMarks extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(children: [
       for (int i = 0; i < checkmarkCount; i += checkmarkPerRow)
-        Column(children: [...buildCheckmarkRow(i, checkmarkPerRow)])
+        Column(children: [
+          ...buildCheckmarkRow(i, min(checkmarkPerRow, checkmarkCount - i))
+        ])
     ]);
   }
 }
