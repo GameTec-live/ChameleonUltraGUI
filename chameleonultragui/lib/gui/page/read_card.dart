@@ -111,7 +111,6 @@ class ReadCardPageState extends State<ReadCardPage> {
   MifareClassicInfo mfcInfo = MifareClassicInfo();
 
   Future<void> readHFInfo(ChameleonGUIState appState) async {
-    bool isEV1 = false;
     setState(() {
       hfInfo = HFCardInfo();
       mfcInfo = MifareClassicInfo();
@@ -124,26 +123,21 @@ class ReadCardPageState extends State<ReadCardPage> {
 
       var card = await appState.communicator!.scan14443aTag();
       var mifare = await appState.communicator!.detectMf1Support();
-      var mf1Type = MifareClassicType.none;
-
-      if (mifare) {
-        mf1Type = mfClassicGetType(card.atqa, card.sak);
-        isEV1 = (await appState.communicator!
-            .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]));
-      }
+      bool isEV1 = (await appState.communicator!
+          .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]));
 
       setState(() {
         hfInfo.uid = bytesToHexSpace(card.uid);
         hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
         hfInfo.atqa = bytesToHexSpace(card.atqa);
-        hfInfo.tech = mifare
-            ? "Mifare Classic ${mfClassicGetName(mf1Type)}${(isEV1) ? " EV1" : ""}"
-            : "Other";
         mfcInfo.isEV1 = isEV1;
-        mfcInfo.type = mf1Type;
-        mfcInfo.state = (mf1Type != MifareClassicType.none)
+        mfcInfo.type = mfClassicGetType(card.atqa, card.sak);
+        mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
             ? MifareClassicState.checkKeys
             : MifareClassicState.none;
+        hfInfo.tech = mifare
+            ? "Mifare Classic ${mfClassicGetName(mfcInfo.type)}${isEV1 ? " EV1" : ""}"
+            : "Other";
       });
     } catch (_) {
       setState(() {
