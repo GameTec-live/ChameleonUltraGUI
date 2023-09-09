@@ -121,22 +121,22 @@ class ReadCardPageState extends State<ReadCardPage> {
         await appState.communicator!.setReaderDeviceMode(true);
       }
 
-      var card = await appState.communicator!.scan14443aTag();
-      var mifare = await appState.communicator!.detectMf1Support();
-      bool isEV1 = (await appState.communicator!
+      CardData card = await appState.communicator!.scan14443aTag();
+      bool isMifare = await appState.communicator!.detectMf1Support();
+      bool isMifareClassicEV1 = (await appState.communicator!
           .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]));
 
       setState(() {
         hfInfo.uid = bytesToHexSpace(card.uid);
         hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
         hfInfo.atqa = bytesToHexSpace(card.atqa);
-        mfcInfo.isEV1 = isEV1;
+        mfcInfo.isEV1 = isMifareClassicEV1;
         mfcInfo.type = mfClassicGetType(card.atqa, card.sak);
         mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
             ? MifareClassicState.checkKeys
             : MifareClassicState.none;
-        hfInfo.tech = mifare
-            ? "Mifare Classic ${mfClassicGetName(mfcInfo.type)}${isEV1 ? " EV1" : ""}"
+        hfInfo.tech = isMifare
+            ? "Mifare Classic ${mfClassicGetName(mfcInfo.type)}${isMifareClassicEV1 ? " EV1" : ""}"
             : "Other";
       });
     } catch (_) {
@@ -626,17 +626,6 @@ class ReadCardPageState extends State<ReadCardPage> {
     );
   }
 
-  Widget buildCheckmark(ChameleonKeyCheckmark value) {
-    if (value != ChameleonKeyCheckmark.checking) {
-      return Icon(
-        value == ChameleonKeyCheckmark.found ? Icons.check : Icons.close,
-        color: value == ChameleonKeyCheckmark.found ? Colors.green : Colors.red,
-      );
-    } else {
-      return const CircularProgressIndicator();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -644,7 +633,9 @@ class ReadCardPageState extends State<ReadCardPage> {
     final isSmallScreen = screenSize.width < 800;
 
     double fieldFontSize = isSmallScreen ? 16 : 20;
+    double checkmarkFontSize = isSmallScreen ? 12 : 16;
     double checkmarkSize = isSmallScreen ? 16 : 20;
+    int checkmarkPerRow = (screenSize.width < 600) ? 8 : 16;
 
     var appState = context.watch<ChameleonGUIState>();
     mfcInfo.recovery.dictionaries =
@@ -778,197 +769,13 @@ class ReadCardPageState extends State<ReadCardPage> {
                         Row(
                           children: [
                             const Spacer(),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    const Text("     "),
-                                    ...List.generate(
-                                      (mfcInfo.type == MifareClassicType.mini)
-                                          ? 5
-                                          : 16,
-                                      (index) => Padding(
-                                        padding: const EdgeInsets.all(2),
-                                        child: SizedBox(
-                                          width: checkmarkSize,
-                                          height: checkmarkSize,
-                                          child: Text("$index"),
-                                        ),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Text(localizations.letter_space("A")),
-                                    ...List.generate(
-                                      (mfcInfo.type == MifareClassicType.mini)
-                                          ? 5
-                                          : 16,
-                                      (index) => Padding(
-                                        padding: const EdgeInsets.all(2),
-                                        child: SizedBox(
-                                          width: checkmarkSize,
-                                          height: checkmarkSize,
-                                          child: buildCheckmark(mfcInfo
-                                              .recovery.checkMarks[index]),
-                                        ),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Text(localizations.letter_space("B")),
-                                    ...List.generate(
-                                      (mfcInfo.type == MifareClassicType.mini)
-                                          ? 5
-                                          : 16,
-                                      (index) => Padding(
-                                        padding: const EdgeInsets.all(2),
-                                        child: SizedBox(
-                                          width: checkmarkSize,
-                                          height: checkmarkSize,
-                                          child: buildCheckmark(mfcInfo
-                                              .recovery.checkMarks[40 + index]),
-                                        ),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                                if (mfcInfo.type == MifareClassicType.m2k ||
-                                    mfcInfo.type == MifareClassicType.m4k) ...[
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Text("     "),
-                                      ...List.generate(
-                                        16,
-                                        (index) => Padding(
-                                          padding: const EdgeInsets.all(2),
-                                          child: SizedBox(
-                                            width: checkmarkSize,
-                                            height: checkmarkSize,
-                                            child: Text("${index + 16}"),
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Text(localizations.letter_space("A")),
-                                      ...List.generate(
-                                        16,
-                                        (index) => Padding(
-                                          padding: const EdgeInsets.all(2),
-                                          child: SizedBox(
-                                            width: checkmarkSize,
-                                            height: checkmarkSize,
-                                            child: buildCheckmark(mfcInfo
-                                                .recovery
-                                                .checkMarks[index + 16]),
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Text(localizations.letter_space("B")),
-                                      ...List.generate(
-                                        16,
-                                        (index) => Padding(
-                                          padding: const EdgeInsets.all(2),
-                                          child: SizedBox(
-                                            width: checkmarkSize,
-                                            height: checkmarkSize,
-                                            child: buildCheckmark(mfcInfo
-                                                .recovery
-                                                .checkMarks[40 + index + 16]),
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                ],
-                                if (mfcInfo.type == MifareClassicType.m4k)
-                                  Center(
-                                      child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            const Text("     "),
-                                            ...List.generate(
-                                              8,
-                                              (index) => Padding(
-                                                padding:
-                                                    const EdgeInsets.all(2),
-                                                child: SizedBox(
-                                                  width: checkmarkSize,
-                                                  height: checkmarkSize,
-                                                  child: Text("${index + 32}"),
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            Text(localizations
-                                                .letter_space("A")),
-                                            ...List.generate(
-                                              8,
-                                              (index) => Padding(
-                                                padding:
-                                                    const EdgeInsets.all(2),
-                                                child: SizedBox(
-                                                  width: checkmarkSize,
-                                                  height: checkmarkSize,
-                                                  child: buildCheckmark(mfcInfo
-                                                      .recovery
-                                                      .checkMarks[index + 32]),
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            Text(localizations
-                                                .letter_space("B")),
-                                            ...List.generate(
-                                              8,
-                                              (index) => Padding(
-                                                padding:
-                                                    const EdgeInsets.all(2),
-                                                child: SizedBox(
-                                                  width: checkmarkSize,
-                                                  height: checkmarkSize,
-                                                  child: buildCheckmark(mfcInfo
-                                                          .recovery.checkMarks[
-                                                      40 + index + 32]),
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                      ]))
-                              ],
-                            ),
+                            KeyCheckMarks(
+                                checkMarks: mfcInfo.recovery.checkMarks,
+                                fontSize: checkmarkFontSize,
+                                checkmarkSize: checkmarkSize,
+                                checkmarkCount:
+                                    mfClassicGetSectorCount(mfcInfo.type),
+                                checkmarkPerRow: checkmarkPerRow),
                             const Spacer(),
                           ],
                         ),
@@ -1229,5 +1036,97 @@ class ReadCardPageState extends State<ReadCardPage> {
         ),
       ),
     );
+  }
+}
+
+class KeyCheckMarks extends StatelessWidget {
+  final int checkmarkCount;
+  final List<ChameleonKeyCheckmark> checkMarks;
+  final int checkmarkPerRow;
+  final double checkmarkSize;
+  final double fontSize;
+
+  const KeyCheckMarks(
+      {super.key,
+      required this.checkMarks,
+      this.checkmarkCount = 16,
+      this.checkmarkPerRow = 16,
+      this.checkmarkSize = 20,
+      this.fontSize = 16});
+
+  Widget buildCheckmark(ChameleonKeyCheckmark value) {
+    if (value != ChameleonKeyCheckmark.checking) {
+      return Icon(
+        value == ChameleonKeyCheckmark.found ? Icons.check : Icons.close,
+        color: value == ChameleonKeyCheckmark.found ? Colors.green : Colors.red,
+      );
+    } else {
+      return const CircularProgressIndicator();
+    }
+  }
+
+  List<Widget> buildCheckmarkRow(int checkmarkIndex, int count) {
+    return [
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          const Text("     "),
+          ...List.generate(
+            count,
+            (index) => Padding(
+              padding: const EdgeInsets.all(2),
+              child: SizedBox(
+                width: checkmarkSize,
+                height: checkmarkSize,
+                child: Text("${checkmarkIndex + index}",
+                    style: TextStyle(fontSize: fontSize)),
+              ),
+            ),
+          )
+        ],
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          const Text("A"),
+          ...List.generate(
+            count,
+            (index) => Padding(
+              padding: const EdgeInsets.all(2),
+              child: SizedBox(
+                width: checkmarkSize,
+                height: checkmarkSize,
+                child: buildCheckmark(checkMarks[checkmarkIndex + index]),
+              ),
+            ),
+          )
+        ],
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          const Text("B"),
+          ...List.generate(
+            count,
+            (index) => Padding(
+              padding: const EdgeInsets.all(2),
+              child: SizedBox(
+                width: checkmarkSize,
+                height: checkmarkSize,
+                child: buildCheckmark(checkMarks[40 + checkmarkIndex + index]),
+              ),
+            ),
+          )
+        ],
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      for (int i = 0; i < checkmarkCount; i += checkmarkPerRow)
+        Column(children: [...buildCheckmarkRow(i, checkmarkPerRow)])
+    ]);
   }
 }
