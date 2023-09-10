@@ -180,7 +180,7 @@ jobs:
           base64-encoded-secret: ${{ secrets.APP_STORE_CERTIFICATE }}
           filename: "cert_key"
           working-directory: "./chameleonultragui"
-      - name: Build and upload executable
+      - name: Initialize keychain and certificates
         working-directory: "./chameleonultragui"
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
@@ -188,17 +188,34 @@ jobs:
           keychain initialize
           keychain add-certificates
           xcode-project use-profiles
+      - name: Build app
+        working-directory: "./chameleonultragui"
+        run: |
           flutter build ipa --release --export-options-plist=$HOME/export_options.plist --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
+      - name: Upload app to App Store
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect publish --path $(find $(pwd) -name "*.ipa")
           while [[ -z "$BUILD_ID" ]]; do
-              BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 11.0" | awk '/^Id:/ {print $2}')
+              export BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 11.0" | awk '/^Id:/ {print $2}')
               if [[ -z "$BUILD_ID" ]]; then
                   echo "Build is not ready, retrying in 30 seconds..."
                   sleep 30
               fi
           done
+          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
+      - name: Submit to App Store
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=IOS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
+      - name: Submit to TestFlight
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect builds submit-to-testflight $BUILD_ID || true
+          app-store-connect beta-groups add-build $BUILD_ID --beta-group="Open beta testing" || true
   build-aur:
     runs-on: ubuntu-latest
     defaults:
