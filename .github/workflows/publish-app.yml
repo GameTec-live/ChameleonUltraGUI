@@ -102,7 +102,9 @@ jobs:
         working-directory: "./chameleonultragui"
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          echo "APP_STORE_CONNECT_PRIVATE_KEY=$APP_STORE_CONNECT_PRIVATE_KEY" >> $GITHUB_ENV
+          echo "APP_STORE_CONNECT_PRIVATE_KEY<<EOF" >> $GITHUB_ENV
+          echo $APP_STORE_CONNECT_PRIVATE_KEY >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
           app-store-connect fetch-signing-files run.chameleon.gui --platform MAC_OS  --type MAC_APP_STORE --certificate-key=@file:cert_key --create
           app-store-connect list-certificates --type MAC_INSTALLER_DISTRIBUTION --certificate-key=@file:cert_key --save
           keychain initialize
