@@ -78,7 +78,8 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - run: sudo chown -R $USER . && sudo chmod -R a+rwx .
+      - name: Fix permissions
+        run: sudo chown -R $USER . && sudo chmod -R a+rwx .
       - name: Enable macOS
         run: flutter config --enable-macos-desktop
       - name: Install tools
@@ -97,20 +98,28 @@ jobs:
           base64-encoded-secret: ${{ secrets.APP_STORE_CERTIFICATE }}
           filename: "cert_key"
           working-directory: "./chameleonultragui"
-      - name: Build and upload executable
+      - name: Initialize keychain and certificates
         working-directory: "./chameleonultragui"
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          echo "::set-env name=APP_STORE_CONNECT_PRIVATE_KEY::$APP_STORE_CONNECT_PRIVATE_KEY"
           app-store-connect fetch-signing-files run.chameleon.gui --platform MAC_OS  --type MAC_APP_STORE --certificate-key=@file:cert_key --create
           app-store-connect list-certificates --type MAC_INSTALLER_DISTRIBUTION --certificate-key=@file:cert_key --save
           keychain initialize
           keychain add-certificates
           xcode-project use-profiles
+      - name: Build app
+        working-directory: "./chameleonultragui"
+        run: |
           sudo chown -R $USER . && sudo chmod -R a+rwx .
           flutter build macos --release --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
           sudo chown -R $USER . && sudo chmod -R a+rwx .
+      - name: Sign package
+        working-directory: "./chameleonultragui"
+        run: |
           APP_NAME=$(find $(pwd) -name "*.app")
           PACKAGE_NAME=$(basename "$APP_NAME" .app).pkg
+          echo "::set-env name=PACKAGE_NAME::$PACKAGE_NAME"
           xcrun productbuild --component "$APP_NAME" /Applications/ unsigned.pkg
           INSTALLER_CERT_NAME=$(keychain list-certificates \
                     | jq '[.[]
@@ -120,17 +129,24 @@ jobs:
                     | xargs)
           xcrun productsign --sign "$INSTALLER_CERT_NAME" unsigned.pkg "$PACKAGE_NAME"
           sudo chown -R $USER . && sudo chmod -R a+rwx .
-          rm -f unsigned.pkg
+      - name: Upload package to App Store
+        working-directory: "./chameleonultragui"
+        run: |
           app-store-connect publish --path "$PACKAGE_NAME"
           while [[ -z "$BUILD_ID" ]]; do
-              BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 10.14" | awk '/^Id:/ {print $2}')
+              export BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 10.14" | awk '/^Id:/ {print $2}')
               if [[ -z "$BUILD_ID" ]]; then
                   echo "Build is not ready, retrying in 5 seconds..."
                   sleep 5
               fi
           done
+          echo "::set-env name=BUILD_ID::$BUILD_ID"
+      - name: Submit to App Store
+        run: app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
+      - name: Submit to TestFlight
+        run: |
           app-store-connect builds submit-to-testflight $BUILD_ID || true
-          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
+          app-store-connect beta-groups add-build $BUILD_ID --beta-group="Open beta testing" || true
   build-ios:
     runs-on: macos-latest
     env:
