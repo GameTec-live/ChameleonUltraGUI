@@ -35,10 +35,13 @@ for language in progressbar(
                            f"https://crowdin.com/api/v2/projects/611911/languages/{language['data']['languageId']}/progress")
     except urllib.error.HTTPError:
         continue
-    if progress['data'][0]['data']['words']['translated']/progress['data'][0]['data']['words']['total'] >= 0.7:
-        translation = request('POST', 'https://crowdin.com/api/v2/projects/611911/translations/exports',
-                              {'targetLanguageId': language['data']['languageId'], 'format': 'arb-export',
-                               'skipUntranslatedStrings': True, 'fileIds': [33]})
+    if progress['data'][0]['data']['words']['translated'] / progress['data'][0]['data']['words']['total'] >= 0.7:
+        try:
+            translation = request('POST', 'https://crowdin.com/api/v2/projects/611911/translations/exports',
+                                  {'targetLanguageId': language['data']['languageId'], 'format': 'arb-export',
+                                   'skipUntranslatedStrings': True, 'fileIds': [33]})
+        except urllib.error.HTTPError:
+            continue
         export = urlopen(Request(translation['data']['url'], method='GET')).read()
         translations = json.loads(export.decode())
         locale = translations['@@locale']
