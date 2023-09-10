@@ -9,19 +9,24 @@ Future<List<String>> fetchOpenCollectiveContributors() async {
   try {
     final response = await http.post(url, headers: headers, body: body);
     final json = jsonDecode(response.body);
-    List<String> contributors = [];
+    Map<String, int> contributors = {};
+    List<String> contributorsList = [];
 
-    var nodes = json["data"]["account"]["transactions"]["nodes"]!;
-    nodes.sort((a, b) {
-      return b["amount"]["value"].compareTo(a["amount"]["value"]) as int;
-    });
-
-    for (var node in nodes) {
-      contributors
-          .add("${node["fromAccount"]["name"]} (${node["amount"]["value"]}\$)");
+    for (var node in json["data"]["account"]["transactions"]["nodes"]) {
+      contributors[node["fromAccount"]["name"]] =
+          (contributors[node["fromAccount"]["name"]] ?? 0) +
+              (node["amount"]["value"] as int);
     }
 
-    return contributors;
+    List<MapEntry<String, int>> sortedEntries = contributors.entries.toList();
+
+    sortedEntries.sort((a, b) => b.value.compareTo(a.value));
+
+    Map.fromEntries(sortedEntries).forEach((key, value) {
+      contributorsList.add("$key ($value\$)");
+    });
+
+    return contributorsList;
   } catch (e) {
     List<String> error = [e.toString()];
     return error;
