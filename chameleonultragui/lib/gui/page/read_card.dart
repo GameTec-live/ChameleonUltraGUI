@@ -791,31 +791,35 @@ class ReadCardPageState extends State<ReadCardPage> {
                         ],
                         if (mfcInfo.state == MifareClassicState.recovery ||
                             mfcInfo.state == MifareClassicState.recoveryOngoing)
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                const SizedBox(height: 8),
-                                ElevatedButton(
-                                  onPressed: (mfcInfo.state ==
-                                          MifareClassicState.recovery)
-                                      ? () async {
-                                          await recoverKeys(appState);
-                                        }
-                                      : null,
-                                  child: Text(localizations.recover_keys),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: (mfcInfo.state ==
-                                          MifareClassicState.recovery)
-                                      ? () async {
-                                          await dumpData(appState);
-                                        }
-                                      : null,
-                                  child: Text(localizations.dump_partial_data),
-                                )
-                              ]),
+                          FittedBox(
+                              alignment: Alignment.topCenter,
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(height: 8),
+                                    ElevatedButton(
+                                      onPressed: (mfcInfo.state ==
+                                              MifareClassicState.recovery)
+                                          ? () async {
+                                              await recoverKeys(appState);
+                                            }
+                                          : null,
+                                      child: Text(localizations.recover_keys),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: (mfcInfo.state ==
+                                              MifareClassicState.recovery)
+                                          ? () async {
+                                              await dumpData(appState);
+                                            }
+                                          : null,
+                                      child:
+                                          Text(localizations.dump_partial_data),
+                                    )
+                                  ])),
                         if (mfcInfo.state == MifareClassicState.checkKeys ||
                             mfcInfo.state ==
                                 MifareClassicState.checkKeysOngoing)
