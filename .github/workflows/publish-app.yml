@@ -102,7 +102,7 @@ jobs:
         working-directory: "./chameleonultragui"
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          echo "::set-env name=APP_STORE_CONNECT_PRIVATE_KEY::$APP_STORE_CONNECT_PRIVATE_KEY"
+          echo "APP_STORE_CONNECT_PRIVATE_KEY=$APP_STORE_CONNECT_PRIVATE_KEY" >> $GITHUB_ENV
           app-store-connect fetch-signing-files run.chameleon.gui --platform MAC_OS  --type MAC_APP_STORE --certificate-key=@file:cert_key --create
           app-store-connect list-certificates --type MAC_INSTALLER_DISTRIBUTION --certificate-key=@file:cert_key --save
           keychain initialize
@@ -119,7 +119,7 @@ jobs:
         run: |
           APP_NAME=$(find $(pwd) -name "*.app")
           PACKAGE_NAME=$(basename "$APP_NAME" .app).pkg
-          echo "::set-env name=PACKAGE_NAME::$PACKAGE_NAME"
+          echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
           xcrun productbuild --component "$APP_NAME" /Applications/ unsigned.pkg
           INSTALLER_CERT_NAME=$(keychain list-certificates \
                     | jq '[.[]
@@ -140,7 +140,7 @@ jobs:
                   sleep 5
               fi
           done
-          echo "::set-env name=BUILD_ID::$BUILD_ID"
+          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
       - name: Submit to App Store
         run: app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
       - name: Submit to TestFlight
