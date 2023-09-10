@@ -618,24 +618,27 @@ class ChameleonCommunicator {
   }
 
   Future<Map<int, Map<int, Map<String, List<DetectionResult>>>>>
-      getMf1DetectionResult(int index) async {
-    // Get results from index
-    var resp = (await sendCmd(ChameleonCommand.mf1GetDetectionResult,
-            data: Uint8List(4)
-              ..buffer.asByteData().setInt16(0, index, Endian.big)))!
-        .data;
+      getMf1DetectionResult(int count) async {
     List<DetectionResult> resultList = [];
-    int pos = 0;
-    while (pos < resp.length) {
-      resultList.add(DetectionResult(
-          block: resp[0 + pos],
-          type: 0x60 + (resp[1 + pos] & 0x01),
-          isNested: (resp[1 + pos] >> 1 & 0x01) == 0x01,
-          uid: bytesToU32(resp.sublist(2 + pos, 6 + pos)),
-          nt: bytesToU32(resp.sublist(6 + pos, 10 + pos)),
-          nr: bytesToU32(resp.sublist(10 + pos, 14 + pos)),
-          ar: bytesToU32(resp.sublist(14 + pos, 18 + pos))));
-      pos += 18;
+    while (resultList.length < count) {
+      // Get results from index
+      var resp = (await sendCmd(ChameleonCommand.mf1GetDetectionResult,
+          data: Uint8List(4)
+            ..buffer.asByteData().setInt32(0, resultList.length, Endian.big)))!
+          .data;
+
+      int pos = 0;
+      while (pos < resp.length) {
+        resultList.add(DetectionResult(
+            block: resp[0 + pos],
+            type: 0x60 + (resp[1 + pos] & 0x01),
+            isNested: (resp[1 + pos] >> 1 & 0x01) == 0x01,
+            uid: bytesToU32(resp.sublist(2 + pos, 6 + pos)),
+            nt: bytesToU32(resp.sublist(6 + pos, 10 + pos)),
+            nr: bytesToU32(resp.sublist(10 + pos, 14 + pos)),
+            ar: bytesToU32(resp.sublist(14 + pos, 18 + pos))));
+        pos += 18;
+      }
     }
 
     // Classify
