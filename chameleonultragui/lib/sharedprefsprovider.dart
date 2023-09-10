@@ -368,6 +368,8 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return 'Tiếng Việt';
       case 'ca':
         return 'Català';
+      case 'bg':
+        return 'Български';
       default:
         return 'Unknown';
     }
