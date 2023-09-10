@@ -318,6 +318,8 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return 'Deutsch (Österreich)';
       case 'pt':
         return 'Português';
+      case 'pt-BR':
+        return 'Português (Brasil)';
       case 'ru':
         return 'Русский';
       case 'it':
@@ -366,6 +368,8 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return 'Tiếng Việt';
       case 'ca':
         return 'Català';
+      case 'bg':
+        return 'Български';
       default:
         return 'Unknown';
     }
