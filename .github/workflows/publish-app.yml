@@ -102,9 +102,6 @@ jobs:
         working-directory: "./chameleonultragui"
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          echo "APP_STORE_CONNECT_PRIVATE_KEY<<EOF" >> $GITHUB_ENV
-          echo $APP_STORE_CONNECT_PRIVATE_KEY >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
           app-store-connect fetch-signing-files run.chameleon.gui --platform MAC_OS  --type MAC_APP_STORE --certificate-key=@file:cert_key --create
           app-store-connect list-certificates --type MAC_INSTALLER_DISTRIBUTION --certificate-key=@file:cert_key --save
           keychain initialize
@@ -134,6 +131,7 @@ jobs:
       - name: Upload package to App Store
         working-directory: "./chameleonultragui"
         run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect publish --path "$PACKAGE_NAME"
           while [[ -z "$BUILD_ID" ]]; do
               export BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 10.14" | awk '/^Id:/ {print $2}')
@@ -144,9 +142,14 @@ jobs:
           done
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
       - name: Submit to App Store
-        run: app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
-      - name: Submit to TestFlight
+        working-directory: "./chameleonultragui"
         run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
+      - name: Submit to TestFlight
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect builds submit-to-testflight $BUILD_ID || true
           app-store-connect beta-groups add-build $BUILD_ID --beta-group="Open beta testing" || true
   build-ios:
