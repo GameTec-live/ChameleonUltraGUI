@@ -9,4 +9,4 @@
 
 ## Reporting a Vulnerability
 
-As we don't think there are any possible critical vulnerabilities, use Github Issues to report them.
+As we don't think there are any possible critical vulnerabilities, use Github Issues to report them. Make sure that it is vulnerability in app, not firmware/device. If there somehow still is a important (reproducible in real world) security vulnerability, please contact [GameTec-live](https://github.com/GameTec-live). This can be done via for example Discord.
