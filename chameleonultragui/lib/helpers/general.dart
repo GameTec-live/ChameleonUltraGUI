@@ -39,6 +39,11 @@ int bytesToU64(Uint8List byteArray) {
   return byteArray.buffer.asByteData().getUint64(0, Endian.big);
 }
 
+Uint8List u8ToBytes(int u8) {
+  final ByteData byteData = ByteData(1)..setUint8(0, u8);
+  return byteData.buffer.asUint8List();
+}
+
 Uint8List u64ToBytes(int u64) {
   final ByteData byteData = ByteData(8)..setUint64(0, u64, Endian.big);
   return byteData.buffer.asUint8List();

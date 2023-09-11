@@ -374,9 +374,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       Text(
                                           "${localizations.tag_type}: ${chameleonTagToString(tag.tag)}"),
                                       Text(
-                                          "${localizations.sak}: ${tag.sak == 0 ? localizations.unavailable : tag.sak}"),
+                                          "${localizations.sak}: ${tag.sak == 0 ? localizations.unavailable : bytesToHex(u8ToBytes(tag.sak))}"),
                                       Text(
-                                          "${localizations.atqa}: ${tag.atqa.asMap().containsKey(0) ? tag.atqa[0] : ""} ${tag.atqa.asMap().containsKey(1) ? tag.atqa[1] : localizations.unavailable}"),
+                                          "${localizations.atqa}: ${tag.atqa.asMap().containsKey(0) ? bytesToHex(u8ToBytes(tag.atqa[0])) : ""} ${tag.atqa.asMap().containsKey(1) ? bytesToHex(u8ToBytes(tag.atqa[1])) : localizations.unavailable}"),
                                     ],
                                   ),
                                   actions: [
