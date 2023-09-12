@@ -29,5 +29,13 @@ If applicable, add screenshots to help explain your problem.
  - Connection type: [e.g. BLE]
  - Chameleon firmware commit: [e.g. 00aa00aa]
 
+**Also required**:
+
+- [ ] - I've upgraded app to latest app version
+
+- [ ] - I've upgraded Chameleon firmware to latest version
+
+- [ ] - I've searched and verified that there is no already created issues 
+
 **Additional context**
 Add any other context about the problem here.
