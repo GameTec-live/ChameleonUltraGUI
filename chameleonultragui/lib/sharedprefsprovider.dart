@@ -219,23 +219,65 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
     Color getThemeComplementaryColor() {
     final themeValue = _sharedPreferences.getInt('app_theme_color') ?? 0;
-    switch (themeValue) {
+    final themeMode = _sharedPreferences.getInt('app_theme') ?? 2;
+    switch (themeMode) {
       case 1:
-        return const Color.fromARGB(30, 116, 58, 183);
+        switch (themeValue) {
+          case 1:
+            return Color.fromARGB(255, 238, 227, 252);
+          case 2:
+            return Color.fromARGB(255, 234, 252, 255);
+          case 3:
+            return Color.fromARGB(255, 238, 255, 248);
+          case 4:
+            return Color.fromARGB(248, 248, 239, 255);
+          case 5:
+            return Color.fromARGB(255, 255, 255, 240);
+          case 6:
+            return Color.fromARGB(255, 253, 238, 238);
+          case 7:
+            return Color.fromARGB(255, 248, 252, 216);
+          default:
+            return Color.fromARGB(255, 255, 236, 236);
+        }
       case 2:
-        return const Color.fromARGB(44, 62, 216, 243);
-      case 3:
-        return const Color.fromARGB(50, 175, 76, 172);
-      case 4:
-        return const Color.fromARGB(46, 130, 51, 196);
-      case 5:
-        return const Color.fromARGB(48, 110, 116, 29);
-      case 6:
-        return const Color.fromARGB(47, 188, 43, 201);
-      case 7:
-        return const Color.fromARGB(44, 58, 104, 202);
+        switch (themeValue) {
+          case 1:
+            return const Color.fromARGB(30, 116, 58, 183);
+          case 2:
+            return const Color.fromARGB(44, 62, 216, 243);
+          case 3:
+            return const Color.fromARGB(50, 175, 76, 172);
+          case 4:
+            return const Color.fromARGB(46, 130, 51, 196);
+          case 5:
+            return const Color.fromARGB(48, 110, 116, 29);
+          case 6:
+            return const Color.fromARGB(47, 188, 43, 201);
+          case 7:
+            return const Color.fromARGB(44, 58, 104, 202);
+          default:
+            return const Color.fromARGB(16, 202, 43, 43);
+        }
       default:
-        return const Color.fromARGB(16, 202, 43, 43);
+        switch (themeValue) {
+          case 1:
+            return const Color.fromARGB(30, 116, 58, 183);
+          case 2:
+            return const Color.fromARGB(44, 62, 216, 243);
+          case 3:
+            return const Color.fromARGB(50, 175, 76, 172);
+          case 4:
+            return const Color.fromARGB(46, 130, 51, 196);
+          case 5:
+            return const Color.fromARGB(48, 110, 116, 29);
+          case 6:
+            return const Color.fromARGB(47, 188, 43, 201);
+          case 7:
+            return const Color.fromARGB(44, 58, 104, 202);
+          default:
+            return const Color.fromARGB(16, 202, 43, 43);
+        }
     }
   }
 
