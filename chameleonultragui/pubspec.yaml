@@ -54,7 +54,7 @@ dependencies:
   http: ^1.1.0
   archive: ^3.3.7
   flutter_reactive_ble: ^5.2.0
-  permission_handler: ^10.4.3
+  permission_handler: ^11.0.0
   protobuf: ^2.1.0
   collection: ^1.17.1
   crypto: ^3.0.3
