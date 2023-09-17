@@ -1079,7 +1079,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 ChameleonMifareClassicState.recovery ||
                             status.state ==
                                 ChameleonMifareClassicState.recoveryOngoing)
-                          Row(
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
@@ -1103,7 +1105,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       : null,
                                   child: Text(localizations.dump_partial_data),
                                 )
-                              ]),
+                              ]),),
                         if (status.state ==
                                 ChameleonMifareClassicState.checkKeys ||
                             status.state ==
