@@ -477,7 +477,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                               
                             ),
                           ),
-                          child: Stack(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child:Stack(
                             children: [
                               Row(
                                 children: [
@@ -493,23 +495,25 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   //Positioned(top: 0,right: 0,
                                   //child: 
                                   SizedBox(
+                                    width: 148,
                                     child: ConstrainedBox(constraints: BoxConstraints(minHeight: 80,),
                                     child: Wrap(
                                       //mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         Column(
                                           children: [
-                                            Text( //This needs to be put in an Expanded but that seems to break the saved_cards page. Need to work on this.
+                                            FittedBox(
+                                              fit: BoxFit.scaleDown, //This will make the text scale down if it overflows. Default Text overflow doesn't work here for some reason.
+                                              child: Text( //This needs to be put in an Expanded but that seems to break the saved_cards page. Need to work on this.
                                               tag.name,
                                               style: const TextStyle(
                                                 fontSize: 16,
-                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                              maxLines: 3,
-                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                            
-                                            Text(
+                                            ),
+                                            FittedBox(
+                                              fit: BoxFit.scaleDown, //This will make the text scale down if it overflows. Default Text overflow doesn't work here for some reason.
+                                              child: Text(
                                               chameleonTagToString(tag.tag) +
                                                   ((chameleonTagSaveCheckForMifareClassicEV1(
                                                           tag))
@@ -518,8 +522,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               style: const TextStyle(
                                                 fontSize: 16,
                                               ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                             ),
                                           ], 
                                         ),
@@ -604,6 +607,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                               ),
                             ],
                           ),
+                        ),
                         ),
                       );
                     }
