@@ -224,21 +224,21 @@ class SharedPreferencesProvider extends ChangeNotifier {
       case 1:
         switch (themeValue) {
           case 1:
-            return Color.fromARGB(255, 238, 227, 252);
+            return const Color.fromARGB(255, 238, 227, 252);
           case 2:
-            return Color.fromARGB(255, 234, 252, 255);
+            return const Color.fromARGB(255, 234, 252, 255);
           case 3:
-            return Color.fromARGB(255, 238, 255, 248);
+            return const Color.fromARGB(255, 238, 255, 248);
           case 4:
-            return Color.fromARGB(248, 248, 239, 255);
+            return const Color.fromARGB(248, 248, 239, 255);
           case 5:
-            return Color.fromARGB(255, 255, 255, 240);
+            return const Color.fromARGB(255, 255, 255, 240);
           case 6:
-            return Color.fromARGB(255, 253, 238, 238);
+            return const Color.fromARGB(255, 253, 238, 238);
           case 7:
-            return Color.fromARGB(255, 248, 252, 216);
+            return const Color.fromARGB(255, 248, 252, 216);
           default:
-            return Color.fromARGB(255, 255, 236, 236);
+            return const Color.fromARGB(255, 255, 236, 236);
         }
       case 2:
         switch (themeValue) {

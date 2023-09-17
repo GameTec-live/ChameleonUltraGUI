@@ -780,7 +780,18 @@ class ReadCardPageState extends State<ReadCardPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const SizedBox(height: 8),
-                                Row(
+                                LayoutBuilder(
+                                  builder: (BuildContext context, BoxConstraints constraints) {
+                                  //Yes...we are getting the screens current width....
+                                  //I know this looks stupid but it is the only thing that I've found to work.
+                                  //If we want to fix this we will need to put some constainsts in the outer containers....
+                                  double screenWidth = MediaQuery.of(context).size.width; 
+                                  double adjustedMaxWidth = screenWidth *0.6;
+                                  return ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: adjustedMaxWidth), // Adjust the maxWidth as needed
+                                    child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
                                   children: [
                                     const Text("     "),
                                     ...List.generate(
@@ -797,9 +808,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       ),
                                     )
                                   ],
-                                ),
+                                ),),);},),
                                 const SizedBox(height: 8),
-                                Row(
+                                LayoutBuilder(
+                                  builder: (BuildContext context, BoxConstraints constraints) {
+                                  //Yes...we are getting the screens current width....
+                                  //I know this looks stupid but it is the only thing that I've found to work.
+                                  //If we want to fix this we will need to put some constainsts in the outer containers....
+                                  double screenWidth = MediaQuery.of(context).size.width; 
+                                  double adjustedMaxWidth = screenWidth *0.6;
+                                  return ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: adjustedMaxWidth), // Adjust the maxWidth as needed
+                                    child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
                                   children: [
                                     Text(localizations.letter_space("A")),
                                     ...List.generate(
@@ -817,9 +839,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       ),
                                     )
                                   ],
-                                ),
+                                ),),);},),
                                 const SizedBox(height: 8),
-                                Row(
+                                LayoutBuilder(
+                                  builder: (BuildContext context, BoxConstraints constraints) {
+                                  //Yes...we are getting the screens current width....
+                                  //I know this looks stupid but it is the only thing that I've found to work.
+                                  //If we want to fix this we will need to put some constainsts in the outer containers....
+                                  double screenWidth = MediaQuery.of(context).size.width; 
+                                  double adjustedMaxWidth = screenWidth *0.6;
+                                  return ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: adjustedMaxWidth), // Adjust the maxWidth as needed
+                                    child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
                                   children: [
                                     Text(localizations.letter_space("B")),
                                     ...List.generate(
@@ -837,11 +870,22 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       ),
                                     )
                                   ],
-                                ),
+                                ),),);},),
                                 if (status.type == MifareClassicType.m2k ||
                                     status.type == MifareClassicType.m4k) ...[
                                   const SizedBox(height: 8),
-                                  Row(
+                                  LayoutBuilder(
+                                  builder: (BuildContext context, BoxConstraints constraints) {
+                                  //Yes...we are getting the screens current width....
+                                  //I know this looks stupid but it is the only thing that I've found to work.
+                                  //If we want to fix this we will need to put some constainsts in the outer containers....
+                                  double screenWidth = MediaQuery.of(context).size.width; 
+                                  double adjustedMaxWidth = screenWidth *0.6;
+                                  return ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: adjustedMaxWidth), // Adjust the maxWidth as needed
+                                    child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
                                     children: [
                                       const Text("     "),
                                       ...List.generate(
@@ -856,9 +900,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         ),
                                       )
                                     ],
-                                  ),
+                                  ),),);},),
                                   const SizedBox(height: 8),
-                                  Row(
+                                  LayoutBuilder(
+                                  builder: (BuildContext context, BoxConstraints constraints) {
+                                  //Yes...we are getting the screens current width....
+                                  //I know this looks stupid but it is the only thing that I've found to work.
+                                  //If we want to fix this we will need to put some constainsts in the outer containers....
+                                  double screenWidth = MediaQuery.of(context).size.width; 
+                                  double adjustedMaxWidth = screenWidth *0.6;
+                                  return ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: adjustedMaxWidth), // Adjust the maxWidth as needed
+                                    child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
                                     children: [
                                       Text(localizations.letter_space("A")),
                                       ...List.generate(
@@ -874,9 +929,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         ),
                                       )
                                     ],
-                                  ),
+                                  ),),);},),
                                   const SizedBox(height: 8),
-                                  Row(
+                                  LayoutBuilder(
+                                  builder: (BuildContext context, BoxConstraints constraints) {
+                                  //Yes...we are getting the screens current width....
+                                  //I know this looks stupid but it is the only thing that I've found to work.
+                                  //If we want to fix this we will need to put some constainsts in the outer containers....
+                                  double screenWidth = MediaQuery.of(context).size.width; 
+                                  double adjustedMaxWidth = screenWidth *0.6;
+                                  return ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: adjustedMaxWidth), // Adjust the maxWidth as needed
+                                    child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
                                     children: [
                                       Text(localizations.letter_space("B")),
                                       ...List.generate(
@@ -892,7 +958,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                         ),
                                       )
                                     ],
-                                  ),
+                                  ),),);},),
                                 ],
                                 if (status.type == MifareClassicType.m4k)
                                   Center(
@@ -903,7 +969,18 @@ class ReadCardPageState extends State<ReadCardPage> {
                                               CrossAxisAlignment.center,
                                           children: [
                                         const SizedBox(height: 8),
-                                        Row(
+                                        LayoutBuilder(
+                                          builder: (BuildContext context, BoxConstraints constraints) {
+                                          //Yes...we are getting the screens current width....
+                                          //I know this looks stupid but it is the only thing that I've found to work.
+                                          //If we want to fix this we will need to put some constainsts in the outer containers....
+                                          double screenWidth = MediaQuery.of(context).size.width; 
+                                          double adjustedMaxWidth = screenWidth *0.6;
+                                          return ConstrainedBox(
+                                          constraints: BoxConstraints(maxWidth: adjustedMaxWidth), // Adjust the maxWidth as needed
+                                            child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Row(
                                           children: [
                                             const Text("     "),
                                             ...List.generate(
@@ -919,9 +996,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                                               ),
                                             )
                                           ],
-                                        ),
+                                        ),),);},),
                                         const SizedBox(height: 8),
-                                        Row(
+                                        LayoutBuilder(
+                                          builder: (BuildContext context, BoxConstraints constraints) {
+                                          //Yes...we are getting the screens current width....
+                                          //I know this looks stupid but it is the only thing that I've found to work.
+                                          //If we want to fix this we will need to put some constainsts in the outer containers....
+                                          double screenWidth = MediaQuery.of(context).size.width; 
+                                          double adjustedMaxWidth = screenWidth *0.6;
+                                          return ConstrainedBox(
+                                          constraints: BoxConstraints(maxWidth: adjustedMaxWidth), // Adjust the maxWidth as needed
+                                            child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Row(
                                           children: [
                                             Text(localizations
                                                 .letter_space("A")),
@@ -939,9 +1027,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                                               ),
                                             )
                                           ],
-                                        ),
+                                        ),),);},),
                                         const SizedBox(height: 8),
-                                        Row(
+                                        LayoutBuilder(
+                                          builder: (BuildContext context, BoxConstraints constraints) {
+                                          //Yes...we are getting the screens current width....
+                                          //I know this looks stupid but it is the only thing that I've found to work.
+                                          //If we want to fix this we will need to put some constainsts in the outer containers....
+                                          double screenWidth = MediaQuery.of(context).size.width; 
+                                          double adjustedMaxWidth = screenWidth *0.6;
+                                          return ConstrainedBox(
+                                          constraints: BoxConstraints(maxWidth: adjustedMaxWidth), // Adjust the maxWidth as needed
+                                            child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Row(
                                           children: [
                                             Text(localizations
                                                 .letter_space("B")),
@@ -960,7 +1059,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                               ),
                                             )
                                           ],
-                                        ),
+                                        ),),);},),
                                       ]))
                               ],
                             ),
