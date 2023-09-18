@@ -623,8 +623,10 @@ class ChameleonCommunicator {
     while (resultList.length < count) {
       // Get results from index
       var resp = (await sendCmd(ChameleonCommand.mf1GetDetectionResult,
-          data: Uint8List(4)
-            ..buffer.asByteData().setInt32(0, resultList.length, Endian.big)))!
+              data: Uint8List(4)
+                ..buffer
+                    .asByteData()
+                    .setInt32(0, resultList.length, Endian.big)))!
           .data;
 
       int pos = 0;
@@ -955,7 +957,7 @@ class ChameleonCommunicator {
         ButtonConfig,
         ButtonConfig,
         bool,
-        Uint8List
+        String
       )> getDeviceSettings() async {
     var resp = (await sendCmd(ChameleonCommand.getDeviceSettings))!.data;
     if (resp[0] != 5) {
@@ -975,7 +977,7 @@ class ChameleonCommunicator {
       aLongPress,
       bLongPress,
       resp[6] == 1,
-      resp.sublist(7, 13)
+      utf8.decode(resp.sublist(7, 13), allowMalformed: true)
     );
   }
 }

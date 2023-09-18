@@ -25,44 +25,6 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     super.initState();
   }
 
-  Future<AnimationSetting> getAnimationMode() async {
-    var appState = context.read<ChameleonGUIState>();
-
-    try {
-      return await appState.communicator!.getAnimationMode();
-    } catch (_) {
-      return AnimationSetting.full;
-    }
-  }
-
-  Future<ButtonConfig> getButtonConfig(ButtonType type) async {
-    var appState = context.read<ChameleonGUIState>();
-    try {
-      return await appState.communicator!.getButtonConfig(type);
-    } catch (_) {
-      return ButtonConfig.disable;
-    }
-  }
-
-  Future<ButtonConfig> getLongButtonConfig(ButtonType type) async {
-    var appState = context.read<ChameleonGUIState>();
-    try {
-      return await appState.communicator!.getLongButtonConfig(type);
-    } catch (_) {
-      return ButtonConfig.disable;
-    }
-  }
-
-  Future<String> getBLEConnectionKey() async {
-    var appState = context.read<ChameleonGUIState>();
-
-    try {
-      return await appState.communicator!.getBLEConnectionKey();
-    } catch (_) {
-      return "123456";
-    }
-  }
-
   Future<
       (
         AnimationSetting,
@@ -70,16 +32,23 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
         ButtonConfig,
         ButtonConfig,
         ButtonConfig,
+        bool,
         String
       )> getSettingsData() async {
-    return (
-      await getAnimationMode(),
-      await getButtonConfig(ButtonType.a),
-      await getButtonConfig(ButtonType.b),
-      await getLongButtonConfig(ButtonType.a),
-      await getLongButtonConfig(ButtonType.b),
-      await getBLEConnectionKey()
-    );
+    var appState = context.read<ChameleonGUIState>();
+    try {
+      return await appState.communicator!.getDeviceSettings();
+    } catch (_) {
+      return (
+        AnimationSetting.full,
+        ButtonConfig.disable,
+        ButtonConfig.disable,
+        ButtonConfig.disable,
+        ButtonConfig.disable,
+        false,
+        ""
+      );
+    }
   }
 
   // ignore_for_file: use_build_context_synchronously
@@ -109,6 +78,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
               bButtonMode,
               aLongButtonMode,
               bLongButtonMode,
+              pairingEnabled,
               connectionKey
             ) = snapshot.data;
             TextEditingController bleKeyController =
@@ -334,92 +304,123 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     const SizedBox(height: 10),
                     const Text("BLE:"),
                     const SizedBox(height: 10),
-                    FittedBox(
-                        alignment: Alignment.centerRight,
-                        fit: BoxFit.scaleDown,
-                        child: TextButton(
-                            onPressed: () async {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) => AlertDialog(
-                                  title: Text(localizations.clear_ble_bonds),
-                                  content: Text(localizations
-                                      .clear_ble_bonds_confirmation),
-                                  actions: <Widget>[
+                    Text('${localizations.ble_pairing}:'),
+                    const SizedBox(height: 10),
+                    ToggleButtonsWrapper(
+                        items: [
+                          localizations.enabled,
+                          localizations.disabled,
+                        ],
+                        selectedValue: pairingEnabled ? 0 : 1,
+                        onChange: (int index) async {
+                          await appState.communicator!
+                              .setBLEPairEnabled(index == 0);
+                          await appState.communicator!.saveSettings();
+                          setState(() {});
+                          appState.changesMade();
+                        }),
+                    ...(pairingEnabled)
+                        ? [
+                            const SizedBox(height: 10),
+                            FittedBox(
+                                alignment: Alignment.centerRight,
+                                fit: BoxFit.scaleDown,
+                                child: TextButton(
+                                    onPressed: () async {
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) =>
+                                            AlertDialog(
+                                          title: Text(
+                                              localizations.clear_ble_bonds),
+                                          content: Text(localizations
+                                              .clear_ble_bonds_confirmation),
+                                          actions: <Widget>[
+                                            TextButton(
+                                              onPressed: () async {
+                                                await appState.communicator!
+                                                    .clearBLEBoundedDevices();
+                                                if (appState.connector!
+                                                        .connectionType ==
+                                                    ConnectionType.ble) {
+                                                  await appState.connector!
+                                                      .performDisconnect();
+                                                }
+                                                Navigator.pop(context,
+                                                    localizations.cancel);
+                                                appState.changesMade();
+                                              },
+                                              child: Text(localizations.yes),
+                                            ),
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(
+                                                  context,
+                                                  localizations.cancel),
+                                              child: Text(localizations.no),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.settings_bluetooth),
+                                        Text(localizations.clear_ble_bonds),
+                                      ],
+                                    ))),
+                            Form(
+                                key: formKey,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                          controller: bleKeyController,
+                                          maxLength: 6,
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty ||
+                                                value.length != 6 ||
+                                                double.tryParse(value) ==
+                                                    null) {
+                                              return localizations
+                                                  .pin_must_be_6_digits;
+                                            }
+
+                                            if (0 < double.tryParse(value)! &&
+                                                double.tryParse(value)! >
+                                                    0xFFFFFFFF) {
+                                              return localizations
+                                                  .pin_must_be_6_digits;
+                                            }
+
+                                            return null;
+                                          },
+                                          decoration: InputDecoration(
+                                            labelText: localizations.ble_pin,
+                                            hintText: localizations.enter_pin,
+                                          )),
+                                    ),
                                     TextButton(
                                       onPressed: () async {
-                                        await appState.communicator!
-                                            .clearBLEBoundedDevices();
-                                        if (appState
-                                                .connector!.connectionType ==
-                                            ConnectionType.ble) {
-                                          await appState.connector!
-                                              .performDisconnect();
+                                        if (formKey.currentState!.validate()) {
+                                          await appState.communicator!
+                                              .setBLEConnectKey(
+                                                  bleKeyController.text);
+                                          await appState.communicator!
+                                              .saveSettings();
+                                          Navigator.pop(
+                                              context, localizations.cancel);
+                                          appState.changesMade();
                                         }
-                                        Navigator.pop(
-                                            context, localizations.cancel);
-                                        appState.changesMade();
                                       },
-                                      child: Text(localizations.yes),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(
-                                          context, localizations.cancel),
-                                      child: Text(localizations.no),
+                                      child: Text(localizations.save),
                                     ),
                                   ],
-                                ),
-                              );
-                            },
-                            child: Row(
-                              children: [
-                                const Icon(Icons.settings_bluetooth),
-                                Text(localizations.clear_ble_bonds),
-                              ],
-                            ))),
-                    Form(
-                        key: formKey,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                  controller: bleKeyController,
-                                  maxLength: 6,
-                                  validator: (value) {
-                                    if (value == null ||
-                                        value.isEmpty ||
-                                        value.length != 6 ||
-                                        double.tryParse(value) == null) {
-                                      return localizations.pin_must_be_6_digits;
-                                    }
-
-                                    if (0 < double.tryParse(value)! &&
-                                        double.tryParse(value)! > 0xFFFFFFFF) {
-                                      return localizations.pin_must_be_6_digits;
-                                    }
-
-                                    return null;
-                                  },
-                                  decoration: InputDecoration(
-                                    labelText: localizations.ble_pin,
-                                    hintText: localizations.enter_pin,
-                                  )),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                if (formKey.currentState!.validate()) {
-                                  await appState.communicator!
-                                      .setBLEConnectKey(bleKeyController.text);
-                                  await appState.communicator!.saveSettings();
-                                  Navigator.pop(context, localizations.cancel);
-                                  appState.changesMade();
-                                }
-                              },
-                              child: Text(localizations.save),
-                            ),
-                          ],
-                        )),
+                                )),
+                          ]
+                        : [],
                     const SizedBox(height: 10),
                     Text("${localizations.other}:"),
                     const SizedBox(height: 10),

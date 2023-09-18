@@ -51,23 +51,31 @@
     "recovery_library",
     "force_flashing",
     "chameleon_flashing_title_easter_egg",
-    "chameleon_flashing_title"
+    "chameleon_flashing_title",
+    "ble_pairing"
+  ],
+
+  "de": [
+    "ble_pairing"
+  ],
+
+  "de_AT": [
+    "ble_pairing"
+  ],
+
+  "es": [
+    "ble_pairing"
   ],
 
   "fr": [
     "shared_preferences_logging",
     "production_logging",
-    "chameleon_flashing_title_easter_egg"
+    "chameleon_flashing_title_easter_egg",
+    "ble_pairing"
   ],
 
   "ko": [
-    "dfu",
-    "uid",
-    "sak",
-    "atqa",
-    "hf",
-    "lf",
-    "letter_space"
+    "ble_pairing"
   ],
 
   "nl": [
@@ -88,7 +96,16 @@
     "recovery_library",
     "force_flashing",
     "chameleon_flashing_title_easter_egg",
-    "chameleon_flashing_title"
+    "chameleon_flashing_title",
+    "ble_pairing"
+  ],
+
+  "pt": [
+    "ble_pairing"
+  ],
+
+  "pt_BR": [
+    "ble_pairing"
   ],
 
   "ro": [
@@ -141,6 +158,15 @@
     "recovery_library",
     "force_flashing",
     "chameleon_flashing_title_easter_egg",
-    "chameleon_flashing_title"
+    "chameleon_flashing_title",
+    "ble_pairing"
+  ],
+
+  "ru": [
+    "ble_pairing"
+  ],
+
+  "zh": [
+    "ble_pairing"
   ]
 }
