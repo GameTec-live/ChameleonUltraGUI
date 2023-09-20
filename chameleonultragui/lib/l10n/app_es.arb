@@ -203,5 +203,6 @@
   "recovery_library": "Biblioteca de recuperaci\u00f3n",
   "force_flashing": "Forzar flasheo",
   "chameleon_flashing_title_easter_egg": "Tu Chameleon {model} se est\u00e1 flasheando",
-  "chameleon_flashing_title": "Instalando firmware en su Chameleon {model}"
+  "chameleon_flashing_title": "Instalando firmware en su Chameleon {model}",
+  "ble_pairing": "Emparejamiento BLE"
 }
