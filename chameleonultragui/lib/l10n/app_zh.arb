@@ -203,5 +203,6 @@
   "recovery_library": "\u6062\u590d\u5e93",
   "force_flashing": "\u5f3a\u5236\u5237\u5165",
   "chameleon_flashing_title_easter_egg": "\u60a8\u7684Chameleon{model} \u6b63\u5728\u5237\u5165",
-  "chameleon_flashing_title": "\u5728\u60a8\u7684Chameleon {model} \u4e0a\u5b89\u88c5\u56fa\u4ef6"
+  "chameleon_flashing_title": "\u5728\u60a8\u7684Chameleon {model} \u4e0a\u5b89\u88c5\u56fa\u4ef6",
+  "ble_pairing": "\u84dd\u8272\u914d\u5bf9"
 }
