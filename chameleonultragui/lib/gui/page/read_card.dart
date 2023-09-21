@@ -1142,16 +1142,11 @@ class KeyCheckMarks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double adjustedMaxWidth = screenWidth * 0.6;
-
-    return ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: adjustedMaxWidth),
-        child: Column(children: [
-          for (int i = 0; i < checkmarkCount; i += checkmarkPerRow)
-            Column(children: [
-              ...buildCheckmarkRow(i, min(checkmarkPerRow, checkmarkCount - i))
-            ])
-        ]));
+    return Column(children: [
+      for (int i = 0; i < checkmarkCount; i += checkmarkPerRow)
+        Column(children: [
+          ...buildCheckmarkRow(i, min(checkmarkPerRow, checkmarkCount - i))
+        ])
+    ]);
   }
 }
