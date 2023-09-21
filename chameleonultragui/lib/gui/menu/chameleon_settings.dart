@@ -164,158 +164,143 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     const SizedBox(height: 10),
                     Text("${localizations.animations}:"),
                     const SizedBox(height: 10),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: ToggleButtonsWrapper(
-                          items: [
-                            localizations.full,
-                            localizations.mini,
-                            localizations.none
-                          ],
-                          selectedValue: animationMode.value,
-                          onChange: (int index) async {
-                            var animation = AnimationSetting.full;
-                            if (index == 1) {
-                              animation = AnimationSetting.minimal;
-                            } else if (index == 2) {
-                              animation = AnimationSetting.none;
-                            }
+                    ToggleButtonsWrapper(
+                        items: [
+                          localizations.full,
+                          localizations.mini,
+                          localizations.none
+                        ],
+                        selectedValue: animationMode.value,
+                        onChange: (int index) async {
+                          var animation = AnimationSetting.full;
+                          if (index == 1) {
+                            animation = AnimationSetting.minimal;
+                          } else if (index == 2) {
+                            animation = AnimationSetting.none;
+                          }
 
-                            await appState.communicator!
-                                .setAnimationMode(animation);
-                            await appState.communicator!.saveSettings();
-                            setState(() {});
-                            appState.changesMade();
-                          }),
-                    ),
+                          await appState.communicator!
+                              .setAnimationMode(animation);
+                          await appState.communicator!.saveSettings();
+                          setState(() {});
+                          appState.changesMade();
+                        }),
                     const SizedBox(height: 10),
                     Text("${localizations.button_config}:"),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("A")}:",
                         textScaleFactor: 0.8),
                     const SizedBox(height: 7),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: ToggleButtonsWrapper(
-                          items: [
-                            localizations.disable,
-                            localizations.forward,
-                            localizations.backward,
-                            localizations.clone_uid
-                          ],
-                          selectedValue: aButtonMode.value,
-                          onChange: (int index) async {
-                            var mode = ButtonConfig.disable;
-                            if (index == 1) {
-                              mode = ButtonConfig.cycleForward;
-                            } else if (index == 2) {
-                              mode = ButtonConfig.cycleBackward;
-                            } else if (index == 3) {
-                              mode = ButtonConfig.cloneUID;
-                            }
+                    ToggleButtonsWrapper(
+                        items: [
+                          localizations.disable,
+                          localizations.forward,
+                          localizations.backward,
+                          localizations.clone_uid
+                        ],
+                        selectedValue: aButtonMode.value,
+                        onChange: (int index) async {
+                          var mode = ButtonConfig.disable;
+                          if (index == 1) {
+                            mode = ButtonConfig.cycleForward;
+                          } else if (index == 2) {
+                            mode = ButtonConfig.cycleBackward;
+                          } else if (index == 3) {
+                            mode = ButtonConfig.cloneUID;
+                          }
 
-                            await appState.communicator!
-                                .setButtonConfig(ButtonType.a, mode);
-                            await appState.communicator!.saveSettings();
-                            setState(() {});
-                            appState.changesMade();
-                          }),
-                    ),
+                          await appState.communicator!
+                              .setButtonConfig(ButtonType.a, mode);
+                          await appState.communicator!.saveSettings();
+                          setState(() {});
+                          appState.changesMade();
+                        }),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("B")}:",
                         textScaleFactor: 0.8),
                     const SizedBox(height: 7),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: ToggleButtonsWrapper(
-                          items: [
-                            localizations.disable,
-                            localizations.forward,
-                            localizations.backward,
-                            localizations.clone_uid
-                          ],
-                          selectedValue: bButtonMode.value,
-                          onChange: (int index) async {
-                            var mode = ButtonConfig.disable;
-                            if (index == 1) {
-                              mode = ButtonConfig.cycleForward;
-                            } else if (index == 2) {
-                              mode = ButtonConfig.cycleBackward;
-                            } else if (index == 3) {
-                              mode = ButtonConfig.cloneUID;
-                            }
+                    ToggleButtonsWrapper(
+                        items: [
+                          localizations.disable,
+                          localizations.forward,
+                          localizations.backward,
+                          localizations.clone_uid
+                        ],
+                        selectedValue: bButtonMode.value,
+                        onChange: (int index) async {
+                          var mode = ButtonConfig.disable;
+                          if (index == 1) {
+                            mode = ButtonConfig.cycleForward;
+                          } else if (index == 2) {
+                            mode = ButtonConfig.cycleBackward;
+                          } else if (index == 3) {
+                            mode = ButtonConfig.cloneUID;
+                          }
 
-                            await appState.communicator!
-                                .setButtonConfig(ButtonType.b, mode);
-                            await appState.communicator!.saveSettings();
-                            setState(() {});
-                            appState.changesMade();
-                          }),
-                    ),
+                          await appState.communicator!
+                              .setButtonConfig(ButtonType.b, mode);
+                          await appState.communicator!.saveSettings();
+                          setState(() {});
+                          appState.changesMade();
+                        }),
                     const SizedBox(height: 7),
                     Text(localizations.long_press, textScaleFactor: 0.9),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("A")}:",
                         textScaleFactor: 0.8),
                     const SizedBox(height: 7),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: ToggleButtonsWrapper(
-                          items: [
-                            localizations.disable,
-                            localizations.forward,
-                            localizations.backward,
-                            localizations.clone_uid
-                          ],
-                          selectedValue: aLongButtonMode.value,
-                          onChange: (int index) async {
-                            var mode = ButtonConfig.disable;
-                            if (index == 1) {
-                              mode = ButtonConfig.cycleForward;
-                            } else if (index == 2) {
-                              mode = ButtonConfig.cycleBackward;
-                            } else if (index == 3) {
-                              mode = ButtonConfig.cloneUID;
-                            }
+                    ToggleButtonsWrapper(
+                        items: [
+                          localizations.disable,
+                          localizations.forward,
+                          localizations.backward,
+                          localizations.clone_uid
+                        ],
+                        selectedValue: aLongButtonMode.value,
+                        onChange: (int index) async {
+                          var mode = ButtonConfig.disable;
+                          if (index == 1) {
+                            mode = ButtonConfig.cycleForward;
+                          } else if (index == 2) {
+                            mode = ButtonConfig.cycleBackward;
+                          } else if (index == 3) {
+                            mode = ButtonConfig.cloneUID;
+                          }
 
-                            await appState.communicator!
-                                .setLongButtonConfig(ButtonType.a, mode);
-                            await appState.communicator!.saveSettings();
-                            setState(() {});
-                            appState.changesMade();
-                          }),
-                    ),
+                          await appState.communicator!
+                              .setLongButtonConfig(ButtonType.a, mode);
+                          await appState.communicator!.saveSettings();
+                          setState(() {});
+                          appState.changesMade();
+                        }),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("B")}:",
                         textScaleFactor: 0.8),
                     const SizedBox(height: 7),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: ToggleButtonsWrapper(
-                          items: [
-                            localizations.disable,
-                            localizations.forward,
-                            localizations.backward,
-                            localizations.clone_uid
-                          ],
-                          selectedValue: bLongButtonMode.value,
-                          onChange: (int index) async {
-                            var mode = ButtonConfig.disable;
-                            if (index == 1) {
-                              mode = ButtonConfig.cycleForward;
-                            } else if (index == 2) {
-                              mode = ButtonConfig.cycleBackward;
-                            } else if (index == 3) {
-                              mode = ButtonConfig.cloneUID;
-                            }
+                    ToggleButtonsWrapper(
+                        items: [
+                          localizations.disable,
+                          localizations.forward,
+                          localizations.backward,
+                          localizations.clone_uid
+                        ],
+                        selectedValue: bLongButtonMode.value,
+                        onChange: (int index) async {
+                          var mode = ButtonConfig.disable;
+                          if (index == 1) {
+                            mode = ButtonConfig.cycleForward;
+                          } else if (index == 2) {
+                            mode = ButtonConfig.cycleBackward;
+                          } else if (index == 3) {
+                            mode = ButtonConfig.cloneUID;
+                          }
 
-                            await appState.communicator!
-                                .setLongButtonConfig(ButtonType.b, mode);
-                            await appState.communicator!.saveSettings();
-                            setState(() {});
-                            appState.changesMade();
-                          }),
-                    ),
+                          await appState.communicator!
+                              .setLongButtonConfig(ButtonType.b, mode);
+                          await appState.communicator!.saveSettings();
+                          setState(() {});
+                          appState.changesMade();
+                        }),
                     const SizedBox(height: 10),
                     const Text("BLE:"),
                     const SizedBox(height: 10),
