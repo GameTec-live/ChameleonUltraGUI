@@ -4,6 +4,7 @@ import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Localizations
@@ -27,6 +28,8 @@ class ConnectPage extends StatelessWidget {
           return Scaffold(
               appBar: AppBar(
                 title: Text(localizations.connect),
+                systemOverlayStyle: SystemUiOverlayStyle(
+                    statusBarColor: Theme.of(context).colorScheme.surface),
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
@@ -38,6 +41,8 @@ class ConnectPage extends StatelessWidget {
           return Scaffold(
             appBar: AppBar(
               title: Text(localizations.connect),
+              systemOverlayStyle: SystemUiOverlayStyle(
+                  statusBarColor: Theme.of(context).colorScheme.surface),
             ),
             body: Center(
               child: Column(

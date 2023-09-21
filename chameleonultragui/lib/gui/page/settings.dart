@@ -2,6 +2,7 @@ import 'package:chameleonultragui/gui/component/developer_list.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/helpers/open_collective.dart';
@@ -53,6 +54,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.settings),
+        systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Theme.of(context).colorScheme.surface),
       ),
       body: Center(
         child: Column(

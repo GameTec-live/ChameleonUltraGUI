@@ -160,6 +160,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Mfkey32'),
+              systemOverlayStyle: SystemUiOverlayStyle(
+                  statusBarColor: Theme.of(context).colorScheme.surface),
             ),
             body: const Center(child: CircularProgressIndicator()),
           );
@@ -171,6 +173,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
             return Scaffold(
               appBar: AppBar(
                 title: const Text('Mfkey32'),
+                systemOverlayStyle: SystemUiOverlayStyle(
+                    statusBarColor: Theme.of(context).colorScheme.surface),
               ),
               body: const Center(child: CircularProgressIndicator()),
             );
@@ -179,6 +183,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Mfkey32'),
+              systemOverlayStyle: SystemUiOverlayStyle(
+                  statusBarColor: Theme.of(context).colorScheme.surface),
             ),
             body: Center(
               child: Padding(

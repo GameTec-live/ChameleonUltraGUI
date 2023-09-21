@@ -7,6 +7,7 @@ import 'package:chameleonultragui/helpers/mifare_classic.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 
@@ -129,6 +130,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.slot_manager),
+        systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Theme.of(context).colorScheme.surface),
       ),
       body: Center(
         child: Column(

@@ -12,6 +12,7 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:file_saver/file_saver.dart';
 
@@ -648,6 +649,8 @@ class ReadCardPageState extends State<ReadCardPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.read_card),
+        systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Theme.of(context).colorScheme.surface),
       ),
       body: SingleChildScrollView(
         child: Column(

@@ -11,6 +11,7 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
@@ -85,6 +86,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.saved_cards),
+        systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Theme.of(context).colorScheme.surface),
       ),
       body: Center(
         child: Column(

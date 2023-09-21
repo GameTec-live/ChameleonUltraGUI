@@ -24,6 +24,8 @@ class DebugPage extends StatelessWidget {
     return Scaffold(
         appBar: AppBar(
           title: const Text('🐞'),
+          systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarColor: Theme.of(context).colorScheme.surface),
         ),
         body: SingleChildScrollView(
             child: Center(

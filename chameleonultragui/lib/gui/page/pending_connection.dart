@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -16,6 +17,8 @@ class PendingConnectionPage extends StatelessWidget {
     return Scaffold(
         appBar: AppBar(
           title: Text(localizations.connect),
+          systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarColor: Theme.of(context).colorScheme.surface),
         ),
         body: Center(
             child:

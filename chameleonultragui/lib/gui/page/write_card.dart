@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -22,12 +23,12 @@ class WriteCardPageState extends State<WriteCardPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.write_card),
+        systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Theme.of(context).colorScheme.surface),
       ),
       body: Column(
         children: [
-          Center(
-            child: Text(localizations.not_implemented)
-          ),
+          Center(child: Text(localizations.not_implemented)),
         ],
       ),
     );

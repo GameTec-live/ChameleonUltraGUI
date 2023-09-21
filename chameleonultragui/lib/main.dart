@@ -194,10 +194,6 @@ class _MainPageState extends State<MainPage> {
       page = const Mfkey32Page();
     }
 
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Theme.of(context).colorScheme.surface,
-    ));
-
     try {
       WakelockPlus.toggle(enable: page is FlashingPage);
     } catch (_) {}
@@ -224,6 +220,10 @@ class _MainPageState extends State<MainPage> {
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
       home: LayoutBuilder(// Build Page
           builder: (context, constraints) {
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+          statusBarColor: Theme.of(context).colorScheme.surface,
+        ));
+
         return Scaffold(
             body: Row(
               children: [

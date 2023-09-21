@@ -3,6 +3,7 @@ import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -129,6 +130,8 @@ class HomePageState extends State<HomePage> {
             return Scaffold(
               appBar: AppBar(
                 title: Text(localizations.home),
+                systemOverlayStyle: SystemUiOverlayStyle(
+                    statusBarColor: Theme.of(context).colorScheme.surface),
               ),
               body: const Center(child: CircularProgressIndicator()),
             );
@@ -146,6 +149,8 @@ class HomePageState extends State<HomePage> {
             return Scaffold(
               appBar: AppBar(
                 title: Text(localizations.home),
+                systemOverlayStyle: SystemUiOverlayStyle(
+                    statusBarColor: Theme.of(context).colorScheme.surface),
               ),
               body: Center(
                 child: Column(
