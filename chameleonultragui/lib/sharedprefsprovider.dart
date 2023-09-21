@@ -217,7 +217,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
     }
   }
 
-    Color getThemeComplementaryColor() {
+  Color getThemeComplementaryColor() {
     final themeValue = _sharedPreferences.getInt('app_theme_color') ?? 0;
     final themeMode = _sharedPreferences.getInt('app_theme') ?? 2;
     switch (themeMode) {

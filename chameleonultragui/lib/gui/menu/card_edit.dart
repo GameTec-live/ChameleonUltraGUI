@@ -66,7 +66,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                   if (value == null || value.isEmpty) {
                     return localizations.please_enter_name;
                   }
-                  if (value.length>19) {
+                  if (value.length > 19) {
                     return localizations.too_long_name;
                   }
                   return null;

@@ -108,7 +108,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                   itemBuilder: (BuildContext context, int index) {
                     if (index == 0) {
                       return Container(
-                        constraints: const BoxConstraints(minHeight: 80),
+                        constraints: const BoxConstraints(maxHeight: 100),
                         child: ElevatedButton(
                           onPressed: () async {
                             FilePickerResult? result =
@@ -347,9 +347,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             }
                           },
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
                               (Set<MaterialState> states) {
-                                return appState.sharedPreferencesProvider.getThemeComplementaryColor(); 
+                                return appState.sharedPreferencesProvider
+                                    .getThemeComplementaryColor();
                               },
                             ),
                             shape: MaterialStateProperty.all<
@@ -365,16 +367,17 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                     } else {
                       final tag = tags[index - 1];
                       return Container(
-                        constraints: const BoxConstraints(minHeight: 80),
+                        constraints: const BoxConstraints(maxHeight: 100),
                         child: ElevatedButton(
-                          
                           onPressed: () {
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  
-                                  title: Expanded(child: Text(tag.name, maxLines: 3, overflow: TextOverflow.ellipsis)),
+                                  title: Expanded(
+                                      child: Text(tag.name,
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis)),
                                   content: Column(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
@@ -464,9 +467,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             );
                           },
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
                               (Set<MaterialState> states) {
-                                return appState.sharedPreferencesProvider.getThemeComplementaryColor(); 
+                                return appState.sharedPreferencesProvider
+                                    .getThemeComplementaryColor();
                               },
                             ),
                             shape: MaterialStateProperty.all<
@@ -474,140 +479,147 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                               RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(18.0),
                               ),
-                              
                             ),
                           ),
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
-                            child:Stack(
-                            children: [
-                              Row(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
+                            child: Stack(
+                              children: [
+                                Row(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        Icon(
+                                          Icons.nfc_sharp,
+                                          color: tag.color,
+                                        ),
+                                      ],
+                                    ),
+                                    //Positioned(top: 0,right: 0,
+                                    //child:
+                                    SizedBox(
+                                      width: 148,
+                                      child: ConstrainedBox(
+                                        constraints: const BoxConstraints(
+                                          minHeight: 80,
+                                        ),
+                                        child: Wrap(
+                                          //mainAxisAlignment: MainAxisAlignment.end,
+                                          children: [
+                                            Column(
+                                              children: [
+                                                FittedBox(
+                                                  fit: BoxFit
+                                                      .scaleDown, //This will make the text scale down if it overflows. Default Text overflow doesn't work here for some reason.
+                                                  child: Text(
+                                                    //This needs to be put in an Expanded but that seems to break the saved_cards page. Need to work on this.
+                                                    tag.name,
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                                FittedBox(
+                                                  fit: BoxFit
+                                                      .scaleDown, //This will make the text scale down if it overflows. Default Text overflow doesn't work here for some reason.
+                                                  child: Text(
+                                                    chameleonTagToString(
+                                                            tag.tag) +
+                                                        ((chameleonTagSaveCheckForMifareClassicEV1(
+                                                                tag))
+                                                            ? " EV1"
+                                                            : ""),
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        //),
+                                      ),
+                                    ), //),
+                                  ],
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      Icon(
-                                        Icons.nfc_sharp,
-                                        color: tag.color,
+                                      IconButton(
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return CardEditMenu(tagSave: tag);
+                                            },
+                                          );
+                                        },
+                                        icon: const Icon(Icons.edit),
+                                      ),
+                                      IconButton(
+                                        onPressed: () async {
+                                          await showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: Text(localizations
+                                                    .select_save_format),
+                                                actions: [
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      await saveTag(
+                                                          tag, appState, true);
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(localizations
+                                                        .save_as(".bin")),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      await saveTag(
+                                                          tag, appState, false);
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(localizations
+                                                        .save_as(".json")),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
+                                        icon:
+                                            const Icon(Icons.download_rounded),
+                                      ),
+                                      IconButton(
+                                        onPressed: () async {
+                                          var tags = appState
+                                              .sharedPreferencesProvider
+                                              .getCards();
+                                          List<CardSave> output = [];
+                                          for (var tagTest in tags) {
+                                            if (tagTest.id != tag.id) {
+                                              output.add(tagTest);
+                                            }
+                                          }
+                                          appState.sharedPreferencesProvider
+                                              .setCards(output);
+                                          appState.changesMade();
+                                        },
+                                        icon: const Icon(Icons.delete_outline),
                                       ),
                                     ],
                                   ),
-                                  //Positioned(top: 0,right: 0,
-                                  //child: 
-                                  SizedBox(
-                                    width: 148,
-                                    child: ConstrainedBox(constraints: BoxConstraints(minHeight: 80,),
-                                    child: Wrap(
-                                      //mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        Column(
-                                          children: [
-                                            FittedBox(
-                                              fit: BoxFit.scaleDown, //This will make the text scale down if it overflows. Default Text overflow doesn't work here for some reason.
-                                              child: Text( //This needs to be put in an Expanded but that seems to break the saved_cards page. Need to work on this.
-                                              tag.name,
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                            ),
-                                            FittedBox(
-                                              fit: BoxFit.scaleDown, //This will make the text scale down if it overflows. Default Text overflow doesn't work here for some reason.
-                                              child: Text(
-                                              chameleonTagToString(tag.tag) +
-                                                  ((chameleonTagSaveCheckForMifareClassicEV1(
-                                                          tag))
-                                                      ? " EV1"
-                                                      : ""),
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                            ),
-                                          ], 
-                                        ),
-                                      ],
-                                      
-                                    ),
-                                  //),
-                                  ),
-                                  ),//),
-                                ],
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    IconButton(
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return CardEditMenu(tagSave: tag);
-                                          },
-                                        );
-                                      },
-                                      icon: const Icon(Icons.edit),
-                                    ),
-                                    IconButton(
-                                      onPressed: () async {
-                                        await showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return AlertDialog(
-                                              title: Text(localizations
-                                                  .select_save_format),
-                                              actions: [
-                                                ElevatedButton(
-                                                  onPressed: () async {
-                                                    await saveTag(
-                                                        tag, appState, true);
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(localizations
-                                                      .save_as(".bin")),
-                                                ),
-                                                ElevatedButton(
-                                                  onPressed: () async {
-                                                    await saveTag(
-                                                        tag, appState, false);
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(localizations
-                                                      .save_as(".json")),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      },
-                                      icon: const Icon(Icons.download_rounded),
-                                    ),
-                                    IconButton(
-                                      onPressed: () async {
-                                        var tags = appState
-                                            .sharedPreferencesProvider
-                                            .getCards();
-                                        List<CardSave> output = [];
-                                        for (var tagTest in tags) {
-                                          if (tagTest.id != tag.id) {
-                                            output.add(tagTest);
-                                          }
-                                        }
-                                        appState.sharedPreferencesProvider
-                                            .setCards(output);
-                                        appState.changesMade();
-                                      },
-                                      icon: const Icon(Icons.delete_outline),
-                                    ),
-                                  ],
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
                         ),
                       );
                     }
@@ -638,7 +650,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                   itemBuilder: (BuildContext context, int index) {
                     if (index == 0) {
                       return Container(
-                        constraints: const BoxConstraints(minHeight: 80),
+                        constraints: const BoxConstraints(maxHeight: 100),
                         child: ElevatedButton(
                           onPressed: () async {
                             FilePickerResult? result =
@@ -679,9 +691,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             }
                           },
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
                               (Set<MaterialState> states) {
-                                return appState.sharedPreferencesProvider.getThemeComplementaryColor(); 
+                                return appState.sharedPreferencesProvider
+                                    .getThemeComplementaryColor();
                               },
                             ),
                             shape: MaterialStateProperty.all<
@@ -797,9 +811,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             );
                           },
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
                               (Set<MaterialState> states) {
-                                return appState.sharedPreferencesProvider.getThemeComplementaryColor(); 
+                                return appState.sharedPreferencesProvider
+                                    .getThemeComplementaryColor();
                               },
                             ),
                             shape: MaterialStateProperty.all<

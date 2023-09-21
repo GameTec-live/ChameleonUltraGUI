@@ -84,32 +84,32 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                 ar1Enc: item1.ar,
               );
               var recoveredKey = await recovery.mfkey32(mfkey);
-              keys.add(
-                  u64ToBytes((recoveredKey)[0]).sublist(2, 8));
-              outputUid = bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase();
-              if (!displayedKeys.contains(Object.hashAll(u64ToBytes((recoveredKey)[0]).sublist(4, 8)))) {
-                displayKeys.add(
-                  Row(
-                    children: [
-                      Text(
-                        bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+              keys.add(u64ToBytes((recoveredKey)[0]).sublist(2, 8));
+              outputUid =
+                  bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase();
+              if (!displayedKeys.contains(Object.hashAll(
+                  u64ToBytes((recoveredKey)[0]).sublist(4, 8)))) {
+                displayKeys.add(Row(
+                  children: [
+                    Text(
+                      bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(width: 8.0),
-                      Text(
-                        "block $block key $key: ${bytesToHex(u64ToBytes((recoveredKey)[0]).sublist(2, 8)).toUpperCase()}",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    ),
+                    const SizedBox(width: 8.0),
+                    Text(
+                      "block $block key $key: ${bytesToHex(u64ToBytes((recoveredKey)[0]).sublist(2, 8)).toUpperCase()}",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  )
-                );
-                displayedKeys.add(Object.hashAll(u64ToBytes((recoveredKey)[0]).sublist(4, 8)));
+                    ),
+                  ],
+                ));
+                displayedKeys.add(Object.hashAll(
+                    u64ToBytes((recoveredKey)[0]).sublist(4, 8)));
               }
               setState(() {
                 displayKeys = displayKeys;
@@ -125,9 +125,9 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   }
 
   List<Uint8List> deduplicateKeys(List<Uint8List> keys) {
-    return <int, Uint8List>{
-      for (var key in keys) Object.hashAll(key): key
-    }.values.toList();
+    return <int, Uint8List>{for (var key in keys) Object.hashAll(key): key}
+        .values
+        .toList();
   }
 
   String convertKeysToDictFile(List<Uint8List> keys) {
@@ -185,24 +185,29 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                       ),
                     ),
                     const SizedBox(height: 25.0),
-                    loading ? OutlinedButton(onPressed: null, child: Text(localizations.recover_keys_nonce(detectionCount)),) :
-                    ElevatedButton(
-                      onPressed: (detectionCount > 0)
-                          ? () async {
-                              setState(() {
-                                loading = true;
-                              });
-                              await handleMfkeyCalculation();
-                              setState(() {
-                                saveKeys = true;
-                                loading = false;
-                                progress = -1;
-                              });
-                            }
-                          : null,
-                      child: Text(
-                          localizations.recover_keys_nonce(detectionCount)),
-                    ),
+                    loading
+                        ? OutlinedButton(
+                            onPressed: null,
+                            child: Text(localizations
+                                .recover_keys_nonce(detectionCount)),
+                          )
+                        : ElevatedButton(
+                            onPressed: (detectionCount > 0)
+                                ? () async {
+                                    setState(() {
+                                      loading = true;
+                                    });
+                                    await handleMfkeyCalculation();
+                                    setState(() {
+                                      saveKeys = true;
+                                      loading = false;
+                                      progress = -1;
+                                    });
+                                  }
+                                : null,
+                            child: Text(localizations
+                                .recover_keys_nonce(detectionCount)),
+                          ),
                     const SizedBox(height: 8.0),
                     Visibility(
                       visible: saveKeys,
@@ -211,8 +216,10 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                           showDialog<String>(
                               context: context,
                               builder: (BuildContext context) => AlertDialog(
-                                    title: Text(localizations.save_recovered_keys),
-                                    content: Text(localizations.save_recovered_keys_where),
+                                    title:
+                                        Text(localizations.save_recovered_keys),
+                                    content: Text(localizations
+                                        .save_recovered_keys_where),
                                     actions: [
                                       ElevatedButton(
                                         onPressed: () async {
@@ -221,29 +228,38 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                           try {
                                             await FileSaver.instance.saveAs(
                                                 name: outputUid,
-                                                bytes: const Utf8Encoder().convert(fileContents),
+                                                bytes: const Utf8Encoder()
+                                                    .convert(fileContents),
                                                 ext: 'dic',
                                                 mimeType: MimeType.other);
                                           } on UnimplementedError catch (_) {
-                                            String? outputFile = await FilePicker.platform.saveFile(
-                                              dialogTitle: '${localizations.output_file}:',
+                                            String? outputFile =
+                                                await FilePicker.platform
+                                                    .saveFile(
+                                              dialogTitle:
+                                                  '${localizations.output_file}:',
                                               fileName: '$outputUid.dic',
                                             );
                                             if (outputFile != null) {
                                               var file = File(outputFile);
-                                              await file.writeAsBytes(const Utf8Encoder().convert(fileContents));
+                                              await file.writeAsBytes(
+                                                  const Utf8Encoder()
+                                                      .convert(fileContents));
                                             }
                                           }
                                           Navigator.pop(context);
                                         },
-                                        child: Text(localizations.save_recovered_keys_to_file),
+                                        child: Text(localizations
+                                            .save_recovered_keys_to_file),
                                       ),
                                       ElevatedButton(
                                         onPressed: () async {
-                                          await dictSelectDialog(context, deduplicateKeys(keys));
+                                          await dictSelectDialog(
+                                              context, deduplicateKeys(keys));
                                           Navigator.pop(context);
                                         },
-                                        child: Text(localizations.add_recovered_keys_to_existing_dict),
+                                        child: Text(localizations
+                                            .add_recovered_keys_to_existing_dict),
                                       ),
                                       ElevatedButton(
                                         onPressed: () async {
@@ -255,12 +271,14 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                           await showDialog<String>(
                                             context: context,
                                             builder: (BuildContext context) {
-                                              return DictionaryEditMenu(dict: dict, isNew: true);
+                                              return DictionaryEditMenu(
+                                                  dict: dict, isNew: true);
                                             },
                                           );
                                           Navigator.pop(context);
                                         },
-                                        child: Text(localizations.create_new_dict_with_recovered_keys),
+                                        child: Text(localizations
+                                            .create_new_dict_with_recovered_keys),
                                       ),
                                     ],
                                   ));
@@ -273,9 +291,17 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                       child: ListView(
                         children: [
                           ...displayKeys,
-                          loading ? const Center(child: CircularProgressIndicator()) : const SizedBox(),
-                          loading ? const SizedBox(height: 8.0) : const SizedBox(),
-                          loading ? Center(child: Text(localizations.recovery_in_progress)) : const SizedBox(),
+                          loading
+                              ? const Center(child: CircularProgressIndicator())
+                              : const SizedBox(),
+                          loading
+                              ? const SizedBox(height: 8.0)
+                              : const SizedBox(),
+                          loading
+                              ? Center(
+                                  child:
+                                      Text(localizations.recovery_in_progress))
+                              : const SizedBox(),
                         ],
                       ),
                     ),
@@ -297,13 +323,11 @@ class Mfkey32PageState extends State<Mfkey32Page> {
     var appState = context.read<ChameleonGUIState>();
     var dicts = appState.sharedPreferencesProvider.getDictionaries();
 
-
     dicts.sort((a, b) => a.name.compareTo(b.name));
 
     return showSearch<String>(
       context: context,
-      delegate:
-          DictSearchDelegate(dicts, keys),
+      delegate: DictSearchDelegate(dicts, keys),
     );
   }
 }
@@ -338,7 +362,8 @@ class DictSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    final results = dicts.where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
+    final results = dicts
+        .where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
 
     return ListView.builder(
       itemCount: results.length,
@@ -356,7 +381,8 @@ class DictSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final results = dicts.where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
+    final results = dicts
+        .where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
 
     var appState = context.read<ChameleonGUIState>();
     return ListView.builder(

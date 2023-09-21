@@ -65,31 +65,32 @@ class SettingsMainPageState extends State<SettingsMainPage> {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: ToggleButtonsWrapper(
-                items: [
-                  localizations.expand,
-                  localizations.auto,
-                  localizations.retract
-                ],
-                selectedValue: appState.sharedPreferencesProvider
-                    .getSideBarExpandedIndex(),
-                onChange: (int index) async {
-                  if (index == 0) {
-                    appState.sharedPreferencesProvider.setSideBarExpanded(true);
+                  items: [
+                    localizations.expand,
+                    localizations.auto,
+                    localizations.retract
+                  ],
+                  selectedValue: appState.sharedPreferencesProvider
+                      .getSideBarExpandedIndex(),
+                  onChange: (int index) async {
+                    if (index == 0) {
+                      appState.sharedPreferencesProvider
+                          .setSideBarExpanded(true);
+                      appState.sharedPreferencesProvider
+                          .setSideBarAutoExpansion(false);
+                    } else if (index == 2) {
+                      appState.sharedPreferencesProvider
+                          .setSideBarExpanded(false);
+                      appState.sharedPreferencesProvider
+                          .setSideBarAutoExpansion(false);
+                    } else {
+                      appState.sharedPreferencesProvider
+                          .setSideBarAutoExpansion(true);
+                    }
                     appState.sharedPreferencesProvider
-                        .setSideBarAutoExpansion(false);
-                  } else if (index == 2) {
-                    appState.sharedPreferencesProvider
-                        .setSideBarExpanded(false);
-                    appState.sharedPreferencesProvider
-                        .setSideBarAutoExpansion(false);
-                  } else {
-                    appState.sharedPreferencesProvider
-                        .setSideBarAutoExpansion(true);
-                  }
-                  appState.sharedPreferencesProvider
-                      .setSideBarExpandedIndex(index);
-                  appState.changesMade();
-                }),
+                        .setSideBarExpandedIndex(index);
+                    appState.changesMade();
+                  }),
             ),
             const SizedBox(height: 10),
             Text(
@@ -100,30 +101,32 @@ class SettingsMainPageState extends State<SettingsMainPage> {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: ToggleButtonsWrapper(
-                items: [
-                  localizations.system,
-                  localizations.light,
-                  localizations.dark
-                ],
-                selectedValue: appState.sharedPreferencesProvider.getTheme() ==
-                        ThemeMode.system
-                    ? 0
-                    : appState.sharedPreferencesProvider.getTheme() ==
-                            ThemeMode.dark
-                        ? 2
-                        : 1,
-                onChange: (int index) async {
-                  if (index == 0) {
-                    appState.sharedPreferencesProvider
-                        .setTheme(ThemeMode.system);
-                  } else if (index == 2) {
-                    appState.sharedPreferencesProvider.setTheme(ThemeMode.dark);
-                  } else {
-                    appState.sharedPreferencesProvider
-                        .setTheme(ThemeMode.light);
-                  }
-                  appState.changesMade();
-                }),
+                  items: [
+                    localizations.system,
+                    localizations.light,
+                    localizations.dark
+                  ],
+                  selectedValue:
+                      appState.sharedPreferencesProvider.getTheme() ==
+                              ThemeMode.system
+                          ? 0
+                          : appState.sharedPreferencesProvider.getTheme() ==
+                                  ThemeMode.dark
+                              ? 2
+                              : 1,
+                  onChange: (int index) async {
+                    if (index == 0) {
+                      appState.sharedPreferencesProvider
+                          .setTheme(ThemeMode.system);
+                    } else if (index == 2) {
+                      appState.sharedPreferencesProvider
+                          .setTheme(ThemeMode.dark);
+                    } else {
+                      appState.sharedPreferencesProvider
+                          .setTheme(ThemeMode.light);
+                    }
+                    appState.changesMade();
+                  }),
             ),
             const SizedBox(height: 10),
             Text(
@@ -185,22 +188,22 @@ class SettingsMainPageState extends State<SettingsMainPage> {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: DropdownButton(
-              value: appState.sharedPreferencesProvider.sharedPreferences
-                      .getString('locale') ??
-                  'en',
-              onChanged: (value) {
-                appState.sharedPreferencesProvider
-                    .setLocale(Locale(value ?? 'en'));
-                appState.changesMade();
-              },
-              items: AppLocalizations.supportedLocales.map((locale) {
-                return DropdownMenuItem(
-                  value: locale.toLanguageTag(),
-                  child:
-                      Text(appState.sharedPreferencesProvider.getFlag(locale)),
-                );
-              }).toList(),
-            ),
+                value: appState.sharedPreferencesProvider.sharedPreferences
+                        .getString('locale') ??
+                    'en',
+                onChanged: (value) {
+                  appState.sharedPreferencesProvider
+                      .setLocale(Locale(value ?? 'en'));
+                  appState.changesMade();
+                },
+                items: AppLocalizations.supportedLocales.map((locale) {
+                  return DropdownMenuItem(
+                    value: locale.toLanguageTag(),
+                    child: Text(
+                        appState.sharedPreferencesProvider.getFlag(locale)),
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: 10),
             TextButton(

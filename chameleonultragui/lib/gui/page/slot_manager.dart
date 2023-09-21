@@ -147,7 +147,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                       itemCount: 8,
                       itemBuilder: (BuildContext context, int index) {
                         return Container(
-                          constraints: const BoxConstraints(minHeight: 120, maxHeight: 180),
+                          constraints: const BoxConstraints(maxHeight: 130),
                           child: ElevatedButton(
                             onPressed: () {
                               cardSelectDialog(context, index);
@@ -190,12 +190,11 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                       const Icon(Icons.credit_card),
                                       const SizedBox(width: 5),
                                       Expanded(
-                                        child: Text(
-                                          "${slotData[index]['hfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$1)})",
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        )
-                                      )
+                                          child: Text(
+                                        "${slotData[index]['hfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$1)})",
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ))
                                       //Text(
                                       //    "${slotData[index]['hfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$1)})")
                                     ],
@@ -209,11 +208,12 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                           children: [
                                             const Icon(Icons.wifi),
                                             const SizedBox(width: 5),
-                                            Expanded(child: Text("${slotData[index]['lfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$2)})",
+                                            Expanded(
+                                                child: Text(
+                                              "${slotData[index]['lfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$2)})",
                                               //maxLines: 2,
                                               overflow: TextOverflow.clip,
                                             ))
-                                            
                                           ],
                                         ),
                                       ),
@@ -292,21 +292,27 @@ class CardSearchDelegate extends SearchDelegate<String> {
             items: [
               DropdownMenuItem(
                 value: SearchFilter.all,
-                child: Text(localizations.all, 
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,),
+                child: Text(
+                  localizations.all,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               DropdownMenuItem(
                 value: SearchFilter.hf,
-                child: Text(localizations.hf, 
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,),
+                child: Text(
+                  localizations.hf,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               DropdownMenuItem(
                 value: SearchFilter.lf,
-                child: Text(localizations.lf, 
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,),
+                child: Text(
+                  localizations.lf,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
             onChanged: (SearchFilter? value) {
@@ -365,12 +371,16 @@ class CardSearchDelegate extends SearchDelegate<String> {
               },
               child: ListTile(
                 leading: const Icon(Icons.credit_card),
-                title: Text(card.name, 
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,),
-                subtitle: Text(chameleonTagToString(card.tag), 
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,),
+                title: Text(
+                  card.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  chameleonTagToString(card.tag),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -403,10 +413,14 @@ class CardSearchDelegate extends SearchDelegate<String> {
         return ListTile(
           leading: const Icon(Icons.credit_card),
           title: Text(card.name),
-          subtitle: Text(chameleonTagToString(card.tag) +
-              ((chameleonTagSaveCheckForMifareClassicEV1(card)) ? " EV1" : ""), 
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,),
+          subtitle: Text(
+            chameleonTagToString(card.tag) +
+                ((chameleonTagSaveCheckForMifareClassicEV1(card))
+                    ? " EV1"
+                    : ""),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
           onTap: () async {
             if ([
               TagType.mifareMini,

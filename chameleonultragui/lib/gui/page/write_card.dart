@@ -25,9 +25,7 @@ class WriteCardPageState extends State<WriteCardPage> {
       ),
       body: Column(
         children: [
-          Center(
-            child: Text(localizations.not_implemented)
-          ),
+          Center(child: Text(localizations.not_implemented)),
         ],
       ),
     );
