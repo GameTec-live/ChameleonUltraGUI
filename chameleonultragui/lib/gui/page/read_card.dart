@@ -133,6 +133,7 @@ class ReadCardPageState extends State<ReadCardPage> {
         hfInfo.uid = bytesToHexSpace(card.uid);
         hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
         hfInfo.atqa = bytesToHexSpace(card.atqa);
+        mfcInfo.isEV1 = isMifareClassicEV1;
         mfcInfo.type = isMifare
             ? mfClassicGetType(card.atqa, card.sak)
             : MifareClassicType.none;
