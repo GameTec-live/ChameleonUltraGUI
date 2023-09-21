@@ -375,10 +375,16 @@ class CardSearchDelegate extends SearchDelegate<String> {
                         ? Icons.credit_card
                         : Icons.wifi,
                     color: card.color),
-                title: Text(card.name,                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis,),
-                subtitle: Text(chameleonTagToString(card.tag),                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis,),
+                title: Text(
+                  card.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  chameleonTagToString(card.tag),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
             const SizedBox(height: 10),

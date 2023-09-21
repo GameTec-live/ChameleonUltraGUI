@@ -138,7 +138,8 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               TextFormField(
                 maxLines: null,
                 controller: keysController,
-                style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
+                style:
+                    const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
                 decoration: InputDecoration(
                   labelText: localizations.keys,
                   hintText: localizations.enter_dict_keys,

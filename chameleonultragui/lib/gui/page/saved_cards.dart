@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/widget/staggered_grid_view.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
