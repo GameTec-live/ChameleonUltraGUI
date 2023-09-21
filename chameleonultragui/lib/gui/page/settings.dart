@@ -62,72 +62,63 @@ class SettingsMainPageState extends State<SettingsMainPage> {
             Text(localizations.sidebar_expansion,
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 5),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: ToggleButtonsWrapper(
-                  items: [
-                    localizations.expand,
-                    localizations.auto,
-                    localizations.retract
-                  ],
-                  selectedValue: appState.sharedPreferencesProvider
-                      .getSideBarExpandedIndex(),
-                  onChange: (int index) async {
-                    if (index == 0) {
-                      appState.sharedPreferencesProvider
-                          .setSideBarExpanded(true);
-                      appState.sharedPreferencesProvider
-                          .setSideBarAutoExpansion(false);
-                    } else if (index == 2) {
-                      appState.sharedPreferencesProvider
-                          .setSideBarExpanded(false);
-                      appState.sharedPreferencesProvider
-                          .setSideBarAutoExpansion(false);
-                    } else {
-                      appState.sharedPreferencesProvider
-                          .setSideBarAutoExpansion(true);
-                    }
+            ToggleButtonsWrapper(
+                items: [
+                  localizations.expand,
+                  localizations.auto,
+                  localizations.retract
+                ],
+                selectedValue: appState.sharedPreferencesProvider
+                    .getSideBarExpandedIndex(),
+                onChange: (int index) async {
+                  if (index == 0) {
+                    appState.sharedPreferencesProvider.setSideBarExpanded(true);
                     appState.sharedPreferencesProvider
-                        .setSideBarExpandedIndex(index);
-                    appState.changesMade();
-                  }),
-            ),
+                        .setSideBarAutoExpansion(false);
+                  } else if (index == 2) {
+                    appState.sharedPreferencesProvider
+                        .setSideBarExpanded(false);
+                    appState.sharedPreferencesProvider
+                        .setSideBarAutoExpansion(false);
+                  } else {
+                    appState.sharedPreferencesProvider
+                        .setSideBarAutoExpansion(true);
+                  }
+                  appState.sharedPreferencesProvider
+                      .setSideBarExpandedIndex(index);
+                  appState.changesMade();
+                }),
             const SizedBox(height: 10),
             Text(
               localizations.theme,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: ToggleButtonsWrapper(
-                  items: [
-                    localizations.system,
-                    localizations.light,
-                    localizations.dark
-                  ],
-                  selectedValue:
-                      appState.sharedPreferencesProvider.getTheme() ==
-                              ThemeMode.system
-                          ? 0
-                          : appState.sharedPreferencesProvider.getTheme() ==
-                                  ThemeMode.dark
-                              ? 2
-                              : 1,
-                  onChange: (int index) async {
-                    if (index == 0) {
-                      appState.sharedPreferencesProvider
-                          .setTheme(ThemeMode.system);
-                    } else if (index == 2) {
-                      appState.sharedPreferencesProvider
-                          .setTheme(ThemeMode.dark);
-                    } else {
-                      appState.sharedPreferencesProvider
-                          .setTheme(ThemeMode.light);
-                    }
-                    appState.changesMade();
-                  }),
-            ),
+            ToggleButtonsWrapper(
+                items: [
+                  localizations.system,
+                  localizations.light,
+                  localizations.dark
+                ],
+                selectedValue: appState.sharedPreferencesProvider.getTheme() ==
+                        ThemeMode.system
+                    ? 0
+                    : appState.sharedPreferencesProvider.getTheme() ==
+                            ThemeMode.dark
+                        ? 2
+                        : 1,
+                onChange: (int index) async {
+                  if (index == 0) {
+                    appState.sharedPreferencesProvider
+                        .setTheme(ThemeMode.system);
+                  } else if (index == 2) {
+                    appState.sharedPreferencesProvider.setTheme(ThemeMode.dark);
+                  } else {
+                    appState.sharedPreferencesProvider
+                        .setTheme(ThemeMode.light);
+                  }
+                  appState.changesMade();
+                }),
             const SizedBox(height: 10),
             Text(
               localizations.color_scheme,
