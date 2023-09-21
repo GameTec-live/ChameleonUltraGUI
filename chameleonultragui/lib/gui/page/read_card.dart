@@ -124,14 +124,15 @@ class ReadCardPageState extends State<ReadCardPage> {
 
       CardData card = await appState.communicator!.scan14443aTag();
       bool isMifare = await appState.communicator!.detectMf1Support();
-      bool isMifareClassicEV1 = (await appState.communicator!
-          .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]));
+      bool isMifareClassicEV1 = isMifare
+          ? (await appState.communicator!
+              .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]))
+          : false;
 
       setState(() {
         hfInfo.uid = bytesToHexSpace(card.uid);
         hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
         hfInfo.atqa = bytesToHexSpace(card.atqa);
-        mfcInfo.isEV1 = isMifareClassicEV1;
         mfcInfo.type = isMifare
             ? mfClassicGetType(card.atqa, card.sak)
             : MifareClassicType.none;
