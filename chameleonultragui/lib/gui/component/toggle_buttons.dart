@@ -33,23 +33,26 @@ class ToggleButtonsState extends State<ToggleButtonsWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return ToggleButtons(
-      direction: Axis.horizontal,
-      onPressed: (int index) async {
-        setState(() {
-          for (int i = 0; i < values.length; i++) {
-            values[i] = i == index;
-          }
-        });
-        await widget.onChange(index);
-      },
-      borderRadius: const BorderRadius.all(Radius.circular(8)),
-      constraints: const BoxConstraints(
-        minHeight: 40.0,
-        minWidth: 80.0,
-      ),
-      isSelected: values,
-      children: textItems,
-    );
+    return FittedBox(
+        alignment: Alignment.centerRight,
+        fit: BoxFit.scaleDown,
+        child: ToggleButtons(
+          direction: Axis.horizontal,
+          onPressed: (int index) async {
+            setState(() {
+              for (int i = 0; i < values.length; i++) {
+                values[i] = i == index;
+              }
+            });
+            await widget.onChange(index);
+          },
+          borderRadius: const BorderRadius.all(Radius.circular(32)),
+          constraints: const BoxConstraints(
+            minHeight: 40.0,
+            minWidth: 80.0,
+          ),
+          isSelected: values,
+          children: textItems,
+        ));
   }
 }

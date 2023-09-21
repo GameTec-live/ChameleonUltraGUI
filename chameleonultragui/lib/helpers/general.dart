@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:io' show Platform;
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
@@ -36,6 +37,11 @@ int bytesToU32(Uint8List byteArray) {
 
 int bytesToU64(Uint8List byteArray) {
   return byteArray.buffer.asByteData().getUint64(0, Endian.big);
+}
+
+Uint8List u8ToBytes(int u8) {
+  final ByteData byteData = ByteData(1)..setUint8(0, u8);
+  return byteData.buffer.asUint8List();
 }
 
 Uint8List u64ToBytes(int u64) {
@@ -171,5 +177,38 @@ class SharedPreferencesLogger extends LogOutput {
     for (var line in event.lines) {
       provider?.addLogLine(line);
     }
+  }
+}
+
+String chameleonDeviceName(ChameleonDevice device) {
+  return (device == ChameleonDevice.ultra) ? "Ultra" : "Lite";
+}
+
+class ChameleonLogFilter extends LogFilter {
+  @override
+  bool shouldLog(LogEvent event) {
+    return true;
+  }
+}
+
+ButtonConfig getButtonConfigType(int value) {
+  if (value == 1) {
+    return ButtonConfig.cycleForward;
+  } else if (value == 2) {
+    return ButtonConfig.cycleBackward;
+  } else if (value == 3) {
+    return ButtonConfig.cloneUID;
+  } else {
+    return ButtonConfig.disable;
+  }
+}
+
+AnimationSetting getAnimationModeType(int value) {
+  if (value == 0) {
+    return AnimationSetting.full;
+  } else if (value == 1) {
+    return AnimationSetting.minimal;
+  } else {
+    return AnimationSetting.none;
   }
 }

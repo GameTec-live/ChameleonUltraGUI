@@ -1,7 +1,7 @@
-import 'dart:typed_data';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +16,7 @@ class ConnectPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
     return FutureBuilder(
       future: (appState.connector!.connected ||
               appState.connector!.pendingConnection)
@@ -87,24 +88,32 @@ class ConnectPage extends StatelessWidget {
                                             Navigator.pop(
                                                 context, localizations.flash);
                                             appState.changesMade();
-                                            Uint8List applicationDat,
-                                                applicationBin;
 
-                                            Uint8List content =
-                                                await fetchFirmware(
-                                                    chameleonDevice.device);
+                                            scaffoldMessenger
+                                                .hideCurrentSnackBar();
 
-                                            (applicationDat, applicationBin) =
-                                                await unpackFirmware(content);
+                                            var snackBar = SnackBar(
+                                              content: Text(
+                                                  localizations.downloading_fw(
+                                                      chameleonDeviceName(
+                                                          chameleonDevice
+                                                              .device))),
+                                              action: SnackBarAction(
+                                                label: localizations.close,
+                                                onPressed: () {
+                                                  scaffoldMessenger
+                                                      .hideCurrentSnackBar();
+                                                },
+                                              ),
+                                            );
 
-                                            flashFile(
-                                                null,
-                                                appState,
-                                                applicationDat,
-                                                applicationBin,
-                                                (progress) =>
-                                                    appState.setProgressBar(
-                                                        progress / 100),
+                                            scaffoldMessenger
+                                                .showSnackBar(snackBar);
+
+                                            await flashFirmware(appState,
+                                                scaffoldMessenger:
+                                                    scaffoldMessenger,
+                                                device: chameleonDevice.device,
                                                 enterDFU: false);
 
                                             appState.changesMade();
@@ -175,7 +184,7 @@ class ConnectPage extends StatelessWidget {
                                             MainAxisAlignment.start,
                                         children: [
                                           Text(
-                                              "Chameleon ${(chameleonDevice.device == ChameleonDevice.ultra) ? 'Ultra' : 'Lite'}",
+                                              "Chameleon ${chameleonDeviceName(chameleonDevice.device)}",
                                               style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 20)),
@@ -187,8 +196,8 @@ class ConnectPage extends StatelessWidget {
                                       child: Image.asset(
                                         chameleonDevice.device ==
                                                 ChameleonDevice.ultra
-                                            ? 'assets/black-ultra-standing-front.png'
-                                            : 'assets/black-lite-standing-front.png',
+                                            ? 'assets/black-ultra-standing-front.webp'
+                                            : 'assets/black-lite-standing-front.webp',
                                         fit: BoxFit.fitHeight,
                                       )),
                                   const SizedBox(height: 8),

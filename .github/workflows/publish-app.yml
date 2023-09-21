@@ -1,226 +1,267 @@
----
-    name: Publish APP
+name: Publish APP
     
-    on:
-        push:
-            branches:
-                - main
-        workflow_dispatch:
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
     
-    jobs:
-      build-android:
-        runs-on: ubuntu-latest
-        defaults:
-          run:
-            working-directory: ./chameleonultragui
-        steps:
-          - uses: actions/checkout@v3
-            with:
-              fetch-depth: 100
-          - uses: actions/setup-java@v3
-            with:
-              distribution: 'zulu'
-              java-version: '17'
-          - name: Load Secret
-            uses: mobiledevops/secret-to-file-action@v1
-            with:
-              base64-encoded-secret: ${{ secrets.KEY_PROPERTIES }}
-              filename: "key.properties"
-              working-directory: "./chameleonultragui/android"
-          - name: Load Secret
-            uses: mobiledevops/secret-to-file-action@v1
-            with:
-              base64-encoded-secret: ${{ secrets.UPLOAD_KEYSTORE }}
-              filename: "upload-keystore.jks"
-              working-directory: "./chameleonultragui"
-          - uses: subosito/flutter-action@v2
-            with:
-              channel: 'stable'
-          - run: flutter pub get
-          - run: flutter build appbundle --build-number ${{ github.run_number }}
-          - uses: actions/upload-artifact@v3
-            with:
-              name: appbundle
-              path: chameleonultragui/build/app/outputs/bundle/release/app-release.aab
-          - name: Set up Ruby
-            uses: ruby/setup-ruby@v1
-            with:
-              ruby-version: '3.2'
-          - name: Install dependencies
-            run: bundle install
-            working-directory: "./chameleonultragui/"
-          - name: Load Secret
-            uses: mobiledevops/secret-to-file-action@v1
-            with:
-                base64-encoded-secret: ${{ secrets.PLAYSTORE_KEY }}
-                filename: "api-key.json"
-                working-directory: "./chameleonultragui"
-          - name: Fastlane Publishing on ${{ github.event.inputs.publish_track }}
-            if:  github.event_name == 'workflow_dispatch' && github.event.inputs.publish_track != ''
-            run: fastlane ${{ github.event.inputs.publish_track }}
-            working-directory: "./chameleonultragui/"
-          - name: Fastlane Publishing on production
-            if:  github.event_name != 'workflow_dispatch' || github.event.inputs.publish_track == ''
-            run: fastlane production
-            working-directory: "./chameleonultragui/"
-      build-macos:
-        runs-on: macos-latest
-        env:
-            APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-            APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
-        steps:
-          - uses: actions/checkout@v3
-            with:
-              fetch-depth: 100
-          - uses: subosito/flutter-action@v2
-            with:
-              channel: 'stable'
-          - run: sudo chown -R $USER . && sudo chmod -R a+rwx .
-          - name: Enable macOS
-            run: flutter config --enable-macos-desktop
-          - name: Install tools
-            run: brew install automake libtool create-dmg
-          - name: Install Codemagic
-            run: pip3 install codemagic-cli-tools
-          - name: Export private key
-            uses: mobiledevops/secret-to-file-action@v1
-            with:
-              base64-encoded-secret: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-              filename: "AuthKey.p8"
-              working-directory: "./chameleonultragui"
-          - name: Export certificate
-            uses: mobiledevops/secret-to-file-action@v1
-            with:
-              base64-encoded-secret: ${{ secrets.APP_STORE_CERTIFICATE }}
-              filename: "cert_key"
-              working-directory: "./chameleonultragui"
-          - name: Build and upload executable
-            working-directory: "./chameleonultragui"
-            run: |
-              export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-              app-store-connect fetch-signing-files run.chameleon.gui --platform MAC_OS  --type MAC_APP_STORE --certificate-key=@file:cert_key --create
-              app-store-connect list-certificates --type MAC_INSTALLER_DISTRIBUTION --certificate-key=@file:cert_key --save
-              keychain initialize
-              keychain add-certificates
-              xcode-project use-profiles
-              sudo chown -R $USER . && sudo chmod -R a+rwx .
-              flutter build macos --release --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
-              sudo chown -R $USER . && sudo chmod -R a+rwx .
-              APP_NAME=$(find $(pwd) -name "*.app")
-              PACKAGE_NAME=$(basename "$APP_NAME" .app).pkg
-              xcrun productbuild --component "$APP_NAME" /Applications/ unsigned.pkg
-              INSTALLER_CERT_NAME=$(keychain list-certificates \
-                        | jq '[.[]
-                          | select(.common_name
-                          | contains("Mac Developer Installer"))
-                          | .common_name][0]' \
-                        | xargs)
-              xcrun productsign --sign "$INSTALLER_CERT_NAME" unsigned.pkg "$PACKAGE_NAME"
-              sudo chown -R $USER . && sudo chmod -R a+rwx .
-              rm -f unsigned.pkg
-              app-store-connect publish --path "$PACKAGE_NAME"
-              while [[ -z "$BUILD_ID" ]]; do
-                  BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 10.14" | awk '/^Id:/ {print $2}')
-                  if [[ -z "$BUILD_ID" ]]; then
-                      echo "Build is not ready, retrying in 5 seconds..."
-                      sleep 5
-                  fi
-              done
-              app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID || true
-      build-ios:
-        runs-on: macos-latest
-        env:
-            APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-            APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
-        steps:
-          - uses: actions/checkout@v3
-            with:
-              fetch-depth: 100
-          - uses: subosito/flutter-action@v2
-            with:
-              channel: 'stable'
-          - name: Install tools
-            run: brew install automake libtool create-dmg
-          - name: Install Codemagic
-            run: pip3 install codemagic-cli-tools
-          - name: Export private key
-            uses: mobiledevops/secret-to-file-action@v1
-            with:
-              base64-encoded-secret: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-              filename: "AuthKey.p8"
-              working-directory: "./chameleonultragui"
-          - name: Export certificate
-            uses: mobiledevops/secret-to-file-action@v1
-            with:
-              base64-encoded-secret: ${{ secrets.APP_STORE_CERTIFICATE }}
-              filename: "cert_key"
-              working-directory: "./chameleonultragui"
-          - name: Build and upload executable
-            working-directory: "./chameleonultragui"
-            run: |
-              export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-              app-store-connect fetch-signing-files $(xcode-project detect-bundle-id) --platform IOS --type IOS_APP_STORE --certificate-key=@file:cert_key --create
-              keychain initialize
-              keychain add-certificates
-              xcode-project use-profiles
-              flutter build ipa --release --export-options-plist=$HOME/export_options.plist --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
-              app-store-connect publish --path $(find $(pwd) -name "*.ipa")
-              while [[ -z "$BUILD_ID" ]]; do
-                  BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 11.0" | awk '/^Id:/ {print $2}')
-                  if [[ -z "$BUILD_ID" ]]; then
-                      echo "Build is not ready, retrying in 30 seconds..."
-                      sleep 30
-                  fi
-              done
-              app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=IOS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID || true
-      build-aur:
-        runs-on: ubuntu-latest
-        defaults:
-          run:
-            working-directory: ./chameleonultragui
-        steps:
-          - uses: actions/checkout@v3
-            with:
-              fetch-depth: 100
-          - uses: webfactory/ssh-agent@v0.8.0
-            with:
-              ssh-private-key: ${{ secrets.AUR_KEY }}
-          - name: configure ssh
-            run: |
-              mkdir -p ~/.ssh
-              ssh-keyscan -t rsa aur.archlinux.org >> ~/.ssh/known_hosts
-              echo -e "Host aur.archlinux.org\n\tStrictHostKeyChecking no\n\tUser aur" >> ~/.ssh/config
-          - name: configure git
-            run: |
-              git config --global user.email "github-actions[bot]@users.noreply.github.com"
-              git config --global user.name "github-actions[bot]"
-          - run: cp ../release-PKGBUILD PKGBUILD
-            working-directory: "./chameleonultragui/"
-          - run: cp ../release-.SRCINFO .SRCINFO
-            working-directory: "./chameleonultragui/"
-          - name: Update pakagerel in PKGBUILD
-            run: sed -i "s/pkgrel=.*/pkgrel=${{ github.run_number }}/" PKGBUILD
-            working-directory: "./chameleonultragui/"       
-          - name: Update pkgrel in .SRCINFO
-            run: sed -i "s/pkgrel = .*/pkgrel = ${{ github.run_number }}/" .SRCINFO
-            working-directory: "./chameleonultragui/"
-          - name: clone aur
-            run: git -c init.defaultbranch=master clone ssh://aur@aur.archlinux.org/chameleonultragui.git
-            working-directory: "./chameleonultragui/"
-          - name: copy PKGBUILD
-            run: cp ../PKGBUILD ./
-            working-directory: "./chameleonultragui/chameleonultragui/"
-          - name: copy .SRCINFO
-            run: cp ../.SRCINFO ./
-            working-directory: "./chameleonultragui/chameleonultragui/"
-          - name: commit
-            run: |
-              git add PKGBUILD
-              git add .SRCINFO
-              git commit -m "Update to ${{ github.run_number }}"
-            working-directory: "./chameleonultragui/chameleonultragui/"
-          - name: push
-            run: git push
-            working-directory: "./chameleonultragui/chameleonultragui/"
+concurrency:
+  group: publish-app
+  cancel-in-progress: true
 
-
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 100
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - name: Load Secret
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.KEY_PROPERTIES }}
+          filename: "key.properties"
+          working-directory: "./chameleonultragui/android"
+      - name: Load Secret
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.UPLOAD_KEYSTORE }}
+          filename: "upload-keystore.jks"
+          working-directory: "./chameleonultragui"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build appbundle --build-number ${{ github.run_number }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: appbundle
+          path: chameleonultragui/build/app/outputs/bundle/release/app-release.aab
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+      - name: Install dependencies
+        run: bundle install
+        working-directory: "./chameleonultragui/"
+      - name: Load Secret
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+            base64-encoded-secret: ${{ secrets.PLAYSTORE_KEY }}
+            filename: "api-key.json"
+            working-directory: "./chameleonultragui"
+      - name: Fastlane Publishing on ${{ github.event.inputs.publish_track }}
+        if:  github.event_name == 'workflow_dispatch' && github.event.inputs.publish_track != ''
+        run: fastlane ${{ github.event.inputs.publish_track }}
+        working-directory: "./chameleonultragui/"
+      - name: Fastlane Publishing on production
+        if:  github.event_name != 'workflow_dispatch' || github.event.inputs.publish_track == ''
+        run: fastlane production
+        working-directory: "./chameleonultragui/"
+  build-macos:
+    runs-on: macos-latest
+    env:
+        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 100
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Fix permissions
+        run: sudo chown -R $USER . && sudo chmod -R a+rwx .
+      - name: Enable macOS
+        run: flutter config --enable-macos-desktop
+      - name: Install tools
+        run: brew install automake libtool create-dmg
+      - name: Install Codemagic
+        run: pip3 install codemagic-cli-tools
+      - name: Export private key
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          filename: "AuthKey.p8"
+          working-directory: "./chameleonultragui"
+      - name: Export certificate
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.APP_STORE_CERTIFICATE }}
+          filename: "cert_key"
+          working-directory: "./chameleonultragui"
+      - name: Initialize keychain and certificates
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect fetch-signing-files run.chameleon.gui --platform MAC_OS  --type MAC_APP_STORE --certificate-key=@file:cert_key --create
+          app-store-connect list-certificates --type MAC_INSTALLER_DISTRIBUTION --certificate-key=@file:cert_key --save
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Build app
+        working-directory: "./chameleonultragui"
+        run: |
+          sudo chown -R $USER . && sudo chmod -R a+rwx .
+          flutter build macos --release --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
+          sudo chown -R $USER . && sudo chmod -R a+rwx .
+      - name: Sign package
+        working-directory: "./chameleonultragui"
+        run: |
+          APP_NAME=$(find $(pwd) -name "*.app")
+          PACKAGE_NAME=$(basename "$APP_NAME" .app).pkg
+          echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
+          xcrun productbuild --component "$APP_NAME" /Applications/ unsigned.pkg
+          INSTALLER_CERT_NAME=$(keychain list-certificates \
+                    | jq '[.[]
+                      | select(.common_name
+                      | contains("Mac Developer Installer"))
+                      | .common_name][0]' \
+                    | xargs)
+          xcrun productsign --sign "$INSTALLER_CERT_NAME" unsigned.pkg "$PACKAGE_NAME"
+          sudo chown -R $USER . && sudo chmod -R a+rwx .
+      - name: Upload package to App Store
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect publish --path "$PACKAGE_NAME"
+          while [[ -z "$BUILD_ID" ]]; do
+              export BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 10.14" | awk '/^Id:/ {print $2}')
+              if [[ -z "$BUILD_ID" ]]; then
+                  echo "Build is not ready, retrying in 5 seconds..."
+                  sleep 5
+              fi
+          done
+          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
+      - name: Submit to App Store
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
+      - name: Submit to TestFlight
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect builds submit-to-testflight $BUILD_ID || true
+          app-store-connect beta-groups add-build $BUILD_ID --beta-group="Open beta testing" || true
+  build-ios:
+    runs-on: macos-latest
+    env:
+        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 100
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Install tools
+        run: brew install automake libtool create-dmg
+      - name: Install Codemagic
+        run: pip3 install codemagic-cli-tools
+      - name: Export private key
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          filename: "AuthKey.p8"
+          working-directory: "./chameleonultragui"
+      - name: Export certificate
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.APP_STORE_CERTIFICATE }}
+          filename: "cert_key"
+          working-directory: "./chameleonultragui"
+      - name: Initialize keychain and certificates
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect fetch-signing-files $(xcode-project detect-bundle-id) --platform IOS --type IOS_APP_STORE --certificate-key=@file:cert_key --create
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Build app
+        working-directory: "./chameleonultragui"
+        run: |
+          flutter build ipa --release --export-options-plist=$HOME/export_options.plist --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
+      - name: Upload app to App Store
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect publish --path $(find $(pwd) -name "*.ipa")
+          while [[ -z "$BUILD_ID" ]]; do
+              export BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 11.0" | awk '/^Id:/ {print $2}')
+              if [[ -z "$BUILD_ID" ]]; then
+                  echo "Build is not ready, retrying in 30 seconds..."
+                  sleep 30
+              fi
+          done
+          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
+      - name: Submit to App Store
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=IOS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
+      - name: Submit to TestFlight
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect builds submit-to-testflight $BUILD_ID || true
+          app-store-connect beta-groups add-build $BUILD_ID --beta-group="Open beta testing" || true
+  build-aur:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 100
+      - uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.AUR_KEY }}
+      - name: configure ssh
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -t rsa aur.archlinux.org >> ~/.ssh/known_hosts
+          echo -e "Host aur.archlinux.org\n\tStrictHostKeyChecking no\n\tUser aur" >> ~/.ssh/config
+      - name: configure git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+      - run: cp ../release-PKGBUILD PKGBUILD
+        working-directory: "./chameleonultragui/"
+      - run: cp ../release-.SRCINFO .SRCINFO
+        working-directory: "./chameleonultragui/"
+      - name: Update pakagerel in PKGBUILD
+        run: sed -i "s/pkgrel=.*/pkgrel=${{ github.run_number }}/" PKGBUILD
+        working-directory: "./chameleonultragui/"       
+      - name: Update pkgrel in .SRCINFO
+        run: sed -i "s/pkgrel = .*/pkgrel = ${{ github.run_number }}/" .SRCINFO
+        working-directory: "./chameleonultragui/"
+      - name: clone aur
+        run: git -c init.defaultbranch=master clone ssh://aur@aur.archlinux.org/chameleonultragui.git
+        working-directory: "./chameleonultragui/"
+      - name: copy PKGBUILD
+        run: cp ../PKGBUILD ./
+        working-directory: "./chameleonultragui/chameleonultragui/"
+      - name: copy .SRCINFO
+        run: cp ../.SRCINFO ./
+        working-directory: "./chameleonultragui/chameleonultragui/"
+      - name: commit
+        run: |
+          git add PKGBUILD
+          git add .SRCINFO
+          git commit -m "Update to ${{ github.run_number }}"
+        working-directory: "./chameleonultragui/chameleonultragui/"
+      - name: push
+        run: git push
+        working-directory: "./chameleonultragui/chameleonultragui/"

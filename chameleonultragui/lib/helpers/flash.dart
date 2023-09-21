@@ -1,11 +1,11 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
+import 'package:chameleonultragui/helpers/github.dart';
 import 'package:crypto/crypto.dart';
 import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/bridge/dfu.dart';
@@ -13,70 +13,6 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/protobuf/dfu-cc.pb.dart';
 import 'dart:math';
-
-Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
-  Uint8List content = Uint8List(0);
-  String error = "";
-
-  try {
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
-        .body
-        .toString());
-
-    if (releases is! List && releases.containsKey("message")) {
-      error = releases["message"];
-      throw error;
-    }
-
-    for (var file in releases[0]["assets"]) {
-      if (file["name"] ==
-          "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
-        content = await http.readBytes(Uri.parse(file["browser_download_url"]));
-        break;
-      }
-    }
-  } catch (_) {}
-
-  if (error.isNotEmpty) {
-    throw error;
-  }
-
-  return content;
-}
-
-Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
-  Uint8List content = Uint8List(0);
-  String error = "";
-
-  try {
-    final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts")))
-        .body
-        .toString());
-
-    if (artifacts.containsKey("message")) {
-      error = artifacts["message"];
-      throw error;
-    }
-
-    for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
-          artifact["workflow_run"]["head_branch"] == "main") {
-        content = await http.readBytes(Uri.parse(
-            "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
-        break;
-      }
-    }
-  } catch (_) {}
-
-  if (error.isNotEmpty) {
-    throw error;
-  }
-
-  return content;
-}
 
 Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
   var content = await fetchFirmwareFromActions(device);
@@ -86,54 +22,6 @@ Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
   }
 
   return content;
-}
-
-Future<String> latestAvailableCommit(ChameleonDevice device) async {
-  String error = "";
-
-  try {
-    final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts")))
-        .body
-        .toString());
-
-    if (artifacts.containsKey("message")) {
-      error = artifacts["message"];
-      throw error;
-    }
-
-    for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
-          artifact["workflow_run"]["head_branch"] == "main") {
-        return artifact["workflow_run"]["head_sha"];
-      }
-    }
-  } catch (_) {}
-
-  try {
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
-        .body
-        .toString());
-
-    if (releases is! List && releases.containsKey("message")) {
-      error = releases["message"];
-      throw error;
-    }
-
-    for (var release in releases) {
-      if (release["author"]["login"] == "github-actions[bot]") {
-        return release["target_commitish"];
-      }
-    }
-  } catch (_) {}
-
-  if (error.isNotEmpty) {
-    throw error;
-  }
-
-  return "";
 }
 
 Future<(Uint8List, Uint8List)> unpackFirmware(Uint8List content) async {
@@ -192,19 +80,26 @@ void validateFiles(Uint8List dat, Uint8List bin) {
   }
 }
 
-Future<void> flashFirmware(ChameleonGUIState appState) async {
+Future<void> flashFirmware(ChameleonGUIState appState,
+    {ScaffoldMessengerState? scaffoldMessenger,
+    ChameleonDevice? device,
+    bool enterDFU = true}) async {
   Uint8List applicationDat, applicationBin;
 
-  Uint8List content = await fetchFirmware(appState.connector!.device);
+  Uint8List content = await fetchFirmware(
+      (device != null) ? device : appState.connector!.device);
 
   (applicationDat, applicationBin) = await unpackFirmware(content);
 
   flashFile(appState.communicator, appState, applicationDat, applicationBin,
       (progress) => appState.setProgressBar(progress / 100),
-      firmwareZip: content);
+      firmwareZip: content,
+      scaffoldMessenger: scaffoldMessenger,
+      enterDFU: enterDFU);
 }
 
-Future<void> flashFirmwareZip(ChameleonGUIState appState) async {
+Future<void> flashFirmwareZip(ChameleonGUIState appState,
+    {ScaffoldMessengerState? scaffoldMessenger, bool enterDFU = true}) async {
   Uint8List applicationDat, applicationBin;
 
   FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -217,7 +112,9 @@ Future<void> flashFirmwareZip(ChameleonGUIState appState) async {
 
     flashFile(appState.communicator, appState, applicationDat, applicationBin,
         (progress) => appState.setProgressBar(progress / 100),
-        firmwareZip: await file.readAsBytes());
+        firmwareZip: await file.readAsBytes(),
+        scaffoldMessenger: scaffoldMessenger,
+        enterDFU: enterDFU);
   }
 }
 
@@ -228,7 +125,8 @@ Future<void> flashFile(
     Uint8List applicationBin,
     void Function(int progress) callback,
     {bool enterDFU = true,
-    List<int> firmwareZip = const []}) async {
+    List<int> firmwareZip = const [],
+    ScaffoldMessengerState? scaffoldMessenger}) async {
   validateFiles(applicationDat, applicationBin);
 
   // Flashing easter egg
@@ -240,8 +138,8 @@ Future<void> flashFile(
   }
 
   if (enterDFU) {
-    await connection!.enterDFUMode();
-    await appState.connector!.performDisconnect();
+    await connection?.enterDFUMode();
+    await appState.connector?.performDisconnect();
   }
 
   if (appState.connector!.isOpen) {
@@ -285,11 +183,15 @@ Future<void> flashFile(
 
   await appState.connector!.connectSpecificDevice(chameleons[0].port);
 
+  if (scaffoldMessenger != null) {
+    scaffoldMessenger.removeCurrentSnackBar();
+  }
+
   var dfu = DFUCommunicator(appState.log!,
       port: appState.connector, viaBLE: toFlash.type == ConnectionType.ble);
+  appState.changesMade();
   await dfu.setPRN();
   await dfu.getMTU();
-  appState.changesMade();
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log!.i("Firmware flashed!");

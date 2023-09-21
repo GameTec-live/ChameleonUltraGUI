@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'dart:io';
 import 'dart:convert';
 
@@ -12,6 +11,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/services.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -63,7 +63,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   Future<void> handleMfkeyCalculation() async {
     var appState = context.read<ChameleonGUIState>();
 
-    var detections = await appState.communicator!.getMf1DetectionResult(0);
+    var count = await appState.communicator!.getMf1DetectionCount();
+    var detections = await appState.communicator!.getMf1DetectionResult(count);
     for (var item in detections.entries) {
       var uid = item.key;
       for (var item in item.value.entries) {
@@ -99,11 +100,20 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                       ),
                     ),
                     const SizedBox(width: 8.0),
-                    Text(
-                      "block $block key $key: ${bytesToHex(u64ToBytes((recoveredKey)[0]).sublist(2, 8)).toUpperCase()}",
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    TextButton(
+                      onPressed: () async {
+                        ClipboardData data = ClipboardData(
+                            text: bytesToHex(
+                                    u64ToBytes((recoveredKey)[0]).sublist(2, 8))
+                                .toUpperCase());
+                        await Clipboard.setData(data);
+                      },
+                      child: Text(
+                        "block $block key $key: ${bytesToHex(u64ToBytes((recoveredKey)[0]).sublist(2, 8)).toUpperCase()}",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -131,9 +141,9 @@ class Mfkey32PageState extends State<Mfkey32Page> {
   }
 
   String convertKeysToDictFile(List<Uint8List> keys) {
-    List<Uint8List> dekeys = deduplicateKeys(keys);
+    List<Uint8List> deduplicatedKeys = deduplicateKeys(keys);
     String fileContents = "";
-    for (Uint8List key in dekeys) {
+    for (Uint8List key in deduplicatedKeys) {
       fileContents += "${bytesToHex(key).toUpperCase()}\n";
     }
     return fileContents;

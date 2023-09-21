@@ -279,7 +279,7 @@ class DFUCommunicator {
         break;
       }
 
-      if (tries == 10) {
+      if (tries == ((Platform.isIOS) ? 50 : 10)) {
         throw ("Unable to recover from DFU");
       }
     }
@@ -353,7 +353,7 @@ class DFUCommunicator {
       }
 
       if (Platform.isIOS) {
-        await asyncSleep(100);
+        await asyncSleep(250);
       }
     } else {
       // Other OS: send as is

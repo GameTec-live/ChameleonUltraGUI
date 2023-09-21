@@ -88,7 +88,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
                     labelText: localizations.name,
                     hintText: localizations.enter_dict_name,
                     prefix: IconButton(
-                      icon: Icon(Icons.nfc, color: currentColor),
+                      icon: Icon(Icons.key, color: currentColor),
                       onPressed: () async {
                         showDialog(
                           context: context,
@@ -138,6 +138,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               TextFormField(
                 maxLines: null,
                 controller: keysController,
+                style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
                 decoration: InputDecoration(
                   labelText: localizations.keys,
                   hintText: localizations.enter_dict_keys,

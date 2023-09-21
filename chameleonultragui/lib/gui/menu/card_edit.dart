@@ -75,7 +75,12 @@ class CardEditMenuState extends State<CardEditMenu> {
                     labelText: localizations.name,
                     hintText: localizations.enter_name,
                     prefix: IconButton(
-                      icon: Icon(Icons.nfc, color: currentColor),
+                      icon: Icon(
+                          (chameleonTagToFrequency(widget.tagSave.tag) ==
+                                  TagFrequency.hf)
+                              ? Icons.credit_card
+                              : Icons.wifi,
+                          color: currentColor),
                       onPressed: () async {
                         showDialog(
                           context: context,

@@ -382,6 +382,8 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return 'Deutsch (Österreich)';
       case 'pt':
         return 'Português';
+      case 'pt-BR':
+        return 'Português (Brasil)';
       case 'ru':
         return 'Русский';
       case 'it':
@@ -430,6 +432,8 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return 'Tiếng Việt';
       case 'ca':
         return 'Català';
+      case 'bg':
+        return 'Български';
       default:
         return 'Unknown';
     }
@@ -448,11 +452,15 @@ class SharedPreferencesProvider extends ChangeNotifier {
         _sharedPreferences.getStringList('debug_logging_value') ?? [];
     rows.add(value);
 
-    if (rows.length > 2500) {
+    if (rows.length > 5000) {
       rows.removeAt(0);
     }
 
     _sharedPreferences.setStringList('debug_logging_value', rows);
+  }
+
+  void clearLogLines() {
+    _sharedPreferences.setStringList('debug_logging_value', []);
   }
 
   List<String> getLogLines() {

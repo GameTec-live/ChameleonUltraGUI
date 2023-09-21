@@ -103,13 +103,27 @@ class _MainPageState extends State<MainPage> {
   var selectedIndex = 0;
 
   @override
+  void reassemble() {
+    super.reassemble();
+
+    // Disconnect on reload
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+    appState.connector?.performDisconnect();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     appState._sharedPreferencesProvider = widget.sharedPreferencesProvider;
     appState.log ??= Logger(
         output: appState._sharedPreferencesProvider!.isDebugLogging()
             ? SharedPreferencesLogger(appState._sharedPreferencesProvider!)
-            : ConsoleOutput());
+            : ConsoleOutput(),
+        printer: PrettyPrinter(
+          noBoxingByDefault:
+              appState._sharedPreferencesProvider!.isDebugLogging(),
+        ),
+        filter: ChameleonLogFilter());
     appState.connector ??= Platform.isAndroid
         ? AndroidSerial(log: appState.log!)
         : (Platform.isIOS
@@ -184,7 +198,9 @@ class _MainPageState extends State<MainPage> {
       statusBarColor: Theme.of(context).colorScheme.surface,
     ));
 
-    WakelockPlus.toggle(enable: page is FlashingPage);
+    try {
+      WakelockPlus.toggle(enable: page is FlashingPage);
+    } catch (_) {}
 
     return MaterialApp(
       title: 'Chameleon Ultra GUI', // App Name

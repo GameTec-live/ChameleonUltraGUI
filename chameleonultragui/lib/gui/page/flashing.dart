@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -25,19 +26,21 @@ class FlashingPage extends StatelessWidget {
               Image.asset(
                 appState.connector!.device == ChameleonDevice.ultra
                     ? appState.easterEgg
-                        ? 'assets/black-ultra-standing-front-flashing.png'
-                        : 'assets/black-ultra-standing-front.png'
+                        ? 'assets/black-ultra-standing-front-flashing.webp'
+                        : 'assets/black-ultra-standing-front.webp'
                     : appState.easterEgg
-                        ? 'assets/black-lite-standing-front-flashing.png'
-                        : 'assets/black-lite-standing-front.png',
+                        ? 'assets/black-lite-standing-front-flashing.webp'
+                        : 'assets/black-lite-standing-front.webp',
                 width: 300,
                 height: 300,
               ),
               const SizedBox(height: 20),
               Text(
                 appState.easterEgg
-                    ? 'Your Chameleon ${appState.connector!.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'} is flashing'
-                    : 'Installing firmware on your Chameleon ${appState.connector!.device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}',
+                    ? localizations.chameleon_flashing_title_easter_egg(
+                        chameleonDeviceName(ChameleonDevice.ultra))
+                    : localizations.chameleon_flashing_title(
+                        chameleonDeviceName(ChameleonDevice.ultra)),
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,

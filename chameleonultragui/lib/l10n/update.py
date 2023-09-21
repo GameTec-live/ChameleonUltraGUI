@@ -28,8 +28,6 @@ def request(method, url, data=None):
                                                'Content-Type': 'application/json'})).read().decode())
 
 
-LANGUAGES = request('GET', 'https://crowdin.com/api/v2/languages?limit=500')['data']
-
 for language in progressbar(
         request('GET', 'https://crowdin.com/api/v2/projects/611911/files/33/languages/progress?limit=500')['data']):
     try:
@@ -37,15 +35,14 @@ for language in progressbar(
                            f"https://crowdin.com/api/v2/projects/611911/languages/{language['data']['languageId']}/progress")
     except urllib.error.HTTPError:
         continue
-    if progress['data'][0]['data']['words']['translated']/progress['data'][0]['data']['words']['total'] >= 0.7:
-        translation = request('POST', 'https://crowdin.com/api/v2/projects/611911/translations/exports',
-                              {'targetLanguageId': language['data']['languageId'], 'format': 'arb-export',
-                               'skipUntranslatedStrings': True, 'fileIds': [33]})
+    if progress['data'][0]['data']['words']['translated'] / progress['data'][0]['data']['words']['total'] >= 0.7:
+        try:
+            translation = request('POST', 'https://crowdin.com/api/v2/projects/611911/translations/exports',
+                                  {'targetLanguageId': language['data']['languageId'], 'format': 'arb-export',
+                                   'skipUntranslatedStrings': True, 'fileIds': [33]})
+        except urllib.error.HTTPError:
+            continue
         export = urlopen(Request(translation['data']['url'], method='GET')).read()
         translations = json.loads(export.decode())
-        locale = None
-        for lang in LANGUAGES:
-            if lang['data']['id'] == language['data']['languageId']:
-                locale = lang['data']['osxLocale']
-        translations['@@locale'] = locale
+        locale = translations['@@locale']
         json.dump(translations, open(f'app_{locale}.arb', 'w+'), indent=2)

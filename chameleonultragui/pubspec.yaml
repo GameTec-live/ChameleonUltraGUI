@@ -30,7 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  sqflite:
   path:
   async:
 
@@ -51,11 +50,11 @@ dependencies:
   file_saver: ^0.2.8
   file_picker: ^5.5.0
   flutter_staggered_grid_view: ^0.7.0
-  uuid: ^3.0.7
+  uuid: ^4.0.0
   http: ^1.1.0
   archive: ^3.3.7
   flutter_reactive_ble: ^5.2.0
-  permission_handler: ^10.4.3
+  permission_handler: ^11.0.0
   protobuf: ^2.1.0
   collection: ^1.17.1
   crypto: ^3.0.3
@@ -66,7 +65,6 @@ dependencies:
     sdk: flutter
   intl: any
   wakelock_plus: ^1.1.1
-  # crowdin_sdk: ^0.3.1
 
 dev_dependencies:
   flutter_test:
@@ -107,11 +105,16 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/black-ultra-standing-front.png
-    - assets/black-lite-standing-front.png
+    - assets/black-ultra-standing-front.webp
+    - assets/black-lite-standing-front.webp
     - assets/logo.png
-    - assets/black-ultra-standing-front-flashing.png
-    - assets/black-lite-standing-front-flashing.png
+    - assets/black-ultra-standing-front-flashing.webp
+    - assets/black-lite-standing-front-flashing.webp
+
+  fonts:
+    - family: RobotoMono
+      fonts:
+        - asset: assets/fonts/RobotoMono-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
