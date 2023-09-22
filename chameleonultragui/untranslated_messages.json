@@ -63,10 +63,6 @@
     "ble_pairing"
   ],
 
-  "es": [
-    "ble_pairing"
-  ],
-
   "fr": [
     "shared_preferences_logging",
     "production_logging",
@@ -159,14 +155,6 @@
     "force_flashing",
     "chameleon_flashing_title_easter_egg",
     "chameleon_flashing_title",
-    "ble_pairing"
-  ],
-
-  "ru": [
-    "ble_pairing"
-  ],
-
-  "zh": [
     "ble_pairing"
   ]
 }
