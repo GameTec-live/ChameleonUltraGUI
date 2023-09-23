@@ -1,9 +1,13 @@
+import 'dart:typed_data';
+
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:uuid/uuid.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -85,6 +89,81 @@ class SlotSettingsState extends State<SlotSettings> {
     }
   }
 
+  Future<CardSave> rebuildCardSaveFromSlot(TagFrequency  frequency) async {
+    var appState = context.read<ChameleonGUIState>();
+
+    String ?name;
+    int ?sak;
+    Uint8List ?atqa;
+    TagType ?tag;
+    String ?uid;
+
+    List<(TagType, TagType)> usedSlots = List.generate(
+      8,
+      (_) => (TagType.unknown, TagType.unknown),
+    );
+
+    try {
+      usedSlots = await appState.communicator!.getUsedSlots();
+    } catch (_) {
+      try {
+        await appState.communicator!.getFirmwareVersion();
+      } catch (_) {
+        appState.log!.e("Lost connection to Chameleon!");
+        appState.connector!.performDisconnect();
+        appState.changesMade();
+      }
+    }
+
+    if (frequency == TagFrequency.lf) {
+      sak = 0;
+      atqa = Uint8List.fromList([0x00, 0x00]);
+      if (usedSlots[widget.slot].$2 == TagType.unknown) {
+        throw Exception("Cant request LF if LF isnt used!");
+      }
+      tag = usedSlots[widget.slot].$2;
+      try {
+        uid = bytesToHexSpace(await appState.communicator!.getEM410XEmulatorID());
+      } catch (_) {}
+
+      try {
+        name = (await appState.communicator!
+                .getSlotTagName(widget.slot, TagFrequency.lf))
+            .trim();
+      } catch (_) {}
+    } else {
+      if (usedSlots[widget.slot].$1 == TagType.unknown) {
+        throw Exception("Cant request HF if HF isnt used!");
+      }
+      tag = usedSlots[widget.slot].$1;
+      CardData ?data;
+      try {
+        data  = await appState.communicator!.mf1GetAntiCollData();
+      } catch (_) {}
+
+      if (data !=  null) {
+        sak = data.sak;
+        atqa = data.atqa;
+        uid = bytesToHexSpace(data.uid);
+      }
+
+      try {
+        name = (await appState.communicator!
+                .getSlotTagName(widget.slot, TagFrequency.hf))
+            .trim();
+      } catch (_) {}
+    }
+
+    return CardSave(
+      id: const Uuid().v4(),
+      uid: uid!,
+      name: name!,
+      sak: sak!,
+      atqa: atqa!,
+      tag: tag
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
@@ -137,24 +216,17 @@ class SlotSettingsState extends State<SlotSettings> {
                                       "Where do you want to save the data?"),
                                   actions: [
                                     ElevatedButton(
-                                      onPressed: () {},
+                                      onPressed: () async {},
                                       child: Text("Save to File"),
                                     ),
                                     ElevatedButton(
-                                      onPressed: () {
-                                        var tag = CardSave(
-                                          id: id,
-                                          uid: uid,
-                                          name: name,
-                                          sak: sak,
-                                          atqa: atqa,
-                                          tag: tag
-                                        );
+                                      onPressed: () async {
+                                        
                                       },
                                       child: Text("Create a new Card"),
                                     ),
                                     ElevatedButton(
-                                      onPressed: () {},
+                                      onPressed: () async {},
                                       child: Text("Overwrite Card"),
                                     ),
                                   ],
