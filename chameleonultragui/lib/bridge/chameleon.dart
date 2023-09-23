@@ -485,11 +485,11 @@ class ChameleonCommunicator {
   Future<NTLevel> getMf1NTLevel() async {
     // Get level of nt (weak/static/hard) in Mifare Classic
     var resp = (await sendCmd(ChameleonCommand.mf1NTLevelDetect))!.data[0];
-    if (resp == 0x00) {
+    if (resp == 0) {
       return NTLevel.weak;
-    } else if (resp == 0x01) {
+    } else if (resp == 1) {
       return NTLevel.static;
-    } else if (resp == 0x02) {
+    } else if (resp == 2) {
       return NTLevel.hard;
     } else {
       return NTLevel.unknown;
@@ -505,13 +505,13 @@ class ChameleonCommunicator {
 
     if (status == 0) {
       return DarksideResult.vulnerable;
-    } else if (status == 0x20) {
+    } else if (status == 1) {
       return DarksideResult.cantFixNT;
-    } else if (status == 0x21) {
+    } else if (status == 2) {
       return DarksideResult.luckAuthOK;
-    } else if (status == 0x22) {
+    } else if (status == 3) {
       return DarksideResult.notSendingNACK;
-    } else if (status == 0x23) {
+    } else if (status == 4) {
       return DarksideResult.tagChanged;
     } else {
       return DarksideResult.fixed;
@@ -569,7 +569,7 @@ class ChameleonCommunicator {
             [targetKeyType, targetBlock, firstRecover ? 1 : 0, syncMax]),
         timeout: const Duration(seconds: 30));
 
-    if (resp!.data[0] != 0x00) {
+    if (resp!.data[0] != 0) {
       throw ("Not vulnerable to Darkside");
     }
 
@@ -975,7 +975,7 @@ class ChameleonCommunicator {
         .data;
   }
 
-  Future<CardData> mf1GetAntiCollData(int startBlock, int blockCount) async {
+  Future<CardData> mf1GetAntiCollData() async {
     var resp = await sendCmd(ChameleonCommand.mf1GetAntiCollData);
 
     if (resp!.data.isNotEmpty) {
