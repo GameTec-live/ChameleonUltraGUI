@@ -931,7 +931,7 @@ class ChameleonCommunicator {
         .data;
   }
 
-  Future<CardData> mf1GetAntiCollData(int startBlock, int blockCount) async {
+  Future<CardData> mf1GetAntiCollData() async {
     var resp = await sendCmd(ChameleonCommand.mf1GetAntiCollData);
 
     if (resp!.data.isNotEmpty) {

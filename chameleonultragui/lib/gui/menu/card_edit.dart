@@ -12,8 +12,9 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class CardEditMenu extends StatefulWidget {
   final CardSave tagSave;
+  final bool isNew;
 
-  const CardEditMenu({Key? key, required this.tagSave}) : super(key: key);
+  const CardEditMenu({Key? key, required this.tagSave, this.isNew = false}) : super(key: key);
 
   @override
   CardEditMenuState createState() => CardEditMenuState();
@@ -271,11 +272,16 @@ class CardEditMenuState extends State<CardEditMenu> {
 
             var tags = appState.sharedPreferencesProvider.getCards();
             List<CardSave> output = [];
-            for (var tagTest in tags) {
-              if (tagTest.id != widget.tagSave.id) {
-                output.add(tagTest);
-              } else {
-                output.add(tag);
+            if (widget.isNew) {
+              output = tags;
+              output.add(tag);
+            } else {
+              for (var tagTest in tags) {
+                if (tagTest.id != widget.tagSave.id) {
+                  output.add(tagTest);
+                } else {
+                  output.add(tag);
+                }
               }
             }
 
