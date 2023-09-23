@@ -36,7 +36,7 @@ class SlotSettingsState extends State<SlotSettings> {
   }
 
   Future<void> fetchInfo() async {
-    var appState = context.read<MyAppState>();
+    var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     if (hfName.isEmpty) {
       try {
@@ -87,7 +87,7 @@ class SlotSettingsState extends State<SlotSettings> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
     return FutureBuilder(
@@ -99,7 +99,7 @@ class SlotSettingsState extends State<SlotSettings> {
                 content: const SingleChildScrollView(
                     child: Column(children: [CircularProgressIndicator()])));
           } else if (snapshot.hasError) {
-            appState.connector.performDisconnect();
+            appState.connector!.performDisconnect();
             return AlertDialog(
                 title: Text(localizations.slot_settings),
                 content: Text(
@@ -202,7 +202,7 @@ class SlotSettingsState extends State<SlotSettings> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('${localizations.hf}:'),
+                      Text('${localizations.lf}:'),
                       const SizedBox(width: 8),
                       Expanded(
                           child: OutlinedButton(
@@ -244,7 +244,7 @@ class SlotSettingsState extends State<SlotSettings> {
                       }),
                   const SizedBox(height: 16),
                   Text(
-                    localizations.mifare_clasic_e_s,
+                    localizations.mifare_classic_emulator_settings,
                     textScaleFactor: 1.1,
                   ),
                   const SizedBox(height: 8),

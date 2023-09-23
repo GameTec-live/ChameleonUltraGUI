@@ -10,6 +10,8 @@ class NativeSerial extends AbstractSerial {
   bool checkDFU = true;
   SerialPortReader? reader;
 
+  NativeSerial({required super.log});
+
   @override
   Future<List> availableDevices() async {
     return SerialPort.availablePorts;
@@ -106,8 +108,7 @@ class NativeSerial extends AbstractSerial {
           device = ChameleonDevice.lite;
         }
 
-        log.d(
-            "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
+        log.d("Found Chameleon ${chameleonDeviceName(device)}!");
 
         connectionType = ConnectionType.usb;
 

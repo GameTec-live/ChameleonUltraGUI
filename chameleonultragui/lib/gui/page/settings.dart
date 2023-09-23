@@ -48,7 +48,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>(); // Get State
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
@@ -56,7 +56,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
       ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // Center
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 10),
             Text(localizations.sidebar_expansion,
@@ -118,24 +118,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         .setTheme(ThemeMode.light);
                   }
                   appState.changesMade();
-                  showDialog<String>(
-                    context: context,
-                    builder: (BuildContext context) => AlertDialog(
-                      title: Text(localizations.restart_required),
-                      content: Center(
-                        child: Text(localizations.take_effects,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      actions: <Widget>[
-                        TextButton(
-                          onPressed: () =>
-                              Navigator.pop(context, localizations.ok),
-                          child: Text(localizations.ok),
-                        ),
-                      ],
-                    ),
-                  );
                 }),
             const SizedBox(height: 10),
             Text(
@@ -152,23 +134,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               onChanged: (value) {
                 appState.sharedPreferencesProvider.setThemeColor(value ?? 0);
                 appState.changesMade();
-                showDialog<String>(
-                  context: context,
-                  builder: (BuildContext context) => AlertDialog(
-                    title: Text(localizations.restart_required),
-                    content: Center(
-                      child: Text(localizations.take_effects,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () =>
-                            Navigator.pop(context, localizations.ok),
-                        child: Text(localizations.ok),
-                      ),
-                    ],
-                  ),
-                );
               },
               items: [
                 DropdownMenuItem(
@@ -219,23 +184,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 appState.sharedPreferencesProvider
                     .setLocale(Locale(value ?? 'en'));
                 appState.changesMade();
-                showDialog<String>(
-                  context: context,
-                  builder: (BuildContext context) => AlertDialog(
-                    title: Text(localizations.restart_required),
-                    content: Center(
-                      child: Text(localizations.take_effects,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () =>
-                            Navigator.pop(context, localizations.ok),
-                        child: Text(localizations.ok),
-                      ),
-                    ],
-                  ),
-                );
               },
               items: AppLocalizations.supportedLocales.map((locale) {
                 return DropdownMenuItem(
@@ -317,10 +265,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     ),
                   ),
                   actions: <Widget>[
-                    /* TextButton(
-                            onPressed: () => Navigator.pop(context, 'Cancel'),
-                            child: const Text('Cancel'),
-                          ), */ // A Cancel button on an about widget??
                     TextButton(
                       onPressed: () => Navigator.pop(context, localizations.ok),
                       child: Text(localizations.ok),

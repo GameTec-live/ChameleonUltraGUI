@@ -3,15 +3,41 @@ A GUI for the Chameleon Ultra/Chameleon Lite written in Flutter for cross platfo
 
 [![Auto build](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml) 
 [![Open collective](https://opencollective.com/chameleon-ultra-gui/tiers/badge.svg)](https://opencollective.com/chameleon-ultra-gui#support)
+[![Crowdin](https://badges.crowdin.net/chameleonultragui/localized.svg)](https://crowdin.com/project/chameleonultragui)
+
+### [Full documentation here](https://docs.chameleonultragui.dev)
 
 ## Installation
-You can download the latest builds from GitHub Actions [here](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/buildapp.yml?query=branch%3Amain) under the artifacts section.
 
-App available in those stores:
-- Google Play: https://play.google.com/store/apps/details?id=io.chameleon.ultra
+#### Windows
+
+Download the installer [here](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows-installer.zip). Short link: https://chameleonultragui.dev/windows
+
+Or, [portable version](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/windows.zip). Short link: https://chameleonultragui.dev/windows-portable
+
+
+#### Linux
+
+Download the Linux build
+
+- [Debian-based (.deb)](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux-debian.zip). Short link: https://chameleonultragui.dev/linux-debian
+- [Arch-based](https://aur.archlinux.org/packages/chameleonultragui) / [or -git](https://aur.archlinux.org/packages/chameleonultragui-git). Short link: https://chameleonultragui.dev/linux-arch
+- [Other](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux.zip). Short link: https://chameleonultragui.dev/linux
+
+#### macOS / iOS / iPadOS
+
+Download it from Apple App Store: [Chameleon Ultra GUI](https://apps.apple.com/app/chameleon-ultra-gui/id6462919364). Short link: https://chameleonultragui.dev/ios
+
+Or, you can join TestFlight to get builds earlier: [Chameleon Ultra GUI - TestFlight](https://testflight.apple.com/join/UgwgfMqo)
+
+#### Android
+
+Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra). Short link: https://chameleonultragui.dev/android
+
+Or, plain [APK](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/apk.zip). Short link: https://chameleonultragui.dev/android-apk
+
+#### Pending stores:
 - F-Store: not yet
-- App Store: https://apps.apple.com/app/chameleon-ultra-gui/id6462919364
-- Arch Linux (AUR): https://aur.archlinux.org/packages/chameleonultragui / https://aur.archlinux.org/packages/chameleonultragui-git
 - Flathub: not yet
 - Chocolatey (Windows): not yet
 
@@ -19,7 +45,6 @@ Note: Under some Linux systems, especially ones running KDE desktop environments
 
 Key:
 - apk: Android APK, download and install either via ADB or your app/file manager of choice
-- appbundle: Android Appbundle, unsigned Appbundle, used for Google Play publishing
 - linux: zip file containing the linux build, either run the binary manually or install using cmake
 - linux-debian: Debain Auto Packaging, Download and install with either apt, apt-get or dpkg.
 - windows: zip file containing windows build, run the binary manually
@@ -39,7 +64,7 @@ Contributions are welcome, most stuff that needs to be done can either be found 
 
 ## Translations
 
-If you want to collaborate by adding your language to the application, you can do it through [our Crowdin project](https://crowdin.com/project/chameleon-ultra-gui). Do not contribute files into `chameleonultragui/lib/l100n/app_*.arb`. All translations should be added only to Crowdin. If your language is missing, you can create issue and ask to enable it. "Chameleon Ultra GUI", "Chameleon" and other trademarks should not be translated.
+If you want to collaborate by adding your language to the application, you can do it through [our Crowdin project](https://crowdin.com/project/chameleonultragui). Do not contribute files into `chameleonultragui/lib/l10n/app_*.arb`. All translations should be added only to Crowdin. If your language is missing, you can create issue and ask to enable it. "Chameleon Ultra GUI", "Chameleon" and other trademarks should not be translated.
 
 ## Screenshots
 ![Connect Page](/screenshots/1.png)
@@ -56,7 +81,7 @@ You want to support us and donate? Thank you, you make it possible for us to kee
 
 You have the following options:
 
-Open Collective: [ChameleonUltraGUI](https://opencollective.com/chameleon-ultra-gui)
+Open Collective: [Chameleon Ultra GUI](https://opencollective.com/chameleon-ultra-gui)
 
 Crypto Currencies if your into that jam (Although open collective is preferred):
 - BTC: bc1qrcd4ctxagaxsetyhpzc08d2upl0mh498gp3lkl

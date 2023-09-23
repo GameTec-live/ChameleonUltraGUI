@@ -10,11 +10,12 @@ import 'package:chameleonultragui/helpers/general.dart';
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-
 class DictionaryEditMenu extends StatefulWidget {
   final Dictionary dict;
+  final bool isNew;
 
-  const DictionaryEditMenu({Key? key, required this.dict}) : super(key: key);
+  const DictionaryEditMenu({Key? key, required this.dict, this.isNew = false})
+      : super(key: key);
 
   @override
   DictionaryEditMenuState createState() => DictionaryEditMenuState();
@@ -65,7 +66,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     return AlertDialog(
       title: Text(localizations.edit_dictionary),
@@ -87,7 +88,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
                     labelText: localizations.name,
                     hintText: localizations.enter_dict_name,
                     prefix: IconButton(
-                      icon: Icon(Icons.nfc, color: currentColor),
+                      icon: Icon(Icons.key, color: currentColor),
                       onPressed: () async {
                         showDialog(
                           context: context,
@@ -137,6 +138,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               TextFormField(
                 maxLines: null,
                 controller: keysController,
+                style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
                 decoration: InputDecoration(
                   labelText: localizations.keys,
                   hintText: localizations.enter_dict_keys,
@@ -169,13 +171,20 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
             var dictionaries =
                 appState.sharedPreferencesProvider.getDictionaries();
             List<Dictionary> output = [];
-            for (var dictTest in dictionaries) {
-              if (dictTest.id != widget.dict.id) {
-                output.add(dictTest);
-              } else {
-                output.add(dict);
+
+            if (widget.isNew) {
+              output = dictionaries;
+              output.add(dict);
+            } else {
+              for (var dictTest in dictionaries) {
+                if (dictTest.id != widget.dict.id) {
+                  output.add(dictTest);
+                } else {
+                  output.add(dict);
+                }
               }
             }
+
             appState.sharedPreferencesProvider.setDictionaries(output);
             appState.changesMade();
             Navigator.pop(context);

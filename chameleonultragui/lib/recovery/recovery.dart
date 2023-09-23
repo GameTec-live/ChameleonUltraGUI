@@ -11,8 +11,6 @@ import 'package:ffi/ffi.dart';
 import 'dart:ffi' as ffi;
 import 'package:logger/logger.dart';
 
-Logger log = Logger();
-
 class DarksideItemDart {
   int nt1;
   int ks1;
@@ -113,6 +111,7 @@ String resolvePath() {
   );
   if (!io.File(path).existsSync() &&
       Platform.environment.containsKey('FLUTTER_TEST')) {
+    Logger log = Logger();
     log.d("Library test hotfix: Library not exists");
     Directory dir = Directory('build/${platformToPath()}');
     for (var f in dir.listSync(recursive: true).toList()) {

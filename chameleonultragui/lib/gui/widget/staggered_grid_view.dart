@@ -1613,13 +1613,17 @@ abstract class RenderSliverVariableSizeBoxAdaptor extends RenderSliver
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
-    _keepAliveBucket.values.forEach((child) => child.attach(owner));
+    for (var child in _keepAliveBucket.values) {
+      child.attach(owner);
+    }
   }
 
   @override
   void detach() {
     super.detach();
-    _keepAliveBucket.values.forEach((child) => child.detach());
+    for (var child in _keepAliveBucket.values) {
+      child.detach();
+    }
   }
 
   @override
@@ -1931,13 +1935,17 @@ mixin TileContainerRenderObjectMixin<ChildType extends RenderObject,
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
-    _childRenderObjects.values.forEach((child) => child.attach(owner));
+    for (var child in _childRenderObjects.values) {
+      child.attach(owner);
+    }
   }
 
   @override
   void detach() {
     super.detach();
-    _childRenderObjects.values.forEach((child) => child.detach());
+    for (var child in _childRenderObjects.values) {
+      child.detach();
+    }
   }
 
   @override

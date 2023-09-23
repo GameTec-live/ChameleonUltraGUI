@@ -1,27 +1,160 @@
 {
+  "da": [
+    "ok",
+    "slot",
+    "slots",
+    "system",
+    "indigo",
+    "debug_mode_confirmation",
+    "platform",
+    "android",
+    "firmware_is_corrupted",
+    "dfu",
+    "firmware_version",
+    "up_to_date",
+    "version",
+    "uid",
+    "sak",
+    "atqa",
+    "factory_reset_confirmation",
+    "mini",
+    "hf",
+    "lf",
+    "mifare_classic_emulator_settings",
+    "mode_gen1a",
+    "mode_gen2",
+    "normal",
+    "recovery_error_no_supported",
+    "no_card_found",
+    "letter_space",
+    "tag_type",
+    "too_long_name",
+    "save_recovered_keys",
+    "save_recovered_keys_where",
+    "save_recovered_keys_to_file",
+    "add_recovered_keys_to_existing_dict",
+    "create_new_dict_with_recovered_keys",
+    "recovery_in_progress",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title",
+    "ble_pairing"
+  ],
+
   "de": [
-    "connecting_to_ble",
-    "default_ble_password",
-    "connection_might_take_some_time"
+    "ble_pairing"
   ],
 
   "de_AT": [
-    "connecting_to_ble",
-    "default_ble_password",
-    "connection_might_take_some_time"
-  ],
-
-  "es": [
-    "connecting_to_ble",
-    "default_ble_password",
-    "connection_might_take_some_time"
+    "ble_pairing"
   ],
 
   "fr": [
-    "unavailable",
-    "correct_tag_data",
-    "connecting_to_ble",
-    "default_ble_password",
-    "connection_might_take_some_time"
+    "shared_preferences_logging",
+    "production_logging",
+    "chameleon_flashing_title_easter_egg",
+    "ble_pairing"
+  ],
+
+  "ko": [
+    "ble_pairing"
+  ],
+
+  "nl": [
+    "factory_reset_confirmation",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title",
+    "ble_pairing"
+  ],
+
+  "pt": [
+    "ble_pairing"
+  ],
+
+  "pt_BR": [
+    "ble_pairing"
+  ],
+
+  "ro": [
+    "ok",
+    "card",
+    "slot",
+    "indigo",
+    "debug_mode_confirmation",
+    "android",
+    "dfu_flash_ultra",
+    "dfu_flash_lite",
+    "firmware_is_corrupted",
+    "dfu",
+    "up_to_date",
+    "auto",
+    "sector",
+    "uid",
+    "sak",
+    "atqa",
+    "factory_reset_confirmation",
+    "mini",
+    "hf",
+    "lf",
+    "mifare_classic_emulator_settings",
+    "normal",
+    "deceive",
+    "shadow",
+    "recovery_error_no_supported",
+    "no_card_found",
+    "letter_space",
+    "save_recovered_keys",
+    "save_recovered_keys_where",
+    "save_recovered_keys_to_file",
+    "add_recovered_keys_to_existing_dict",
+    "create_new_dict_with_recovered_keys",
+    "recovery_in_progress",
+    "clear_ble_bonds",
+    "ble_pin",
+    "enter_pin",
+    "pin_must_be_6_digits",
+    "clear_ble_bonds_confirmation",
+    "ble_need_to_remove_pair",
+    "shared_preferences_logging",
+    "production_logging",
+    "slow_down_warning",
+    "enable_production_logging",
+    "disable_production_logging",
+    "clear_logs",
+    "copy_logs_to_clipboard",
+    "recovery_library",
+    "force_flashing",
+    "chameleon_flashing_title_easter_egg",
+    "chameleon_flashing_title",
+    "ble_pairing"
   ]
 }

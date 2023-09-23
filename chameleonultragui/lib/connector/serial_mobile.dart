@@ -10,6 +10,8 @@ class MobileSerial extends AbstractSerial {
   Map<String, UsbDevice> deviceMap = {};
   UsbPort? port;
 
+  MobileSerial({required super.log});
+
   @override
   Future<bool> performDisconnect() async {
     device = ChameleonDevice.none;
@@ -52,8 +54,7 @@ class MobileSerial extends AbstractSerial {
           device = ChameleonDevice.lite;
         }
 
-        log.d(
-            "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
+        log.d("Found Chameleon ${chameleonDeviceName(device)}!");
 
         var dfuMode = deviceMap[deviceName]!.vid == 0x1915;
 

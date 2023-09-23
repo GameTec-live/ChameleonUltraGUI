@@ -26,6 +26,8 @@ class BLESerial extends AbstractSerial {
   Map<String, Chameleon> chameleonMap = {};
   bool inSearch = false;
 
+  BLESerial({required super.log});
+
   @override
   Future<List> availableDevices() async {
     if (inSearch) {
@@ -97,8 +99,7 @@ class BLESerial extends AbstractSerial {
 
       connectionType = ConnectionType.ble;
 
-      log.d(
-          "Found Chameleon ${device == ChameleonDevice.ultra ? 'Ultra' : 'Lite'}!");
+      log.d("Found Chameleon ${chameleonDeviceName(device)}!");
       if (!onlyDFU || onlyDFU && dfuMode) {
         output.add(Chameleon(
             port: bleDevice.id,

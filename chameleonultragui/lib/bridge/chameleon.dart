@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -43,12 +42,22 @@ enum ChameleonCommand {
   getAnimationMode(1016),
 
   factoryReset(1020), // WARNING: ERASES ALL
+  getDeviceType(1033),
+  getDeviceSettings(1034),
+  getDeviceCapabilities(1035),
 
   // button config
   getButtonPressConfig(1026),
   setButtonPressConfig(1027),
   getLongButtonPressConfig(1028),
   setLongButtonPressConfig(1029),
+
+  // BLE
+  bleSetConnectKey(1030),
+  bleGetConnectKey(1031),
+  bleClearBondedDevices(1032),
+  bleGetPairEnable(1036),
+  bleSetPairEnable(1037),
 
   // hf reader commands
   scan14ATag(2000),
@@ -86,8 +95,13 @@ enum ChameleonCommand {
   mf1GetWriteMode(4016),
   mf1SetWriteMode(4017),
 
+  // read slot info
+  mf1GetBlockData(4008),
+  mf1GetAntiCollData(4018),
+
   // lf emulator
-  setEM410XemulatorID(5000);
+  setEM410XemulatorID(5000),
+  getEM410XemulatorID(5001);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -253,10 +267,10 @@ class ChameleonCommunicator {
   int dataStatus = 0;
   int dataLength = 0;
   List<ChameleonMessage> messageQueue = [];
-  Logger log = Logger();
-  Random random = Random();
 
-  ChameleonCommunicator({AbstractSerial? port}) {
+  final Logger log;
+
+  ChameleonCommunicator(this.log, {AbstractSerial? port}) {
     if (port != null) {
       open(port);
     }
@@ -604,24 +618,29 @@ class ChameleonCommunicator {
   }
 
   Future<Map<int, Map<int, Map<String, List<DetectionResult>>>>>
-      getMf1DetectionResult(int index) async {
-    // Get results from index
-    var resp = (await sendCmd(ChameleonCommand.mf1GetDetectionResult,
-            data: Uint8List(4)
-              ..buffer.asByteData().setInt16(0, index, Endian.big)))!
-        .data;
+      getMf1DetectionResult(int count) async {
     List<DetectionResult> resultList = [];
-    int pos = 0;
-    while (pos < resp.length) {
-      resultList.add(DetectionResult(
-          block: resp[0 + pos],
-          type: 0x60 + (resp[1 + pos] & 0x01),
-          isNested: (resp[1 + pos] >> 1 & 0x01) == 0x01,
-          uid: bytesToU32(resp.sublist(2 + pos, 6 + pos)),
-          nt: bytesToU32(resp.sublist(6 + pos, 10 + pos)),
-          nr: bytesToU32(resp.sublist(10 + pos, 14 + pos)),
-          ar: bytesToU32(resp.sublist(14 + pos, 18 + pos))));
-      pos += 18;
+    while (resultList.length < count) {
+      // Get results from index
+      var resp = (await sendCmd(ChameleonCommand.mf1GetDetectionResult,
+              data: Uint8List(4)
+                ..buffer
+                    .asByteData()
+                    .setInt32(0, resultList.length, Endian.big)))!
+          .data;
+
+      int pos = 0;
+      while (pos < resp.length) {
+        resultList.add(DetectionResult(
+            block: resp[0 + pos],
+            type: 0x60 + (resp[1 + pos] & 0x01),
+            isNested: (resp[1 + pos] >> 1 & 0x01) == 0x01,
+            uid: bytesToU32(resp.sublist(2 + pos, 6 + pos)),
+            nt: bytesToU32(resp.sublist(6 + pos, 10 + pos)),
+            nr: bytesToU32(resp.sublist(10 + pos, 14 + pos)),
+            ar: bytesToU32(resp.sublist(14 + pos, 18 + pos))));
+        pos += 18;
+      }
     }
 
     // Classify
@@ -724,13 +743,7 @@ class ChameleonCommunicator {
 
   Future<AnimationSetting> getAnimationMode() async {
     var resp = await sendCmd(ChameleonCommand.getAnimationMode);
-    if (resp!.data[0] == 0) {
-      return AnimationSetting.full;
-    } else if (resp.data[0] == 1) {
-      return AnimationSetting.minimal;
-    } else {
-      return AnimationSetting.none;
-    }
+    return getAnimationModeType(resp!.data[0]);
   }
 
   Future<String> getGitCommitHash() async {
@@ -880,5 +893,91 @@ class ChameleonCommunicator {
   Future<void> setLongButtonConfig(ButtonType type, ButtonConfig mode) async {
     await sendCmd(ChameleonCommand.setLongButtonPressConfig,
         data: Uint8List.fromList([type.value, mode.value]));
+  }
+
+  Future<void> clearBLEBoundedDevices() async {
+    await sendCmd(ChameleonCommand.bleClearBondedDevices, skipReceive: true);
+  }
+
+  Future<String> getBLEConnectionKey() async {
+    var resp = await sendCmd(ChameleonCommand.bleGetConnectKey);
+    return utf8.decode(resp!.data, allowMalformed: true);
+  }
+
+  Future<void> setBLEConnectKey(String key) async {
+    await sendCmd(ChameleonCommand.bleSetConnectKey,
+        data: Uint8List.fromList(utf8.encode(key)));
+  }
+
+  Future<bool> isBLEPairEnabled() async {
+    var resp = await sendCmd(ChameleonCommand.bleGetPairEnable);
+    return resp!.data[0] == 1;
+  }
+
+  Future<void> setBLEPairEnabled(bool status) async {
+    await sendCmd(ChameleonCommand.bleSetPairEnable,
+        data: Uint8List.fromList([status ? 1 : 0]));
+  }
+
+  Future<ChameleonDevice> getDeviceType() async {
+    return (await sendCmd(ChameleonCommand.getDeviceType))!.data[0] == 1
+        ? ChameleonDevice.ultra
+        : ChameleonDevice.lite;
+  }
+
+  Future<Uint8List> mf1GetEmulatorBlock(int startBlock, int blockCount) async {
+    return (await sendCmd(ChameleonCommand.mf1GetBlockData,
+            data: Uint8List.fromList([startBlock, blockCount])))!
+        .data;
+  }
+
+  Future<CardData> mf1GetAntiCollData(int startBlock, int blockCount) async {
+    var resp = await sendCmd(ChameleonCommand.mf1GetAntiCollData);
+
+    if (resp!.data.isNotEmpty) {
+      return CardData(
+          uid: resp.data.sublist(0, resp.data[10]),
+          sak: resp.data[12],
+          atqa:
+              Uint8List.fromList(resp.data.sublist(13, 15).reversed.toList()));
+    } else {
+      throw ("Invalid data length");
+    }
+  }
+
+  Future<Uint8List> getEM410XEmulatorID() async {
+    return (await sendCmd(ChameleonCommand.getEM410XemulatorID))!.data;
+  }
+
+  Future<
+      (
+        AnimationSetting,
+        ButtonConfig,
+        ButtonConfig,
+        ButtonConfig,
+        ButtonConfig,
+        bool,
+        String
+      )> getDeviceSettings() async {
+    var resp = (await sendCmd(ChameleonCommand.getDeviceSettings))!.data;
+    if (resp[0] != 5) {
+      throw ("Invalid settings version");
+    }
+
+    AnimationSetting animationMode = getAnimationModeType(resp[1]);
+    ButtonConfig aPress = getButtonConfigType(resp[2]),
+        bPress = getButtonConfigType(resp[3]),
+        aLongPress = getButtonConfigType(resp[4]),
+        bLongPress = getButtonConfigType(resp[5]);
+
+    return (
+      animationMode,
+      aPress,
+      bPress,
+      aLongPress,
+      bLongPress,
+      resp[6] == 1,
+      utf8.decode(resp.sublist(7, 13), allowMalformed: true)
+    );
   }
 }

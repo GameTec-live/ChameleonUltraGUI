@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/widget/staggered_grid_view.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic.dart';
@@ -28,7 +29,8 @@ class SavedCardsPage extends StatefulWidget {
 class SavedCardsPageState extends State<SavedCardsPage> {
   MifareClassicType selectedType = MifareClassicType.m1k;
 
-  Future<void> saveTag(CardSave tag, MyAppState appState, bool bin) async {
+  Future<void> saveTag(
+      CardSave tag, ChameleonGUIState appState, bool bin) async {
     var localizations = AppLocalizations.of(context)!;
     if (bin) {
       List<int> tagDump = [];
@@ -76,7 +78,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
   // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<ChameleonGUIState>();
     var dictionaries = appState.sharedPreferencesProvider.getDictionaries();
     var tags = appState.sharedPreferencesProvider.getCards();
     var localizations = AppLocalizations.of(context)!;
@@ -325,8 +327,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                 .setCards(tags);
                                             appState.changesMade();
                                             Navigator.pop(context);
-                                            Navigator.pop(
-                                                context); // Close the modal after saving
                                           },
                                           child: Text(localizations
                                               .save_as("7 byte UID")),
@@ -374,9 +374,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       Text(
                                           "${localizations.tag_type}: ${chameleonTagToString(tag.tag)}"),
                                       Text(
-                                          "${localizations.sak}: ${tag.sak == 0 ? localizations.unavailable : tag.sak}"),
+                                          "${localizations.sak}: ${tag.sak == 0 ? localizations.unavailable : bytesToHex(u8ToBytes(tag.sak))}"),
                                       Text(
-                                          "${localizations.atqa}: ${tag.atqa.asMap().containsKey(0) ? tag.atqa[0] : ""} ${tag.atqa.asMap().containsKey(1) ? tag.atqa[1] : localizations.unavailable}"),
+                                          "${localizations.atqa}: ${tag.atqa.asMap().containsKey(0) ? bytesToHex(u8ToBytes(tag.atqa[0])) : ""} ${tag.atqa.asMap().containsKey(1) ? bytesToHex(u8ToBytes(tag.atqa[1])) : localizations.unavailable}"),
                                     ],
                                   ),
                                   actions: [
@@ -400,15 +400,16 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               title: Text(localizations
                                                   .select_save_format),
                                               actions: [
-                                                ElevatedButton(
-                                                  onPressed: () async {
-                                                    await saveTag(
-                                                        tag, appState, true);
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(localizations
-                                                      .save_as(".bin")),
-                                                ),
+                                                if (isMifareClassic(tag.tag))
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      await saveTag(
+                                                          tag, appState, true);
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(localizations
+                                                        .save_as(".bin")),
+                                                  ),
                                                 ElevatedButton(
                                                   onPressed: () async {
                                                     await saveTag(
@@ -471,7 +472,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Icon(
-                                        Icons.nfc_sharp,
+                                        (chameleonTagToFrequency(tag.tag) ==
+                                                TagFrequency.hf)
+                                            ? Icons.credit_card
+                                            : Icons.wifi,
                                         color: tag.color,
                                       ),
                                     ],
@@ -532,15 +536,16 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               title: Text(localizations
                                                   .select_save_format),
                                               actions: [
-                                                ElevatedButton(
-                                                  onPressed: () async {
-                                                    await saveTag(
-                                                        tag, appState, true);
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(localizations
-                                                      .save_as(".bin")),
-                                                ),
+                                                if (isMifareClassic(tag.tag))
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      await saveTag(
+                                                          tag, appState, true);
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(localizations
+                                                        .save_as(".bin")),
+                                                  ),
                                                 ElevatedButton(
                                                   onPressed: () async {
                                                     await saveTag(
@@ -687,13 +692,26 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         width: 600,
                                         child: ListView(
                                           children: [
-                                            Text(output),
+                                            Text(
+                                              output,
+                                              style: const TextStyle(
+                                                  fontFamily: 'RobotoMono',
+                                                  fontSize: 16.0),
+                                            ),
                                           ],
                                         ),
                                       )
                                     ],
                                   ),
                                   actions: [
+                                    IconButton(
+                                      onPressed: () async {
+                                        await dictMergeDialog(
+                                            context, dictionary);
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.merge),
+                                    ),
                                     IconButton(
                                       onPressed: () {
                                         showDialog(
@@ -831,9 +849,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       onPressed: () async {
                                         try {
                                           await FileSaver.instance.saveAs(
-                                              name: '${dictionary.name}.dic',
+                                              name: dictionary.name,
                                               bytes: dictionary.toFile(),
-                                              ext: 'bin',
+                                              ext: 'dic',
                                               mimeType: MimeType.other);
                                         } on UnimplementedError catch (_) {
                                           String? outputFile = await FilePicker
@@ -889,6 +907,138 @@ class SavedCardsPageState extends State<SavedCardsPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<String?> dictMergeDialog(BuildContext context, Dictionary mergeDict) {
+    var appState = context.read<ChameleonGUIState>();
+    var dicts = appState.sharedPreferencesProvider.getDictionaries();
+
+    dicts.sort((a, b) => a.name.compareTo(b.name));
+
+    return showSearch<String>(
+      context: context,
+      delegate: DictMergeDelegate(dicts, mergeDict),
+    );
+  }
+}
+
+class DictMergeDelegate extends SearchDelegate<String> {
+  final List<Dictionary> dicts;
+  final Dictionary mergeDict;
+  List<bool> selectedDicts = [];
+
+  DictMergeDelegate(this.dicts, this.mergeDict) {
+    selectedDicts = List.filled(dicts.length, false);
+  }
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    var appState = context.read<ChameleonGUIState>();
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+      const SizedBox(width: 10),
+      IconButton(
+        icon: const Icon(Icons.merge),
+        onPressed: () {
+          List<Dictionary> selectedForMerge = [];
+          List<Dictionary> output = dicts;
+
+          // Get selected dicts
+          for (var i = 0; i < selectedDicts.length; i++) {
+            if (selectedDicts[i]) {
+              selectedForMerge.add(dicts[i]);
+            }
+          }
+
+          // Merge
+          for (var dict in selectedForMerge) {
+            mergeDict.keys = mergeDict.keys + dict.keys;
+          }
+
+          // Deduplicate
+          mergeDict.keys = <int, Uint8List>{
+            for (var key in mergeDict.keys) Object.hashAll(key): key
+          }.values.toList();
+
+          // Replace
+          for (var i = 0; i < output.length; i++) {
+            if (output[i].id == mergeDict.id) {
+              output[i] = mergeDict;
+            }
+          }
+
+          appState.sharedPreferencesProvider.setDictionaries(output);
+
+          Navigator.pop(context);
+          appState.changesMade();
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, '');
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final results = dicts
+        .where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (BuildContext context, int index) {
+        final dict = results.elementAt(index);
+        if (dict.id == mergeDict.id) {
+          return Container();
+        }
+        return CheckboxListTile(
+          value: selectedDicts[index],
+          title: Text(dict.name),
+          secondary: Icon(Icons.key, color: dict.color),
+          subtitle: Text("${dict.keys.length.toString()} keys"),
+          onChanged: (value) {},
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final results = dicts
+        .where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (BuildContext context, int index) {
+        final dict = results.elementAt(index);
+        var appState = context.read<ChameleonGUIState>();
+        if (dict.id == mergeDict.id) {
+          return Container();
+        }
+        return CheckboxListTile(
+          value: selectedDicts[index],
+          title: Text(dict.name),
+          secondary: Icon(Icons.key, color: dict.color),
+          subtitle: Text("${dict.keys.length.toString()} keys"),
+          onChanged: (value) {
+            selectedDicts[index] = value!;
+            appState.changesMade();
+          },
+        );
+      },
     );
   }
 }
