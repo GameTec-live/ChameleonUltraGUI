@@ -410,7 +410,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
               var cardData = CardData(
                   uid: hexToBytes(card.uid.replaceAll(" ", "")),
                   atqa: card.atqa,
-                  sak: card.sak);
+                  sak: card.sak,
+                  ats: card.ats);
               await appState.communicator!.setMf1AntiCollision(cardData);
 
               List<int> blockChunk = [];

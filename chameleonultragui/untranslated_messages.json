@@ -52,26 +52,81 @@
     "force_flashing",
     "chameleon_flashing_title_easter_egg",
     "chameleon_flashing_title",
-    "ble_pairing"
+    "ble_pairing",
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
   ],
 
   "de": [
-    "ble_pairing"
+    "ble_pairing",
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
   ],
 
   "de_AT": [
-    "ble_pairing"
+    "ble_pairing",
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
+  ],
+
+  "es": [
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
   ],
 
   "fr": [
     "shared_preferences_logging",
     "production_logging",
     "chameleon_flashing_title_easter_egg",
-    "ble_pairing"
+    "ble_pairing",
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
+  ],
+
+  "it": [
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
   ],
 
   "ko": [
-    "ble_pairing"
+    "ble_pairing",
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
   ],
 
   "nl": [
@@ -93,15 +148,36 @@
     "force_flashing",
     "chameleon_flashing_title_easter_egg",
     "chameleon_flashing_title",
-    "ble_pairing"
+    "ble_pairing",
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
   ],
 
   "pt": [
-    "ble_pairing"
+    "ble_pairing",
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
   ],
 
   "pt_BR": [
-    "ble_pairing"
+    "ble_pairing",
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
   ],
 
   "ro": [
@@ -155,6 +231,33 @@
     "force_flashing",
     "chameleon_flashing_title_easter_egg",
     "chameleon_flashing_title",
-    "ble_pairing"
+    "ble_pairing",
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
+  ],
+
+  "ru": [
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
+  ],
+
+  "zh": [
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
   ]
 }

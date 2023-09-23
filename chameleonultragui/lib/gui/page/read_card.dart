@@ -41,6 +41,7 @@ class HFCardInfo {
   String sak;
   String atqa;
   String tech;
+  String ats;
   bool cardExist;
 
   HFCardInfo(
@@ -48,6 +49,7 @@ class HFCardInfo {
       this.sak = '',
       this.atqa = '',
       this.tech = '',
+      this.ats = '',
       this.cardExist = true});
 }
 
@@ -123,8 +125,11 @@ class ReadCardPageState extends State<ReadCardPage> {
       }
 
       CardData card = await appState.communicator!.scan14443aTag();
-      bool isMifare = await appState.communicator!.detectMf1Support();
-      bool isMifareClassicEV1 = isMifare
+      bool isMifareClassic = false;
+      try {
+        isMifareClassic = await appState.communicator!.detectMf1Support();
+      } catch (_) {}
+      bool isMifareClassicEV1 = isMifareClassic
           ? (await appState.communicator!
               .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]))
           : false;
@@ -133,14 +138,15 @@ class ReadCardPageState extends State<ReadCardPage> {
         hfInfo.uid = bytesToHexSpace(card.uid);
         hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
         hfInfo.atqa = bytesToHexSpace(card.atqa);
+        hfInfo.ats = (card.ats.isNotEmpty) ? bytesToHexSpace(card.ats) : "No";
         mfcInfo.isEV1 = isMifareClassicEV1;
-        mfcInfo.type = isMifare
+        mfcInfo.type = isMifareClassic
             ? mfClassicGetType(card.atqa, card.sak)
             : MifareClassicType.none;
         mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
             ? MifareClassicState.checkKeys
             : MifareClassicState.none;
-        hfInfo.tech = isMifare
+        hfInfo.tech = isMifareClassic
             ? "Mifare Classic ${mfClassicGetName(mfcInfo.type)}${isMifareClassicEV1 ? " EV1" : ""}"
             : "Other";
       });
@@ -597,7 +603,10 @@ class ReadCardPageState extends State<ReadCardPage> {
           tag: (skipDump)
               ? TagType.mifare1K
               : mfClassicGetChameleonTagType(mfcInfo.type),
-          data: mfcInfo.cardData));
+          data: mfcInfo.cardData,
+          ats: (hfInfo.ats != "No")
+              ? hexToBytes(hfInfo.ats.replaceAll(" ", ""))
+              : Uint8List(0)));
       appState.sharedPreferencesProvider.setCards(tags);
     }
   }
@@ -611,7 +620,8 @@ class ReadCardPageState extends State<ReadCardPage> {
         atqa: Uint8List(0),
         name: dumpName,
         tag: TagType.em410X,
-        data: []));
+        data: [],
+        ats: Uint8List(0)));
     appState.sharedPreferencesProvider.setCards(tags);
   }
 
@@ -679,6 +689,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                           localizations.sak, hfInfo.sak, fieldFontSize),
                       buildFieldRow(
                           localizations.atqa, hfInfo.atqa, fieldFontSize),
+                      buildFieldRow(
+                          localizations.ats, hfInfo.ats, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
                         'Tech: ${hfInfo.tech}',
