@@ -67,7 +67,8 @@ class SlotSettingsState extends State<SlotSettings> {
 
     if (!isRun) {
       await appState.communicator!.activateSlot(widget.slot);
-      isEnabled = (await appState.communicator!.getEnabledSlots())[widget.slot];
+      var enabledSlots = await appState.communicator!.getEnabledSlots();
+      isEnabled = enabledSlots[widget.slot].$1 || enabledSlots[widget.slot].$2;
       var data = (await appState.communicator!.getMf1EmulatorConfig());
       isDetection = data.$1;
       if (isDetection) {
@@ -176,8 +177,10 @@ class SlotSettingsState extends State<SlotSettings> {
                       items: [localizations.enabled, localizations.disabled],
                       selectedValue: isEnabled ? 0 : 1,
                       onChange: (int index) async {
-                        await appState.communicator!
-                            .enableSlot(widget.slot, index == 0 ? true : false);
+                        await appState.communicator!.enableSlot(widget.slot,
+                            TagFrequency.hf, index == 0 ? true : false);
+                        await appState.communicator!.enableSlot(widget.slot,
+                            TagFrequency.lf, index == 0 ? true : false);
 
                         widget.refresh(widget.slot);
                       }),

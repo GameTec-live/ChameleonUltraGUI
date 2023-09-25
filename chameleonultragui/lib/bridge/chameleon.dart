@@ -479,7 +479,7 @@ class ChameleonCommunicator {
     // Detects if it is a Mifare Classic tag
     // true - Mifare Classic
     // false - any other card
-    return (await sendCmd(ChameleonCommand.mf1SupportDetect))!.data[0] == 1;
+    return (await sendCmd(ChameleonCommand.mf1SupportDetect))!.status == 0;
   }
 
   Future<NTLevel> getMf1NTLevel() async {
@@ -629,9 +629,9 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([slot, ...intToNetwork(type.value)]));
   }
 
-  Future<void> enableSlot(int slot, bool status) async {
+  Future<void> enableSlot(int slot, TagFrequency frequency, bool status) async {
     await sendCmd(ChameleonCommand.setSlotEnable,
-        data: Uint8List.fromList([slot, status ? 1 : 0]));
+        data: Uint8List.fromList([slot, frequency.value, status ? 1 : 0]));
   }
 
   Future<bool> isMf1DetectionMode() async {
@@ -821,7 +821,7 @@ class ChameleonCommunicator {
       mode = MifareClassicWriteMode.denied;
     } else if (resp.data[4] == 2) {
       mode = MifareClassicWriteMode.deceive;
-    } else if (resp.data[4] == 3) {
+    } else if (resp.data[4] == 3 || resp.data[4] == 4) {
       mode = MifareClassicWriteMode.shadow;
     }
     return (
@@ -885,12 +885,12 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([mode.value]));
   }
 
-  Future<List<bool>> getEnabledSlots() async {
+  Future<List<(bool, bool)>> getEnabledSlots() async {
     var resp = await sendCmd(ChameleonCommand.getEnabledSlots);
     if (resp!.data.length != 8) throw ("Invalid data length");
-    List<bool> slots = [];
+    List<(bool, bool)> slots = [];
     for (var slot = 0; slot < 8; slot++) {
-      slots.add(resp.data[slot] != 0);
+      slots.add((resp.data[slot * 2] != 0, resp.data[slot * 2 + 1] != 0));
     }
     return slots;
   }
