@@ -514,7 +514,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                       .scaleDown, //This will make the text scale down if it overflows. Default Text overflow doesn't work here for some reason.
                                                   child: Text(
                                                     //This needs to be put in an Expanded but that seems to break the saved_cards page. Need to work on this.
-                                                    tag.name,
+                                                    tag.name.isEmpty ? "⠀" : tag.name, // U+2800 to prevent app crashing
                                                     style: const TextStyle(
                                                       fontSize: 16,
                                                     ),
