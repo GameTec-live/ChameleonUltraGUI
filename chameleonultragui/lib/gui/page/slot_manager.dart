@@ -147,7 +147,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                       itemCount: 8,
                       itemBuilder: (BuildContext context, int index) {
                         return Container(
-                          constraints: const BoxConstraints(maxHeight: 130),
+                          constraints: const BoxConstraints(maxHeight: 160, minHeight: 100),
                           child: ElevatedButton(
                             onPressed: () {
                               cardSelectDialog(context, index);
