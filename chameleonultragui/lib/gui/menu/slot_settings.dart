@@ -8,6 +8,7 @@ import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -33,6 +34,7 @@ class SlotSettingsState extends State<SlotSettings> {
   late MifareClassicWriteMode writeMode;
   String hfName = "";
   String lfName = "";
+  TagFrequency exportFrequency = TagFrequency.hf;
 
   @override
   void initState() {
@@ -89,7 +91,7 @@ class SlotSettingsState extends State<SlotSettings> {
     }
   }
 
-  Future<CardSave> rebuildCardSaveFromSlot(TagFrequency  frequency) async {
+  Future<CardSave> rebuildCardSaveFromSlot(TagFrequency  frequency, int slot) async {
     var appState = context.read<ChameleonGUIState>();
 
     String ?name;
@@ -97,11 +99,16 @@ class SlotSettingsState extends State<SlotSettings> {
     Uint8List ?atqa;
     TagType ?tag;
     String ?uid;
+    List<Uint8List> ?binData;
 
     List<(TagType, TagType)> usedSlots = List.generate(
       8,
       (_) => (TagType.unknown, TagType.unknown),
     );
+
+    try {
+      await appState.communicator!.activateSlot(widget.slot);
+    } catch(_) {}
 
     try {
       usedSlots = await appState.communicator!.getUsedSlots();
@@ -118,24 +125,24 @@ class SlotSettingsState extends State<SlotSettings> {
     if (frequency == TagFrequency.lf) {
       sak = 0;
       atqa = Uint8List.fromList([0x00, 0x00]);
-      if (usedSlots[widget.slot].$2 == TagType.unknown) {
+      if (usedSlots[slot].$2 == TagType.unknown) {
         throw Exception("Cant request LF if LF isnt used!");
       }
-      tag = usedSlots[widget.slot].$2;
+      tag = usedSlots[slot].$2;
       try {
         uid = bytesToHexSpace(await appState.communicator!.getEM410XEmulatorID());
       } catch (_) {}
 
       try {
         name = (await appState.communicator!
-                .getSlotTagName(widget.slot, TagFrequency.lf))
+                .getSlotTagName(slot, TagFrequency.lf))
             .trim();
       } catch (_) {}
     } else {
-      if (usedSlots[widget.slot].$1 == TagType.unknown) {
+      if (usedSlots[slot].$1 == TagType.unknown) {
         throw Exception("Cant request HF if HF isnt used!");
       }
-      tag = usedSlots[widget.slot].$1;
+      tag = usedSlots[slot].$1;
       CardData ?data;
       try {
         data  = await appState.communicator!.mf1GetAntiCollData();
@@ -152,6 +159,20 @@ class SlotSettingsState extends State<SlotSettings> {
                 .getSlotTagName(widget.slot, TagFrequency.hf))
             .trim();
       } catch (_) {}
+
+      try {
+        int blockCount = mfClassicGetBlockCount(chameleonTagTypeGetMfClassicType(tag));
+        for (int block = 0; block < blockCount; block += 16) {
+          try {
+            Uint8List blockData = await appState.communicator!.mf1GetEmulatorBlock(block, block + 16);
+            if (binData == null) {
+              binData = [blockData];
+            } else {
+              binData.add(blockData);
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
     }
 
     return CardSave(
@@ -160,7 +181,8 @@ class SlotSettingsState extends State<SlotSettings> {
       name: name!,
       sak: sak!,
       atqa: atqa!,
-      tag: tag
+      tag: tag,
+      data: binData ?? [],
     );
   }
 
@@ -212,8 +234,23 @@ class SlotSettingsState extends State<SlotSettings> {
                                 context: context,
                                 builder: (BuildContext context) => AlertDialog(
                                   title: Text("Download Slot Data"),
-                                  content: Text(
-                                      "Where do you want to save the data?"),
+                                  content: Column(
+                                    children: [
+                                      Text("Frequency to export?"),
+                                      ToggleButtonsWrapper(
+                                        items: [
+                                          "HF",
+                                          "LF",
+                                        ],
+                                        selectedValue: exportFrequency == TagFrequency.hf ? 0 : 1,
+                                        onChange: (int index) async {
+                                          setState(() {
+                                            exportFrequency = index == 0 ? TagFrequency.hf : TagFrequency.lf;
+                                          });
+                                        }
+                                      ),
+                                    ],
+                                  ),
                                   actions: [
                                     ElevatedButton(
                                       onPressed: () async {},
@@ -221,6 +258,8 @@ class SlotSettingsState extends State<SlotSettings> {
                                     ),
                                     ElevatedButton(
                                       onPressed: () async {
+                                        CardSave cardSave = await rebuildCardSaveFromSlot(exportFrequency, widget.slot);
+                                        appState.log!.i("CardSave: ${cardSave.toJson().toString()}");
                                         
                                       },
                                       child: Text("Create a new Card"),
