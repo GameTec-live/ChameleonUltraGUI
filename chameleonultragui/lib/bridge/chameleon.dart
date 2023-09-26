@@ -8,13 +8,13 @@ import 'package:logger/logger.dart';
 enum ChameleonCommand {
   // basic commands
   getAppVersion(1000),
-  changeMode(1001),
+  changeDeviceMode(1001),
   getDeviceMode(1002),
-  getGitCommitHash(1017),
+  getGitVersion(1017),
   getBatteryCharge(1025),
 
   // slot
-  setSlotActivated(1003),
+  setActiveSlot(1003),
   setSlotTagType(1004),
   setSlotDataDefault(1005),
   setSlotEnable(1006),
@@ -63,13 +63,14 @@ enum ChameleonCommand {
   scan14ATag(2000),
   mf1SupportDetect(2001),
   mf1NTLevelDetect(2002),
-  mf1DarksideDetect(2003),
+  mf1StaticNestedAcquire(2003),
   mf1DarksideAcquire(2004),
   mf1NTDistanceDetect(2005),
   mf1NestedAcquire(2006),
   mf1CheckKey(2007),
   mf1ReadBlock(2008),
   mf1WriteBlock(2009),
+  hf14ARawCommand(2010),
 
   // lf commands
   scanEM410Xtag(3000),
@@ -413,17 +414,6 @@ class ChameleonCommunicator {
     return bytes.buffer.asByteData().getInt16(0, Endian.big);
   }
 
-  int networkToInt(Uint8List bytes) {
-    return (bytes[0] << 8) | bytes[1];
-  }
-
-  Uint8List intToNetwork(int value) {
-    var bytes = Uint8List(2);
-    bytes[0] = (value >> 8) & 0xFF;
-    bytes[1] = value & 0xFF;
-    return bytes;
-  }
-
   Future<(bool, int)> getFirmwareVersion() async {
     var resp = await sendCmd(ChameleonCommand.getAppVersion);
     if (resp!.data.length != 2) throw ("Invalid data length");
@@ -432,7 +422,7 @@ class ChameleonCommunicator {
     if (resp.data[0] == 0 && resp.data[1] == 1) {
       return (true, 256);
     } else {
-      return (false, networkToInt(resp.data));
+      return (false, bytesToU16(resp.data));
     }
   }
 
@@ -453,7 +443,7 @@ class ChameleonCommunicator {
   }
 
   Future<void> setReaderDeviceMode(bool readerMode) async {
-    await sendCmd(ChameleonCommand.changeMode,
+    await sendCmd(ChameleonCommand.changeDeviceMode,
         data: Uint8List.fromList([readerMode ? 1 : 0]));
   }
 
@@ -538,23 +528,36 @@ class ChameleonCommunicator {
   }
 
   Future<NestedNonces> getMf1NestedNonces(int block, int keyType,
-      Uint8List keyKnown, int targetBlock, int targetKeyType) async {
+      Uint8List keyKnown, int targetBlock, int targetKeyType,
+      {bool isStaticNested = false}) async {
     // Collect nonces for nested attack
     // keyType 0x60 if A key, 0x61 B key
-    int i = 0;
-    var resp = await sendCmd(ChameleonCommand.mf1NestedAcquire,
+    int i = isStaticNested ? 4 : 0;
+    var resp = await sendCmd(
+        isStaticNested
+            ? ChameleonCommand.mf1StaticNestedAcquire
+            : ChameleonCommand.mf1NestedAcquire,
         data: Uint8List.fromList(
             [keyType, block, ...keyKnown, targetKeyType, targetBlock]),
         timeout: const Duration(seconds: 30));
     var nonces = NestedNonces(nonces: []);
 
     while (i < resp!.data.length) {
-      nonces.nonces.add(NestedNonce(
-          nt: bytesToU32(resp.data.sublist(i, i + 4)),
-          ntEnc: bytesToU32(resp.data.sublist(i + 4, i + 8)),
-          parity: resp.data[i + 8]));
+      if (isStaticNested) {
+        nonces.nonces.add(NestedNonce(
+            nt: bytesToU32(resp.data.sublist(i, i + 4)),
+            ntEnc: bytesToU32(resp.data.sublist(i + 4, i + 8)),
+            parity: 0));
 
-      i += 9;
+        i += 8;
+      } else {
+        nonces.nonces.add(NestedNonce(
+            nt: bytesToU32(resp.data.sublist(i, i + 4)),
+            ntEnc: bytesToU32(resp.data.sublist(i + 4, i + 8)),
+            parity: resp.data[i + 8]));
+
+        i += 9;
+      }
     }
 
     return nonces;
@@ -615,18 +618,18 @@ class ChameleonCommunicator {
 
   Future<void> activateSlot(int slot) async {
     // Slot 0-7
-    await sendCmd(ChameleonCommand.setSlotActivated,
+    await sendCmd(ChameleonCommand.setActiveSlot,
         data: Uint8List.fromList([slot]));
   }
 
   Future<void> setSlotType(int slot, TagType type) async {
     await sendCmd(ChameleonCommand.setSlotTagType,
-        data: Uint8List.fromList([slot, ...intToNetwork(type.value)]));
+        data: Uint8List.fromList([slot, ...u16ToBytes(type.value)]));
   }
 
   Future<void> setDefaultDataToSlot(int slot, TagType type) async {
     await sendCmd(ChameleonCommand.setSlotDataDefault,
-        data: Uint8List.fromList([slot, ...intToNetwork(type.value)]));
+        data: Uint8List.fromList([slot, ...u16ToBytes(type.value)]));
   }
 
   Future<void> enableSlot(int slot, TagFrequency frequency, bool status) async {
@@ -786,7 +789,7 @@ class ChameleonCommunicator {
   }
 
   Future<String> getGitCommitHash() async {
-    var resp = await sendCmd(ChameleonCommand.getGitCommitHash);
+    var resp = await sendCmd(ChameleonCommand.getGitVersion);
     return const AsciiDecoder().convert(resp!.data);
   }
 
@@ -801,10 +804,9 @@ class ChameleonCommunicator {
     var index = 0;
     for (var slot = 0; slot < 8; slot++) {
       tags.add((
+        numberToChameleonTag(bytesToU16(resp!.data.sublist(index, index + 2))),
         numberToChameleonTag(
-            networkToInt(resp!.data.sublist(index, index + 2))),
-        numberToChameleonTag(
-            networkToInt(resp.data.sublist(index + 2, index + 4))),
+            bytesToU16(resp.data.sublist(index + 2, index + 4))),
       ));
 
       index += 4;
@@ -964,7 +966,7 @@ class ChameleonCommunicator {
   }
 
   Future<ChameleonDevice> getDeviceType() async {
-    return (await sendCmd(ChameleonCommand.getDeviceType))!.data[0] == 1
+    return (await sendCmd(ChameleonCommand.getDeviceType))!.data[0] == 0
         ? ChameleonDevice.ultra
         : ChameleonDevice.lite;
   }
@@ -1034,7 +1036,7 @@ class ChameleonCommunicator {
     List<int> commands = [];
 
     for (int i = 0; i < resp.length; i += 2) {
-      commands.add(networkToInt(resp.sublist(i, i + 2)));
+      commands.add(bytesToU16(resp.sublist(i, i + 2)));
     }
 
     return commands;

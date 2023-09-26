@@ -54,6 +54,23 @@ class NestedDart {
       required this.par1});
 }
 
+class StaticNestedDart {
+  int uid;
+  int keyType;
+  int nt0;
+  int nt0Enc;
+  int nt1;
+  int nt1Enc;
+
+  StaticNestedDart(
+      {required this.uid,
+      required this.keyType,
+      required this.nt0,
+      required this.nt0Enc,
+      required this.nt1,
+      required this.nt1Enc});
+}
+
 class Mfkey32Dart {
   int uid;
   int nt0;
@@ -87,6 +104,16 @@ Future<List<int>> nested(NestedDart nested) async {
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final NestedRequest request = NestedRequest(requestId, nested);
+  final Completer<List<int>> completer = Completer<List<int>>();
+  requests[requestId] = completer;
+  helperIsolateSendPort.send(request);
+  return completer.future;
+}
+
+Future<List<int>> static_nested(StaticNestedDart nested) async {
+  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
+  final int requestId = _nextSumRequestId++;
+  final StaticNestedRequest request = StaticNestedRequest(requestId, nested);
   final Completer<List<int>> completer = Completer<List<int>>();
   requests[requestId] = completer;
   helperIsolateSendPort.send(request);
@@ -146,6 +173,13 @@ class NestedRequest {
   final NestedDart nested;
 
   const NestedRequest(this.id, this.nested);
+}
+
+class StaticNestedRequest {
+  final int id;
+  final StaticNestedDart nested;
+
+  const StaticNestedRequest(this.id, this.nested);
 }
 
 class Mfkey32Request {
@@ -263,6 +297,26 @@ Future<SendPort> _helperIsolateSendPort = () async {
 
           final int result = _bindings.mfkey32(pointer);
           final KeyResponse response = KeyResponse(data.id, [result]);
+          sendPort.send(response);
+          return;
+        } else if (data is StaticNestedRequest) {
+          Pointer<StaticNested> pointer = calloc();
+          pointer.ref.uid = data.nested.uid;
+          pointer.ref.key_type = data.nested.keyType;
+          pointer.ref.nt0 = data.nested.nt0;
+          pointer.ref.nt0_enc = data.nested.nt0Enc;
+          pointer.ref.nt1 = data.nested.nt1;
+          pointer.ref.nt1_enc = data.nested.nt1Enc;
+
+          Pointer<Uint32> count = calloc();
+          count.value = 0;
+          List<int> keys = [];
+          final Pointer<Uint64> result =
+              _bindings.static_nested(pointer, count);
+          for (var i = 0; i < count.value; i++) {
+            keys.add(result.elementAt(i).value);
+          }
+          final KeyResponse response = KeyResponse(data.id, keys);
           sendPort.send(response);
           return;
         }

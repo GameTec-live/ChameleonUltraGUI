@@ -59,7 +59,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "de": [
@@ -70,7 +71,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "de_AT": [
@@ -81,7 +83,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "es": [
@@ -91,7 +94,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "fr": [
@@ -105,7 +109,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "it": [
@@ -115,7 +120,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "ko": [
@@ -126,7 +132,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "nl": [
@@ -155,7 +162,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "pt": [
@@ -166,7 +174,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "pt_BR": [
@@ -177,7 +186,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "ro": [
@@ -238,7 +248,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "ru": [
@@ -248,7 +259,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "uk": [
@@ -258,7 +270,8 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ],
 
   "zh": [
@@ -268,6 +281,7 @@
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
     "skip",
-    "update"
+    "update",
+    "static_nested_attack"
   ]
 }
