@@ -86,8 +86,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.saved_cards),
-        systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Theme.of(context).colorScheme.surface),
       ),
       body: Center(
         child: Column(

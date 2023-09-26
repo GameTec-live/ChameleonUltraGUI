@@ -18,8 +18,6 @@ class FlashingPage extends StatelessWidget {
     return Scaffold(
         appBar: AppBar(
           title: const Text('Chameleon DFU'),
-          systemOverlayStyle: SystemUiOverlayStyle(
-              statusBarColor: Theme.of(context).colorScheme.surface),
         ),
         body: Center(
           child: Column(

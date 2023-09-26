@@ -130,8 +130,6 @@ class HomePageState extends State<HomePage> {
             return Scaffold(
               appBar: AppBar(
                 title: Text(localizations.home),
-                systemOverlayStyle: SystemUiOverlayStyle(
-                    statusBarColor: Theme.of(context).colorScheme.surface),
               ),
               body: const Center(child: CircularProgressIndicator()),
             );
@@ -149,8 +147,6 @@ class HomePageState extends State<HomePage> {
             return Scaffold(
               appBar: AppBar(
                 title: Text(localizations.home),
-                systemOverlayStyle: SystemUiOverlayStyle(
-                    statusBarColor: Theme.of(context).colorScheme.surface),
               ),
               body: Center(
                 child: Column(

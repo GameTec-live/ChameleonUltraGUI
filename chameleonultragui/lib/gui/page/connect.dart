@@ -28,8 +28,6 @@ class ConnectPage extends StatelessWidget {
           return Scaffold(
               appBar: AppBar(
                 title: Text(localizations.connect),
-                systemOverlayStyle: SystemUiOverlayStyle(
-                    statusBarColor: Theme.of(context).colorScheme.surface),
               ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
@@ -41,8 +39,6 @@ class ConnectPage extends StatelessWidget {
           return Scaffold(
             appBar: AppBar(
               title: Text(localizations.connect),
-              systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarColor: Theme.of(context).colorScheme.surface),
             ),
             body: Center(
               child: Column(

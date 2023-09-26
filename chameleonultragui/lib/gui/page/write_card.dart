@@ -23,8 +23,6 @@ class WriteCardPageState extends State<WriteCardPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.write_card),
-        systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Theme.of(context).colorScheme.surface),
       ),
       body: Column(
         children: [

@@ -130,8 +130,6 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.slot_manager),
-        systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Theme.of(context).colorScheme.surface),
       ),
       body: Center(
         child: Column(

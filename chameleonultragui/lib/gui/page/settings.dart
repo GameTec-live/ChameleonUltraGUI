@@ -54,8 +54,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.settings),
-        systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Theme.of(context).colorScheme.surface),
       ),
       body: Center(
         child: Column(

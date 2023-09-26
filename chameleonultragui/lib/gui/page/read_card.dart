@@ -649,8 +649,6 @@ class ReadCardPageState extends State<ReadCardPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.read_card),
-        systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Theme.of(context).colorScheme.surface),
       ),
       body: SingleChildScrollView(
         child: Column(
