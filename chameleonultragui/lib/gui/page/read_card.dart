@@ -41,6 +41,7 @@ class HFCardInfo {
   String sak;
   String atqa;
   String tech;
+  String ats;
   bool cardExist;
 
   HFCardInfo(
@@ -48,6 +49,7 @@ class HFCardInfo {
       this.sak = '',
       this.atqa = '',
       this.tech = '',
+      this.ats = '',
       this.cardExist = true});
 }
 
@@ -123,8 +125,11 @@ class ReadCardPageState extends State<ReadCardPage> {
       }
 
       CardData card = await appState.communicator!.scan14443aTag();
-      bool isMifare = await appState.communicator!.detectMf1Support();
-      bool isMifareClassicEV1 = isMifare
+      bool isMifareClassic = false;
+      try {
+        isMifareClassic = await appState.communicator!.detectMf1Support();
+      } catch (_) {}
+      bool isMifareClassicEV1 = isMifareClassic
           ? (await appState.communicator!
               .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]))
           : false;
@@ -133,14 +138,15 @@ class ReadCardPageState extends State<ReadCardPage> {
         hfInfo.uid = bytesToHexSpace(card.uid);
         hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
         hfInfo.atqa = bytesToHexSpace(card.atqa);
+        hfInfo.ats = (card.ats.isNotEmpty) ? bytesToHexSpace(card.ats) : "No";
         mfcInfo.isEV1 = isMifareClassicEV1;
-        mfcInfo.type = isMifare
+        mfcInfo.type = isMifareClassic
             ? mfClassicGetType(card.atqa, card.sak)
             : MifareClassicType.none;
         mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
             ? MifareClassicState.checkKeys
             : MifareClassicState.none;
-        hfInfo.tech = isMifare
+        hfInfo.tech = isMifareClassic
             ? "Mifare Classic ${mfClassicGetName(mfcInfo.type)}${isMifareClassicEV1 ? " EV1" : ""}"
             : "Other";
       });
@@ -263,12 +269,13 @@ class ReadCardPageState extends State<ReadCardPage> {
         });
 
         var prng = await appState.communicator!.getMf1NTLevel();
-        if (prng != NTLevel.weak) {
-          // No hardnested/staticnested implementation yet
+        if (prng == NTLevel.hard) {
+          // No hardnested implementation yet
           setState(() {
             mfcInfo.recovery.error = localizations.recovery_error_no_supported;
             mfcInfo.state = MifareClassicState.recovery;
           });
+
           return;
         }
 
@@ -306,23 +313,45 @@ class ReadCardPageState extends State<ReadCardPage> {
                   validKeyBlock, 0x60 + validKeyType, validKey);
               bool found = false;
               for (var i = 0; i < 0xFF && !found; i++) {
-                var nonces = await appState.communicator!.getMf1NestedNonces(
-                    validKeyBlock,
-                    0x60 + validKeyType,
-                    validKey,
-                    mfClassicGetSectorTrailerBlockBySector(sector),
-                    0x60 + keyType);
-                var nested = NestedDart(
+                List<int> keys = [];
+                if (prng == NTLevel.weak) {
+                  var nonces = await appState.communicator!.getMf1NestedNonces(
+                      validKeyBlock,
+                      0x60 + validKeyType,
+                      validKey,
+                      mfClassicGetSectorTrailerBlockBySector(sector),
+                      0x60 + keyType);
+                  var nested = NestedDart(
+                      uid: distance.uid,
+                      distance: distance.distance,
+                      nt0: nonces.nonces[0].nt,
+                      nt0Enc: nonces.nonces[0].ntEnc,
+                      par0: nonces.nonces[0].parity,
+                      nt1: nonces.nonces[1].nt,
+                      nt1Enc: nonces.nonces[1].ntEnc,
+                      par1: nonces.nonces[1].parity);
+
+                  keys = await recovery.nested(nested);
+                } else if (prng == NTLevel.static) {
+                  var nonces = await appState.communicator!.getMf1NestedNonces(
+                      validKeyBlock,
+                      0x60 + validKeyType,
+                      validKey,
+                      mfClassicGetSectorTrailerBlockBySector(sector),
+                      0x60 + keyType,
+                      isStaticNested: true);
+                  var nested = StaticNestedDart(
                     uid: distance.uid,
-                    distance: distance.distance,
+                    keyType: 0x60 + validKeyType,
                     nt0: nonces.nonces[0].nt,
                     nt0Enc: nonces.nonces[0].ntEnc,
-                    par0: nonces.nonces[0].parity,
                     nt1: nonces.nonces[1].nt,
                     nt1Enc: nonces.nonces[1].ntEnc,
-                    par1: nonces.nonces[1].parity);
+                  );
 
-                var keys = await recovery.nested(nested);
+                  keys = await recovery.static_nested(nested);
+                }
+
                 if (keys.isNotEmpty) {
                   appState.log!.d("Found keys: $keys. Checking them...");
                   for (var key in keys) {
@@ -398,8 +427,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                 ...mfcInfo.recovery.selectedDictionary!.keys,
                 ...gMifareClassicKeys
               ]) {
-                appState.log!
-                    .d("Checking $key on sector $sector, key type $keyType");
+                appState.log!.d(
+                    "Checking ${bytesToHex(key)} on sector $sector, key type $keyType");
                 await asyncSleep(1); // Let GUI update
                 if (await appState.communicator!.mf1Auth(
                     mfClassicGetSectorTrailerBlockBySector(sector),
@@ -597,7 +626,10 @@ class ReadCardPageState extends State<ReadCardPage> {
           tag: (skipDump)
               ? TagType.mifare1K
               : mfClassicGetChameleonTagType(mfcInfo.type),
-          data: mfcInfo.cardData));
+          data: mfcInfo.cardData,
+          ats: (hfInfo.ats != "No")
+              ? hexToBytes(hfInfo.ats.replaceAll(" ", ""))
+              : Uint8List(0)));
       appState.sharedPreferencesProvider.setCards(tags);
     }
   }
@@ -611,7 +643,8 @@ class ReadCardPageState extends State<ReadCardPage> {
         atqa: Uint8List(0),
         name: dumpName,
         tag: TagType.em410X,
-        data: []));
+        data: [],
+        ats: Uint8List(0)));
     appState.sharedPreferencesProvider.setCards(tags);
   }
 
@@ -679,6 +712,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                           localizations.sak, hfInfo.sak, fieldFontSize),
                       buildFieldRow(
                           localizations.atqa, hfInfo.atqa, fieldFontSize),
+                      buildFieldRow(
+                          localizations.ats, hfInfo.ats, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
                         'Tech: ${hfInfo.tech}',

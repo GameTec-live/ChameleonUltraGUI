@@ -26,9 +26,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     (_) => (TagType.unknown, TagType.unknown),
   );
 
-  List<bool> enabledSlots = List.generate(
+  List<(bool, bool)> enabledSlots = List.generate(
     8,
-    (_) => true,
+    (_) => (true, true),
   );
 
   List<Map<String, String>> slotData = List.generate(
@@ -169,7 +169,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                   Row(
                                     children: [
                                       Icon(Icons.nfc,
-                                          color: enabledSlots[index]
+                                          color: enabledSlots[index].$1 ||
+                                                  enabledSlots[index].$2
                                               ? Colors.green
                                               : Colors.deepOrange),
                                       const SizedBox(width: 5),
@@ -402,7 +403,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
               }
 
               await appState.communicator!.setReaderDeviceMode(false);
-              await appState.communicator!.enableSlot(gridPosition, true);
+              await appState.communicator!
+                  .enableSlot(gridPosition, TagFrequency.hf, true);
               await appState.communicator!.activateSlot(gridPosition);
               await appState.communicator!.setSlotType(gridPosition, card.tag);
               await appState.communicator!
@@ -410,7 +412,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
               var cardData = CardData(
                   uid: hexToBytes(card.uid.replaceAll(" ", "")),
                   atqa: card.atqa,
-                  sak: card.sak);
+                  sak: card.sak,
+                  ats: card.ats);
               await appState.communicator!.setMf1AntiCollision(cardData);
 
               List<int> blockChunk = [];
@@ -461,7 +464,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
             } else if (card.tag == TagType.em410X) {
               close(context, card.name);
               await appState.communicator!.setReaderDeviceMode(false);
-              await appState.communicator!.enableSlot(gridPosition, true);
+              await appState.communicator!
+                  .enableSlot(gridPosition, TagFrequency.lf, true);
               await appState.communicator!.activateSlot(gridPosition);
               await appState.communicator!.setSlotType(gridPosition, card.tag);
               await appState.communicator!

@@ -168,6 +168,56 @@ class DebugPage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () async {
                   await appState.communicator!.setReaderDeviceMode(true);
+                  var distance = await appState.communicator!.getMf1NTDistance(
+                      50,
+                      0x60,
+                      Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]));
+                  bool found = false;
+                  for (var i = 0; i < 0xFF && !found; i++) {
+                    var nonces = await appState.communicator!
+                        .getMf1NestedNonces(
+                            50,
+                            0x60,
+                            Uint8List.fromList(
+                                [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
+                            0,
+                            0x61,
+                            isStaticNested: true);
+                    var nested = StaticNestedDart(
+                        uid: distance.uid,
+                        keyType: 0x61,
+                        nt0: nonces.nonces[0].nt,
+                        nt0Enc: nonces.nonces[0].ntEnc,
+                        nt1: nonces.nonces[1].nt,
+                        nt1Enc: nonces.nonces[1].ntEnc);
+
+                    var keys = await recovery.static_nested(nested);
+                    if (keys.isNotEmpty) {
+                      appState.log!.d("Found keys: $keys. Checking them...");
+                      for (var key in keys) {
+                        var keyBytes = u64ToBytes(key);
+                        if ((await appState.communicator!
+                                .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8))) ==
+                            true) {
+                          appState.log!.i(
+                              "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
+                          found = true;
+                          break;
+                        }
+                      }
+                    } else {
+                      appState.log!.d("Can't find keys, retrying...");
+                    }
+                  }
+                },
+                child: Column(children: [
+                  Text(localizations.static_nested_attack),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  await appState.communicator!.setReaderDeviceMode(true);
                   var data = await appState.communicator!
                       .getMf1Darkside(0x03, 0x61, true, 15);
                   var darkside = DarksideDart(uid: data.uid, items: []);
