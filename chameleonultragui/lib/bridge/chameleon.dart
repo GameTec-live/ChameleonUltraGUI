@@ -1041,4 +1041,45 @@ class ChameleonCommunicator {
 
     return commands;
   }
+
+  Future<Uint8List> send14ARaw(Uint8List data,
+      {int respTimeoutMs = 100,
+      int? bitLen,
+      bool activateRfField = true,
+      bool waitResponse = true,
+      bool appendCrc = true,
+      bool autoSelect = true,
+      bool keepRfField = false,
+      bool checkResponseCrc = true}) async {
+    bitLen ??= data.length * 8; // bits = bytes * 8(bit)
+    int options = 0;
+
+    if (activateRfField) {
+      options += 128;
+    }
+    if (waitResponse) {
+      options += 64;
+    }
+    if (appendCrc) {
+      options += 32;
+    }
+    if (autoSelect) {
+      options += 16;
+    }
+    if (keepRfField) {
+      options += 8;
+    }
+    if (checkResponseCrc) {
+      options += 4;
+    }
+
+    return (await sendCmd(ChameleonCommand.hf14ARawCommand,
+            data: Uint8List.fromList([
+              options,
+              ...u16ToBytes(respTimeoutMs),
+              ...u16ToBytes(bitLen),
+              ...data
+            ])))!
+        .data;
+  }
 }
