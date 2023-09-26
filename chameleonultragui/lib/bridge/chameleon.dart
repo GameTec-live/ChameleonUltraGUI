@@ -109,14 +109,14 @@ enum ChameleonCommand {
 
 enum TagType {
   unknown(0),
-  em410X(1),
-  mifareMini(2),
-  mifare1K(3),
-  mifare2K(4),
-  mifare4K(5),
-  ntag213(6),
-  ntag215(7),
-  ntag216(8);
+  em410X(100),
+  mifareMini(1000),
+  mifare1K(1001),
+  mifare2K(1002),
+  mifare4K(1003),
+  ntag213(1100),
+  ntag215(1101),
+  ntag216(1102);
 
   const TagType(this.value);
   final int value;
@@ -887,7 +887,7 @@ class ChameleonCommunicator {
 
   Future<List<(bool, bool)>> getEnabledSlots() async {
     var resp = await sendCmd(ChameleonCommand.getEnabledSlots);
-    if (resp!.data.length != 8) throw ("Invalid data length");
+    if (resp!.data.length != 16) throw ("Invalid data length");
     List<(bool, bool)> slots = [];
     for (var slot = 0; slot < 8; slot++) {
       slots.add((resp.data[slot * 2] != 0, resp.data[slot * 2 + 1] != 0));

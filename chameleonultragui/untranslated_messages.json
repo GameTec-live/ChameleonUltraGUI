@@ -251,6 +251,16 @@
     "update"
   ],
 
+  "uk": [
+    "ats",
+    "outdated_protocol",
+    "outdated_protocol_description_1",
+    "outdated_protocol_description_2",
+    "outdated_protocol_description_3",
+    "skip",
+    "update"
+  ],
+
   "zh": [
     "ats",
     "outdated_protocol",
