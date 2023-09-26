@@ -191,7 +191,7 @@ class ChameleonMessage {
       {required this.command, required this.status, required this.data});
 }
 
-enum NTLevel { weak, static, hard, unknown }
+enum NTLevel { static, weak, hard, unknown }
 
 enum DarksideResult {
   vulnerable,
@@ -476,9 +476,9 @@ class ChameleonCommunicator {
     // Get level of nt (weak/static/hard) in Mifare Classic
     var resp = (await sendCmd(ChameleonCommand.mf1NTLevelDetect))!.data[0];
     if (resp == 0) {
-      return NTLevel.weak;
-    } else if (resp == 1) {
       return NTLevel.static;
+    } else if (resp == 1) {
+      return NTLevel.weak;
     } else if (resp == 2) {
       return NTLevel.hard;
     } else {
