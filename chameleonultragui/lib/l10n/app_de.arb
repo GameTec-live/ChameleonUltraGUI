@@ -203,5 +203,6 @@
   "recovery_library": "Wiederherstellungs-Bibliothek",
   "force_flashing": "Flashen erzwingen",
   "chameleon_flashing_title_easter_egg": "Dein Chameleon {model} ist am Flashen",
-  "chameleon_flashing_title": "Firmware wird auf Ihrem Chameleon {model} installiert"
+  "chameleon_flashing_title": "Firmware wird auf Ihrem Chameleon {model} installiert",
+  "ble_pairing": "BLE koppeln"
 }
