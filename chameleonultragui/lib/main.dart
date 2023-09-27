@@ -194,10 +194,6 @@ class _MainPageState extends State<MainPage> {
       page = const Mfkey32Page();
     }
 
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Theme.of(context).colorScheme.surface,
-    ));
-
     try {
       WakelockPlus.toggle(enable: page is FlashingPage);
     } catch (_) {}
@@ -210,16 +206,33 @@ class _MainPageState extends State<MainPage> {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-            seedColor: widget.sharedPreferencesProvider
-                .getThemeColor()), // Color Scheme
-        brightness: Brightness.light, // Light Theme
+            seedColor: widget.sharedPreferencesProvider.getThemeColor()),
+        brightness: Brightness.light,
+        appBarTheme: AppBarTheme(
+            systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: ColorScheme.fromSeed(
+                        seedColor:
+                            widget.sharedPreferencesProvider.getThemeColor(),
+                        brightness: Brightness.light)
+                    .surface,
+                statusBarBrightness: Brightness.dark,
+                statusBarIconBrightness: Brightness.dark)),
       ),
       darkTheme: ThemeData.dark().copyWith(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
             seedColor: widget.sharedPreferencesProvider.getThemeColor(),
-            brightness: Brightness.dark), // Color Scheme
-        brightness: Brightness.dark, // Dark Theme
+            brightness: Brightness.dark),
+        brightness: Brightness.dark,
+        appBarTheme: AppBarTheme(
+            systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: ColorScheme.fromSeed(
+                        seedColor:
+                            widget.sharedPreferencesProvider.getThemeColor(),
+                        brightness: Brightness.dark)
+                    .surface,
+                statusBarBrightness: Brightness.light,
+                statusBarIconBrightness: Brightness.light)),
       ),
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
       home: LayoutBuilder(// Build Page
