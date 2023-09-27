@@ -353,6 +353,39 @@ class DebugPage extends StatelessWidget {
                 ]),
               ),
               const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  var data = await appState.communicator!.send14ARaw(
+                      Uint8List.fromList([0x40]),
+                      bitLen: 7,
+                      appendCrc: false,
+                      autoSelect: false,
+                      checkResponseCrc: false,
+                      keepRfField: true);
+
+                  if (data[0] == 0x0a) {
+                    data = await appState.communicator!.send14ARaw(
+                        Uint8List.fromList([0x43]),
+                        appendCrc: false,
+                        autoSelect: false,
+                        checkResponseCrc: false,
+                        keepRfField: true);
+                    if (data[0] == 0x0a) {
+                      for (var block = 0; block < 64; block++) {
+                        data = await appState.communicator!.send14ARaw(
+                            Uint8List.fromList([0x30, block]),
+                            autoSelect: false,
+                            keepRfField: block == 63 ? false : true);
+                        appState.log!.d("$block : ${bytesToHexSpace(data)}");
+                      }
+                    }
+                  }
+                },
+                child: Column(children: [
+                  Text(localizations.read_gen1_card_data),
+                ]),
+              ),
+              const SizedBox(height: 10),
             ],
           ),
         )));

@@ -60,11 +60,11 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "de": [
-    "ble_pairing",
     "ats",
     "outdated_protocol",
     "outdated_protocol_description_1",
@@ -72,11 +72,11 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "de_AT": [
-    "ble_pairing",
     "ats",
     "outdated_protocol",
     "outdated_protocol_description_1",
@@ -84,7 +84,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "es": [
@@ -95,7 +96,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "fr": [
@@ -110,7 +112,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "it": [
@@ -121,7 +124,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "ko": [
@@ -133,7 +137,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "nl": [
@@ -163,7 +168,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "pt": [
@@ -175,7 +181,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "pt_BR": [
@@ -187,7 +194,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "ro": [
@@ -249,7 +257,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "ru": [
@@ -260,7 +269,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "uk": [
@@ -271,7 +281,8 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ],
 
   "zh": [
@@ -282,6 +293,7 @@
     "outdated_protocol_description_3",
     "skip",
     "update",
-    "static_nested_attack"
+    "static_nested_attack",
+    "read_gen1_card_data"
   ]
 }

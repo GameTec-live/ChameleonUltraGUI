@@ -212,5 +212,6 @@
   "outdated_protocol_description_3": "Would you like to update firmware?",
   "skip": "Skip",
   "update": "Update",
-  "static_nested_attack": "Run Static Nested attack on card"
+  "static_nested_attack": "Run Static Nested attack on card",
+  "read_gen1_card_data": "Read Gen1 card data"
 }
