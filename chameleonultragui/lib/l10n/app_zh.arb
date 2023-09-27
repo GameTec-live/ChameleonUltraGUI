@@ -204,5 +204,13 @@
   "force_flashing": "\u5f3a\u5236\u5237\u5165",
   "chameleon_flashing_title_easter_egg": "\u60a8\u7684Chameleon{model} \u6b63\u5728\u5237\u5165",
   "chameleon_flashing_title": "\u5728\u60a8\u7684Chameleon {model} \u4e0a\u5b89\u88c5\u56fa\u4ef6",
-  "ble_pairing": "\u84dd\u8272\u914d\u5bf9"
+  "ble_pairing": "\u84dd\u7259\u914d\u5bf9\u5bc6\u7801",
+  "ats": "ATS",
+  "outdated_protocol": "\u8fc7\u671f\u7684\u534f\u8bae\u56fa\u4ef6",
+  "outdated_protocol_description_1": "\u60a8\u7684\u53d8\u8272\u9f99\u6b63\u5728\u4f7f\u7528\u8fc7\u65f6\u7684\u534f\u8bae\u56fa\u4ef6\uff0c\u8fd9\u610f\u5473\u7740\u56fa\u4ef6\u5df2\u7ecf\u8fc7\u65f6\u3002",
+  "outdated_protocol_description_2": "\u672c\u8f6f\u4ef6\u4e0d\u5339\u914d\u6b64\u534f\u8bae\u56fa\u4ef6\u3002\u8bf7\u52ff\u63d0\u4ea4\u4efb\u4f55Bug\u5982\u4e0d\u66f4\u65b0\u56fa\u4ef6\u3002",
+  "outdated_protocol_description_3": "\u60a8\u60f3\u66f4\u65b0\u56fa\u4ef6\u5417\uff1f",
+  "skip": "\u8df3\u8fc7",
+  "update": "\u66f4\u65b0",
+  "static_nested_attack": "\u5bf9\u5361\u7247\u8fd0\u884cStatic Nested\u653b\u51fb"
 }
