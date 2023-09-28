@@ -204,5 +204,13 @@
   "force_flashing": "Forzar flasheo",
   "chameleon_flashing_title_easter_egg": "Tu Chameleon {model} se est\u00e1 flasheando",
   "chameleon_flashing_title": "Instalando firmware en su Chameleon {model}",
-  "ble_pairing": "Emparejamiento BLE"
+  "ble_pairing": "Emparejamiento BLE",
+  "ats": "ATS",
+  "outdated_protocol": "Protocolo obsoleto en el firmware",
+  "outdated_protocol_description_1": "Su Chameleon funciona con un protocolo obsoleto, lo que significa que el firmware no est\u00e1 actualizado.",
+  "outdated_protocol_description_2": "La aplicaci\u00f3n no puede funcionar con esta versi\u00f3n del protocolo.",
+  "outdated_protocol_description_3": "\u00bfQuieres actualizar el firmaware?",
+  "skip": "Saltar",
+  "update": "Actualizar",
+  "static_nested_attack": "Ejecutar ataque Nested est\u00e1tico sobre la tarjeta"
 }
