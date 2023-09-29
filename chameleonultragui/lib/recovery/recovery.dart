@@ -110,7 +110,7 @@ Future<List<int>> nested(NestedDart nested) async {
   return completer.future;
 }
 
-Future<List<int>> static_nested(StaticNestedDart nested) async {
+Future<List<int>> staticNested(StaticNestedDart nested) async {
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final StaticNestedRequest request = StaticNestedRequest(requestId, nested);

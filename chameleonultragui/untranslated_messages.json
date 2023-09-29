@@ -1,4 +1,8 @@
 {
+  "cs": [
+    "card_tech"
+  ],
+
   "da": [
     "ok",
     "slot",
@@ -61,43 +65,23 @@
     "skip",
     "update",
     "static_nested_attack",
-    "read_gen1_card_data"
+    "read_gen1_card_data",
+    "card_tech"
   ],
 
   "de": [
     "ats",
-    "outdated_protocol",
-    "outdated_protocol_description_1",
-    "outdated_protocol_description_2",
-    "outdated_protocol_description_3",
-    "skip",
-    "update",
-    "static_nested_attack",
-    "read_gen1_card_data"
+    "card_tech"
   ],
 
   "de_AT": [
     "ats",
-    "outdated_protocol",
-    "outdated_protocol_description_1",
-    "outdated_protocol_description_2",
-    "outdated_protocol_description_3",
-    "skip",
-    "update",
-    "static_nested_attack",
-    "read_gen1_card_data"
+    "card_tech"
   ],
 
   "es": [
-    "ats",
-    "outdated_protocol",
-    "outdated_protocol_description_1",
-    "outdated_protocol_description_2",
-    "outdated_protocol_description_3",
-    "skip",
-    "update",
-    "static_nested_attack",
-    "read_gen1_card_data"
+    "read_gen1_card_data",
+    "card_tech"
   ],
 
   "fr": [
@@ -113,7 +97,8 @@
     "skip",
     "update",
     "static_nested_attack",
-    "read_gen1_card_data"
+    "read_gen1_card_data",
+    "card_tech"
   ],
 
   "it": [
@@ -125,20 +110,17 @@
     "skip",
     "update",
     "static_nested_attack",
-    "read_gen1_card_data"
+    "read_gen1_card_data",
+    "card_tech"
   ],
 
   "ko": [
     "ble_pairing",
     "ats",
     "outdated_protocol",
-    "outdated_protocol_description_1",
-    "outdated_protocol_description_2",
-    "outdated_protocol_description_3",
-    "skip",
-    "update",
     "static_nested_attack",
-    "read_gen1_card_data"
+    "read_gen1_card_data",
+    "card_tech"
   ],
 
   "nl": [
@@ -169,7 +151,8 @@
     "skip",
     "update",
     "static_nested_attack",
-    "read_gen1_card_data"
+    "read_gen1_card_data",
+    "card_tech"
   ],
 
   "pt": [
@@ -182,7 +165,8 @@
     "skip",
     "update",
     "static_nested_attack",
-    "read_gen1_card_data"
+    "read_gen1_card_data",
+    "card_tech"
   ],
 
   "pt_BR": [
@@ -195,7 +179,8 @@
     "skip",
     "update",
     "static_nested_attack",
-    "read_gen1_card_data"
+    "read_gen1_card_data",
+    "card_tech"
   ],
 
   "ro": [
@@ -258,42 +243,25 @@
     "skip",
     "update",
     "static_nested_attack",
-    "read_gen1_card_data"
+    "read_gen1_card_data",
+    "card_tech"
   ],
 
   "ru": [
-    "ats",
-    "outdated_protocol",
-    "outdated_protocol_description_1",
-    "outdated_protocol_description_2",
-    "outdated_protocol_description_3",
-    "skip",
-    "update",
-    "static_nested_attack",
-    "read_gen1_card_data"
+    "card_tech"
   ],
 
   "uk": [
-    "ats",
     "outdated_protocol",
     "outdated_protocol_description_1",
     "outdated_protocol_description_2",
     "outdated_protocol_description_3",
-    "skip",
-    "update",
     "static_nested_attack",
-    "read_gen1_card_data"
+    "read_gen1_card_data",
+    "card_tech"
   ],
 
   "zh": [
-    "ats",
-    "outdated_protocol",
-    "outdated_protocol_description_1",
-    "outdated_protocol_description_2",
-    "outdated_protocol_description_3",
-    "skip",
-    "update",
-    "static_nested_attack",
-    "read_gen1_card_data"
+    "card_tech"
   ]
 }

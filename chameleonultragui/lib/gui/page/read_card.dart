@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -168,7 +168,7 @@ class ReadCardPageState extends State<ReadCardPage> {
       }
 
       var card = await appState.communicator!.readEM410X();
-      if (card != "00 00 00 00 00") {
+      if (card != "") {
         setState(() {
           lfInfo.uid = card;
           lfInfo.tech = "EM-Marin EM4100/EM4102";
@@ -349,7 +349,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                     nt1Enc: nonces.nonces[1].ntEnc,
                   );
 
-                  keys = await recovery.static_nested(nested);
+                  keys = await recovery.staticNested(nested);
                 }
 
                 if (keys.isNotEmpty) {
@@ -716,7 +716,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                           localizations.ats, hfInfo.ats, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
-                        'Tech: ${hfInfo.tech}',
+                        '${localizations.card_tech}: ${hfInfo.tech}',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: fieldFontSize),
                       ),
@@ -992,7 +992,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                           localizations.uid, lfInfo.uid, fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
-                        'Tech: ${lfInfo.tech}',
+                        '${localizations.card_tech}: ${lfInfo.tech}',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: fieldFontSize),
                       ),

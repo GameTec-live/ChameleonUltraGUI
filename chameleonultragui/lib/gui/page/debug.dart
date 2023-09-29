@@ -191,7 +191,7 @@ class DebugPage extends StatelessWidget {
                         nt1: nonces.nonces[1].nt,
                         nt1Enc: nonces.nonces[1].ntEnc);
 
-                    var keys = await recovery.static_nested(nested);
+                    var keys = await recovery.staticNested(nested);
                     if (keys.isNotEmpty) {
                       appState.log!.d("Found keys: $keys. Checking them...");
                       for (var key in keys) {
