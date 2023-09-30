@@ -308,7 +308,13 @@ class HomePageState extends State<HomePage> {
                                 return;
                               }
 
-                              appState.log!.i("Latest commit: $latestCommit");
+                              try {
+                                fwVersion[1] =
+                                    await resolveCommit(fwVersion[1]);
+                              } catch (_) {}
+
+                              appState.log!.i(
+                                  "Latest commit: $latestCommit, current commit ${fwVersion[1]}");
 
                               if (latestCommit.isEmpty) {
                                 return;
