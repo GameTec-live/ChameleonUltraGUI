@@ -4,12 +4,13 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/gui/widget/staggered_grid_view.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
@@ -273,19 +274,20 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                 .sharedPreferencesProvider
                                                 .getCards();
                                             var tag = CardSave(
-                                              id: const Uuid().v4(),
-                                              name: nameController.text,
-                                              sak: hexToBytes(sak4Controller
-                                                  .text
-                                                  .replaceAll(" ", ""))[0],
-                                              atqa: hexToBytes(atqa4Controller
-                                                  .text
-                                                  .replaceAll(" ", "")),
-                                              uid: uid4Controller.text,
-                                              tag: mfClassicGetChameleonTagType(
-                                                  selectedType),
-                                              data: blocks,
-                                            );
+                                                id: const Uuid().v4(),
+                                                name: nameController.text,
+                                                sak: hexToBytes(sak4Controller
+                                                    .text
+                                                    .replaceAll(" ", ""))[0],
+                                                atqa: hexToBytes(atqa4Controller
+                                                    .text
+                                                    .replaceAll(" ", "")),
+                                                uid: uid4Controller.text,
+                                                tag:
+                                                    mfClassicGetChameleonTagType(
+                                                        selectedType),
+                                                data: blocks,
+                                                ats: Uint8List(0));
                                             tags.add(tag);
                                             appState.sharedPreferencesProvider
                                                 .setCards(tags);
@@ -308,19 +310,20 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                 .sharedPreferencesProvider
                                                 .getCards();
                                             var tag = CardSave(
-                                              id: const Uuid().v4(),
-                                              name: nameController.text,
-                                              sak: hexToBytes(sak7Controller
-                                                  .text
-                                                  .replaceAll(" ", ""))[0],
-                                              atqa: hexToBytes(atqa7Controller
-                                                  .text
-                                                  .replaceAll(" ", "")),
-                                              uid: uid7Controller.text,
-                                              tag: mfClassicGetChameleonTagType(
-                                                  selectedType),
-                                              data: blocks,
-                                            );
+                                                id: const Uuid().v4(),
+                                                name: nameController.text,
+                                                sak: hexToBytes(sak7Controller
+                                                    .text
+                                                    .replaceAll(" ", ""))[0],
+                                                atqa: hexToBytes(atqa7Controller
+                                                    .text
+                                                    .replaceAll(" ", "")),
+                                                uid: uid7Controller.text,
+                                                tag:
+                                                    mfClassicGetChameleonTagType(
+                                                        selectedType),
+                                                data: blocks,
+                                                ats: Uint8List(0));
                                             tags.add(tag);
                                             appState.sharedPreferencesProvider
                                                 .setCards(tags);

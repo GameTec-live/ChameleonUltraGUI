@@ -204,5 +204,15 @@
   "force_flashing": "Force flashing",
   "chameleon_flashing_title_easter_egg": "Your Chameleon {model} is flashing",
   "chameleon_flashing_title": "Installing firmware on your Chameleon {model}",
-  "ble_pairing": "BLE pairing"
+  "ble_pairing": "BLE pairing",
+  "ats": "ATS",
+  "outdated_protocol": "Outdated protocol in firmware",
+  "outdated_protocol_description_1": "Your Chameleon is running on outdated protocol, which means firmware is outdated.",
+  "outdated_protocol_description_2": "App can't work with this version of protocol. Don't report any bugs found after that message.",
+  "outdated_protocol_description_3": "Would you like to update firmware?",
+  "skip": "Skip",
+  "update": "Update",
+  "static_nested_attack": "Run Static Nested attack on card",
+  "read_gen1_card_data": "Read Gen1 card data",
+  "card_tech": "Tech"
 }

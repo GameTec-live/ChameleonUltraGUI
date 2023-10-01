@@ -31,6 +31,10 @@ Uint8List hexToBytes(String hex) {
   return Uint8List.fromList(bytes);
 }
 
+int bytesToU16(Uint8List byteArray) {
+  return byteArray.buffer.asByteData().getUint16(0, Endian.big);
+}
+
 int bytesToU32(Uint8List byteArray) {
   return byteArray.buffer.asByteData().getUint32(0, Endian.big);
 }
@@ -41,6 +45,16 @@ int bytesToU64(Uint8List byteArray) {
 
 Uint8List u8ToBytes(int u8) {
   final ByteData byteData = ByteData(1)..setUint8(0, u8);
+  return byteData.buffer.asUint8List();
+}
+
+Uint8List u16ToBytes(int u16) {
+  final ByteData byteData = ByteData(2)..setUint16(0, u16);
+  return byteData.buffer.asUint8List();
+}
+
+Uint8List u32ToBytes(int u32) {
+  final ByteData byteData = ByteData(4)..setUint32(0, u32);
   return byteData.buffer.asUint8List();
 }
 

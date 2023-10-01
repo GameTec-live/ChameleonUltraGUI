@@ -64,6 +64,24 @@ class Recovery {
       ffi.Pointer<ffi.Uint64> Function(
           ffi.Pointer<Nested>, ffi.Pointer<ffi.Uint32>)>();
 
+  ffi.Pointer<ffi.Uint64> static_nested(
+    ffi.Pointer<StaticNested> data,
+    ffi.Pointer<ffi.Uint32> keyCount,
+  ) {
+    return _static_nested(
+      data,
+      keyCount,
+    );
+  }
+
+  late final _static_nestedPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Uint64> Function(ffi.Pointer<StaticNested>,
+              ffi.Pointer<ffi.Uint32>)>>('static_nested');
+  late final _static_nested = _static_nestedPtr.asFunction<
+      ffi.Pointer<ffi.Uint64> Function(
+          ffi.Pointer<StaticNested>, ffi.Pointer<ffi.Uint32>)>();
+
   int mfkey32(
     ffi.Pointer<Mfkey32> data,
   ) {
@@ -130,6 +148,26 @@ final class Nested extends ffi.Struct {
 
   @ffi.Uint32()
   external int par1;
+}
+
+final class StaticNested extends ffi.Struct {
+  @ffi.Uint32()
+  external int uid;
+
+  @ffi.Uint32()
+  external int key_type;
+
+  @ffi.Uint32()
+  external int nt0;
+
+  @ffi.Uint32()
+  external int nt0_enc;
+
+  @ffi.Uint32()
+  external int nt1;
+
+  @ffi.Uint32()
+  external int nt1_enc;
 }
 
 final class Mfkey32 extends ffi.Struct {

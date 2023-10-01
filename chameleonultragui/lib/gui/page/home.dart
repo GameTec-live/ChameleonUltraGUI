@@ -21,7 +21,8 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
-  var selectedSlot = 1;
+  int selectedSlot = 1;
+  bool isLegacyFirmware = false;
 
   @override
   void initState() {
@@ -95,8 +96,9 @@ class HomePageState extends State<HomePage> {
   Future<List<String>> getVersion() async {
     var appState = context.read<ChameleonGUIState>();
     String commitHash = "";
-    String firmwareVersion =
-        numToVerCode(await appState.communicator!.getFirmwareVersion());
+    var firmware = await appState.communicator!.getFirmwareVersion();
+    isLegacyFirmware = firmware.$1;
+    String firmwareVersion = numToVerCode(firmware.$2);
 
     try {
       commitHash = await appState.communicator!.getGitCommitHash();
@@ -108,6 +110,58 @@ class HomePageState extends State<HomePage> {
       } else {
         commitHash = "Outdated FW";
       }
+    }
+
+    if (context.mounted && isLegacyFirmware) {
+      var localizations = AppLocalizations.of(context)!;
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(localizations.outdated_protocol),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Text(localizations.outdated_protocol_description_1),
+                  Text(localizations.outdated_protocol_description_2),
+                  Text(localizations.outdated_protocol_description_3),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: Text(localizations.update),
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  var localizations = AppLocalizations.of(context)!;
+                  var scaffoldMessenger = ScaffoldMessenger.of(context);
+                  var snackBar = SnackBar(
+                    content: Text(localizations.downloading_fw(
+                        chameleonDeviceName(appState.connector!.device))),
+                    action: SnackBarAction(
+                      label: localizations.close,
+                      onPressed: () {
+                        scaffoldMessenger.hideCurrentSnackBar();
+                      },
+                    ),
+                  );
+
+                  scaffoldMessenger.showSnackBar(snackBar);
+                  await flashFirmware(appState,
+                      scaffoldMessenger: scaffoldMessenger);
+                },
+              ),
+              TextButton(
+                child: Text(localizations.skip),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
     }
 
     return ["$firmwareVersion ($commitHash)", commitHash];
@@ -268,7 +322,13 @@ class HomePageState extends State<HomePage> {
                                 return;
                               }
 
-                              appState.log!.i("Latest commit: $latestCommit");
+                              try {
+                                fwVersion[1] =
+                                    await resolveCommit(fwVersion[1]);
+                              } catch (_) {}
+
+                              appState.log!.i(
+                                  "Latest commit: $latestCommit, current commit ${fwVersion[1]}");
 
                               if (latestCommit.isEmpty) {
                                 return;

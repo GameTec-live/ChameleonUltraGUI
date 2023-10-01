@@ -194,7 +194,7 @@ uint64_t *most_frequent_uint64(uint64_t *keys, uint32_t size, uint32_t *outputKe
 }
 
 // nested decrypt
-static void nested_revover(RecPar *rp)
+static void nested_recover(RecPar *rp)
 {
   struct Crypto1State *revstate, *revstate_start = NULL;
   uint64_t lfsr = 0;
@@ -275,7 +275,7 @@ uint64_t *nested_run(NtpKs1 *pNK, uint32_t sizePNK, uint32_t authuid, uint32_t *
   pRPs->endPos = sizePNK;
 
   // start recover
-  nested_revover(pRPs);
+  nested_recover(pRPs);
   *keyCount = pRPs->keyCount;
 
   uint64_t *keys = NULL;
@@ -353,6 +353,83 @@ FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *outputKeyCount)
       }
       nttest = prng_successor(nttest, 1);
     }
+  }
+
+  uint32_t keyCount = 0;
+  uint64_t *keys = nested_run(pNK, j, authuid, &keyCount, outputKeyCount);
+  *outputKeyCount = MIN(256, *outputKeyCount);
+  return keys;
+}
+
+FFI_PLUGIN_EXPORT uint64_t *static_nested(StaticNested *data, uint32_t *outputKeyCount)
+{
+  NtpKs1 *pNK = NULL;
+  uint32_t i, m;
+  uint32_t j = 0;
+  uint32_t nt1, nt2, nttest, ks1, dist;
+
+  uint32_t authuid = data->uid;
+  uint8_t type = (uint8_t)data->key_type; // target key type
+  // process all args.
+  bool check_st_level_at_first_run = false;
+  for (i = 0; i < 2; i++)
+  {
+    if (i == 0)
+    {
+      nt1 = data->nt0;
+      nt2 = data->nt0_enc;
+    }
+    else
+    {
+      nt1 = data->nt1;
+      nt2 = data->nt1_enc;
+    }
+
+    if (!check_st_level_at_first_run)
+    {
+      if (nt1 == 0x01200145)
+      {
+        // There is no loophole in this generation.
+        // This tag can be decrypted with the default parameter value 160!
+        dist = 160; // st gen1
+      }
+      else if (nt1 == 0x009080A2)
+      { // st gen2
+        // We found that the gen2 tag is vulnerable too but parameter must be adapted depending on the attacked key
+        if (type == 0x61)
+        {
+          dist = 161;
+        }
+        else if (type == 0x60)
+        {
+          dist = 160;
+        }
+        else
+        {
+          return NULL;
+        }
+      }
+      else
+      {
+        return NULL;
+      }
+      check_st_level_at_first_run = true;
+    }
+
+    nttest = prng_successor(nt1, dist);
+    ks1 = nt2 ^ nttest;
+    ++j;
+    dist += 160;
+
+    void *tmp = realloc(pNK, sizeof(NtpKs1) * j);
+    if (tmp == NULL)
+    {
+      return NULL;
+    }
+
+    pNK = tmp;
+    pNK[j - 1].ntp = nttest;
+    pNK[j - 1].ks1 = ks1;
   }
 
   uint32_t keyCount = 0;
