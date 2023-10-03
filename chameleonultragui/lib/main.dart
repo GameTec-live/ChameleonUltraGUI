@@ -215,7 +215,7 @@ class _MainPageState extends State<MainPage> {
                             widget.sharedPreferencesProvider.getThemeColor(),
                         brightness: Brightness.light)
                     .surface,
-                statusBarBrightness: Brightness.dark,
+                statusBarBrightness: Brightness.light,
                 statusBarIconBrightness: Brightness.dark)),
       ),
       darkTheme: ThemeData.dark().copyWith(
@@ -231,7 +231,7 @@ class _MainPageState extends State<MainPage> {
                             widget.sharedPreferencesProvider.getThemeColor(),
                         brightness: Brightness.dark)
                     .surface,
-                statusBarBrightness: Brightness.light,
+                statusBarBrightness: Brightness.dark,
                 statusBarIconBrightness: Brightness.light)),
       ),
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
