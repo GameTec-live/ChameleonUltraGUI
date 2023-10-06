@@ -56,6 +56,7 @@ class CardEditMenuState extends State<CardEditMenu> {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+
     return AlertDialog(
       title: Text(localizations.edit_card),
       content: SingleChildScrollView(
@@ -142,6 +143,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                   TagType.ntag215,
                   TagType.ntag216,
                   TagType.em410X,
+                  TagType.unknown
                 ].map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
                     value: type,
@@ -151,9 +153,11 @@ class CardEditMenuState extends State<CardEditMenu> {
                   );
                 }).toList(),
                 onChanged: (TagType? newValue) {
-                  setState(() {
-                    selectedType = newValue!;
-                  });
+                  if (newValue != TagType.unknown) {
+                    setState(() {
+                      selectedType = newValue!;
+                    });
+                  }
                   appState.changesMade();
                 },
               ),

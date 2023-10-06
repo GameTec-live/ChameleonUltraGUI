@@ -701,7 +701,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         localizations.hf_tag_info,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontSize: 28,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -983,7 +983,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         localizations.lf_tag_info,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontSize: 28,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1114,11 +1114,15 @@ class KeyCheckMarks extends StatelessWidget {
       const SizedBox(height: 8),
       LayoutBuilder(
         builder: (context, constraints) {
-          double maxWidth = constraints.maxWidth; //TODO: The parent will need to be constrained for this to start working. Akisame will look into this when he has time.
+          double maxWidth = constraints
+              .maxWidth; //TODO: The parent will need to be constrained for this to start working. Akisame will look into this when he has time.
 
-          double requiredWidth = (count * (checkmarkSize + 4)) + 30;  // Rough estimate
+          double requiredWidth =
+              (count * (checkmarkSize + 4)) + 30; // Rough estimate
 
-          double scaleFactor = requiredWidth > maxWidth ? maxWidth / requiredWidth : 1.0;  // Calculate scale factor
+          double scaleFactor = requiredWidth > maxWidth
+              ? maxWidth / requiredWidth
+              : 1.0; // Calculate scale factor
 
           return Transform.scale(
             scale: scaleFactor,
@@ -1192,7 +1196,8 @@ class KeyCheckMarks extends StatelessWidget {
                 child: SizedBox(
                   width: checkmarkSize,
                   height: checkmarkSize,
-                  child: buildCheckmark(checkMarks[40 + checkmarkIndex + index]),
+                  child:
+                      buildCheckmark(checkMarks[40 + checkmarkIndex + index]),
                 ),
               ),
             ),
@@ -1201,7 +1206,6 @@ class KeyCheckMarks extends StatelessWidget {
       ],
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
