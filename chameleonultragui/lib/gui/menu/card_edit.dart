@@ -79,58 +79,61 @@ class CardEditMenuState extends State<CardEditMenu> {
                 decoration: InputDecoration(
                     labelText: localizations.name,
                     hintText: localizations.enter_name,
-                    prefix: IconButton(
-                      icon: Icon(
-                          (chameleonTagToFrequency(widget.tagSave.tag) ==
-                                  TagFrequency.hf)
-                              ? Icons.credit_card
-                              : Icons.wifi,
-                          color: currentColor),
-                      onPressed: () async {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text(localizations.pick_color),
-                              content: SingleChildScrollView(
-                                child: ColorPicker(
-                                  pickerColor: pickerColor,
-                                  onColorChanged: (Color color) {
-                                    setState(() {
-                                      pickerColor = color;
-                                    });
-                                  },
-                                  pickerAreaHeightPercent: 0.8,
-                                ),
-                              ),
-                              actions: <Widget>[
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() => currentColor =
-                                        pickerColor = Colors.deepOrange);
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(localizations.reset_default),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(localizations.cancel),
-                                ),
-                                TextButton(
-                                  child: Text(localizations.ok),
-                                  onPressed: () {
-                                    setState(() => currentColor = pickerColor);
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                              ],
+                    prefix: Transform(
+                        transform: Matrix4.translationValues(0, 7, 0),
+                        child: IconButton(
+                          icon: Icon(
+                              (chameleonTagToFrequency(widget.tagSave.tag) ==
+                                      TagFrequency.hf)
+                                  ? Icons.credit_card
+                                  : Icons.wifi,
+                              color: currentColor),
+                          onPressed: () async {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text(localizations.pick_color),
+                                  content: SingleChildScrollView(
+                                    child: ColorPicker(
+                                      pickerColor: pickerColor,
+                                      onColorChanged: (Color color) {
+                                        setState(() {
+                                          pickerColor = color;
+                                        });
+                                      },
+                                      pickerAreaHeightPercent: 0.8,
+                                    ),
+                                  ),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () {
+                                        setState(() => currentColor =
+                                            pickerColor = Colors.deepOrange);
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(localizations.reset_default),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(localizations.cancel),
+                                    ),
+                                    TextButton(
+                                      child: Text(localizations.ok),
+                                      onPressed: () {
+                                        setState(
+                                            () => currentColor = pickerColor);
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
                             );
                           },
-                        );
-                      },
-                    )),
+                        ))),
               ),
               DropdownButton<TagType>(
                 value: selectedType,
