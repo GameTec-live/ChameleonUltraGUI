@@ -376,6 +376,13 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 ? " EV1"
                                 : ""),
                         itemIndex: index,
+                        onPressed: () {
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return SaveEditMenu(tagSave: tag);
+                              });
+                        },
                         children: [
                           IconButton(
                             onPressed: () {
@@ -540,13 +547,22 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                         secondLine:
                             "${localizations.key_count}: ${dictionary.keys.length}",
                         itemIndex: index,
+                        onPressed: () {
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return DictionaryEditMenu(
+                                    dictionary: dictionary);
+                              });
+                        },
                         children: [
                           IconButton(
                             onPressed: () {
                               showDialog(
                                 context: context,
                                 builder: (BuildContext context) {
-                                  return DictionaryEditMenu(dict: dictionary);
+                                  return DictionaryEditMenu(
+                                      dictionary: dictionary);
                                 },
                               );
                             },

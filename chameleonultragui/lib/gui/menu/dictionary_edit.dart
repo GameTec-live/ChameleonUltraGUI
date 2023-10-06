@@ -11,10 +11,11 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DictionaryEditMenu extends StatefulWidget {
-  final Dictionary dict;
+  final Dictionary dictionary;
   final bool isNew;
 
-  const DictionaryEditMenu({Key? key, required this.dict, this.isNew = false})
+  const DictionaryEditMenu(
+      {Key? key, required this.dictionary, this.isNew = false})
       : super(key: key);
 
   @override
@@ -57,11 +58,11 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
   @override
   void initState() {
     super.initState();
-    nameController = TextEditingController(text: widget.dict.name);
+    nameController = TextEditingController(text: widget.dictionary.name);
     keysController =
-        TextEditingController(text: dictToString(widget.dict.keys));
-    pickerColor = widget.dict.color;
-    currentColor = widget.dict.color;
+        TextEditingController(text: dictToString(widget.dictionary.keys));
+    pickerColor = widget.dictionary.color;
+    currentColor = widget.dictionary.color;
   }
 
   @override
@@ -178,7 +179,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               output.add(dict);
             } else {
               for (var dictTest in dictionaries) {
-                if (dictTest.id != widget.dict.id) {
+                if (dictTest.id != widget.dictionary.id) {
                   output.add(dictTest);
                 } else {
                   output.add(dict);

@@ -9,6 +9,7 @@ class SavedCard extends StatefulWidget {
   final String secondLine;
   final List<Widget> children;
   final int itemIndex;
+  final VoidCallback? onPressed;
 
   const SavedCard(
       {Key? key,
@@ -17,7 +18,8 @@ class SavedCard extends StatefulWidget {
       required this.firstLine,
       required this.secondLine,
       required this.children,
-      required this.itemIndex})
+      required this.itemIndex,
+      required this.onPressed})
       : super(key: key);
 
   @override
@@ -57,7 +59,7 @@ class SavedCardState extends State<SavedCard> {
     return Container(
         constraints: BoxConstraints(maxHeight: !shouldMoveIcons() ? 90 : 130),
         child: ElevatedButton(
-            onPressed: () {},
+            onPressed: widget.onPressed,
             style: ButtonStyle(
               backgroundColor: MaterialStateProperty.resolveWith<Color>(
                 (Set<MaterialState> states) {
