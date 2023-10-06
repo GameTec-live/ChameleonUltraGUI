@@ -212,5 +212,7 @@
   "outdated_protocol_description_3": "\u00bfQuieres actualizar el firmaware?",
   "skip": "Saltar",
   "update": "Actualizar",
-  "static_nested_attack": "Ejecutar ataque Nested est\u00e1tico sobre la tarjeta"
+  "static_nested_attack": "Ejecutar ataque Nested est\u00e1tico sobre la tarjeta",
+  "read_gen1_card_data": "Leer datos de tarjeta Gen1",
+  "card_tech": "Tecnolog\u00eda"
 }

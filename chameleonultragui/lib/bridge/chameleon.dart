@@ -274,6 +274,7 @@ class ChameleonCommunicator {
   int dataStatus = 0;
   int dataLength = 0;
   List<ChameleonMessage> messageQueue = [];
+  List<int> commandQueue = [];
 
   final Logger log;
 
@@ -369,7 +370,8 @@ class ChameleonCommunicator {
   Future<ChameleonMessage?> sendCmd(ChameleonCommand cmd,
       {Uint8List? data,
       Duration timeout = const Duration(seconds: 5),
-      bool skipReceive = false}) async {
+      bool skipReceive = false,
+      bool firstRun = false}) async {
     var startTime = DateTime.now();
     var dataFrame = makeDataFrameBytes(cmd, 0x00, data);
 
@@ -378,6 +380,17 @@ class ChameleonCommunicator {
       await _serialInstance!.registerCallback(onSerialMessage);
       _serialInstance!.isOpen = true;
     }
+
+    while (commandQueue.contains(cmd.value)) {
+      if (startTime.millisecondsSinceEpoch + (timeout.inMilliseconds * 2) <
+          DateTime.now().millisecondsSinceEpoch) {
+        throw ("Timeout waiting for queue for command ${cmd.value}");
+      }
+
+      await asyncSleep(1);
+    }
+
+    commandQueue.add(cmd.value);
 
     log.d("Sending: ${bytesToHex(dataFrame)}");
 
@@ -394,13 +407,20 @@ class ChameleonCommunicator {
       for (var message in messageQueue) {
         if (message.command == cmd.value) {
           messageQueue.remove(message);
+          commandQueue.remove(cmd.value);
           return message;
         }
       }
 
       if (startTime.millisecondsSinceEpoch + timeout.inMilliseconds <
           DateTime.now().millisecondsSinceEpoch) {
-        throw ("Timeout waiting for response for command ${cmd.value}");
+        commandQueue.remove(cmd.value);
+        if (firstRun) {
+          sendCmd(cmd, data: data, timeout: timeout, firstRun: false);
+        } else {
+          // no luck
+          throw ("Timeout waiting for response for command ${cmd.value}");
+        }
       }
 
       await asyncSleep(1);
