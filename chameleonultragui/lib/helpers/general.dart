@@ -212,6 +212,8 @@ ButtonConfig getButtonConfigType(int value) {
     return ButtonConfig.cycleBackward;
   } else if (value == 3) {
     return ButtonConfig.cloneUID;
+  } else if (value == 4) {
+    return ButtonConfig.chargeStatus;
   } else {
     return ButtonConfig.disable;
   }

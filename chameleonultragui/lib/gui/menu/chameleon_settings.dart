@@ -196,7 +196,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.disable,
                           localizations.forward,
                           localizations.backward,
-                          localizations.clone_uid
+                          localizations.clone_uid,
+                          localizations.charge
                         ],
                         selectedValue: aButtonMode.value,
                         onChange: (int index) async {
@@ -207,6 +208,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.cycleBackward;
                           } else if (index == 3) {
                             mode = ButtonConfig.cloneUID;
+                          } else if (index == 4) {
+                            mode = ButtonConfig.chargeStatus;
                           }
 
                           await appState.communicator!
@@ -224,7 +227,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.disable,
                           localizations.forward,
                           localizations.backward,
-                          localizations.clone_uid
+                          localizations.clone_uid,
+                          localizations.charge
                         ],
                         selectedValue: bButtonMode.value,
                         onChange: (int index) async {
@@ -235,6 +239,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.cycleBackward;
                           } else if (index == 3) {
                             mode = ButtonConfig.cloneUID;
+                          } else if (index == 4) {
+                            mode = ButtonConfig.chargeStatus;
                           }
 
                           await appState.communicator!
@@ -254,7 +260,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.disable,
                           localizations.forward,
                           localizations.backward,
-                          localizations.clone_uid
+                          localizations.clone_uid,
+                          localizations.charge
                         ],
                         selectedValue: aLongButtonMode.value,
                         onChange: (int index) async {
@@ -265,6 +272,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.cycleBackward;
                           } else if (index == 3) {
                             mode = ButtonConfig.cloneUID;
+                          } else if (index == 4) {
+                            mode = ButtonConfig.chargeStatus;
                           }
 
                           await appState.communicator!
@@ -282,7 +291,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.disable,
                           localizations.forward,
                           localizations.backward,
-                          localizations.clone_uid
+                          localizations.clone_uid,
+                          localizations.charge
                         ],
                         selectedValue: bLongButtonMode.value,
                         onChange: (int index) async {
@@ -293,6 +303,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.cycleBackward;
                           } else if (index == 3) {
                             mode = ButtonConfig.cloneUID;
+                          } else if (index == 4) {
+                            mode = ButtonConfig.chargeStatus;
                           }
 
                           await appState.communicator!
