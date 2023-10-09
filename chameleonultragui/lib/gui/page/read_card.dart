@@ -701,7 +701,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         localizations.hf_tag_info,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontSize: 28,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -983,7 +983,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         localizations.lf_tag_info,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontSize: 28,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1112,71 +1112,99 @@ class KeyCheckMarks extends StatelessWidget {
   List<Widget> buildCheckmarkRow(int checkmarkIndex, int count) {
     return [
       const SizedBox(height: 8),
-      Row(
-        children: [
-          const Text("     "),
-          ...List.generate(
-            count,
-            (index) => Padding(
-              padding: const EdgeInsets.all(2),
-              child: SizedBox(
-                width: checkmarkSize,
-                height: checkmarkSize,
-                child: Center(
-                    child: Text("${checkmarkIndex + index} ",
-                        style: TextStyle(fontSize: fontSize))),
-              ),
-            ),
-          )
-        ],
-      ),
-      const SizedBox(height: 4),
-      Row(
-        children: [
-          Transform(
-            transform: Matrix4.translationValues(0.0, 1.0, 0.0),
-            child: Text(
-              "A",
-              style: TextStyle(fontSize: fontSize),
-            ),
-          ),
-          ...List.generate(
-            count,
-            (index) => Padding(
-              padding: const EdgeInsets.all(2),
-              child: SizedBox(
-                width: checkmarkSize,
-                height: checkmarkSize,
-                child: buildCheckmark(checkMarks[checkmarkIndex + index]),
-              ),
-            ),
-          )
-        ],
+      LayoutBuilder(
+        builder: (context, constraints) {
+          double maxWidth = constraints
+              .maxWidth; //TODO: The parent will need to be constrained for this to start working. Akisame will look into this when he has time.
+
+          double requiredWidth =
+              (count * (checkmarkSize + 4)) + 30; // Rough estimate
+
+          double scaleFactor = requiredWidth > maxWidth
+              ? maxWidth / requiredWidth
+              : 1.0; // Calculate scale factor
+
+          return Transform.scale(
+            scale: scaleFactor,
+            child: buildContent(checkmarkIndex, count),
+          );
+        },
       ),
       const SizedBox(height: 8),
-      Row(
-        children: [
-          Transform(
-            transform: Matrix4.translationValues(0.0, 1.0, 0.0),
-            child: Text(
-              "B",
-              style: TextStyle(fontSize: fontSize),
-            ),
-          ),
-          ...List.generate(
-            count,
-            (index) => Padding(
-              padding: const EdgeInsets.all(2),
-              child: SizedBox(
-                width: checkmarkSize,
-                height: checkmarkSize,
-                child: buildCheckmark(checkMarks[40 + checkmarkIndex + index]),
+    ];
+  }
+
+  Widget buildContent(int checkmarkIndex, int count) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            const Text("     "),
+            ...List.generate(
+              count,
+              (index) => Padding(
+                padding: const EdgeInsets.all(2),
+                child: SizedBox(
+                  width: checkmarkSize,
+                  height: checkmarkSize,
+                  child: Center(
+                    child: Text("${checkmarkIndex + index} ",
+                        style: TextStyle(fontSize: fontSize)),
+                  ),
+                ),
               ),
             ),
-          )
-        ],
-      ),
-    ];
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Transform(
+              transform: Matrix4.translationValues(0.0, 1.0, 0.0),
+              child: Text(
+                "A",
+                style: TextStyle(fontSize: fontSize),
+              ),
+            ),
+            ...List.generate(
+              count,
+              (index) => Padding(
+                padding: const EdgeInsets.all(2),
+                child: SizedBox(
+                  width: checkmarkSize,
+                  height: checkmarkSize,
+                  child: buildCheckmark(checkMarks[checkmarkIndex + index]),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Transform(
+              transform: Matrix4.translationValues(0.0, 1.0, 0.0),
+              child: Text(
+                "B",
+                style: TextStyle(fontSize: fontSize),
+              ),
+            ),
+            ...List.generate(
+              count,
+              (index) => Padding(
+                padding: const EdgeInsets.all(2),
+                child: SizedBox(
+                  width: checkmarkSize,
+                  height: checkmarkSize,
+                  child:
+                      buildCheckmark(checkMarks[40 + checkmarkIndex + index]),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override

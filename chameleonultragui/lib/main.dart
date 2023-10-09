@@ -218,7 +218,7 @@ class _MainPageState extends State<MainPage> {
                 statusBarBrightness: Brightness.light,
                 statusBarIconBrightness: Brightness.dark)),
       ),
-      darkTheme: ThemeData.dark().copyWith(
+      darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
             seedColor: widget.sharedPreferencesProvider.getThemeColor(),

@@ -282,7 +282,8 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                                             context: context,
                                             builder: (BuildContext context) {
                                               return DictionaryEditMenu(
-                                                  dict: dict, isNew: true);
+                                                  dictionary: dict,
+                                                  isNew: true);
                                             },
                                           );
                                           Navigator.pop(context);
