@@ -213,5 +213,6 @@
   "skip": "\u8df3\u8fc7",
   "update": "\u66f4\u65b0",
   "static_nested_attack": "\u5bf9\u5361\u7247\u8fd0\u884cStatic Nested\u653b\u51fb",
-  "read_gen1_card_data": "\u8bfb\u53d6Gen1\u5361\u7684\u6570\u636e"
+  "read_gen1_card_data": "\u8bfb\u53d6Gen1\u5361\u7684\u6570\u636e",
+  "card_tech": "\u6280\u672f"
 }
