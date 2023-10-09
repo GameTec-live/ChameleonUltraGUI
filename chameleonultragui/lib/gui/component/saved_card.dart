@@ -35,10 +35,13 @@ class SavedCardState extends State<SavedCard> {
   // good luck understanding it
   // some values went from Flutter Inspector, some logically calculated
   bool shouldMoveIcons() {
+    var appState = context.read<ChameleonGUIState>();
+
     double readWidth = MediaQuery.of(context).size.width *
         MediaQuery.of(context).devicePixelRatio;
-    double predictedElementWidth =
-        readWidth >= 700 ? (readWidth - 118) / 2 : readWidth - 108;
+    double predictedElementWidth = readWidth >= 700
+        ? (readWidth - appState.navigationRailSize!.width - 38) / 2
+        : (readWidth - appState.navigationRailSize!.width - 28);
     double iconsWidth = widget.children.length * 40 + 8; // 8 - padding
     double textWidth = (TextPainter(
             text: TextSpan(text: widget.secondLine),
@@ -56,6 +59,7 @@ class SavedCardState extends State<SavedCard> {
   @override
   Widget build(BuildContext context) {
     var appState = context.read<ChameleonGUIState>();
+
     return Container(
         constraints: BoxConstraints(maxHeight: !shouldMoveIcons() ? 90 : 130),
         child: ElevatedButton(

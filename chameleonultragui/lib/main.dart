@@ -80,6 +80,9 @@ class ChameleonGUIState extends ChangeNotifier {
 
   bool forceMfkey32Page = false;
 
+  GlobalKey navigationRailKey = GlobalKey();
+  Size? navigationRailSize;
+
   void changesMade() {
     notifyListeners();
   }
@@ -101,6 +104,13 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   var selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => updateNavigationRailWidth(context, skipWait: true));
+  }
 
   @override
   void reassemble() {
@@ -243,6 +253,7 @@ class _MainPageState extends State<MainPage> {
                 (!appState.connector!.isDFU || !appState.connector!.connected)
                     ? SafeArea(
                         child: NavigationRail(
+                          key: appState.navigationRailKey,
                           // Sidebar
                           extended: appState.sharedPreferencesProvider
                               .getSideBarExpanded(),
