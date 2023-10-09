@@ -1,4 +1,3 @@
-
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:flutter/material.dart';
@@ -26,9 +25,8 @@ class SaveEditMenuState extends State<SaveEditMenu> {
     var appState = context.watch<ChameleonGUIState>();
 
     return AlertDialog(
-      title: Expanded(
-          child: Text(widget.tagSave.name,
-              maxLines: 3, overflow: TextOverflow.ellipsis)),
+      title: Text(widget.tagSave.name,
+          maxLines: 3, overflow: TextOverflow.ellipsis),
       content: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
