@@ -5,20 +5,21 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:flutter/services.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class SaveEditMenu extends StatefulWidget {
+class CardViewMenu extends StatefulWidget {
   final CardSave tagSave;
 
-  const SaveEditMenu({Key? key, required this.tagSave}) : super(key: key);
+  const CardViewMenu({Key? key, required this.tagSave}) : super(key: key);
 
   @override
-  SaveEditMenuState createState() => SaveEditMenuState();
+  CardViewMenuState createState() => CardViewMenuState();
 }
 
-class SaveEditMenuState extends State<SaveEditMenu> {
+class CardViewMenuState extends State<CardViewMenu> {
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
@@ -30,13 +31,63 @@ class SaveEditMenuState extends State<SaveEditMenu> {
       content: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Text("${localizations.uid}: ${widget.tagSave.uid}"),
-          Text(
-              "${localizations.tag_type}: ${chameleonTagToString(widget.tagSave.tag)}"),
-          Text(
-              "${localizations.sak}: ${widget.tagSave.sak == 0 ? localizations.unavailable : bytesToHex(u8ToBytes(widget.tagSave.sak))}"),
-          Text(
-              "${localizations.atqa}: ${widget.tagSave.atqa.asMap().containsKey(0) ? bytesToHex(u8ToBytes(widget.tagSave.atqa[0])) : ""} ${widget.tagSave.atqa.asMap().containsKey(1) ? bytesToHex(u8ToBytes(widget.tagSave.atqa[1])) : localizations.unavailable}"),
+          Row(
+            children: [
+              Text("${localizations.uid}: ${widget.tagSave.uid}"),
+              IconButton(
+                onPressed: () async {
+                  ClipboardData data = ClipboardData(text: widget.tagSave.uid);
+                  await Clipboard.setData(data);
+                },
+                icon: const Icon(Icons.copy),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Text(
+                  "${localizations.tag_type}: ${chameleonTagToString(widget.tagSave.tag)}"),
+              IconButton(
+                onPressed: () async {
+                  ClipboardData data = ClipboardData(
+                      text: chameleonTagToString(widget.tagSave.tag));
+                  await Clipboard.setData(data);
+                },
+                icon: const Icon(Icons.copy),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Text(
+                  "${localizations.sak}: ${widget.tagSave.sak == 0 ? localizations.unavailable : bytesToHex(u8ToBytes(widget.tagSave.sak))}"),
+              IconButton(
+                onPressed: () async {
+                  ClipboardData data = ClipboardData(
+                      text: widget.tagSave.sak == 0
+                          ? localizations.unavailable
+                          : bytesToHex(u8ToBytes(widget.tagSave.sak)));
+                  await Clipboard.setData(data);
+                },
+                icon: const Icon(Icons.copy),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Text(
+                  "${localizations.atqa}: ${widget.tagSave.atqa.asMap().containsKey(0) ? bytesToHex(u8ToBytes(widget.tagSave.atqa[0])) : ""} ${widget.tagSave.atqa.asMap().containsKey(1) ? bytesToHex(u8ToBytes(widget.tagSave.atqa[1])) : localizations.unavailable}"),
+              IconButton(
+                onPressed: () async {
+                  ClipboardData data = ClipboardData(
+                      text:
+                          "${widget.tagSave.atqa.asMap().containsKey(0) ? bytesToHex(u8ToBytes(widget.tagSave.atqa[0])) : ""} ${widget.tagSave.atqa.asMap().containsKey(1) ? bytesToHex(u8ToBytes(widget.tagSave.atqa[1])) : localizations.unavailable}");
+                  await Clipboard.setData(data);
+                },
+                icon: const Icon(Icons.copy),
+              ),
+            ],
+          ),
         ],
       ),
       actions: [

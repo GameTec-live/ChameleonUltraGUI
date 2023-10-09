@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/saved_card.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
-import 'package:chameleonultragui/gui/menu/save_edit.dart';
+import 'package:chameleonultragui/gui/menu/card_view.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
@@ -17,6 +17,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
+import 'package:chameleonultragui/gui/menu/dictionary_view.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -334,7 +335,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           showDialog(
                               context: context,
                               builder: (BuildContext context) {
-                                return SaveEditMenu(tagSave: tag);
+                                return CardViewMenu(tagSave: tag);
                               });
                         },
                         children: [
@@ -383,7 +384,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 },
                               );
                             },
-                            icon: const Icon(Icons.download_rounded),
+                            icon: const Icon(Icons.download),
                           ),
                           IconButton(
                             onPressed: () async {
@@ -505,7 +506,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           showDialog(
                               context: context,
                               builder: (BuildContext context) {
-                                return DictionaryEditMenu(
+                                return DictionaryViewMenu(
                                     dictionary: dictionary);
                               });
                         },
@@ -543,7 +544,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 }
                               }
                             },
-                            icon: const Icon(Icons.download_rounded),
+                            icon: const Icon(Icons.download),
                           ),
                           IconButton(
                             onPressed: () async {
