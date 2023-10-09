@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
@@ -11,6 +12,7 @@ import 'package:logger/logger.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
 
 Future<void> asyncSleep(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
@@ -276,5 +278,17 @@ Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
         await file.writeAsBytes(const Utf8Encoder().convert(tag.toJson()));
       }
     }
+  }
+}
+
+void updateNavigationRailWidth(BuildContext context,
+    {bool skipWait = false}) async {
+  if (context.mounted) {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+    if (!skipWait) {
+      await asyncSleep(500);
+    }
+    appState.navigationRailSize =
+        appState.navigationRailKey.currentContext!.size;
   }
 }
