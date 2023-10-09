@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/saved_card.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
+import 'package:chameleonultragui/gui/menu/save_edit.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
@@ -333,10 +334,21 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           showDialog(
                               context: context,
                               builder: (BuildContext context) {
-                                return CardEditMenu(tagSave: tag);
+                                return SaveEditMenu(tagSave: tag);
                               });
                         },
                         children: [
+                          IconButton(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return CardEditMenu(tagSave: tag);
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.edit),
+                          ),
                           IconButton(
                             onPressed: () async {
                               await showDialog(
@@ -371,7 +383,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 },
                               );
                             },
-                            icon: const Icon(Icons.download),
+                            icon: const Icon(Icons.download_rounded),
                           ),
                           IconButton(
                             onPressed: () async {
@@ -499,6 +511,18 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                         },
                         children: [
                           IconButton(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return DictionaryEditMenu(
+                                      dictionary: dictionary);
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.edit),
+                          ),
+                          IconButton(
                             onPressed: () async {
                               try {
                                 await FileSaver.instance.saveAs(
@@ -519,7 +543,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 }
                               }
                             },
-                            icon: const Icon(Icons.download),
+                            icon: const Icon(Icons.download_rounded),
                           ),
                           IconButton(
                             onPressed: () async {
