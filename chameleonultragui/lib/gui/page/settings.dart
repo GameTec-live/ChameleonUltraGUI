@@ -176,25 +176,22 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: DropdownButton(
-                value: appState.sharedPreferencesProvider.sharedPreferences
-                        .getString('locale') ??
-                    'en',
-                onChanged: (value) {
-                  appState.sharedPreferencesProvider
-                      .setLocale(Locale(value ?? 'en'));
-                  appState.changesMade();
-                },
-                items: AppLocalizations.supportedLocales.map((locale) {
-                  return DropdownMenuItem(
-                    value: locale.toLanguageTag(),
-                    child: Text(
-                        appState.sharedPreferencesProvider.getFlag(locale)),
-                  );
-                }).toList(),
-              ),
+            DropdownButton(
+              value: appState.sharedPreferencesProvider.sharedPreferences
+                      .getString('locale') ??
+                  'en',
+              onChanged: (value) {
+                appState.sharedPreferencesProvider
+                    .setLocale(Locale(value ?? 'en'));
+                appState.changesMade();
+              },
+              items: AppLocalizations.supportedLocales.map((locale) {
+                return DropdownMenuItem(
+                  value: locale.toLanguageTag(),
+                  child:
+                      Text(appState.sharedPreferencesProvider.getFlag(locale)),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 10),
             TextButton(

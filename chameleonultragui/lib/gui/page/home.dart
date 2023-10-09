@@ -8,7 +8,6 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/gui/component/slot_changer.dart';
-import 'dart:math';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -248,22 +247,15 @@ class HomePageState extends State<HomePage> {
                         Text(
                             "Chameleon ${chameleonDeviceName(appState.connector!.device)}",
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: min(
-                                MediaQuery.of(context).size.width / 25,
-                                MediaQuery.of(context).size.height / 20,
-                              ),
-                            )),
+                                fontWeight: FontWeight.bold,
+                                fontSize:
+                                    MediaQuery.of(context).size.width / 25)),
                       ],
                     ),
                     const SizedBox(height: 20),
                     Text("${localizations.used_slots}: $usedSlots/8",
                         style: TextStyle(
-                          fontSize: min(
-                            MediaQuery.of(context).size.width / 35,
-                            MediaQuery.of(context).size.height / 20,
-                          ),
-                        )),
+                            fontSize: MediaQuery.of(context).size.width / 50)),
                     const SlotChanger(),
                     Expanded(
                       child: FractionallySizedBox(
@@ -282,19 +274,13 @@ class HomePageState extends State<HomePage> {
                       children: [
                         Text("${localizations.firmware_version}: ",
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: min(
-                                MediaQuery.of(context).size.width / 50,
-                                MediaQuery.of(context).size.height / 30,
-                              ),
-                            )),
+                                fontWeight: FontWeight.bold,
+                                fontSize:
+                                    MediaQuery.of(context).size.width / 50)),
                         Text(fwVersion[0],
                             style: TextStyle(
-                              fontSize: min(
-                                MediaQuery.of(context).size.width / 50,
-                                MediaQuery.of(context).size.height / 30,
-                              ),
-                            )),
+                                fontSize:
+                                    MediaQuery.of(context).size.width / 50)),
                         Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: IconButton(

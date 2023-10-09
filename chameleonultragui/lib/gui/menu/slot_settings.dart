@@ -19,7 +19,7 @@ class SlotSettings extends StatefulWidget {
 
 class SlotSettingsState extends State<SlotSettings> {
   bool isRun = false;
-  List<(bool, bool)> enabledSlots = [];
+  bool isEnabled = false;
   late bool isDetection;
   late int detectionCount;
   late bool isGen1a;
@@ -67,7 +67,8 @@ class SlotSettingsState extends State<SlotSettings> {
 
     if (!isRun) {
       await appState.communicator!.activateSlot(widget.slot);
-      enabledSlots = await appState.communicator!.getEnabledSlots();
+      var enabledSlots = await appState.communicator!.getEnabledSlots();
+      isEnabled = enabledSlots[widget.slot].$1 || enabledSlots[widget.slot].$2;
       var data = (await appState.communicator!.getMf1EmulatorConfig());
       isDetection = data.$1;
       if (isDetection) {
@@ -136,25 +137,6 @@ class SlotSettingsState extends State<SlotSettings> {
                         },
                         icon: const Icon(Icons.clear_rounded),
                       ),
-                      IconButton(
-                        onPressed: () async {
-                          await appState.communicator!.enableSlot(widget.slot,
-                              TagFrequency.hf, !enabledSlots[widget.slot].$1);
-                          await appState.communicator!.saveSlotData();
-
-                          setState(() {
-                            enabledSlots[widget.slot] = (
-                              !enabledSlots[widget.slot].$1,
-                              enabledSlots[widget.slot].$2
-                            );
-                          });
-
-                          widget.refresh(widget.slot);
-                        },
-                        icon: Icon(enabledSlots[widget.slot].$1
-                            ? Icons.toggle_on
-                            : Icons.toggle_off),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -186,27 +168,22 @@ class SlotSettingsState extends State<SlotSettings> {
                         },
                         icon: const Icon(Icons.clear_rounded),
                       ),
-                      IconButton(
-                        onPressed: () async {
-                          await appState.communicator!.enableSlot(widget.slot,
-                              TagFrequency.lf, !enabledSlots[widget.slot].$2);
-                          await appState.communicator!.saveSlotData();
-
-                          setState(() {
-                            enabledSlots[widget.slot] = (
-                              enabledSlots[widget.slot].$1,
-                              !enabledSlots[widget.slot].$2
-                            );
-                          });
-
-                          widget.refresh(widget.slot);
-                        },
-                        icon: Icon(enabledSlots[widget.slot].$2
-                            ? Icons.toggle_on
-                            : Icons.toggle_off),
-                      ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  Text(localizations.slot_status),
+                  const SizedBox(height: 8),
+                  ToggleButtonsWrapper(
+                      items: [localizations.enabled, localizations.disabled],
+                      selectedValue: isEnabled ? 0 : 1,
+                      onChange: (int index) async {
+                        await appState.communicator!.enableSlot(widget.slot,
+                            TagFrequency.hf, index == 0 ? true : false);
+                        await appState.communicator!.enableSlot(widget.slot,
+                            TagFrequency.lf, index == 0 ? true : false);
+
+                        widget.refresh(widget.slot);
+                      }),
                   const SizedBox(height: 16),
                   Text(
                     localizations.mifare_classic_emulator_settings,

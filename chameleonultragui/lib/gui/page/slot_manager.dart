@@ -142,14 +142,13 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   child: AlignedGridView.count(
                       padding: const EdgeInsets.all(20),
                       crossAxisCount:
-                          MediaQuery.of(context).size.width >= 700 ? 2 : 1,
+                          MediaQuery.of(context).size.width >= 600 ? 2 : 1,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                       itemCount: 8,
                       itemBuilder: (BuildContext context, int index) {
                         return Container(
-                          constraints: const BoxConstraints(
-                              maxHeight: 160, minHeight: 100),
+                          constraints: const BoxConstraints(maxHeight: 120),
                           child: ElevatedButton(
                             onPressed: () {
                               cardSelectDialog(context, index);
@@ -176,27 +175,17 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                               ? Colors.green
                                               : Colors.deepOrange),
                                       const SizedBox(width: 5),
-                                      Expanded(
-                                        child: Text(
-                                          "${localizations.slot} ${index + 1}",
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
+                                      Text("${localizations.slot} ${index + 1}")
                                     ],
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 10),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       const Icon(Icons.credit_card),
                                       const SizedBox(width: 5),
-                                      Expanded(
-                                          child: Text(
-                                        "${slotData[index]['hfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$1)})",
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ))
+                                      Text(
+                                          "${slotData[index]['hfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$1)})")
                                     ],
                                   ),
                                   Row(
@@ -208,12 +197,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                           children: [
                                             const Icon(Icons.wifi),
                                             const SizedBox(width: 5),
-                                            Expanded(
-                                                child: Text(
+                                            Text(
                                               "${slotData[index]['lfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$2)})",
-                                              //maxLines: 2,
-                                              overflow: TextOverflow.clip,
-                                            ))
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -292,27 +278,15 @@ class CardSearchDelegate extends SearchDelegate<String> {
             items: [
               DropdownMenuItem(
                 value: SearchFilter.all,
-                child: Text(
-                  localizations.all,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: Text(localizations.all),
               ),
               DropdownMenuItem(
                 value: SearchFilter.hf,
-                child: Text(
-                  localizations.hf,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: Text(localizations.hf),
               ),
               DropdownMenuItem(
                 value: SearchFilter.lf,
-                child: Text(
-                  localizations.lf,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: Text(localizations.lf),
               ),
             ],
             onChanged: (SearchFilter? value) {
@@ -375,16 +349,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
                         ? Icons.credit_card
                         : Icons.wifi,
                     color: card.color),
-                title: Text(
-                  card.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  chameleonTagToString(card.tag),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                title: Text(card.name),
+                subtitle: Text(chameleonTagToString(card.tag)),
               ),
             ),
             const SizedBox(height: 10),
@@ -421,14 +387,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
                   : Icons.wifi,
               color: card.color),
           title: Text(card.name),
-          subtitle: Text(
-            chameleonTagToString(card.tag) +
-                ((chameleonTagSaveCheckForMifareClassicEV1(card))
-                    ? " EV1"
-                    : ""),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+          subtitle: Text(chameleonTagToString(card.tag) +
+              ((chameleonTagSaveCheckForMifareClassicEV1(card)) ? " EV1" : "")),
           onTap: () async {
             if ([
               TagType.mifareMini,

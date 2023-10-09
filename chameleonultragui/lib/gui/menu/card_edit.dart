@@ -56,7 +56,6 @@ class CardEditMenuState extends State<CardEditMenu> {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
-
     return AlertDialog(
       title: Text(localizations.edit_card),
       content: SingleChildScrollView(
@@ -71,69 +70,63 @@ class CardEditMenuState extends State<CardEditMenu> {
                   if (value == null || value.isEmpty) {
                     return localizations.please_enter_name;
                   }
-                  if (value.length > 19) {
-                    return localizations.too_long_name;
-                  }
                   return null;
                 },
                 decoration: InputDecoration(
                     labelText: localizations.name,
                     hintText: localizations.enter_name,
-                    prefix: Transform(
-                        transform: Matrix4.translationValues(0, 7, 0),
-                        child: IconButton(
-                          icon: Icon(
-                              (chameleonTagToFrequency(widget.tagSave.tag) ==
-                                      TagFrequency.hf)
-                                  ? Icons.credit_card
-                                  : Icons.wifi,
-                              color: currentColor),
-                          onPressed: () async {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text(localizations.pick_color),
-                                  content: SingleChildScrollView(
-                                    child: ColorPicker(
-                                      pickerColor: pickerColor,
-                                      onColorChanged: (Color color) {
-                                        setState(() {
-                                          pickerColor = color;
-                                        });
-                                      },
-                                      pickerAreaHeightPercent: 0.8,
-                                    ),
-                                  ),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      onPressed: () {
-                                        setState(() => currentColor =
-                                            pickerColor = Colors.deepOrange);
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(localizations.reset_default),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(localizations.cancel),
-                                    ),
-                                    TextButton(
-                                      child: Text(localizations.ok),
-                                      onPressed: () {
-                                        setState(
-                                            () => currentColor = pickerColor);
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                  ],
-                                );
-                              },
+                    prefix: IconButton(
+                      icon: Icon(
+                          (chameleonTagToFrequency(widget.tagSave.tag) ==
+                                  TagFrequency.hf)
+                              ? Icons.credit_card
+                              : Icons.wifi,
+                          color: currentColor),
+                      onPressed: () async {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text(localizations.pick_color),
+                              content: SingleChildScrollView(
+                                child: ColorPicker(
+                                  pickerColor: pickerColor,
+                                  onColorChanged: (Color color) {
+                                    setState(() {
+                                      pickerColor = color;
+                                    });
+                                  },
+                                  pickerAreaHeightPercent: 0.8,
+                                ),
+                              ),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() => currentColor =
+                                        pickerColor = Colors.deepOrange);
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text(localizations.reset_default),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text(localizations.cancel),
+                                ),
+                                TextButton(
+                                  child: Text(localizations.ok),
+                                  onPressed: () {
+                                    setState(() => currentColor = pickerColor);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
                             );
                           },
-                        ))),
+                        );
+                      },
+                    )),
               ),
               DropdownButton<TagType>(
                 value: selectedType,
@@ -146,7 +139,6 @@ class CardEditMenuState extends State<CardEditMenu> {
                   TagType.ntag215,
                   TagType.ntag216,
                   TagType.em410X,
-                  TagType.unknown
                 ].map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
                     value: type,
@@ -156,11 +148,9 @@ class CardEditMenuState extends State<CardEditMenu> {
                   );
                 }).toList(),
                 onChanged: (TagType? newValue) {
-                  if (newValue != TagType.unknown) {
-                    setState(() {
-                      selectedType = newValue!;
-                    });
-                  }
+                  setState(() {
+                    selectedType = newValue!;
+                  });
                   appState.changesMade();
                 },
               ),

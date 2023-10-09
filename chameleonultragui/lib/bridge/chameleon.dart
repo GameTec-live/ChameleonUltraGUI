@@ -163,8 +163,7 @@ enum ButtonConfig {
   disable(0),
   cycleForward(1),
   cycleBackward(2),
-  cloneUID(3),
-  chargeStatus(4);
+  cloneUID(3);
 
   const ButtonConfig(this.value);
   final int value;
