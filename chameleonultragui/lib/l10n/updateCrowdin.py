@@ -34,6 +34,7 @@ if __name__ == '__main__':
 
     current_translation = fetch('https://raw.githubusercontent.com/GameTec-live/ChameleonUltraGUI/main/chameleonultragui/lib/l10n/app_en.arb')
     branch_translation = json.load(open('chameleonultragui/lib/l10n/app_en.arb'))
+    strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings?limit=500')
 
     for key, value in branch_translation.items():
         failed = False
@@ -49,7 +50,6 @@ if __name__ == '__main__':
                 failed = True
                 print(e.reason)
         if failed or (key in current_translation.keys() and current_translation[key] != value):
-            strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings?limit=500')
             for string in strings['data']:
                 if string['data']['identifier'] == key:
                     try:
@@ -63,9 +63,15 @@ if __name__ == '__main__':
                         print(e.reason)
      
     # remove old
+    to_remove = []
     for key, value in current_translation.items():
         if key not in branch_translation.keys():
-            strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings?limit=500')
-            for string in strings['data']:
-                if string['data']['identifier'] == key:
-                    request('DELETE', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + str(string['data']['id']))
+            to_remove.append(key)
+    for string in strings['data']:
+        if string['data']['identifier'] not in branch_translation.keys():
+            to_remove.append(key)
+
+    for remove in to_remove:
+        for string in strings['data']:
+            if string['data']['identifier'] == remove:
+                request('DELETE', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + str(string['data']['id']))
