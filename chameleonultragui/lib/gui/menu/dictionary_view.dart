@@ -57,7 +57,9 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
           ),
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.5,
-            width: MediaQuery.of(context).size.width * 0.2,
+            width: MediaQuery.of(context).size.width < 600
+                ? MediaQuery.of(context).size.width
+                : MediaQuery.of(context).size.width * 0.5,
             child: ListView(
               children: [
                 Text(
