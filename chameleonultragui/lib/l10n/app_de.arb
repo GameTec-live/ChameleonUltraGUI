@@ -212,5 +212,7 @@
   "skip": "\u00dcberspringen",
   "update": "Updaten",
   "static_nested_attack": "Starte \"Static Nested\" Angriff auf Karte",
-  "read_gen1_card_data": "Lese Daten von Gen1 Karte"
+  "read_gen1_card_data": "Lese Daten von Gen1 Karte",
+  "charge": "Laden",
+  "copy_all_keys": "Alle Schl\u00fcssel in Zwischenablage"
 }
