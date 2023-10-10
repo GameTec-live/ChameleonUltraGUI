@@ -52,6 +52,11 @@ jobs:
         skip_checkout: true
         disable_globbing: true
         create_branch: true
+    - name: Change repo
+      if: steps.git-check.outputs.has_changes == 'true'
+      id: change-repo
+      run: |
+        git remote set-url origin https://github.com/GameTec-live/ChameleonUltraGUI.git
     - name: Create PR
       if: steps.git-check.outputs.has_changes == 'true'
       uses: peter-evans/create-pull-request@v4
