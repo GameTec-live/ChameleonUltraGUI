@@ -56,5 +56,5 @@ jobs:
         token: ${{ secrets.BOT_HELPER_TOKEN }}
         base: main
         branch: translations-branch
-        commit-message: "New translations fetched from Crowdin"
+        push-to-fork: ChameleonHelper/ChameleonUltraGUI
         title: "feat: Update translations"
