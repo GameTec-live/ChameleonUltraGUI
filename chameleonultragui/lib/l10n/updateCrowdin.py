@@ -49,9 +49,8 @@ if __name__ == '__main__':
                 failed = True
                 print(e.reason)
         if failed or (key in current_translation.keys() and current_translation[key] != value):
-            strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings')
+            strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings?limit=500')
             for string in strings['data']:
-                print(string['data']['identifier'], key)
                 if string['data']['identifier'] == key:
                     try:
                         data = [{'op': 'replace', 'path': '/text', 'value': value}]
@@ -66,7 +65,7 @@ if __name__ == '__main__':
     # remove old
     for key, value in current_translation.items():
         if key not in branch_translation.keys():
-            strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings')
+            strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings?limit=500')
             for string in strings['data']:
                 if string['data']['identifier'] == key:
                     request('DELETE', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + string['data']['id'])
