@@ -24,30 +24,19 @@ def request(method, url, data=None):
                                       headers={'Accept': 'application/json',
                                                'Authorization': 'Bearer ' + str(os.getenv('CROWDIN_API')),
                                                'Content-Type': 'application/json'})).read().decode())
+def fetch(url):
+    return json.loads(urlopen(Request(url, method='GET')).read().decode())
 
-def add_string_to_source(string):
-    print(string)
+if __name__ == '__main__':
     projectId =  611911
     sourceId = 33
 
-    try:
-        string_parsed = string.split('app_en.arb', 1)[1].replace(' ', '').replace(',', '').replace('\n','').split('+')[1:]
-        for s in string_parsed:
-            try:
-                key, value = s.split(':')
-                data = {'identifier': key.replace('"', ''), 'text': value.replace('"', ''), 'fileId': sourceId}
-                request('POST', f"https://api.crowdin.com/api/v2/projects/{projectId}/strings", data)
-                print("Added: ", key)
-            except Exception as e:
-                print(e)
+    current_translation = fetch('https://raw.githubusercontent.com/GameTec-live/ChameleonUltraGUI/main/chameleonultragui/lib/l10n/app_en.arb')
+    branch_translation = json.load(open('chameleonultragui/lib/l10n/app_en.arb'))
 
-    except Exception as e:
-        print(e)
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python updateCrowdin.py <string>")
-        sys.exit(1)
-
-    string_to_be_added = sys.argv[1]
-    add_string_to_source(string_to_be_added)
+    for key, value in branch_translation.items():
+        if key == '@@locale':
+            continue
+        if key not in current_translation.keys() or current_translation[key] != value:
+            data = {'identifier': key, 'text': value, 'fileId': sourceId}
+            request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings', data)
