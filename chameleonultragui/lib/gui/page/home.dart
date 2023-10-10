@@ -29,7 +29,7 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<(Icon, String, List<String>, bool)> getFutureData() async {
+  Future<((Icon, int, int), String, List<String>, bool)> getFutureData() async {
     var appState = context.read<ChameleonGUIState>();
     List<(TagType, TagType)> usedSlots = [];
     try {
@@ -39,42 +39,44 @@ class HomePageState extends State<HomePage> {
     }
 
     return (
-      await getBatteryChargeIcon(),
+      await getBatteryInfo(),
       await getUsedSlotsOut8(usedSlots),
       await getVersion(),
       await isReaderDeviceMode()
     );
   }
 
-  Future<Icon> getBatteryChargeIcon() async {
+  Future<(Icon, int, int)> getBatteryInfo() async {
     var appState = context.read<ChameleonGUIState>();
+    var icon = const Icon(Icons.battery_unknown);
     int charge = 0;
+    int voltage = 0;
 
     try {
-      (_, charge) = await appState.communicator!.getBatteryCharge();
+      (voltage, charge) = await appState.communicator!.getBatteryCharge();
     } catch (_) {}
 
     if (charge > 98) {
-      return const Icon(Icons.battery_full);
+      icon = const Icon(Icons.battery_full);
     } else if (charge > 87) {
-      return const Icon(Icons.battery_6_bar);
+      icon = const Icon(Icons.battery_6_bar);
     } else if (charge > 75) {
-      return const Icon(Icons.battery_5_bar);
+      icon = const Icon(Icons.battery_5_bar);
     } else if (charge > 62) {
-      return const Icon(Icons.battery_4_bar);
+      icon = const Icon(Icons.battery_4_bar);
     } else if (charge > 50) {
-      return const Icon(Icons.battery_3_bar);
+      icon = const Icon(Icons.battery_3_bar);
     } else if (charge > 37) {
-      return const Icon(Icons.battery_2_bar);
+      icon = const Icon(Icons.battery_2_bar);
     } else if (charge > 10) {
-      return const Icon(Icons.battery_1_bar);
+      icon = const Icon(Icons.battery_1_bar);
     } else if (charge > 3) {
-      return const Icon(Icons.battery_0_bar);
+      icon = const Icon(Icons.battery_0_bar);
     } else if (charge > 0) {
-      return const Icon(Icons.battery_alert);
+      icon = const Icon(Icons.battery_alert);
     }
 
-    return const Icon(Icons.battery_unknown);
+    return (icon, charge, voltage);
   }
 
   Future<String> getUsedSlotsOut8(List<(TagType, TagType)> usedSlots) async {
@@ -192,7 +194,7 @@ class HomePageState extends State<HomePage> {
             return Text('${localizations.error}: ${snapshot.error.toString()}');
           } else {
             final (
-              batteryIcon,
+              batteryInfo,
               usedSlots,
               fwVersion,
               isReaderDeviceMode,
@@ -235,7 +237,11 @@ class HomePageState extends State<HomePage> {
                                         ConnectionType.ble
                                     ? Icons.bluetooth
                                     : Icons.usb),
-                                batteryIcon,
+                                Tooltip(
+                                  message: localizations.battery_info(
+                                      batteryInfo.$2, batteryInfo.$3),
+                                  child: batteryInfo.$1,
+                                ),
                               ],
                             ),
                           ],
