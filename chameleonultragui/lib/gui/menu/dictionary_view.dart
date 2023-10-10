@@ -31,7 +31,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
 
     String output = "";
     for (var key in widget.dictionary.keys) {
-      output += "${bytesToHexSpace(key)}\n";
+      output += "${bytesToHex(key)}\n";
     }
     output.trim();
 
