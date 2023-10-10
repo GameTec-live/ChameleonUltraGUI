@@ -39,4 +39,8 @@ if __name__ == '__main__':
             continue
         if key not in current_translation.keys() or current_translation[key] != value:
             data = {'identifier': key, 'text': value, 'fileId': sourceId}
-            request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings', data)
+            string = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings', data)
+            data = {'stringId': string['data']['id'], 'languageId': 'en', 'text': value}
+            translation = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/translations', data)
+            data = {'translationId': translation['data']['id']}
+            translation = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/approvals', data)
