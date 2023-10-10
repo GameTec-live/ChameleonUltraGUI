@@ -52,5 +52,6 @@ jobs:
         branch: translations-branch
         push-to-fork: ChameleonHelper/ChameleonUltraGUI
         body: "Update translations"
+        commit-message: "feat: Update translations"
         title: "feat: Update translations"
         delete-branch: true
