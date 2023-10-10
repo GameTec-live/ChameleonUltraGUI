@@ -36,8 +36,7 @@ if __name__ == '__main__':
     branch_translation = json.load(open('chameleonultragui/lib/l10n/app_en.arb'))
 
     for key, value in branch_translation.items():
-        if key == '@@locale':
-            continue
+        failed = False
         if key not in current_translation.keys():
             try:
                 data = {'identifier': key, 'text': value, 'fileId': sourceId}
@@ -47,8 +46,9 @@ if __name__ == '__main__':
                 data = {'translationId': translation['data']['id']}
                 translation = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/approvals', data)
             except urllib.error.HTTPError as e:
+                failed = True
                 print(e.reason)
-        elif current_translation[key] != value:
+        if current_translation[key] != value or failed:
             strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings')
             for string in strings['data']:
                 if string['data']['identifier'] == key:
@@ -61,3 +61,11 @@ if __name__ == '__main__':
                         translation = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/approvals', data)
                     except urllib.error.HTTPError as e:
                         print(e.reason)
+     
+    # remove old
+    for key, value in current_translation.items():
+        if key not in branch_translation.keys():
+            strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings')
+            for string in strings['data']:
+                if string['data']['identifier'] == key:
+                    request('DELETE', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + string['data']['id'])
