@@ -48,7 +48,7 @@ if __name__ == '__main__':
             except urllib.error.HTTPError as e:
                 failed = True
                 print(e.reason)
-        if current_translation[key] != value or failed:
+        if failed or (key in current_translation.keys() and current_translation[key] != value):
             strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings')
             for string in strings['data']:
                 if string['data']['identifier'] == key:
