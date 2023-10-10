@@ -32,6 +32,7 @@ jobs:
         if [[ -z $(git status --untracked-files=no -s) ]]; then
           echo "No changes"
         else
+          git remote set-url origin https://github.com/ChameleonHelper/ChameleonUltraGUI.git
           echo "::set-output name=has_changes::true"
         fi
     - name: Create commit
