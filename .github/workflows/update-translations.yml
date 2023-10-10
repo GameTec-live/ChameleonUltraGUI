@@ -34,28 +34,14 @@ jobs:
         if [[ -z $(git status --untracked-files=no -s) ]]; then
           echo "No changes"
         else
-          git remote set-url origin https://github.com/ChameleonHelper/ChameleonUltraGUI.git
           echo "::set-output name=has_changes::true"
         fi
-    - name: Create commit
-      uses: stefanzweifel/git-auto-commit-action@v4
+    - name: Remove old branch
       if: steps.git-check.outputs.has_changes == 'true'
-      with:
-        commit_message: Update translations
-        branch: translations-branch
-        commit_options: '--no-verify'
-        status_options: '--untracked-files=no'
-        add_options: '-u'
-        push_options: '--force'
-        skip_dirty_check: true
-        skip_fetch: true
-        skip_checkout: true
-        disable_globbing: true
-        create_branch: true
-    - name: Change repo
-      if: steps.git-check.outputs.has_changes == 'true'
-      id: change-repo
+      id: remove-branch
       run: |
+        git remote set-url origin https://github.com/ChameleonHelper/ChameleonUltraGUI.git
+        git push origin :translations-branch || true
         git remote set-url origin https://github.com/GameTec-live/ChameleonUltraGUI.git
     - name: Create PR
       if: steps.git-check.outputs.has_changes == 'true'
