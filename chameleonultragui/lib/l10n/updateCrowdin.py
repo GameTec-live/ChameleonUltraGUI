@@ -54,7 +54,7 @@ if __name__ == '__main__':
                 if string['data']['identifier'] == key:
                     try:
                         data = [{'op': 'replace', 'path': '/text', 'value': value}]
-                        string = request('PATCH', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + string['data']['id'], data)
+                        string = request('PATCH', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + str(string['data']['id']), data)
                         data = {'stringId': string['data']['id'], 'languageId': 'en', 'text': value}
                         translation = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/translations', data)
                         data = {'translationId': translation['data']['id']}
@@ -68,4 +68,4 @@ if __name__ == '__main__':
             strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings?limit=500')
             for string in strings['data']:
                 if string['data']['identifier'] == key:
-                    request('DELETE', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + string['data']['id'])
+                    request('DELETE', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + str(string['data']['id']))
