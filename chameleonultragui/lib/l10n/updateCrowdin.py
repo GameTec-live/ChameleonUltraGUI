@@ -51,6 +51,7 @@ if __name__ == '__main__':
         if failed or (key in current_translation.keys() and current_translation[key] != value):
             strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings')
             for string in strings['data']:
+                print(string['data']['identifier'], key)
                 if string['data']['identifier'] == key:
                     try:
                         data = [{'op': 'replace', 'path': '/text', 'value': value}]
