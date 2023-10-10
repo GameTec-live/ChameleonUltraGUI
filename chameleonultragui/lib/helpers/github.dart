@@ -42,6 +42,11 @@ List<Map<String, String>> developers = [
   },
 ];
 
+List<String> excludedAccounts = [
+  "github-actions[bot]",
+  "ChameleonHelper"
+]
+
 Future<List<Map<String, String>>> fetchGitHubContributors() async {
   try {
     final response = json.decode((await http.get(Uri.parse(
@@ -52,7 +57,7 @@ Future<List<Map<String, String>>> fetchGitHubContributors() async {
     if (response is List) {
       List<Map<String, String>> contributors = [];
       for (var contributor in response) {
-        if (contributor['login'] != 'github-actions[bot]' &&
+        if (!excludedAccounts.contains(contributor['login']) &&
             !developers.any(
                 (developer) => developer['username'] == contributor['login'])) {
           contributors.add({
