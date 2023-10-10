@@ -29,5 +29,6 @@ jobs:
           if echo "$CHANGED_FILES" | grep -q 'app_en.arb'; then
             python chameleonultragui/lib/l10n/updateCrowdin.py
           else
-            echo "The file 'app_en.arb' has not changed."
+            python chameleonultragui/lib/l10n/updateCrowdin.py
+            # echo "The file 'app_en.arb' has not changed."
           fi
