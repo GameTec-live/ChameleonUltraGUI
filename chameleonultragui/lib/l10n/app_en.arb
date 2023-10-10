@@ -214,9 +214,9 @@
   "update": "Update",
   "static_nested_attack": "Run Static Nested attack on card",
   "read_gen1_card_data": "Read Gen1 card data",
-  "card_tech": "Card tech",
+  "card_tech": "Tech",
   "charge": "Charge",
   "copy_all_keys": "Copy all keys to clipboard",
   "battery_info": "Charge: {percent}%\nVoltage: {voltage} mV",
-  "test": "Test"
+  "test": "Test value"
 }
