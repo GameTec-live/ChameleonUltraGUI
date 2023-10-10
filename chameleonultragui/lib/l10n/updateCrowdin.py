@@ -37,10 +37,20 @@ if __name__ == '__main__':
     for key, value in branch_translation.items():
         if key == '@@locale':
             continue
-        if key not in current_translation.keys() or current_translation[key] != value:
+        if key not in current_translation.keys():
             data = {'identifier': key, 'text': value, 'fileId': sourceId}
             string = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings', data)
             data = {'stringId': string['data']['id'], 'languageId': 'en', 'text': value}
             translation = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/translations', data)
             data = {'translationId': translation['data']['id']}
             translation = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/approvals', data)
+        elif current_translation[key] != value:
+            strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings')
+            for string in strings['data']:
+                if string['data']['identifier'] == key:
+                    data = [{'op': 'replace', 'path': '/text', 'value': value}]
+                    string = request('PATCH', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + string['data']['id'], data)
+                    data = {'stringId': string['data']['id'], 'languageId': 'en', 'text': value}
+                    translation = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/translations', data)
+                    data = {'translationId': translation['data']['id']}
+                    translation = request('POST', f'https://api.crowdin.com/api/v2/projects/{projectId}/approvals', data)
