@@ -307,105 +307,108 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               ]),
               Expanded(
                   child: SingleChildScrollView(
-                      child: Column(children: [
-                AlignedGridView.count(
-                    clipBehavior: Clip.antiAlias,
-                    padding: const EdgeInsets.all(10),
-                    crossAxisCount:
-                        MediaQuery.of(context).size.width >= 700 ? 2 : 1,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    itemCount: tags.length,
-                    shrinkWrap: true,
-                    itemBuilder: (BuildContext context, int index) {
-                      final tag = tags[index];
-                      return SavedCard(
-                        icon: (chameleonTagToFrequency(tag.tag) ==
-                                TagFrequency.hf)
-                            ? Icons.credit_card
-                            : Icons.wifi,
-                        iconColor: tag.color,
-                        firstLine: tag.name.isEmpty ? "⠀" : tag.name,
-                        secondLine: chameleonTagToString(tag.tag) +
-                            ((chameleonTagSaveCheckForMifareClassicEV1(tag))
-                                ? " EV1"
-                                : ""),
-                        itemIndex: index,
-                        onPressed: () {
-                          showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return CardViewMenu(tagSave: tag);
-                              });
-                        },
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return CardEditMenu(tagSave: tag);
-                                },
-                              );
-                            },
-                            icon: const Icon(Icons.edit),
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              await showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title:
-                                        Text(localizations.select_save_format),
-                                    actions: [
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          await saveTag(tag, context, true);
-                                          if (context.mounted) {
-                                            Navigator.pop(context);
-                                          }
-                                        },
-                                        child:
-                                            Text(localizations.save_as(".bin")),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          await saveTag(tag, context, false);
-                                          if (context.mounted) {
-                                            Navigator.pop(context);
-                                          }
-                                        },
-                                        child: Text(
-                                            localizations.save_as(".json")),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                            icon: const Icon(Icons.download),
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              var tags =
-                                  appState.sharedPreferencesProvider.getCards();
-                              List<CardSave> output = [];
-                              for (var tagTest in tags) {
-                                if (tagTest.id != tag.id) {
-                                  output.add(tagTest);
-                                }
-                              }
-                              appState.sharedPreferencesProvider
-                                  .setCards(output);
-                              appState.changesMade();
-                            },
-                            icon: const Icon(Icons.delete_outline),
-                          ),
-                        ],
-                      );
-                    })
-              ]))),
+                      child: AlignedGridView.count(
+                          clipBehavior: Clip.antiAlias,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(10),
+                          crossAxisCount:
+                              MediaQuery.of(context).size.width >= 700 ? 2 : 1,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          itemCount: tags.length,
+                          shrinkWrap: true,
+                          itemBuilder: (BuildContext context, int index) {
+                            final tag = tags[index];
+                            return SavedCard(
+                              icon: (chameleonTagToFrequency(tag.tag) ==
+                                      TagFrequency.hf)
+                                  ? Icons.credit_card
+                                  : Icons.wifi,
+                              iconColor: tag.color,
+                              firstLine: tag.name.isEmpty ? "⠀" : tag.name,
+                              secondLine: chameleonTagToString(tag.tag) +
+                                  ((chameleonTagSaveCheckForMifareClassicEV1(
+                                          tag))
+                                      ? " EV1"
+                                      : ""),
+                              itemIndex: index,
+                              onPressed: () {
+                                showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return CardViewMenu(tagSave: tag);
+                                    });
+                              },
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return CardEditMenu(tagSave: tag);
+                                      },
+                                    );
+                                  },
+                                  icon: const Icon(Icons.edit),
+                                ),
+                                IconButton(
+                                  onPressed: () async {
+                                    await showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: Text(
+                                              localizations.select_save_format),
+                                          actions: [
+                                            ElevatedButton(
+                                              onPressed: () async {
+                                                await saveTag(
+                                                    tag, context, true);
+                                                if (context.mounted) {
+                                                  Navigator.pop(context);
+                                                }
+                                              },
+                                              child: Text(localizations
+                                                  .save_as(".bin")),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () async {
+                                                await saveTag(
+                                                    tag, context, false);
+                                                if (context.mounted) {
+                                                  Navigator.pop(context);
+                                                }
+                                              },
+                                              child: Text(localizations
+                                                  .save_as(".json")),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                  icon: const Icon(Icons.download),
+                                ),
+                                IconButton(
+                                  onPressed: () async {
+                                    var tags = appState
+                                        .sharedPreferencesProvider
+                                        .getCards();
+                                    List<CardSave> output = [];
+                                    for (var tagTest in tags) {
+                                      if (tagTest.id != tag.id) {
+                                        output.add(tagTest);
+                                      }
+                                    }
+                                    appState.sharedPreferencesProvider
+                                        .setCards(output);
+                                    appState.changesMade();
+                                  },
+                                  icon: const Icon(Icons.delete_outline),
+                                ),
+                              ],
+                            );
+                          }))),
             ])),
           ),
           Expanded(
@@ -483,90 +486,91 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               ]),
               Expanded(
                   child: SingleChildScrollView(
-                      child: Column(children: [
-                AlignedGridView.count(
-                    clipBehavior: Clip.antiAlias,
-                    padding: const EdgeInsets.all(10),
-                    crossAxisCount:
-                        MediaQuery.of(context).size.width >= 700 ? 2 : 1,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    itemCount: dictionaries.length,
-                    shrinkWrap: true,
-                    itemBuilder: (BuildContext context, int index) {
-                      final dictionary = dictionaries[index];
-                      return SavedCard(
-                        icon: Icons.key,
-                        iconColor: dictionary.color,
-                        firstLine: dictionary.name,
-                        secondLine:
-                            "${localizations.key_count}: ${dictionary.keys.length}",
-                        itemIndex: index,
-                        onPressed: () {
-                          showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return DictionaryViewMenu(
-                                    dictionary: dictionary);
-                              });
-                        },
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return DictionaryEditMenu(
-                                      dictionary: dictionary);
-                                },
-                              );
-                            },
-                            icon: const Icon(Icons.edit),
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              try {
-                                await FileSaver.instance.saveAs(
-                                    name: dictionary.name,
-                                    bytes: dictionary.toFile(),
-                                    ext: 'dic',
-                                    mimeType: MimeType.other);
-                              } on UnimplementedError catch (_) {
-                                String? outputFile =
-                                    await FilePicker.platform.saveFile(
-                                  dialogTitle: '${localizations.output_file}:',
-                                  fileName: '${dictionary.name}.dic',
-                                );
+                      child: AlignedGridView.count(
+                          clipBehavior: Clip.antiAlias,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(10),
+                          crossAxisCount:
+                              MediaQuery.of(context).size.width >= 700 ? 2 : 1,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          itemCount: dictionaries.length,
+                          shrinkWrap: true,
+                          itemBuilder: (BuildContext context, int index) {
+                            final dictionary = dictionaries[index];
+                            return SavedCard(
+                              icon: Icons.key,
+                              iconColor: dictionary.color,
+                              firstLine: dictionary.name,
+                              secondLine:
+                                  "${localizations.key_count}: ${dictionary.keys.length}",
+                              itemIndex: index,
+                              onPressed: () {
+                                showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return DictionaryViewMenu(
+                                          dictionary: dictionary);
+                                    });
+                              },
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return DictionaryEditMenu(
+                                            dictionary: dictionary);
+                                      },
+                                    );
+                                  },
+                                  icon: const Icon(Icons.edit),
+                                ),
+                                IconButton(
+                                  onPressed: () async {
+                                    try {
+                                      await FileSaver.instance.saveAs(
+                                          name: dictionary.name,
+                                          bytes: dictionary.toFile(),
+                                          ext: 'dic',
+                                          mimeType: MimeType.other);
+                                    } on UnimplementedError catch (_) {
+                                      String? outputFile =
+                                          await FilePicker.platform.saveFile(
+                                        dialogTitle:
+                                            '${localizations.output_file}:',
+                                        fileName: '${dictionary.name}.dic',
+                                      );
 
-                                if (outputFile != null) {
-                                  var file = File(outputFile);
-                                  await file.writeAsBytes(dictionary.toFile());
-                                }
-                              }
-                            },
-                            icon: const Icon(Icons.download),
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              var dictionaries = appState
-                                  .sharedPreferencesProvider
-                                  .getDictionaries();
-                              List<Dictionary> output = [];
-                              for (var dict in dictionaries) {
-                                if (dict.id != dictionary.id) {
-                                  output.add(dict);
-                                }
-                              }
-                              appState.sharedPreferencesProvider
-                                  .setDictionaries(output);
-                              appState.changesMade();
-                            },
-                            icon: const Icon(Icons.delete_outline),
-                          ),
-                        ],
-                      );
-                    })
-              ]))),
+                                      if (outputFile != null) {
+                                        var file = File(outputFile);
+                                        await file
+                                            .writeAsBytes(dictionary.toFile());
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.download),
+                                ),
+                                IconButton(
+                                  onPressed: () async {
+                                    var dictionaries = appState
+                                        .sharedPreferencesProvider
+                                        .getDictionaries();
+                                    List<Dictionary> output = [];
+                                    for (var dict in dictionaries) {
+                                      if (dict.id != dictionary.id) {
+                                        output.add(dict);
+                                      }
+                                    }
+                                    appState.sharedPreferencesProvider
+                                        .setDictionaries(output);
+                                    appState.changesMade();
+                                  },
+                                  icon: const Icon(Icons.delete_outline),
+                                ),
+                              ],
+                            );
+                          }))),
             ])),
           ),
         ],
