@@ -42,10 +42,7 @@ List<Map<String, String>> developers = [
   },
 ];
 
-List<String> excludedAccounts = [
-  "github-actions[bot]",
-  "ChameleonHelper"
-]
+List<String> excludedAccounts = ["github-actions[bot]", "ChameleonHelper"];
 
 Future<List<Map<String, String>>> fetchGitHubContributors() async {
   try {
