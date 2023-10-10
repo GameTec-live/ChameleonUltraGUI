@@ -5,11 +5,10 @@ on:
     branches: [ main ]
     types:
       - closed
-  workflow_dispatch:
 
 jobs:
   check_changes:
-    # if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
       CROWDIN_API: ${{ secrets.CROWDIN_API }}
@@ -29,6 +28,5 @@ jobs:
           if echo "$CHANGED_FILES" | grep -q 'app_en.arb'; then
             python chameleonultragui/lib/l10n/updateCrowdin.py
           else
-            python chameleonultragui/lib/l10n/updateCrowdin.py
             # echo "The file 'app_en.arb' has not changed."
           fi

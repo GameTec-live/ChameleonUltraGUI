@@ -62,11 +62,12 @@ if __name__ == '__main__':
                     except urllib.error.HTTPError as e:
                         print(e.reason)
      
-    # remove old
+    # remove old strings
     to_remove = []
     for key, value in current_translation.items():
         if key not in branch_translation.keys():
             to_remove.append(key)
+
     for string in strings['data']:
         if string['data']['identifier'] not in branch_translation.keys():
             to_remove.append(key)
