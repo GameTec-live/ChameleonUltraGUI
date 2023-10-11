@@ -205,6 +205,7 @@
   "chameleon_flashing_title_easter_egg": "Dein Chameleon {model} ist am Flashen",
   "chameleon_flashing_title": "Firmware wird auf Ihrem Chameleon {model} installiert",
   "ble_pairing": "BLE koppeln",
+  "ats": "ATS",
   "outdated_protocol": "Veraltetes Protokoll in FW",
   "outdated_protocol_description_1": "Der Chameleon hat ein veraltetes Protokoll, was bedeutet die FW ist veraltet.",
   "outdated_protocol_description_2": "Die App kann nicht mit dieser Version des Protokolls arbeiten. Bitte keinen Bug-Report f\u00fcr Fehler nach dieser Nachricht erstellen.",
@@ -214,5 +215,6 @@
   "static_nested_attack": "Starte \"Static Nested\" Angriff auf Karte",
   "read_gen1_card_data": "Lese Daten von Gen1 Karte",
   "charge": "Laden",
-  "copy_all_keys": "Alle Schl\u00fcssel in Zwischenablage"
+  "copy_all_keys": "Alle Schl\u00fcssel in Zwischenablage",
+  "battery_info": "Ladung: {percent}%\nVolt: {voltage} mV"
 }
