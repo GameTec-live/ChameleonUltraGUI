@@ -62,7 +62,7 @@
   "error": "\u9519\u8bef",
   "chameleon_is_dfu": "Chameleon \u5904\u4e8eDFU\u6a21\u5f0f\u3002",
   "firmware_is_corrupted": "\u8fd9\u53ef\u80fd\u610f\u5473\u7740\u60a8\u7684\u56fa\u4ef6\u5df2\u635f\u574f\uff0c\u60a8\u60f3\u8981\u5237\u5165\u6700\u65b0\u7684\u56fa\u4ef6\u5417\uff1f",
-  "flash": "\u5237\u5199",
+  "flash": "\u5237\u5165",
   "dfu": " (DFU)",
   "keys": "\u5bc6\u94a5",
   "found_keys": "\u5df2\u627e\u5230\u5bc6\u94a5",
@@ -214,5 +214,8 @@
   "update": "\u66f4\u65b0",
   "static_nested_attack": "\u5bf9\u5361\u7247\u8fd0\u884cStatic Nested\u653b\u51fb",
   "read_gen1_card_data": "\u8bfb\u53d6Gen1\u5361\u7684\u6570\u636e",
-  "card_tech": "\u6280\u672f"
+  "card_tech": "\u6280\u672f",
+  "charge": "\u5145\u7535",
+  "copy_all_keys": "\u62f7\u8d1d\u6240\u6709\u7684\u5bc6\u94a5\u5230\u7c98\u8d34\u677f",
+  "test": "\u6d4b\u8bd5\u503c"
 }

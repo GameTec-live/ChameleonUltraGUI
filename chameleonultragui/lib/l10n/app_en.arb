@@ -217,5 +217,5 @@
   "card_tech": "Tech",
   "charge": "Charge",
   "copy_all_keys": "Copy all keys to clipboard",
-  "battery_info": "Charge: {percent}%\nVoltage: {voltage} mV"
+  "test": "Test value"
 }
