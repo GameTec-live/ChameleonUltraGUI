@@ -210,5 +210,6 @@
   "skip": "\uac74\ub108\ub6f0\uae30",
   "update": "\uc5c5\ub370\uc774\ud2b8",
   "card_tech": "\uae30\uc220\uc9c0\uc6d0",
-  "charge": "\ucda9\uc804"
+  "charge": "\ucda9\uc804",
+  "battery_info": "\ucda9\uc804: {percent}%\n\uc804\uc555: {voltage} mV"
 }

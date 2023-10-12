@@ -216,5 +216,6 @@
   "read_gen1_card_data": "\u8bfb\u53d6Gen1\u5361\u7684\u6570\u636e",
   "card_tech": "\u6280\u672f",
   "charge": "\u5145\u7535",
-  "copy_all_keys": "\u62f7\u8d1d\u6240\u6709\u7684\u5bc6\u94a5\u5230\u7c98\u8d34\u677f"
+  "copy_all_keys": "\u62f7\u8d1d\u6240\u6709\u7684\u5bc6\u94a5\u5230\u7c98\u8d34\u677f",
+  "battery_info": "\u7535\u91cf: {percent}%\n\u7535\u538b: {voltage} mV"
 }
