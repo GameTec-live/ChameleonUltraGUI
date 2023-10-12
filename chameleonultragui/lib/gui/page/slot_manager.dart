@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/gui/menu/slot_settings.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
@@ -47,6 +48,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   Future<void> executeNextFunction() async {
     var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+
     if (currentFunctionIndex == 0 || onlyOneSlot) {
       try {
         usedSlots = await appState.communicator!.getUsedSlots();
@@ -251,6 +253,104 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     );
   }
 
+  Future<void> onTap(CardSave card, int gridPosition, dynamic close) async {
+    var appState = context.read<ChameleonGUIState>();
+    var localizations = AppLocalizations.of(context)!;
+
+    if ([
+      TagType.mifareMini,
+      TagType.mifare1K,
+      TagType.mifare2K,
+      TagType.mifare4K
+    ].contains(card.tag)) {
+      close(context, card.name);
+      setUploadState(0);
+      var isEV1 = chameleonTagSaveCheckForMifareClassicEV1(card);
+      if (isEV1) {
+        card.tag = TagType.mifare2K;
+      }
+
+      await appState.communicator!.setReaderDeviceMode(false);
+      await appState.communicator!
+          .enableSlot(gridPosition, TagFrequency.hf, true);
+      await appState.communicator!.activateSlot(gridPosition);
+      await appState.communicator!.setSlotType(gridPosition, card.tag);
+      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
+      var cardData = CardData(
+          uid: hexToBytes(card.uid.replaceAll(" ", "")),
+          atqa: card.atqa,
+          sak: card.sak,
+          ats: card.ats);
+      await appState.communicator!.setMf1AntiCollision(cardData);
+
+      List<int> blockChunk = [];
+      int lastSend = 0;
+
+      for (var blockOffset = 0;
+          blockOffset <
+              mfClassicGetBlockCount(
+                  chameleonTagTypeGetMfClassicType(card.tag));
+          blockOffset++) {
+        if ((card.data.length > blockOffset &&
+                card.data[blockOffset].isEmpty) ||
+            blockChunk.length >= 128) {
+          if (blockChunk.isNotEmpty) {
+            await appState.communicator!
+                .setMf1BlockData(lastSend, Uint8List.fromList(blockChunk));
+            blockChunk = [];
+            lastSend = blockOffset;
+          }
+        }
+
+        if (card.data.length > blockOffset) {
+          blockChunk.addAll(card.data[blockOffset]);
+        }
+
+        setUploadState((blockOffset /
+                mfClassicGetBlockCount(
+                    chameleonTagTypeGetMfClassicType(card.tag)) *
+                100)
+            .round());
+        await asyncSleep(1);
+      }
+
+      if (blockChunk.isNotEmpty) {
+        await appState.communicator!
+            .setMf1BlockData(lastSend, Uint8List.fromList(blockChunk));
+      }
+
+      setUploadState(100);
+
+      await appState.communicator!.setSlotTagName(
+          gridPosition,
+          (card.name.isEmpty) ? localizations.no_name : card.name,
+          TagFrequency.hf);
+      await appState.communicator!.saveSlotData();
+      appState.changesMade();
+      refreshSlot(gridPosition);
+    } else if (card.tag == TagType.em410X) {
+      close(context, card.name);
+      await appState.communicator!.setReaderDeviceMode(false);
+      await appState.communicator!
+          .enableSlot(gridPosition, TagFrequency.lf, true);
+      await appState.communicator!.activateSlot(gridPosition);
+      await appState.communicator!.setSlotType(gridPosition, card.tag);
+      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
+      await appState.communicator!
+          .setEM410XEmulatorID(hexToBytes(card.uid.replaceAll(" ", "")));
+      await appState.communicator!.setSlotTagName(
+          gridPosition,
+          (card.name.isEmpty) ? localizations.no_name : card.name,
+          TagFrequency.lf);
+      await appState.communicator!.saveSlotData();
+      appState.changesMade();
+      refreshSlot(gridPosition);
+    } else {
+      appState.log!.e("Can't write this card type yet.");
+      close(context, card.name);
+    }
+  }
+
   Future<String?> cardSelectDialog(BuildContext context, int gridPosition) {
     var appState = context.read<ChameleonGUIState>();
     var tags = appState.sharedPreferencesProvider.getCards();
@@ -264,269 +364,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
     return showSearch<String>(
       context: context,
-      delegate:
-          CardSearchDelegate(tags, gridPosition, refreshSlot, setUploadState),
-    );
-  }
-}
-
-enum SearchFilter { all, hf, lf }
-
-class CardSearchDelegate extends SearchDelegate<String> {
-  final List<CardSave> cards;
-  final int gridPosition;
-  final dynamic refresh;
-  final dynamic setUploadState;
-  SearchFilter filter = SearchFilter.all;
-
-  CardSearchDelegate(
-      this.cards, this.gridPosition, this.refresh, this.setUploadState);
-
-  @override
-  List<Widget> buildActions(BuildContext context) {
-    var localizations = AppLocalizations.of(context)!;
-    return [
-      StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) {
-          return DropdownButton(
-            items: [
-              DropdownMenuItem(
-                value: SearchFilter.all,
-                child: Text(
-                  localizations.all,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              DropdownMenuItem(
-                value: SearchFilter.hf,
-                child: Text(
-                  localizations.hf,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              DropdownMenuItem(
-                value: SearchFilter.lf,
-                child: Text(
-                  localizations.lf,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-            onChanged: (SearchFilter? value) {
-              if (value != null) {
-                setState(() {
-                  filter = value;
-                });
-              }
-            },
-            value: filter,
-          );
-        },
-      ),
-      IconButton(
-        icon: const Icon(Icons.clear),
-        onPressed: () {
-          query = '';
-        },
-      ),
-    ];
-  }
-
-  @override
-  Widget buildLeading(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: () {
-        close(context, '');
-      },
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) {
-    final results = cards.where((card) =>
-        (((card.name.toLowerCase().contains(query.toLowerCase())) ||
-                (chameleonTagToString(card.tag)
-                    .toLowerCase()
-                    .contains(query.toLowerCase()))) &&
-            ((filter == SearchFilter.all) ||
-                (filter == SearchFilter.hf &&
-                    chameleonTagToFrequency(card.tag) == TagFrequency.hf) ||
-                (filter == SearchFilter.lf &&
-                    chameleonTagToFrequency(card.tag) == TagFrequency.lf))));
-
-    return ListView.builder(
-      itemCount: results.length,
-      itemBuilder: (BuildContext context, int index) {
-        final card = results.elementAt(index);
-        return Column(
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                // Set card here
-                Navigator.pop(context);
-              },
-              child: ListTile(
-                leading: Icon(
-                    (chameleonTagToFrequency(card.tag) == TagFrequency.hf)
-                        ? Icons.credit_card
-                        : Icons.wifi,
-                    color: card.color),
-                title: Text(
-                  card.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  chameleonTagToString(card.tag),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  Widget buildSuggestions(BuildContext context) {
-    var localizations = AppLocalizations.of(context)!;
-    final results = cards.where((card) =>
-        (((card.name.toLowerCase().contains(query.toLowerCase())) ||
-                (chameleonTagToString(card.tag)
-                    .toLowerCase()
-                    .contains(query.toLowerCase()))) &&
-            ((filter == SearchFilter.all) ||
-                (filter == SearchFilter.hf &&
-                    chameleonTagToFrequency(card.tag) == TagFrequency.hf) ||
-                (filter == SearchFilter.lf &&
-                    chameleonTagToFrequency(card.tag) == TagFrequency.lf))));
-
-    var appState = context.read<ChameleonGUIState>();
-
-    return ListView.builder(
-      itemCount: results.length,
-      itemBuilder: (BuildContext context, int index) {
-        final card = results.elementAt(index);
-        return ListTile(
-          leading: Icon(
-              (chameleonTagToFrequency(card.tag) == TagFrequency.hf)
-                  ? Icons.credit_card
-                  : Icons.wifi,
-              color: card.color),
-          title: Text(card.name),
-          subtitle: Text(
-            chameleonTagToString(card.tag) +
-                ((chameleonTagSaveCheckForMifareClassicEV1(card))
-                    ? " EV1"
-                    : ""),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          onTap: () async {
-            if ([
-              TagType.mifareMini,
-              TagType.mifare1K,
-              TagType.mifare2K,
-              TagType.mifare4K
-            ].contains(card.tag)) {
-              close(context, card.name);
-              setUploadState(0);
-              var isEV1 = chameleonTagSaveCheckForMifareClassicEV1(card);
-              if (isEV1) {
-                card.tag = TagType.mifare2K;
-              }
-
-              await appState.communicator!.setReaderDeviceMode(false);
-              await appState.communicator!
-                  .enableSlot(gridPosition, TagFrequency.hf, true);
-              await appState.communicator!.activateSlot(gridPosition);
-              await appState.communicator!.setSlotType(gridPosition, card.tag);
-              await appState.communicator!
-                  .setDefaultDataToSlot(gridPosition, card.tag);
-              var cardData = CardData(
-                  uid: hexToBytes(card.uid.replaceAll(" ", "")),
-                  atqa: card.atqa,
-                  sak: card.sak,
-                  ats: card.ats);
-              await appState.communicator!.setMf1AntiCollision(cardData);
-
-              List<int> blockChunk = [];
-              int lastSend = 0;
-
-              for (var blockOffset = 0;
-                  blockOffset <
-                      mfClassicGetBlockCount(
-                          chameleonTagTypeGetMfClassicType(card.tag));
-                  blockOffset++) {
-                if ((card.data.length > blockOffset &&
-                        card.data[blockOffset].isEmpty) ||
-                    blockChunk.length >= 128) {
-                  if (blockChunk.isNotEmpty) {
-                    await appState.communicator!.setMf1BlockData(
-                        lastSend, Uint8List.fromList(blockChunk));
-                    blockChunk = [];
-                    lastSend = blockOffset;
-                  }
-                }
-
-                if (card.data.length > blockOffset) {
-                  blockChunk.addAll(card.data[blockOffset]);
-                }
-
-                setUploadState((blockOffset /
-                        mfClassicGetBlockCount(
-                            chameleonTagTypeGetMfClassicType(card.tag)) *
-                        100)
-                    .round());
-                await asyncSleep(1);
-              }
-
-              if (blockChunk.isNotEmpty) {
-                await appState.communicator!
-                    .setMf1BlockData(lastSend, Uint8List.fromList(blockChunk));
-              }
-
-              setUploadState(100);
-
-              await appState.communicator!.setSlotTagName(
-                  gridPosition,
-                  (card.name.isEmpty) ? localizations.no_name : card.name,
-                  TagFrequency.hf);
-              await appState.communicator!.saveSlotData();
-              appState.changesMade();
-              refresh(gridPosition);
-            } else if (card.tag == TagType.em410X) {
-              close(context, card.name);
-              await appState.communicator!.setReaderDeviceMode(false);
-              await appState.communicator!
-                  .enableSlot(gridPosition, TagFrequency.lf, true);
-              await appState.communicator!.activateSlot(gridPosition);
-              await appState.communicator!.setSlotType(gridPosition, card.tag);
-              await appState.communicator!
-                  .setDefaultDataToSlot(gridPosition, card.tag);
-              await appState.communicator!.setEM410XEmulatorID(
-                  hexToBytes(card.uid.replaceAll(" ", "")));
-              await appState.communicator!.setSlotTagName(
-                  gridPosition,
-                  (card.name.isEmpty) ? localizations.no_name : card.name,
-                  TagFrequency.lf);
-              await appState.communicator!.saveSlotData();
-              appState.changesMade();
-              refresh(gridPosition);
-            } else {
-              appState.log!.e("Can't write this card type yet.");
-              close(context, card.name);
-            }
-          },
-        );
-      },
+      delegate: CardSearchDelegate(tags, gridPosition, onTap),
     );
   }
 }
