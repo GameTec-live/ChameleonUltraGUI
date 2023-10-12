@@ -17,7 +17,6 @@ import 'package:file_saver/file_saver.dart';
 
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
-import 'package:uuid/uuid.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -618,7 +617,6 @@ class ReadCardPageState extends State<ReadCardPage> {
     } else {
       var tags = appState.sharedPreferencesProvider.getCards();
       tags.add(CardSave(
-          id: const Uuid().v4(),
           uid: hfInfo.uid,
           sak: hexToBytes(hfInfo.sak)[0],
           atqa: hexToBytes(hfInfo.atqa.replaceAll(" ", "")),
@@ -636,15 +634,7 @@ class ReadCardPageState extends State<ReadCardPage> {
 
   Future<void> saveLFCard(ChameleonGUIState appState) async {
     var tags = appState.sharedPreferencesProvider.getCards();
-    tags.add(CardSave(
-        id: const Uuid().v4(),
-        uid: lfInfo.uid,
-        sak: 0,
-        atqa: Uint8List(0),
-        name: dumpName,
-        tag: TagType.em410X,
-        data: [],
-        ats: Uint8List(0)));
+    tags.add(CardSave(uid: lfInfo.uid, name: dumpName, tag: TagType.em410X));
     appState.sharedPreferencesProvider.setCards(tags);
   }
 

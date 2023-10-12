@@ -15,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_view.dart';
 
@@ -75,7 +74,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           var tags =
                               appState.sharedPreferencesProvider.getCards();
                           var tag = CardSave.fromJson(string);
-                          tag.id = const Uuid().v4();
                           tags.add(tag);
                           appState.sharedPreferencesProvider.setCards(tags);
                           appState.changesMade();
@@ -222,7 +220,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           .sharedPreferencesProvider
                                           .getCards();
                                       var tag = CardSave(
-                                          id: const Uuid().v4(),
                                           name: nameController.text,
                                           sak: hexToBytes(sak4Controller.text
                                               .replaceAll(" ", ""))[0],
@@ -231,16 +228,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           uid: uid4Controller.text,
                                           tag: mfClassicGetChameleonTagType(
                                               selectedType),
-                                          data: blocks,
-                                          ats: Uint8List(0));
+                                          data: blocks);
                                       tags.add(tag);
                                       appState.sharedPreferencesProvider
                                           .setCards(tags);
                                       appState.changesMade();
                                       Navigator.pop(context);
                                     },
-                                    child: Text(
-                                        localizations.save_as("4 byte UID")),
+                                    child: Text(localizations
+                                        .save_as(localizations.x_byte_uid(4))),
                                   ),
                                   ElevatedButton(
                                     onPressed: () async {
@@ -254,7 +250,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           .sharedPreferencesProvider
                                           .getCards();
                                       var tag = CardSave(
-                                          id: const Uuid().v4(),
                                           name: nameController.text,
                                           sak: hexToBytes(sak7Controller.text
                                               .replaceAll(" ", ""))[0],
@@ -263,16 +258,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           uid: uid7Controller.text,
                                           tag: mfClassicGetChameleonTagType(
                                               selectedType),
-                                          data: blocks,
-                                          ats: Uint8List(0));
+                                          data: blocks);
                                       tags.add(tag);
                                       appState.sharedPreferencesProvider
                                           .setCards(tags);
                                       appState.changesMade();
                                       Navigator.pop(context);
                                     },
-                                    child: Text(
-                                        localizations.save_as("7 byte UID")),
+                                    child: Text(localizations
+                                        .save_as(localizations.x_byte_uid(7))),
                                   ),
                                   ElevatedButton(
                                     onPressed: () {
@@ -459,7 +453,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                         var dictionaries = appState.sharedPreferencesProvider
                             .getDictionaries();
                         dictionaries.add(Dictionary(
-                            id: const Uuid().v4(),
                             name: result.files.single.name.split(".")[0],
                             keys: keys));
                         appState.sharedPreferencesProvider
