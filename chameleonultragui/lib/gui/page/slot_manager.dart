@@ -3,10 +3,11 @@ import 'dart:typed_data';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/menu/slot_settings.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 
@@ -26,9 +27,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     (_) => (TagType.unknown, TagType.unknown),
   );
 
-  List<bool> enabledSlots = List.generate(
+  List<(bool, bool)> enabledSlots = List.generate(
     8,
-    (_) => true,
+    (_) => (true, true),
   );
 
   List<Map<String, String>> slotData = List.generate(
@@ -141,13 +142,14 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   child: AlignedGridView.count(
                       padding: const EdgeInsets.all(20),
                       crossAxisCount:
-                          MediaQuery.of(context).size.width >= 600 ? 2 : 1,
+                          MediaQuery.of(context).size.width >= 700 ? 2 : 1,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                       itemCount: 8,
                       itemBuilder: (BuildContext context, int index) {
                         return Container(
-                          constraints: const BoxConstraints(maxHeight: 120),
+                          constraints: const BoxConstraints(
+                              maxHeight: 160, minHeight: 100),
                           child: ElevatedButton(
                             onPressed: () {
                               cardSelectDialog(context, index);
@@ -169,21 +171,32 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                   Row(
                                     children: [
                                       Icon(Icons.nfc,
-                                          color: enabledSlots[index]
+                                          color: enabledSlots[index].$1 ||
+                                                  enabledSlots[index].$2
                                               ? Colors.green
                                               : Colors.deepOrange),
                                       const SizedBox(width: 5),
-                                      Text("${localizations.slot} ${index + 1}")
+                                      Expanded(
+                                        child: Text(
+                                          "${localizations.slot} ${index + 1}",
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: 20),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       const Icon(Icons.credit_card),
                                       const SizedBox(width: 5),
-                                      Text(
-                                          "${slotData[index]['hfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$1)})")
+                                      Expanded(
+                                          child: Text(
+                                        "${slotData[index]['hfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$1)})",
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ))
                                     ],
                                   ),
                                   Row(
@@ -195,9 +208,12 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                           children: [
                                             const Icon(Icons.wifi),
                                             const SizedBox(width: 5),
-                                            Text(
+                                            Expanded(
+                                                child: Text(
                                               "${slotData[index]['lfName'] ?? localizations.unknown} (${chameleonTagToString(usedSlots[index].$2)})",
-                                            ),
+                                              //maxLines: 2,
+                                              overflow: TextOverflow.clip,
+                                            ))
                                           ],
                                         ),
                                       ),
@@ -276,15 +292,27 @@ class CardSearchDelegate extends SearchDelegate<String> {
             items: [
               DropdownMenuItem(
                 value: SearchFilter.all,
-                child: Text(localizations.all),
+                child: Text(
+                  localizations.all,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               DropdownMenuItem(
                 value: SearchFilter.hf,
-                child: Text(localizations.hf),
+                child: Text(
+                  localizations.hf,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               DropdownMenuItem(
                 value: SearchFilter.lf,
-                child: Text(localizations.lf),
+                child: Text(
+                  localizations.lf,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
             onChanged: (SearchFilter? value) {
@@ -347,8 +375,16 @@ class CardSearchDelegate extends SearchDelegate<String> {
                         ? Icons.credit_card
                         : Icons.wifi,
                     color: card.color),
-                title: Text(card.name),
-                subtitle: Text(chameleonTagToString(card.tag)),
+                title: Text(
+                  card.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  chameleonTagToString(card.tag),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -385,8 +421,14 @@ class CardSearchDelegate extends SearchDelegate<String> {
                   : Icons.wifi,
               color: card.color),
           title: Text(card.name),
-          subtitle: Text(chameleonTagToString(card.tag) +
-              ((chameleonTagSaveCheckForMifareClassicEV1(card)) ? " EV1" : "")),
+          subtitle: Text(
+            chameleonTagToString(card.tag) +
+                ((chameleonTagSaveCheckForMifareClassicEV1(card))
+                    ? " EV1"
+                    : ""),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
           onTap: () async {
             if ([
               TagType.mifareMini,
@@ -402,7 +444,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
               }
 
               await appState.communicator!.setReaderDeviceMode(false);
-              await appState.communicator!.enableSlot(gridPosition, true);
+              await appState.communicator!
+                  .enableSlot(gridPosition, TagFrequency.hf, true);
               await appState.communicator!.activateSlot(gridPosition);
               await appState.communicator!.setSlotType(gridPosition, card.tag);
               await appState.communicator!
@@ -410,7 +453,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
               var cardData = CardData(
                   uid: hexToBytes(card.uid.replaceAll(" ", "")),
                   atqa: card.atqa,
-                  sak: card.sak);
+                  sak: card.sak,
+                  ats: card.ats);
               await appState.communicator!.setMf1AntiCollision(cardData);
 
               List<int> blockChunk = [];
@@ -461,7 +505,8 @@ class CardSearchDelegate extends SearchDelegate<String> {
             } else if (card.tag == TagType.em410X) {
               close(context, card.name);
               await appState.communicator!.setReaderDeviceMode(false);
-              await appState.communicator!.enableSlot(gridPosition, true);
+              await appState.communicator!
+                  .enableSlot(gridPosition, TagFrequency.lf, true);
               await appState.communicator!.activateSlot(gridPosition);
               await appState.communicator!.setSlotType(gridPosition, card.tag);
               await appState.communicator!

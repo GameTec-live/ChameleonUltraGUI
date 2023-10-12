@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/gui/component/developer_list.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -87,6 +88,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   appState.sharedPreferencesProvider
                       .setSideBarExpandedIndex(index);
                   appState.changesMade();
+
+                  WidgetsBinding.instance.addPostFrameCallback(
+                      (_) => updateNavigationRailWidth(context));
                 }),
             const SizedBox(height: 10),
             Text(
@@ -176,22 +180,25 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
-            DropdownButton(
-              value: appState.sharedPreferencesProvider.sharedPreferences
-                      .getString('locale') ??
-                  'en',
-              onChanged: (value) {
-                appState.sharedPreferencesProvider
-                    .setLocale(Locale(value ?? 'en'));
-                appState.changesMade();
-              },
-              items: AppLocalizations.supportedLocales.map((locale) {
-                return DropdownMenuItem(
-                  value: locale.toLanguageTag(),
-                  child:
-                      Text(appState.sharedPreferencesProvider.getFlag(locale)),
-                );
-              }).toList(),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: DropdownButton(
+                value: appState.sharedPreferencesProvider.sharedPreferences
+                        .getString('locale') ??
+                    'en',
+                onChanged: (value) {
+                  appState.sharedPreferencesProvider
+                      .setLocale(Locale(value ?? 'en'));
+                  appState.changesMade();
+                },
+                items: AppLocalizations.supportedLocales.map((locale) {
+                  return DropdownMenuItem(
+                    value: locale.toLanguageTag(),
+                    child: Text(
+                        appState.sharedPreferencesProvider.getFlag(locale)),
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: 10),
             TextButton(

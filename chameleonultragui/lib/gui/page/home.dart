@@ -8,6 +8,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/gui/component/slot_changer.dart';
+import 'dart:math';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -20,14 +21,15 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
-  var selectedSlot = 1;
+  int selectedSlot = 1;
+  bool isLegacyFirmware = false;
 
   @override
   void initState() {
     super.initState();
   }
 
-  Future<(Icon, String, List<String>, bool)> getFutureData() async {
+  Future<((Icon, int, int), String, List<String>, bool)> getFutureData() async {
     var appState = context.read<ChameleonGUIState>();
     List<(TagType, TagType)> usedSlots = [];
     try {
@@ -37,42 +39,44 @@ class HomePageState extends State<HomePage> {
     }
 
     return (
-      await getBatteryChargeIcon(),
+      await getBatteryInfo(),
       await getUsedSlotsOut8(usedSlots),
       await getVersion(),
       await isReaderDeviceMode()
     );
   }
 
-  Future<Icon> getBatteryChargeIcon() async {
+  Future<(Icon, int, int)> getBatteryInfo() async {
     var appState = context.read<ChameleonGUIState>();
+    var icon = const Icon(Icons.battery_unknown);
     int charge = 0;
+    int voltage = 0;
 
     try {
-      (_, charge) = await appState.communicator!.getBatteryCharge();
+      (voltage, charge) = await appState.communicator!.getBatteryCharge();
     } catch (_) {}
 
     if (charge > 98) {
-      return const Icon(Icons.battery_full);
+      icon = const Icon(Icons.battery_full);
     } else if (charge > 87) {
-      return const Icon(Icons.battery_6_bar);
+      icon = const Icon(Icons.battery_6_bar);
     } else if (charge > 75) {
-      return const Icon(Icons.battery_5_bar);
+      icon = const Icon(Icons.battery_5_bar);
     } else if (charge > 62) {
-      return const Icon(Icons.battery_4_bar);
+      icon = const Icon(Icons.battery_4_bar);
     } else if (charge > 50) {
-      return const Icon(Icons.battery_3_bar);
+      icon = const Icon(Icons.battery_3_bar);
     } else if (charge > 37) {
-      return const Icon(Icons.battery_2_bar);
+      icon = const Icon(Icons.battery_2_bar);
     } else if (charge > 10) {
-      return const Icon(Icons.battery_1_bar);
+      icon = const Icon(Icons.battery_1_bar);
     } else if (charge > 3) {
-      return const Icon(Icons.battery_0_bar);
+      icon = const Icon(Icons.battery_0_bar);
     } else if (charge > 0) {
-      return const Icon(Icons.battery_alert);
+      icon = const Icon(Icons.battery_alert);
     }
 
-    return const Icon(Icons.battery_unknown);
+    return (icon, charge, voltage);
   }
 
   Future<String> getUsedSlotsOut8(List<(TagType, TagType)> usedSlots) async {
@@ -94,8 +98,9 @@ class HomePageState extends State<HomePage> {
   Future<List<String>> getVersion() async {
     var appState = context.read<ChameleonGUIState>();
     String commitHash = "";
-    String firmwareVersion =
-        numToVerCode(await appState.communicator!.getFirmwareVersion());
+    var firmware = await appState.communicator!.getFirmwareVersion();
+    isLegacyFirmware = firmware.$1;
+    String firmwareVersion = numToVerCode(firmware.$2);
 
     try {
       commitHash = await appState.communicator!.getGitCommitHash();
@@ -107,6 +112,58 @@ class HomePageState extends State<HomePage> {
       } else {
         commitHash = "Outdated FW";
       }
+    }
+
+    if (context.mounted && isLegacyFirmware) {
+      var localizations = AppLocalizations.of(context)!;
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(localizations.outdated_protocol),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Text(localizations.outdated_protocol_description_1),
+                  Text(localizations.outdated_protocol_description_2),
+                  Text(localizations.outdated_protocol_description_3),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: Text(localizations.update),
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  var localizations = AppLocalizations.of(context)!;
+                  var scaffoldMessenger = ScaffoldMessenger.of(context);
+                  var snackBar = SnackBar(
+                    content: Text(localizations.downloading_fw(
+                        chameleonDeviceName(appState.connector!.device))),
+                    action: SnackBarAction(
+                      label: localizations.close,
+                      onPressed: () {
+                        scaffoldMessenger.hideCurrentSnackBar();
+                      },
+                    ),
+                  );
+
+                  scaffoldMessenger.showSnackBar(snackBar);
+                  await flashFirmware(appState,
+                      scaffoldMessenger: scaffoldMessenger);
+                },
+              ),
+              TextButton(
+                child: Text(localizations.skip),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
     }
 
     return ["$firmwareVersion ($commitHash)", commitHash];
@@ -137,7 +194,7 @@ class HomePageState extends State<HomePage> {
             return Text('${localizations.error}: ${snapshot.error.toString()}');
           } else {
             final (
-              batteryIcon,
+              batteryInfo,
               usedSlots,
               fwVersion,
               isReaderDeviceMode,
@@ -180,7 +237,11 @@ class HomePageState extends State<HomePage> {
                                         ConnectionType.ble
                                     ? Icons.bluetooth
                                     : Icons.usb),
-                                batteryIcon,
+                                Tooltip(
+                                  message: localizations.battery_info(
+                                      batteryInfo.$2, batteryInfo.$3),
+                                  child: batteryInfo.$1,
+                                ),
                               ],
                             ),
                           ],
@@ -193,15 +254,22 @@ class HomePageState extends State<HomePage> {
                         Text(
                             "Chameleon ${chameleonDeviceName(appState.connector!.device)}",
                             style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize:
-                                    MediaQuery.of(context).size.width / 25)),
+                              fontWeight: FontWeight.bold,
+                              fontSize: min(
+                                MediaQuery.of(context).size.width / 25,
+                                MediaQuery.of(context).size.height / 20,
+                              ),
+                            )),
                       ],
                     ),
                     const SizedBox(height: 20),
                     Text("${localizations.used_slots}: $usedSlots/8",
                         style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width / 50)),
+                          fontSize: min(
+                            MediaQuery.of(context).size.width / 35,
+                            MediaQuery.of(context).size.height / 20,
+                          ),
+                        )),
                     const SlotChanger(),
                     Expanded(
                       child: FractionallySizedBox(
@@ -220,13 +288,19 @@ class HomePageState extends State<HomePage> {
                       children: [
                         Text("${localizations.firmware_version}: ",
                             style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize:
-                                    MediaQuery.of(context).size.width / 50)),
+                              fontWeight: FontWeight.bold,
+                              fontSize: min(
+                                MediaQuery.of(context).size.width / 50,
+                                MediaQuery.of(context).size.height / 30,
+                              ),
+                            )),
                         Text(fwVersion[0],
                             style: TextStyle(
-                                fontSize:
-                                    MediaQuery.of(context).size.width / 50)),
+                              fontSize: min(
+                                MediaQuery.of(context).size.width / 50,
+                                MediaQuery.of(context).size.height / 30,
+                              ),
+                            )),
                         Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: IconButton(
@@ -254,7 +328,13 @@ class HomePageState extends State<HomePage> {
                                 return;
                               }
 
-                              appState.log!.i("Latest commit: $latestCommit");
+                              try {
+                                fwVersion[1] =
+                                    await resolveCommit(fwVersion[1]);
+                              } catch (_) {}
+
+                              appState.log!.i(
+                                  "Latest commit: $latestCommit, current commit ${fwVersion[1]}");
 
                               if (latestCommit.isEmpty) {
                                 return;

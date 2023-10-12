@@ -36,11 +36,13 @@ List<Map<String, String>> developers = [
   },
   {
     'name': 'Andrés Ruz Nieto',
-    'description': 'Translator',
+    'description': 'Translation maintainer',
     'avatarUrl': 'https://avatars.githubusercontent.com/u/40019177',
     'username': 'aruznieto'
   },
 ];
+
+List<String> excludedAccounts = ["github-actions[bot]", "ChameleonHelper"];
 
 Future<List<Map<String, String>>> fetchGitHubContributors() async {
   try {
@@ -52,7 +54,7 @@ Future<List<Map<String, String>>> fetchGitHubContributors() async {
     if (response is List) {
       List<Map<String, String>> contributors = [];
       for (var contributor in response) {
-        if (contributor['login'] != 'github-actions[bot]' &&
+        if (!excludedAccounts.contains(contributor['login']) &&
             !developers.any(
                 (developer) => developer['username'] == contributor['login'])) {
           contributors.add({
@@ -141,6 +143,24 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
   String error = "";
 
   try {
+    final releases = json.decode((await http.get(Uri.parse(
+            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
+        .body
+        .toString());
+
+    if (releases is! List && releases.containsKey("message")) {
+      error = releases["message"];
+      throw error;
+    }
+
+    for (var release in releases) {
+      if (release["author"]["login"] == "github-actions[bot]") {
+        return release["target_commitish"];
+      }
+    }
+  } catch (_) {}
+
+  try {
     final artifacts = json.decode((await http.get(Uri.parse(
             "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts")))
         .body
@@ -160,27 +180,29 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
     }
   } catch (_) {}
 
-  try {
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
-        .body
-        .toString());
-
-    if (releases is! List && releases.containsKey("message")) {
-      error = releases["message"];
-      throw error;
-    }
-
-    for (var release in releases) {
-      if (release["author"]["login"] == "github-actions[bot]") {
-        return release["target_commitish"];
-      }
-    }
-  } catch (_) {}
-
   if (error.isNotEmpty) {
     throw error;
   }
 
   return "";
+}
+
+Future<String> resolveCommit(String commitHash) async {
+  if ('-'.allMatches(commitHash).length == 2) {
+    return commitHash.split("-")[2].replaceAll('g', ''); // v2.0.0-1-gXXXXXX
+  } else if (commitHash.startsWith('-dirty')) {
+    return commitHash; // v2.0.0-1-gXXXXXX-dirty
+  } else if ('-'.allMatches(commitHash).isEmpty) {
+    final tags = json.decode((await http.get(Uri.parse(
+            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/tags")))
+        .body
+        .toString());
+    for (var tag in tags) {
+      if (commitHash == tag['name']) {
+        return tag['commit']['sha'];
+      }
+    }
+  }
+
+  return commitHash;
 }

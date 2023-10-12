@@ -80,6 +80,9 @@ class ChameleonGUIState extends ChangeNotifier {
 
   bool forceMfkey32Page = false;
 
+  GlobalKey navigationRailKey = GlobalKey();
+  Size? navigationRailSize;
+
   void changesMade() {
     notifyListeners();
   }
@@ -101,6 +104,13 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   var selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => updateNavigationRailWidth(context, skipWait: true));
+  }
 
   @override
   void reassemble() {
@@ -194,10 +204,6 @@ class _MainPageState extends State<MainPage> {
       page = const Mfkey32Page();
     }
 
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Theme.of(context).colorScheme.surface,
-    ));
-
     try {
       WakelockPlus.toggle(enable: page is FlashingPage);
     } catch (_) {}
@@ -210,16 +216,33 @@ class _MainPageState extends State<MainPage> {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-            seedColor: widget.sharedPreferencesProvider
-                .getThemeColor()), // Color Scheme
-        brightness: Brightness.light, // Light Theme
+            seedColor: widget.sharedPreferencesProvider.getThemeColor()),
+        brightness: Brightness.light,
+        appBarTheme: AppBarTheme(
+            systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: ColorScheme.fromSeed(
+                        seedColor:
+                            widget.sharedPreferencesProvider.getThemeColor(),
+                        brightness: Brightness.light)
+                    .surface,
+                statusBarBrightness: Brightness.light,
+                statusBarIconBrightness: Brightness.dark)),
       ),
-      darkTheme: ThemeData.dark().copyWith(
+      darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
             seedColor: widget.sharedPreferencesProvider.getThemeColor(),
-            brightness: Brightness.dark), // Color Scheme
-        brightness: Brightness.dark, // Dark Theme
+            brightness: Brightness.dark),
+        brightness: Brightness.dark,
+        appBarTheme: AppBarTheme(
+            systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: ColorScheme.fromSeed(
+                        seedColor:
+                            widget.sharedPreferencesProvider.getThemeColor(),
+                        brightness: Brightness.dark)
+                    .surface,
+                statusBarBrightness: Brightness.dark,
+                statusBarIconBrightness: Brightness.light)),
       ),
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
       home: LayoutBuilder(// Build Page
@@ -230,6 +253,7 @@ class _MainPageState extends State<MainPage> {
                 (!appState.connector!.isDFU || !appState.connector!.connected)
                     ? SafeArea(
                         child: NavigationRail(
+                          key: appState.navigationRailKey,
                           // Sidebar
                           extended: appState.sharedPreferencesProvider
                               .getSideBarExpanded(),

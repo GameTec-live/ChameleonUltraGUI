@@ -25,10 +25,12 @@ class CardEditMenuState extends State<CardEditMenu> {
   String uid = "";
   int sak = 0;
   Uint8List atqa = Uint8List.fromList([]);
+  Uint8List ats = Uint8List.fromList([]);
   TextEditingController uidController = TextEditingController();
-  TextEditingController sak4Controller = TextEditingController();
-  TextEditingController atqa4Controller = TextEditingController();
+  TextEditingController sakController = TextEditingController();
+  TextEditingController atqaController = TextEditingController();
   TextEditingController nameController = TextEditingController();
+  TextEditingController atsController = TextEditingController();
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -39,11 +41,13 @@ class CardEditMenuState extends State<CardEditMenu> {
     selectedType = widget.tagSave.tag;
     uid = widget.tagSave.uid;
     sak = widget.tagSave.sak;
+    ats = widget.tagSave.ats;
     atqa = Uint8List.fromList(widget.tagSave.atqa);
     uidController = TextEditingController(text: uid);
-    sak4Controller =
+    sakController =
         TextEditingController(text: bytesToHexSpace(Uint8List.fromList([sak])));
-    atqa4Controller = TextEditingController(text: bytesToHexSpace(atqa));
+    atqaController = TextEditingController(text: bytesToHexSpace(atqa));
+    atsController = TextEditingController(text: bytesToHexSpace(ats));
     nameController = TextEditingController(text: widget.tagSave.name);
     pickerColor = widget.tagSave.color;
     currentColor = widget.tagSave.color;
@@ -53,6 +57,7 @@ class CardEditMenuState extends State<CardEditMenu> {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+
     return AlertDialog(
       title: Text(localizations.edit_card),
       content: SingleChildScrollView(
@@ -67,63 +72,69 @@ class CardEditMenuState extends State<CardEditMenu> {
                   if (value == null || value.isEmpty) {
                     return localizations.please_enter_name;
                   }
+                  if (value.length > 19) {
+                    return localizations.too_long_name;
+                  }
                   return null;
                 },
                 decoration: InputDecoration(
                     labelText: localizations.name,
                     hintText: localizations.enter_name,
-                    prefix: IconButton(
-                      icon: Icon(
-                          (chameleonTagToFrequency(widget.tagSave.tag) ==
-                                  TagFrequency.hf)
-                              ? Icons.credit_card
-                              : Icons.wifi,
-                          color: currentColor),
-                      onPressed: () async {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text(localizations.pick_color),
-                              content: SingleChildScrollView(
-                                child: ColorPicker(
-                                  pickerColor: pickerColor,
-                                  onColorChanged: (Color color) {
-                                    setState(() {
-                                      pickerColor = color;
-                                    });
-                                  },
-                                  pickerAreaHeightPercent: 0.8,
-                                ),
-                              ),
-                              actions: <Widget>[
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() => currentColor =
-                                        pickerColor = Colors.deepOrange);
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(localizations.reset_default),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(localizations.cancel),
-                                ),
-                                TextButton(
-                                  child: Text(localizations.ok),
-                                  onPressed: () {
-                                    setState(() => currentColor = pickerColor);
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                              ],
+                    prefix: Transform(
+                        transform: Matrix4.translationValues(0, 7, 0),
+                        child: IconButton(
+                          icon: Icon(
+                              (chameleonTagToFrequency(widget.tagSave.tag) ==
+                                      TagFrequency.hf)
+                                  ? Icons.credit_card
+                                  : Icons.wifi,
+                              color: currentColor),
+                          onPressed: () async {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text(localizations.pick_color),
+                                  content: SingleChildScrollView(
+                                    child: ColorPicker(
+                                      pickerColor: pickerColor,
+                                      onColorChanged: (Color color) {
+                                        setState(() {
+                                          pickerColor = color;
+                                        });
+                                      },
+                                      pickerAreaHeightPercent: 0.8,
+                                    ),
+                                  ),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () {
+                                        setState(() => currentColor =
+                                            pickerColor = Colors.deepOrange);
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(localizations.reset_default),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(localizations.cancel),
+                                    ),
+                                    TextButton(
+                                      child: Text(localizations.ok),
+                                      onPressed: () {
+                                        setState(
+                                            () => currentColor = pickerColor);
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
                             );
                           },
-                        );
-                      },
-                    )),
+                        ))),
               ),
               DropdownButton<TagType>(
                 value: selectedType,
@@ -136,6 +147,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                   TagType.ntag215,
                   TagType.ntag216,
                   TagType.em410X,
+                  TagType.unknown
                 ].map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
                     value: type,
@@ -145,9 +157,11 @@ class CardEditMenuState extends State<CardEditMenu> {
                   );
                 }).toList(),
                 onChanged: (TagType? newValue) {
-                  setState(() {
-                    selectedType = newValue!;
-                  });
+                  if (newValue != TagType.unknown) {
+                    setState(() {
+                      selectedType = newValue!;
+                    });
+                  }
                   appState.changesMade();
                 },
               ),
@@ -157,21 +171,23 @@ class CardEditMenuState extends State<CardEditMenu> {
                   controller: uidController,
                   decoration: InputDecoration(
                       labelText: localizations.uid,
-                      hintText: localizations.enter_something("UID")),
+                      hintText:
+                          localizations.enter_something(localizations.uid)),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return localizations.please_enter_something("UID");
+                      return localizations
+                          .please_enter_something(localizations.uid);
                     }
                     if (!(value.replaceAll(" ", "").length == 14 ||
                             value.replaceAll(" ", "").length == 8) &&
                         chameleonTagToFrequency(selectedType) !=
                             TagFrequency.lf) {
-                      return localizations.must_or(4, 7, "UID");
+                      return localizations.must_or(4, 7, localizations.uid);
                     }
                     if (value.replaceAll(" ", "").length != 10 &&
                         chameleonTagToFrequency(selectedType) ==
                             TagFrequency.lf) {
-                      return localizations.must_be(5, "UID");
+                      return localizations.must_be(5, localizations.uid);
                     }
                     return null;
                   },
@@ -181,21 +197,23 @@ class CardEditMenuState extends State<CardEditMenu> {
                   visible:
                       chameleonTagToFrequency(selectedType) != TagFrequency.lf,
                   child: TextFormField(
-                    controller: sak4Controller,
+                    controller: sakController,
                     decoration: InputDecoration(
                         labelText: localizations.sak,
-                        hintText: localizations.enter_something("SAK")),
+                        hintText:
+                            localizations.enter_something(localizations.sak)),
                     validator: (value) {
                       if (value == null ||
                           value.isEmpty &&
                               chameleonTagToFrequency(selectedType) !=
                                   TagFrequency.lf) {
-                        return localizations.please_enter_something("SAK");
+                        return localizations
+                            .please_enter_something(localizations.sak);
                       }
                       if (value.replaceAll(" ", "").length != 2 &&
                           chameleonTagToFrequency(selectedType) !=
                               TagFrequency.lf) {
-                        return localizations.must_be(1, "SAK");
+                        return localizations.must_be(1, localizations.sak);
                       }
                       return null;
                     },
@@ -206,24 +224,38 @@ class CardEditMenuState extends State<CardEditMenu> {
                   visible:
                       chameleonTagToFrequency(selectedType) != TagFrequency.lf,
                   child: TextFormField(
-                    controller: atqa4Controller,
+                    controller: atqaController,
                     decoration: InputDecoration(
                         labelText: localizations.atqa,
-                        hintText: localizations.enter_something("ATQA")),
+                        hintText:
+                            localizations.enter_something(localizations.atqa)),
                     validator: (value) {
                       if (value == null ||
                           value.isEmpty &&
                               chameleonTagToFrequency(selectedType) !=
                                   TagFrequency.lf) {
-                        return localizations.please_enter_something("ATQA");
+                        return localizations
+                            .please_enter_something(localizations.atqa);
                       }
                       if (value.replaceAll(" ", "").length != 4 &&
                           chameleonTagToFrequency(selectedType) !=
                               TagFrequency.lf) {
-                        return localizations.must_be(2, "ATQA");
+                        return localizations.must_be(2, localizations.atqa);
                       }
                       return null;
                     },
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Visibility(
+                  visible:
+                      chameleonTagToFrequency(selectedType) != TagFrequency.lf,
+                  child: TextFormField(
+                    controller: atsController,
+                    decoration: InputDecoration(
+                        labelText: localizations.ats,
+                        hintText:
+                            localizations.enter_something(localizations.ats)),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -258,17 +290,17 @@ class CardEditMenuState extends State<CardEditMenu> {
             }
 
             var tag = CardSave(
-              id: widget.tagSave.uid,
-              name: nameController.text,
-              sak: chameleonTagToFrequency(selectedType) == TagFrequency.lf
-                  ? widget.tagSave.sak
-                  : hexToBytes(sak4Controller.text.replaceAll(" ", ""))[0],
-              atqa: hexToBytes(atqa4Controller.text.replaceAll(" ", "")),
-              uid: uidController.text,
-              tag: selectedType,
-              data: widget.tagSave.data,
-              color: currentColor,
-            );
+                id: widget.tagSave.uid,
+                name: nameController.text,
+                sak: chameleonTagToFrequency(selectedType) == TagFrequency.lf
+                    ? widget.tagSave.sak
+                    : hexToBytes(sakController.text.replaceAll(" ", ""))[0],
+                atqa: hexToBytes(atqaController.text.replaceAll(" ", "")),
+                uid: uidController.text,
+                tag: selectedType,
+                data: widget.tagSave.data,
+                color: currentColor,
+                ats: hexToBytes(atsController.text.replaceAll(" ", "")));
 
             var tags = appState.sharedPreferencesProvider.getCards();
             List<CardSave> output = [];

@@ -21,13 +21,12 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.11
-      - name: Watching for changes in app_en.arb and run Python script
+      - name: Update translation
         run: |
           CHANGED_FILES=$(git diff --name-only -r HEAD^1 HEAD)
           # Check if the specific file is in the changed files list
           if echo "$CHANGED_FILES" | grep -q 'app_en.arb'; then
-            FILE=$(git diff HEAD^1:chameleonultragui/lib/l10n/app_en.arb HEAD:chameleonultragui/lib/l10n/app_en.arb --no-ext-diff --unified=0 -a --no-prefix | egrep "^\+")
-            python chameleonultragui/lib/l10n/updateCrowdin.py "$FILE"
+            python chameleonultragui/lib/l10n/updateCrowdin.py
           else
             echo "The file 'app_en.arb' has not changed."
           fi

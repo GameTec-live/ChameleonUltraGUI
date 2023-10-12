@@ -70,6 +70,7 @@ class CardSave {
   String uid;
   int sak;
   Uint8List atqa;
+  Uint8List ats;
   String name;
   TagType tag;
   List<Uint8List> data;
@@ -81,6 +82,7 @@ class CardSave {
     final uid = data['uid'] as String;
     final sak = data['sak'] as int;
     final atqa = List<int>.from(data['atqa'] as List<dynamic>);
+    final ats = List<int>.from((data['ats'] ?? []) as List<dynamic>);
     final name = data['name'] as String;
     final tag = getTagTypeByValue(data['tag']);
     if (data['color'] == null) {
@@ -100,6 +102,7 @@ class CardSave {
         tag: tag,
         data: tagData,
         color: color,
+        ats: Uint8List.fromList(ats),
         atqa: Uint8List.fromList(atqa));
   }
 
@@ -109,10 +112,11 @@ class CardSave {
       'uid': uid,
       'sak': sak,
       'atqa': atqa.toList(),
+      'ats': ats.toList(),
       'name': name,
       'tag': tag.value,
       'color': colorToHex(color),
-      'data': data.map((data) => data.toList()).toList()
+      'data': data.map((data) => data.toList()).toList(),
     });
   }
 
@@ -123,6 +127,7 @@ class CardSave {
       required this.sak,
       required this.atqa,
       required this.tag,
+      required this.ats,
       this.color = Colors.deepOrange,
       this.data = const []});
 }
@@ -214,6 +219,70 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return Colors.yellow;
       default:
         return Colors.deepOrange;
+    }
+  }
+
+  Color getThemeComplementaryColor() {
+    final themeValue = _sharedPreferences.getInt('app_theme_color') ?? 0;
+    final themeMode = _sharedPreferences.getInt('app_theme') ?? 2;
+    switch (themeMode) {
+      case 1:
+        switch (themeValue) {
+          case 1:
+            return const Color.fromARGB(255, 238, 227, 252);
+          case 2:
+            return const Color.fromARGB(255, 234, 252, 255);
+          case 3:
+            return const Color.fromARGB(255, 238, 255, 248);
+          case 4:
+            return const Color.fromARGB(248, 248, 239, 255);
+          case 5:
+            return const Color.fromARGB(255, 255, 255, 240);
+          case 6:
+            return const Color.fromARGB(255, 253, 238, 238);
+          case 7:
+            return const Color.fromARGB(255, 248, 252, 216);
+          default:
+            return const Color.fromARGB(255, 255, 236, 236);
+        }
+      case 2:
+        switch (themeValue) {
+          case 1:
+            return const Color.fromARGB(30, 116, 58, 183);
+          case 2:
+            return const Color.fromARGB(44, 62, 216, 243);
+          case 3:
+            return const Color.fromARGB(50, 175, 76, 172);
+          case 4:
+            return const Color.fromARGB(46, 130, 51, 196);
+          case 5:
+            return const Color.fromARGB(48, 110, 116, 29);
+          case 6:
+            return const Color.fromARGB(47, 188, 43, 201);
+          case 7:
+            return const Color.fromARGB(44, 58, 104, 202);
+          default:
+            return const Color.fromARGB(16, 202, 43, 43);
+        }
+      default:
+        switch (themeValue) {
+          case 1:
+            return const Color.fromARGB(30, 116, 58, 183);
+          case 2:
+            return const Color.fromARGB(44, 62, 216, 243);
+          case 3:
+            return const Color.fromARGB(50, 175, 76, 172);
+          case 4:
+            return const Color.fromARGB(46, 130, 51, 196);
+          case 5:
+            return const Color.fromARGB(48, 110, 116, 29);
+          case 6:
+            return const Color.fromARGB(47, 188, 43, 201);
+          case 7:
+            return const Color.fromARGB(44, 58, 104, 202);
+          default:
+            return const Color.fromARGB(16, 202, 43, 43);
+        }
     }
   }
 

@@ -1,11 +1,18 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:io' show Platform;
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
 
 Future<void> asyncSleep(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
@@ -31,6 +38,10 @@ Uint8List hexToBytes(String hex) {
   return Uint8List.fromList(bytes);
 }
 
+int bytesToU16(Uint8List byteArray) {
+  return byteArray.buffer.asByteData().getUint16(0, Endian.big);
+}
+
 int bytesToU32(Uint8List byteArray) {
   return byteArray.buffer.asByteData().getUint32(0, Endian.big);
 }
@@ -41,6 +52,16 @@ int bytesToU64(Uint8List byteArray) {
 
 Uint8List u8ToBytes(int u8) {
   final ByteData byteData = ByteData(1)..setUint8(0, u8);
+  return byteData.buffer.asUint8List();
+}
+
+Uint8List u16ToBytes(int u16) {
+  final ByteData byteData = ByteData(2)..setUint16(0, u16);
+  return byteData.buffer.asUint8List();
+}
+
+Uint8List u32ToBytes(int u32) {
+  final ByteData byteData = ByteData(4)..setUint32(0, u32);
   return byteData.buffer.asUint8List();
 }
 
@@ -198,6 +219,8 @@ ButtonConfig getButtonConfigType(int value) {
     return ButtonConfig.cycleBackward;
   } else if (value == 3) {
     return ButtonConfig.cloneUID;
+  } else if (value == 4) {
+    return ButtonConfig.chargeStatus;
   } else {
     return ButtonConfig.disable;
   }
@@ -210,5 +233,62 @@ AnimationSetting getAnimationModeType(int value) {
     return AnimationSetting.minimal;
   } else {
     return AnimationSetting.none;
+  }
+}
+
+Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
+  var localizations = AppLocalizations.of(context)!;
+  if (bin) {
+    List<int> tagDump = [];
+    for (var block in tag.data) {
+      tagDump.addAll(block);
+    }
+    try {
+      await FileSaver.instance.saveAs(
+          name: tag.name,
+          bytes: Uint8List.fromList(tagDump),
+          ext: 'bin',
+          mimeType: MimeType.other);
+    } on UnimplementedError catch (_) {
+      String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: '${localizations.output_file}:',
+        fileName: '${tag.name}.bin',
+      );
+
+      if (outputFile != null) {
+        var file = File(outputFile);
+        await file.writeAsBytes(Uint8List.fromList(tagDump));
+      }
+    }
+  } else {
+    try {
+      await FileSaver.instance.saveAs(
+          name: tag.name,
+          bytes: const Utf8Encoder().convert(tag.toJson()),
+          ext: 'json',
+          mimeType: MimeType.other);
+    } on UnimplementedError catch (_) {
+      String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: '${localizations.output_file}:',
+        fileName: '${tag.name}.json',
+      );
+
+      if (outputFile != null) {
+        var file = File(outputFile);
+        await file.writeAsBytes(const Utf8Encoder().convert(tag.toJson()));
+      }
+    }
+  }
+}
+
+void updateNavigationRailWidth(BuildContext context,
+    {bool skipWait = false}) async {
+  if (context.mounted) {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+    if (!skipWait) {
+      await asyncSleep(500);
+    }
+    appState.navigationRailSize =
+        appState.navigationRailKey.currentContext!.size;
   }
 }
