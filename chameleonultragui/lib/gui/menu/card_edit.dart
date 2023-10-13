@@ -307,9 +307,7 @@ class CardEditMenuState extends State<CardEditMenu> {
             var index =
                 tags.indexWhere((element) => element.id == widget.tagSave.id);
 
-            if (widget.isNew || index == -1) {
-              tags.add(tag);
-            } else {
+            if (index != -1) {
               tags[index] = tag;
             }
 
