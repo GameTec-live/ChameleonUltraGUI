@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +36,7 @@ class SlotExportMenu extends StatefulWidget {
 }
 
 class SlotExportMenuState extends State<SlotExportMenu> {
-  TagFrequency exportFrequency = TagFrequency.hf;
+  TagFrequency exportFrequency = TagFrequency.unknown;
 
   Future<CardSave> rebuildCardSaveFromSlot(
       TagFrequency frequency, int slot) async {
@@ -72,6 +73,36 @@ class SlotExportMenuState extends State<SlotExportMenu> {
     }
   }
 
+  Future<void> onTap(CardSave card, dynamic close) async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+    close(context, card.name);
+
+    CardSave modify = card;
+    CardSave newCard = await rebuildCardSaveFromSlot(
+        chameleonTagToFrequency(card.tag), widget.slot);
+
+    // modify only changeable values
+    modify.uid = newCard.uid;
+    modify.tag = newCard.tag;
+    modify.sak = newCard.sak;
+    modify.atqa = newCard.atqa;
+    modify.ats = newCard.ats;
+    modify.data = newCard.data;
+
+    var tags = appState.sharedPreferencesProvider.getCards();
+    var index = tags.indexWhere((element) => element.id == modify.id);
+
+    if (index != -1) {
+      tags[index] = modify;
+    }
+
+    appState.sharedPreferencesProvider.setCards(tags);
+
+    if (context.mounted) {
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
@@ -86,10 +117,12 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       buttons.add(localizations.lf);
     }
 
-    setState(() {
-      exportFrequency =
-          buttons[0] == localizations.hf ? TagFrequency.hf : TagFrequency.lf;
-    });
+    if (exportFrequency == TagFrequency.unknown) {
+      setState(() {
+        exportFrequency =
+            buttons[0] == localizations.hf ? TagFrequency.hf : TagFrequency.lf;
+      });
+    }
 
     return AlertDialog(
       title: Text(localizations.export_slot_data),
@@ -152,7 +185,22 @@ class SlotExportMenuState extends State<SlotExportMenu> {
           child: Text(localizations.export_to_new_card),
         ),
         ElevatedButton(
-          onPressed: () async {},
+          onPressed: () async {
+            var appState = context.read<ChameleonGUIState>();
+            var tags = appState.sharedPreferencesProvider.getCards();
+
+            tags.sort((a, b) => a.name.compareTo(b.name));
+
+            showSearch<String>(
+              context: context,
+              delegate: CardSearchDelegate(
+                  cards: tags,
+                  onTap: onTap,
+                  filter: exportFrequency == TagFrequency.hf
+                      ? SearchFilter.hf
+                      : SearchFilter.lf),
+            );
+          },
           child: Text(localizations.update_saved_card),
         ),
       ],

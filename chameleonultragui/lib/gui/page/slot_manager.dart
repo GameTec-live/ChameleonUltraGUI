@@ -43,6 +43,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
   int currentFunctionIndex = 0;
   int progress = -1;
+  int gridPosition = 0;
   bool onlyOneSlot = false;
 
   Future<void> executeNextFunction() async {
@@ -154,7 +155,10 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                               maxHeight: 160, minHeight: 100),
                           child: ElevatedButton(
                             onPressed: () {
-                              cardSelectDialog(context, index);
+                              setState(() {
+                                gridPosition = index;
+                              });
+                              cardSelectDialog(context);
                             },
                             style: ButtonStyle(
                               shape: MaterialStateProperty.all<
@@ -253,8 +257,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     );
   }
 
-  Future<void> onTap(CardSave card, int gridPosition, dynamic close) async {
-    var appState = context.read<ChameleonGUIState>();
+  Future<void> onTap(CardSave card, dynamic close) async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     var localizations = AppLocalizations.of(context)!;
 
     if ([
@@ -277,7 +281,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       var cardData = CardData(
-          uid: hexToBytes(card.uid.replaceAll(" ", "")),
+          uid: hexToBytesSpace(card.uid),
           atqa: card.atqa,
           sak: card.sak,
           ats: card.ats);
@@ -337,7 +341,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       await appState.communicator!
-          .setEM410XEmulatorID(hexToBytes(card.uid.replaceAll(" ", "")));
+          .setEM410XEmulatorID(hexToBytesSpace(card.uid));
       await appState.communicator!.setSlotTagName(
           gridPosition,
           (card.name.isEmpty) ? localizations.no_name : card.name,
@@ -351,7 +355,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     }
   }
 
-  Future<String?> cardSelectDialog(BuildContext context, int gridPosition) {
+  Future<String?> cardSelectDialog(BuildContext context) {
     var appState = context.read<ChameleonGUIState>();
     var tags = appState.sharedPreferencesProvider.getCards();
 
@@ -364,7 +368,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
     return showSearch<String>(
       context: context,
-      delegate: CardSearchDelegate(tags, gridPosition, onTap),
+      delegate: CardSearchDelegate(cards: tags, onTap: onTap),
     );
   }
 }

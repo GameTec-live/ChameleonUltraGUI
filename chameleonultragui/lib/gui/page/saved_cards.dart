@@ -221,10 +221,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           .getCards();
                                       var tag = CardSave(
                                           name: nameController.text,
-                                          sak: hexToBytes(sak4Controller.text
-                                              .replaceAll(" ", ""))[0],
-                                          atqa: hexToBytes(atqa4Controller.text
-                                              .replaceAll(" ", "")),
+                                          sak: hexToBytesSpace(
+                                              sak4Controller.text)[0],
+                                          atqa: hexToBytesSpace(
+                                              atqa4Controller.text),
                                           uid: uid4Controller.text,
                                           tag: mfClassicGetChameleonTagType(
                                               selectedType),
@@ -251,10 +251,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           .getCards();
                                       var tag = CardSave(
                                           name: nameController.text,
-                                          sak: hexToBytes(sak7Controller.text
-                                              .replaceAll(" ", ""))[0],
-                                          atqa: hexToBytes(atqa7Controller.text
-                                              .replaceAll(" ", "")),
+                                          sak: hexToBytesSpace(
+                                              sak7Controller.text)[0],
+                                          atqa: hexToBytesSpace(
+                                              atqa7Controller.text),
                                           uid: uid7Controller.text,
                                           tag: mfClassicGetChameleonTagType(
                                               selectedType),

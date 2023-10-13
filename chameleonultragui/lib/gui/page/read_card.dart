@@ -619,14 +619,14 @@ class ReadCardPageState extends State<ReadCardPage> {
       tags.add(CardSave(
           uid: hfInfo.uid,
           sak: hexToBytes(hfInfo.sak)[0],
-          atqa: hexToBytes(hfInfo.atqa.replaceAll(" ", "")),
+          atqa: hexToBytesSpace(hfInfo.atqa),
           name: dumpName,
           tag: (skipDump)
               ? TagType.mifare1K
               : mfClassicGetChameleonTagType(mfcInfo.type),
           data: mfcInfo.cardData,
           ats: (hfInfo.ats != "No")
-              ? hexToBytes(hfInfo.ats.replaceAll(" ", ""))
+              ? hexToBytesSpace(hfInfo.ats)
               : Uint8List(0)));
       appState.sharedPreferencesProvider.setCards(tags);
     }

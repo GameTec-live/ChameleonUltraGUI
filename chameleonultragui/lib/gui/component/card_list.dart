@@ -11,15 +11,18 @@ enum SearchFilter { all, hf, lf }
 
 class CardSearchDelegate extends SearchDelegate<String> {
   final List<CardSave> cards;
-  final int gridPosition;
   final dynamic onTap;
-  SearchFilter filter = SearchFilter.all;
+  SearchFilter filter;
 
-  CardSearchDelegate(this.cards, this.gridPosition, this.onTap);
+  CardSearchDelegate(
+      {required this.cards,
+      required this.onTap,
+      this.filter = SearchFilter.all});
 
   @override
   List<Widget> buildActions(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
+
     return [
       StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
@@ -162,7 +165,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
             overflow: TextOverflow.ellipsis,
           ),
           onTap: () async {
-            onTap(card, gridPosition, close);
+            onTap(card, close);
           },
         );
       },
