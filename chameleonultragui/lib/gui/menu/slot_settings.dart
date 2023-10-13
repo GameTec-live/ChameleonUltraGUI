@@ -132,7 +132,7 @@ class SlotSettingsState extends State<SlotSettings> {
                         IconButton(
                           onPressed: (usedSlots[widget.slot].$1 !=
                                       TagType.unknown ||
-                                  usedSlots[widget.slot].$1 != TagType.unknown)
+                                  usedSlots[widget.slot].$2 != TagType.unknown)
                               ? () {
                                   showDialog<String>(
                                       context: context,
@@ -174,6 +174,8 @@ class SlotSettingsState extends State<SlotSettings> {
 
                           setState(() {
                             hfName = '';
+                            usedSlots[widget.slot] =
+                                (TagType.unknown, usedSlots[widget.slot].$2);
                           });
 
                           widget.refresh(widget.slot);
@@ -224,6 +226,8 @@ class SlotSettingsState extends State<SlotSettings> {
 
                           setState(() {
                             lfName = '';
+                            usedSlots[widget.slot] =
+                                (usedSlots[widget.slot].$2, TagType.unknown);
                           });
 
                           widget.refresh(widget.slot);
