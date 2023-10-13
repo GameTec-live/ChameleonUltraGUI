@@ -8,6 +8,7 @@ on:
 
 jobs:
   build-android:
+    if: github.event_name == 'push' && !contains(github.event.pull_request.body, 'open')
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,6 +30,7 @@ jobs:
           path: chameleonultragui/build/app/outputs/flutter-apk/app-release.apk
 
   build-windows:
+    if: github.event_name == 'push' && !contains(github.event.pull_request.body, 'open')
     runs-on: windows-latest
     defaults:
       run:
@@ -55,6 +57,7 @@ jobs:
           path: chameleonultragui-setup-win.exe
 
   build-linux:
+    if: github.event_name == 'push' && !contains(github.event.pull_request.body, 'open')
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -80,6 +83,7 @@ jobs:
           path: chameleonultragui/debian/packages
 
   build-linux-legacy:
+    if: github.event_name == 'push' && !contains(github.event.pull_request.body, 'open')
     runs-on: ubuntu-20.04
     defaults:
       run:
@@ -99,6 +103,7 @@ jobs:
           path: chameleonultragui/build/linux/x64/release
 
   build-macos:
+    if: github.event_name == 'push' && !contains(github.event.pull_request.body, 'open')
     runs-on: macos-latest
     defaults:
       run:
