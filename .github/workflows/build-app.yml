@@ -7,8 +7,18 @@ on:
   pull_request:
 
 jobs:
+  check:
+    outputs:
+      status: ${{ steps.early.conclusion }}
+    steps:
+      - uses: 8BitJonny/gh-get-current-pr@2.2.0
+        id: PR
+      - run: exit 1
+        if: steps.PR.outputs.pr_found == 'true' && github.event_name == 'push'
+
   build-android:
-    if: github.event_name == 'push' && !contains(github.event.pull_request.body, 'open')
+    needs: check
+    if: needs.check.outputs.status == 'success'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,7 +40,8 @@ jobs:
           path: chameleonultragui/build/app/outputs/flutter-apk/app-release.apk
 
   build-windows:
-    if: github.event_name == 'push' && !contains(github.event.pull_request.body, 'open')
+    needs: check
+    if: needs.check.outputs.status == 'success'
     runs-on: windows-latest
     defaults:
       run:
@@ -57,7 +68,8 @@ jobs:
           path: chameleonultragui-setup-win.exe
 
   build-linux:
-    if: github.event_name == 'push' && !contains(github.event.pull_request.body, 'open')
+    needs: check
+    if: needs.check.outputs.status == 'success'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -83,7 +95,8 @@ jobs:
           path: chameleonultragui/debian/packages
 
   build-linux-legacy:
-    if: github.event_name == 'push' && !contains(github.event.pull_request.body, 'open')
+    needs: check
+    if: needs.check.outputs.status == 'success'
     runs-on: ubuntu-20.04
     defaults:
       run:
@@ -103,7 +116,8 @@ jobs:
           path: chameleonultragui/build/linux/x64/release
 
   build-macos:
-    if: github.event_name == 'push' && !contains(github.event.pull_request.body, 'open')
+    needs: check
+    if: needs.check.outputs.status == 'success'
     runs-on: macos-latest
     defaults:
       run:
