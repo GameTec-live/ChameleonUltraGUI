@@ -273,7 +273,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                   actions: <Widget>[
                     TextButton(
-                      onPressed: () => Navigator.pop(context, localizations.ok),
+                      onPressed: () => Navigator.pop(context),
                       child: Text(localizations.ok),
                     ),
                   ],
@@ -293,8 +293,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           : localizations.activate.toLowerCase())),
                   actions: <Widget>[
                     TextButton(
-                      onPressed: () =>
-                          Navigator.pop(context, localizations.cancel),
+                      onPressed: () => Navigator.pop(context),
                       child: Text(localizations.cancel),
                     ),
                     TextButton(
@@ -302,7 +301,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         appState.sharedPreferencesProvider.setDebugMode(
                             !appState.sharedPreferencesProvider.isDebugMode());
                         appState.changesMade();
-                        Navigator.pop(context, localizations.ok);
+                        Navigator.pop(context);
                       },
                       child: Text(localizations.ok),
                     ),

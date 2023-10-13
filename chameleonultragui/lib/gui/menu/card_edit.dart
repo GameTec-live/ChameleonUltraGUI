@@ -1,7 +1,7 @@
+import 'package:chameleonultragui/helpers/ntag/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
-import 'dart:typed_data';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -23,14 +23,10 @@ class CardEditMenu extends StatefulWidget {
 
 class CardEditMenuState extends State<CardEditMenu> {
   TagType selectedType = TagType.unknown;
-  String uid = "";
-  int sak = 0;
-  Uint8List atqa = Uint8List.fromList([]);
-  Uint8List ats = Uint8List.fromList([]);
+  TextEditingController nameController = TextEditingController();
   TextEditingController uidController = TextEditingController();
   TextEditingController sakController = TextEditingController();
   TextEditingController atqaController = TextEditingController();
-  TextEditingController nameController = TextEditingController();
   TextEditingController atsController = TextEditingController();
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
@@ -40,16 +36,11 @@ class CardEditMenuState extends State<CardEditMenu> {
   void initState() {
     super.initState();
     selectedType = widget.tagSave.tag;
-    uid = widget.tagSave.uid;
-    sak = widget.tagSave.sak;
-    ats = widget.tagSave.ats;
-    atqa = Uint8List.fromList(widget.tagSave.atqa);
-    uidController = TextEditingController(text: uid);
-    sakController =
-        TextEditingController(text: bytesToHexSpace(Uint8List.fromList([sak])));
-    atqaController = TextEditingController(text: bytesToHexSpace(atqa));
-    atsController = TextEditingController(text: bytesToHexSpace(ats));
-    nameController = TextEditingController(text: widget.tagSave.name);
+    uidController.text = widget.tagSave.uid;
+    sakController.text = bytesToHexSpace(u8ToBytes(widget.tagSave.sak));
+    atqaController.text = bytesToHexSpace(widget.tagSave.atqa);
+    atsController.text = bytesToHexSpace(widget.tagSave.ats);
+    nameController.text = widget.tagSave.name;
     pickerColor = widget.tagSave.color;
     currentColor = widget.tagSave.color;
   }
@@ -137,6 +128,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                           },
                         ))),
               ),
+              const SizedBox(height: 8),
               DropdownButton<TagType>(
                 value: selectedType,
                 items: [
@@ -158,121 +150,110 @@ class CardEditMenuState extends State<CardEditMenu> {
                   );
                 }).toList(),
                 onChanged: (TagType? newValue) {
-                  if (newValue != TagType.unknown) {
+                  if (newValue != TagType.unknown && !isNTAG(newValue!)) {
                     setState(() {
-                      selectedType = newValue!;
+                      selectedType = newValue;
                     });
                   }
                   appState.changesMade();
                 },
               ),
-              Column(children: [
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: uidController,
-                  decoration: InputDecoration(
-                      labelText: localizations.uid,
-                      hintText:
-                          localizations.enter_something(localizations.uid)),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return localizations
-                          .please_enter_something(localizations.uid);
-                    }
-                    if (!(value.replaceAll(" ", "").length == 14 ||
-                            value.replaceAll(" ", "").length == 8) &&
-                        chameleonTagToFrequency(selectedType) !=
-                            TagFrequency.lf) {
-                      return localizations.must_or(4, 7, localizations.uid);
-                    }
-                    if (value.replaceAll(" ", "").length != 10 &&
-                        chameleonTagToFrequency(selectedType) ==
-                            TagFrequency.lf) {
-                      return localizations.must_be(5, localizations.uid);
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                Visibility(
-                  visible:
-                      chameleonTagToFrequency(selectedType) != TagFrequency.lf,
-                  child: TextFormField(
-                    controller: sakController,
+              Visibility(
+                visible: selectedType != TagType.unknown,
+                child: Column(children: [
+                  TextFormField(
+                    controller: uidController,
                     decoration: InputDecoration(
-                        labelText: localizations.sak,
+                        labelText: localizations.uid,
                         hintText:
-                            localizations.enter_something(localizations.sak)),
+                            localizations.enter_something(localizations.uid)),
                     validator: (value) {
-                      if (value == null ||
-                          value.isEmpty &&
-                              chameleonTagToFrequency(selectedType) !=
-                                  TagFrequency.lf) {
+                      if (value == null || value.isEmpty) {
                         return localizations
-                            .please_enter_something(localizations.sak);
+                            .please_enter_something(localizations.uid);
                       }
-                      if (value.replaceAll(" ", "").length != 2 &&
+                      if (!(value.replaceAll(" ", "").length == 14 ||
+                              value.replaceAll(" ", "").length == 8) &&
                           chameleonTagToFrequency(selectedType) !=
                               TagFrequency.lf) {
-                        return localizations.must_be(1, localizations.sak);
+                        return localizations.must_or(4, 7, localizations.uid);
+                      }
+                      if (value.replaceAll(" ", "").length != 10 &&
+                          chameleonTagToFrequency(selectedType) ==
+                              TagFrequency.lf) {
+                        return localizations.must_be(5, localizations.uid);
                       }
                       return null;
                     },
                   ),
-                ),
-                const SizedBox(height: 20),
-                Visibility(
-                  visible:
-                      chameleonTagToFrequency(selectedType) != TagFrequency.lf,
-                  child: TextFormField(
-                    controller: atqaController,
-                    decoration: InputDecoration(
-                        labelText: localizations.atqa,
-                        hintText:
-                            localizations.enter_something(localizations.atqa)),
-                    validator: (value) {
-                      if (value == null ||
-                          value.isEmpty &&
-                              chameleonTagToFrequency(selectedType) !=
-                                  TagFrequency.lf) {
-                        return localizations
-                            .please_enter_something(localizations.atqa);
-                      }
-                      if (value.replaceAll(" ", "").length != 4 &&
-                          chameleonTagToFrequency(selectedType) !=
-                              TagFrequency.lf) {
-                        return localizations.must_be(2, localizations.atqa);
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Visibility(
-                  visible:
-                      chameleonTagToFrequency(selectedType) != TagFrequency.lf,
-                  child: TextFormField(
-                    controller: atsController,
-                    decoration: InputDecoration(
-                        labelText: localizations.ats,
-                        hintText:
-                            localizations.enter_something(localizations.ats)),
-                  ),
-                ),
-                const SizedBox(height: 40),
-              ]),
-
-              /*ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return HexEdit(data: widget.tagSave.data);
-                    },
-                  );
-                },
-                child: const Text("Edit data"),
-              ),*/ //TODO: Make Hex editor
+                  Visibility(
+                      visible: chameleonTagToFrequency(selectedType) !=
+                          TagFrequency.lf,
+                      child: Column(children: [
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: sakController,
+                          decoration: InputDecoration(
+                              labelText: localizations.sak,
+                              hintText: localizations
+                                  .enter_something(localizations.sak)),
+                          validator: (value) {
+                            if (value == null ||
+                                value.isEmpty &&
+                                    chameleonTagToFrequency(selectedType) !=
+                                        TagFrequency.lf) {
+                              return localizations
+                                  .please_enter_something(localizations.sak);
+                            }
+                            if (value.replaceAll(" ", "").length != 2 &&
+                                chameleonTagToFrequency(selectedType) !=
+                                    TagFrequency.lf) {
+                              return localizations.must_be(
+                                  1, localizations.sak);
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: atqaController,
+                          decoration: InputDecoration(
+                              labelText: localizations.atqa,
+                              hintText: localizations
+                                  .enter_something(localizations.atqa)),
+                          validator: (value) {
+                            if (value == null ||
+                                value.isEmpty &&
+                                    chameleonTagToFrequency(selectedType) !=
+                                        TagFrequency.lf) {
+                              return localizations
+                                  .please_enter_something(localizations.atqa);
+                            }
+                            if (value.replaceAll(" ", "").length != 4 &&
+                                chameleonTagToFrequency(selectedType) !=
+                                    TagFrequency.lf) {
+                              return localizations.must_be(
+                                  2, localizations.atqa);
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                            controller: atsController,
+                            decoration: InputDecoration(
+                                labelText: localizations.ats,
+                                hintText: localizations
+                                    .enter_something(localizations.ats)),
+                            validator: (value) {
+                              if (value!.replaceAll(" ", "").length % 2 != 0) {
+                                return localizations.must_be_valid_hex;
+                              }
+                              return null;
+                            }),
+                      ]))
+                ]),
+              )
             ],
           ),
         ),

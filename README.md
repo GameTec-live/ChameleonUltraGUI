@@ -23,6 +23,7 @@ Download the Linux build
 - [Debian-based (.deb)](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux-debian.zip). Short link: https://chameleonultragui.dev/linux-debian
 - [Arch-based](https://aur.archlinux.org/packages/chameleonultragui) / [or -git](https://aur.archlinux.org/packages/chameleonultragui-git). Short link: https://chameleonultragui.dev/linux-arch
 - [Other](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux.zip). Short link: https://chameleonultragui.dev/linux
+- [Other (legacy, built on Ubuntu 20.04 LTS)](https://nightly.link/GameTec-live/ChameleonUltraGUI/workflows/build-app/main/linux-legacy.zip)
 
 #### macOS / iOS / iPadOS
 
@@ -46,6 +47,7 @@ Note: Under some Linux systems, especially ones running KDE desktop environments
 Key:
 - apk: Android APK, download and install either via ADB or your app/file manager of choice
 - linux: zip file containing the linux build, either run the binary manually or install using cmake
+- linux-legacy: same as `linux`, but built on Ubuntu 20.04 LTS. Suited for users on old glibc
 - linux-debian: Debain Auto Packaging, Download and install with either apt, apt-get or dpkg.
 - windows: zip file containing windows build, run the binary manually
 - windows-installer: NSIS based Windows Installer, Installs the Windows build and creates Shortcuts

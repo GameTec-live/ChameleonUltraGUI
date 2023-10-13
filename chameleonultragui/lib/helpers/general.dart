@@ -42,6 +42,10 @@ Uint8List hexToBytesSpace(String hex) {
   return hexToBytes(hex.replaceAll(" ", ""));
 }
 
+int bytesToU8(Uint8List byteArray) {
+  return byteArray.buffer.asByteData().getUint8(0);
+}
+
 int bytesToU16(Uint8List byteArray) {
   return byteArray.buffer.asByteData().getUint16(0, Endian.big);
 }
@@ -293,4 +297,22 @@ void updateNavigationRailWidth(BuildContext context) async {
         appState.navigationRailKey.currentContext!.size;
     appState.changesMade();
   }
+}
+
+List<TagType> getTagTypeByFrequency(TagFrequency frequency) {
+  if (frequency == TagFrequency.hf) {
+    return [
+      TagType.mifare1K,
+      TagType.mifare2K,
+      TagType.mifare4K,
+      TagType.mifareMini,
+      TagType.ntag213,
+      TagType.ntag215,
+      TagType.ntag216,
+    ];
+  } else if (frequency == TagFrequency.lf) {
+    return [TagType.em410X];
+  }
+
+  return [TagType.unknown];
 }

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/gui/menu/slot_settings.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -18,17 +19,15 @@ import 'package:file_saver/file_saver.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SlotExportMenu extends StatefulWidget {
-  final List<String> names;
-  final List<(bool, bool)> enabledSlots;
-  final List<(TagType, TagType)> usedSlots;
-  final int slot;
+  final SlotNames names;
+  final EnabledSlotInfo enabledSlotInfo;
+  final SlotTypes slotTypes;
 
   const SlotExportMenu(
       {Key? key,
       required this.names,
-      required this.enabledSlots,
-      required this.usedSlots,
-      required this.slot})
+      required this.enabledSlotInfo,
+      required this.slotTypes})
       : super(key: key);
 
   @override
@@ -38,23 +37,22 @@ class SlotExportMenu extends StatefulWidget {
 class SlotExportMenuState extends State<SlotExportMenu> {
   TagFrequency exportFrequency = TagFrequency.unknown;
 
-  Future<CardSave> rebuildCardSaveFromSlot(
-      TagFrequency frequency, int slot) async {
+  Future<CardSave> rebuildCardSaveFromSlot(TagFrequency frequency) async {
     var appState = context.read<ChameleonGUIState>();
 
     if (frequency == TagFrequency.lf) {
       return CardSave(
         uid:
             bytesToHexSpace(await appState.communicator!.getEM410XEmulatorID()),
-        name: widget.names[1],
-        tag: widget.usedSlots[slot].$2,
+        name: widget.names.lfName,
+        tag: widget.slotTypes.lfSlot,
       );
     } else {
       CardData data = await appState.communicator!.mf1GetAntiCollData();
       List<Uint8List> binData = [];
 
       int blockCount = mfClassicGetBlockCount(
-          chameleonTagTypeGetMfClassicType(widget.usedSlots[slot].$1));
+          chameleonTagTypeGetMfClassicType(widget.slotTypes.hfSlot));
       for (int block = 0; block < blockCount; block += 16) {
         Uint8List blockData =
             await appState.communicator!.mf1GetEmulatorBlock(block, block + 16);
@@ -63,11 +61,11 @@ class SlotExportMenuState extends State<SlotExportMenu> {
 
       return CardSave(
         uid: bytesToHexSpace(data.uid),
-        name: widget.names[0],
+        name: widget.names.lfName,
         sak: data.sak,
         atqa: data.atqa,
         ats: data.ats,
-        tag: widget.usedSlots[slot].$1,
+        tag: widget.slotTypes.hfSlot,
         data: binData,
       );
     }
@@ -78,8 +76,8 @@ class SlotExportMenuState extends State<SlotExportMenu> {
     close(context, card.name);
 
     CardSave modify = card;
-    CardSave newCard = await rebuildCardSaveFromSlot(
-        chameleonTagToFrequency(card.tag), widget.slot);
+    CardSave newCard =
+        await rebuildCardSaveFromSlot(chameleonTagToFrequency(card.tag));
 
     // modify only changeable values
     modify.uid = newCard.uid;
@@ -109,11 +107,11 @@ class SlotExportMenuState extends State<SlotExportMenu> {
     var appState = context.watch<ChameleonGUIState>();
 
     List<String> buttons = [];
-    if (widget.usedSlots[widget.slot].$1 != TagType.unknown) {
+    if (widget.slotTypes.hfSlot != TagType.unknown) {
       buttons.add(localizations.hf);
     }
 
-    if (widget.usedSlots[widget.slot].$2 != TagType.unknown) {
+    if (widget.slotTypes.lfSlot != TagType.unknown) {
       buttons.add(localizations.lf);
     }
 
@@ -146,8 +144,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       actions: [
         ElevatedButton(
           onPressed: () async {
-            CardSave cardSave =
-                await rebuildCardSaveFromSlot(exportFrequency, widget.slot);
+            CardSave cardSave = await rebuildCardSaveFromSlot(exportFrequency);
             Uint8List export = const Utf8Encoder().convert(cardSave.toJson());
             try {
               await FileSaver.instance.saveAs(
@@ -174,12 +171,11 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         ),
         ElevatedButton(
           onPressed: () async {
-            CardSave tag =
-                await rebuildCardSaveFromSlot(exportFrequency, widget.slot);
+            CardSave tag = await rebuildCardSaveFromSlot(exportFrequency);
             if (context.mounted) {
               await showDialog(
                 context: context,
-                builder: (BuildContext context) {
+                builder: (BuildContext dialogContext) {
                   TextEditingController controller =
                       TextEditingController(text: tag.name);
                   return AlertDialog(
@@ -193,7 +189,8 @@ class SlotExportMenuState extends State<SlotExportMenu> {
                               appState.sharedPreferencesProvider.getCards();
                           tags.add(tag);
                           appState.sharedPreferencesProvider.setCards(tags);
-                          if (context.mounted) {
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext);
                             Navigator.pop(context);
                           }
                         },
@@ -201,7 +198,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.pop(context);
+                          Navigator.pop(dialogContext);
                         },
                         child: Text(localizations.cancel),
                       ),
