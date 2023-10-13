@@ -268,29 +268,29 @@ class FirmwareVersion {
 }
 
 class SlotTypes {
-  TagType hfSlot;
-  TagType lfSlot;
+  TagType hf;
+  TagType lf;
 
   bool match({TagType type = TagType.unknown}) {
-    return hfSlot == type || lfSlot == type;
+    return hf == type || lf == type;
   }
 
   bool notMatch({TagType type = TagType.unknown}) {
-    return hfSlot != type || lfSlot != type;
+    return hf != type || lf != type;
   }
 
-  SlotTypes({this.hfSlot = TagType.unknown, this.lfSlot = TagType.unknown});
+  SlotTypes({this.hf = TagType.unknown, this.lf = TagType.unknown});
 }
 
 class EnabledSlotInfo {
-  bool hfSlot;
-  bool lfSlot;
+  bool hf;
+  bool lf;
 
   bool any() {
-    return hfSlot || lfSlot;
+    return hf || lf;
   }
 
-  EnabledSlotInfo({this.hfSlot = false, this.lfSlot = false});
+  EnabledSlotInfo({this.hf = false, this.lf = false});
 }
 
 class BatteryCharge {
@@ -904,9 +904,9 @@ class ChameleonCommunicator {
     var index = 0;
     for (var slot = 0; slot < 8; slot++) {
       tags.add(SlotTypes(
-        hfSlot: numberToChameleonTag(
+        hf: numberToChameleonTag(
             bytesToU16(resp!.data.sublist(index, index + 2))),
-        lfSlot: numberToChameleonTag(
+        lf: numberToChameleonTag(
             bytesToU16(resp.data.sublist(index + 2, index + 4))),
       ));
 
@@ -996,8 +996,7 @@ class ChameleonCommunicator {
     List<EnabledSlotInfo> slots = [];
     for (var slot = 0; slot < 8; slot++) {
       slots.add(EnabledSlotInfo(
-          hfSlot: resp.data[slot * 2] != 0,
-          lfSlot: resp.data[slot * 2 + 1] != 0));
+          hf: resp.data[slot * 2] != 0, lf: resp.data[slot * 2 + 1] != 0));
     }
     return slots;
   }

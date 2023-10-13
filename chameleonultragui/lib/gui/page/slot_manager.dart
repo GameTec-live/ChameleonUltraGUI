@@ -73,9 +73,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   .getSlotTagName(index, TagFrequency.hf))
               .trim();
           if (name.isEmpty) {
-            slotData[index].hfName = localizations.empty;
+            slotData[index].hf = localizations.empty;
           } else {
-            slotData[index].hfName = name;
+            slotData[index].hf = name;
           }
         } catch (_) {}
 
@@ -84,9 +84,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   .getSlotTagName(index, TagFrequency.lf))
               .trim();
           if (name.isEmpty) {
-            slotData[index].lfName = localizations.empty;
+            slotData[index].lf = localizations.empty;
           } else {
-            slotData[index].lfName = name;
+            slotData[index].lf = name;
           }
         } catch (_) {}
       }
@@ -302,7 +302,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                       const SizedBox(width: 5),
                                       Expanded(
                                           child: Text(
-                                        "${slotData[index].hfName} (${chameleonTagToString(usedSlots[index].hfSlot)})",
+                                        "${slotData[index].hf} (${chameleonTagToString(usedSlots[index].hf)})",
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ))
@@ -319,7 +319,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                             const SizedBox(width: 5),
                                             Expanded(
                                                 child: Text(
-                                              "${slotData[index].lfName} (${chameleonTagToString(usedSlots[index].lfSlot)})",
+                                              "${slotData[index].lf} (${chameleonTagToString(usedSlots[index].lf)})",
                                               //maxLines: 2,
                                               overflow: TextOverflow.clip,
                                             ))

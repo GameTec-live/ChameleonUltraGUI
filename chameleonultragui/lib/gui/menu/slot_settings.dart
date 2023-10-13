@@ -9,10 +9,10 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SlotNames {
-  String hfName;
-  String lfName;
+  String hf;
+  String lf;
 
-  SlotNames({this.hfName = "", this.lfName = ""});
+  SlotNames({this.hf = "", this.lf = ""});
 }
 
 class SlotSettings extends StatefulWidget {
@@ -37,7 +37,7 @@ class SlotSettingsState extends State<SlotSettings> {
   }
 
   Future<void> fetchInfo() async {
-    if (names.hfName.isNotEmpty) {
+    if (names.hf.isNotEmpty) {
       return;
     }
 
@@ -49,9 +49,9 @@ class SlotSettingsState extends State<SlotSettings> {
               .getSlotTagName(widget.slot, TagFrequency.hf))
           .trim();
       if (name.isEmpty) {
-        names.hfName = localizations.empty;
+        names.hf = localizations.empty;
       } else {
-        names.hfName = name;
+        names.hf = name;
       }
     } catch (_) {}
 
@@ -60,9 +60,9 @@ class SlotSettingsState extends State<SlotSettings> {
               .getSlotTagName(widget.slot, TagFrequency.lf))
           .trim();
       if (name.isEmpty) {
-        names.lfName = localizations.empty;
+        names.lf = localizations.empty;
       } else {
-        names.lfName = name;
+        names.lf = name;
       }
     } catch (_) {}
 
@@ -74,11 +74,11 @@ class SlotSettingsState extends State<SlotSettings> {
 
   void updateSlot(String name, TagFrequency frequency, TagType type) {
     if (frequency == TagFrequency.hf) {
-      names.hfName = name;
-      slotTypes.hfSlot = type;
+      names.hf = name;
+      slotTypes.hf = type;
     } else if (frequency == TagFrequency.lf) {
-      names.lfName = name;
-      slotTypes.lfSlot = type;
+      names.lf = name;
+      slotTypes.lf = type;
     }
 
     widget.refresh(widget.slot);
@@ -95,7 +95,7 @@ class SlotSettingsState extends State<SlotSettings> {
         future: fetchInfo(),
         builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting &&
-              names.hfName.isNotEmpty) {
+              names.hf.isNotEmpty) {
             return AlertDialog(
                 title: Text(localizations.slot_settings),
                 content: const SingleChildScrollView(
@@ -142,14 +142,14 @@ class SlotSettingsState extends State<SlotSettings> {
                           showDialog<String>(
                               context: context,
                               builder: (BuildContext context) => SlotEditMenu(
-                                  name: names.hfName,
-                                  isEnabled: enabledSlot.hfSlot,
-                                  slotType: slotTypes.hfSlot,
+                                  name: names.hf,
+                                  isEnabled: enabledSlot.hf,
+                                  slotType: slotTypes.hf,
                                   frequency: TagFrequency.hf,
                                   slot: widget.slot,
                                   update: updateSlot));
                         },
-                        child: Text(names.hfName),
+                        child: Text(names.hf),
                       )),
                       const SizedBox(width: 8),
                       IconButton(
@@ -163,8 +163,8 @@ class SlotSettingsState extends State<SlotSettings> {
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
-                            names.hfName = localizations.empty;
-                            slotTypes.hfSlot = TagType.unknown;
+                            names.hf = localizations.empty;
+                            slotTypes.hf = TagType.unknown;
                           });
 
                           widget.refresh(widget.slot);
@@ -173,17 +173,17 @@ class SlotSettingsState extends State<SlotSettings> {
                       ),
                       IconButton(
                         onPressed: () async {
-                          await appState.communicator!.enableSlot(widget.slot,
-                              TagFrequency.hf, !enabledSlot.hfSlot);
+                          await appState.communicator!.enableSlot(
+                              widget.slot, TagFrequency.hf, !enabledSlot.hf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
-                            enabledSlot.hfSlot = !enabledSlot.hfSlot;
+                            enabledSlot.hf = !enabledSlot.hf;
                           });
 
                           widget.refresh(widget.slot);
                         },
-                        icon: Icon(enabledSlot.hfSlot
+                        icon: Icon(enabledSlot.hf
                             ? Icons.toggle_on
                             : Icons.toggle_off),
                       ),
@@ -200,14 +200,14 @@ class SlotSettingsState extends State<SlotSettings> {
                           showDialog<String>(
                               context: context,
                               builder: (BuildContext context) => SlotEditMenu(
-                                  name: names.lfName,
-                                  isEnabled: enabledSlot.lfSlot,
-                                  slotType: slotTypes.lfSlot,
+                                  name: names.lf,
+                                  isEnabled: enabledSlot.lf,
+                                  slotType: slotTypes.lf,
                                   frequency: TagFrequency.lf,
                                   slot: widget.slot,
                                   update: updateSlot));
                         },
-                        child: Text(names.lfName),
+                        child: Text(names.lf),
                       )),
                       const SizedBox(width: 8),
                       IconButton(
@@ -221,8 +221,8 @@ class SlotSettingsState extends State<SlotSettings> {
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
-                            names.lfName = localizations.empty;
-                            slotTypes.lfSlot = TagType.unknown;
+                            names.lf = localizations.empty;
+                            slotTypes.lf = TagType.unknown;
                           });
 
                           widget.refresh(widget.slot);
@@ -231,17 +231,17 @@ class SlotSettingsState extends State<SlotSettings> {
                       ),
                       IconButton(
                         onPressed: () async {
-                          await appState.communicator!.enableSlot(widget.slot,
-                              TagFrequency.lf, !enabledSlot.lfSlot);
+                          await appState.communicator!.enableSlot(
+                              widget.slot, TagFrequency.lf, !enabledSlot.lf);
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
-                            enabledSlot.lfSlot = !enabledSlot.lfSlot;
+                            enabledSlot.lf = !enabledSlot.lf;
                           });
 
                           widget.refresh(widget.slot);
                         },
-                        icon: Icon(enabledSlot.lfSlot
+                        icon: Icon(enabledSlot.lf
                             ? Icons.toggle_on
                             : Icons.toggle_off),
                       ),

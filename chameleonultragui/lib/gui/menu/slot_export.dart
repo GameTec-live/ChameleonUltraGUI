@@ -44,15 +44,15 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       return CardSave(
         uid:
             bytesToHexSpace(await appState.communicator!.getEM410XEmulatorID()),
-        name: widget.names.lfName,
-        tag: widget.slotTypes.lfSlot,
+        name: widget.names.lf,
+        tag: widget.slotTypes.lf,
       );
     } else {
       CardData data = await appState.communicator!.mf1GetAntiCollData();
       List<Uint8List> binData = [];
 
       int blockCount = mfClassicGetBlockCount(
-          chameleonTagTypeGetMfClassicType(widget.slotTypes.hfSlot));
+          chameleonTagTypeGetMfClassicType(widget.slotTypes.hf));
       for (int block = 0; block < blockCount; block += 16) {
         Uint8List blockData =
             await appState.communicator!.mf1GetEmulatorBlock(block, block + 16);
@@ -61,11 +61,11 @@ class SlotExportMenuState extends State<SlotExportMenu> {
 
       return CardSave(
         uid: bytesToHexSpace(data.uid),
-        name: widget.names.lfName,
+        name: widget.names.lf,
         sak: data.sak,
         atqa: data.atqa,
         ats: data.ats,
-        tag: widget.slotTypes.hfSlot,
+        tag: widget.slotTypes.hf,
         data: binData,
       );
     }
@@ -107,11 +107,11 @@ class SlotExportMenuState extends State<SlotExportMenu> {
     var appState = context.watch<ChameleonGUIState>();
 
     List<String> buttons = [];
-    if (widget.slotTypes.hfSlot != TagType.unknown) {
+    if (widget.slotTypes.hf != TagType.unknown) {
       buttons.add(localizations.hf);
     }
 
-    if (widget.slotTypes.lfSlot != TagType.unknown) {
+    if (widget.slotTypes.lf != TagType.unknown) {
       buttons.add(localizations.lf);
     }
 
