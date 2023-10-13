@@ -17,7 +17,6 @@ jobs:
 
   build-android:
     needs: check
-    if: needs.check.outputs.found == 'false' && github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,7 +39,6 @@ jobs:
 
   build-windows:
     needs: check
-    if: needs.check.outputs.found == 'false' && github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: windows-latest
     defaults:
       run:
@@ -68,7 +66,6 @@ jobs:
 
   build-linux:
     needs: check
-    if: needs.check.outputs.found == 'false' && github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -95,7 +92,6 @@ jobs:
 
   build-linux-legacy:
     needs: check
-    if: needs.check.outputs.found == 'false' && github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-20.04
     defaults:
       run:
@@ -116,7 +112,6 @@ jobs:
 
   build-macos:
     needs: check
-    if: needs.check.outputs.found == 'false' && github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: macos-latest
     defaults:
       run:
