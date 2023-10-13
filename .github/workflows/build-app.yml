@@ -14,8 +14,9 @@ jobs:
     steps:
       - uses: 8BitJonny/gh-get-current-pr@2.2.0
         id: PR
-      - run: exit 1
+      - run: echo "::set-output name=status::success"
         if: steps.PR.outputs.pr_found == 'true' && github.event_name == 'push'
+        name: Continue
 
   build-android:
     needs: check
