@@ -37,8 +37,7 @@ class SavedCardState extends State<SavedCard> {
   bool shouldMoveIcons() {
     var appState = context.read<ChameleonGUIState>();
 
-    double readWidth = MediaQuery.of(context).size.width *
-        MediaQuery.of(context).devicePixelRatio;
+    double readWidth = MediaQuery.of(context).size.width;
     double predictedElementWidth = readWidth >= 700
         ? (readWidth - appState.navigationRailSize!.width - 38) / 2
         : (readWidth - appState.navigationRailSize!.width - 28);
@@ -82,49 +81,67 @@ class SavedCardState extends State<SavedCard> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    children: [
-                      Transform(
-                        transform: Matrix4.translationValues(-5, 18, 0),
-                        child: Icon(widget.icon, color: widget.iconColor),
-                      ),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Text(
-                          widget.firstLine,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+                  Row(children: [
+                    Expanded(
+                        child: FittedBox(
+                            alignment: Alignment.centerLeft,
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              children: [
+                                Transform(
+                                  transform:
+                                      Matrix4.translationValues(-5, 18, 0),
+                                  child: Icon(widget.icon,
+                                      color: widget.iconColor),
+                                ),
+                                const SizedBox(width: 5),
+                                FittedBox(
+                                  alignment: Alignment.centerLeft,
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    widget.firstLine,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            )))
+                  ]),
                   if (shouldMoveIcons()) const SizedBox(height: 10),
                   Row(
                     children: [
                       Expanded(
+                          child: FittedBox(
+                        alignment: Alignment.centerLeft,
+                        fit: BoxFit.scaleDown,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const SizedBox(width: 30),
-                            Expanded(
+                            FittedBox(
+                                alignment: Alignment.centerLeft,
+                                fit: BoxFit.scaleDown,
                                 child: Text(
-                              widget.secondLine,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ))
+                                  widget.secondLine,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ))
                           ],
                         ),
-                      ),
+                      )),
                       if (!shouldMoveIcons()) ...widget.children
                     ],
                   ),
                   ...(shouldMoveIcons())
                       ? [
                           const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: widget.children,
-                          )
+                          FittedBox(
+                              alignment: Alignment.centerRight,
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: widget.children,
+                              ))
                         ]
                       : []
                 ],

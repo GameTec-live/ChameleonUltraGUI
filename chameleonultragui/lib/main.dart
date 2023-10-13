@@ -108,8 +108,8 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-        (_) => updateNavigationRailWidth(context, skipWait: true));
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => updateNavigationRailWidth(context));
   }
 
   @override
