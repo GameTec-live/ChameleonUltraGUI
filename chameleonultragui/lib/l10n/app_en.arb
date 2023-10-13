@@ -217,5 +217,12 @@
   "card_tech": "Tech",
   "charge": "Charge",
   "copy_all_keys": "Copy all keys to clipboard",
-  "battery_info": "Charge: {percent}%\nVoltage: {voltage} mV"
+  "battery_info": "Charge: {percent}%\nVoltage: {voltage} mV",
+  "x_byte_uid": "{length} byte UID",
+  "edit_slot_data": "Edit Slot Data",
+  "export_slot_data": "Export Slot Data",
+  "frequency_to_export": "Frequency to export",
+  "save_to_file": "Save to file",
+  "export_to_new_card": "Export to new card",
+  "update_saved_card": "Update saved card"
 }

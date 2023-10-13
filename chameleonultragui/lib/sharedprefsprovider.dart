@@ -41,13 +41,12 @@ class Dictionary {
   }
 
   factory Dictionary.fromFile(String file, String name) {
-    final id = const Uuid().v4();
     final lines = file.split("\n");
     List<Uint8List> keys = [];
     for (var key in lines) {
       keys.add(hexToBytes(key));
     }
-    return Dictionary(id: id, name: name, keys: keys);
+    return Dictionary(name: name, keys: keys);
   }
 
   Uint8List toFile() {
@@ -59,10 +58,11 @@ class Dictionary {
   }
 
   Dictionary(
-      {this.id = "",
+      {String? id,
       this.name = "",
       this.keys = const [],
-      this.color = Colors.deepOrange});
+      this.color = Colors.deepOrange})
+      : id = id ?? const Uuid().v4();
 }
 
 class CardSave {
@@ -121,15 +121,19 @@ class CardSave {
   }
 
   CardSave(
-      {required this.id,
+      {String? id,
       required this.uid,
       required this.name,
-      required this.sak,
-      required this.atqa,
       required this.tag,
-      required this.ats,
+      int? sak,
+      Uint8List? atqa,
+      Uint8List? ats,
       this.color = Colors.deepOrange,
-      this.data = const []});
+      this.data = const []})
+      : id = id ?? const Uuid().v4(),
+        sak = sak ?? 0,
+        atqa = atqa ?? Uint8List(0),
+        ats = ats ?? Uint8List(0);
 }
 
 class SharedPreferencesProvider extends ChangeNotifier {

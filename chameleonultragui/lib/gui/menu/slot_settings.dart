@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/gui/menu/slot_export.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -20,14 +21,16 @@ class SlotSettings extends StatefulWidget {
 class SlotSettingsState extends State<SlotSettings> {
   bool isRun = false;
   List<(bool, bool)> enabledSlots = [];
+  List<(TagType, TagType)> usedSlots = [];
   late bool isDetection;
   late int detectionCount;
   late bool isGen1a;
   late bool isGen2;
   late bool isAntiColl;
   late MifareClassicWriteMode writeMode;
-  String hfName = "";
-  String lfName = "";
+  String hfName = '';
+  String lfName = '';
+  TagFrequency exportFrequency = TagFrequency.hf;
 
   @override
   void initState() {
@@ -66,8 +69,9 @@ class SlotSettingsState extends State<SlotSettings> {
     }
 
     if (!isRun) {
-      await appState.communicator!.activateSlot(widget.slot);
       enabledSlots = await appState.communicator!.getEnabledSlots();
+      usedSlots = await appState.communicator!.getUsedSlots();
+      await appState.communicator!.activateSlot(widget.slot);
       var data = (await appState.communicator!.getMf1EmulatorConfig());
       isDetection = data.$1;
       if (isDetection) {
@@ -105,7 +109,47 @@ class SlotSettingsState extends State<SlotSettings> {
                     '${localizations.error}: ${snapshot.error.toString()}'));
           } else {
             return AlertDialog(
-                title: Text(localizations.slot_settings),
+                title: Row(
+                  children: [
+                    Text(localizations.slot_settings),
+                    const Spacer(
+                      flex: 1,
+                    ),
+                    Row(
+                      children: [
+                        // IconButton(
+                        //     onPressed: () {
+                        //       showDialog<String>(
+                        //         context: context,
+                        //         builder: (BuildContext context) => AlertDialog(
+                        //           title: Text(localizations.edit_slot_data),
+                        //           content: const Placeholder(),
+                        //         ),
+                        //       );
+                        //     },
+                        //     icon: const Icon(Icons.edit)),
+                        // const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: (usedSlots[widget.slot].$1 !=
+                                      TagType.unknown ||
+                                  usedSlots[widget.slot].$2 != TagType.unknown)
+                              ? () {
+                                  showDialog<String>(
+                                      context: context,
+                                      builder: (BuildContext context) =>
+                                          SlotExportMenu(
+                                              names: [hfName, lfName],
+                                              enabledSlots: enabledSlots,
+                                              usedSlots: usedSlots,
+                                              slot: widget.slot));
+                                }
+                              : null,
+                          icon: const Icon(Icons.download),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
                 content: SingleChildScrollView(
                     child: Column(children: [
                   Row(
@@ -129,7 +173,9 @@ class SlotSettingsState extends State<SlotSettings> {
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
-                            hfName = "";
+                            hfName = '';
+                            usedSlots[widget.slot] =
+                                (TagType.unknown, usedSlots[widget.slot].$2);
                           });
 
                           widget.refresh(widget.slot);
@@ -179,7 +225,9 @@ class SlotSettingsState extends State<SlotSettings> {
                           await appState.communicator!.saveSlotData();
 
                           setState(() {
-                            lfName = "";
+                            lfName = '';
+                            usedSlots[widget.slot] =
+                                (usedSlots[widget.slot].$2, TagType.unknown);
                           });
 
                           widget.refresh(widget.slot);
@@ -252,7 +300,7 @@ class SlotSettingsState extends State<SlotSettings> {
                         widget.refresh(widget.slot);
                       }),
                   const SizedBox(height: 8),
-                  Text(localizations.collect_nonces("Mfkey32")),
+                  Text(localizations.collect_nonces('Mfkey32')),
                   const SizedBox(height: 8),
                   ToggleButtonsWrapper(
                       items: [localizations.yes, localizations.no],

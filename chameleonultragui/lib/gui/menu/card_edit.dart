@@ -12,8 +12,10 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class CardEditMenu extends StatefulWidget {
   final CardSave tagSave;
+  final bool isNew;
 
-  const CardEditMenu({Key? key, required this.tagSave}) : super(key: key);
+  const CardEditMenu({Key? key, required this.tagSave, this.isNew = false})
+      : super(key: key);
 
   @override
   CardEditMenuState createState() => CardEditMenuState();
@@ -289,29 +291,27 @@ class CardEditMenuState extends State<CardEditMenu> {
             }
 
             var tag = CardSave(
-                id: widget.tagSave.uid,
+                id: widget.tagSave.id,
                 name: nameController.text,
                 sak: chameleonTagToFrequency(selectedType) == TagFrequency.lf
                     ? widget.tagSave.sak
-                    : hexToBytes(sakController.text.replaceAll(" ", ""))[0],
-                atqa: hexToBytes(atqaController.text.replaceAll(" ", "")),
-                uid: uidController.text,
+                    : hexToBytesSpace(sakController.text)[0],
+                atqa: hexToBytesSpace(atqaController.text),
+                uid: bytesToHexSpace(hexToBytesSpace(uidController.text)),
                 tag: selectedType,
                 data: widget.tagSave.data,
                 color: currentColor,
-                ats: hexToBytes(atsController.text.replaceAll(" ", "")));
+                ats: hexToBytesSpace(atsController.text));
 
             var tags = appState.sharedPreferencesProvider.getCards();
-            List<CardSave> output = [];
-            for (var tagTest in tags) {
-              if (tagTest.id != widget.tagSave.id) {
-                output.add(tagTest);
-              } else {
-                output.add(tag);
-              }
+            var index =
+                tags.indexWhere((element) => element.id == widget.tagSave.id);
+
+            if (index != -1) {
+              tags[index] = tag;
             }
 
-            appState.sharedPreferencesProvider.setCards(output);
+            appState.sharedPreferencesProvider.setCards(tags);
             appState.changesMade();
             Navigator.pop(context);
           },

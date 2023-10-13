@@ -38,6 +38,10 @@ Uint8List hexToBytes(String hex) {
   return Uint8List.fromList(bytes);
 }
 
+Uint8List hexToBytesSpace(String hex) {
+  return hexToBytes(hex.replaceAll(" ", ""));
+}
+
 int bytesToU16(Uint8List byteArray) {
   return byteArray.buffer.asByteData().getUint16(0, Endian.big);
 }

@@ -3,7 +3,6 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'dart:typed_data';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
-import 'package:uuid/uuid.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 
@@ -168,7 +167,6 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
             }
 
             Dictionary dict = Dictionary(
-              id: const Uuid().v4(),
               name: nameController.text,
               keys: stringToDict(keysController.text),
               color: currentColor,

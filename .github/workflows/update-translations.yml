@@ -54,4 +54,6 @@ jobs:
         body: "Update translations"
         commit-message: "feat: Update translations"
         title: "feat: Update translations"
+        author: "Chameleon Helper <147535828+ChameleonHelper@users.noreply.github.com>"
+        committer: "Chameleon Helper <147535828+ChameleonHelper@users.noreply.github.com>"
         delete-branch: true
