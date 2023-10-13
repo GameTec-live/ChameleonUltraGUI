@@ -10,17 +10,14 @@ jobs:
   check:
     runs-on: ubuntu-latest
     outputs:
-      status: ${{ steps.early.conclusion }}
+      found: ${{ steps.PR.outputs.pr_found }}
     steps:
       - uses: 8BitJonny/gh-get-current-pr@2.2.0
         id: PR
-      - run: echo "::set-output name=status::success"
-        if: steps.PR.outputs.pr_found == 'true' && github.event_name == 'push'
-        name: Continue
 
   build-android:
     needs: check
-    if: needs.check.outputs.status == 'success'
+    if: needs.check.outputs.found == 'false' && github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -43,7 +40,7 @@ jobs:
 
   build-windows:
     needs: check
-    if: needs.check.outputs.status == 'success'
+    if: needs.check.outputs.found == 'false' && github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: windows-latest
     defaults:
       run:
@@ -71,7 +68,7 @@ jobs:
 
   build-linux:
     needs: check
-    if: needs.check.outputs.status == 'success'
+    if: needs.check.outputs.found == 'false' && github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -98,7 +95,7 @@ jobs:
 
   build-linux-legacy:
     needs: check
-    if: needs.check.outputs.status == 'success'
+    if: needs.check.outputs.found == 'false' && github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-20.04
     defaults:
       run:
@@ -119,7 +116,7 @@ jobs:
 
   build-macos:
     needs: check
-    if: needs.check.outputs.status == 'success'
+    if: needs.check.outputs.found == 'false' && github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: macos-latest
     defaults:
       run:
