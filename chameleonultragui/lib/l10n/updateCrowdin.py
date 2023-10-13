@@ -32,7 +32,7 @@ if __name__ == '__main__':
     projectId =  611911
     sourceId = 33
 
-    current_translation = fetch('https://raw.githubusercontent.com/GameTec-live/ChameleonUltraGUI/main/chameleonultragui/lib/l10n/app_en.arb')
+    current_translation = fetch('https://raw.githubusercontent.com/GameTec-live/ChameleonUltraGUI/main~1/chameleonultragui/lib/l10n/app_en.arb')
     branch_translation = json.load(open('chameleonultragui/lib/l10n/app_en.arb'))
     strings = request('GET', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings?limit=500')
 

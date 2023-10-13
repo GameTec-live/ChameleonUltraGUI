@@ -281,14 +281,12 @@ Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
   }
 }
 
-void updateNavigationRailWidth(BuildContext context,
-    {bool skipWait = false}) async {
+void updateNavigationRailWidth(BuildContext context) async {
   if (context.mounted) {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
-    if (!skipWait) {
-      await asyncSleep(500);
-    }
+    await asyncSleep(500);
     appState.navigationRailSize =
         appState.navigationRailKey.currentContext!.size;
+    appState.changesMade();
   }
 }
