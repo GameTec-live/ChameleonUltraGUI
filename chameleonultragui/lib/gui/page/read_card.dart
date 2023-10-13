@@ -113,7 +113,9 @@ class ReadCardPageState extends State<ReadCardPage> {
   LFCardInfo lfInfo = LFCardInfo();
   MifareClassicInfo mfcInfo = MifareClassicInfo();
 
-  Future<void> readHFInfo(ChameleonGUIState appState) async {
+  Future<void> readHFInfo() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
     setState(() {
       hfInfo = HFCardInfo();
       mfcInfo = MifareClassicInfo();
@@ -157,7 +159,9 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> readLFInfo(ChameleonGUIState appState) async {
+  Future<void> readLFInfo() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
     try {
       setState(() {
         lfInfo = LFCardInfo();
@@ -181,7 +185,9 @@ class ReadCardPageState extends State<ReadCardPage> {
     } catch (_) {}
   }
 
-  Future<void> recoverKeys(ChameleonGUIState appState) async {
+  Future<void> recoverKeys() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
     setState(() {
       mfcInfo.state = MifareClassicState.recoveryOngoing;
     });
@@ -236,7 +242,6 @@ class ReadCardPageState extends State<ReadCardPage> {
                     .d("Darkside: Found keys: $keys. Checking them...");
                 for (var key in keys) {
                   var keyBytes = u64ToBytes(key);
-                  await asyncSleep(1); // Let GUI update
                   if ((await appState.communicator!
                       .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8)))) {
                     appState.log!.i(
@@ -245,6 +250,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                     mfcInfo.recovery.checkMarks[40] =
                         ChameleonKeyCheckmark.found;
                     found = true;
+                    await recheckMifareClassicKey(keyBytes);
                     break;
                   }
                 }
@@ -305,7 +311,6 @@ class ReadCardPageState extends State<ReadCardPage> {
                 ChameleonKeyCheckmark.none) {
               mfcInfo.recovery.checkMarks[sector + (keyType * 40)] =
                   ChameleonKeyCheckmark.checking;
-              await asyncSleep(1); // Let GUI update
               setState(() {
                 mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
               });
@@ -356,7 +361,6 @@ class ReadCardPageState extends State<ReadCardPage> {
                   appState.log!.d("Found keys: $keys. Checking them...");
                   for (var key in keys) {
                     var keyBytes = u64ToBytes(key);
-                    await asyncSleep(1); // Let GUI update
                     if ((await appState.communicator!.mf1Auth(
                         mfClassicGetSectorTrailerBlockBySector(sector),
                         0x60 + keyType,
@@ -368,7 +372,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                           keyBytes.sublist(2, 8);
                       mfcInfo.recovery.checkMarks[sector + (keyType * 40)] =
                           ChameleonKeyCheckmark.found;
-                      await asyncSleep(1); // Let GUI update
+                      await recheckMifareClassicKey(keyBytes);
                       break;
                     }
                   }
@@ -389,7 +393,51 @@ class ReadCardPageState extends State<ReadCardPage> {
     } catch (_) {}
   }
 
-  Future<void> checkKeys(ChameleonGUIState appState) async {
+  Future<void> recheckMifareClassicKey(Uint8List key) async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
+    for (var sector = 0;
+        sector < mfClassicGetSectorCount(mfcInfo.type);
+        sector++) {
+      for (var keyType = 0; keyType < 2; keyType++) {
+        if (mfcInfo.recovery.checkMarks[sector + (keyType * 40)] ==
+            ChameleonKeyCheckmark.none) {
+          appState.log!.d(
+              "Checking found key ${bytesToHex(key)} on sector $sector, key type $keyType");
+          mfcInfo.recovery.checkMarks[sector + (keyType * 40)] =
+              ChameleonKeyCheckmark.checking;
+          setState(() {
+            mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
+          });
+
+          if (await appState.communicator!.mf1Auth(
+              mfClassicGetSectorTrailerBlockBySector(sector),
+              0x60 + keyType,
+              key)) {
+            // Found valid key
+            mfcInfo.recovery.validKeys[sector + (keyType * 40)] = key;
+            mfcInfo.recovery.checkMarks[sector + (keyType * 40)] =
+                ChameleonKeyCheckmark.found;
+
+            setState(() {
+              mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
+            });
+          } else {
+            mfcInfo.recovery.checkMarks[sector + (keyType * 40)] =
+                ChameleonKeyCheckmark.none;
+
+            setState(() {
+              mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
+            });
+          }
+        }
+      }
+    }
+  }
+
+  Future<void> checkKeys() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
     setState(() {
       mfcInfo.state = MifareClassicState.checkKeysOngoing;
     });
@@ -429,7 +477,6 @@ class ReadCardPageState extends State<ReadCardPage> {
               ]) {
                 appState.log!.d(
                     "Checking ${bytesToHex(key)} on sector $sector, key type $keyType");
-                await asyncSleep(1); // Let GUI update
                 if (await appState.communicator!.mf1Auth(
                     mfClassicGetSectorTrailerBlockBySector(sector),
                     0x60 + keyType,
@@ -441,6 +488,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                   setState(() {
                     mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
                   });
+                  await recheckMifareClassicKey(key);
                   break;
                 }
               }
@@ -491,7 +539,9 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> dumpData(ChameleonGUIState appState) async {
+  Future<void> dumpData() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
     setState(() {
       mfcInfo.state = MifareClassicState.dumpOngoing;
     });
@@ -562,7 +612,6 @@ class ReadCardPageState extends State<ReadCardPage> {
                       (mfClassicGetBlockCount(mfcInfo.type));
             });
 
-            await asyncSleep(1); // Let GUI update
             break;
           }
         }
@@ -580,8 +629,9 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> saveHFCard(ChameleonGUIState appState,
-      {bool bin = false, bool skipDump = false}) async {
+  Future<void> saveHFCard({bool bin = false, bool skipDump = false}) async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
     List<int> cardDump = [];
     var localizations = AppLocalizations.of(context)!;
     if (!skipDump) {
@@ -634,7 +684,9 @@ class ReadCardPageState extends State<ReadCardPage> {
     }
   }
 
-  Future<void> saveLFCard(ChameleonGUIState appState) async {
+  Future<void> saveLFCard() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
     var tags = appState.sharedPreferencesProvider.getCards();
     tags.add(CardSave(
         id: const Uuid().v4(),
@@ -729,7 +781,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         onPressed: () async {
                           if (appState.connector!.device ==
                               ChameleonDevice.ultra) {
-                            await readHFInfo(appState);
+                            await readHFInfo();
                           } else if (appState.connector!.device ==
                               ChameleonDevice.lite) {
                             showDialog<String>(
@@ -773,8 +825,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   actions: [
                                     ElevatedButton(
                                       onPressed: () async {
-                                        await saveHFCard(appState,
-                                            skipDump: true);
+                                        await saveHFCard(skipDump: true);
                                         if (context.mounted) {
                                           Navigator.pop(context);
                                         }
@@ -842,7 +893,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       onPressed: (mfcInfo.state ==
                                               MifareClassicState.recovery)
                                           ? () async {
-                                              await recoverKeys(appState);
+                                              await recoverKeys();
                                             }
                                           : null,
                                       child: Text(localizations.recover_keys),
@@ -852,7 +903,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       onPressed: (mfcInfo.state ==
                                               MifareClassicState.recovery)
                                           ? () async {
-                                              await dumpData(appState);
+                                              await dumpData();
                                             }
                                           : null,
                                       child:
@@ -894,7 +945,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                               onPressed: (mfcInfo.state ==
                                       MifareClassicState.checkKeys)
                                   ? () async {
-                                      await checkKeys(appState);
+                                      await checkKeys();
                                     }
                                   : null,
                               child: Text(localizations.check_keys_dict),
@@ -907,7 +958,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                               onPressed:
                                   (mfcInfo.state == MifareClassicState.dump)
                                       ? () async {
-                                          await dumpData(appState);
+                                          await dumpData();
                                         }
                                       : null,
                               child: Text(localizations.dump_card),
@@ -936,7 +987,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           actions: [
                                             ElevatedButton(
                                               onPressed: () async {
-                                                await saveHFCard(appState);
+                                                await saveHFCard();
                                                 if (context.mounted) {
                                                   Navigator.pop(context);
                                                 }
@@ -960,7 +1011,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 const SizedBox(width: 8),
                                 ElevatedButton(
                                   onPressed: () async {
-                                    await saveHFCard(appState, bin: true);
+                                    await saveHFCard(bin: true);
                                   },
                                   child: Text(localizations.save_as(".bin")),
                                 ),
@@ -1005,7 +1056,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         onPressed: () async {
                           if (appState.connector!.device ==
                               ChameleonDevice.ultra) {
-                            await readLFInfo(appState);
+                            await readLFInfo();
                           } else if (appState.connector!.device ==
                               ChameleonDevice.lite) {
                             showDialog<String>(
@@ -1049,7 +1100,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   actions: [
                                     ElevatedButton(
                                       onPressed: () async {
-                                        await saveLFCard(appState);
+                                        await saveLFCard();
                                         if (context.mounted) {
                                           Navigator.pop(context);
                                         }
