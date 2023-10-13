@@ -117,18 +117,18 @@ class SlotSettingsState extends State<SlotSettings> {
                     ),
                     Row(
                       children: [
-                        IconButton(
-                            onPressed: () {
-                              showDialog<String>(
-                                context: context,
-                                builder: (BuildContext context) => AlertDialog(
-                                  title: Text(localizations.edit_slot_data),
-                                  content: const Placeholder(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.edit)),
-                        const SizedBox(width: 8),
+                        // IconButton(
+                        //     onPressed: () {
+                        //       showDialog<String>(
+                        //         context: context,
+                        //         builder: (BuildContext context) => AlertDialog(
+                        //           title: Text(localizations.edit_slot_data),
+                        //           content: const Placeholder(),
+                        //         ),
+                        //       );
+                        //     },
+                        //     icon: const Icon(Icons.edit)),
+                        // const SizedBox(width: 8),
                         IconButton(
                           onPressed: (usedSlots[widget.slot].$1 !=
                                       TagType.unknown ||
