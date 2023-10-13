@@ -174,12 +174,41 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         ),
         ElevatedButton(
           onPressed: () async {
-            var tags = appState.sharedPreferencesProvider.getCards();
-            tags.add(
-                await rebuildCardSaveFromSlot(exportFrequency, widget.slot));
-            appState.sharedPreferencesProvider.setCards(tags);
+            CardSave tag =
+                await rebuildCardSaveFromSlot(exportFrequency, widget.slot);
             if (context.mounted) {
-              Navigator.pop(context);
+              await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  TextEditingController controller =
+                      TextEditingController(text: tag.name);
+                  return AlertDialog(
+                    title: Text(localizations.enter_name),
+                    content: TextField(controller: controller),
+                    actions: [
+                      ElevatedButton(
+                        onPressed: () async {
+                          tag.name = controller.text;
+                          var tags =
+                              appState.sharedPreferencesProvider.getCards();
+                          tags.add(tag);
+                          appState.sharedPreferencesProvider.setCards(tags);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
+                        },
+                        child: Text(localizations.ok),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text(localizations.cancel),
+                      ),
+                    ],
+                  );
+                },
+              );
             }
           },
           child: Text(localizations.export_to_new_card),
