@@ -216,5 +216,12 @@
   "read_gen1_card_data": "Lese Daten von Gen1 Karte",
   "charge": "Laden",
   "copy_all_keys": "Alle Schl\u00fcssel in Zwischenablage",
-  "battery_info": "Ladung: {percent}%\nVolt: {voltage} mV"
+  "battery_info": "Ladung: {percent}%\nVolt: {voltage} mV",
+  "x_byte_uid": "{length} Byte UID",
+  "edit_slot_data": "Daten in Slot bearbeiten",
+  "export_slot_data": "Daten aus Slot exportieren",
+  "frequency_to_export": "Frequenz zum Export",
+  "save_to_file": "Als Datei speichern",
+  "export_to_new_card": "Exportiere auf neue Karte",
+  "update_saved_card": "Gespeicherte Karte aktualisieren"
 }
