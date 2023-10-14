@@ -18,8 +18,6 @@ class ChameleonSettings extends StatefulWidget {
 }
 
 class ChameleonSettingsState extends State<ChameleonSettings> {
-  late AnimationSetting animationMode;
-
   @override
   void initState() {
     super.initState();
@@ -145,7 +143,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.mini,
                           localizations.none
                         ],
-                        selectedValue: animationMode.value,
+                        selectedValue: settings.animation.value,
                         onChange: (int index) async {
                           var animation = AnimationSetting.full;
                           if (index == 1) {
