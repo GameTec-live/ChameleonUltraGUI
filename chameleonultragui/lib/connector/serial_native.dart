@@ -35,14 +35,15 @@ class NativeSerial extends AbstractSerial {
     connectionType = ConnectionType.none;
     isOpen = false;
     messageCallback = null;
+    connected = false;
+    messageCallback = null;
     if (port != null) {
-      port?.close();
       reader?.close();
+      port?.close();
       reader = null;
-      connected = false;
+      port = null;
       return true;
     }
-    connected = false; // For debug button
     return false;
   }
 

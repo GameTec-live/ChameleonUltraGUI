@@ -113,12 +113,13 @@ class _MainPageState extends State<MainPage> {
   }
 
   @override
-  void reassemble() {
-    super.reassemble();
-
+  void reassemble() async {
     // Disconnect on reload
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
-    appState.connector?.performDisconnect();
+    await appState.connector?.performDisconnect();
+    appState.changesMade();
+
+    super.reassemble();
   }
 
   @override

@@ -29,66 +29,65 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<((Icon, int, int), String, List<String>, bool)> getFutureData() async {
+  Future<((Icon, BatteryCharge), String, List<String>, bool)>
+      getFutureData() async {
     var appState = context.read<ChameleonGUIState>();
-    List<(TagType, TagType)> usedSlots = [];
+    List<SlotTypes> slotTypes = [];
     try {
-      usedSlots = await appState.communicator!.getUsedSlots();
+      slotTypes = await appState.communicator!.getSlotTagTypes();
     } catch (e) {
       appState.log!.e(e);
     }
 
     return (
       await getBatteryInfo(),
-      await getUsedSlotsOut8(usedSlots),
+      await getUsedSlotsOut8(slotTypes),
       await getVersion(),
       await isReaderDeviceMode()
     );
   }
 
-  Future<(Icon, int, int)> getBatteryInfo() async {
+  Future<(Icon, BatteryCharge)> getBatteryInfo() async {
     var appState = context.read<ChameleonGUIState>();
     var icon = const Icon(Icons.battery_unknown);
-    int charge = 0;
-    int voltage = 0;
+    BatteryCharge battery = BatteryCharge(percent: 0, voltage: 0);
 
     try {
-      (voltage, charge) = await appState.communicator!.getBatteryCharge();
+      battery = await appState.communicator!.getBatteryCharge();
     } catch (_) {}
 
-    if (charge > 98) {
+    if (battery.percent > 98) {
       icon = const Icon(Icons.battery_full);
-    } else if (charge > 87) {
+    } else if (battery.percent > 87) {
       icon = const Icon(Icons.battery_6_bar);
-    } else if (charge > 75) {
+    } else if (battery.percent > 75) {
       icon = const Icon(Icons.battery_5_bar);
-    } else if (charge > 62) {
+    } else if (battery.percent > 62) {
       icon = const Icon(Icons.battery_4_bar);
-    } else if (charge > 50) {
+    } else if (battery.percent > 50) {
       icon = const Icon(Icons.battery_3_bar);
-    } else if (charge > 37) {
+    } else if (battery.percent > 37) {
       icon = const Icon(Icons.battery_2_bar);
-    } else if (charge > 10) {
+    } else if (battery.percent > 10) {
       icon = const Icon(Icons.battery_1_bar);
-    } else if (charge > 3) {
+    } else if (battery.percent > 3) {
       icon = const Icon(Icons.battery_0_bar);
-    } else if (charge > 0) {
+    } else if (battery.percent > 0) {
       icon = const Icon(Icons.battery_alert);
     }
 
-    return (icon, charge, voltage);
+    return (icon, battery);
   }
 
-  Future<String> getUsedSlotsOut8(List<(TagType, TagType)> usedSlots) async {
+  Future<String> getUsedSlotsOut8(List<SlotTypes> slotTypes) async {
     int usedSlotsOut8 = 0;
 
-    if (usedSlots.isEmpty) {
+    if (slotTypes.isEmpty) {
       return AppLocalizations.of(context)!.unknown;
     }
 
     for (int i = 0; i < 8; i++) {
-      if (usedSlots[i].$1 != TagType.unknown ||
-          usedSlots[i].$2 != TagType.unknown) {
+      if (slotTypes[i].notMatch()) {
         usedSlotsOut8++;
       }
     }
@@ -99,8 +98,8 @@ class HomePageState extends State<HomePage> {
     var appState = context.read<ChameleonGUIState>();
     String commitHash = "";
     var firmware = await appState.communicator!.getFirmwareVersion();
-    isLegacyFirmware = firmware.$1;
-    String firmwareVersion = numToVerCode(firmware.$2);
+    isLegacyFirmware = firmware.legacyProtocol;
+    String firmwareVersion = numToVerCode(firmware.version);
 
     try {
       commitHash = await appState.communicator!.getGitCommitHash();
@@ -239,7 +238,8 @@ class HomePageState extends State<HomePage> {
                                     : Icons.usb),
                                 Tooltip(
                                   message: localizations.battery_info(
-                                      batteryInfo.$2, batteryInfo.$3),
+                                      batteryInfo.$2.percent,
+                                      batteryInfo.$2.voltage),
                                   child: batteryInfo.$1,
                                 ),
                               ],

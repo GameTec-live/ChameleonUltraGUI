@@ -224,5 +224,6 @@
   "frequency_to_export": "Frequency to export",
   "save_to_file": "Save to file",
   "export_to_new_card": "Export to new card",
-  "update_saved_card": "Update saved card"
+  "update_saved_card": "Update saved card",
+  "must_be_valid_hex": "Must be valid HEX"
 }

@@ -260,6 +260,80 @@ class DetectionResult {
       required this.ar});
 }
 
+class FirmwareVersion {
+  bool legacyProtocol;
+  int version;
+
+  FirmwareVersion({required this.legacyProtocol, required this.version});
+}
+
+class SlotTypes {
+  TagType hf;
+  TagType lf;
+
+  bool match({TagType type = TagType.unknown}) {
+    return hf == type || lf == type;
+  }
+
+  bool notMatch({TagType type = TagType.unknown}) {
+    return hf != type || lf != type;
+  }
+
+  SlotTypes({this.hf = TagType.unknown, this.lf = TagType.unknown});
+}
+
+class EnabledSlotInfo {
+  bool hf;
+  bool lf;
+
+  bool any() {
+    return hf || lf;
+  }
+
+  EnabledSlotInfo({this.hf = false, this.lf = false});
+}
+
+class BatteryCharge {
+  int voltage;
+  int percent;
+
+  BatteryCharge({required this.voltage, required this.percent});
+}
+
+class EmulatorSettings {
+  bool isDetectionEnabled;
+  bool isGen1a;
+  bool isGen2;
+  bool isAntiColl;
+  MifareClassicWriteMode writeMode;
+
+  EmulatorSettings(
+      {required this.isDetectionEnabled,
+      required this.isGen1a,
+      required this.isGen2,
+      required this.isAntiColl,
+      required this.writeMode});
+}
+
+class DeviceSettings {
+  AnimationSetting animation;
+  ButtonConfig aPress;
+  ButtonConfig bPress;
+  ButtonConfig aLongPress;
+  ButtonConfig bLongPress;
+  bool pairingEnabled;
+  String key;
+
+  DeviceSettings(
+      {this.animation = AnimationSetting.none,
+      this.aPress = ButtonConfig.disable,
+      this.bPress = ButtonConfig.disable,
+      this.aLongPress = ButtonConfig.disable,
+      this.bLongPress = ButtonConfig.disable,
+      this.pairingEnabled = false,
+      this.key = ""});
+}
+
 // Some ChatGPT magic
 // Nobody knows how it works
 
@@ -318,6 +392,8 @@ class ChameleonCommunicator {
   }
 
   Future<void> onSerialMessage(List<int> message) async {
+    log.t("Received: ${bytesToHex(Uint8List.fromList(message))}");
+
     for (var byte in message) {
       dataBuffer.add(byte);
 
@@ -392,7 +468,9 @@ class ChameleonCommunicator {
 
     commandQueue.add(cmd.value);
 
-    log.d("Sending: ${bytesToHex(dataFrame)}");
+    log.t("Sending: ${bytesToHex(dataFrame)}");
+    log.d(
+        "Sending message: command = ${cmd.value}, data = ${bytesToHex(data ?? Uint8List(0))}");
 
     if (skipReceive) {
       try {
@@ -435,15 +513,16 @@ class ChameleonCommunicator {
     return bytes.buffer.asByteData().getInt16(0, Endian.big);
   }
 
-  Future<(bool, int)> getFirmwareVersion() async {
+  Future<FirmwareVersion> getFirmwareVersion() async {
     var resp = await sendCmd(ChameleonCommand.getAppVersion);
     if (resp!.data.length != 2) throw ("Invalid data length");
 
     // Check for legacy protocol
     if (resp.data[0] == 0 && resp.data[1] == 1) {
-      return (true, 256);
+      return FirmwareVersion(legacyProtocol: true, version: 256);
     } else {
-      return (false, bytesToU16(resp.data));
+      return FirmwareVersion(
+          legacyProtocol: false, version: bytesToU16(resp.data));
     }
   }
 
@@ -819,14 +898,15 @@ class ChameleonCommunicator {
     return (await sendCmd(ChameleonCommand.getActiveSlot))!.data[0];
   }
 
-  Future<List<(TagType, TagType)>> getUsedSlots() async {
-    List<(TagType, TagType)> tags = [];
+  Future<List<SlotTypes>> getSlotTagTypes() async {
+    List<SlotTypes> tags = [];
     var resp = await sendCmd(ChameleonCommand.getSlotInfo);
     var index = 0;
     for (var slot = 0; slot < 8; slot++) {
-      tags.add((
-        numberToChameleonTag(bytesToU16(resp!.data.sublist(index, index + 2))),
-        numberToChameleonTag(
+      tags.add(SlotTypes(
+        hf: numberToChameleonTag(
+            bytesToU16(resp!.data.sublist(index, index + 2))),
+        lf: numberToChameleonTag(
             bytesToU16(resp.data.sublist(index + 2, index + 4))),
       ));
 
@@ -835,11 +915,11 @@ class ChameleonCommunicator {
     return tags;
   }
 
-  Future<(bool, bool, bool, bool, MifareClassicWriteMode)>
-      getMf1EmulatorConfig() async {
+  Future<EmulatorSettings> getMf1EmulatorSettings() async {
     var resp = await sendCmd(ChameleonCommand.mf1GetEmulatorConfig);
     if (resp!.data.length != 5) throw ("Invalid data length");
     MifareClassicWriteMode mode = MifareClassicWriteMode.normal;
+
     if (resp.data[4] == 1) {
       mode = MifareClassicWriteMode.denied;
     } else if (resp.data[4] == 2) {
@@ -847,13 +927,15 @@ class ChameleonCommunicator {
     } else if (resp.data[4] == 3 || resp.data[4] == 4) {
       mode = MifareClassicWriteMode.shadow;
     }
-    return (
-      resp.data[0] == 1, // is detection enabled
-      resp.data[1] == 1, // is gen1a mode enabled
-      resp.data[2] == 1, // is gen2 mode enabled
-      resp.data[3] == 1, // use anti collision data from block 0 mode enabled
-      mode // write mode
-    );
+
+    return EmulatorSettings(
+        isDetectionEnabled: resp.data[0] == 1, // is detection enabled
+        isGen1a: resp.data[1] == 1, // is gen1a mode enabled
+        isGen2: resp.data[2] == 1, // is gen2 mode enabled
+        isAntiColl: resp.data[3] ==
+            1, // use anti collision data from block 0 mode enabled
+        writeMode: mode // write mode
+        );
   }
 
   Future<bool> isMf1Gen1aMode() async {
@@ -908,20 +990,22 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([mode.value]));
   }
 
-  Future<List<(bool, bool)>> getEnabledSlots() async {
+  Future<List<EnabledSlotInfo>> getEnabledSlots() async {
     var resp = await sendCmd(ChameleonCommand.getEnabledSlots);
     if (resp!.data.length != 16) throw ("Invalid data length");
-    List<(bool, bool)> slots = [];
+    List<EnabledSlotInfo> slots = [];
     for (var slot = 0; slot < 8; slot++) {
-      slots.add((resp.data[slot * 2] != 0, resp.data[slot * 2 + 1] != 0));
+      slots.add(EnabledSlotInfo(
+          hf: resp.data[slot * 2] != 0, lf: resp.data[slot * 2 + 1] != 0));
     }
     return slots;
   }
 
-  Future<(int, int)> getBatteryCharge() async {
+  Future<BatteryCharge> getBatteryCharge() async {
     var resp = await sendCmd(ChameleonCommand.getBatteryCharge);
     if (resp!.data.length != 3) throw ("Invalid data length");
-    return (_toInt16BE(resp.data.sublist(0, 2)), resp.data[2]);
+    return BatteryCharge(
+        voltage: _toInt16BE(resp.data.sublist(0, 2)), percent: resp.data[2]);
   }
 
   Future<ButtonConfig> getButtonConfig(ButtonType type) async {
@@ -1020,16 +1104,7 @@ class ChameleonCommunicator {
     return (await sendCmd(ChameleonCommand.getEM410XemulatorID))!.data;
   }
 
-  Future<
-      (
-        AnimationSetting,
-        ButtonConfig,
-        ButtonConfig,
-        ButtonConfig,
-        ButtonConfig,
-        bool,
-        String
-      )> getDeviceSettings() async {
+  Future<DeviceSettings> getDeviceSettings() async {
     var resp = (await sendCmd(ChameleonCommand.getDeviceSettings))!.data;
     if (resp[0] != 5) {
       throw ("Invalid settings version");
@@ -1041,15 +1116,14 @@ class ChameleonCommunicator {
         aLongPress = getButtonConfigType(resp[4]),
         bLongPress = getButtonConfigType(resp[5]);
 
-    return (
-      animationMode,
-      aPress,
-      bPress,
-      aLongPress,
-      bLongPress,
-      resp[6] == 1,
-      utf8.decode(resp.sublist(7, 13), allowMalformed: true)
-    );
+    return DeviceSettings(
+        animation: animationMode,
+        aPress: aPress,
+        bPress: bPress,
+        aLongPress: aLongPress,
+        bLongPress: bLongPress,
+        pairingEnabled: resp[6] == 1,
+        key: utf8.decode(resp.sublist(7, 13), allowMalformed: true));
   }
 
   Future<List<int>> getDeviceCapabilities() async {

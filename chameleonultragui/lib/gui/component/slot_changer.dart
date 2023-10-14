@@ -23,10 +23,10 @@ class SlotChangerState extends State<SlotChanger> {
 
   Future<List<Icon>> getFutureData() async {
     var appState = context.read<ChameleonGUIState>();
-    List<(TagType, TagType)> usedSlots;
+    List<SlotTypes> usedSlots;
 
     try {
-      usedSlots = await appState.communicator!.getUsedSlots();
+      usedSlots = await appState.communicator!.getSlotTagTypes();
     } catch (_) {
       usedSlots = [];
     }
@@ -34,7 +34,7 @@ class SlotChangerState extends State<SlotChanger> {
     return await getSlotIcons(usedSlots);
   }
 
-  Future<List<Icon>> getSlotIcons(List<(TagType, TagType)> usedSlots) async {
+  Future<List<Icon>> getSlotIcons(List<SlotTypes> usedSlots) async {
     var appState = context.read<ChameleonGUIState>();
     List<Icon> icons = [];
 
@@ -48,14 +48,13 @@ class SlotChangerState extends State<SlotChanger> {
       return [const Icon(Icons.warning)];
     }
 
-    for (int i = 1; i < 9; i++) {
-      if (i == selectedSlot) {
+    for (int i = 0; i < 8; i++) {
+      if (i == selectedSlot - 1) {
         icons.add(const Icon(
           Icons.circle_outlined,
           color: Colors.red,
         ));
-      } else if (usedSlots[i - 1].$1 != TagType.unknown ||
-          usedSlots[i - 1].$2 != TagType.unknown) {
+      } else if (usedSlots[i].notMatch()) {
         icons.add(const Icon(Icons.circle));
       } else {
         icons.add(const Icon(Icons.circle_outlined));

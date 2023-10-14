@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:flutter/material.dart';
@@ -57,37 +58,42 @@ class CardViewMenuState extends State<CardViewMenu> {
               ),
             ],
           ),
-          Row(
-            children: [
-              Text(
-                  "${localizations.sak}: ${widget.tagSave.sak == 0 ? localizations.unavailable : bytesToHex(u8ToBytes(widget.tagSave.sak))}"),
-              IconButton(
-                onPressed: () async {
-                  ClipboardData data = ClipboardData(
-                      text: widget.tagSave.sak == 0
-                          ? localizations.unavailable
-                          : bytesToHex(u8ToBytes(widget.tagSave.sak)));
-                  await Clipboard.setData(data);
-                },
-                icon: const Icon(Icons.copy),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Text(
-                  "${localizations.atqa}: ${widget.tagSave.atqa.asMap().containsKey(0) ? bytesToHex(u8ToBytes(widget.tagSave.atqa[0])) : ""} ${widget.tagSave.atqa.asMap().containsKey(1) ? bytesToHex(u8ToBytes(widget.tagSave.atqa[1])) : localizations.unavailable}"),
-              IconButton(
-                onPressed: () async {
-                  ClipboardData data = ClipboardData(
-                      text:
-                          "${widget.tagSave.atqa.asMap().containsKey(0) ? bytesToHex(u8ToBytes(widget.tagSave.atqa[0])) : ""} ${widget.tagSave.atqa.asMap().containsKey(1) ? bytesToHex(u8ToBytes(widget.tagSave.atqa[1])) : localizations.unavailable}");
-                  await Clipboard.setData(data);
-                },
-                icon: const Icon(Icons.copy),
-              ),
-            ],
-          ),
+          ...(chameleonTagToFrequency(widget.tagSave.tag) == TagFrequency.hf)
+              ? [
+                  Row(
+                    children: [
+                      Text(
+                          "${localizations.sak}: ${widget.tagSave.sak == 0 ? localizations.unavailable : bytesToHex(u8ToBytes(widget.tagSave.sak))}"),
+                      IconButton(
+                        onPressed: () async {
+                          ClipboardData data = ClipboardData(
+                              text: widget.tagSave.sak == 0
+                                  ? localizations.unavailable
+                                  : bytesToHex(u8ToBytes(widget.tagSave.sak)));
+                          await Clipboard.setData(data);
+                        },
+                        icon: const Icon(Icons.copy),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                          "${localizations.atqa}: ${widget.tagSave.atqa.isNotEmpty ? bytesToHexSpace(widget.tagSave.atqa) : localizations.unavailable}"),
+                      IconButton(
+                        onPressed: () async {
+                          ClipboardData data = ClipboardData(
+                              text: widget.tagSave.atqa.isNotEmpty
+                                  ? bytesToHex(widget.tagSave.atqa)
+                                  : localizations.unavailable);
+                          await Clipboard.setData(data);
+                        },
+                        icon: const Icon(Icons.copy),
+                      ),
+                    ],
+                  )
+                ]
+              : [],
         ],
       ),
       actions: [
