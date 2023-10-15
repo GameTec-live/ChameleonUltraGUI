@@ -61,7 +61,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
 
       return CardSave(
         uid: bytesToHexSpace(data.uid),
-        name: widget.names.lf,
+        name: widget.names.hf,
         sak: data.sak,
         atqa: data.atqa,
         ats: data.ats,
@@ -148,7 +148,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
             Uint8List export = const Utf8Encoder().convert(cardSave.toJson());
             try {
               await FileSaver.instance.saveAs(
-                  name: '${cardSave.name}.json',
+                  name: cardSave.name,
                   bytes: export,
                   ext: 'json',
                   mimeType: MimeType.json);
