@@ -137,7 +137,7 @@ class SlotSettingsState extends State<SlotSettings> {
                       Text('${localizations.hf}:'),
                       const SizedBox(width: 8),
                       Expanded(
-                          child: OutlinedButton(
+                          child: ElevatedButton(
                         onPressed: () async {
                           showDialog<String>(
                               context: context,
@@ -195,7 +195,7 @@ class SlotSettingsState extends State<SlotSettings> {
                       Text('${localizations.lf}:'),
                       const SizedBox(width: 8),
                       Expanded(
-                          child: OutlinedButton(
+                          child: ElevatedButton(
                         onPressed: () async {
                           showDialog<String>(
                               context: context,
