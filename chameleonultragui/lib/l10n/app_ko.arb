@@ -211,5 +211,11 @@
   "update": "\uc5c5\ub370\uc774\ud2b8",
   "card_tech": "\uae30\uc220\uc9c0\uc6d0",
   "charge": "\ucda9\uc804",
-  "battery_info": "\ucda9\uc804: {percent}%\n\uc804\uc555: {voltage} mV"
+  "battery_info": "\ucda9\uc804: {percent}%\n\uc804\uc555: {voltage} mV",
+  "edit_slot_data": "\uc2ac\ub86f \ub370\uc774\ud130 \ud3b8\uc9d1",
+  "export_slot_data": "\uc2ac\ub86f \ub370\uc774\ud130 \ub0b4\ubcf4\ub0b4\uae30",
+  "save_to_file": "\ud30c\uc77c\ub85c \uc800\uc7a5",
+  "export_to_new_card": "\uc0c8 \uce74\ub4dc\ub85c \ub0b4\ubcf4\ub0b4\uae30",
+  "update_saved_card": "\uc800\uc7a5\ub41c \uce74\ub4dc \uc5c5\ub370\uc774\ud2b8",
+  "must_be_valid_hex": "\uc720\ud6a8\ud55c HEX\uc5ec\uc57c \ud569\ub2c8\ub2e4."
 }
