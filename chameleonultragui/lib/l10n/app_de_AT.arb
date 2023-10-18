@@ -99,7 +99,6 @@
   "edit_card": "Koartn beorbatn",
   "please_enter_name": "Bitte giab an nom ein",
   "name": "Nom",
-  "enter_name": "Giab an nom von der Koartn ei",
   "pick_color": "W\u00f6h a foab",
   "reset_default": "Auf standoard zuricksetzn",
   "please_enter_something": "Bitte giab {name} ei",
@@ -224,5 +223,6 @@
   "save_to_file": "Als Datei speichern",
   "export_to_new_card": "Exportiere auf neue Karte",
   "update_saved_card": "Gespeicherte Karte aktualisieren",
-  "must_be_valid_hex": "HEX Wert erforderlich"
+  "must_be_valid_hex": "HEX Wert erforderlich",
+  "export_to_dictionary": "Export in W\u00f6rterbuch"
 }

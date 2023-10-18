@@ -99,7 +99,6 @@
   "edit_card": "\u7f16\u8f91\u5361\u7247",
   "please_enter_name": "\u8bf7\u8f93\u5165\u540d\u79f0",
   "name": "\u540d\u79f0",
-  "enter_name": "\u8bf7\u8f93\u5165\u5361\u7247\u540d\u79f0",
   "pick_color": "\u9009\u62e9\u989c\u8272",
   "reset_default": "\u91cd\u7f6e\u4e3a\u9ed8\u8ba4\u8bbe\u7f6e",
   "please_enter_something": "\u8bf7\u8f93\u5165{name}",

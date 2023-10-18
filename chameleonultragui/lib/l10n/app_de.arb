@@ -99,7 +99,6 @@
   "edit_card": "Karte bearbeiten",
   "please_enter_name": "Bitte gebe einen Namen an",
   "name": "Namen",
-  "enter_name": "Geben Sie den Namen der Karte ein",
   "pick_color": "W\u00e4hlen Sie eine Farbe",
   "reset_default": "Auf Standard zur\u00fccksetzen",
   "please_enter_something": "Bitte {name} eingeben",
@@ -224,5 +223,6 @@
   "save_to_file": "Als Datei speichern",
   "export_to_new_card": "Exportiere auf neue Karte",
   "update_saved_card": "Gespeicherte Karte aktualisieren",
-  "must_be_valid_hex": "HEX Wert erforderlich"
+  "must_be_valid_hex": "HEX Wert erforderlich",
+  "export_to_dictionary": "Export in W\u00f6rterbuch"
 }

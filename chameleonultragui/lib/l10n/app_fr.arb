@@ -99,7 +99,6 @@
   "edit_card": "\u00c9diter carte",
   "please_enter_name": "Veuillez saisir un nom",
   "name": "Nom",
-  "enter_name": "Saisir le nom de la carte",
   "pick_color": "Choisis une couleur",
   "reset_default": "R\u00e9tablir les valeurs par d\u00e9faut",
   "please_enter_something": "Veuillez saisir {name}",
