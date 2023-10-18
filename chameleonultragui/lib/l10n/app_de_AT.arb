@@ -223,5 +223,6 @@
   "frequency_to_export": "Frequenz zum Export",
   "save_to_file": "Als Datei speichern",
   "export_to_new_card": "Exportiere auf neue Karte",
-  "update_saved_card": "Gespeicherte Karte aktualisieren"
+  "update_saved_card": "Gespeicherte Karte aktualisieren",
+  "must_be_valid_hex": "HEX Wert erforderlich"
 }
