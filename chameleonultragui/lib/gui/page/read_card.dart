@@ -825,8 +825,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: Text(localizations.enter_name(
-                                      localizations.card.toLowerCase())),
+                                  title: Text(localizations.enter_name_of_card),
                                   content: TextField(
                                     onChanged: (value) {
                                       setState(() {
@@ -1007,9 +1006,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       context: context,
                                       builder: (BuildContext context) {
                                         return AlertDialog(
-                                          title: Text(localizations.enter_name(
-                                              localizations.card
-                                                  .toLowerCase())),
+                                          title: Text(
+                                              localizations.enter_name_of_card),
                                           content: TextField(
                                             onChanged: (value) {
                                               setState(() {
@@ -1122,8 +1120,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: Text(localizations.enter_name(
-                                      localizations.card.toLowerCase())),
+                                  title: Text(localizations.enter_name_of_card),
                                   content: TextField(
                                     onChanged: (value) {
                                       setState(() {
