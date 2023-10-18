@@ -27,9 +27,10 @@ class DictionaryExportMenu extends StatefulWidget {
 
 class DictionaryExportMenuState extends State<DictionaryExportMenu> {
   List<Uint8List> deduplicateKeys(List<Uint8List> keys) {
-    return <int, Uint8List>{for (var key in keys) Object.hashAll(key): key}
-        .values
-        .toList();
+    return <int, Uint8List>{
+      for (var key in keys.where((key) => key.isNotEmpty).toList())
+        Object.hashAll(key): key
+    }.values.toList();
   }
 
   String convertKeysToDictionaryFile(List<Uint8List> keys) {
