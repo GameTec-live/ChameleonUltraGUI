@@ -53,7 +53,6 @@ class SlotEditMenuState extends State<SlotEditMenu> {
 
   Future<void> updateInfo() async {
     var appState = context.watch<ChameleonGUIState>();
-
     if (previousTagType == selectedType ||
         isMifareClassic(previousTagType) && isMifareClassic(selectedType!)) {
       return;
@@ -171,7 +170,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
               FutureBuilder(
                   future: updateInfo(),
                   builder: (BuildContext context, AsyncSnapshot snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        !(previousTagType == selectedType ||
+                            isMifareClassic(previousTagType) &&
+                                isMifareClassic(selectedType!))) {
                       return const Column(
                           children: [CircularProgressIndicator()]);
                     } else if (snapshot.hasError) {
