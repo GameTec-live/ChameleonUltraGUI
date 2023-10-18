@@ -27,7 +27,7 @@ def request(method, url, data=None, decode_data=True):
                                                'Authorization': 'Bearer ' + str(os.getenv('CROWDIN_API')),
                                                'Content-Type': 'application/json'}))
     if decode_data:
-        return json.loads(result.read())
+        return json.loads(result.read().decode())
 
 def fetch(url):
     return json.loads(urlopen(Request(url, method='GET')).read().decode())
