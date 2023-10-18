@@ -99,7 +99,6 @@
   "edit_card": "Editar tarjeta",
   "please_enter_name": "Por favor, introduzca un nombre",
   "name": "Nombre",
-  "enter_name": "Introduzca el nombre de la tarjeta",
   "pick_color": "Elija un color",
   "reset_default": "Restablecer a valores predeterminados",
   "please_enter_something": "Por favor, introduzca un {name}",
