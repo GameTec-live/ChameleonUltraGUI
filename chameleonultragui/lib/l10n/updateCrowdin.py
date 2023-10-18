@@ -18,13 +18,17 @@ def progressbar(it, prefix='', size=60, out=sys.stdout):
     print('\n', flush=True, file=out)
 
 
-def request(method, url, data=None):
+def request(method, url, data=None, decode_data=True):
     if not data:
         data = {}
-    return json.loads(urlopen(Request(url, method=method, data=json.dumps(data).encode(),
+
+    result = urlopen(Request(url, method=method, data=json.dumps(data).encode(),
                                       headers={'Accept': 'application/json',
                                                'Authorization': 'Bearer ' + str(os.getenv('CROWDIN_API')),
-                                               'Content-Type': 'application/json'})).read().decode())
+                                               'Content-Type': 'application/json'}))
+    if decode_data:
+        return json.loads(result.read().decode())
+
 def fetch(url):
     return json.loads(urlopen(Request(url, method='GET')).read().decode())
 
@@ -75,4 +79,4 @@ if __name__ == '__main__':
     for remove in to_remove:
         for string in strings['data']:
             if string['data']['identifier'] == remove:
-                request('DELETE', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + str(string['data']['id']))
+                request('DELETE', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + str(string['data']['id']), decode_data=False)
