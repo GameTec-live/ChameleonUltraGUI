@@ -531,7 +531,15 @@ class ReadCardPageState extends State<ReadCardPage> {
         }
       }
     } catch (_) {
+      for (var checkmark = 0; checkmark < 80; checkmark++) {
+        if (mfcInfo.recovery.checkMarks[checkmark] ==
+            ChameleonKeyCheckmark.checking) {
+          mfcInfo.recovery.checkMarks[checkmark] = ChameleonKeyCheckmark.none;
+        }
+      }
+
       setState(() {
+        mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
         mfcInfo.recovery.error = localizations.recovery_error_dict;
         mfcInfo.state = MifareClassicState.checkKeys;
       });
@@ -690,6 +698,67 @@ class ReadCardPageState extends State<ReadCardPage> {
     appState.sharedPreferencesProvider.setCards(tags);
   }
 
+  Future<void> exportFoundKeys() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+    var localizations = AppLocalizations.of(context)!;
+    TextEditingController dictionary = TextEditingController();
+    String keys = "";
+
+    for (var sector = 0;
+        sector < mfClassicGetSectorCount(mfcInfo.type, isEV1: mfcInfo.isEV1);
+        sector++) {
+      for (var block = 0;
+          block < mfClassicGetBlockCountBySector(sector);
+          block++) {
+        for (var keyType = 0; keyType < 2; keyType++) {
+          if (mfcInfo.recovery.validKeys[sector + (keyType * 40)].isNotEmpty) {
+            String key =
+                "${bytesToHex(mfcInfo.recovery.validKeys[sector + (keyType * 40)])}\n";
+
+            if (!keys.contains(key)) {
+              keys += key;
+            }
+          }
+        }
+      }
+    }
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+              localizations.enter_name(localizations.dictionary.toLowerCase())),
+          content: TextField(
+            controller: dictionary,
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                var dictionaries =
+                    appState.sharedPreferencesProvider.getDictionaries();
+                dictionaries
+                    .add(Dictionary.fromFile(keys.trim(), dictionary.text));
+                appState.sharedPreferencesProvider
+                    .setDictionaries(dictionaries);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Text(localizations.ok),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(localizations.cancel),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget buildFieldRow(String label, String value, double fontSize) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -804,7 +873,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: Text(localizations.enter_name),
+                                  title: Text(localizations.enter_name(
+                                      localizations.card.toLowerCase())),
                                   content: TextField(
                                     onChanged: (value) {
                                       setState(() {
@@ -898,7 +968,15 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           : null,
                                       child:
                                           Text(localizations.dump_partial_data),
-                                    )
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        await exportFoundKeys();
+                                      },
+                                      child: Text(
+                                          localizations.export_to_dictionary),
+                                    ),
                                   ])),
                         if (mfcInfo.state == MifareClassicState.checkKeys ||
                             mfcInfo.state ==
@@ -943,17 +1021,28 @@ class ReadCardPageState extends State<ReadCardPage> {
                           ]),
                         if (mfcInfo.state == MifareClassicState.dump ||
                             mfcInfo.state == MifareClassicState.dumpOngoing)
-                          Column(children: [
-                            ElevatedButton(
-                              onPressed:
-                                  (mfcInfo.state == MifareClassicState.dump)
-                                      ? () async {
-                                          await dumpData();
-                                        }
-                                      : null,
-                              child: Text(localizations.dump_card),
-                            ),
-                          ]),
+                          FittedBox(
+                              alignment: Alignment.topCenter,
+                              fit: BoxFit.scaleDown,
+                              child: Row(children: [
+                                ElevatedButton(
+                                  onPressed:
+                                      (mfcInfo.state == MifareClassicState.dump)
+                                          ? () async {
+                                              await dumpData();
+                                            }
+                                          : null,
+                                  child: Text(localizations.dump_card),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    await exportFoundKeys();
+                                  },
+                                  child:
+                                      Text(localizations.export_to_dictionary),
+                                ),
+                              ])),
                         if (mfcInfo.state == MifareClassicState.save)
                           Center(
                               child: Row(
@@ -966,7 +1055,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       context: context,
                                       builder: (BuildContext context) {
                                         return AlertDialog(
-                                          title: Text(localizations.enter_name),
+                                          title: Text(localizations.enter_name(
+                                              localizations.card
+                                                  .toLowerCase())),
                                           content: TextField(
                                             onChanged: (value) {
                                               setState(() {
@@ -1079,7 +1170,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: Text(localizations.enter_name),
+                                  title: Text(localizations.enter_name(
+                                      localizations.card.toLowerCase())),
                                   content: TextField(
                                     onChanged: (value) {
                                       setState(() {

@@ -71,7 +71,8 @@ class CardEditMenuState extends State<CardEditMenu> {
                 },
                 decoration: InputDecoration(
                     labelText: localizations.name,
-                    hintText: localizations.enter_name,
+                    hintText: localizations
+                        .enter_name(localizations.card.toLowerCase()),
                     prefix: Transform(
                         transform: Matrix4.translationValues(0, 7, 0),
                         child: IconButton(

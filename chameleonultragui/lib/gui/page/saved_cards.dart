@@ -175,7 +175,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       controller: nameController,
                                       decoration: InputDecoration(
                                           labelText: localizations.name,
-                                          hintText: localizations.enter_name),
+                                          hintText: localizations.enter_name(
+                                              localizations.card
+                                                  .toLowerCase())),
                                     ),
                                     DropdownButton<MifareClassicType>(
                                       value: selectedType,

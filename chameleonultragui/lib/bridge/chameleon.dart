@@ -694,10 +694,15 @@ class ChameleonCommunicator {
   Future<bool> mf1Auth(int block, int keyType, Uint8List key) async {
     // Check if key is valid for block
     // keyType 0x60 if A key, 0x61 B key
-    return (await sendCmd(ChameleonCommand.mf1CheckKey,
-                data: Uint8List.fromList([keyType, block, ...key])))!
-            .status ==
-        0;
+    int status = (await sendCmd(ChameleonCommand.mf1CheckKey,
+            data: Uint8List.fromList([keyType, block, ...key])))!
+        .status;
+
+    if (status == 1) {
+      throw ("Lost card");
+    }
+
+    return status == 0;
   }
 
   Future<Uint8List> mf1ReadBlock(int block, int keyType, Uint8List key) async {
