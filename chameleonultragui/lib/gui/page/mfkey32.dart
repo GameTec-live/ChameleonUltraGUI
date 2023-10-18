@@ -128,7 +128,6 @@ class Mfkey32PageState extends State<Mfkey32Page> {
     }
   }
 
-  // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
