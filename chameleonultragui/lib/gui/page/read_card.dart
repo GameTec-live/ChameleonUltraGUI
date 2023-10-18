@@ -77,7 +77,7 @@ class MifareClassicInfo {
       MifareClassicRecoveryInfo? recovery,
       List<Uint8List>? cardData})
       : recovery = recovery ?? MifareClassicRecoveryInfo(),
-        cardData = cardData ?? List.generate(0xFF, (_) => Uint8List(0));
+        cardData = cardData ?? List.generate(256, (_) => Uint8List(0));
 }
 
 class MifareClassicRecoveryInfo {
@@ -474,6 +474,9 @@ class ReadCardPageState extends State<ReadCardPage> {
               for (var key in [
                 ...mfcInfo.recovery.selectedDictionary!.keys,
                 ...gMifareClassicKeys
+                    .where((key) => !mfcInfo.recovery.selectedDictionary!.keys
+                        .contains(key))
+                    .toList()
               ]) {
                 appState.log!.d(
                     "Checking ${bytesToHex(key)} on sector $sector, key type $keyType");
