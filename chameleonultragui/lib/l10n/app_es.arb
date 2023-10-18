@@ -216,5 +216,14 @@
   "read_gen1_card_data": "Leer datos de tarjeta Gen1",
   "card_tech": "Tecnolog\u00eda",
   "charge": "Cargar",
-  "copy_all_keys": "Copiar todas las claves"
+  "copy_all_keys": "Copiar todas las claves",
+  "battery_info": "Carga: {percent}%\nTensi\u00f3n: {voltage} mV",
+  "x_byte_uid": "UID de {length} bytes",
+  "edit_slot_data": "Editar datos del slot",
+  "export_slot_data": "Exportar datos del slot",
+  "frequency_to_export": "Frecuencia a exportar",
+  "save_to_file": "Guardar en archivo",
+  "export_to_new_card": "Exportar a nueva tarjeta",
+  "update_saved_card": "Actualizar tarjeta guardada",
+  "must_be_valid_hex": "El HEX debe ser v\u00e1lido"
 }

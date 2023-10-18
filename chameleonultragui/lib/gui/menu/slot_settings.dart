@@ -1,5 +1,4 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
-import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/gui/menu/slot_edit.dart';
 import 'package:chameleonultragui/gui/menu/slot_export.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +37,10 @@ class SlotSettingsState extends State<SlotSettings> {
   }
 
   Future<void> fetchInfo() async {
+    if (names.hf.isNotEmpty) {
+      return;
+    }
+
     var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 

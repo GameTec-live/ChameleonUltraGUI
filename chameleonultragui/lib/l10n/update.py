@@ -44,5 +44,5 @@ for language in progressbar(
             continue
         export = urlopen(Request(translation['data']['url'], method='GET')).read()
         translations = json.loads(export.decode())
-        locale = translations['@@locale']
+        locale = translations['@@locale'] = translations['@@locale'].replace('-', '_')
         json.dump(translations, open(f'app_{locale}.arb', 'w+'), indent=2)
