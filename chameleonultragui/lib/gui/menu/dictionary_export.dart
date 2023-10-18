@@ -66,8 +66,7 @@ class DictionaryExportMenuState extends State<DictionaryExportMenu> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(
-              localizations.enter_name(localizations.dictionary.toLowerCase())),
+          title: Text(localizations.enter_name_of_dictionary),
           content: TextField(
             controller: dictionary,
           ),

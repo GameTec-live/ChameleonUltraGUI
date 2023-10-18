@@ -179,8 +179,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
                   TextEditingController controller =
                       TextEditingController(text: tag.name);
                   return AlertDialog(
-                    title: Text(localizations
-                        .enter_name(localizations.card.toLowerCase())),
+                    title: Text(localizations.enter_name_of_card),
                     content: TextField(controller: controller),
                     actions: [
                       ElevatedButton(
