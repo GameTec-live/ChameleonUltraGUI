@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/gui/menu/slot_edit.dart';
 import 'package:chameleonultragui/gui/menu/slot_export.dart';
 import 'package:flutter/material.dart';
@@ -37,10 +38,6 @@ class SlotSettingsState extends State<SlotSettings> {
   }
 
   Future<void> fetchInfo() async {
-    if (names.hf.isNotEmpty) {
-      return;
-    }
-
     var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
@@ -92,10 +89,10 @@ class SlotSettingsState extends State<SlotSettings> {
     var localizations = AppLocalizations.of(context)!;
 
     return FutureBuilder(
-        future: fetchInfo(),
+        future: (names.hf.isNotEmpty) ? Future.value(null) : fetchInfo(),
         builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting &&
-              names.hf.isNotEmpty) {
+              names.hf.isEmpty) {
             return AlertDialog(
                 title: Text(localizations.slot_settings),
                 content: const SingleChildScrollView(
@@ -138,6 +135,24 @@ class SlotSettingsState extends State<SlotSettings> {
                       const SizedBox(width: 8),
                       Expanded(
                           child: OutlinedButton(
+                        onPressed: null,
+                        child: Text(names.hf),
+                      )),
+                      const SizedBox(width: 8),
+                      Switch(
+                        value: enabledSlot.hf,
+                        onChanged: (bool value) async {
+                          await appState.communicator!
+                              .enableSlot(widget.slot, TagFrequency.hf, value);
+
+                          setState(() {
+                            enabledSlot.hf = value;
+                          });
+
+                          widget.refresh(widget.slot);
+                        },
+                      ),
+                      IconButton(
                         onPressed: () async {
                           showDialog<String>(
                               context: context,
@@ -149,9 +164,8 @@ class SlotSettingsState extends State<SlotSettings> {
                                   slot: widget.slot,
                                   update: updateSlot));
                         },
-                        child: Text(names.hf),
-                      )),
-                      const SizedBox(width: 8),
+                        icon: const Icon(Icons.edit),
+                      ),
                       IconButton(
                         onPressed: () async {
                           await appState.communicator!
@@ -171,22 +185,6 @@ class SlotSettingsState extends State<SlotSettings> {
                         },
                         icon: const Icon(Icons.clear_rounded),
                       ),
-                      IconButton(
-                        onPressed: () async {
-                          await appState.communicator!.enableSlot(
-                              widget.slot, TagFrequency.hf, !enabledSlot.hf);
-                          await appState.communicator!.saveSlotData();
-
-                          setState(() {
-                            enabledSlot.hf = !enabledSlot.hf;
-                          });
-
-                          widget.refresh(widget.slot);
-                        },
-                        icon: Icon(enabledSlot.hf
-                            ? Icons.toggle_on
-                            : Icons.toggle_off),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -196,6 +194,24 @@ class SlotSettingsState extends State<SlotSettings> {
                       const SizedBox(width: 8),
                       Expanded(
                           child: OutlinedButton(
+                        onPressed: null,
+                        child: Text(names.lf),
+                      )),
+                      const SizedBox(width: 8),
+                      Switch(
+                        value: enabledSlot.lf,
+                        onChanged: (bool value) async {
+                          await appState.communicator!
+                              .enableSlot(widget.slot, TagFrequency.lf, value);
+
+                          setState(() {
+                            enabledSlot.lf = value;
+                          });
+
+                          widget.refresh(widget.slot);
+                        },
+                      ),
+                      IconButton(
                         onPressed: () async {
                           showDialog<String>(
                               context: context,
@@ -207,9 +223,8 @@ class SlotSettingsState extends State<SlotSettings> {
                                   slot: widget.slot,
                                   update: updateSlot));
                         },
-                        child: Text(names.lf),
-                      )),
-                      const SizedBox(width: 8),
+                        icon: const Icon(Icons.edit),
+                      ),
                       IconButton(
                         onPressed: () async {
                           await appState.communicator!
@@ -228,22 +243,6 @@ class SlotSettingsState extends State<SlotSettings> {
                           widget.refresh(widget.slot);
                         },
                         icon: const Icon(Icons.clear_rounded),
-                      ),
-                      IconButton(
-                        onPressed: () async {
-                          await appState.communicator!.enableSlot(
-                              widget.slot, TagFrequency.lf, !enabledSlot.lf);
-                          await appState.communicator!.saveSlotData();
-
-                          setState(() {
-                            enabledSlot.lf = !enabledSlot.lf;
-                          });
-
-                          widget.refresh(widget.slot);
-                        },
-                        icon: Icon(enabledSlot.lf
-                            ? Icons.toggle_on
-                            : Icons.toggle_off),
                       ),
                     ],
                   ),
