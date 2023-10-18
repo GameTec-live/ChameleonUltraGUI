@@ -65,7 +65,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     FittedBox(
                         alignment: Alignment.centerRight,
                         fit: BoxFit.scaleDown,
-                        child: TextButton(
+                        child: ElevatedButton(
                             onPressed: () async {
                               await appState.communicator!.enterDFUMode();
                               appState.connector!.performDisconnect();
@@ -80,10 +80,11 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                 Text(localizations.enter_dfu),
                               ],
                             ))),
+                    const SizedBox(height: 10),
                     FittedBox(
                         alignment: Alignment.centerRight,
                         fit: BoxFit.scaleDown,
-                        child: TextButton(
+                        child: ElevatedButton(
                             onPressed: () async {
                               Navigator.pop(buildContext);
                               var snackBar = SnackBar(
@@ -120,10 +121,11 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                 Text(localizations.flash_via_dfu),
                               ],
                             ))),
+                    const SizedBox(height: 10),
                     FittedBox(
                         alignment: Alignment.centerRight,
                         fit: BoxFit.scaleDown,
-                        child: TextButton(
+                        child: ElevatedButton(
                             onPressed: () async {
                               Navigator.pop(buildContext);
                               await flashFirmwareZip(appState,
@@ -311,7 +313,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             FittedBox(
                                 alignment: Alignment.centerRight,
                                 fit: BoxFit.scaleDown,
-                                child: TextButton(
+                                child: ElevatedButton(
                                     onPressed: () async {
                                       showDialog(
                                         context: context,
@@ -393,7 +395,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                             hintText: localizations.enter_pin,
                                           )),
                                     ),
-                                    TextButton(
+                                    ElevatedButton(
                                       onPressed: () async {
                                         if (formKey.currentState!.validate()) {
                                           await appState.communicator!
@@ -421,7 +423,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     FittedBox(
                         alignment: Alignment.centerRight,
                         fit: BoxFit.scaleDown,
-                        child: TextButton(
+                        child: ElevatedButton(
                             onPressed: () async {
                               await appState.communicator!.resetSettings();
 
@@ -437,10 +439,11 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                 Text(localizations.reset_settings),
                               ],
                             ))),
+                    const SizedBox(height: 10),
                     FittedBox(
                         alignment: Alignment.centerRight,
                         fit: BoxFit.scaleDown,
-                        child: TextButton(
+                        child: ElevatedButton(
                             onPressed: () async {
                               // Ask for confirmation
                               Navigator.pop(context);

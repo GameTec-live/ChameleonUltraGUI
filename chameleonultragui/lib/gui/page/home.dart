@@ -230,8 +230,19 @@ class HomePageState extends State<HomePage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Text(appState.connector!.portName,
-                                    style: const TextStyle(fontSize: 20)),
+                                Expanded(
+                                    flex: 1,
+                                    child: FittedBox(
+                                        alignment: Alignment.centerRight,
+                                        fit: BoxFit.scaleDown,
+                                        child: Row(children: [
+                                          Text(
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              appState.connector!.portName,
+                                              style:
+                                                  const TextStyle(fontSize: 20))
+                                        ]))),
                                 Icon(appState.connector!.connectionType ==
                                         ConnectionType.ble
                                     ? Icons.bluetooth
@@ -270,7 +281,10 @@ class HomePageState extends State<HomePage> {
                             MediaQuery.of(context).size.height / 20,
                           ),
                         )),
-                    const SlotChanger(),
+                    const FittedBox(
+                        alignment: Alignment.center,
+                        fit: BoxFit.scaleDown,
+                        child: SlotChanger()),
                     Expanded(
                       child: FractionallySizedBox(
                         widthFactor: 0.4,

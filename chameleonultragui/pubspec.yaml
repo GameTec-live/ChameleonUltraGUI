@@ -1,5 +1,5 @@
 name: chameleonultragui
-description: A crossplatform GUI for the Chameleon Ultra written in flutter.
+description: A cross platform GUI for the Chameleon Ultra written in flutter.
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -48,7 +48,7 @@ dependencies:
       url: https://github.com/Foxushka/usbserial.git
       ref: fixes
   file_saver: ^0.2.8
-  file_picker: ^5.5.0
+  file_picker: ^6.0.0
   flutter_staggered_grid_view: ^0.7.0
   uuid: ^4.0.0
   http: ^1.1.0
