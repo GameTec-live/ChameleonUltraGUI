@@ -25,6 +25,15 @@ def request(method, url, data=None):
                                       headers={'Accept': 'application/json',
                                                'Authorization': 'Bearer ' + str(os.getenv('CROWDIN_API')),
                                                'Content-Type': 'application/json'})).read().decode())
+
+def raw_request(method, url, data=None):
+    if not data:
+        data = {}
+    return urlopen(Request(url, method=method, data=json.dumps(data).encode(),
+                                      headers={'Accept': 'application/json',
+                                               'Authorization': 'Bearer ' + str(os.getenv('CROWDIN_API')),
+                                               'Content-Type': 'application/json'}))
+
 def fetch(url):
     return json.loads(urlopen(Request(url, method='GET')).read().decode())
 
@@ -75,4 +84,4 @@ if __name__ == '__main__':
     for remove in to_remove:
         for string in strings['data']:
             if string['data']['identifier'] == remove:
-                request('DELETE', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + str(string['data']['id']))
+                raw_request('DELETE', f'https://api.crowdin.com/api/v2/projects/{projectId}/strings/' + str(string['data']['id']))
