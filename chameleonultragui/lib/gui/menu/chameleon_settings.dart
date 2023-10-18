@@ -32,7 +32,6 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     }
   }
 
-  // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
@@ -70,7 +69,9 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             onPressed: () async {
                               await appState.communicator!.enterDFUMode();
                               appState.connector!.performDisconnect();
-                              Navigator.pop(buildContext);
+                              if (buildContext.mounted) {
+                                Navigator.pop(buildContext);
+                              }
                               appState.changesMade();
                             },
                             child: Row(
@@ -333,14 +334,21 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                                   await appState.connector!
                                                       .performDisconnect();
                                                 }
-                                                Navigator.pop(context);
+
+                                                if (context.mounted) {
+                                                  Navigator.pop(context);
+                                                }
+
                                                 appState.changesMade();
                                               },
                                               child: Text(localizations.yes),
                                             ),
                                             TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context),
+                                              onPressed: () {
+                                                if (context.mounted) {
+                                                  Navigator.pop(context);
+                                                }
+                                              },
                                               child: Text(localizations.no),
                                             ),
                                           ],
@@ -395,7 +403,11 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                                   bleKeyController.text);
                                           await appState.communicator!
                                               .saveSettings();
-                                          Navigator.pop(context);
+
+                                          if (context.mounted) {
+                                            Navigator.pop(context);
+                                          }
+
                                           appState.changesMade();
                                         }
                                       },
@@ -414,7 +426,11 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         child: ElevatedButton(
                             onPressed: () async {
                               await appState.communicator!.resetSettings();
-                              Navigator.pop(context);
+
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                              }
+
                               appState.changesMade();
                             },
                             child: Row(
@@ -444,7 +460,11 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                             .factoryReset();
                                         await appState.connector!
                                             .performDisconnect();
-                                        Navigator.pop(context);
+
+                                        if (context.mounted) {
+                                          Navigator.pop(context);
+                                        }
+
                                         appState.changesMade();
                                       },
                                       child: Text(localizations.yes),

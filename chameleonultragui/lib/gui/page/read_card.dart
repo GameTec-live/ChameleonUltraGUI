@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
+import 'package:chameleonultragui/gui/menu/dictionary_export.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
@@ -76,7 +77,7 @@ class MifareClassicInfo {
       MifareClassicRecoveryInfo? recovery,
       List<Uint8List>? cardData})
       : recovery = recovery ?? MifareClassicRecoveryInfo(),
-        cardData = cardData ?? List.generate(0xFF, (_) => Uint8List(0));
+        cardData = cardData ?? List.generate(256, (_) => Uint8List(0));
 }
 
 class MifareClassicRecoveryInfo {
@@ -473,6 +474,9 @@ class ReadCardPageState extends State<ReadCardPage> {
               for (var key in [
                 ...mfcInfo.recovery.selectedDictionary!.keys,
                 ...gMifareClassicKeys
+                    .where((key) => !mfcInfo.recovery.selectedDictionary!.keys
+                        .contains(key))
+                    .toList()
               ]) {
                 appState.log!.d(
                     "Checking ${bytesToHex(key)} on sector $sector, key type $keyType");
@@ -531,7 +535,15 @@ class ReadCardPageState extends State<ReadCardPage> {
         }
       }
     } catch (_) {
+      for (var checkmark = 0; checkmark < 80; checkmark++) {
+        if (mfcInfo.recovery.checkMarks[checkmark] ==
+            ChameleonKeyCheckmark.checking) {
+          mfcInfo.recovery.checkMarks[checkmark] = ChameleonKeyCheckmark.none;
+        }
+      }
+
       setState(() {
+        mfcInfo.recovery.checkMarks = mfcInfo.recovery.checkMarks;
         mfcInfo.recovery.error = localizations.recovery_error_dict;
         mfcInfo.state = MifareClassicState.checkKeys;
       });
@@ -690,6 +702,15 @@ class ReadCardPageState extends State<ReadCardPage> {
     appState.sharedPreferencesProvider.setCards(tags);
   }
 
+  Future<void> exportFoundKeys() async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return DictionaryExportMenu(keys: mfcInfo.recovery.validKeys);
+      },
+    );
+  }
+
   Widget buildFieldRow(String label, String value, double fontSize) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -804,7 +825,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: Text(localizations.enter_name),
+                                  title: Text(localizations.enter_name(
+                                      localizations.card.toLowerCase())),
                                   content: TextField(
                                     onChanged: (value) {
                                       setState(() {
@@ -898,7 +920,15 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           : null,
                                       child:
                                           Text(localizations.dump_partial_data),
-                                    )
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        await exportFoundKeys();
+                                      },
+                                      child: Text(
+                                          localizations.export_to_dictionary),
+                                    ),
                                   ])),
                         if (mfcInfo.state == MifareClassicState.checkKeys ||
                             mfcInfo.state ==
@@ -943,17 +973,28 @@ class ReadCardPageState extends State<ReadCardPage> {
                           ]),
                         if (mfcInfo.state == MifareClassicState.dump ||
                             mfcInfo.state == MifareClassicState.dumpOngoing)
-                          Column(children: [
-                            ElevatedButton(
-                              onPressed:
-                                  (mfcInfo.state == MifareClassicState.dump)
-                                      ? () async {
-                                          await dumpData();
-                                        }
-                                      : null,
-                              child: Text(localizations.dump_card),
-                            ),
-                          ]),
+                          FittedBox(
+                              alignment: Alignment.topCenter,
+                              fit: BoxFit.scaleDown,
+                              child: Row(children: [
+                                ElevatedButton(
+                                  onPressed:
+                                      (mfcInfo.state == MifareClassicState.dump)
+                                          ? () async {
+                                              await dumpData();
+                                            }
+                                          : null,
+                                  child: Text(localizations.dump_card),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    await exportFoundKeys();
+                                  },
+                                  child:
+                                      Text(localizations.export_to_dictionary),
+                                ),
+                              ])),
                         if (mfcInfo.state == MifareClassicState.save)
                           Center(
                               child: Row(
@@ -966,7 +1007,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       context: context,
                                       builder: (BuildContext context) {
                                         return AlertDialog(
-                                          title: Text(localizations.enter_name),
+                                          title: Text(localizations.enter_name(
+                                              localizations.card
+                                                  .toLowerCase())),
                                           content: TextField(
                                             onChanged: (value) {
                                               setState(() {
@@ -1079,7 +1122,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: Text(localizations.enter_name),
+                                  title: Text(localizations.enter_name(
+                                      localizations.card.toLowerCase())),
                                   content: TextField(
                                     onChanged: (value) {
                                       setState(() {

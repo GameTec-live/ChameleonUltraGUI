@@ -203,3 +203,17 @@ bool isMifareClassic(TagType type) {
     TagType.mifareMini
   ].contains(type);
 }
+
+List<Uint8List> mfClassicGetKeysFromDump(List<Uint8List> dump) {
+  List<Uint8List> keys = [];
+
+  for (var sector = 0; sector < 40; sector++) {
+    var block = mfClassicGetSectorTrailerBlockBySector(sector);
+    if (dump.length > block && dump[block].isNotEmpty) {
+      keys.add(dump[block].sublist(0, 6));
+      keys.add(dump[block].sublist(10, 16));
+    }
+  }
+
+  return keys;
+}

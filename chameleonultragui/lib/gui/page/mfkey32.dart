@@ -1,16 +1,10 @@
-import 'dart:io';
-import 'dart:convert';
-
+import 'package:chameleonultragui/gui/menu/dictionary_export.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:file_saver/file_saver.dart';
-import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
-import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/services.dart';
 
 // Localizations
@@ -134,22 +128,6 @@ class Mfkey32PageState extends State<Mfkey32Page> {
     }
   }
 
-  List<Uint8List> deduplicateKeys(List<Uint8List> keys) {
-    return <int, Uint8List>{for (var key in keys) Object.hashAll(key): key}
-        .values
-        .toList();
-  }
-
-  String convertKeysToDictFile(List<Uint8List> keys) {
-    List<Uint8List> deduplicatedKeys = deduplicateKeys(keys);
-    String fileContents = "";
-    for (Uint8List key in deduplicatedKeys) {
-      fileContents += "${bytesToHex(key).toUpperCase()}\n";
-    }
-    return fileContents;
-  }
-
-  // ignore_for_file: use_build_context_synchronously
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
@@ -225,74 +203,9 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                         onPressed: () {
                           showDialog<String>(
                               context: context,
-                              builder: (BuildContext context) => AlertDialog(
-                                    title:
-                                        Text(localizations.save_recovered_keys),
-                                    content: Text(localizations
-                                        .save_recovered_keys_where),
-                                    actions: [
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          String fileContents =
-                                              convertKeysToDictFile(keys);
-                                          try {
-                                            await FileSaver.instance.saveAs(
-                                                name: outputUid,
-                                                bytes: const Utf8Encoder()
-                                                    .convert(fileContents),
-                                                ext: 'dic',
-                                                mimeType: MimeType.other);
-                                          } on UnimplementedError catch (_) {
-                                            String? outputFile =
-                                                await FilePicker.platform
-                                                    .saveFile(
-                                              dialogTitle:
-                                                  '${localizations.output_file}:',
-                                              fileName: '$outputUid.dic',
-                                            );
-                                            if (outputFile != null) {
-                                              var file = File(outputFile);
-                                              await file.writeAsBytes(
-                                                  const Utf8Encoder()
-                                                      .convert(fileContents));
-                                            }
-                                          }
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(localizations
-                                            .save_recovered_keys_to_file),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          await dictSelectDialog(
-                                              context, deduplicateKeys(keys));
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(localizations
-                                            .add_recovered_keys_to_existing_dict),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          Dictionary dict = Dictionary(
-                                            name: outputUid,
-                                            color: Colors.blue,
-                                            keys: deduplicateKeys(keys),
-                                          );
-                                          await showDialog<String>(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return DictionaryEditMenu(
-                                                  dictionary: dict,
-                                                  isNew: true);
-                                            },
-                                          );
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(localizations
-                                            .create_new_dict_with_recovered_keys),
-                                      ),
-                                    ],
-                                  ));
+                              builder: (BuildContext context) =>
+                                  DictionaryExportMenu(
+                                      defaultName: outputUid, keys: keys));
                         },
                         child: Text(localizations.save_recovered_keys),
                       ),
@@ -326,91 +239,6 @@ class Mfkey32PageState extends State<Mfkey32Page> {
             ),
           );
         }
-      },
-    );
-  }
-
-  Future<String?> dictSelectDialog(BuildContext context, List<Uint8List> keys) {
-    var appState = context.read<ChameleonGUIState>();
-    var dicts = appState.sharedPreferencesProvider.getDictionaries();
-
-    dicts.sort((a, b) => a.name.compareTo(b.name));
-
-    return showSearch<String>(
-      context: context,
-      delegate: DictSearchDelegate(dicts, keys),
-    );
-  }
-}
-
-class DictSearchDelegate extends SearchDelegate<String> {
-  final List<Dictionary> dicts;
-  final List<Uint8List> keys;
-
-  DictSearchDelegate(this.dicts, this.keys);
-
-  @override
-  List<Widget> buildActions(BuildContext context) {
-    return [
-      IconButton(
-        icon: const Icon(Icons.clear),
-        onPressed: () {
-          query = '';
-        },
-      ),
-    ];
-  }
-
-  @override
-  Widget buildLeading(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: () {
-        close(context, '');
-      },
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) {
-    final results = dicts
-        .where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
-
-    return ListView.builder(
-      itemCount: results.length,
-      itemBuilder: (BuildContext context, int index) {
-        final dict = results.elementAt(index);
-        return ListTile(
-          leading: Icon(Icons.key, color: dict.color),
-          title: Text(dict.name),
-          subtitle: Text("${dict.keys.length.toString()} keys"),
-          onTap: () async {},
-        );
-      },
-    );
-  }
-
-  @override
-  Widget buildSuggestions(BuildContext context) {
-    final results = dicts
-        .where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
-
-    var appState = context.read<ChameleonGUIState>();
-    return ListView.builder(
-      itemCount: results.length,
-      itemBuilder: (BuildContext context, int index) {
-        final dict = results.elementAt(index);
-        return ListTile(
-          leading: Icon(Icons.key, color: dict.color),
-          title: Text(dict.name),
-          subtitle: Text("${dict.keys.length.toString()} keys"),
-          onTap: () async {
-            dict.keys.addAll(keys);
-            appState.sharedPreferencesProvider.setDictionaries(dicts);
-            appState.changesMade();
-            Navigator.pop(context);
-          },
-        );
       },
     );
   }

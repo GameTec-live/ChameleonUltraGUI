@@ -99,7 +99,7 @@
   "edit_card": "Edit Card",
   "please_enter_name": "Please enter a name",
   "name": "Name",
-  "enter_name": "Enter name of card",
+  "enter_name": "Enter name of {name}",
   "pick_color": "Pick a color",
   "reset_default": "Reset to default",
   "please_enter_something": "Please enter {name}",
@@ -225,5 +225,6 @@
   "save_to_file": "Save to file",
   "export_to_new_card": "Export to new card",
   "update_saved_card": "Update saved card",
-  "must_be_valid_hex": "Must be valid HEX"
+  "must_be_valid_hex": "Must be valid HEX",
+  "export_to_dictionary": "Export found keys"
 }

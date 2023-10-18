@@ -31,7 +31,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
 
     String output = "";
     for (var key in widget.dictionary.keys) {
-      output += "${bytesToHex(key)}\n";
+      output += "${bytesToHex(key)}\n".toUpperCase();
     }
     output.trim();
 
@@ -64,7 +64,8 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
               children: [
                 Text(
                   output,
-                  style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
+                  style:
+                      const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
                 ),
               ],
             ),

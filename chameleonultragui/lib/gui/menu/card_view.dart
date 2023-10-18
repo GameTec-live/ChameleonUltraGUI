@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
+import 'package:chameleonultragui/gui/menu/dictionary_export.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -29,7 +30,8 @@ class CardViewMenuState extends State<CardViewMenu> {
     return AlertDialog(
       title: Text(widget.tagSave.name,
           maxLines: 3, overflow: TextOverflow.ellipsis),
-      content: Column(
+      content: SingleChildScrollView(
+          child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Row(
@@ -91,11 +93,35 @@ class CardViewMenuState extends State<CardViewMenu> {
                         icon: const Icon(Icons.copy),
                       ),
                     ],
-                  )
+                  ),
+                  if (isMifareClassic(widget.tagSave.tag))
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                            onPressed: (mfClassicGetKeysFromDump(
+                                        widget.tagSave.data)
+                                    .isNotEmpty)
+                                ? () async {
+                                    List<Uint8List> keys =
+                                        mfClassicGetKeysFromDump(
+                                            widget.tagSave.data);
+                                    await showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return DictionaryExportMenu(keys: keys);
+                                      },
+                                    );
+                                  }
+                                : null,
+                            child: Text(localizations.export_to_dictionary)),
+                      ],
+                    )
                 ]
               : [],
         ],
-      ),
+      )),
       actions: [
         IconButton(
           onPressed: () {
