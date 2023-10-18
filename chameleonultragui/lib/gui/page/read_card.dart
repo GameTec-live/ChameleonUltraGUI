@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
+import 'package:chameleonultragui/gui/menu/dictionary_export.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
@@ -699,62 +700,10 @@ class ReadCardPageState extends State<ReadCardPage> {
   }
 
   Future<void> exportFoundKeys() async {
-    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
-    var localizations = AppLocalizations.of(context)!;
-    TextEditingController dictionary = TextEditingController();
-    String keys = "";
-
-    for (var sector = 0;
-        sector < mfClassicGetSectorCount(mfcInfo.type, isEV1: mfcInfo.isEV1);
-        sector++) {
-      for (var block = 0;
-          block < mfClassicGetBlockCountBySector(sector);
-          block++) {
-        for (var keyType = 0; keyType < 2; keyType++) {
-          if (mfcInfo.recovery.validKeys[sector + (keyType * 40)].isNotEmpty) {
-            String key =
-                "${bytesToHex(mfcInfo.recovery.validKeys[sector + (keyType * 40)])}\n";
-
-            if (!keys.contains(key)) {
-              keys += key;
-            }
-          }
-        }
-      }
-    }
-
     await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-              localizations.enter_name(localizations.dictionary.toLowerCase())),
-          content: TextField(
-            controller: dictionary,
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () async {
-                var dictionaries =
-                    appState.sharedPreferencesProvider.getDictionaries();
-                dictionaries
-                    .add(Dictionary.fromFile(keys.trim(), dictionary.text));
-                appState.sharedPreferencesProvider
-                    .setDictionaries(dictionaries);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
-              },
-              child: Text(localizations.ok),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text(localizations.cancel),
-            ),
-          ],
-        );
+        return DictionaryExportMenu(keys: mfcInfo.recovery.validKeys);
       },
     );
   }
