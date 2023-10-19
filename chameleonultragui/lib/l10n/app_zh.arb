@@ -216,5 +216,16 @@
   "card_tech": "\u6280\u672f",
   "charge": "\u5145\u7535",
   "copy_all_keys": "\u62f7\u8d1d\u6240\u6709\u7684\u5bc6\u94a5\u5230\u7c98\u8d34\u677f",
-  "battery_info": "\u7535\u91cf: {percent}%\n\u7535\u538b: {voltage} mV"
+  "battery_info": "\u7535\u91cf: {percent}%\n\u7535\u538b: {voltage} mV",
+  "x_byte_uid": "{length} byte UID",
+  "edit_slot_data": "\u7f16\u8f91\u5361\u69fd\u6570\u636e",
+  "export_slot_data": "\u5bfc\u51fa\u5361\u69fd\u6570\u636e",
+  "frequency_to_export": "\u5bfc\u51fa\u9891\u7387",
+  "save_to_file": "\u53e6\u5b58\u4e3a\u6587\u4ef6",
+  "export_to_new_card": "\u5bfc\u51fa\u81f3\u65b0\u7684\u5361\u7247",
+  "update_saved_card": "\u66f4\u65b0\u4fdd\u5b58\u7684\u5361\u7247",
+  "must_be_valid_hex": "\u5fc5\u987b\u662f\u6709\u6548\u7684 HEX",
+  "export_to_dictionary": "\u5bfc\u51fa\u5df2\u627e\u5230\u7684\u5bc6\u94a5",
+  "enter_name_of_card": "\u8bf7\u8f93\u5165\u5361\u7247\u540d\u79f0",
+  "enter_name_of_dictionary": "\u8bf7\u8f93\u5165\u5b57\u5178\u540d\u79f0"
 }
