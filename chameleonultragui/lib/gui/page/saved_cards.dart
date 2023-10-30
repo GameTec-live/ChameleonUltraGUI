@@ -79,6 +79,50 @@ class SavedCardsPageState extends State<SavedCardsPage> {
       atqa: Uint8List.fromList(atqa));
   }
 
+  CardSave flipperNfcToCardSave(String data) {
+    final String id = const Uuid().v4();
+    final String uid = RegExp(r'UID:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!;
+    final int sak = hexToBytes(RegExp(r'SAK:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!)[0];
+    String atqaString = RegExp(r'ATQA:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!;
+    final List<int> atqa = [
+      int.parse(atqaString.substring(0, 2), radix: 16),
+      int.parse(atqaString.substring(2), radix: 16)
+    ];
+    final List<int> ats = [];
+    final String name = uid;
+    const Color color = Colors.deepOrange;
+    final TagType tag;
+    List<Uint8List> tagData = [];
+    List<String> blocks = [];
+    for (var block in data.split("\n")) {
+      if (block.startsWith("Block")) {
+        blocks.add(block.split(":")[1].trim());
+      }
+    }
+
+    //Check if a block has more than 16 Bytes, Ultralight, return as unknown
+    if (blocks[0].replaceAll(' ', '').length > 32) {
+      tag = TagType.unknown;
+    } else {
+      tag = mfClassicGetChameleonTagType(mfClassicGetCardType(blocks.length));
+    }
+
+    for (var block in blocks) {
+      tagData.add(hexToBytesSpace(block));
+    }
+    
+    return CardSave(
+      id: id,
+      uid: uid,
+      sak: sak,
+      name: name,
+      tag: tag,
+      data: tagData,
+      color: color,
+      ats: Uint8List.fromList(ats),
+      atqa: Uint8List.fromList(atqa));
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
@@ -125,9 +169,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           if (string.contains("\"Created\": \"proxmark3\",")) {
                             // PM3 JSON
                             tag = pm3JsonToCardSave(string);
-                          } else if (string.startsWith("Filetype: Flipper NFC device")) {
+                          } else if (string.contains("Filetype: Flipper NFC device")) {
                             // Flipper NFC
-                            tag = CardSave.fromJson(string);
+                            tag = flipperNfcToCardSave(string);
                           } else {
                             tag = CardSave.fromJson(string);
                           }
