@@ -141,7 +141,7 @@ int mfClassicGetBlockCount(MifareClassicType type, {bool isEV1 = false}) {
   }
 }
 
-MifareClassicType mfClassicGetCardType(int blockCount) {
+MifareClassicType mfClassicGetCardTypeByBlockCount(int blockCount) {
   if (blockCount == 64 || blockCount == 72) {
     return MifareClassicType.m1k;
   } else if (blockCount == 128) {

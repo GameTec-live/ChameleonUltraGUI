@@ -60,7 +60,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     if (blocks[0].length > 32) {
       tag = TagType.unknown;
     } else {
-      tag = mfClassicGetChameleonTagType(mfClassicGetCardType(blocks.length));
+      tag = mfClassicGetChameleonTagType(mfClassicGetCardTypeByBlockCount(blocks.length));
     }
 
     for (var block in blocks) {
@@ -104,7 +104,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     if (blocks[0].replaceAll(' ', '').length > 32) {
       tag = TagType.unknown;
     } else {
-      tag = mfClassicGetChameleonTagType(mfClassicGetCardType(blocks.length));
+      tag = mfClassicGetChameleonTagType(mfClassicGetCardTypeByBlockCount(blocks.length));
     }
 
     for (var block in blocks) {
@@ -148,7 +148,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     if (blocks[0].replaceAll(' ', '').length > 32) {
       tag = TagType.unknown;
     } else {
-      tag = mfClassicGetChameleonTagType(mfClassicGetCardType(blocks.length));
+      tag = mfClassicGetChameleonTagType(mfClassicGetCardTypeByBlockCount(blocks.length));
     }
 
     for (var block in blocks) {
