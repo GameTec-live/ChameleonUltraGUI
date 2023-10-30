@@ -9,8 +9,6 @@ import 'package:uuid/uuid.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:uuid/v4.dart';
-
 class Dictionary {
   String id;
   String name;
