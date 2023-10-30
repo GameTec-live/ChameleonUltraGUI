@@ -141,6 +141,20 @@ int mfClassicGetBlockCount(MifareClassicType type, {bool isEV1 = false}) {
   }
 }
 
+MifareClassicType mfClassicGetCardType(int blockCount) {
+  if (blockCount == 64 || blockCount == 72) {
+    return MifareClassicType.m1k;
+  } else if (blockCount == 128) {
+    return MifareClassicType.m2k;
+  } else if (blockCount == 256) {
+    return MifareClassicType.m4k;
+  } else if (blockCount == 20) {
+    return MifareClassicType.mini;
+  } else {
+    return MifareClassicType.none;
+  }
+}
+
 int mfClassicGetSectorTrailerBlockBySector(int sector) {
   if (sector < 32) {
     return sector * 4 + 3;
@@ -216,4 +230,26 @@ List<Uint8List> mfClassicGetKeysFromDump(List<Uint8List> dump) {
   }
 
   return keys;
+}
+
+TagType mfClassicTypeToTagType(MifareClassicType type) {
+  final typeMap = {
+    MifareClassicType.m1k: TagType.mifare1K,
+    MifareClassicType.m2k: TagType.mifare2K,
+    MifareClassicType.m4k: TagType.mifare4K,
+    MifareClassicType.mini: TagType.mifareMini,
+  };
+
+  return typeMap[type] ?? TagType.unknown;
+}
+
+MifareClassicType tagTypeToMfClassicType(TagType type) {
+  final typeMap = {
+    TagType.mifare1K: MifareClassicType.m1k,
+    TagType.mifare2K: MifareClassicType.m2k,
+    TagType.mifare4K: MifareClassicType.m4k,
+    TagType.mifareMini: MifareClassicType.mini,
+  };
+
+  return typeMap[type] ?? MifareClassicType.none;
 }
