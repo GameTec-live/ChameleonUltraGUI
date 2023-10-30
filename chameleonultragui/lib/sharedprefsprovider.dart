@@ -78,67 +78,22 @@ class CardSave {
 
   factory CardSave.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
-
-    final String id;
-    final String uid;
-    final int sak;
-    final List<int> atqa;
-    final List<int> ats;
-    final String name;
-    final TagType tag;
-    final Color color;
-    List<Uint8List> tagData = [];
-
-    if (data['Created'] == "proxmark3") {
-      // PM3 JSON, parse that
-      id = const Uuid().v4();
-      uid = data['Card']['UID'] as String;
-      String sakString = data['Card']['SAK'] as String;
-      sak = hexToBytes(sakString)[0];
-      String atqaString = data['Card']['ATQA'] as String;
-      atqa = [
-        int.parse(atqaString.substring(2), radix: 16),
-        int.parse(atqaString.substring(0, 2), radix: 16)
-      ];
-      ats = [];
-      name = uid;
-      color = Colors.deepOrange;
-      
-      List<String> blocks = [];
-      Map<String, dynamic> blockData = data['blocks'] as Map<String, dynamic>;
-      for (int i = 0; blockData.containsKey(i.toString()); i++) {
-        blocks.add(blockData[i.toString()] as String);
-      }
-
-      //Check if a block has more than 16 Bytes, Ultralight, return as unknown
-      if (blocks[0].length > 32) {
-        tag = TagType.unknown;
-      } else {
-        tag = mfClassicGetChameleonTagType(mfClassicGetCardType(blocks.length));
-      }
-
-      for (var block in blocks) {
-        tagData.add(hexToBytes(block));
-      }
-      
-    } else {
-      id = data['id'] as String;
-      uid = data['uid'] as String;
-      sak = data['sak'] as int;
-      atqa = List<int>.from(data['atqa'] as List<dynamic>);
-      ats = List<int>.from((data['ats'] ?? []) as List<dynamic>);
-      name = data['name'] as String;
-      tag = getTagTypeByValue(data['tag']);
-      if (data['color'] == null) {
-        data['color'] = colorToHex(Colors.deepOrange);
-      }
-      color = hexToColor(data['color']);
-      final encodedData = data['data'] as List<dynamic>;
-      for (var block in encodedData) {
-        tagData.add(Uint8List.fromList(List<int>.from(block)));
-      }
+    final id = data['id'] as String;
+    final uid = data['uid'] as String;
+    final sak = data['sak'] as int;
+    final atqa = List<int>.from(data['atqa'] as List<dynamic>);
+    final ats = List<int>.from((data['ats'] ?? []) as List<dynamic>);
+    final name = data['name'] as String;
+    final tag = getTagTypeByValue(data['tag']);
+    if (data['color'] == null) {
+      data['color'] = colorToHex(Colors.deepOrange);
     }
-
+    final color = hexToColor(data['color']);
+    final encodedData = data['data'] as List<dynamic>;
+    List<Uint8List> tagData = [];
+    for (var block in encodedData) {
+      tagData.add(Uint8List.fromList(List<int>.from(block)));
+    }
     return CardSave(
         id: id,
         uid: uid,

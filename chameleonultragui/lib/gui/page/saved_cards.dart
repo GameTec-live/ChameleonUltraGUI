@@ -17,6 +17,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_view.dart';
+import 'package:uuid/uuid.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -30,6 +31,53 @@ class SavedCardsPage extends StatefulWidget {
 
 class SavedCardsPageState extends State<SavedCardsPage> {
   MifareClassicType selectedType = MifareClassicType.m1k;
+
+  CardSave pm3JsonToCardSave(String json) {
+    Map<String, dynamic> data = jsonDecode(json);
+
+    final String id = const Uuid().v4();
+    final String uid = data['Card']['UID'] as String;
+    String sakString = data['Card']['SAK'] as String;
+    final int sak = hexToBytes(sakString)[0];
+    String atqaString = data['Card']['ATQA'] as String;
+    final List<int> atqa = [
+      int.parse(atqaString.substring(2), radix: 16),
+      int.parse(atqaString.substring(0, 2), radix: 16)
+    ];
+    final List<int> ats = [];
+    final String name = uid;
+    const Color color = Colors.deepOrange;
+    final TagType tag;
+    List<Uint8List> tagData = [];
+      
+    List<String> blocks = [];
+    Map<String, dynamic> blockData = data['blocks'] as Map<String, dynamic>;
+    for (int i = 0; blockData.containsKey(i.toString()); i++) {
+      blocks.add(blockData[i.toString()] as String);
+    }
+
+    //Check if a block has more than 16 Bytes, Ultralight, return as unknown
+    if (blocks[0].length > 32) {
+      tag = TagType.unknown;
+    } else {
+      tag = mfClassicGetChameleonTagType(mfClassicGetCardType(blocks.length));
+    }
+
+    for (var block in blocks) {
+      tagData.add(hexToBytes(block));
+    }
+
+    return CardSave(
+      id: id,
+      uid: uid,
+      sak: sak,
+      name: name,
+      tag: tag,
+      data: tagData,
+      color: color,
+      ats: Uint8List.fromList(ats),
+      atqa: Uint8List.fromList(atqa));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +121,17 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           var string = const Utf8Decoder().convert(contents);
                           var tags =
                               appState.sharedPreferencesProvider.getCards();
-                          var tag = CardSave.fromJson(string);
+                          CardSave tag;
+                          if (string.contains("\"Created\": \"proxmark3\",")) {
+                            // PM3 JSON
+                            tag = pm3JsonToCardSave(string);
+                          } else if (string.startsWith("Filetype: Flipper NFC device")) {
+                            // Flipper NFC
+                            tag = CardSave.fromJson(string);
+                          } else {
+                            tag = CardSave.fromJson(string);
+                          }
+                          
                           tags.add(tag);
                           appState.sharedPreferencesProvider.setCards(tags);
                           appState.changesMade();
