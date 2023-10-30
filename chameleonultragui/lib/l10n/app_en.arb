@@ -228,5 +228,8 @@
   "export_to_dictionary": "Export found keys",
   "enter_name_of_card": "Enter name of card",
   "enter_name_of_dictionary": "Enter name of dictionary",
-  "edit_hex": "Edit HEX"
+  "edit_hex": "Edit HEX",
+  "key_a": "Key A",
+  "key_b": "Key B",
+  "acs": "ACS"
 }

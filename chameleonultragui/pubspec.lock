@@ -557,6 +557,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.2.0"
+  rich_text_controller:
+    dependency: "direct main"
+    description:
+      name: rich_text_controller
+      sha256: "2697b0313c03429ac4d924e14f16e07d16e31a234d31c46bcce9f8f8e713f05f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.2"
   shared_preferences:
     dependency: "direct main"
     description:

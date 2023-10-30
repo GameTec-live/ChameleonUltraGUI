@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import'package:rich_text_controller/rich_text_controller.dart';
 //import 'package:provider/provider.dart';
 //import 'package:chameleonultragui/main.dart';
 
@@ -25,7 +26,7 @@ class HexEditMenuState extends State<HexEditMenu> {
     super.initState();
   }
 
-  final List<TextEditingController> _controllers = [];
+  final List<RichTextController> _controllers = [];
 
   List<Widget> cardSaveToBlockView(CardSave card) {
     List<Widget> sectors = [];
@@ -48,7 +49,23 @@ class HexEditMenuState extends State<HexEditMenu> {
       }
 
       // Create a new TextEditingController for each sector
-      _controllers.add(TextEditingController(text: blocks.last));
+      _controllers.add(
+        RichTextController(
+          text: blocks.last,
+          //patternMatchMap: {
+            //RegExp(r''): const TextStyle(color: Colors.green),
+            //RegExp(r'((?:\s[0-9A-F]{2}){4})(?=.{18}$)'): const TextStyle(color: Colors.red),
+            //RegExp(r'((?:[0-9A-F]{2}(?:\ |\n|\))?){6})$'): const TextStyle(color: Colors.blue),
+          //},
+          stringMatchMap: {
+            blocks.last.substring(blocks.last.length- 18, blocks.last.length): const TextStyle(color: Colors.blue),
+            blocks.last.substring(blocks.last.length - 29, blocks.last.length - 21): const TextStyle(color: Colors.red),
+            blocks.last.substring(blocks.last.length - 48, blocks.last.length - 30): const TextStyle(color: Colors.green),
+            " ": const TextStyle(color: Colors.blue), // This is a hack to properly display all colors, its a bug in the library
+          }, // This function has also some edgecase where stuff gets colored incorrectly, needs to be fixed some day when regex lookahead is fixed... //TODO: Fix when library got patched
+          onMatch: (List<String> matches) {},
+        ),
+      );
     }
 
     for (var i = 0; i < blocks.length; i++) {
@@ -94,6 +111,22 @@ class HexEditMenuState extends State<HexEditMenu> {
       content: SingleChildScrollView(
         child: Column(
           children: [
+            FittedBox(
+              fit: BoxFit.fitWidth,
+              child: Row(
+                children: [
+                  const Icon(Icons.square, color: Colors.green,),
+                  Text(localizations.key_a),
+                  const SizedBox(width: 10,),
+                  const Icon(Icons.square, color: Colors.red,),
+                  Text(localizations.acs),
+                  const SizedBox(width: 10,),
+                  const Icon(Icons.square, color: Colors.blue,),
+                  Text(localizations.key_b),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10,),
             ...cardSaveToBlockView(widget.tagSave),
           ],
         )
