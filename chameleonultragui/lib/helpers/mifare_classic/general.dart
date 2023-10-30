@@ -141,6 +141,20 @@ int mfClassicGetBlockCount(MifareClassicType type, {bool isEV1 = false}) {
   }
 }
 
+MifareClassicType mfClassicGetCardTypeByBlockCount(int blockCount) {
+  if (blockCount == 64 || blockCount == 72) {
+    return MifareClassicType.m1k;
+  } else if (blockCount == 128) {
+    return MifareClassicType.m2k;
+  } else if (blockCount == 256) {
+    return MifareClassicType.m4k;
+  } else if (blockCount == 20) {
+    return MifareClassicType.mini;
+  } else {
+    return MifareClassicType.none;
+  }
+}
+
 int mfClassicGetSectorTrailerBlockBySector(int sector) {
   if (sector < 32) {
     return sector * 4 + 3;
