@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
