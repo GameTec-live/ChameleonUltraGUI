@@ -96,7 +96,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     List<String> blocks = [];
     for (var block in data.split("\n")) {
       if (block.startsWith("Block")) {
-        blocks.add(block.split(":")[1].trim());
+        blocks.add(block.split(":")[1].trim().replaceAll('?', '0'));
       }
     }
 
@@ -126,11 +126,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
   CardSave mfctToCardSave(String data) {
     final String id = const Uuid().v4();
     final String uid = data.split("\n")[1].substring(0, 8);
-    final int sak = hexToBytes("08")[0];
-    String atqaString = "0002";
+    final int sak = hexToBytes(data.split("\n")[1].substring(10,12))[0];
+    String atqaString = data.split("\n")[1].substring(12, 16);
     final List<int> atqa = [
-      int.parse(atqaString.substring(0, 2), radix: 16),
-      int.parse(atqaString.substring(2), radix: 16)
+      int.parse(atqaString.substring(2), radix: 16),
+      int.parse(atqaString.substring(0, 2), radix: 16)
     ];
     final List<int> ats = [];
     final String name = uid;
