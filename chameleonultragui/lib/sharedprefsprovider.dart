@@ -114,7 +114,7 @@ class CardSave {
       if (blocks[0].length > 32) {
         tag = TagType.unknown;
       } else {
-        tag = mfClassicTypeToTagType(mfClassicGetCardType(blocks.length));
+        tag = mfClassicGetChameleonTagType(mfClassicGetCardType(blocks.length));
       }
 
       for (var block in blocks) {

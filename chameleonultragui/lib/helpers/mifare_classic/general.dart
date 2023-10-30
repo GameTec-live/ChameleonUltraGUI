@@ -231,25 +231,3 @@ List<Uint8List> mfClassicGetKeysFromDump(List<Uint8List> dump) {
 
   return keys;
 }
-
-TagType mfClassicTypeToTagType(MifareClassicType type) {
-  final typeMap = {
-    MifareClassicType.m1k: TagType.mifare1K,
-    MifareClassicType.m2k: TagType.mifare2K,
-    MifareClassicType.m4k: TagType.mifare4K,
-    MifareClassicType.mini: TagType.mifareMini,
-  };
-
-  return typeMap[type] ?? TagType.unknown;
-}
-
-MifareClassicType tagTypeToMfClassicType(TagType type) {
-  final typeMap = {
-    TagType.mifare1K: MifareClassicType.m1k,
-    TagType.mifare2K: MifareClassicType.m2k,
-    TagType.mifare4K: MifareClassicType.m4k,
-    TagType.mifareMini: MifareClassicType.mini,
-  };
-
-  return typeMap[type] ?? MifareClassicType.none;
-}
