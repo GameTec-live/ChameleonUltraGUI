@@ -474,4 +474,57 @@ class SharedPreferencesProvider extends ChangeNotifier {
   List<String> getLogLines() {
     return _sharedPreferences.getStringList('debug_logging_value') ?? [];
   }
+
+  String dumpSettingsToJson() {
+    Map<String, String> settingsMap = {};
+
+    for (var key in _sharedPreferences.getKeys()) {
+      //format:
+      // "settingstype;key": "value"
+      if (_sharedPreferences.get(key).runtimeType == List<String>) {
+        settingsMap["${_sharedPreferences.get(key).runtimeType};$key"] =
+            (_sharedPreferences.get(key) as List<String>).join('ʤ'); // Has to be a string that is not in the json
+        continue;
+      }
+      settingsMap["${_sharedPreferences.get(key).runtimeType};$key"] =
+          _sharedPreferences.get(key).toString();
+    }
+
+    String jsonSettings = jsonEncode(settingsMap);
+
+    return jsonSettings;
+  }
+
+  void restoreSettingsFromJson(String jsonSettings) {
+    Map<String, dynamic> settingsMap = jsonDecode(jsonSettings);
+
+    for (var key in settingsMap.keys) {
+      var splitKey = key.split(';');
+      var type = splitKey[0];
+      var actualKey = splitKey[1];
+
+      if (settingsMap[key] != null && settingsMap[key] != '') {
+        switch (type) {
+          case 'String':
+            _sharedPreferences.setString(actualKey, settingsMap[key]!);
+            break;
+          case 'int':
+            _sharedPreferences.setInt(actualKey, int.parse(settingsMap[key]!));
+            break;
+          case 'double':
+            _sharedPreferences.setDouble(actualKey, double.parse(settingsMap[key]!));
+            break;
+          case 'bool':
+            _sharedPreferences.setBool(actualKey, settingsMap[key] == 'true');
+            break;
+          case 'List<String>':
+            _sharedPreferences.setStringList(actualKey, settingsMap[key]!.split('ʤ'));
+            break;
+          default:
+            break;
+        }
+      }
+    }
+  }
+
 }

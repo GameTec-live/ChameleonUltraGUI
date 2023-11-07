@@ -33,7 +33,17 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 // Logger
 import 'package:logger/logger.dart';
 
+
+import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+Future<void> resetSharedPreferences() async {
+
+  SharedPreferences preferences = await SharedPreferences.getInstance();
+  await preferences.clear();
+}
+
 Future<void> main() async {
+  //await resetSharedPreferences(); //Thank me later... //TODO: Remover before merging
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferencesProvider = SharedPreferencesProvider();
   await sharedPreferencesProvider.load();

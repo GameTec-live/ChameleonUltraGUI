@@ -8,6 +8,10 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/helpers/open_collective.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
+import 'dart:convert';
+import 'dart:io';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -310,6 +314,76 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               ),
               child: Text(
                   "${appState.sharedPreferencesProvider.isDebugMode() ? localizations.deactivate : localizations.activate} ${localizations.debug_mode.toLowerCase()}"),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+                onPressed: () async {
+                  try {
+                    await FileSaver.instance.saveAs(
+                        name: 'ChameleonUltraGUISettings',
+                        bytes: const Utf8Encoder().convert(appState
+                            .sharedPreferencesProvider
+                            .dumpSettingsToJson()),
+                        ext: 'json',
+                        mimeType: MimeType.other);
+                  } on UnimplementedError catch (_) {
+                    String? outputFile = await FilePicker.platform.saveFile(
+                      dialogTitle: '${localizations.output_file}:',
+                      fileName: 'ChameleonUltraGUISettings.json',
+                    );
+
+                    if (outputFile != null) {
+                      var file = File(outputFile);
+                      await file.writeAsBytes(const Utf8Encoder().convert(
+                          appState.sharedPreferencesProvider
+                              .dumpSettingsToJson()));
+                    }
+                  }
+                },
+                child: Text("Export Settings")
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => showDialog<String>(
+                context: context,
+                builder: (BuildContext context) => AlertDialog(
+                  title: Text("Choose import method"),
+                  content: Text("Choose how you want to import your settings"),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(localizations.cancel),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        
+                        appState.changesMade();
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: Text("Qr Code"),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        FilePickerResult? result = await FilePicker.platform.pickFiles();
+                        if (result != null) {
+                          File file = File(result.files.single.path!);
+                          var contents = await file.readAsBytes();
+                          var string = const Utf8Decoder().convert(contents);
+                          appState.sharedPreferencesProvider.restoreSettingsFromJson(string);
+                          appState.changesMade();
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
+                        }
+                      },
+                      child: Text("File"),
+                    ),
+                  ],
+                ),
+              ),
+              child: Text("Import Settings"),
             )
           ],
         ),
