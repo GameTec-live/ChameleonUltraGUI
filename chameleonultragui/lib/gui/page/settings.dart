@@ -12,6 +12,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:chameleonultragui/gui/component/qrcode_viewer.dart';
+import 'package:crypto/crypto.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -317,29 +319,70 @@ class SettingsMainPageState extends State<SettingsMainPage> {
             ),
             const SizedBox(height: 10),
             TextButton(
-                onPressed: () async {
-                  try {
-                    await FileSaver.instance.saveAs(
-                        name: 'ChameleonUltraGUISettings',
-                        bytes: const Utf8Encoder().convert(appState
-                            .sharedPreferencesProvider
-                            .dumpSettingsToJson()),
-                        ext: 'json',
-                        mimeType: MimeType.other);
-                  } on UnimplementedError catch (_) {
-                    String? outputFile = await FilePicker.platform.saveFile(
-                      dialogTitle: '${localizations.output_file}:',
-                      fileName: 'ChameleonUltraGUISettings.json',
-                    );
+                onPressed: () => showDialog<String>(
+                      context: context,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: Text("Choose export method"),
+                        content: Text("Choose how you want to export your settings"),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(localizations.cancel),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              String string = appState.sharedPreferencesProvider.dumpSettingsToJson();
+                              List<String> qrChunks = splitStringIntoQrChunks(string, 2048);
 
-                    if (outputFile != null) {
-                      var file = File(outputFile);
-                      await file.writeAsBytes(const Utf8Encoder().convert(
-                          appState.sharedPreferencesProvider
-                              .dumpSettingsToJson()));
-                    }
-                  }
-                },
+                              // Generate Header Info
+                              Map<String, String> headerData = {
+                                "Info": "Chameleon Ultra GUI Settings",
+                                "chunks": qrChunks.length.toString(),
+                                "sha256": sha256.convert(const Utf8Encoder().convert(string)).toString(),
+                              };
+                              qrChunks.insert(0, jsonEncode(headerData));
+
+                              await showDialog(
+                                context: context,
+                                builder: (BuildContext context) => QrCodeViewer(qrChunks: qrChunks),
+                              );
+
+                              appState.changesMade();
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                              }
+                            },
+                            child: Text("QR Code"),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              try {
+                                await FileSaver.instance.saveAs(
+                                    name: 'ChameleonUltraGUISettings',
+                                    bytes: const Utf8Encoder().convert(appState
+                                        .sharedPreferencesProvider
+                                        .dumpSettingsToJson()),
+                                    ext: 'json',
+                                    mimeType: MimeType.other);
+                              } on UnimplementedError catch (_) {
+                                String? outputFile = await FilePicker.platform.saveFile(
+                                  dialogTitle: '${localizations.output_file}:',
+                                  fileName: 'ChameleonUltraGUISettings.json',
+                                );
+
+                                if (outputFile != null) {
+                                  var file = File(outputFile);
+                                  await file.writeAsBytes(const Utf8Encoder().convert(
+                                      appState.sharedPreferencesProvider
+                                          .dumpSettingsToJson()));
+                                }
+                              }
+                            },
+                            child: Text("JSON File"),
+                          ),
+                        ],
+                      ),
+                    ),
                 child: Text("Export Settings")
             ),
             const SizedBox(height: 10),
@@ -355,14 +398,13 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       child: Text(localizations.cancel),
                     ),
                     TextButton(
-                      onPressed: () async {
-                        
+                      onPressed: (Platform.isIOS || Platform.isAndroid) ? null : () async {
                         appState.changesMade();
                         if (context.mounted) {
                           Navigator.pop(context);
                         }
                       },
-                      child: Text("Qr Code"),
+                      child: Text("QR Code"),
                     ),
                     TextButton(
                       onPressed: () async {
@@ -378,7 +420,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           }
                         }
                       },
-                      child: Text("File"),
+                      child: Text("JSON File"),
                     ),
                   ],
                 ),
