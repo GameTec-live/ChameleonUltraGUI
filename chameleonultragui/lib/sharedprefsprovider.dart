@@ -476,21 +476,19 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   String dumpSettingsToJson() {
-    Map<String, String> settingsMap = {};
+    Map<String, dynamic> settingsMap = {};
 
     for (var key in _sharedPreferences.getKeys()) {
-      //format:
-      // "settingstype;key": "value"
-      if (_sharedPreferences.get(key).runtimeType == List<String>) {
-        settingsMap["${_sharedPreferences.get(key).runtimeType};$key"] =
-            (_sharedPreferences.get(key) as List<String>).join('ʤ'); // Has to be a string that is not in the json
-        continue;
+      dynamic value = _sharedPreferences.get(key);
+      String typeKey = '${value.runtimeType};$key';
+      if (value is List<String>) {
+        settingsMap[typeKey] = jsonEncode(value);
+      } else {
+        settingsMap[typeKey] = value.toString();
       }
-      settingsMap["${_sharedPreferences.get(key).runtimeType};$key"] =
-          _sharedPreferences.get(key).toString();
     }
-
     String jsonSettings = jsonEncode(settingsMap);
+    //Okay. this should create a nested json. Test it out and see if it works
 
     return jsonSettings;
   }
@@ -503,22 +501,26 @@ class SharedPreferencesProvider extends ChangeNotifier {
       var type = splitKey[0];
       var actualKey = splitKey[1];
 
-      if (settingsMap[key] != null && settingsMap[key] != '') {
+      dynamic value = settingsMap[key];
+
+      if (value != null) {
         switch (type) {
           case 'String':
-            _sharedPreferences.setString(actualKey, settingsMap[key]!);
+            _sharedPreferences.setString(actualKey, value);
             break;
           case 'int':
-            _sharedPreferences.setInt(actualKey, int.parse(settingsMap[key]!));
+            _sharedPreferences.setInt(actualKey, int.parse(value));
             break;
           case 'double':
-            _sharedPreferences.setDouble(actualKey, double.parse(settingsMap[key]!));
+            _sharedPreferences.setDouble(actualKey, double.parse(value));
             break;
           case 'bool':
-            _sharedPreferences.setBool(actualKey, settingsMap[key] == 'true');
+            _sharedPreferences.setBool(actualKey, value == 'true');
             break;
           case 'List<String>':
-            _sharedPreferences.setStringList(actualKey, settingsMap[key]!.split('ʤ'));
+            // Decode the JSON array string back to List<String>
+            List<String> listValue = List<String>.from(jsonDecode(value));
+            _sharedPreferences.setStringList(actualKey, listValue);
             break;
           default:
             break;
@@ -526,5 +528,6 @@ class SharedPreferencesProvider extends ChangeNotifier {
       }
     }
   }
+
 
 }
