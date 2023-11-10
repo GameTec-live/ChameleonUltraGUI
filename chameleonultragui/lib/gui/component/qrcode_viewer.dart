@@ -16,7 +16,10 @@ List<String> splitStringIntoQrChunks(String str, int chunkSize) {
 class QrCodeViewer extends StatefulWidget {
   final List<String> qrChunks;
 
-  const QrCodeViewer({required this.qrChunks, Key? key}) : super(key: key,);
+  const QrCodeViewer({required this.qrChunks, Key? key})
+      : super(
+          key: key,
+        );
 
   @override
   QrCodeViewerState createState() => QrCodeViewerState();
@@ -30,22 +33,28 @@ class QrCodeViewerState extends State<QrCodeViewer> {
     return AlertDialog(
       title: Text("QR Code Viewer"),
       content: SizedBox(
-          width: MediaQuery.of(context).size.width > MediaQuery.of(context).size.height ? MediaQuery.of(context).size.height * 0.5 : MediaQuery.of(context).size.width * 0.5,
-          height: MediaQuery.of(context).size.width > MediaQuery.of(context).size.height ? MediaQuery.of(context).size.height * 0.5 : MediaQuery.of(context).size.width * 0.5,
-          child: Container(
-            color: Colors.white,
-            child: QrImageView(
-              data: widget.qrChunks[currentQrIndex],
-              version: QrVersions.auto,
-              size: 200.0,
-              padding: const EdgeInsets.all(20.0),
-            ),
-          ),
+        width: MediaQuery.of(context).size.width >
+                MediaQuery.of(context).size.height
+            ? MediaQuery.of(context).size.height * 0.8
+            : MediaQuery.of(context).size.width * 0.8,
+        height: MediaQuery.of(context).size.width >
+                MediaQuery.of(context).size.height
+            ? MediaQuery.of(context).size.height * 0.8
+            : MediaQuery.of(context).size.width * 0.8,
+        child: QrImageView(
+          data: widget.qrChunks[currentQrIndex],
+          version: QrVersions.auto,
+          size: 200.0,
+          backgroundColor: Colors.white,
+          padding: const EdgeInsets.all(20.0),
         ),
+      ),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: currentQrIndex < widget.qrChunks.length - 1 ? Text("Cancel") : Text("Done"),
+          child: currentQrIndex < widget.qrChunks.length - 1
+              ? Text("Cancel")
+              : Text("Done"),
         ),
         if (currentQrIndex < widget.qrChunks.length - 1)
           TextButton(
@@ -54,7 +63,7 @@ class QrCodeViewerState extends State<QrCodeViewer> {
                 currentQrIndex++;
               });
             },
-            child: Text("Next QR Code"),
+            child: Text("Next QR Code (${currentQrIndex + 1}/${widget.qrChunks.length})"),
           ),
       ],
     );

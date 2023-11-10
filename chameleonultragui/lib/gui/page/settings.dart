@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:chameleonultragui/gui/component/qrcode_viewer.dart';
 import 'package:crypto/crypto.dart';
+import 'package:chameleonultragui/gui/component/qrcode_scanner.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -323,7 +324,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       context: context,
                       builder: (BuildContext context) => AlertDialog(
                         title: Text("Choose export method"),
-                        content: Text("Choose how you want to export your settings"),
+                        content:
+                            Text("Choose how you want to export your settings"),
                         actions: <Widget>[
                           TextButton(
                             onPressed: () => Navigator.pop(context),
@@ -331,20 +333,26 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           ),
                           TextButton(
                             onPressed: () async {
-                              String string = appState.sharedPreferencesProvider.dumpSettingsToJson();
-                              List<String> qrChunks = splitStringIntoQrChunks(string, 2048);
+                              String string = appState.sharedPreferencesProvider
+                                  .dumpSettingsToJson();
+                              List<String> qrChunks =
+                                  splitStringIntoQrChunks(string, 2048);
 
                               // Generate Header Info
                               Map<String, String> headerData = {
                                 "Info": "Chameleon Ultra GUI Settings",
                                 "chunks": qrChunks.length.toString(),
-                                "sha256": sha256.convert(const Utf8Encoder().convert(string)).toString(),
+                                "sha256": sha256
+                                    .convert(
+                                        const Utf8Encoder().convert(string))
+                                    .toString(),
                               };
                               qrChunks.insert(0, jsonEncode(headerData));
 
                               await showDialog(
                                 context: context,
-                                builder: (BuildContext context) => QrCodeViewer(qrChunks: qrChunks),
+                                builder: (BuildContext context) =>
+                                    QrCodeViewer(qrChunks: qrChunks),
                               );
 
                               appState.changesMade();
@@ -365,15 +373,17 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                     ext: 'json',
                                     mimeType: MimeType.other);
                               } on UnimplementedError catch (_) {
-                                String? outputFile = await FilePicker.platform.saveFile(
+                                String? outputFile =
+                                    await FilePicker.platform.saveFile(
                                   dialogTitle: '${localizations.output_file}:',
                                   fileName: 'ChameleonUltraGUISettings.json',
                                 );
 
                                 if (outputFile != null) {
                                   var file = File(outputFile);
-                                  await file.writeAsBytes(const Utf8Encoder().convert(
-                                      appState.sharedPreferencesProvider
+                                  await file.writeAsBytes(const Utf8Encoder()
+                                      .convert(appState
+                                          .sharedPreferencesProvider
                                           .dumpSettingsToJson()));
                                 }
                               }
@@ -383,8 +393,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         ],
                       ),
                     ),
-                child: Text("Export Settings")
-            ),
+                child: Text("Export Settings")),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
@@ -398,7 +407,28 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       child: Text(localizations.cancel),
                     ),
                     TextButton(
-                      onPressed: (Platform.isIOS || Platform.isAndroid) ? null : () async {
+                      onPressed: () async {
+                        if (!(Platform.isAndroid || Platform.isIOS)) {
+                          await showDialog(
+                            context: context,
+                            builder: (BuildContext context) => AlertDialog(
+                              title: Text("Error"),
+                              content: Text(
+                                  "QR Code import is only supported on mobile devices"),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: Text(localizations.ok),
+                                ),
+                              ],
+                            ),
+                          );
+                          return;
+                        }
+                        await showDialog(
+                          context: context,
+                          builder: (BuildContext context) => QrCodeScanner(),
+                        );
                         appState.changesMade();
                         if (context.mounted) {
                           Navigator.pop(context);
@@ -408,12 +438,14 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     ),
                     TextButton(
                       onPressed: () async {
-                        FilePickerResult? result = await FilePicker.platform.pickFiles();
+                        FilePickerResult? result =
+                            await FilePicker.platform.pickFiles();
                         if (result != null) {
                           File file = File(result.files.single.path!);
                           var contents = await file.readAsBytes();
                           var string = const Utf8Decoder().convert(contents);
-                          appState.sharedPreferencesProvider.restoreSettingsFromJson(string);
+                          appState.sharedPreferencesProvider
+                              .restoreSettingsFromJson(string);
                           appState.changesMade();
                           if (context.mounted) {
                             Navigator.pop(context);
