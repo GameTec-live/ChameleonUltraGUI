@@ -14,7 +14,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:chameleonultragui/gui/component/qrcode_viewer.dart';
 import 'package:crypto/crypto.dart';
-import 'package:chameleonultragui/gui/component/qrcode_scanner.dart';
+import 'package:chameleonultragui/gui/menu/qrcode_import.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -339,16 +339,16 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   splitStringIntoQrChunks(string, 2048);
 
                               // Generate Header Info
-                              Map<String, String> headerData = {
+                              Map<String, dynamic> headerData = {
                                 "Info": "Chameleon Ultra GUI Settings",
-                                "chunks": qrChunks.length.toString(),
+                                "chunks": qrChunks.length,
                                 "sha256": sha256
                                     .convert(
                                         const Utf8Encoder().convert(string))
                                     .toString(),
                               };
                               qrChunks.insert(0, jsonEncode(headerData));
-
+                              appState.log!.d(qrChunks);
                               await showDialog(
                                 context: context,
                                 builder: (BuildContext context) =>
@@ -425,10 +425,22 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           );
                           return;
                         }
-                        await showDialog(
+
+                        String? jsonData = await showDialog(
                           context: context,
-                          builder: (BuildContext context) => QrCodeScanner(),
+                          builder: (BuildContext context) {
+                            return const QrCodeImport();
+                          }
                         );
+
+                        appState.log!.d(jsonData);
+
+                        if (jsonData == null) {
+                          return;
+                        }
+
+                        appState.sharedPreferencesProvider.restoreSettingsFromJson(jsonData);
+
                         appState.changesMade();
                         if (context.mounted) {
                           Navigator.pop(context);

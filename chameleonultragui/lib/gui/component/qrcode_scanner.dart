@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:typed_data';
@@ -15,43 +17,65 @@ class QrCodeScanner extends StatefulWidget {
 
 class QrCodeScannerState extends State<QrCodeScanner> {
   MobileScannerController cameraController = MobileScannerController();
+  bool isFlashOn = false;
+  bool succesfulScan = false;
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text("QR Code Scanner"),
-      content: Column(
-        children: [
-          FittedBox(
-            fit: BoxFit.contain,
-            child: MobileScanner(
-              controller: cameraController,
-              onDetect: (capture) {
-                final List<Barcode> barcodes = capture.barcodes;
-                for (final barcode in barcodes) {
-                  debugPrint('Barcode found! ${barcode.rawValue}');
-                }
-              },
+      content: succesfulScan
+          ? SizedBox(
+              width: MediaQuery.of(context).size.width >
+                      MediaQuery.of(context).size.height
+                  ? MediaQuery.of(context).size.height * 0.8
+                  : MediaQuery.of(context).size.width * 0.8,
+              height: MediaQuery.of(context).size.width >
+                      MediaQuery.of(context).size.height
+                  ? MediaQuery.of(context).size.height * 0.8
+                  : MediaQuery.of(context).size.width * 0.8,
+              child: const Icon(Icons.check))
+          : SizedBox(
+              width: MediaQuery.of(context).size.width >
+                      MediaQuery.of(context).size.height
+                  ? MediaQuery.of(context).size.height * 0.8
+                  : MediaQuery.of(context).size.width * 0.8,
+              height: MediaQuery.of(context).size.width >
+                      MediaQuery.of(context).size.height
+                  ? MediaQuery.of(context).size.height * 0.8
+                  : MediaQuery.of(context).size.width * 0.8,
+              child: MobileScanner(
+                controller: cameraController,
+                onDetect: (capture) async {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  for (final Barcode barcode in barcodes) {
+                    if (barcode.format == BarcodeFormat.qrCode && barcode.rawValue != null) {
+                      setState(() {
+                        succesfulScan = true;
+                      });
+                      if (context.mounted) {
+                        Navigator.pop(context, barcode.rawValue);
+                      }
+                    }
+                  }
+                },
+              ),
             ),
-          ),
-        ],
-      ),
       actions: <Widget>[
         IconButton(
-          color: Colors.white,
-          icon: const Icon(Icons.flash_on),
-          iconSize: 32.0,
-          onPressed: () => cameraController.toggleTorch(),
+          icon: isFlashOn
+              ? const Icon(Icons.flash_on)
+              : const Icon(Icons.flash_off),
+          onPressed: () {
+            setState(() {
+              isFlashOn = !isFlashOn;
+              cameraController.toggleTorch();
+            });
+          },
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text("Cancel"),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text("Done"),
         ),
       ],
     );
