@@ -4,6 +4,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/gui/component/qrcode_scanner.dart';
 import 'package:crypto/crypto.dart';
+import 'package:chameleonultragui/main.dart';
+import 'package:provider/provider.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -23,6 +25,7 @@ class QrCodeImportState extends State<QrCodeImport> {
 
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<ChameleonGUIState>();
     return AlertDialog(
       title: Text("QR Code Import"),
       content: Column(
@@ -30,6 +33,7 @@ class QrCodeImportState extends State<QrCodeImport> {
           TextButton(
             onPressed: () async {
               if (qrCodeChuncks == currentChunk) {
+                appState.log!.d(resultingJson);
                 Navigator.pop(context, resultingJson);
                 return;
               }
@@ -50,13 +54,21 @@ class QrCodeImportState extends State<QrCodeImport> {
                   qrCodeChuncks = data["chunks"];
                 });
                 currentChunk = 0;
+                resultingJson = "";
+                appState.log!.d(qrCodeData);
+                appState.log!.d(shasum);
+                appState.log!.d(qrCodeChuncks);
               }
               else {
+                appState.log!.d(qrCodeData);
+                appState.log!.d(resultingJson);
                 resultingJson += qrCodeData;
                 setState(() {
                   currentChunk++;
                 });
               }
+              appState.log!.d(resultingJson);
+              appState.log!.d(sha256.convert(const Utf8Encoder().convert(resultingJson)));
             },
             child: qrCodeChuncks == null ? Text("Start Scanning") : qrCodeChuncks == currentChunk ? Text("Finish Import") : Text("Scan next QR Code ($currentChunk/$qrCodeChuncks)"),
           ),

@@ -349,6 +349,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               };
                               qrChunks.insert(0, jsonEncode(headerData));
                               appState.log!.d(qrChunks);
+                              appState.log!.d(string);
                               await showDialog(
                                 context: context,
                                 builder: (BuildContext context) =>

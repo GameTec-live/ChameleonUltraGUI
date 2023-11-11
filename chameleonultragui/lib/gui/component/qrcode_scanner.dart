@@ -56,6 +56,7 @@ class QrCodeScannerState extends State<QrCodeScanner> {
                       if (context.mounted) {
                         Navigator.pop(context, barcode.rawValue);
                       }
+                      return;
                     }
                   }
                 },
