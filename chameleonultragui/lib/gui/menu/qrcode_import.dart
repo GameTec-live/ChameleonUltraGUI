@@ -22,7 +22,7 @@ class QrCodeImportState extends State<QrCodeImport> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("QR Code Import"),
+      title: Text(AppLocalizations.of(context)!.qrCodeImport),	
       actions: [
         TextButton(
           onPressed: () {
@@ -65,19 +65,18 @@ class QrCodeImportState extends State<QrCodeImport> {
             mainAxisSize: MainAxisSize.min,
             children: [
               qrCodeChuncks == null
-                  ? Text("Start Scanning")
+                  ? Text(AppLocalizations.of(context)!.startScanning)
                   : qrCodeChuncks == currentChunk
-                      ? Text("Finish Import")
-                      : Text(
-                          "Scan next QR Code (${currentChunk + 1}/${qrCodeChuncks! + 1})"),
+                      ? Text(AppLocalizations.of(context)!.finishImport)
+                      : Text(AppLocalizations.of(context)!.scan_next_qr_code("${currentChunk + 1}", "${qrCodeChuncks! +1}")),
               const SizedBox(width: 5),
               if (sha256
                       .convert(const Utf8Encoder().convert(resultingJson))
                       .toString() ==
                   shasum)
                 Tooltip(
-                  message: "Checksum OK",
-                  child: Icon(Icons.check),
+                  message: AppLocalizations.of(context)!.checksumOk,
+                  child: const Icon(Icons.check),
                 ),
             ],
           ),

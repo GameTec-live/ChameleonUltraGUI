@@ -32,7 +32,7 @@ class QrCodeViewerState extends State<QrCodeViewer> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("QR Code Viewer"),
+      title: Text(AppLocalizations.of(context)!.qrCodeViewer),
       content: SizedBox(
         width: MediaQuery.of(context).size.width >
                 MediaQuery.of(context).size.height
@@ -56,7 +56,7 @@ class QrCodeViewerState extends State<QrCodeViewer> {
           onPressed: () => Navigator.pop(context),
           child: currentQrIndex < widget.qrChunks.length - 1
               ? Text(AppLocalizations.of(context)!.cancel)
-              : Text("Done"),
+              : Text(AppLocalizations.of(context)!.done),
         ),
         if (currentQrIndex < widget.qrChunks.length - 1)
           TextButton(
@@ -65,7 +65,7 @@ class QrCodeViewerState extends State<QrCodeViewer> {
                 currentQrIndex++;
               });
             },
-            child: Text("Next QR Code (${currentQrIndex + 1}/${widget.qrChunks.length})"),
+            child: Text(AppLocalizations.of(context)!.next_qr_code("${currentQrIndex + 1}", "${widget.qrChunks.length}")),//"Next QR Code (${currentQrIndex + 1}/${widget.qrChunks.length})"
           ),
       ],
     );

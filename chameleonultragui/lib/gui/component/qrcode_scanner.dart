@@ -19,7 +19,7 @@ class QrCodeScannerState extends State<QrCodeScanner> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("QR Code Scanner"),
+      title: Text(AppLocalizations.of(context)!.qrCodeScanner),
       content: succesfulScan
           ? SizedBox(
               width: MediaQuery.of(context).size.width >
@@ -72,7 +72,7 @@ class QrCodeScannerState extends State<QrCodeScanner> {
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text("Cancel"),
+          child: Text(AppLocalizations.of(context)!.cancel),
         ),
       ],
     );

@@ -323,9 +323,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 onPressed: () => showDialog<String>(
                       context: context,
                       builder: (BuildContext context) => AlertDialog(
-                        title: Text("Choose export method"),
+                        title: Text(AppLocalizations.of(context)!.choose_export_method),
                         content:
-                            Text("Choose how you want to export your settings"),
+                            Text(AppLocalizations.of(context)!.choose_export_method_description),
                         actions: <Widget>[
                           TextButton(
                             onPressed: () => Navigator.pop(context),
@@ -345,7 +345,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                 context: context,
                                 builder: (BuildContext context) {
                                   return AlertDialog(
-                                  title: Text("QR Code Export Settings"),
+                                  title: Text(AppLocalizations.of(context)!.qr_code_settings),
                                   content: Form(
                                     key: formKey,
                                     autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -355,25 +355,25 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                         TextFormField(
                                           controller: splitSize,
                                           decoration: InputDecoration(
-                                            labelText: "Split Size",
+                                            labelText: AppLocalizations.of(context)!.split_size,
                                             hintText: "2048",
                                             suffix: Tooltip(
-                                              message: "Split Size is the maximum amount of characters per QR Code. Smaller Split Size results in more, smaller QR Codes. Smaller QR Codes are easier to scan.",
-                                              child: Icon(Icons.info_outline),
+                                              message: AppLocalizations.of(context)!.split_size_tooltip,
+                                              child: const Icon(Icons.info_outline),
                                             ),
                                           ),
                                           validator: (value) {
                                             if (value == null || value.isEmpty) {
-                                              return "Please enter a value";
+                                              return AppLocalizations.of(context)!.please_enter_something("Split Size");
                                             }
                                             if (int.tryParse(value) == null) {
-                                              return "Please enter a valid number";
+                                              return AppLocalizations.of(context)!.please_enter_a_valid_number;
                                             }
                                             if (int.tryParse(value)! < 1) {
-                                              return "Please enter a number greater than 0";
+                                              return  AppLocalizations.of(context)!.please_enter_a_number_greater_than("0");
                                             }
                                             if (int.tryParse(value)! > 2048) {
-                                              return "Please enter a valid number";
+                                              return AppLocalizations.of(context)!.please_enter_a_valid_number;
                                             }
                                             return null;
                                           },
@@ -381,22 +381,22 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                         TextFormField(
                                           controller: errorCorrection,
                                           decoration: InputDecoration(
-                                            labelText: "Error Correction",
+                                            labelText: AppLocalizations.of(context)!.error_correction,
                                             hintText: "0",
                                             suffix: Tooltip(
-                                              message: "Error Correction takes up more space, resulting in more QR Codes:\nL = 1; M = 0; Q = 3; H = 2;",
-                                              child: Icon(Icons.info_outline),
+                                              message: AppLocalizations.of(context)!.error_correction_tooltip,
+                                              child: const Icon(Icons.info_outline),
                                             ),
                                           ),
                                           validator: (value) {
                                             if (value == null || value.isEmpty) {
-                                              return "Please enter a value";
+                                              return AppLocalizations.of(context)!.please_enter_something("Error Correction");
                                             }
                                             if (int.tryParse(value) == null) {
-                                              return "Please enter a valid number";
+                                              return AppLocalizations.of(context)!.please_enter_a_valid_number;
                                             }
                                             if (int.tryParse(value)! < 0 || int.tryParse(value)! > 3) {
-                                              return "Please enter a number between 0 and 3";
+                                              return  AppLocalizations.of(context)!.please_enter_a_number_between("0", "3");
                                             }
                                             return null;
                                           },
@@ -479,7 +479,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                 Navigator.pop(context);
                               }
                             },
-                            child: Text("QR Code"),
+                            child: const Text("QR Code"),
                           ),
                           TextButton(
                             onPressed: () async {
@@ -507,7 +507,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                 }
                               }
                             },
-                            child: Text("JSON File"),
+                            child: Text(AppLocalizations.of(context)!.json_file),
                           ),
                         ],
                       ),
@@ -515,7 +515,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("Export Settings"),
+                    Text(AppLocalizations.of(context)!.export_settings),
                     const Icon(Icons.upload)
                   ],
                 )),
@@ -524,8 +524,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               onPressed: () => showDialog<String>(
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
-                  title: Text("Choose import method"),
-                  content: Text("Choose how you want to import your settings"),
+                  title: Text(AppLocalizations.of(context)!.import_settings),
+                  content: Text(AppLocalizations.of(context)!.import_settings_description),
                   actions: <Widget>[
                     TextButton(
                       onPressed: () => Navigator.pop(context),
@@ -537,9 +537,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           await showDialog(
                             context: context,
                             builder: (BuildContext context) => AlertDialog(
-                              title: Text("Error"),
-                              content: Text(
-                                  "QR Code import is only supported on mobile devices"),
+                              title: Text(AppLocalizations.of(context)!.error),
+                              content: Text(AppLocalizations.of(context)!.qr_code_import_not_supported_description),
                               actions: <Widget>[
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
@@ -568,7 +567,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           Navigator.pop(context);
                         }
                       },
-                      child: Text("QR Code"),
+                      child: const Text("QR Code"),
                     ),
                     TextButton(
                       onPressed: () async {
@@ -586,7 +585,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           }
                         }
                       },
-                      child: Text("JSON File"),
+                      child: Text(AppLocalizations.of(context)!.json_file),
                     ),
                   ],
                 ),
@@ -594,7 +593,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("Import Settings"),
+                  Text(AppLocalizations.of(context)!.import_settings),
                   const Icon(Icons.download),
                 ],
               ),
