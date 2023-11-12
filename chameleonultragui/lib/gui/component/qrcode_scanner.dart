@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:chameleonultragui/main.dart';
+import 'package:provider/provider.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -22,6 +24,7 @@ class QrCodeScannerState extends State<QrCodeScanner> {
 
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<ChameleonGUIState>();
     return AlertDialog(
       title: Text("QR Code Scanner"),
       content: succesfulScan
@@ -53,6 +56,10 @@ class QrCodeScannerState extends State<QrCodeScanner> {
                       setState(() {
                         succesfulScan = true;
                       });
+                      appState.log!.d("Barcodes: $barcodes");
+                      appState.log!.d("Barcode: $barcode");
+                      appState.log!.d("Barcode rawbytes utf8 decoded: ${const Utf8Decoder().convert(barcode.rawBytes!)}");
+                      appState.log!.d("Barcode data: ${barcode.rawValue}");
                       if (context.mounted) {
                         Navigator.pop(context, barcode.rawValue);
                       }

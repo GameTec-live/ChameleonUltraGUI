@@ -55,20 +55,20 @@ class QrCodeImportState extends State<QrCodeImport> {
                 });
                 currentChunk = 0;
                 resultingJson = "";
-                appState.log!.d(qrCodeData);
-                appState.log!.d(shasum);
-                appState.log!.d(qrCodeChuncks);
+                appState.log!.d("Header Data: $qrCodeData");
+                appState.log!.d("Header shasum: $shasum");
+                appState.log!.d("Header chunks: $qrCodeChuncks");
               }
               else {
-                appState.log!.d(qrCodeData);
-                appState.log!.d(resultingJson);
+                appState.log!.d("Chunk $currentChunk: $qrCodeData");
+                appState.log!.d("Before: $resultingJson");
                 resultingJson += qrCodeData;
                 setState(() {
                   currentChunk++;
                 });
               }
-              appState.log!.d(resultingJson);
-              appState.log!.d(sha256.convert(const Utf8Encoder().convert(resultingJson)));
+              appState.log!.d("After: $resultingJson");
+              appState.log!.d("Current Sha256: ${sha256.convert(const Utf8Encoder().convert(resultingJson)).toString()}");
             },
             child: qrCodeChuncks == null ? Text("Start Scanning") : qrCodeChuncks == currentChunk ? Text("Finish Import") : Text("Scan next QR Code ($currentChunk/$qrCodeChuncks)"),
           ),
