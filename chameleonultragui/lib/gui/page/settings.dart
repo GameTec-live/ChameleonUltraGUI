@@ -15,6 +15,7 @@ import 'dart:io';
 import 'package:chameleonultragui/gui/component/qrcode_viewer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:chameleonultragui/gui/menu/qrcode_import.dart';
+import 'dart:developer';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -336,7 +337,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               String string = appState.sharedPreferencesProvider
                                   .dumpSettingsToJson();
                               List<String> qrChunks =
-                                  splitStringIntoQrChunks(string, 2048);
+                                  splitStringIntoQrChunks(string, 2048); //2048
 
                               // Generate Header Info
                               Map<String, dynamic> headerData = {
@@ -348,8 +349,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                     .toString(),
                               };
                               qrChunks.insert(0, jsonEncode(headerData));
-                              appState.log!.d(qrChunks);
-                              appState.log!.d(string);
                               await showDialog(
                                 context: context,
                                 builder: (BuildContext context) =>
@@ -434,12 +433,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           }
                         );
 
-                        appState.log!.d(jsonData);
-
                         if (jsonData == null) {
                           return;
                         }
-
+                        log(jsonData); //TODO:
                         appState.sharedPreferencesProvider.restoreSettingsFromJson(jsonData);
 
                         appState.changesMade();
