@@ -336,8 +336,125 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                             onPressed: () async {
                               String string = appState.sharedPreferencesProvider
                                   .dumpSettingsToJson();
+
+
+                              final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+                              TextEditingController splitSize = TextEditingController(text: "2048");
+                              TextEditingController errorCorrection = TextEditingController(text: "0");
+
+                              Map<String, int> settings = await showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                  title: Text("QR Code Export Settings"),
+                                  content: Form(
+                                    key: formKey,
+                                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TextFormField(
+                                          controller: splitSize,
+                                          decoration: InputDecoration(
+                                            labelText: "Split Size",
+                                            hintText: "2048",
+                                            suffix: Tooltip(
+                                              message: "Split Size is the maximum amount of characters per QR Code. Smaller Split Size results in more, smaller QR Codes. Smaller QR Codes are easier to scan.",
+                                              child: Icon(Icons.info_outline),
+                                            ),
+                                          ),
+                                          validator: (value) {
+                                            if (value == null || value.isEmpty) {
+                                              return "Please enter a value";
+                                            }
+                                            if (int.tryParse(value) == null) {
+                                              return "Please enter a valid number";
+                                            }
+                                            if (int.tryParse(value)! < 1) {
+                                              return "Please enter a number greater than 0";
+                                            }
+                                            if (int.tryParse(value)! > 2048) {
+                                              return "Please enter a valid number";
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                        TextFormField(
+                                          controller: errorCorrection,
+                                          decoration: InputDecoration(
+                                            labelText: "Error Correction",
+                                            hintText: "0",
+                                            suffix: Tooltip(
+                                              message: "Error Correction takes up more space, resulting in more QR Codes:\nL = 1; M = 0; Q = 3; H = 2;",
+                                              child: Icon(Icons.info_outline),
+                                            ),
+                                          ),
+                                          validator: (value) {
+                                            if (value == null || value.isEmpty) {
+                                              return "Please enter a value";
+                                            }
+                                            if (int.tryParse(value) == null) {
+                                              return "Please enter a valid number";
+                                            }
+                                            if (int.tryParse(value)! < 0 || int.tryParse(value)! > 3) {
+                                              return "Please enter a number between 0 and 3";
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(localizations.cancel),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        if (formKey.currentState!.validate()) {
+                                          int splitSizeInt = int.parse(splitSize.text);
+                                          int errorCorrectionInt = int.parse(errorCorrection.text);
+                                          // Level 0: max splitsize: 2048 (default)
+                                          // Level 1: max splitsize: 2048
+                                          // Level 2: max splitsize: 1200
+                                          // Level 3: max splitsize: 1600
+                                          // L = 1;
+                                          // M = 0;
+                                          // Q = 3;
+                                          // H = 2;
+                                          if (errorCorrectionInt == 0 && splitSizeInt > 2048) {
+                                            splitSizeInt = 2048;
+                                          }
+                                          else if (errorCorrectionInt == 1 && splitSizeInt > 2048) {
+                                            splitSizeInt = 2048;
+                                          }
+                                          else if (errorCorrectionInt == 2 && splitSizeInt > 1200) {
+                                            splitSizeInt = 1200;
+                                          }
+                                          else if (errorCorrectionInt == 3 && splitSizeInt > 1600) {
+                                            splitSizeInt = 1600;
+                                          }
+                                          
+                                          Navigator.pop(context, {
+                                            "splitSize": splitSizeInt,
+                                            "errorCorrection": errorCorrectionInt,
+                                          });
+                                        }
+                                      },
+                                      child: Text(localizations.ok),
+                                    ),
+                                  ],
+                                );
+                                }
+                              ) ?? {};
+
+                              if (settings.isEmpty) {
+                                return;
+                              }
+
                               List<String> qrChunks =
-                                  splitStringIntoQrChunks(string, 2048); //2048
+                                  splitStringIntoQrChunks(string, settings["splitSize"]!); //2048
 
                               // Generate Header Info
                               Map<String, dynamic> headerData = {
@@ -349,11 +466,14 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                     .toString(),
                               };
                               qrChunks.insert(0, jsonEncode(headerData));
-                              await showDialog(
+
+                              if (context.mounted) {
+                                await showDialog(
                                 context: context,
                                 builder: (BuildContext context) =>
-                                    QrCodeViewer(qrChunks: qrChunks),
-                              );
+                                    QrCodeViewer(qrChunks: qrChunks, errorCorrection: settings["errorCorrection"]!),
+                                );
+                              }
 
                               appState.changesMade();
                               if (context.mounted) {
@@ -436,7 +556,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         if (jsonData == null) {
                           return;
                         }
-                        log(jsonData); //TODO:
                         appState.sharedPreferencesProvider.restoreSettingsFromJson(jsonData);
 
                         appState.changesMade();

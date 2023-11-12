@@ -15,8 +15,9 @@ List<String> splitStringIntoQrChunks(String str, int chunkSize) {
 
 class QrCodeViewer extends StatefulWidget {
   final List<String> qrChunks;
+  final int errorCorrection;
 
-  const QrCodeViewer({required this.qrChunks, Key? key})
+  const QrCodeViewer({required this.qrChunks, this.errorCorrection = 0,Key? key})
       : super(
           key: key,
         );
@@ -47,13 +48,14 @@ class QrCodeViewerState extends State<QrCodeViewer> {
           size: 200.0,
           backgroundColor: Colors.white,
           padding: const EdgeInsets.all(20.0),
+          errorCorrectionLevel: widget.errorCorrection,
         ),
       ),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: currentQrIndex < widget.qrChunks.length - 1
-              ? Text("Cancel")
+              ? Text(AppLocalizations.of(context)!.cancel)
               : Text("Done"),
         ),
         if (currentQrIndex < widget.qrChunks.length - 1)
