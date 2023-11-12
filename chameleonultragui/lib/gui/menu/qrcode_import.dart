@@ -70,7 +70,7 @@ class QrCodeImportState extends State<QrCodeImport> {
                       ? Text("Finish Import")
                       : Text(
                           "Scan next QR Code (${currentChunk + 1}/${qrCodeChuncks! + 1})"),
-              const SizedBox(width: 10),
+              const SizedBox(width: 5),
               if (sha256
                       .convert(const Utf8Encoder().convert(resultingJson))
                       .toString() ==

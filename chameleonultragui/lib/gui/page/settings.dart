@@ -15,7 +15,6 @@ import 'dart:io';
 import 'package:chameleonultragui/gui/component/qrcode_viewer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:chameleonultragui/gui/menu/qrcode_import.dart';
-import 'dart:developer';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -513,7 +512,13 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         ],
                       ),
                     ),
-                child: Text("Export Settings")),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text("Export Settings"),
+                    const Icon(Icons.upload)
+                  ],
+                )),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => showDialog<String>(
@@ -586,7 +591,13 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ],
                 ),
               ),
-              child: Text("Import Settings"),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Import Settings"),
+                  const Icon(Icons.download),
+                ],
+              ),
             )
           ],
         ),
