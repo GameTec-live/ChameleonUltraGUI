@@ -487,8 +487,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
         settingsMap[typeKey] = value.toString();
       }
     }
-    String jsonSettings = jsonEncode(settingsMap);
-    //Okay. this should create a nested json. Test it out and see if it works
+    String jsonSettings = jsonEncode(settingsMap); // This will create the nested json
 
     return jsonSettings;
   }
