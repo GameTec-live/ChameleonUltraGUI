@@ -157,7 +157,7 @@ class QRCodeSettingsState extends State<QRCodeSettings> {
                 ],
               ),
               const SizedBox(height: 10),
-              Align(child: Text(AppLocalizations.of(context).test_qr_code), alignment: Alignment.centerLeft,),
+              Align(alignment: Alignment.centerLeft, child: Text(AppLocalizations.of(context)!.test_qr_code)),
               const SizedBox(height: 10),
               SizedBox( //TODO: Constrain properly, should be square but still fit entirely on screen (withing the scrollview)
                   width: MediaQuery.of(context).size.width >
