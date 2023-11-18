@@ -251,5 +251,6 @@
   "export_settings": "Export Settings",
   "import_settings": "Import Settings",
   "import_settings_description": "Choose how you want to import your settings",
-  "qr_code_import_not_supported_description": "QR Code import is only supported on mobile devices"
+  "qr_code_import_not_supported_description": "QR Code import is only supported on mobile devices",
+  "test_qr_code": "Test QR Code"
 }
