@@ -54,7 +54,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: windows
-          path: chameleonultragui/build/windows/runner/Release/
+          path: chameleonultragui/build/windows/x64/runner/Release/
       - name: Create NSIS installer
         uses: joncloud/makensis-action@v4
         with:
