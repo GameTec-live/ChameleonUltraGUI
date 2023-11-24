@@ -210,117 +210,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 ),
               ),
               const SizedBox(height: 10),
-              TextButton(
-                onPressed: () => showDialog<String>(
-                  context: context,
-                  builder: (BuildContext context) => AlertDialog(
-                    title: Text(localizations.about),
-                    content: Center(
-                      child: FutureBuilder(
-                        future: getFutureData(),
-                        builder: (BuildContext context, AsyncSnapshot snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else {
-                            final (names, contributors, packageInfo) =
-                                snapshot.data;
-                            return SingleChildScrollView(
-                                child: Column(
-                              children: [
-                                const Text('Chameleon Ultra GUI',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
-                                Text(localizations.about_text),
-                                const SizedBox(height: 10),
-                                Text('${localizations.version}:'),
-                                Text(
-                                    '${packageInfo.version} (Build ${packageInfo.buildNumber})',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 10),
-                                Text('${localizations.developed_by}:'),
-                                const SizedBox(height: 10),
-                                DeveloperList(avatars: developers),
-                                const SizedBox(height: 10),
-                                Text('${localizations.license}:'),
-                                const Text('GNU General Public License v3.0',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 10),
-                                GestureDetector(
-                                    onTap: () async {
-                                      await launchUrl(Uri.parse(
-                                          'https://github.com/GameTec-live/ChameleonUltraGUI'));
-                                    },
-                                    child: const Text(
-                                        'https://github.com/GameTec-live/ChameleonUltraGUI')),
-                                const SizedBox(height: 30),
-                                GestureDetector(
-                                    onTap: () async {
-                                      await launchUrl(Uri.parse(
-                                          'https://opencollective.com/chameleon-ultra-gui'));
-                                    },
-                                    child:
-                                        Text(localizations.thanks_for_support)),
-                                const SizedBox(height: 10),
-                                Text(names,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 10),
-                                Text('${localizations.code_contributors}:'),
-                                const SizedBox(height: 10),
-                                DeveloperList(avatars: contributors),
-                              ],
-                            ));
-                          }
-                        },
-                      ),
-                    ),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(localizations.ok),
-                      ),
-                    ],
-                  ),
-                ),
-                child: Text(localizations.about),
-              ),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () => showDialog<String>(
-                  context: context,
-                  builder: (BuildContext context) => AlertDialog(
-                    title: Text(localizations.debug_mode),
-                    content: Text(localizations.debug_mode_confirmation(
-                        appState.sharedPreferencesProvider.isDebugMode()
-                            ? localizations.deactivate.toLowerCase()
-                            : localizations.activate.toLowerCase())),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(localizations.cancel),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          appState.sharedPreferencesProvider.setDebugMode(
-                              !appState.sharedPreferencesProvider.isDebugMode());
-                          appState.changesMade();
-                          Navigator.pop(context);
-                        },
-                        child: Text(localizations.ok),
-                      ),
-                    ],
-                  ),
-                ),
-                child: Text(
-                    "${appState.sharedPreferencesProvider.isDebugMode() ? localizations.deactivate : localizations.activate} ${localizations.debug_mode.toLowerCase()}"),
-              ),
-              const SizedBox(height: 10),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: TextButton(
@@ -507,6 +396,117 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: Text(localizations.about),
+                    content: Center(
+                      child: FutureBuilder(
+                        future: getFutureData(),
+                        builder: (BuildContext context, AsyncSnapshot snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else {
+                            final (names, contributors, packageInfo) =
+                                snapshot.data;
+                            return SingleChildScrollView(
+                                child: Column(
+                              children: [
+                                const Text('Chameleon Ultra GUI',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
+                                Text(localizations.about_text),
+                                const SizedBox(height: 10),
+                                Text('${localizations.version}:'),
+                                Text(
+                                    '${packageInfo.version} (Build ${packageInfo.buildNumber})',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 10),
+                                Text('${localizations.developed_by}:'),
+                                const SizedBox(height: 10),
+                                DeveloperList(avatars: developers),
+                                const SizedBox(height: 10),
+                                Text('${localizations.license}:'),
+                                const Text('GNU General Public License v3.0',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 10),
+                                GestureDetector(
+                                    onTap: () async {
+                                      await launchUrl(Uri.parse(
+                                          'https://github.com/GameTec-live/ChameleonUltraGUI'));
+                                    },
+                                    child: const Text(
+                                        'https://github.com/GameTec-live/ChameleonUltraGUI')),
+                                const SizedBox(height: 30),
+                                GestureDetector(
+                                    onTap: () async {
+                                      await launchUrl(Uri.parse(
+                                          'https://opencollective.com/chameleon-ultra-gui'));
+                                    },
+                                    child:
+                                        Text(localizations.thanks_for_support)),
+                                const SizedBox(height: 10),
+                                Text(names,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 10),
+                                Text('${localizations.code_contributors}:'),
+                                const SizedBox(height: 10),
+                                DeveloperList(avatars: contributors),
+                              ],
+                            ));
+                          }
+                        },
+                      ),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(localizations.ok),
+                      ),
+                    ],
+                  ),
+                ),
+                child: Text(localizations.about),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: Text(localizations.debug_mode),
+                    content: Text(localizations.debug_mode_confirmation(
+                        appState.sharedPreferencesProvider.isDebugMode()
+                            ? localizations.deactivate.toLowerCase()
+                            : localizations.activate.toLowerCase())),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(localizations.cancel),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          appState.sharedPreferencesProvider.setDebugMode(
+                              !appState.sharedPreferencesProvider.isDebugMode());
+                          appState.changesMade();
+                          Navigator.pop(context);
+                        },
+                        child: Text(localizations.ok),
+                      ),
+                    ],
+                  ),
+                ),
+                child: Text(
+                    "${appState.sharedPreferencesProvider.isDebugMode() ? localizations.deactivate : localizations.activate} ${localizations.debug_mode.toLowerCase()}"),
               )
             ],
           ),
