@@ -38,7 +38,6 @@ class QRCodeSettingsState extends State<QRCodeSettings> {
         },
         child: SingleChildScrollView(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 children: [
@@ -159,7 +158,7 @@ class QRCodeSettingsState extends State<QRCodeSettings> {
               const SizedBox(height: 10),
               Align(alignment: Alignment.centerLeft, child: Text(AppLocalizations.of(context)!.test_qr_code)),
               const SizedBox(height: 10),
-              SizedBox( //TODO: Constrain properly, should be square but still fit entirely on screen (withing the scrollview)
+              SizedBox(
                   width: MediaQuery.of(context).size.width >
                           MediaQuery.of(context).size.height
                       ? MediaQuery.of(context).size.height * 0.8
