@@ -474,4 +474,59 @@ class SharedPreferencesProvider extends ChangeNotifier {
   List<String> getLogLines() {
     return _sharedPreferences.getStringList('debug_logging_value') ?? [];
   }
+
+  String dumpSettingsToJson() {
+    Map<String, dynamic> settingsMap = {};
+
+    for (var key in _sharedPreferences.getKeys()) {
+      dynamic value = _sharedPreferences.get(key);
+      String typeKey = '${value.runtimeType};$key';
+      if (value is List<String>) {
+        settingsMap[typeKey] = jsonEncode(value);
+      } else {
+        settingsMap[typeKey] = value.toString();
+      }
+    }
+    String jsonSettings = jsonEncode(settingsMap); // This will create the nested json
+
+    return jsonSettings;
+  }
+
+  void restoreSettingsFromJson(String jsonSettings) {
+    Map<String, dynamic> settingsMap = jsonDecode(jsonSettings);
+
+    for (var key in settingsMap.keys) {
+      var splitKey = key.split(';');
+      var type = splitKey[0];
+      var actualKey = splitKey[1];
+
+      dynamic value = settingsMap[key];
+
+      if (value != null) {
+        switch (type) {
+          case 'String':
+            _sharedPreferences.setString(actualKey, value);
+            break;
+          case 'int':
+            _sharedPreferences.setInt(actualKey, int.parse(value));
+            break;
+          case 'double':
+            _sharedPreferences.setDouble(actualKey, double.parse(value));
+            break;
+          case 'bool':
+            _sharedPreferences.setBool(actualKey, value == 'true');
+            break;
+          case 'List<String>':
+            // Decode the JSON array string back to List<String>
+            List<String> listValue = List<String>.from(jsonDecode(value));
+            _sharedPreferences.setStringList(actualKey, listValue);
+            break;
+          default:
+            break;
+        }
+      }
+    }
+  }
+
+
 }
