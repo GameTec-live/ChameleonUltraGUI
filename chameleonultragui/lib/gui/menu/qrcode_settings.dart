@@ -153,19 +153,19 @@ class QRCodeSettingsState extends State<QRCodeSettings> {
               SizedBox(
                 width: MediaQuery.of(context).size.width >
                         MediaQuery.of(context).size.height
-                    ? MediaQuery.of(context).size.height * 0.8
-                    : MediaQuery.of(context).size.width * 0.8,
+                    ? MediaQuery.of(context).size.height * 0.8 - 10
+                    : MediaQuery.of(context).size.width * 0.8 - 10,
                 height: MediaQuery.of(context).size.width >
                         MediaQuery.of(context).size.height
-                    ? MediaQuery.of(context).size.height * 0.8
-                    : MediaQuery.of(context).size.width * 0.8,
+                    ? MediaQuery.of(context).size.height * 0.8 - 10
+                    : MediaQuery.of(context).size.width * 0.8 - 10,
                 child: QrImageView(
                   // Generate dummy data on the fly depending on the splitsize
                   data: List.filled(sliderSplitSize, "a").join(""),
                   version: QrVersions.auto,
                   size: 200.0,
                   backgroundColor: Colors.white,
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(40.0),
                   errorCorrectionLevel: sliderErrorCorrection,
                 ),
               ),
