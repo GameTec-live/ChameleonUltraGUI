@@ -175,9 +175,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     var tags = appState.sharedPreferencesProvider.getCards();
     var localizations = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations.saved_cards),
-      ),
       body: Column(
         children: [
           Expanded(
