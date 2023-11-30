@@ -170,10 +170,10 @@ class _MainPageState extends State<MainPage> {
             if (appState.connector!.isDFU) {
               page = const FlashingPage();
             } else {
-              page = const SavedCardsPage();
+              page = const ConnectPage();
             }
           } else {
-            page = const SlotManagerPage();
+            page = const SavedCardsPagePage();
           }
         }
         break;
@@ -197,8 +197,8 @@ class _MainPageState extends State<MainPage> {
         break;
       case 7:
         appState.connector!.performDisconnect();
-        page = const DebugPage();
-        //appState.changesMade();
+        appState.changesMade();
+        page = const ConnectPage();
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
@@ -305,7 +305,7 @@ class _MainPageState extends State<MainPage> {
                                     '${AppLocalizations.of(context)!.debug}'),
                               ),
                             NavigationRailDestination(
-                              icon: const Icon(Icons.power),
+                              icon: const Icon(Icons.reset),
                               label:
                                   Text("Restart"),
                             ),
