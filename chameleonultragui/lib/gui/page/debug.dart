@@ -38,10 +38,6 @@ class DebugPage extends StatelessWidget {
                   icon: const Icon(Icons.close),
                 ),
               ),
-              const Text(
-                '🐞 Chameleon Ultra GUI DEBUG MENU 🐞',
-                textScaleFactor: 2,
-              ),
               Text(
                 localizations.debug_page_warning,
                 textScaleFactor: 2,

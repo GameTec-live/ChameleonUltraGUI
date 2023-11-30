@@ -156,7 +156,8 @@ class _MainPageState extends State<MainPage> {
         selectedIndex != 0 &&
         selectedIndex != 2 &&
         selectedIndex != 5 &&
-        selectedIndex != 6) {
+        selectedIndex != 6 &&
+        selectedIndex != 7) {
       selectedIndex = 0;
     }
 
@@ -193,6 +194,10 @@ class _MainPageState extends State<MainPage> {
         break;
       case 6:
         page = const DebugPage();
+        break;
+      case 7:
+        appState.connector!.performDisconnect();
+        appState.changesMade();
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
@@ -296,8 +301,13 @@ class _MainPageState extends State<MainPage> {
                               NavigationRailDestination(
                                 icon: const Icon(Icons.bug_report),
                                 label: Text(
-                                    '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
+                                    '${AppLocalizations.of(context)!.debug}'),
                               ),
+                            NavigationRailDestination(
+                              icon: const Icon(Icons.power),
+                              label:
+                                  Text("Restart"),
+                            ),
                           ],
                           selectedIndex: selectedIndex,
                           onDestinationSelected: (value) {
