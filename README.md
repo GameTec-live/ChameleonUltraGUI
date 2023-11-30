@@ -5,8 +5,8 @@ My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 [![Crowdin](https://badges.crowdin.net/chameleonultragui/localized.svg)](https://crowdin.com/project/chameleonultragui)
 
 ## Features Roadmap
-- [ ] Remove automatic build on commit/PR
-- [ ] Tailor actions to build only for Windows (portable + installer) and Android
+- [x] Remove automatic build on commit/PR
+- [x] Tailor actions to build only for Windows (portable + installer) and Android
 - [ ] Expand built-in dictionary
 - [ ] Change some of the icons
 - [ ] Set default language to Russian
