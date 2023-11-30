@@ -2,7 +2,6 @@
 My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 
 [![Auto build](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml) 
-[![Crowdin](https://badges.crowdin.net/chameleonultragui/localized.svg)](https://crowdin.com/project/chameleonultragui)
 
 ## Features Roadmap
 - [x] Remove automatic build on commit/PR
