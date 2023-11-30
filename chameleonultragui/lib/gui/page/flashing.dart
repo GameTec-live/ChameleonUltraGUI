@@ -15,9 +15,6 @@ class FlashingPage extends StatelessWidget {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Chameleon DFU'),
-        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

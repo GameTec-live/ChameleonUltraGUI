@@ -235,9 +235,6 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations.slot_manager),
-      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

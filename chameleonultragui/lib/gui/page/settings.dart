@@ -60,9 +60,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations.settings),
-      ),
       body: SingleChildScrollView(
         child: Center(
           child: Column(

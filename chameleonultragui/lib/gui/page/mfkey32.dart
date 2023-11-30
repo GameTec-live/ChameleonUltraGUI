@@ -136,9 +136,6 @@ class Mfkey32PageState extends State<Mfkey32Page> {
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('Mfkey32'),
-            ),
             body: const Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasError) {
@@ -147,17 +144,11 @@ class Mfkey32PageState extends State<Mfkey32Page> {
           if (detectionCount == -1) {
             updateDetectionStatus();
             return Scaffold(
-              appBar: AppBar(
-                title: const Text('Mfkey32'),
-              ),
               body: const Center(child: CircularProgressIndicator()),
             );
           }
 
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('Mfkey32'),
-            ),
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),

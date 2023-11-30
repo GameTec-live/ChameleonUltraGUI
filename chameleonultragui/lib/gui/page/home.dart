@@ -183,9 +183,6 @@ class HomePageState extends State<HomePage> {
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Scaffold(
-              appBar: AppBar(
-                title: Text(localizations.home),
-              ),
               body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
@@ -200,9 +197,6 @@ class HomePageState extends State<HomePage> {
             ) = snapshot.data;
 
             return Scaffold(
-              appBar: AppBar(
-                title: Text(localizations.home),
-              ),
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

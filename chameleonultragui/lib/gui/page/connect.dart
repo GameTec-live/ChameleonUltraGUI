@@ -25,9 +25,6 @@ class ConnectPage extends StatelessWidget {
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
-              appBar: AppBar(
-                title: Text(localizations.connect),
-              ),
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
           appState.connector!.performDisconnect();

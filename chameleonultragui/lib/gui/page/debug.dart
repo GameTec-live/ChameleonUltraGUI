@@ -22,9 +22,6 @@ class DebugPage extends StatelessWidget {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('🐞'),
-        ),
         body: SingleChildScrollView(
             child: Center(
           child: Column(

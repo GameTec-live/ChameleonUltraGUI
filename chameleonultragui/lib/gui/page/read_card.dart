@@ -746,9 +746,6 @@ class ReadCardPageState extends State<ReadCardPage> {
     mfcInfo.recovery.selectedDictionary ??= mfcInfo.recovery.dictionaries[0];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations.read_card),
-      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
