@@ -65,6 +65,7 @@ dependencies:
     sdk: flutter
   intl: any
   wakelock_plus: ^1.1.1
+  rich_text_controller: ^1.4.2
   qr_flutter: ^4.1.0
   mobile_scanner: ^3.5.2
 

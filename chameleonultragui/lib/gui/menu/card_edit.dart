@@ -6,6 +6,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:chameleonultragui/gui/menu/hex_edit.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -259,6 +260,28 @@ class CardEditMenuState extends State<CardEditMenu> {
         ),
       ),
       actions: [
+        Visibility(
+          visible: chameleonTagToFrequency(selectedType) != TagFrequency.lf,
+          child: TextButton(
+            onPressed: () async {
+              final data = await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return HexEditMenu(
+                    tagSave: widget.tagSave,
+                  );
+                },
+              );
+
+              if (data != null) {
+                setState(() {
+                  widget.tagSave.data = data;
+                });
+              }
+            },
+            child: Text(localizations.edit_hex)
+          ),
+        ),
         TextButton(
           onPressed: () {
             Navigator.pop(context);

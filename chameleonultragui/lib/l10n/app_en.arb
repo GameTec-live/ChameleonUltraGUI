@@ -252,5 +252,10 @@
   "import_settings": "Import Settings",
   "import_settings_description": "Choose how you want to import your settings",
   "qr_code_import_not_supported_description": "QR Code import is only supported on mobile devices",
-  "test_qr_code": "Test QR Code"
+  "test_qr_code": "Test QR Code",
+  "enter_name_of_dictionary": "Enter name of dictionary",
+  "edit_hex": "Edit HEX",
+  "key_a": "Key A",
+  "key_b": "Key B",
+  "acs": "ACL"
 }
