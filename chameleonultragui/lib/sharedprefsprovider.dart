@@ -367,22 +367,22 @@ class SharedPreferencesProvider extends ChangeNotifier {
       var lcode = loc.toString().split("-").first;
       var ccode = loc.toString().split("-").last;
       if (!AppLocalizations.supportedLocales.contains(Locale(lcode, ccode))) {
-        return const Locale('en');
+        return const Locale('ru');
       } else {
         return Locale(lcode, ccode);
       }
     } else if (loc != null) {
       if (!AppLocalizations.supportedLocales.contains(Locale(loc.toString()))) {
-        return const Locale('en');
+        return const Locale('ru');
       } else {
         return Locale(loc.toString());
       }
     }
-    return const Locale('en');
+    return const Locale('ru');
   }
 
   void clearLocale() {
-    _sharedPreferences.setString('locale', "en");
+    _sharedPreferences.setString('locale', "ru");
     notifyListeners();
   }
 
