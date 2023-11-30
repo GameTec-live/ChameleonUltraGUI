@@ -178,6 +178,14 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     value: 7,
                     child: Text(localizations.yellow),
                   ),
+                  DropdownMenuItem(
+                    value: 8,
+                    child: Text(localizations.prpl),
+                  ),
+                  DropdownMenuItem(
+                    value: 9,
+                    child: Text(localizations.pink),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),

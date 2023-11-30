@@ -9,15 +9,16 @@ My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 - [x] Change default SAK and ATQA values in CaradSave() to Mifare Classic 1k
 - [ ] Expand built-in dictionary
 - [ ] Change some of the icons
-- [X] Set default language to Russian
+- [x] Set default language to Russian
 - [ ] Spawn a smaller viewport for Windows on startup
 - [ ] Add possibility to recursively load dictionaries from folder rather than a single file
 - [ ] Update README to trace star history for this specific fork
 - [x] Remove redundant files in repo
-- [ ] Make debug panel always visible
+- [x] Make debug panel always visible
 - [x] When no device connected, initial screen is cards/dictionaries listing
 - [ ] Robust write for LF and HF tags
 - [ ] Support for raw Mifare commands (separate GUI panel)
+- [x] Merge RichText hex editor from upstream
 - [ ] Change icon & main window title
 - [x] Remove all panels titles (they occupy too much space)
 - [ ] Make BLE a default connectivity type

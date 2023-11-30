@@ -249,6 +249,10 @@ class SharedPreferencesProvider extends ChangeNotifier {
             return const Color.fromARGB(255, 253, 238, 238);
           case 7:
             return const Color.fromARGB(255, 248, 252, 216);
+          case 8:
+            return const Color.fromARGB(255, 238, 227, 252);
+          case 9:
+            return const Color.fromARGB(255, 238, 227, 252);
           default:
             return const Color.fromARGB(255, 255, 236, 236);
         }
@@ -268,6 +272,10 @@ class SharedPreferencesProvider extends ChangeNotifier {
             return const Color.fromARGB(47, 188, 43, 201);
           case 7:
             return const Color.fromARGB(44, 58, 104, 202);
+          case 8:
+            return const Color.fromARGB(30, 116, 58, 183);
+          case 9:
+            return const Color.fromARGB(30, 116, 58, 183);
           default:
             return const Color.fromARGB(16, 202, 43, 43);
         }
@@ -298,7 +306,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   bool isDebugMode() {
-    return _sharedPreferences.getBool('debug') ?? false;
+    return _sharedPreferences.getBool('debug') ?? true;
   }
 
   void setDebugMode(bool value) {
