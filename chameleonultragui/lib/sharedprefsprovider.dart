@@ -130,8 +130,8 @@ class CardSave {
       this.color = Colors.deepOrange,
       this.data = const []})
       : id = id ?? const Uuid().v4(),
-        sak = sak ?? 0,
-        atqa = atqa ?? Uint8List(0),
+        sak = sak ?? 0x08,
+        atqa = atqa ?? Uint8List.fromList([0x04, 0x00]),
         ats = ats ?? Uint8List(0);
 }
 
