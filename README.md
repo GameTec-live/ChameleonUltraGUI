@@ -13,13 +13,15 @@ My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 - [ ] Spawn a smaller viewport for Windows on startup
 - [ ] Add possibility to recursively load dictionaries from folder rather than a single file
 - [ ] Update README to trace star history for this specific fork
-- [ ] Remove redundant files in repo
+- [x] Remove redundant files in repo
 - [ ] Make debug panel always visible
-- [ ] When no device connected, initial screen is cards/dictionaries listing
+- [x] When no device connected, initial screen is cards/dictionaries listing
 - [ ] Robust write for LF and HF tags
 - [ ] Support for raw Mifare commands (separate GUI panel)
 - [ ] Change icon & main window title
-- [ ] Remove all panels titles (they occupy too much space)
+- [x] Remove all panels titles (they occupy too much space)
+- [ ] Make BLE a default connectivity type
+- [ ] Remove the non-fitting photo of the device from the connect screen
 
 
 ## Buy a Chameleon Ultra
