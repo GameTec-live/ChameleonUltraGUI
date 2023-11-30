@@ -143,7 +143,7 @@ class _MainPageState extends State<MainPage> {
     if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {
-        appState.sharedPreferencesProvider.setSideBarExpanded(true);
+        appState.sharedPreferencesProvider.setSideBarExpanded(false);
       } else {
         appState.sharedPreferencesProvider.setSideBarExpanded(false);
       }
@@ -157,7 +157,7 @@ class _MainPageState extends State<MainPage> {
         selectedIndex != 2 &&
         selectedIndex != 5 &&
         selectedIndex != 6) {
-      selectedIndex = 2;
+      selectedIndex = 0;
     }
 
     switch (selectedIndex) {
@@ -169,10 +169,10 @@ class _MainPageState extends State<MainPage> {
             if (appState.connector!.isDFU) {
               page = const FlashingPage();
             } else {
-              page = const HomePage();
+              page = const SavedCardsPage();
             }
           } else {
-            page = const ConnectPage();
+            page = const SlotManagerPage();
           }
         }
         break;
