@@ -154,7 +154,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   ThemeMode getTheme() {
-    final themeValue = _sharedPreferences.getInt('app_theme') ?? 0;
+    final themeValue = _sharedPreferences.getInt('app_theme') ?? 2;
     switch (themeValue) {
       case 1:
         return ThemeMode.light;
@@ -180,7 +180,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   bool getSideBarAutoExpansion() {
-    return _sharedPreferences.getBool('sidebar_auto_expanded') ?? true;
+    return _sharedPreferences.getBool('sidebar_auto_expanded') ?? false;
   }
 
   bool getSideBarExpanded() {
@@ -204,7 +204,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   MaterialColor getThemeColor() {
-    final themeValue = _sharedPreferences.getInt('app_theme_color') ?? 0;
+    final themeValue = _sharedPreferences.getInt('app_theme_color') ?? 1;
     switch (themeValue) {
       case 1:
         return Colors.deepPurple;
@@ -220,6 +220,10 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return Colors.red;
       case 7:
         return Colors.yellow;
+      case 8:
+        return Colors.purple;
+      case 9:
+        return Colors.pink;
       default:
         return Colors.deepOrange;
     }
