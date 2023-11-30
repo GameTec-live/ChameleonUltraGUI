@@ -173,7 +173,7 @@ class _MainPageState extends State<MainPage> {
               page = const ConnectPage();
             }
           } else {
-            page = const SavedCardsPagePage();
+            page = const SavedCardsPage();
           }
         }
         break;
