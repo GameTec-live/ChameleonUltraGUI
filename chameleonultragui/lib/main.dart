@@ -151,18 +151,16 @@ class _MainPageState extends State<MainPage> {
 
     appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
 
-    Widget page; // Set Page
+    Widget page; 
     if (!appState.connector!.connected &&
         selectedIndex != 0 &&
         selectedIndex != 2 &&
         selectedIndex != 5 &&
         selectedIndex != 6) {
-      // If not connected, and not on home, settings or dev page, go to home page
-      selectedIndex = 0;
+      selectedIndex = 2;
     }
 
     switch (selectedIndex) {
-      // Sidebar Navigation
       case 0:
         if (appState.connector!.pendingConnection) {
           page = const PendingConnectionPage();
