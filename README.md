@@ -6,6 +6,7 @@ My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 ## Features Roadmap
 - [x] Remove automatic build on commit/PR
 - [x] Tailor actions to build only for Windows (portable + installer) and Android
+- [x] Change default SAK and ATQA values in CaradSave() to Mifare Classic 1k
 - [ ] Expand built-in dictionary
 - [ ] Change some of the icons
 - [ ] Set default language to Russian
@@ -18,6 +19,7 @@ My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 - [ ] Robust write for LF and HF tags
 - [ ] Support for raw Mifare commands (separate GUI panel)
 - [ ] Change icon & main window title
+- [ ] Remove all panels titles (they occupy too much space)
 
 
 ## Buy a Chameleon Ultra
