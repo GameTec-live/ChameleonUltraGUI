@@ -197,7 +197,8 @@ class _MainPageState extends State<MainPage> {
         break;
       case 7:
         appState.connector!.performDisconnect();
-        appState.changesMade();
+        page = const DebugPage();
+        //appState.changesMade();
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
