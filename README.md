@@ -9,7 +9,7 @@ My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 - [x] Change default SAK and ATQA values in CaradSave() to Mifare Classic 1k
 - [ ] Expand built-in dictionary
 - [ ] Change some of the icons
-- [ ] Set default language to Russian
+- [X] Set default language to Russian
 - [ ] Spawn a smaller viewport for Windows on startup
 - [ ] Add possibility to recursively load dictionaries from folder rather than a single file
 - [ ] Update README to trace star history for this specific fork
@@ -22,6 +22,7 @@ My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 - [x] Remove all panels titles (they occupy too much space)
 - [ ] Make BLE a default connectivity type
 - [ ] Remove the non-fitting photo of the device from the connect screen
+- [x] Set default color scheme to purple
 
 
 ## Buy a Chameleon Ultra

@@ -138,11 +138,11 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               DropdownButton(
                 value: appState.sharedPreferencesProvider.sharedPreferences
                         .getInt('app_theme_color') ??
-                    0,
+                    1,
                 icon: const Icon(Icons.arrow_downward),
                 elevation: 16,
                 onChanged: (value) {
-                  appState.sharedPreferencesProvider.setThemeColor(value ?? 0);
+                  appState.sharedPreferencesProvider.setThemeColor(value ?? 1);
                   appState.changesMade();
                 },
                 items: [
@@ -191,10 +191,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 child: DropdownButton(
                   value: appState.sharedPreferencesProvider.sharedPreferences
                           .getString('locale') ??
-                      'en',
+                      'ru',
                   onChanged: (value) {
                     appState.sharedPreferencesProvider
-                        .setLocale(Locale(value ?? 'en'));
+                        .setLocale(Locale(value ?? 'ru'));
                     appState.changesMade();
                   },
                   items: AppLocalizations.supportedLocales.map((locale) {
