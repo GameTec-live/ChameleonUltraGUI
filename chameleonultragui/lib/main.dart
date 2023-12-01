@@ -265,7 +265,7 @@ class _MainPageState extends State<MainPage> {
                           destinations: [
                             // Sidebar Items
                             NavigationRailDestination(
-                              icon: const Icon(Icons.home),
+                              icon: const Icon(Icons.cpu),
                               label: Text(
                                   AppLocalizations.of(context)!.home), // Home
                             ),
@@ -305,7 +305,7 @@ class _MainPageState extends State<MainPage> {
                                     '${AppLocalizations.of(context)!.debug}'),
                               ),
                             NavigationRailDestination(
-                              icon: const Icon(Icons.reload),
+                              icon: const Icon(Icons.power),
                               label:
                                   Text("Restart"),
                             ),
