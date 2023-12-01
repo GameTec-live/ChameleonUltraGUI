@@ -38,11 +38,6 @@ class DebugPage extends StatelessWidget {
                   icon: const Icon(Icons.close),
                 ),
               ),
-              Text(
-                localizations.debug_page_warning,
-                textScaleFactor: 2,
-              ),
-              Text('⚠️ ${localizations.warned} ⚠️', textScaleFactor: 3),
               Text('${localizations.platform}: ${Platform.operatingSystem}'),
               Text('${localizations.serial_protocol}: ${appState.connector}'),
               Text(

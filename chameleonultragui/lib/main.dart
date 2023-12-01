@@ -305,7 +305,7 @@ class _MainPageState extends State<MainPage> {
                                     '${AppLocalizations.of(context)!.debug}'),
                               ),
                             NavigationRailDestination(
-                              icon: const Icon(Icons.power),
+                              icon: const Icon(Icons.power_button),
                               label:
                                   Text("Restart"),
                             ),
@@ -343,7 +343,7 @@ class BottomProgressBar extends StatelessWidget {
         ? LinearProgressIndicator(
             value: appState.progress,
             backgroundColor: Colors.grey[300],
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.pink),
           )
         : const SizedBox();
   }

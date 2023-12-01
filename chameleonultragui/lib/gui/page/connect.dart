@@ -193,7 +193,7 @@ class ConnectPage extends StatelessWidget {
                                       child: Image.asset(
                                         chameleonDevice.device ==
                                                 ChameleonDevice.ultra
-                                            ? 'assets/black-ultra-standing-front.webp'
+                                            ? 'assets/devkit.webp'
                                             : 'assets/black-lite-standing-front.webp',
                                         fit: BoxFit.fitHeight,
                                       )),

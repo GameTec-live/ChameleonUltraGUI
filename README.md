@@ -22,7 +22,7 @@ My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 - [ ] Change icon & main window title
 - [x] Remove all panels titles (they occupy too much space)
 - [ ] Make BLE a default connectivity type
-- [ ] Remove the non-fitting photo of the device from the connect screen
+- [x] Remove the non-fitting photo of the device from the connect screen
 - [x] Set default color scheme to purple
 
 
