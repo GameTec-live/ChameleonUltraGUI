@@ -265,7 +265,7 @@ class _MainPageState extends State<MainPage> {
                           destinations: [
                             // Sidebar Items
                             NavigationRailDestination(
-                              icon: const Icon(Icons.cpu),
+                              icon: const Icon(Icons.check),
                               label: Text(
                                   AppLocalizations.of(context)!.home), // Home
                             ),
