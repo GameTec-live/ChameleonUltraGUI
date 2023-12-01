@@ -305,7 +305,7 @@ class _MainPageState extends State<MainPage> {
                                     '${AppLocalizations.of(context)!.debug}'),
                               ),
                             NavigationRailDestination(
-                              icon: const Icon(Icons.reboot),
+                              icon: const Icon(Icons.reload),
                               label:
                                   Text("Restart"),
                             ),
