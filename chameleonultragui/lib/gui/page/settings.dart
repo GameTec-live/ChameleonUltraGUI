@@ -494,19 +494,19 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     localizations.yes,
                     localizations.no,
                   ],
-                  selectedValue: appState.sharedPreferencesProvider.getBool("all_pages") ==
+                  selectedValue: appState.sharedPreferencesProvider.isShowAll() ==
                           true
                       ? 1
-                      : appState.sharedPreferencesProvider.getBool("all_pages") ==
+                      : appState.sharedPreferencesProvider.isShowAll() ==
                               false
                           ? 0
                           : 0,
                   onChange: (int index) async {
                     if (index == 0) {
                       appState.sharedPreferencesProvider
-                          .setBool("all_pages", false);
+                          .setShowAll(false);
                     } else if (index == 1) {
-                      appState.sharedPreferencesProvider.setBool("all_pages", true);
+                      appState.sharedPreferencesProvider.setShowAll(true);
                     }
                     appState.changesMade();
                   }),
