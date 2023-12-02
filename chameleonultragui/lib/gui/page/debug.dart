@@ -27,17 +27,17 @@ class DebugPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  onPressed: () {
-                    // Disconnect
-                    appState.connector!.performDisconnect();
-                    appState.changesMade();
-                  },
-                  icon: const Icon(Icons.close),
-                ),
-              ),
+              //Align(
+              //  alignment: Alignment.topRight,
+              //  child: IconButton(
+              //    onPressed: () {
+              //      // Disconnect
+              //      appState.connector!.performDisconnect();
+              //      appState.changesMade();
+              //    },
+              //    icon: const Icon(Icons.close),
+              //  ),
+              //),
               Text('${localizations.platform}: ${Platform.operatingSystem}'),
               Text('${localizations.serial_protocol}: ${appState.connector}'),
               Text(
