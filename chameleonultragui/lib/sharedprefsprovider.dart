@@ -317,6 +317,14 @@ class SharedPreferencesProvider extends ChangeNotifier {
     _sharedPreferences.setBool('all_pages', value);
   }
 
+  void setB(String flag, bool value){
+    _sharedPreferences.setBool(flag, value);
+  }
+
+  bool getB(String flag){
+    return _sharedPreferences.getBool(flag) ?? false;
+  }
+
   void setDebugMode(bool value) {
     _sharedPreferences.setBool('debug', value);
   }
