@@ -270,7 +270,7 @@ class _MainPageState extends State<MainPage> {
                                   AppLocalizations.of(context)!.home), // Home
                             ),
                             NavigationRailDestination(
-                              disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.getBool("all_pages")),
+                              disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.isShowAll()),
                               icon: const Icon(Icons.widgets),
                               label: Text(
                                   AppLocalizations.of(context)!.slot_manager),
