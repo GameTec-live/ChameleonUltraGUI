@@ -85,7 +85,7 @@ class CardSave {
     final name = data['name'] as String;
     final tag = getTagTypeByValue(data['tag']);
     if (data['color'] == null) {
-      data['color'] = colorToHex(Colors.deepOrange);
+      data['color'] = colorToHex(Colors.deepPurple);
     }
     final color = hexToColor(data['color']);
     final encodedData = data['data'] as List<dynamic>;

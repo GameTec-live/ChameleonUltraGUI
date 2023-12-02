@@ -1,5 +1,5 @@
 # CU GUI
-My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
+My personal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 
 [![Auto build](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml) 
 
@@ -14,6 +14,7 @@ My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 - [ ] Add possibility to recursively load dictionaries from folder rather than a single file
 - [ ] Update README to trace star history for this specific fork
 - [x] Remove redundant files in repo
+- [x] Device restart button available in context navigator instead of almost invisible icon in top-right corner
 - [x] Make debug panel always visible
 - [x] When no device connected, initial screen is cards/dictionaries listing
 - [ ] Robust write for LF and HF tags
@@ -21,7 +22,7 @@ My persoal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 - [x] Merge RichText hex editor from upstream
 - [ ] Change icon & main window title
 - [x] Remove all panels titles (they occupy too much space)
-- [ ] Make BLE a default connectivity type
+- [x] Make BLE a default connectivity type
 - [x] Remove the non-fitting photo of the device from the connect screen
 - [x] Set default color scheme to purple
 

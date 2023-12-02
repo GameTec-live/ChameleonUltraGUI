@@ -447,10 +447,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                 GestureDetector(
                                     onTap: () async {
                                       await launchUrl(Uri.parse(
-                                          'https://github.com/GameTec-live/ChameleonUltraGUI'));
+                                          'https://github.com/redcode-labs/CU-DevKit'));
                                     },
                                     child: const Text(
-                                        'https://github.com/GameTec-live/ChameleonUltraGUI')),
+                                        'https://github.com/GameTec-live/redcode-labs/CU-DevKit')),
                                 const SizedBox(height: 30),
                                 GestureDetector(
                                     onTap: () async {
@@ -483,6 +483,33 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 ),
                 child: Text(localizations.about),
               ),
+              const SizedBox(height: 10),
+              Text(
+                localizations.show_pages,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 5),
+              ToggleButtonsWrapper(
+                  items: [
+                    localizations.yes,
+                    localizations.no,
+                  ],
+                  selectedValue: appState.sharedPreferencesProvider.getBool("all_pages") ==
+                          true
+                      ? 1
+                      : appState.sharedPreferencesProvider.getBool("all_pages") ==
+                              false
+                          ? 0
+                          : 0,
+                  onChange: (int index) async {
+                    if (index == 0) {
+                      appState.sharedPreferencesProvider
+                          .setBool("all_pages", false);
+                    } else if (index == 1) {
+                      appState.sharedPreferencesProvider.setBool("all_pages", true);
+                    }
+                    appState.changesMade();
+                  }),
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () => showDialog<String>(

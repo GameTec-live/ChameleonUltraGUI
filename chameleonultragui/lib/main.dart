@@ -72,7 +72,7 @@ class ChameleonGUIState extends ChangeNotifier {
   AbstractSerial? connector;
   ChameleonCommunicator? communicator;
 
-  bool devMode = false;
+  bool devMode = true;
   double? progress; // DFU
 
   // Flashing easter egg
@@ -247,7 +247,7 @@ class _MainPageState extends State<MainPage> {
                         brightness: Brightness.dark)
                     .surface,
                 statusBarBrightness: Brightness.dark,
-                statusBarIconBrightness: Brightness.light)),
+                statusBarIconBrightness: Brightness.dark)),
       ),
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
       home: LayoutBuilder(// Build Page
@@ -270,7 +270,7 @@ class _MainPageState extends State<MainPage> {
                                   AppLocalizations.of(context)!.home), // Home
                             ),
                             NavigationRailDestination(
-                              disabled: !appState.connector!.connected,
+                              disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.getBool("all_pages")),
                               icon: const Icon(Icons.widgets),
                               label: Text(
                                   AppLocalizations.of(context)!.slot_manager),

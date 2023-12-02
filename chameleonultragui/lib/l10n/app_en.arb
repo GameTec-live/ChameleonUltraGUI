@@ -259,5 +259,6 @@
   "edit_hex": "Edit HEX",
   "key_a": "Key A",
   "key_b": "Key B",
-  "acs": "ACL"
+  "acs": "ACL",
+  "show_pages" : "Show all pages",
 }
