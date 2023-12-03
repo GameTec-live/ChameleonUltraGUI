@@ -23,6 +23,7 @@ import 'package:chameleonultragui/gui/page/mfkey32.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/gui/page/write_card.dart';
 import 'package:chameleonultragui/gui/page/pending_connection.dart';
+import 'package:chameleonultragui/gui/page/info.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -196,9 +197,7 @@ class _MainPageState extends State<MainPage> {
         page = const DebugPage();
         break;
       case 7:
-        AlertDialog(title: Text("Hardware Info"),
-                    content: Text("● ${AppLocalizations.of(context)!.platform} -> ${Platform.operatingSystem}\n● ${AppLocalizations.of(context)!.serial_protocol} -> ${appState.connector}\n● ${AppLocalizations.of(context)!.chameleon_connected} -> ${appState.connector!.connected}\n● ${AppLocalizations.of(context)!.chameleon_device_type} -> ${appState.connector!.device}\n● ${AppLocalizations.of(context)!.shared_preferences_logging} -> ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines"));
-        page = const DebugPage();
+        page = const InfoPage();
         break;
       case 8:
         appState.connector!.performDisconnect();
