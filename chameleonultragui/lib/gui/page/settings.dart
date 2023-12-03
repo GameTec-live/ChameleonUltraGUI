@@ -500,7 +500,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       : appState.sharedPreferencesProvider.isShowAll() ==
                               false
                           ? 0
-                          : 0,
+                          : 1,
                   onChange: (int index) async {
                     if (index == 0) {
                       appState.sharedPreferencesProvider

@@ -170,10 +170,10 @@ class _MainPageState extends State<MainPage> {
             if (appState.connector!.isDFU) {
               page = const FlashingPage();
             } else {
-              page = const ConnectPage();
+              page = const SavedCardsPage();
             }
           } else {
-            page = const SavedCardsPage();
+            page = const ConnectPage();
           }
         }
         break;
@@ -287,13 +287,13 @@ class _MainPageState extends State<MainPage> {
                                   AppLocalizations.of(context)!.saved_cards),
                             ),
                             NavigationRailDestination(
-                              disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.isShowAll()),
+                              disabled: (!appState.connector!.connected || appState.sharedPreferencesProvider.isShowAll()),
                               icon: const Icon(Icons.wifi),
                               label:
                                   Text(AppLocalizations.of(context)!.read_card),
                             ),
                             NavigationRailDestination(
-                              disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.isShowAll()),
+                              disabled: (!appState.connector!.connected || appState.sharedPreferencesProvider.isShowAll()),
                               icon: const Icon(Icons.credit_card),
                               label: Text(
                                   AppLocalizations.of(context)!.write_card),
@@ -310,7 +310,7 @@ class _MainPageState extends State<MainPage> {
                                     '${AppLocalizations.of(context)!.debug}'),
                               ),
                             NavigationRailDestination(
-                              disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.isShowAll()),
+                              disabled: (!appState.connector!.connected || appState.sharedPreferencesProvider.isShowAll()),
                               icon: const Icon(Icons.info),
                               label:
                                   Text("Info"),
