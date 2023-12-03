@@ -483,33 +483,60 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 ),
                 child: Text(localizations.about),
               ),
+              //const SizedBox(height: 10),
+              //Text(
+              //  localizations.show_pages,
+              //  style: const TextStyle(fontWeight: FontWeight.bold),
+              //),
+              //const SizedBox(height: 5),
+              //ToggleButtonsWrapper(
+              //    items: [
+              //      localizations.yes,
+              //      localizations.no,
+              //    ],
+              //    selectedValue: appState.sharedPreferencesProvider.isShowAll() ==
+              //            true
+              //        ? 1
+              //        : appState.sharedPreferencesProvider.isShowAll() ==
+              //                false
+              //            ? 0
+              //            : 1,
+              //    onChange: (int index) async {
+              //      if (index == 0) {
+              //        appState.sharedPreferencesProvider
+              //            .setShowAll(false);
+              //      } else if (index == 1) {
+              //        appState.sharedPreferencesProvider.setShowAll(true);
+              //      }
+              //      appState.changesMade();
+              //    }),
               const SizedBox(height: 10),
-              Text(
-                localizations.show_pages,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 5),
-              ToggleButtonsWrapper(
-                  items: [
-                    localizations.yes,
-                    localizations.no,
-                  ],
-                  selectedValue: appState.sharedPreferencesProvider.isShowAll() ==
-                          true
-                      ? 1
-                      : appState.sharedPreferencesProvider.isShowAll() ==
-                              false
-                          ? 0
-                          : 1,
-                  onChange: (int index) async {
-                    if (index == 0) {
-                      appState.sharedPreferencesProvider
-                          .setShowAll(false);
-                    } else if (index == 1) {
-                      appState.sharedPreferencesProvider.setShowAll(true);
-                    }
-                    appState.changesMade();
-                  }),
+              TextButton(
+                onPressed: () => showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: Text(localizations.debug_mode),
+                    content: Text(localizations.show_pages),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(localizations.cancel),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          appState.sharedPreferencesProvider.setShowAll(
+                              !appState.sharedPreferencesProvider.isShowAll());
+                          appState.changesMade();
+                          Navigator.pop(context);
+                        },
+                        child: Text(localizations.ok),
+                      ),
+                    ],
+                  ),
+                ),
+                child: Text(
+                    "${appState.sharedPreferencesProvider.isShowAll() ? localizations.deactivate : localizations.activate} ${localizations.all_pages.toLowerCase()}"),
+              )
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () => showDialog<String>(
