@@ -201,7 +201,7 @@ class _MainPageState extends State<MainPage> {
         page = const DebugPage();
         break;
       case 8:
-        await appState.connector!.performDisconnect();
+        appState.connector!.performDisconnect();
         appState.changesMade();
         page = const ConnectPage();
         break;
