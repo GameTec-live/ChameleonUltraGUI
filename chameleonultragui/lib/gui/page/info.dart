@@ -14,7 +14,7 @@ class InfoPage extends StatefulWidget {
   InfoPageState createState() => InfoPageState();
 }
 
-class InfoPageState extends State<InfoCardPage> {
+class InfoPageState extends State<InfoPage> {
   @override
   void initState() {
     super.initState();
@@ -29,7 +29,7 @@ class InfoPageState extends State<InfoCardPage> {
         children: [
           Center(child: 
             AlertDialog(title: Text("Hardware Info"),
-                    content: Text("● ${localizations.platform} -> ${Platform.operatingSystem}\n● ${AppLocalizations.of(context)!.serial_protocol} -> ${appState.connector}\n● ${AppLocalizations.of(context)!.chameleon_connected} -> ${appState.connector!.connected}\n● ${AppLocalizations.of(context)!.chameleon_device_type} -> ${appState.connector!.device}\n● ${AppLocalizations.of(context)!.shared_preferences_logging} -> ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines"));
+                    content: Text("● ${localizations.platform} -> ${Platform.operatingSystem}\n● ${AppLocalizations.of(context)!.serial_protocol} -> ${appState.connector}\n● ${AppLocalizations.of(context)!.chameleon_connected} -> ${appState.connector!.connected}\n● ${AppLocalizations.of(context)!.chameleon_device_type} -> ${appState.connector!.device}\n● ${AppLocalizations.of(context)!.shared_preferences_logging} -> ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines")),
           ),
         ],
       ),
