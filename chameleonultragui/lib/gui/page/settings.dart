@@ -450,7 +450,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                           'https://github.com/redcode-labs/CU-DevKit'));
                                     },
                                     child: const Text(
-                                        'https://github.com/GameTec-live/redcode-labs/CU-DevKit')),
+                                        'https://github.com/redcode-labs/CU-DevKit')),
                                 const SizedBox(height: 30),
                                 GestureDetector(
                                     onTap: () async {
