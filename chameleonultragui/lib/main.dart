@@ -196,8 +196,8 @@ class _MainPageState extends State<MainPage> {
         page = const DebugPage();
         break;
       case 7:
-        AlertDialog(title: "Hardware Info",
-                    content: "● ${AppLocalizations.of(context)!.platform} -> ${Platform.operatingSystem}\n● ${AppLocalizations.of(context)!.serial_protocol} -> ${appState.connector}\n● ${AppLocalizations.of(context)!.chameleon_connected} -> ${appState.connector!.connected}\n● ${AppLocalizations.of(context)!.chameleon_device_type} -> ${appState.connector!.device}\n● ${AppLocalizations.of(context)!.shared_preferences_logging} -> ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines");
+        AlertDialog(title: Text("Hardware Info"),
+                    content: Text("● ${AppLocalizations.of(context)!.platform} -> ${Platform.operatingSystem}\n● ${AppLocalizations.of(context)!.serial_protocol} -> ${appState.connector}\n● ${AppLocalizations.of(context)!.chameleon_connected} -> ${appState.connector!.connected}\n● ${AppLocalizations.of(context)!.chameleon_device_type} -> ${appState.connector!.device}\n● ${AppLocalizations.of(context)!.shared_preferences_logging} -> ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines"));
         page = const DebugPage();
         break;
       case 8:
