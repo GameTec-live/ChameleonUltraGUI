@@ -310,7 +310,7 @@ class _MainPageState extends State<MainPage> {
                                     '${AppLocalizations.of(context)!.debug}'),
                               ),
                             NavigationRailDestination(
-                              disabled: (!appState.connector!.connected || appState.sharedPreferencesProvider.isShowAll()),
+                              //disabled: (!appState.connector!.connected || appState.sharedPreferencesProvider.isShowAll()),
                               icon: const Icon(Icons.info),
                               label:
                                   Text("Info"),
