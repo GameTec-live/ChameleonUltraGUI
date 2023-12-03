@@ -196,7 +196,11 @@ class _MainPageState extends State<MainPage> {
         page = const DebugPage();
         break;
       case 7:
-        appState.connector!.performDisconnect();
+        AlertDialog(title: "Hardware Info",
+                    content: "● ${localizations.platform} -> ${Platform.operatingSystem}\n● ${localizations.serial_protocol} -> ${appState.connector}\n● ${localizations.chameleon_connected} -> ${appState.connector!.connected}\n● ${localizations.chameleon_device_type} -> ${appState.connector!.device}\n● ${localizations.shared_preferences_logging} -> ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines");
+        break;
+      case 8:
+        await appState.connector!.performDisconnect();
         appState.changesMade();
         page = const ConnectPage();
         break;
@@ -304,6 +308,12 @@ class _MainPageState extends State<MainPage> {
                                 label: Text(
                                     '${AppLocalizations.of(context)!.debug}'),
                               ),
+                            NavigationRailDestination(
+                              disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.isShowAll()),
+                              icon: const Icon(Icons.info),
+                              label:
+                                  Text("Info"),
+                            ),
                             NavigationRailDestination(
                               //disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.isShowAll()),
                               icon: const Icon(Icons.refresh),

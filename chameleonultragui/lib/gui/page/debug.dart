@@ -38,14 +38,6 @@ class DebugPage extends StatelessWidget {
               //    icon: const Icon(Icons.close),
               //  ),
               //),
-              Text('${localizations.platform}: ${Platform.operatingSystem}'),
-              Text('${localizations.serial_protocol}: ${appState.connector}'),
-              Text(
-                  '${localizations.chameleon_connected}: ${appState.connector!.connected}'),
-              Text(
-                  '${localizations.chameleon_device_type}: ${appState.connector!.device}'),
-              Text(
-                  '${localizations.shared_preferences_logging}: ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines'),
               const SizedBox(height: 10),
               Text(localizations.production_logging, textScaleFactor: 1.5),
               const SizedBox(height: 5),
