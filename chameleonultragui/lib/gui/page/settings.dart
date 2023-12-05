@@ -535,8 +535,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                 ),
                 child: Text(
-                    "${appState.sharedPreferencesProvider.isShowAll() ? localizations.deactivate : localizations.activate} ${localizations.all_pages.toLowerCase()}"),
-              )
+                    "${appState.sharedPreferencesProvider.isShowAll() ? localizations.deactivate : localizations.activate} ${localizations.show_pages.toLowerCase()}"),
+              ),
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () => showDialog<String>(
