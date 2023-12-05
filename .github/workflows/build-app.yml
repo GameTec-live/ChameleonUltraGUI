@@ -4,8 +4,8 @@ name: Build APP
 on:
   workflow_dispatch:
   push:
-    paths:
-      - 'CU-devkit/chameleonultragui/lib/*'
+    #paths:
+      #- 'CU-devkit/chameleonultragui/lib/*'
 
 jobs:
   check:
