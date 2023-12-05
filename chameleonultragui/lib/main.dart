@@ -79,6 +79,8 @@ class ChameleonGUIState extends ChangeNotifier {
   // Flashing easter egg
   bool easterEgg = false;
 
+  bool reader_enabled = false;
+
   bool forceMfkey32Page = false;
 
   GlobalKey navigationRailKey = GlobalKey();
@@ -158,7 +160,9 @@ class _MainPageState extends State<MainPage> {
         selectedIndex != 2 &&
         selectedIndex != 5 &&
         selectedIndex != 6 &&
-        selectedIndex != 7) {
+        selectedIndex != 7 &&
+        selectedIndex != 8 &&
+        selectedIndex != 9) {
       selectedIndex = 0;
     }
 
@@ -200,6 +204,12 @@ class _MainPageState extends State<MainPage> {
         page = const InfoPage();
         break;
       case 8:
+        bool new_reader_state = !reader_enabled
+        appState.communicator!.setReaderDeviceMode(new_reader_state);
+        //appState.changesMade();
+        page = const ReadCardPage();
+        break;
+      case 9:
         appState.connector!.performDisconnect();
         appState.changesMade();
         page = const ConnectPage();
@@ -313,6 +323,12 @@ class _MainPageState extends State<MainPage> {
                               icon: const Icon(Icons.info),
                               label:
                                   Text("Info"),
+                            ),
+                            NavigationRailDestination(
+                              disabled: (!appState.connector!.connected || appState.sharedPreferencesProvider.isShowAll()),
+                              icon: const Icon(Icons.antenna),
+                              label:
+                                  Text("HF Reader"),
                             ),
                             NavigationRailDestination(
                               //disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.isShowAll()),
