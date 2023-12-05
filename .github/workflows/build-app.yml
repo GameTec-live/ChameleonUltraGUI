@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'CU-devkit/chameleonultragui/lib/**/*'
+      - 'CU-devkit/chameleonultragui/lib/*'
 
 jobs:
   check:
