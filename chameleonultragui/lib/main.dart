@@ -204,7 +204,7 @@ class _MainPageState extends State<MainPage> {
         page = const InfoPage();
         break;
       case 8:
-        bool new_reader_state = !reader_enabled
+        bool new_reader_state = !appState.reader_enabled;
         appState.communicator!.setReaderDeviceMode(new_reader_state);
         //appState.changesMade();
         page = const ReadCardPage();
@@ -326,7 +326,7 @@ class _MainPageState extends State<MainPage> {
                             ),
                             NavigationRailDestination(
                               disabled: (!appState.connector!.connected || appState.sharedPreferencesProvider.isShowAll()),
-                              icon: const Icon(Icons.antenna),
+                              icon: const Icon(Icons.radio),
                               label:
                                   Text("HF Reader"),
                             ),
