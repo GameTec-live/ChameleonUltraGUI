@@ -1,8 +1,11 @@
 name: Build APP
 
-# manual only 
+# manual only + push 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'CU-devkit/chameleonultragui/lib/**/*'
 
 jobs:
   check:
