@@ -24,6 +24,7 @@ import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/gui/page/write_card.dart';
 import 'package:chameleonultragui/gui/page/pending_connection.dart';
 import 'package:chameleonultragui/gui/page/info.dart';
+import 'package:chameleonultragui/gui/page/recovery.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -162,7 +163,8 @@ class _MainPageState extends State<MainPage> {
         selectedIndex != 6 &&
         selectedIndex != 7 &&
         selectedIndex != 8 &&
-        selectedIndex != 9) {
+        selectedIndex != 9 &&
+        selectedIndex != 10) {
       selectedIndex = 0;
     }
 
@@ -210,6 +212,9 @@ class _MainPageState extends State<MainPage> {
         page = const ReadCardPage();
         break;
       case 9:
+        page = const RecoveryPage();
+        break;
+      case 10:
         appState.connector!.performDisconnect();
         appState.changesMade();
         page = const ConnectPage();
@@ -329,6 +334,12 @@ class _MainPageState extends State<MainPage> {
                               icon: const Icon(Icons.radio),
                               label:
                                   Text("HF Reader"),
+                            ),
+                            NavigationRailDestination(
+                              disabled: (!appState.connector!.connected || appState.sharedPreferencesProvider.isShowAll()),
+                              icon: const Icon(Icons.skull),
+                              label:
+                                  Text("Recoery"),
                             ),
                             NavigationRailDestination(
                               //disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.isShowAll()),

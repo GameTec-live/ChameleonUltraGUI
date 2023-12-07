@@ -7,8 +7,8 @@ My personal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 - [x] Remove automatic build on commit/PR
 - [x] Tailor actions to build only for Windows (portable + installer) and Android
 - [x] Change default SAK and ATQA values in CaradSave() to Mifare Classic 1k
-- [ ] Expand built-in dictionary
-- [ ] Change some of the icons
+- [x] Expand built-in keys dictionary
+- [x] Change some of the icons
 - [x] Set default language to Russian
 - [ ] Spawn a smaller viewport for Windows on startup
 - [ ] Add possibility to recursively load dictionaries from folder rather than a single file
@@ -26,7 +26,8 @@ My personal fork of the Chameleon GUI, tailored for the Ultra DevKit version
 - [x] Make sure thet [set|get]Bool() is exported in global scope of SharedPreferences
 - [x] Remove the non-fitting photo of the device from the connect screen
 - [x] Re-arrane some debug info into a separate section
-- [ ] Separate page for key recovery attacks
+- [x] Separate page for key recovery attacks
+- [x] Enablement of reader field directly through navbar
 - [x] Set default color scheme to purple
 
 
