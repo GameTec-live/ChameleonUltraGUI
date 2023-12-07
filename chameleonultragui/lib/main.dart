@@ -284,7 +284,7 @@ class _MainPageState extends State<MainPage> {
                           destinations: [
                             // Sidebar Items
                             NavigationRailDestination(
-                              icon: const Icon(Icons.check),
+                              icon: const Icon(Icons.memory_sharp),
                               label: Text(
                                   AppLocalizations.of(context)!.home), // Home
                             ),
@@ -319,7 +319,7 @@ class _MainPageState extends State<MainPage> {
                             ),
                             if (appState.devMode)
                               NavigationRailDestination(
-                                icon: const Icon(Icons.bug_report),
+                                icon: const Icon(Icons.adb),
                                 label: Text(
                                     '${AppLocalizations.of(context)!.debug}'),
                               ),
@@ -337,7 +337,7 @@ class _MainPageState extends State<MainPage> {
                             ),
                             NavigationRailDestination(
                               disabled: (!appState.connector!.connected || appState.sharedPreferencesProvider.isShowAll()),
-                              icon: const Icon(Icons.skull),
+                              icon: const Icon(Icons.key),
                               label:
                                   Text("Recoery"),
                             ),
