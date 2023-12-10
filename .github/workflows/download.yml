@@ -1,18 +1,18 @@
-name: Download Artifacts 
-  id: download-artifacts
-  uses: dawidd6/action-download-artifact@v2
-  with:
-    workflow: build-app.yml
-    workflow_conclusion: success
-    branch: master
-    event: push
-    name: .*windows.*
-    name_is_regexp: true
-    path: E:\RFID
-    check_artifacts: true
-    skip_unpack: false
-    if_no_artifact_found: warn
-    allow_forks: true
+- name: Download Artifacts 
+    id: download-artifacts
+    uses: dawidd6/action-download-artifact@v2
+    with:
+      workflow: build-app.yml
+      workflow_conclusion: success
+      branch: master
+      event: push
+      name: ".*windows.*"
+      name_is_regexp: true
+      path: "E:\RFID"
+      check_artifacts: true
+      skip_unpack: false
+      if_no_artifact_found: warn
+      allow_forks: true
 #on:
 #   workflow_run:
 #     workflows: ["Build APP"]
