@@ -343,7 +343,7 @@ class _MainPageState extends State<MainPage> {
                             ),
                             NavigationRailDestination(
                               //disabled: (!appState.connector!.connected || !appState.sharedPreferencesProvider.isShowAll()),
-                              icon: const Icon(Icons.refresh),
+                              icon: const Icon(Icons.power_settings_new),
                               label:
                                   Text("Restart"),
                             ),
