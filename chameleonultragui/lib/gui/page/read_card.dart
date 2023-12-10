@@ -185,6 +185,33 @@ class ReadCardPageState extends State<ReadCardPage> {
     } catch (_) {}
   }
 
+  /*Future<void> writeMXto5X() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
+    try {
+      setState(() {
+        lfInfo = LFCardInfo();
+      });
+
+      if (!await appState.communicator!.isReaderDeviceMode()) {
+        await appState.communicator!.setReaderDeviceMode(true);
+      }
+
+      var card = await appState.communicator!.readEM410X();
+      if (card != "") {
+        setState(() {
+          lfInfo.uid = card;
+          List<int> keys = [0x1111111111];
+          await appState.communicator!.writeEM410XtoT55XX(lfinfo.uid, )
+        });
+      } else {
+        setState(() {
+          lfInfo.cardExist = false;
+        });
+      }
+    } catch (_) {}
+  }*/
+
   Future<void> recoverKeys() async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
