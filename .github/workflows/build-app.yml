@@ -67,14 +67,13 @@ jobs:
 
   download:
     needs: build-windows
-    runs-on: windows-latest
+    #runs-on: windows-latest
     permissions:
       contents: read
     steps: 
       - uses: actions/download-artifact@v3
         with:
           name: windows
-          path: chameleonultragui/build/windows/x64/runner/Release/
 
 #- name: Download Artifact
 #  id: download-artifact
