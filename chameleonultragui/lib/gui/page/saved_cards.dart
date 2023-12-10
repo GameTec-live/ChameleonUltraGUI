@@ -505,8 +505,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           actions: [
                                             ElevatedButton(
                                               onPressed: () async {
-                                                await saveTag(
-                                                    tag, context, true);
+                                                await saveTagBin(
+                                                    tag, context);
                                                 if (context.mounted) {
                                                   Navigator.pop(context);
                                                 }
@@ -516,8 +516,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             ),
                                             ElevatedButton(
                                               onPressed: () async {
-                                                await saveTag(
-                                                    tag, context, false);
+                                                await saveTagJson(
+                                                    tag, context);
                                                 if (context.mounted) {
                                                   Navigator.pop(context);
                                                 }

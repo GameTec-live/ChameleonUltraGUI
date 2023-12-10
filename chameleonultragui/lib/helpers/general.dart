@@ -244,47 +244,48 @@ AnimationSetting getAnimationModeType(int value) {
   }
 }
 
-Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
+Future<void> saveTagBin(CardSave tag, BuildContext context) async {
   var localizations = AppLocalizations.of(context)!;
-  if (bin) {
-    List<int> tagDump = [];
-    for (var block in tag.data) {
-      tagDump.addAll(block);
-    }
-    try {
-      await FileSaver.instance.saveAs(
-          name: tag.name,
-          bytes: Uint8List.fromList(tagDump),
-          ext: 'bin',
-          mimeType: MimeType.other);
-    } on UnimplementedError catch (_) {
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: '${localizations.output_file}:',
-        fileName: '${tag.name}.bin',
-      );
+  List<int> tagDump = [];
+  for (var block in tag.data) {
+    tagDump.addAll(block);
+  }
+  try {
+    await FileSaver.instance.saveAs(
+        name: tag.name,
+        bytes: Uint8List.fromList(tagDump),
+        ext: 'bin',
+        mimeType: MimeType.other);
+  } on UnimplementedError catch (_) {
+    String? outputFile = await FilePicker.platform.saveFile(
+      dialogTitle: '${localizations.output_file}:',
+      fileName: '${tag.name}.bin',
+    );
 
-      if (outputFile != null) {
-        var file = File(outputFile);
-        await file.writeAsBytes(Uint8List.fromList(tagDump));
-      }
+    if (outputFile != null) {
+      var file = File(outputFile);
+      await file.writeAsBytes(Uint8List.fromList(tagDump));
     }
-  } else {
-    try {
-      await FileSaver.instance.saveAs(
-          name: tag.name,
-          bytes: const Utf8Encoder().convert(tag.toJson()),
-          ext: 'json',
-          mimeType: MimeType.other);
-    } on UnimplementedError catch (_) {
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: '${localizations.output_file}:',
-        fileName: '${tag.name}.json',
-      );
+  }
+}
 
-      if (outputFile != null) {
-        var file = File(outputFile);
-        await file.writeAsBytes(const Utf8Encoder().convert(tag.toJson()));
-      }
+Future<void> saveTagJson(CardSave tag, BuildContext context) async {
+  var localizations = AppLocalizations.of(context)!;
+  try {
+    await FileSaver.instance.saveAs(
+        name: tag.name,
+        bytes: const Utf8Encoder().convert(tag.toJson()),
+        ext: 'json',
+        mimeType: MimeType.other);
+  } on UnimplementedError catch (_) {
+    String? outputFile = await FilePicker.platform.saveFile(
+      dialogTitle: '${localizations.output_file}:',
+      fileName: '${tag.name}.json',
+    );
+
+    if (outputFile != null) {
+      var file = File(outputFile);
+      await file.writeAsBytes(const Utf8Encoder().convert(tag.toJson()));
     }
   }
 }

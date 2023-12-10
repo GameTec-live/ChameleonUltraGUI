@@ -145,7 +145,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                     //if (isMifareClassic(widget.tagSave.tag))
                     ElevatedButton(
                         onPressed: () async {
-                          await saveTag(widget.tagSave, context, true);
+                          await saveTagBin(widget.tagSave, context);
                           if (context.mounted) {
                             Navigator.pop(context);
                           }
@@ -154,7 +154,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        await saveTag(widget.tagSave, context, false);
+                        await saveTagJson(widget.tagSave, context);
                         if (context.mounted) {
                           Navigator.pop(context);
                         }
