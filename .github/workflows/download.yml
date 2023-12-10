@@ -3,7 +3,6 @@ on:
    workflow_run:
      workflows: ["Build APP"]
      types: [completed] 
-
   id: download-artifact
   uses: dawidd6/action-download-artifact@v2
   with:
