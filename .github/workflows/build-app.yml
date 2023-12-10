@@ -64,16 +64,45 @@ jobs:
         with:
           name: windows-installer
           path: chameleonultragui-setup-win.exe
-
-  download:
-    needs: build-windows
-    #runs-on: windows-latest
-    permissions:
-      contents: read
-    steps: 
-      - uses: actions/download-artifact@v3
+              - name: Create Draft Release
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: windows
+          tag_name: <tofill>
+          release_name: <tofill>
+          draft: true
+          prerelease: false
+      - uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./windows.zip
+          asset_name: windows.zip
+          asset_content_type: application/zip
+
+      - uses: eregon/publish-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ steps.create_release.outputs.id }}
+      - uses: robinraju/release-downloader@v1.8
+        with:
+          latest: true
+          extract: true
+          fileName: "windows.zip"
+
+#  download:
+#    needs: build-windows
+#    #runs-on: windows-latest
+#    permissions:
+#      contents: read
+#    steps: 
+#      - uses: actions/download-artifact@v3
+#        with:
+#          name: windows
 
 #- name: Download Artifact
 #  id: download-artifact
