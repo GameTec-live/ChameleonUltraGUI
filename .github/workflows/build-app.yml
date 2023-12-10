@@ -64,35 +64,35 @@ jobs:
         with:
           name: windows-installer
           path: chameleonultragui-setup-win.exe
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: stable
-          release_name: windows
-          draft: true
-          prerelease: false
-      - uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: chameleonultragui-setup-win.exe
-          asset_name: windows.zip
-          asset_content_type: application/zip
+#      - name: Create Release
+#        id: create_release
+#        uses: actions/create-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          tag_name: stable
+#          release_name: windows
+#          draft: true
+#          prerelease: false
+#      - uses: actions/upload-release-asset@v1.0.1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: chameleonultragui-setup-win.exe
+#          asset_name: windows.zip
+#          asset_content_type: application/zip
 
-      - uses: eregon/publish-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          release_id: ${{ steps.create_release.outputs.id }}
-      - uses: robinraju/release-downloader@v1.8
-        with:
-          latest: true
-          extract: true
-          fileName: "windows.zip"
+#      - uses: eregon/publish-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          release_id: ${{ steps.create_release.outputs.id }}
+#      - uses: robinraju/release-downloader@v1.8
+#        with:
+#          latest: true
+#          extract: true
+#          fileName: "windows.zip"
 
 #  download:
 #    needs: build-windows
