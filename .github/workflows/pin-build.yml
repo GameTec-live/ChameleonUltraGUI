@@ -9,7 +9,7 @@ jobs:
     permissions:
       statuses: write
     name: Pin artifacts URL to commit statuses
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.repository == 'wintrmcte/CU-DevKit' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Add artifacts links to commit status
