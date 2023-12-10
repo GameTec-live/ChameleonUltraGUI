@@ -1,8 +1,4 @@
 name: Download 
-on:
-   workflow_run:
-     workflows: ["Build APP"]
-     types: [completed] 
   id: download-artifact
   uses: dawidd6/action-download-artifact@v2
   with:
@@ -17,3 +13,7 @@ on:
     skip_unpack: false
     if_no_artifact_found: warn
     allow_forks: true
+#on:
+#   workflow_run:
+#     workflows: ["Build APP"]
+#     types: [completed] 
