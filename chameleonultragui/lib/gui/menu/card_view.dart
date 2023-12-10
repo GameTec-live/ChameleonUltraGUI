@@ -142,8 +142,8 @@ class CardViewMenuState extends State<CardViewMenu> {
                 return AlertDialog(
                   title: Text(localizations.select_save_format),
                   actions: [
-                    if (isMifareClassic(widget.tagSave.tag))
-                      ElevatedButton(
+                    //if (isMifareClassic(widget.tagSave.tag))
+                    ElevatedButton(
                         onPressed: () async {
                           await saveTag(widget.tagSave, context, true);
                           if (context.mounted) {
@@ -151,7 +151,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                           }
                         },
                         child: Text(localizations.save_as(".bin")),
-                      ),
+                    ),
                     ElevatedButton(
                       onPressed: () async {
                         await saveTag(widget.tagSave, context, false);
