@@ -1,4 +1,4 @@
-- name: Download Artifacts 
+name: Download Artifacts 
   id: download-artifacts
   uses: dawidd6/action-download-artifact@v2
   with:
