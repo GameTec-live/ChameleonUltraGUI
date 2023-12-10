@@ -64,3 +64,34 @@ jobs:
         with:
           name: windows-installer
           path: chameleonultragui-setup-win.exe
+
+  download:
+    needs: build-windows
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps: 
+      - uses: actions/download-artifact@v3
+        with:
+          name: windows
+          path: chameleonultragui/build/windows/x64/runner/Release/
+
+#- name: Download Artifact
+#  id: download-artifact
+#  uses: dawidd6/action-download-artifact@v2
+#  with:
+#    workflow: build-app.yml
+#    workflow_conclusion: success
+#    branch: master
+#    event: push
+#    name: .*windows.*
+#    name_is_regexp: true
+#    path: E:\RFID
+#    check_artifacts: true
+#    skip_unpack: false
+#    if_no_artifact_found: warn
+#    allow_forks: true
+#on:
+#   workflow_run:
+#     workflows: ["Build APP"]
+#     types: [completed] 
