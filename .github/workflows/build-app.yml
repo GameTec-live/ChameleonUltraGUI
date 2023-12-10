@@ -64,7 +64,6 @@ jobs:
         with:
           name: windows-installer
           path: chameleonultragui-setup-win.exe
-              - name: Create Draft Release
       - name: Create Release
         uses: actions/create-release@v1
         env:
