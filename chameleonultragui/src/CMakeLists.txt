@@ -42,7 +42,7 @@ if (WIN32)
 
   add_custom_command(
     TARGET recovery POST_BUILD
-    COMMAND ../../src/post_build.bat $<CONFIG> $<TARGET_FILE_DIR:recovery>
+    COMMAND ../../../src/post_build.bat $<CONFIG> $<TARGET_FILE_DIR:recovery>
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   )
 endif (WIN32)

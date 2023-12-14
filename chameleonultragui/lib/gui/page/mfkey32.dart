@@ -11,7 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Mfkey32Page extends StatefulWidget {
-  const Mfkey32Page({Key? key}) : super(key: key);
+  const Mfkey32Page({super.key});
 
   @override
   Mfkey32PageState createState() => Mfkey32PageState();

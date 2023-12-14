@@ -18,7 +18,7 @@ class Chameleon {
       required this.dfu});
 }
 
-class AbstractSerial {
+abstract class AbstractSerial {
   late Logger log;
   ChameleonDevice device = ChameleonDevice.none;
   bool connected = false;
@@ -39,23 +39,13 @@ class AbstractSerial {
     return false;
   }
 
-  Future<List> availableDevices() async {
-    return [];
-  }
+  Future<bool> connectSpecificDevice(devicePort);
 
-  Future<bool> connectSpecificDevice(devicePort) async {
-    return false;
-  }
-
-  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
-    return [];
-  }
+  Future<List<Chameleon>> availableChameleons(bool onlyDFU);
 
   Future<void> open() async {}
 
-  Future<bool> write(Uint8List command, {bool firmware = false}) async {
-    return false;
-  }
+  Future<bool> write(Uint8List command, {bool firmware = false});
 
   Future<void> registerCallback(dynamic callback) async {
     messageCallback = callback;

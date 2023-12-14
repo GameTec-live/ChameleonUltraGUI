@@ -18,8 +18,7 @@ class DictionaryExportMenu extends StatefulWidget {
   final List<Uint8List> keys;
 
   const DictionaryExportMenu(
-      {Key? key, this.defaultName = "", required this.keys})
-      : super(key: key);
+      {super.key, this.defaultName = "", required this.keys});
 
   @override
   DictionaryExportMenuState createState() => DictionaryExportMenuState();

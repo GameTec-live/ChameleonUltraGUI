@@ -14,8 +14,7 @@ class CardEditMenu extends StatefulWidget {
   final CardSave tagSave;
   final bool isNew;
 
-  const CardEditMenu({Key? key, required this.tagSave, this.isNew = false})
-      : super(key: key);
+  const CardEditMenu({super.key, required this.tagSave, this.isNew = false});
 
   @override
   CardEditMenuState createState() => CardEditMenuState();

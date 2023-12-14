@@ -8,7 +8,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class HexEdit extends StatefulWidget {
   final List<Uint8List> data;
 
-  const HexEdit({Key? key, required this.data}) : super(key: key);
+  const HexEdit({super.key, required this.data});
 
   @override
   HexEditState createState() => HexEditState();

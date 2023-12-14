@@ -27,7 +27,6 @@ class MobileSerial extends AbstractSerial {
     return false;
   }
 
-  @override
   Future<List> availableDevices() async {
     device = ChameleonDevice.none;
     connectionType = ConnectionType.none;

@@ -7,7 +7,7 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SlotChanger extends StatefulWidget {
-  const SlotChanger({Key? key}) : super(key: key);
+  const SlotChanger({super.key});
 
   @override
   SlotChangerState createState() => SlotChangerState();

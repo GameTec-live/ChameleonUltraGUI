@@ -24,11 +24,10 @@ class SlotExportMenu extends StatefulWidget {
   final SlotTypes slotTypes;
 
   const SlotExportMenu(
-      {Key? key,
+      {super.key,
       required this.names,
       required this.enabledSlotInfo,
-      required this.slotTypes})
-      : super(key: key);
+      required this.slotTypes});
 
   @override
   SlotExportMenuState createState() => SlotExportMenuState();

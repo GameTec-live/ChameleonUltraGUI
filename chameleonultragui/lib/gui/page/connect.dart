@@ -204,7 +204,7 @@ class ConnectPage extends StatelessWidget {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          }),
                         ]),
                   ),
                 ],

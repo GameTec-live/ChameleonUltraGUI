@@ -16,8 +16,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class DictionaryViewMenu extends StatefulWidget {
   final Dictionary dictionary;
 
-  const DictionaryViewMenu({Key? key, required this.dictionary})
-      : super(key: key);
+  const DictionaryViewMenu({super.key, required this.dictionary});
 
   @override
   DictionaryViewMenuState createState() => DictionaryViewMenuState();

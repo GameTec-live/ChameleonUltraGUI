@@ -713,12 +713,14 @@ class ChameleonCommunicator {
         .data;
   }
 
-  Future<void> mf1WriteBlock(
+  Future<bool> mf1WriteBlock(
       int block, int keyType, Uint8List key, Uint8List data) async {
     // Write block
     // keyType 0x60 if A key, 0x61 B key
-    await sendCmd(ChameleonCommand.mf1WriteBlock,
-        data: Uint8List.fromList([keyType, block, ...key, ...data]));
+    return (await sendCmd(ChameleonCommand.mf1WriteBlock,
+                data: Uint8List.fromList([keyType, block, ...key, ...data])))!
+            .status ==
+        0;
   }
 
   Future<void> activateSlot(int slot) async {

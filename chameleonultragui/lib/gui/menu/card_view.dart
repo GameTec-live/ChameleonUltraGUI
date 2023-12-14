@@ -15,7 +15,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class CardViewMenu extends StatefulWidget {
   final CardSave tagSave;
 
-  const CardViewMenu({Key? key, required this.tagSave}) : super(key: key);
+  const CardViewMenu({super.key, required this.tagSave});
 
   @override
   CardViewMenuState createState() => CardViewMenuState();
