@@ -86,7 +86,7 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
           if (!(await writeBlock(blockToWrite, data[blockToWrite],
                       useGenericKey: cleanSectors[sector]) &&
                   cleanSectors[sector]) &&
-              blockToWrite == 0) {
+              blockToWrite != 0) {
             failedBlocks.add(blockToWrite);
           }
 
