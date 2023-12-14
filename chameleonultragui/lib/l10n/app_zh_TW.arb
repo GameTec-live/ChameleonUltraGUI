@@ -251,6 +251,6 @@
   "export_settings": "\u532f\u51fa\u8a2d\u5b9a",
   "import_settings": "\u200b\n\u532f\u5165\u8a2d\u5b9a",
   "import_settings_description": "\u9078\u64c7\u532f\u5165\u8a2d\u5b9a\u7684\u65b9\u5f0f",
-  "qr_code_import_not_supported_description": "\u50c5\u884c\u52d5\u88dd\u7f6e\u652f\u63f4\u4e8c\u7dad\u5716\u78bc\u532f\u5165",
+  "qr_code_import_not_supported_description": "QR\u5716\u78bc\u532f\u5165\u529f\u80fd\u53ea\u652f\u63f4\u5728\u667a\u6167\u578b\u624b\u6a5f\u4e0a\u4f7f\u7528",
   "test_qr_code": "\u6e2c\u8a66QR\u5716\u78bc"
 }
