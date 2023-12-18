@@ -177,6 +177,36 @@ class WriteCardPageState extends State<WriteCardPage> {
     });
   }
 
+  Future<void> writeCard() async {
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
+    var localizations = AppLocalizations.of(context)!;
+    SnackBar snackBar;
+    updateProgress(0);
+
+    if (await helper!.writeData(card!, updateProgress)) {
+      snackBar = SnackBar(
+        content: Text(localizations.magic_success_write),
+        action: SnackBarAction(
+          label: localizations.close,
+          onPressed: () {},
+        ),
+      );
+    } else {
+      snackBar = SnackBar(
+        content: Text(localizations.magic_failed_write),
+        action: SnackBarAction(
+          label: localizations.close,
+          onPressed: () {},
+        ),
+      );
+    }
+
+    scaffoldMessenger.hideCurrentSnackBar();
+    scaffoldMessenger.showSnackBar(snackBar);
+
+    updateProgress(-1);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -192,228 +222,205 @@ class WriteCardPageState extends State<WriteCardPage> {
       appBar: AppBar(
         title: Text(localizations.write_card),
       ),
-      body: Column(
-        children: [
-          SingleChildScrollView(
-              child: Center(
-                  child: Stepper(
-            currentStep: step,
-            onStepContinue: (step == 0 && card == null ||
-                    step == 1 && baseHelper == null)
-                ? null
-                : () async {
-                    if (appState.connector!.device == ChameleonDevice.lite) {
-                      showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) => AlertDialog(
-                          title: Text(localizations.no_supported),
-                          content: Text(localizations.lite_no_read,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(context, localizations.ok),
-                              child: Text(localizations.ok),
-                            ),
-                          ],
+      body: SingleChildScrollView(
+          child: Center(
+              child: Stepper(
+        currentStep: step,
+        onStepContinue: (step == 0 && card == null ||
+                step == 1 && baseHelper == null)
+            ? null
+            : () async {
+                if (appState.connector!.device == ChameleonDevice.lite) {
+                  showDialog<String>(
+                    context: context,
+                    builder: (BuildContext context) => AlertDialog(
+                      title: Text(localizations.no_supported),
+                      content: Text(localizations.lite_no_read,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.pop(context, localizations.ok),
+                          child: Text(localizations.ok),
                         ),
-                      );
+                      ],
+                    ),
+                  );
 
-                      return;
-                    }
+                  return;
+                }
 
-                    if (step != 2) {
-                      if (step == 1) {
-                        await helper?.reset();
+                if (step != 2) {
+                  if (step == 1) {
+                    await helper?.reset();
 
-                        setState(() {
-                          hfInfo = null;
-                          mfcInfo = null;
-                        });
-                      }
-                      setState(() {
-                        step++;
-                      });
-                    } else if (helper != null &&
-                        helper!.isReady() &&
-                        progress == -1) {
-                      SnackBar snackBar;
-                      updateProgress(0);
-
-                      if (!await helper!.isCompatible(card!)) {
-                        snackBar = SnackBar(
-                          content: Text(localizations.magic_incompatible_card),
-                          action: SnackBarAction(
-                            label: localizations.close,
-                            onPressed: () {},
-                          ),
-                        );
-                      } else if (await helper!
-                          .writeData(card!, updateProgress)) {
-                        snackBar = SnackBar(
-                          content: Text(localizations.magic_success_write),
-                          action: SnackBarAction(
-                            label: localizations.close,
-                            onPressed: () {},
-                          ),
-                        );
-                      } else {
-                        snackBar = SnackBar(
-                          content: Text(localizations.magic_failed_write),
-                          action: SnackBarAction(
-                            label: localizations.close,
-                            onPressed: () {},
-                          ),
-                        );
-                      }
-
-                      scaffoldMessenger.hideCurrentSnackBar();
-                      scaffoldMessenger.showSnackBar(snackBar);
-
-                      updateProgress(-1);
-                    }
-                  },
-            onStepCancel: step == 0
-                ? null
-                : () async {
                     setState(() {
-                      step--;
+                      hfInfo = null;
+                      mfcInfo = null;
                     });
-                    if (step == 1) {
-                      await helper?.reset();
+                  }
+                  setState(() {
+                    step++;
+                  });
+                } else if (helper != null &&
+                    helper!.isReady() &&
+                    progress == -1) {
+                  SnackBar snackBar;
+                  updateProgress(0);
 
-                      setState(() {
-                        hfInfo = null;
-                        mfcInfo = null;
-                      });
-                    }
-                  },
-            steps: [
-              Step(
-                title: Text(localizations.select_saved_card_to_write),
-                content: Card(
-                  child: ListTile(
-                    title: Row(children: [
-                      FilterChip(
-                        onSelected: (bool selected) {
-                          cardSelectDialog(context);
+                  if (!await helper!.isCompatible(card!)) {
+                    snackBar = SnackBar(
+                      content: Text(localizations.magic_incompatible_card),
+                      action: SnackBarAction(
+                        label: localizations.continue_anyway,
+                        onPressed: () async {
+                          await writeCard();
                         },
-                        avatar: (card != null)
-                            ? CircleAvatar(
-                                backgroundColor: Colors.transparent,
-                                child: Icon(
-                                    (chameleonTagToFrequency(card!.tag) ==
-                                            TagFrequency.hf)
-                                        ? Icons.credit_card
-                                        : Icons.wifi,
-                                    color: card!.color),
-                              )
-                            : null,
-                        label: Text((card != null)
-                            ? card!.name
-                            : localizations.select_saved_card),
-                      )
-                    ]),
-                  ),
-                ),
-                isActive: step >= 1,
+                      ),
+                    );
+
+                    scaffoldMessenger.hideCurrentSnackBar();
+                    scaffoldMessenger.showSnackBar(snackBar);
+                  } else {
+                    await writeCard();
+                  }
+
+                  updateProgress(-1);
+                }
+              },
+        onStepCancel: step == 0
+            ? null
+            : () async {
+                setState(() {
+                  step--;
+                });
+                if (step == 1) {
+                  await helper?.reset();
+
+                  setState(() {
+                    hfInfo = null;
+                    mfcInfo = null;
+                  });
+                }
+              },
+        steps: [
+          Step(
+            title: Text(localizations.select_saved_card_to_write),
+            content: Card(
+              child: ListTile(
+                title: Row(children: [
+                  FilterChip(
+                    onSelected: (bool selected) {
+                      cardSelectDialog(context);
+                    },
+                    avatar: (card != null)
+                        ? CircleAvatar(
+                            backgroundColor: Colors.transparent,
+                            child: Icon(
+                                (chameleonTagToFrequency(card!.tag) ==
+                                        TagFrequency.hf)
+                                    ? Icons.credit_card
+                                    : Icons.wifi,
+                                color: card!.color),
+                          )
+                        : null,
+                    label: Text((card != null)
+                        ? card!.name
+                        : localizations.select_saved_card),
+                  )
+                ]),
               ),
-              Step(
-                title: Text(localizations.select_magic_card),
-                content: Card(
-                  child: ListTile(
-                    title: (baseHelper != null)
-                        ? Row(children: [
-                            DropdownButton<AbstractWriteHelper>(
-                              value: helper,
-                              items: baseHelper!
-                                  .getAvailableMethods()
-                                  .map<DropdownMenuItem<AbstractWriteHelper>>(
-                                      (AbstractWriteHelper helperClass) {
-                                return DropdownMenuItem<AbstractWriteHelper>(
-                                  value: helperClass,
-                                  child: Text(helperClass.name),
-                                );
-                              }).toList(),
-                              onChanged: (AbstractWriteHelper? helperClass) {
-                                setState(() {
-                                  helper = helperClass;
-                                });
-                              },
-                            ),
-                            if (baseHelper!.autoDetect)
-                              ElevatedButton(
-                                onPressed: () async {
-                                  await detectMagicType();
-                                },
-                                child:
-                                    Text(localizations.auto_detect_magic_card),
-                              )
-                          ])
-                        : Text(localizations.writing_is_not_yet_supported),
-                  ),
-                ),
-                isActive: step >= 2,
+            ),
+            isActive: step >= 1,
+          ),
+          Step(
+            title: Text(localizations.select_magic_card),
+            content: Card(
+              child: ListTile(
+                title: (baseHelper != null)
+                    ? Row(children: [
+                        DropdownButton<AbstractWriteHelper>(
+                          value: helper,
+                          items: baseHelper!
+                              .getAvailableMethods()
+                              .map<DropdownMenuItem<AbstractWriteHelper>>(
+                                  (AbstractWriteHelper helperClass) {
+                            return DropdownMenuItem<AbstractWriteHelper>(
+                              value: helperClass,
+                              child: Text(helperClass.name),
+                            );
+                          }).toList(),
+                          onChanged: (AbstractWriteHelper? helperClass) {
+                            setState(() {
+                              helper = helperClass;
+                            });
+                          },
+                        ),
+                        if (baseHelper!.autoDetect)
+                          ElevatedButton(
+                            onPressed: () async {
+                              await detectMagicType();
+                            },
+                            child: Text(localizations.auto_detect_magic_card),
+                          )
+                      ])
+                    : Text(localizations.writing_is_not_yet_supported),
               ),
-              Step(
-                title: Text(localizations.write_data_to_magic_card),
-                content: Card(
-                  child: ListTile(
-                    title: (progress == -1)
-                        ? (helper != null && helper!.isReady())
-                            ? (helper != null &&
-                                    helper!.name ==
-                                        MifareClassicGen2WriteHelper
-                                            .staticName &&
-                                    helper!.getExtraData()[1].isNotEmpty)
-                                ? Text(
-                                    "${localizations.otp_magic_warning} ${localizations.some_blocks_failed_to_write}: ${helper!.getExtraData()[1].join(", ")}")
-                                : Text(localizations.otp_magic_warning)
-                            : (helper != null &&
-                                    helper!.name ==
-                                        MifareClassicGen2WriteHelper.staticName)
-                                ? FutureBuilder(
-                                    future: (hfInfo != null)
-                                        ? Future.value([])
-                                        : prepareMifareClassic(),
-                                    builder: (BuildContext context,
-                                        AsyncSnapshot snapshot) {
-                                      if (hfInfo != null &&
-                                          mfcInfo != null &&
-                                          mfcInfo!.recovery != null) {
-                                        return CardRecovery(
-                                            hfInfo: hfInfo!,
-                                            mfcInfo: mfcInfo!,
-                                            allowSave: false);
-                                      } else if (hfInfo != null &&
-                                          mfcInfo != null &&
-                                          mfcInfo!.type ==
-                                              MifareClassicType.none) {
-                                        if (hfInfo!.cardExist) {
-                                          return Text(localizations
-                                              .not_mifare_classic_card);
-                                        } else {
-                                          return Text(
-                                              localizations.no_card_found);
-                                        }
-                                      } else {
-                                        return const Column(children: [
-                                          CircularProgressIndicator()
-                                        ]);
-                                      }
-                                    })
-                                : Text(localizations.error)
-                        : LinearProgressIndicator(
-                            value: progress.toDouble() / 100),
-                  ),
-                ),
-                isActive: step >= 3,
+            ),
+            isActive: step >= 2,
+          ),
+          Step(
+            title: Text(localizations.write_data_to_magic_card),
+            content: Card(
+              child: ListTile(
+                title: (progress == -1)
+                    ? (helper != null && helper!.isReady())
+                        ? (helper != null &&
+                                helper!.name ==
+                                    MifareClassicGen2WriteHelper.staticName &&
+                                helper!.getExtraData()[1].isNotEmpty)
+                            ? Text(
+                                "${localizations.otp_magic_warning} ${localizations.some_blocks_failed_to_write}: ${helper!.getExtraData()[1].join(", ")}")
+                            : Text(localizations.otp_magic_warning)
+                        : (helper != null &&
+                                helper!.name ==
+                                    MifareClassicGen2WriteHelper.staticName)
+                            ? FutureBuilder(
+                                future: (hfInfo != null)
+                                    ? Future.value([])
+                                    : prepareMifareClassic(),
+                                builder: (BuildContext context,
+                                    AsyncSnapshot snapshot) {
+                                  if (hfInfo != null &&
+                                      mfcInfo != null &&
+                                      mfcInfo!.recovery != null) {
+                                    return CardRecovery(
+                                        hfInfo: hfInfo!,
+                                        mfcInfo: mfcInfo!,
+                                        allowSave: false);
+                                  } else if (hfInfo != null &&
+                                      mfcInfo != null &&
+                                      mfcInfo!.type == MifareClassicType.none) {
+                                    if (hfInfo!.cardExist) {
+                                      return Text(localizations
+                                          .not_mifare_classic_card);
+                                    } else {
+                                      return Text(localizations.no_card_found);
+                                    }
+                                  } else {
+                                    return const Column(children: [
+                                      CircularProgressIndicator()
+                                    ]);
+                                  }
+                                })
+                            : Text(localizations.error)
+                    : LinearProgressIndicator(value: progress.toDouble() / 100),
               ),
-            ],
-          ))),
+            ),
+            isActive: step >= 3,
+          ),
         ],
-      ),
+      ))),
     );
   }
 }

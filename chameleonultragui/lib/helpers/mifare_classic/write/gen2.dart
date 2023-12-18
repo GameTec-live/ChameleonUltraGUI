@@ -56,8 +56,13 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
     }
 
     if (tryBothKeys) {
-      return (await communicator.mf1WriteBlock(block, 0x61,
-          recovery.validKeys[40 + mfClassicGetSectorByBlock(block)], data));
+      return (await communicator.mf1WriteBlock(
+          block,
+          0x61,
+          (useGenericKey)
+              ? gMifareClassicKeys[0]
+              : recovery.validKeys[mfClassicGetSectorByBlock(block)],
+          data));
     }
 
     return false;
@@ -97,7 +102,7 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
 
         if (data.length > blockToWrite && data[blockToWrite].isNotEmpty) {
           if (!(await writeBlock(blockToWrite, data[blockToWrite],
-                      useGenericKey: cleanSectors[sector]) &&
+                      useGenericKey: cleanSectors[sector], tryBothKeys: true) &&
                   cleanSectors[sector]) &&
               blockToWrite != 0) {
             failedBlocks.add(blockToWrite);

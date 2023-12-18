@@ -98,10 +98,6 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
       }
     }
 
-    if (data.length != mfClassicGetBlockCount(type)) {
-      return false;
-    }
-
     return true;
   }
 
@@ -128,7 +124,13 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
 
   @override
   Future<bool> isCompatible(CardSave card) async {
-    CardData magicCard = await communicator.scan14443aTag();
+    CardData magicCard;
+
+    try {
+      magicCard = await communicator.scan14443aTag();
+    } catch (_) {
+      return false;
+    }
 
     if (magicCard.uid.length != hexToBytesSpace(card.uid).length) {
       return false;
