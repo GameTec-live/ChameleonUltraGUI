@@ -1,10 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 abstract class AbstractWriteHelper {
   final ChameleonCommunicator communicator;
@@ -14,12 +13,16 @@ abstract class AbstractWriteHelper {
   bool writeSupported = false; // can write data without authorization
 
   String get name => "Abstract"; // name in dropdown
+  static String get staticName => "Abstract"; // for comparing
 
   bool get autoDetect => false; // is autodetect supported
 
   Future<bool> isMagic(dynamic data); // is current card is magic card
 
   bool isReady(); // card ready to be written
+
+  Future<bool> isCompatible(
+      CardSave card); // is current magic card compatible with selected dump
 
   List<AbstractWriteHelper>
       getAvailableMethods(); // get available methods for automatic check with priority
@@ -40,7 +43,7 @@ abstract class AbstractWriteHelper {
     return null; // writing is not supported
   }
 
-  Future<bool> writeData(List<Uint8List> data, dynamic update);
+  Future<bool> writeData(CardSave card, dynamic update);
 
   @override
   bool operator ==(dynamic other) => other != null && name == other.name;

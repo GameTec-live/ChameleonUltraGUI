@@ -8,6 +8,8 @@ class MifareClassicGen1WriteHelper extends BaseMifareClassicMagicCardHelper {
   @override
   String get name => "Gen1";
 
+  static String get staticName => "Gen1";
+
   @override
   Future<bool> isMagic(dynamic data) async {
     await communicator.send14ARaw(Uint8List(1)); // reset

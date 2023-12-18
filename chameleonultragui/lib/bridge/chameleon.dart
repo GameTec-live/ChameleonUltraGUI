@@ -588,10 +588,13 @@ class ChameleonCommunicator {
 
   Future<DarksideResult> checkMf1Darkside() async {
     // Check card vulnerability to Mifare Classic darkside attack
-    var status = (await sendCmd(ChameleonCommand.mf1DarksideAcquire,
-            data: Uint8List.fromList([0, 0, 1, 15]),
-            timeout: const Duration(seconds: 30)))!
-        .data[0];
+    var message = (await sendCmd(ChameleonCommand.mf1DarksideAcquire,
+        data: Uint8List.fromList([0, 0, 1, 15]),
+        timeout: const Duration(seconds: 30)))!;
+    int status = message.status;
+    if (message.data.isNotEmpty) {
+      status = message.data[0];
+    }
 
     if (status == 0) {
       return DarksideResult.vulnerable;

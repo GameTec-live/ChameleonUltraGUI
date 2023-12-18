@@ -1,10 +1,13 @@
 import 'dart:typed_data';
 
+import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/gen1.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/gen2.dart';
 import 'package:chameleonultragui/helpers/write.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
   late MifareClassicRecovery recovery;
@@ -67,38 +70,17 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
     throw UnimplementedError();
   }
 
-  Future<List<Uint8List>> readSector(int sector) async {
-    List<Uint8List> data = [];
-
-    for (var block = 0;
-        block < mfClassicGetBlockCountBySector(sector);
-        block++) {
-      data.add(
-          await readBlock(block + mfClassicGetFirstBlockCountBySector(sector)));
-    }
-
-    return data;
-  }
-
-  Future<List<Uint8List>> readCard() async {
-    List<Uint8List> data = [];
-
-    for (var sector = 0;
-        sector < mfClassicGetSectorCount(type, isEV1: isEV1);
-        sector++) {
-      for (var block = 0;
-          block < mfClassicGetBlockCountBySector(sector);
-          block++) {
-        data.add(await readBlock(
-            block + mfClassicGetFirstBlockCountBySector(sector)));
-      }
-    }
-
-    return data;
-  }
-
   @override
-  Future<bool> writeData(List<Uint8List> data, dynamic update) async {
+  Future<bool> writeData(CardSave card, dynamic update) async {
+    List<Uint8List> data = card.data;
+
+    if (data.isEmpty || data[0].isEmpty) {
+      if (data.isEmpty) {
+        data = [Uint8List(0)];
+      }
+      data[0] = createBlock0FromSave(card);
+    }
+
     for (var sector = 0;
         sector < mfClassicGetSectorCount(type, isEV1: isEV1);
         sector++) {
@@ -117,6 +99,50 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
     }
 
     if (data.length != mfClassicGetBlockCount(type)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  Uint8List createBlock0FromSave(CardSave card) {
+    List<int> block = [];
+    Uint8List uid = hexToBytesSpace(card.uid);
+    block.addAll(uid);
+    if (uid.length == 4) {
+      int bcc = 0;
+
+      for (int i = 0; i < 4; i++) {
+        bcc ^= uid[i];
+      }
+
+      block.add(bcc);
+    }
+
+    block.add(card.sak);
+    block.addAll(card.atqa.reversed);
+    block.addAll(List.generate(16 - block.length, (index) => 0));
+
+    return Uint8List.fromList(block);
+  }
+
+  @override
+  Future<bool> isCompatible(CardSave card) async {
+    CardData magicCard = await communicator.scan14443aTag();
+
+    if (magicCard.uid.length != hexToBytesSpace(card.uid).length) {
+      return false;
+    }
+
+    int blockCount =
+        mfClassicGetBlockCount(chameleonTagTypeGetMfClassicType(card.tag));
+    blockCount--;
+
+    Uint8List data = await communicator.send14ARaw(
+        Uint8List.fromList([0x60, blockCount]),
+        checkResponseCrc: false);
+
+    if (data.length != 4) {
       return false;
     }
 

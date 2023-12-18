@@ -186,7 +186,7 @@ class ReadCardPageState extends State<ReadCardPage> {
         atqa: hexToBytesSpace(hfInfo.atqa),
         name: dumpName,
         tag: mfClassicGetChameleonTagType(mfcInfo.type),
-        data: mfcInfo.recovery!.cardData,
+        data: mfcInfo.recovery?.cardData ?? [],
         ats: (hfInfo.ats != localizations.no)
             ? hexToBytesSpace(hfInfo.ats)
             : Uint8List(0)));

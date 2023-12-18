@@ -7,10 +7,13 @@ import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
+  List<int> failedBlocks = [];
   MifareClassicGen2WriteHelper(super.communicator, {required super.recovery});
 
   @override
   String get name => "Gen2 / Generic";
+
+  static String get staticName => "Gen2 / Generic";
 
   @override
   Future<bool> isMagic(dynamic data) async {
@@ -61,14 +64,24 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
   }
 
   @override
-  Future<bool> writeData(List<Uint8List> data, dynamic update) async {
+  Future<bool> writeData(CardSave card, dynamic update) async {
+    List<Uint8List> data = card.data;
     List<bool> cleanSectors = List.generate(40, (index) => false);
-    List<int> failedBlocks = [];
+    failedBlocks = [];
+
+    if (data.isEmpty || data[0].isEmpty) {
+      if (data.isEmpty) {
+        data = [Uint8List(0)];
+      }
+      data[0] = createBlock0FromSave(card);
+    }
 
     for (var sector = 0; sector < mfClassicGetSectorCount(type); sector++) {
       var block = mfClassicGetSectorTrailerBlockBySector(sector);
-      cleanSectors[sector] =
-          await writeBlock(block, data[block], tryBothKeys: true);
+      if (data.length > block && data[block].isNotEmpty) {
+        cleanSectors[sector] =
+            await writeBlock(block, data[block], tryBothKeys: true);
+      }
     }
 
     for (var sector = 0;
@@ -109,5 +122,10 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
     }
 
     return failedBlocks.isEmpty;
+  }
+
+  @override
+  List<dynamic> getExtraData() {
+    return [recovery, failedBlocks];
   }
 }

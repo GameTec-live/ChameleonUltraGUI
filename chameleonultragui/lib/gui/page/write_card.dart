@@ -1,9 +1,11 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/gui/component/card_recovery.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/write/gen2.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -109,46 +111,58 @@ class WriteCardPageState extends State<WriteCardPage> {
       await appState.communicator!.setReaderDeviceMode(true);
     }
 
-    CardData card = await appState.communicator!.scan14443aTag();
-    bool isMifareClassic = false;
-
     try {
-      isMifareClassic = await appState.communicator!.detectMf1Support();
-    } catch (_) {}
+      CardData card = await appState.communicator!.scan14443aTag();
+      bool isMifareClassic = false;
 
-    bool isMifareClassicEV1 = isMifareClassic
-        ? (await appState.communicator!
-            .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]))
-        : false;
+      try {
+        isMifareClassic = await appState.communicator!.detectMf1Support();
+      } catch (_) {}
 
-    setState(() {
-      hfInfo = HFCardInfo();
-      mfcInfo = MifareClassicInfo();
-    });
+      bool isMifareClassicEV1 = isMifareClassic
+          ? (await appState.communicator!
+              .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]))
+          : false;
 
-    if (isMifareClassic) {
       setState(() {
-        mfcInfo!.recovery = helper!.getExtraData()[0];
+        hfInfo = HFCardInfo();
+        mfcInfo = MifareClassicInfo();
+      });
+
+      if (isMifareClassic) {
+        setState(() {
+          mfcInfo!.recovery = helper!.getExtraData()[0];
+        });
+      }
+
+      setState(() {
+        hfInfo!.uid = bytesToHexSpace(card.uid);
+        hfInfo!.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
+        hfInfo!.atqa = bytesToHexSpace(card.atqa);
+        hfInfo!.ats = (card.ats.isNotEmpty)
+            ? bytesToHexSpace(card.ats)
+            : localizations.no;
+        mfcInfo!.isEV1 = isMifareClassicEV1;
+        mfcInfo!.type = isMifareClassic
+            ? mfClassicGetType(card.atqa, card.sak)
+            : MifareClassicType.none;
+        mfcInfo!.state = (mfcInfo!.type != MifareClassicType.none)
+            ? MifareClassicState.checkKeys
+            : MifareClassicState.none;
+        hfInfo!.tech = isMifareClassic
+            ? "Mifare Classic ${mfClassicGetName(mfcInfo!.type)}${isMifareClassicEV1 ? " EV1" : ""}"
+            : localizations.other;
+      });
+    } catch (_) {
+      setState(() {
+        hfInfo = HFCardInfo();
+        mfcInfo = MifareClassicInfo();
+      });
+
+      setState(() {
+        hfInfo!.cardExist = false;
       });
     }
-
-    setState(() {
-      hfInfo!.uid = bytesToHexSpace(card.uid);
-      hfInfo!.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
-      hfInfo!.atqa = bytesToHexSpace(card.atqa);
-      hfInfo!.ats =
-          (card.ats.isNotEmpty) ? bytesToHexSpace(card.ats) : localizations.no;
-      mfcInfo!.isEV1 = isMifareClassicEV1;
-      mfcInfo!.type = isMifareClassic
-          ? mfClassicGetType(card.atqa, card.sak)
-          : MifareClassicType.none;
-      mfcInfo!.state = (mfcInfo!.type != MifareClassicType.none)
-          ? MifareClassicState.checkKeys
-          : MifareClassicState.none;
-      hfInfo!.tech = isMifareClassic
-          ? "Mifare Classic ${mfClassicGetName(mfcInfo!.type)}${isMifareClassicEV1 ? " EV1" : ""}"
-          : localizations.other;
-    });
   }
 
   void updateState() {
@@ -172,6 +186,7 @@ class WriteCardPageState extends State<WriteCardPage> {
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
     var scaffoldMessenger = ScaffoldMessenger.of(context);
+    var appState = context.read<ChameleonGUIState>();
 
     return Scaffold(
       appBar: AppBar(
@@ -179,13 +194,35 @@ class WriteCardPageState extends State<WriteCardPage> {
       ),
       body: Column(
         children: [
-          Center(
-              child: Stepper(
+          SingleChildScrollView(
+              child: Center(
+                  child: Stepper(
             currentStep: step,
             onStepContinue: (step == 0 && card == null ||
                     step == 1 && baseHelper == null)
                 ? null
                 : () async {
+                    if (appState.connector!.device == ChameleonDevice.lite) {
+                      showDialog<String>(
+                        context: context,
+                        builder: (BuildContext context) => AlertDialog(
+                          title: Text(localizations.no_supported),
+                          content: Text(localizations.lite_no_read,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, localizations.ok),
+                              child: Text(localizations.ok),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      return;
+                    }
+
                     if (step != 2) {
                       if (step == 1) {
                         await helper?.reset();
@@ -204,7 +241,16 @@ class WriteCardPageState extends State<WriteCardPage> {
                       SnackBar snackBar;
                       updateProgress(0);
 
-                      if (await helper!.writeData(card!.data, updateProgress)) {
+                      if (!await helper!.isCompatible(card!)) {
+                        snackBar = SnackBar(
+                          content: Text(localizations.magic_incompatible_card),
+                          action: SnackBarAction(
+                            label: localizations.close,
+                            onPressed: () {},
+                          ),
+                        );
+                      } else if (await helper!
+                          .writeData(card!, updateProgress)) {
                         snackBar = SnackBar(
                           content: Text(localizations.magic_success_write),
                           action: SnackBarAction(
@@ -316,8 +362,17 @@ class WriteCardPageState extends State<WriteCardPage> {
                   child: ListTile(
                     title: (progress == -1)
                         ? (helper != null && helper!.isReady())
-                            ? Text(localizations.otp_magic_warning)
-                            : (helper != null)
+                            ? (helper != null &&
+                                    helper!.name ==
+                                        MifareClassicGen2WriteHelper
+                                            .staticName &&
+                                    helper!.getExtraData()[1].isNotEmpty)
+                                ? Text(
+                                    "${localizations.otp_magic_warning} ${localizations.some_blocks_failed_to_write}: ${helper!.getExtraData()[1].join(", ")}")
+                                : Text(localizations.otp_magic_warning)
+                            : (helper != null &&
+                                    helper!.name ==
+                                        MifareClassicGen2WriteHelper.staticName)
                                 ? FutureBuilder(
                                     future: (hfInfo != null)
                                         ? Future.value([])
@@ -331,6 +386,17 @@ class WriteCardPageState extends State<WriteCardPage> {
                                             hfInfo: hfInfo!,
                                             mfcInfo: mfcInfo!,
                                             allowSave: false);
+                                      } else if (hfInfo != null &&
+                                          mfcInfo != null &&
+                                          mfcInfo!.type ==
+                                              MifareClassicType.none) {
+                                        if (hfInfo!.cardExist) {
+                                          return Text(localizations
+                                              .not_mifare_classic_card);
+                                        } else {
+                                          return Text(
+                                              localizations.no_card_found);
+                                        }
                                       } else {
                                         return const Column(children: [
                                           CircularProgressIndicator()
@@ -345,7 +411,7 @@ class WriteCardPageState extends State<WriteCardPage> {
                 isActive: step >= 3,
               ),
             ],
-          )),
+          ))),
         ],
       ),
     );
