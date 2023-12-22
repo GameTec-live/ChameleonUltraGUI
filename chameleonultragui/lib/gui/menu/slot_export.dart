@@ -53,9 +53,10 @@ class SlotExportMenuState extends State<SlotExportMenu> {
 
       int blockCount = mfClassicGetBlockCount(
           chameleonTagTypeGetMfClassicType(widget.slotTypes.hf));
-      for (int block = 0; block < blockCount; block += 16) {
+
+      for (int block = 0; block < blockCount; block += 4) {
         Uint8List blockData =
-            await appState.communicator!.mf1GetEmulatorBlock(block, block + 16);
+            await appState.communicator!.mf1GetEmulatorBlock(block, 4);
         binData.add(blockData);
       }
 
