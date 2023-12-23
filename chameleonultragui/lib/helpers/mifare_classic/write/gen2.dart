@@ -17,13 +17,17 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
 
   @override
   Future<bool> isMagic(dynamic data) async {
-    CardSave cardSave = data;
-    var card = await communicator.scan14443aTag();
-    if (cardSave.uid == bytesToHexSpace(card.uid)) {
-      return true; // if UID matches we can assume it is same card
-    }
+    try {
+      CardSave cardSave = data;
+      var card = await communicator.scan14443aTag();
+      if (cardSave.uid == bytesToHexSpace(card.uid)) {
+        return true; // if UID matches we can assume it is same card
+      }
 
-    return false; // we can't check
+      return false; // we can't check
+    } catch (_) {
+      return false;
+    }
   }
 
   @override

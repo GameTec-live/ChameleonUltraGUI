@@ -6,7 +6,6 @@ import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/gui/menu/slot_settings.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -80,7 +79,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       List<Uint8List> blocks = [];
 
       for (int i = 0; i < binData.length; i += 16) {
-        Uint8List block = Uint8List.fromList(binData.sublist(i, i+16));
+        Uint8List block = Uint8List.fromList(binData.sublist(i, i + 16));
         blocks.add(block);
       }
 

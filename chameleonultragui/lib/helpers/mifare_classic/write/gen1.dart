@@ -12,25 +12,29 @@ class MifareClassicGen1WriteHelper extends BaseMifareClassicMagicCardHelper {
 
   @override
   Future<bool> isMagic(dynamic data) async {
-    await communicator.send14ARaw(Uint8List(1)); // reset
+    try {
+      await communicator.send14ARaw(Uint8List(1)); // reset
 
-    Uint8List data = await communicator.send14ARaw(Uint8List.fromList([0x40]),
-        bitLen: 7,
-        appendCrc: false,
-        autoSelect: false,
-        checkResponseCrc: false,
-        keepRfField: true);
-
-    if (data.isNotEmpty && data[0] == 0x0a) {
-      data = await communicator.send14ARaw(Uint8List.fromList([0x43]),
+      Uint8List data = await communicator.send14ARaw(Uint8List.fromList([0x40]),
+          bitLen: 7,
           appendCrc: false,
           autoSelect: false,
           checkResponseCrc: false,
           keepRfField: true);
-      return data.isNotEmpty && data[0] == 0x0a;
-    }
 
-    return false;
+      if (data.isNotEmpty && data[0] == 0x0a) {
+        data = await communicator.send14ARaw(Uint8List.fromList([0x43]),
+            appendCrc: false,
+            autoSelect: false,
+            checkResponseCrc: false,
+            keepRfField: true);
+        return data.isNotEmpty && data[0] == 0x0a;
+      }
+
+      return false;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override

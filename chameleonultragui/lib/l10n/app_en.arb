@@ -260,7 +260,7 @@
   "writing_is_not_yet_supported": "Writing such card save to Magic card is not yet supported",
   "auto_detect_magic_card": "Auto-detect Magic card type",
   "detected_magic_card_type": "Detected Magic card type",
-  "failed_to_detect_magic_card_type": "Failed to detect Magic card type. Maybe your Magic card doesn't support detection (Mifare Classic Gen2)",
+  "failed_to_detect_magic_card_type": "Failed to detect Magic card type. Maybe your Magic card doesn't support detection (Mifare Classic Gen2) or is missing",
   "otp_magic_warning": "Some Magic cards are writable only once. Make sure you selected correct card. Press \"{button}\" to write data to Magic card.",
   "magic_success_write": "Card written successfully",
   "magic_failed_write": "Something went wrong in card writing",
