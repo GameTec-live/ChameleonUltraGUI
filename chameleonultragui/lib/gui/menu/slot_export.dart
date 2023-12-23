@@ -6,6 +6,7 @@ import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/gui/menu/slot_settings.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -48,14 +49,20 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       );
     } else {
       CardData data = await appState.communicator!.mf1GetAntiCollData();
-      List<Uint8List> binData = [];
+      List<int> binData = [];
+      List<Uint8List> blocks = [];
 
       int blockCount = mfClassicGetBlockCount(
           chameleonTagTypeGetMfClassicType(widget.slotTypes.hf));
       for (int block = 0; block < blockCount; block += 16) {
         Uint8List blockData =
             await appState.communicator!.mf1GetEmulatorBlock(block, block + 16);
-        binData.add(blockData);
+        binData.addAll(blockData.toList());
+      }
+
+      for (int block = 0; block < binData.length ~/ 16; block++) {
+        blocks.add(
+            Uint8List.fromList(binData.slice(block * 16, block * 16 + 16)));
       }
 
       return CardSave(
@@ -65,7 +72,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         atqa: data.atqa,
         ats: data.ats,
         tag: widget.slotTypes.hf,
-        data: binData,
+        data: blocks,
       );
     }
   }
