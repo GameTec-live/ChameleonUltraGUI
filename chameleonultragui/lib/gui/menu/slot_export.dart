@@ -77,16 +77,11 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         binData.setAll(binDataIndex, result);
       }
 
-      List<Uint8List> sectors = [];
-      int sectorSize = 16 * 4;
+      List<Uint8List> blocks = [];
 
-      for (int i = 0; i < binData.length; i += sectorSize) {
-        int end = i + sectorSize;
-        if (end > binData.length) {
-          end = binData.length;
-        }
-        Uint8List block = Uint8List.fromList(binData.sublist(i, end));
-        sectors.add(block);
+      for (int i = 0; i < binData.length; i += 16) {
+        Uint8List block = Uint8List.fromList(binData.sublist(i, i+16));
+        blocks.add(block);
       }
 
       return CardSave(
@@ -96,7 +91,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         atqa: data.atqa,
         ats: data.ats,
         tag: widget.slotTypes.hf,
-        data: sectors,
+        data: blocks,
       );
     }
   }
