@@ -207,6 +207,115 @@ class WriteCardPageState extends State<WriteCardPage> {
     updateProgress(-1);
   }
 
+  void onStepContinue() async {
+    var localizations = AppLocalizations.of(context)!;
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
+    if (appState.connector!.device == ChameleonDevice.lite) {
+      showDialog<String>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text(localizations.no_supported),
+          content: Text(localizations.lite_no_read,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, localizations.ok),
+              child: Text(localizations.ok),
+            ),
+          ],
+        ),
+      );
+
+      return;
+    }
+
+    if (step != 2) {
+      if (step == 1) {
+        await helper?.reset();
+
+        setState(() {
+          hfInfo = null;
+          mfcInfo = null;
+        });
+      }
+      setState(() {
+        step++;
+      });
+    } else if (helper != null && helper!.isReady() && progress == -1) {
+      SnackBar snackBar;
+      updateProgress(0);
+
+      if (!await helper!.isCompatible(card!)) {
+        snackBar = SnackBar(
+          content: Text(localizations.magic_incompatible_card),
+          action: SnackBarAction(
+            label: localizations.continue_anyway,
+            onPressed: () async {
+              await writeCard();
+            },
+          ),
+        );
+
+        scaffoldMessenger.hideCurrentSnackBar();
+        scaffoldMessenger.showSnackBar(snackBar);
+      } else {
+        await writeCard();
+      }
+
+      updateProgress(-1);
+    }
+  }
+
+  void onStepBack() async {
+    setState(() {
+      step--;
+    });
+
+    if (step == 1) {
+      await helper?.reset();
+
+      setState(() {
+        hfInfo = null;
+        mfcInfo = null;
+      });
+    }
+  }
+
+  List<Widget> createButtonsForStep(ControlsDetails details, int step) {
+    var localizations = AppLocalizations.of(context)!;
+    List<Widget> widgets = [];
+
+    if (step == 0 || step == 1) {
+      widgets.add(TextButton(
+        onPressed:
+            (step == 0 && card == null || step == 1 && baseHelper == null)
+                ? null
+                : onStepContinue,
+        child: Text(localizations.next),
+      ));
+    }
+
+    if (step == 2) {
+      widgets.add(TextButton(
+        onPressed: (helper != null && helper!.isReady() && progress == -1)
+            ? onStepContinue
+            : null,
+        child: Text(localizations.write_data_to_magic_card),
+      ));
+    }
+
+    if (step != 0) {
+      widgets.add(TextButton(
+        onPressed: onStepBack,
+        child: Text(localizations.back),
+      ));
+    }
+
+    return widgets;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -215,8 +324,6 @@ class WriteCardPageState extends State<WriteCardPage> {
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
-    var scaffoldMessenger = ScaffoldMessenger.of(context);
-    var appState = context.read<ChameleonGUIState>();
 
     return Scaffold(
       appBar: AppBar(
@@ -225,84 +332,15 @@ class WriteCardPageState extends State<WriteCardPage> {
       body: SingleChildScrollView(
           child: Center(
               child: Stepper(
+        controlsBuilder: (BuildContext context, ControlsDetails details) {
+          return Column(children: [
+            const SizedBox(height: 8),
+            Row(
+              children: createButtonsForStep(details, step),
+            )
+          ]);
+        },
         currentStep: step,
-        onStepContinue: (step == 0 && card == null ||
-                step == 1 && baseHelper == null)
-            ? null
-            : () async {
-                if (appState.connector!.device == ChameleonDevice.lite) {
-                  showDialog<String>(
-                    context: context,
-                    builder: (BuildContext context) => AlertDialog(
-                      title: Text(localizations.no_supported),
-                      content: Text(localizations.lite_no_read,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      actions: <Widget>[
-                        TextButton(
-                          onPressed: () =>
-                              Navigator.pop(context, localizations.ok),
-                          child: Text(localizations.ok),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  return;
-                }
-
-                if (step != 2) {
-                  if (step == 1) {
-                    await helper?.reset();
-
-                    setState(() {
-                      hfInfo = null;
-                      mfcInfo = null;
-                    });
-                  }
-                  setState(() {
-                    step++;
-                  });
-                } else if (helper != null &&
-                    helper!.isReady() &&
-                    progress == -1) {
-                  SnackBar snackBar;
-                  updateProgress(0);
-
-                  if (!await helper!.isCompatible(card!)) {
-                    snackBar = SnackBar(
-                      content: Text(localizations.magic_incompatible_card),
-                      action: SnackBarAction(
-                        label: localizations.continue_anyway,
-                        onPressed: () async {
-                          await writeCard();
-                        },
-                      ),
-                    );
-
-                    scaffoldMessenger.hideCurrentSnackBar();
-                    scaffoldMessenger.showSnackBar(snackBar);
-                  } else {
-                    await writeCard();
-                  }
-
-                  updateProgress(-1);
-                }
-              },
-        onStepCancel: step == 0
-            ? null
-            : () async {
-                setState(() {
-                  step--;
-                });
-                if (step == 1) {
-                  await helper?.reset();
-
-                  setState(() {
-                    hfInfo = null;
-                    mfcInfo = null;
-                  });
-                }
-              },
         steps: [
           Step(
             title: Text(localizations.select_saved_card_to_write),
@@ -338,32 +376,37 @@ class WriteCardPageState extends State<WriteCardPage> {
             content: Card(
               child: ListTile(
                 title: (baseHelper != null)
-                    ? Row(children: [
-                        DropdownButton<AbstractWriteHelper>(
-                          value: helper,
-                          items: baseHelper!
-                              .getAvailableMethods()
-                              .map<DropdownMenuItem<AbstractWriteHelper>>(
-                                  (AbstractWriteHelper helperClass) {
-                            return DropdownMenuItem<AbstractWriteHelper>(
-                              value: helperClass,
-                              child: Text(helperClass.name),
-                            );
-                          }).toList(),
-                          onChanged: (AbstractWriteHelper? helperClass) {
-                            setState(() {
-                              helper = helperClass;
-                            });
-                          },
-                        ),
-                        if (baseHelper!.autoDetect)
-                          ElevatedButton(
-                            onPressed: () async {
-                              await detectMagicType();
-                            },
-                            child: Text(localizations.auto_detect_magic_card),
-                          )
-                      ])
+                    ? Wrap(
+                        direction: Axis.horizontal,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: <Widget>[
+                            DropdownButton<AbstractWriteHelper>(
+                              value: helper,
+                              items: baseHelper!
+                                  .getAvailableMethods()
+                                  .map<DropdownMenuItem<AbstractWriteHelper>>(
+                                      (AbstractWriteHelper helperClass) {
+                                return DropdownMenuItem<AbstractWriteHelper>(
+                                  value: helperClass,
+                                  child: Text(helperClass.name),
+                                );
+                              }).toList(),
+                              onChanged: (AbstractWriteHelper? helperClass) {
+                                setState(() {
+                                  helper = helperClass;
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            if (baseHelper!.autoDetect)
+                              TextButton(
+                                onPressed: () async {
+                                  await detectMagicType();
+                                },
+                                child:
+                                    Text(localizations.auto_detect_magic_card),
+                              )
+                          ])
                     : Text(localizations.writing_is_not_yet_supported),
               ),
             ),
@@ -380,8 +423,9 @@ class WriteCardPageState extends State<WriteCardPage> {
                                     MifareClassicGen2WriteHelper.staticName &&
                                 helper!.getExtraData()[1].isNotEmpty)
                             ? Text(
-                                "${localizations.otp_magic_warning} ${localizations.some_blocks_failed_to_write}: ${helper!.getExtraData()[1].join(", ")}")
-                            : Text(localizations.otp_magic_warning)
+                                "${localizations.otp_magic_warning(localizations.write_data_to_magic_card)} ${localizations.some_blocks_failed_to_write}: ${helper!.getExtraData()[1].join(", ")}")
+                            : Text(localizations.otp_magic_warning(
+                                localizations.write_data_to_magic_card))
                         : (helper != null &&
                                 helper!.name ==
                                     MifareClassicGen2WriteHelper.staticName)

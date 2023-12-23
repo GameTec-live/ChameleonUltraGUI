@@ -261,7 +261,7 @@
   "auto_detect_magic_card": "Auto-detect Magic card type",
   "detected_magic_card_type": "Detected Magic card type",
   "failed_to_detect_magic_card_type": "Failed to detect Magic card type. Maybe your Magic card doesn't support detection (Mifare Classic Gen2)",
-  "otp_magic_warning": "Some Magic cards are writable only once. Make sure you selected correct card. Press \"Continue\" to write data to Magic card.",
+  "otp_magic_warning": "Some Magic cards are writable only once. Make sure you selected correct card. Press \"{button}\" to write data to Magic card.",
   "magic_success_write": "Card written successfully",
   "magic_failed_write": "Something went wrong in card writing",
   "skip_default_dictionary": "Skip default dictionary",
@@ -269,5 +269,7 @@
   "not_mifare_classic_card": "This card probably isn't Mifare Classic card",
   "magic_incompatible_card": "Your Magic card isn't compatible with this dump. Probably UID size or block count mismatch",
   "some_blocks_failed_to_write": "Failed to write some blocks",
-  "continue_anyway": "Continue anyway"
+  "continue_anyway": "Continue anyway",
+  "next": "Next",
+  "back": "Back"
 }
