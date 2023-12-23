@@ -56,7 +56,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       Uint8List binData = Uint8List(blockCount * 16);
 
       // How many blocks to request per read command.
-      int readCount = 32;
+      int readCount = 16;
       int binDataIndex = 0;
 
       for (int currentBlock = 0;
