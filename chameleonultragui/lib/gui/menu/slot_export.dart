@@ -49,14 +49,39 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       );
     } else {
       CardData data = await appState.communicator!.mf1GetAntiCollData();
-      List<Uint8List> binData = [];
 
       int blockCount = mfClassicGetBlockCount(
           chameleonTagTypeGetMfClassicType(widget.slotTypes.hf));
-      for (int block = 0; block < blockCount; block += 16) {
-        Uint8List blockData =
-            await appState.communicator!.mf1GetEmulatorBlock(block, block + 16);
-        binData.add(blockData);
+
+      Uint8List binData = Uint8List(blockCount * 16);
+
+      // How many blocks to request per read command.
+      int readCount = 16;
+      int binDataIndex = 0;
+
+      for (int currentBlock = 0;
+          currentBlock < blockCount;
+          currentBlock += readCount) {
+        Uint8List result = await appState.communicator!
+            .mf1GetEmulatorBlock(currentBlock, readCount);
+
+        binData.setAll(binDataIndex, result);
+        binDataIndex += result.length;
+      }
+
+      int remainingBlocks = blockCount % readCount;
+
+      if (remainingBlocks != 0) {
+        Uint8List result = await appState.communicator!
+            .mf1GetEmulatorBlock(blockCount - remainingBlocks, remainingBlocks);
+        binData.setAll(binDataIndex, result);
+      }
+
+      List<Uint8List> blocks = [];
+
+      for (int i = 0; i < binData.length; i += 16) {
+        Uint8List block = Uint8List.fromList(binData.sublist(i, i+16));
+        blocks.add(block);
       }
 
       return CardSave(
@@ -66,7 +91,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         atqa: data.atqa,
         ats: data.ats,
         tag: widget.slotTypes.hf,
-        data: binData,
+        data: blocks,
       );
     }
   }
