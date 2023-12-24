@@ -12,7 +12,6 @@ class NativeSerial extends AbstractSerial {
 
   NativeSerial({required super.log});
 
-  @override
   Future<List> availableDevices() async {
     return SerialPort.availablePorts;
   }

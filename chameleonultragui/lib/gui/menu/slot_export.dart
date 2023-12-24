@@ -24,11 +24,10 @@ class SlotExportMenu extends StatefulWidget {
   final SlotTypes slotTypes;
 
   const SlotExportMenu(
-      {Key? key,
+      {super.key,
       required this.names,
       required this.enabledSlotInfo,
-      required this.slotTypes})
-      : super(key: key);
+      required this.slotTypes});
 
   @override
   SlotExportMenuState createState() => SlotExportMenuState();
@@ -80,7 +79,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       List<Uint8List> blocks = [];
 
       for (int i = 0; i < binData.length; i += 16) {
-        Uint8List block = Uint8List.fromList(binData.sublist(i, i+16));
+        Uint8List block = Uint8List.fromList(binData.sublist(i, i + 16));
         blocks.add(block);
       }
 

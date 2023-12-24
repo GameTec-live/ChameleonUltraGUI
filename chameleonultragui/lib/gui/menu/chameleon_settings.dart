@@ -165,7 +165,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     Text("${localizations.button_config}:"),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("A")}:",
-                        textScaleFactor: 0.8),
+                        textScaler: const TextScaler.linear(0.8)),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
                         items: [
@@ -196,7 +196,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         }),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("B")}:",
-                        textScaleFactor: 0.8),
+                        textScaler: const TextScaler.linear(0.8)),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
                         items: [
@@ -226,10 +226,11 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           appState.changesMade();
                         }),
                     const SizedBox(height: 7),
-                    Text(localizations.long_press, textScaleFactor: 0.9),
+                    Text(localizations.long_press,
+                        textScaler: const TextScaler.linear(0.9)),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("A")}:",
-                        textScaleFactor: 0.8),
+                        textScaler: const TextScaler.linear(0.8)),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
                         items: [
@@ -260,7 +261,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         }),
                     const SizedBox(height: 7),
                     Text("${localizations.button_x("B")}:",
-                        textScaleFactor: 0.8),
+                        textScaler: const TextScaler.linear(0.8)),
                     const SizedBox(height: 7),
                     ToggleButtonsWrapper(
                         items: [

@@ -14,8 +14,7 @@ class DictionaryEditMenu extends StatefulWidget {
   final bool isNew;
 
   const DictionaryEditMenu(
-      {Key? key, required this.dictionary, this.isNew = false})
-      : super(key: key);
+      {super.key, required this.dictionary, this.isNew = false});
 
   @override
   DictionaryEditMenuState createState() => DictionaryEditMenuState();

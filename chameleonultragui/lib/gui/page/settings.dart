@@ -21,7 +21,7 @@ import 'package:chameleonultragui/gui/menu/qrcode_settings.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingsMainPage extends StatefulWidget {
-  const SettingsMainPage({Key? key}) : super(key: key);
+  const SettingsMainPage({super.key});
 
   @override
   SettingsMainPageState createState() => SettingsMainPageState();
@@ -82,7 +82,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       .getSideBarExpandedIndex(),
                   onChange: (int index) async {
                     if (index == 0) {
-                      appState.sharedPreferencesProvider.setSideBarExpanded(true);
+                      appState.sharedPreferencesProvider
+                          .setSideBarExpanded(true);
                       appState.sharedPreferencesProvider
                           .setSideBarAutoExpansion(false);
                     } else if (index == 2) {
@@ -97,7 +98,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     appState.sharedPreferencesProvider
                         .setSideBarExpandedIndex(index);
                     appState.changesMade();
-      
+
                     WidgetsBinding.instance.addPostFrameCallback(
                         (_) => updateNavigationRailWidth(context));
                   }),
@@ -113,19 +114,21 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     localizations.light,
                     localizations.dark
                   ],
-                  selectedValue: appState.sharedPreferencesProvider.getTheme() ==
-                          ThemeMode.system
-                      ? 0
-                      : appState.sharedPreferencesProvider.getTheme() ==
-                              ThemeMode.dark
-                          ? 2
-                          : 1,
+                  selectedValue:
+                      appState.sharedPreferencesProvider.getTheme() ==
+                              ThemeMode.system
+                          ? 0
+                          : appState.sharedPreferencesProvider.getTheme() ==
+                                  ThemeMode.dark
+                              ? 2
+                              : 1,
                   onChange: (int index) async {
                     if (index == 0) {
                       appState.sharedPreferencesProvider
                           .setTheme(ThemeMode.system);
                     } else if (index == 2) {
-                      appState.sharedPreferencesProvider.setTheme(ThemeMode.dark);
+                      appState.sharedPreferencesProvider
+                          .setTheme(ThemeMode.dark);
                     } else {
                       appState.sharedPreferencesProvider
                           .setTheme(ThemeMode.light);
@@ -216,8 +219,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     onPressed: () => showDialog<String>(
                           context: context,
                           builder: (BuildContext context) => AlertDialog(
-                            title: Text(
-                                AppLocalizations.of(context)!.choose_export_method),
+                            title: Text(AppLocalizations.of(context)!
+                                .choose_export_method),
                             content: Text(AppLocalizations.of(context)!
                                 .choose_export_method_description),
                             actions: <Widget>[
@@ -227,23 +230,25 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               ),
                               TextButton(
                                 onPressed: () async {
-                                  String string = appState.sharedPreferencesProvider
+                                  String string = appState
+                                      .sharedPreferencesProvider
                                       .dumpSettingsToJson();
-                    
+
                                   Map<String, int> settings = await showDialog(
                                           context: context,
                                           builder: (BuildContext context) {
                                             return const QRCodeSettings();
                                           }) ??
                                       {};
-                    
+
                                   if (settings.isEmpty) {
                                     return;
                                   }
-                    
-                                  List<String> qrChunks = splitStringIntoQrChunks(
-                                      string, settings["splitSize"]!); //2048
-                    
+
+                                  List<String> qrChunks =
+                                      splitStringIntoQrChunks(string,
+                                          settings["splitSize"]!); //2048
+
                                   // Generate Header Info
                                   Map<String, dynamic> headerData = {
                                     "Info": "Chameleon Ultra GUI Settings",
@@ -254,7 +259,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                         .toString(),
                                   };
                                   qrChunks.insert(0, jsonEncode(headerData));
-                    
+
                                   if (context.mounted) {
                                     await showDialog(
                                       context: context,
@@ -265,7 +270,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                                   settings["errorCorrection"]!),
                                     );
                                   }
-                    
+
                                   appState.changesMade();
                                   if (context.mounted) {
                                     Navigator.pop(context);
@@ -278,29 +283,31 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   try {
                                     await FileSaver.instance.saveAs(
                                         name: 'ChameleonUltraGUISettings',
-                                        bytes: const Utf8Encoder().convert(appState
-                                            .sharedPreferencesProvider
-                                            .dumpSettingsToJson()),
+                                        bytes: const Utf8Encoder().convert(
+                                            appState.sharedPreferencesProvider
+                                                .dumpSettingsToJson()),
                                         ext: 'json',
                                         mimeType: MimeType.other);
                                   } on UnimplementedError catch (_) {
                                     String? outputFile =
                                         await FilePicker.platform.saveFile(
-                                      dialogTitle: '${localizations.output_file}:',
-                                      fileName: 'ChameleonUltraGUISettings.json',
+                                      dialogTitle:
+                                          '${localizations.output_file}:',
+                                      fileName:
+                                          'ChameleonUltraGUISettings.json',
                                     );
-                    
+
                                     if (outputFile != null) {
                                       var file = File(outputFile);
-                                      await file.writeAsBytes(const Utf8Encoder()
-                                          .convert(appState
+                                      await file.writeAsBytes(
+                                          const Utf8Encoder().convert(appState
                                               .sharedPreferencesProvider
                                               .dumpSettingsToJson()));
                                     }
                                   }
                                 },
-                                child:
-                                    Text(AppLocalizations.of(context)!.json_file),
+                                child: Text(
+                                    AppLocalizations.of(context)!.json_file),
                               ),
                             ],
                           ),
@@ -320,7 +327,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   onPressed: () => showDialog<String>(
                     context: context,
                     builder: (BuildContext context) => AlertDialog(
-                      title: Text(AppLocalizations.of(context)!.import_settings),
+                      title:
+                          Text(AppLocalizations.of(context)!.import_settings),
                       content: Text(AppLocalizations.of(context)!
                           .import_settings_description),
                       actions: <Widget>[
@@ -334,7 +342,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               await showDialog(
                                 context: context,
                                 builder: (BuildContext context) => AlertDialog(
-                                  title: Text(AppLocalizations.of(context)!.error),
+                                  title:
+                                      Text(AppLocalizations.of(context)!.error),
                                   content: Text(AppLocalizations.of(context)!
                                       .qr_code_import_not_supported_description),
                                   actions: <Widget>[
@@ -347,19 +356,19 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               );
                               return;
                             }
-                    
+
                             String? jsonData = await showDialog(
                                 context: context,
                                 builder: (BuildContext context) {
                                   return const QrCodeImport();
                                 });
-                    
+
                             if (jsonData == null) {
                               return;
                             }
                             appState.sharedPreferencesProvider
                                 .restoreSettingsFromJson(jsonData);
-                    
+
                             appState.changesMade();
                             if (context.mounted) {
                               Navigator.pop(context);
@@ -374,7 +383,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                             if (result != null) {
                               File file = File(result.files.single.path!);
                               var contents = await file.readAsBytes();
-                              var string = const Utf8Decoder().convert(contents);
+                              var string =
+                                  const Utf8Decoder().convert(contents);
                               appState.sharedPreferencesProvider
                                   .restoreSettingsFromJson(string);
                               appState.changesMade();
@@ -406,7 +416,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     content: Center(
                       child: FutureBuilder(
                         future: getFutureData(),
-                        builder: (BuildContext context, AsyncSnapshot snapshot) {
+                        builder:
+                            (BuildContext context, AsyncSnapshot snapshot) {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return const Center(
@@ -496,7 +507,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       TextButton(
                         onPressed: () {
                           appState.sharedPreferencesProvider.setDebugMode(
-                              !appState.sharedPreferencesProvider.isDebugMode());
+                              !appState.sharedPreferencesProvider
+                                  .isDebugMode());
                           appState.changesMade();
                           Navigator.pop(context);
                         },

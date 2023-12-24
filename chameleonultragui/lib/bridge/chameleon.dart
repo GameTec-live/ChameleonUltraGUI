@@ -588,10 +588,13 @@ class ChameleonCommunicator {
 
   Future<DarksideResult> checkMf1Darkside() async {
     // Check card vulnerability to Mifare Classic darkside attack
-    var status = (await sendCmd(ChameleonCommand.mf1DarksideAcquire,
-            data: Uint8List.fromList([0, 0, 1, 15]),
-            timeout: const Duration(seconds: 30)))!
-        .data[0];
+    var message = (await sendCmd(ChameleonCommand.mf1DarksideAcquire,
+        data: Uint8List.fromList([0, 0, 1, 15]),
+        timeout: const Duration(seconds: 30)))!;
+    int status = message.status;
+    if (message.data.isNotEmpty) {
+      status = message.data[0];
+    }
 
     if (status == 0) {
       return DarksideResult.vulnerable;
@@ -713,12 +716,14 @@ class ChameleonCommunicator {
         .data;
   }
 
-  Future<void> mf1WriteBlock(
+  Future<bool> mf1WriteBlock(
       int block, int keyType, Uint8List key, Uint8List data) async {
     // Write block
     // keyType 0x60 if A key, 0x61 B key
-    await sendCmd(ChameleonCommand.mf1WriteBlock,
-        data: Uint8List.fromList([keyType, block, ...key, ...data]));
+    return (await sendCmd(ChameleonCommand.mf1WriteBlock,
+                data: Uint8List.fromList([keyType, block, ...key, ...data])))!
+            .status ==
+        0;
   }
 
   Future<void> activateSlot(int slot) async {

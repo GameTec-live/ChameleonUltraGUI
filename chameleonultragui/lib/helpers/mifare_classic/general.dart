@@ -163,6 +163,10 @@ int mfClassicGetSectorTrailerBlockBySector(int sector) {
   }
 }
 
+int mfClassicGetSectorTrailerBlockInSector(int sector) {
+  return sector < 32 ? 3 : 15;
+}
+
 int mfClassicGetBlockCountBySector(int sector) {
   return sector < 32 ? 4 : 16;
 }
@@ -172,6 +176,14 @@ int mfClassicGetFirstBlockCountBySector(int sector) {
     return sector * 4;
   } else {
     return 32 * 4 + (sector - 32) * 16;
+  }
+}
+
+int mfClassicGetSectorByBlock(int block) {
+  if (block < 128) {
+    return block ~/ 4;
+  } else {
+    return 32 + (block - 128) ~/ 16;
   }
 }
 

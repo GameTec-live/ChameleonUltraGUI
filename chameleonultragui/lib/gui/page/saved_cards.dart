@@ -49,7 +49,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     const Color color = Colors.deepOrange;
     final TagType tag;
     List<Uint8List> tagData = [];
-      
+
     List<String> blocks = [];
     Map<String, dynamic> blockData = data['blocks'] as Map<String, dynamic>;
     for (int i = 0; blockData.containsKey(i.toString()); i++) {
@@ -60,7 +60,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     if (blocks[0].length > 32) {
       tag = TagType.unknown;
     } else {
-      tag = mfClassicGetChameleonTagType(mfClassicGetCardTypeByBlockCount(blocks.length));
+      tag = mfClassicGetChameleonTagType(
+          mfClassicGetCardTypeByBlockCount(blocks.length));
     }
 
     for (var block in blocks) {
@@ -68,22 +69,25 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     }
 
     return CardSave(
-      id: id,
-      uid: uid,
-      sak: sak,
-      name: name,
-      tag: tag,
-      data: tagData,
-      color: color,
-      ats: Uint8List.fromList(ats),
-      atqa: Uint8List.fromList(atqa));
+        id: id,
+        uid: uid,
+        sak: sak,
+        name: name,
+        tag: tag,
+        data: tagData,
+        color: color,
+        ats: Uint8List.fromList(ats),
+        atqa: Uint8List.fromList(atqa));
   }
 
   CardSave flipperNfcToCardSave(String data) {
     final String id = const Uuid().v4();
-    final String uid = RegExp(r'UID:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!;
-    final int sak = hexToBytes(RegExp(r'SAK:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!)[0];
-    String atqaString = RegExp(r'ATQA:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!;
+    final String uid =
+        RegExp(r'UID:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!;
+    final int sak = hexToBytes(
+        RegExp(r'SAK:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!)[0];
+    String atqaString =
+        RegExp(r'ATQA:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!;
     final List<int> atqa = [
       int.parse(atqaString.substring(0, 2), radix: 16),
       int.parse(atqaString.substring(2), radix: 16)
@@ -104,29 +108,30 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     if (blocks[0].replaceAll(' ', '').length > 32) {
       tag = TagType.unknown;
     } else {
-      tag = mfClassicGetChameleonTagType(mfClassicGetCardTypeByBlockCount(blocks.length));
+      tag = mfClassicGetChameleonTagType(
+          mfClassicGetCardTypeByBlockCount(blocks.length));
     }
 
     for (var block in blocks) {
       tagData.add(hexToBytesSpace(block));
     }
-    
+
     return CardSave(
-      id: id,
-      uid: uid,
-      sak: sak,
-      name: name,
-      tag: tag,
-      data: tagData,
-      color: color,
-      ats: Uint8List.fromList(ats),
-      atqa: Uint8List.fromList(atqa));
+        id: id,
+        uid: uid,
+        sak: sak,
+        name: name,
+        tag: tag,
+        data: tagData,
+        color: color,
+        ats: Uint8List.fromList(ats),
+        atqa: Uint8List.fromList(atqa));
   }
 
-  CardSave mfctToCardSave(String data) {
+  CardSave mctToCardSave(String data) {
     final String id = const Uuid().v4();
     final String uid = data.split("\n")[1].substring(0, 8);
-    final int sak = hexToBytes(data.split("\n")[1].substring(10,12))[0];
+    final int sak = hexToBytes(data.split("\n")[1].substring(10, 12))[0];
     String atqaString = data.split("\n")[1].substring(12, 16);
     final List<int> atqa = [
       int.parse(atqaString.substring(2), radix: 16),
@@ -148,7 +153,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     if (blocks[0].replaceAll(' ', '').length > 32) {
       tag = TagType.unknown;
     } else {
-      tag = mfClassicGetChameleonTagType(mfClassicGetCardTypeByBlockCount(blocks.length));
+      tag = mfClassicGetChameleonTagType(
+          mfClassicGetCardTypeByBlockCount(blocks.length));
     }
 
     for (var block in blocks) {
@@ -156,17 +162,16 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     }
 
     return CardSave(
-      id: id,
-      uid: uid,
-      sak: sak,
-      name: name,
-      tag: tag,
-      data: tagData,
-      color: color,
-      ats: Uint8List.fromList(ats),
-      atqa: Uint8List.fromList(atqa));
+        id: id,
+        uid: uid,
+        sak: sak,
+        name: name,
+        tag: tag,
+        data: tagData,
+        color: color,
+        ats: Uint8List.fromList(ats),
+        atqa: Uint8List.fromList(atqa));
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -214,17 +219,17 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           if (string.contains("\"Created\": \"proxmark3\",")) {
                             // PM3 JSON
                             tag = pm3JsonToCardSave(string);
-                          } else if (string.contains("Filetype: Flipper NFC device")) {
+                          } else if (string
+                              .contains("Filetype: Flipper NFC device")) {
                             // Flipper NFC
                             tag = flipperNfcToCardSave(string);
                           } else if (string.contains("+Sector: 0")) {
                             // Mifare Classic Tool
-                            tag = mfctToCardSave(string);
-
+                            tag = mctToCardSave(string);
                           } else {
                             tag = CardSave.fromJson(string);
                           }
-                          
+
                           tags.add(tag);
                           appState.sharedPreferencesProvider.setCards(tags);
                           appState.changesMade();

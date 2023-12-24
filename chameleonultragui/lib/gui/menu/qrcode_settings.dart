@@ -5,10 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class QRCodeSettings extends StatefulWidget {
-  const QRCodeSettings({Key? key})
-      : super(
-          key: key,
-        );
+  const QRCodeSettings({super.key});
 
   @override
   QRCodeSettingsState createState() => QRCodeSettingsState();
@@ -160,7 +157,7 @@ class QRCodeSettingsState extends State<QRCodeSettings> {
                     ? MediaQuery.of(context).size.height * 0.8 - 10
                     : MediaQuery.of(context).size.width * 0.8 - 10,
                 child: QrImageView(
-                  // Generate dummy data on the fly depending on the splitsize
+                  // Generate dummy data on the fly depending on the split size
                   data: List.filled(sliderSplitSize, "a").join(""),
                   version: QrVersions.auto,
                   size: 200.0,
@@ -183,10 +180,10 @@ class QRCodeSettingsState extends State<QRCodeSettings> {
             if (formKey.currentState!.validate()) {
               int splitSizeInt = int.parse(splitSize.text);
               int errorCorrectionInt = int.parse(errorCorrection.text);
-              // Level 0: max splitsize: 2048 (default)
-              // Level 1: max splitsize: 2048
-              // Level 2: max splitsize: 1200
-              // Level 3: max splitsize: 1600
+              // Level 0: max split size: 2048 (default)
+              // Level 1: max split size: 2048
+              // Level 2: max split size: 1200
+              // Level 3: max split size: 1600
               // L = 1;
               // M = 0;
               // Q = 3;

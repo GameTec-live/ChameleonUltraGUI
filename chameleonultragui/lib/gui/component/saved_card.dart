@@ -12,15 +12,14 @@ class SavedCard extends StatefulWidget {
   final VoidCallback? onPressed;
 
   const SavedCard(
-      {Key? key,
+      {super.key,
       required this.icon,
       required this.iconColor,
       required this.firstLine,
       required this.secondLine,
       required this.children,
       required this.itemIndex,
-      required this.onPressed})
-      : super(key: key);
+      required this.onPressed});
 
   @override
   SavedCardState createState() => SavedCardState();
@@ -45,7 +44,7 @@ class SavedCardState extends State<SavedCard> {
     double textWidth = (TextPainter(
             text: TextSpan(text: widget.secondLine),
             maxLines: 1,
-            textScaleFactor: MediaQuery.of(context).textScaleFactor,
+            textScaler: MediaQuery.of(context).textScaler,
             textDirection: TextDirection.ltr)
           ..layout())
         .size

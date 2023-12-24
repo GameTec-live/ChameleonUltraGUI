@@ -7,7 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class QrCodeImport extends StatefulWidget {
-  const QrCodeImport({Key? key}) : super(key: key);
+  const QrCodeImport({super.key});
 
   @override
   State<StatefulWidget> createState() => QrCodeImportState();
@@ -15,14 +15,14 @@ class QrCodeImport extends StatefulWidget {
 
 class QrCodeImportState extends State<QrCodeImport> {
   String? shasum;
-  int? qrCodeChuncks;
+  int? qrCodeChunks;
   String resultingJson = "";
   int currentChunk = 0;
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(AppLocalizations.of(context)!.qrCodeImport),	
+      title: Text(AppLocalizations.of(context)!.qrCodeImport),
       actions: [
         TextButton(
           onPressed: () {
@@ -32,7 +32,7 @@ class QrCodeImportState extends State<QrCodeImport> {
         ),
         TextButton(
           onPressed: () async {
-            if (qrCodeChuncks == currentChunk) {
+            if (qrCodeChunks == currentChunk) {
               Navigator.pop(context, resultingJson);
               return;
             }
@@ -50,7 +50,7 @@ class QrCodeImportState extends State<QrCodeImport> {
               }
               setState(() {
                 shasum = data["sha256"];
-                qrCodeChuncks = data["chunks"];
+                qrCodeChunks = data["chunks"];
               });
               currentChunk = 0;
               resultingJson = "";
@@ -64,11 +64,12 @@ class QrCodeImportState extends State<QrCodeImport> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              qrCodeChuncks == null
+              qrCodeChunks == null
                   ? Text(AppLocalizations.of(context)!.startScanning)
-                  : qrCodeChuncks == currentChunk
+                  : qrCodeChunks == currentChunk
                       ? Text(AppLocalizations.of(context)!.finishImport)
-                      : Text(AppLocalizations.of(context)!.scan_next_qr_code("${currentChunk + 1}", "${qrCodeChuncks! +1}")),
+                      : Text(AppLocalizations.of(context)!.scan_next_qr_code(
+                          "${currentChunk + 1}", "${qrCodeChunks! + 1}")),
               const SizedBox(width: 5),
               if (sha256
                       .convert(const Utf8Encoder().convert(resultingJson))

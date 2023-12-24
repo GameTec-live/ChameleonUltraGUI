@@ -43,13 +43,14 @@ class DebugPage extends StatelessWidget {
               ),
               const Text(
                 '🐞 Chameleon Ultra GUI DEBUG MENU 🐞',
-                textScaleFactor: 2,
+                textScaler: TextScaler.linear(2),
               ),
               Text(
                 localizations.debug_page_warning,
-                textScaleFactor: 2,
+                textScaler: const TextScaler.linear(2),
               ),
-              Text('⚠️ ${localizations.warned} ⚠️', textScaleFactor: 3),
+              Text('⚠️ ${localizations.warned} ⚠️',
+                  textScaler: const TextScaler.linear(3)),
               Text('${localizations.platform}: ${Platform.operatingSystem}'),
               Text('${localizations.serial_protocol}: ${appState.connector}'),
               Text(
@@ -59,9 +60,11 @@ class DebugPage extends StatelessWidget {
               Text(
                   '${localizations.shared_preferences_logging}: ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines'),
               const SizedBox(height: 10),
-              Text(localizations.production_logging, textScaleFactor: 1.5),
+              Text(localizations.production_logging,
+                  textScaler: const TextScaler.linear(1.5)),
               const SizedBox(height: 5),
-              Text(localizations.slow_down_warning, textScaleFactor: 0.9),
+              Text(localizations.slow_down_warning,
+                  textScaler: const TextScaler.linear(0.9)),
               const SizedBox(height: 10),
               if (!appState.sharedPreferencesProvider.isDebugLogging())
                 ElevatedButton(
@@ -112,7 +115,8 @@ class DebugPage extends StatelessWidget {
                 ]),
               ),
               const SizedBox(height: 10),
-              Text(localizations.recovery_library, textScaleFactor: 1.5),
+              Text(localizations.recovery_library,
+                  textScaler: const TextScaler.linear(1.5)),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
@@ -302,7 +306,8 @@ class DebugPage extends StatelessWidget {
                 ]),
               ),
               const SizedBox(height: 10),
-              Text(localizations.force_flashing, textScaleFactor: 1.5),
+              Text(localizations.force_flashing,
+                  textScaler: const TextScaler.linear(1.5)),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
@@ -326,7 +331,8 @@ class DebugPage extends StatelessWidget {
                 ]),
               ),
               const SizedBox(height: 10),
-              Text(localizations.other, textScaleFactor: 1.5),
+              Text(localizations.other,
+                  textScaler: const TextScaler.linear(1.5)),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
@@ -350,39 +356,6 @@ class DebugPage extends StatelessWidget {
                 },
                 child: Column(children: [
                   Text(localizations.copy_uid),
-                ]),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () async {
-                  var data = await appState.communicator!.send14ARaw(
-                      Uint8List.fromList([0x40]),
-                      bitLen: 7,
-                      appendCrc: false,
-                      autoSelect: false,
-                      checkResponseCrc: false,
-                      keepRfField: true);
-
-                  if (data[0] == 0x0a) {
-                    data = await appState.communicator!.send14ARaw(
-                        Uint8List.fromList([0x43]),
-                        appendCrc: false,
-                        autoSelect: false,
-                        checkResponseCrc: false,
-                        keepRfField: true);
-                    if (data[0] == 0x0a) {
-                      for (var block = 0; block < 64; block++) {
-                        data = await appState.communicator!.send14ARaw(
-                            Uint8List.fromList([0x30, block]),
-                            autoSelect: false,
-                            keepRfField: block == 63 ? false : true);
-                        appState.log!.d("$block : ${bytesToHexSpace(data)}");
-                      }
-                    }
-                  }
-                },
-                child: Column(children: [
-                  Text(localizations.read_gen1_card_data),
                 ]),
               ),
               const SizedBox(height: 10),

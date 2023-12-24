@@ -17,10 +17,8 @@ class QrCodeViewer extends StatefulWidget {
   final List<String> qrChunks;
   final int errorCorrection;
 
-  const QrCodeViewer({required this.qrChunks, this.errorCorrection = 0,Key? key})
-      : super(
-          key: key,
-        );
+  const QrCodeViewer(
+      {required this.qrChunks, this.errorCorrection = 0, super.key});
 
   @override
   QrCodeViewerState createState() => QrCodeViewerState();
@@ -65,7 +63,9 @@ class QrCodeViewerState extends State<QrCodeViewer> {
                 currentQrIndex++;
               });
             },
-            child: Text(AppLocalizations.of(context)!.next_qr_code("${currentQrIndex + 1}", "${widget.qrChunks.length}")),//"Next QR Code (${currentQrIndex + 1}/${widget.qrChunks.length})"
+            child: Text(AppLocalizations.of(context)!.next_qr_code(
+                "${currentQrIndex + 1}",
+                "${widget.qrChunks.length}")), //"Next QR Code (${currentQrIndex + 1}/${widget.qrChunks.length})"
           ),
       ],
     );

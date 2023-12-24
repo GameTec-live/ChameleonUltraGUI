@@ -5,7 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class QrCodeScanner extends StatefulWidget {
-  const QrCodeScanner({Key? key}) : super(key: key);
+  const QrCodeScanner({super.key});
 
   @override
   State<StatefulWidget> createState() => QrCodeScannerState();
@@ -14,13 +14,13 @@ class QrCodeScanner extends StatefulWidget {
 class QrCodeScannerState extends State<QrCodeScanner> {
   MobileScannerController cameraController = MobileScannerController();
   bool isFlashOn = false;
-  bool succesfulScan = false;
+  bool successfulScan = false;
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(AppLocalizations.of(context)!.qrCodeScanner),
-      content: succesfulScan
+      content: successfulScan
           ? SizedBox(
               width: MediaQuery.of(context).size.width >
                       MediaQuery.of(context).size.height
@@ -45,9 +45,10 @@ class QrCodeScannerState extends State<QrCodeScanner> {
                 onDetect: (capture) async {
                   final List<Barcode> barcodes = capture.barcodes;
                   for (final Barcode barcode in barcodes) {
-                    if (barcode.format == BarcodeFormat.qrCode && barcode.rawValue != null) {
+                    if (barcode.format == BarcodeFormat.qrCode &&
+                        barcode.rawValue != null) {
                       setState(() {
-                        succesfulScan = true;
+                        successfulScan = true;
                       });
                       if (context.mounted) {
                         Navigator.pop(context, barcode.rawValue);

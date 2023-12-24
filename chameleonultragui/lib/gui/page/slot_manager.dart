@@ -234,6 +234,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.slot_manager),

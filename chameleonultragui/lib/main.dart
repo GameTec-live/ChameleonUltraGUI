@@ -43,8 +43,7 @@ Future<void> main() async {
 class ChameleonGUI extends StatelessWidget {
   // Root Widget
   final SharedPreferencesProvider _sharedPreferencesProvider;
-  const ChameleonGUI(this._sharedPreferencesProvider, {Key? key})
-      : super(key: key);
+  const ChameleonGUI(this._sharedPreferencesProvider, {super.key});
 
   @override
   Widget build(BuildContext context) {

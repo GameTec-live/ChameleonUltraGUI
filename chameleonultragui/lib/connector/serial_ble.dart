@@ -28,7 +28,6 @@ class BLESerial extends AbstractSerial {
 
   BLESerial({required super.log});
 
-  @override
   Future<List> availableDevices() async {
     if (inSearch) {
       log.w("Multiple searches in one time not allowed! FIXME");

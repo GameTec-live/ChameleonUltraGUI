@@ -6,11 +6,10 @@ class ToggleButtonsWrapper extends StatefulWidget {
   final dynamic onChange;
 
   const ToggleButtonsWrapper(
-      {Key? key,
+      {super.key,
       required this.items,
       required this.selectedValue,
-      required this.onChange})
-      : super(key: key);
+      required this.onChange});
 
   @override
   ToggleButtonsState createState() => ToggleButtonsState();

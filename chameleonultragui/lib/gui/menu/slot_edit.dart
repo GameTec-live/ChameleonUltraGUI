@@ -19,14 +19,13 @@ class SlotEditMenu extends StatefulWidget {
   final dynamic update;
 
   const SlotEditMenu(
-      {Key? key,
+      {super.key,
       required this.name,
       required this.isEnabled,
       required this.slotType,
       required this.frequency,
       required this.slot,
-      required this.update})
-      : super(key: key);
+      required this.update});
 
   @override
   SlotEditMenuState createState() => SlotEditMenuState();
@@ -317,7 +316,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                           Text(
                                             localizations
                                                 .mifare_classic_emulator_settings,
-                                            textScaleFactor: 1.1,
+                                            textScaler:
+                                                const TextScaler.linear(1.1),
                                           ),
                                           const SizedBox(height: 8),
                                           Text(localizations.mode_gen1a),
@@ -404,8 +404,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                           Text(
                                                               localizations
                                                                   .present_cham_reader_keys,
-                                                              textScaleFactor:
-                                                                  0.8)
+                                                              textScaler:
+                                                                  const TextScaler
+                                                                      .linear(
+                                                                      0.8))
                                                         ]
                                                       : [
                                                           const SizedBox(
@@ -441,7 +443,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                   Text(
                                                       localizations
                                                           .ena_coll_recover_keys,
-                                                      textScaleFactor: 0.8)
+                                                      textScaler:
+                                                          const TextScaler
+                                                              .linear(0.8))
                                                 ],
                                           const SizedBox(height: 8),
                                           Text(localizations.write_mode),
