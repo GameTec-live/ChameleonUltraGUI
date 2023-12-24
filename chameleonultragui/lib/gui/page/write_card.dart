@@ -27,6 +27,7 @@ class WriteCardPageState extends State<WriteCardPage> {
   MifareClassicInfo? mfcInfo;
   int step = 0;
   int progress = -1;
+  bool written = false;
   CardSave? card;
   AbstractWriteHelper? baseHelper;
   AbstractWriteHelper? helper;
@@ -204,6 +205,10 @@ class WriteCardPageState extends State<WriteCardPage> {
     scaffoldMessenger.hideCurrentSnackBar();
     scaffoldMessenger.showSnackBar(snackBar);
 
+    setState(() {
+      written = true;
+    });
+
     updateProgress(-1);
   }
 
@@ -270,6 +275,7 @@ class WriteCardPageState extends State<WriteCardPage> {
 
   void onStepBack() async {
     setState(() {
+      written = false;
       step--;
     });
 
@@ -283,34 +289,53 @@ class WriteCardPageState extends State<WriteCardPage> {
     }
   }
 
+  void onStepReset() async {
+    setState(() {
+      written = false;
+      step = 0;
+    });
+  }
+
   List<Widget> createButtonsForStep(ControlsDetails details, int step) {
     var localizations = AppLocalizations.of(context)!;
     List<Widget> widgets = [];
 
-    if (step == 0 || step == 1) {
+    if (written) {
       widgets.add(TextButton(
-        onPressed:
-            (step == 0 && card == null || step == 1 && baseHelper == null)
-                ? null
-                : onStepContinue,
-        child: Text(localizations.next),
+        onPressed: (progress == -1) ? onStepContinue : null,
+        child: Text(localizations.write_again),
       ));
-    }
 
-    if (step == 2) {
       widgets.add(TextButton(
-        onPressed: (helper != null && helper!.isReady() && progress == -1)
-            ? onStepContinue
-            : null,
-        child: Text(localizations.write_data_to_magic_card),
+        onPressed: (progress == -1) ? onStepReset : null,
+        child: Text(localizations.reset),
       ));
-    }
+    } else {
+      if (step == 0 || step == 1) {
+        widgets.add(TextButton(
+          onPressed:
+              (step == 0 && card == null || step == 1 && baseHelper == null)
+                  ? null
+                  : onStepContinue,
+          child: Text(localizations.next),
+        ));
+      }
 
-    if (step != 0) {
-      widgets.add(TextButton(
-        onPressed: onStepBack,
-        child: Text(localizations.back),
-      ));
+      if (step == 2) {
+        widgets.add(TextButton(
+          onPressed: (helper != null && helper!.isReady() && progress == -1)
+              ? onStepContinue
+              : null,
+          child: Text(localizations.write_data_to_magic_card),
+        ));
+      }
+
+      if (step != 0) {
+        widgets.add(TextButton(
+          onPressed: onStepBack,
+          child: Text(localizations.back),
+        ));
+      }
     }
 
     return widgets;

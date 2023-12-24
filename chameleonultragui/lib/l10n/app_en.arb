@@ -271,5 +271,7 @@
   "some_blocks_failed_to_write": "Failed to write some blocks",
   "continue_anyway": "Continue anyway",
   "next": "Next",
-  "back": "Back"
+  "back": "Back",
+  "reset": "Reset",
+  "write_again": "Write again"
 }
