@@ -134,6 +134,7 @@ class CardRecoveryState extends State<CardRecovery> {
           const Spacer(),
           KeyCheckMarks(
               checkMarks: widget.mfcInfo.recovery!.checkMarks,
+              validKeys: widget.mfcInfo.recovery!.validKeys,
               fontSize: checkmarkFontSize,
               checkmarkSize: checkmarkSize,
               checkmarkCount: mfClassicGetSectorCount(widget.mfcInfo.type),
