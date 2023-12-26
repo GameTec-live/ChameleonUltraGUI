@@ -380,6 +380,8 @@ class SharedPreferencesProvider extends ChangeNotifier {
         return 'English';
       case 'zh':
         return '中文';
+      case 'zh-TW':
+        return '臺灣正體';
       case 'es':
         return 'Español';
       case 'fr':
