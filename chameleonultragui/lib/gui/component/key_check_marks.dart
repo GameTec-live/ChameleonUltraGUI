@@ -22,7 +22,7 @@ class KeyCheckMarks extends StatelessWidget {
       this.checkmarkSize = 20,
       this.fontSize = 16});
 
-  Widget buildCheckmark(int index) {
+  Widget buildCheckmark(int index, {bool tooltipBelow = true}) {
     var checkMark = checkMarks[index];
     var key = validKeys[index];
 
@@ -30,6 +30,7 @@ class KeyCheckMarks extends StatelessWidget {
       case ChameleonKeyCheckmark.found:
         return Tooltip(
           message: bytesToHex(key).toUpperCase(),
+          preferBelow: tooltipBelow,
           child: const Icon(
             Icons.check,
             color: Colors.green,
@@ -108,7 +109,7 @@ class KeyCheckMarks extends StatelessWidget {
                 child: SizedBox(
                   width: checkmarkSize,
                   height: checkmarkSize,
-                  child: buildCheckmark(checkmarkIndex + index),
+                  child: buildCheckmark(checkmarkIndex + index, tooltipBelow: false),
                 ),
               ),
             ),
@@ -132,7 +133,7 @@ class KeyCheckMarks extends StatelessWidget {
                   width: checkmarkSize,
                   height: checkmarkSize,
                   child:
-                      buildCheckmark(40 + checkmarkIndex + index),
+                      buildCheckmark(40 + checkmarkIndex + index, tooltipBelow: true),
                 ),
               ),
             ),
