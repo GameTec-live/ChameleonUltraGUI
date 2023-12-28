@@ -1,11 +1,14 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 
 class KeyCheckMarks extends StatelessWidget {
   final int checkmarkCount;
   final List<ChameleonKeyCheckmark> checkMarks;
+  final List<Uint8List> validKeys;
   final int checkmarkPerRow;
   final double checkmarkSize;
   final double fontSize;
@@ -13,19 +16,33 @@ class KeyCheckMarks extends StatelessWidget {
   const KeyCheckMarks(
       {super.key,
       required this.checkMarks,
+      required this.validKeys,
       this.checkmarkCount = 16,
       this.checkmarkPerRow = 16,
       this.checkmarkSize = 20,
       this.fontSize = 16});
 
-  Widget buildCheckmark(ChameleonKeyCheckmark value) {
-    if (value != ChameleonKeyCheckmark.checking) {
-      return Icon(
-        value == ChameleonKeyCheckmark.found ? Icons.check : Icons.close,
-        color: value == ChameleonKeyCheckmark.found ? Colors.green : Colors.red,
-      );
-    } else {
-      return const CircularProgressIndicator();
+  Widget buildCheckmark(int index, {bool tooltipBelow = true}) {
+    var checkMark = checkMarks[index];
+    var key = validKeys[index];
+
+    switch (checkMark) {
+      case ChameleonKeyCheckmark.found:
+        return Tooltip(
+          message: bytesToHex(key).toUpperCase(),
+          preferBelow: tooltipBelow,
+          child: const Icon(
+            Icons.check,
+            color: Colors.green,
+          ),
+        );
+      case ChameleonKeyCheckmark.none:
+        return const Icon(
+            Icons.close,
+            color: Colors.red,
+          );
+      case ChameleonKeyCheckmark.checking:
+        return const CircularProgressIndicator();
     }
   }
 
@@ -92,7 +109,7 @@ class KeyCheckMarks extends StatelessWidget {
                 child: SizedBox(
                   width: checkmarkSize,
                   height: checkmarkSize,
-                  child: buildCheckmark(checkMarks[checkmarkIndex + index]),
+                  child: buildCheckmark(checkmarkIndex + index, tooltipBelow: false),
                 ),
               ),
             ),
@@ -116,7 +133,7 @@ class KeyCheckMarks extends StatelessWidget {
                   width: checkmarkSize,
                   height: checkmarkSize,
                   child:
-                      buildCheckmark(checkMarks[40 + checkmarkIndex + index]),
+                      buildCheckmark(40 + checkmarkIndex + index, tooltipBelow: true),
                 ),
               ),
             ),
