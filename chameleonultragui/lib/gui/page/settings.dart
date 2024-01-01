@@ -20,6 +20,44 @@ import 'package:chameleonultragui/gui/menu/qrcode_settings.dart';
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+//TODO: remove and use a language provided string
+const localeNameMap = {
+  "en": "English",
+  "zh": "中文",
+  "zh-TW": "臺灣正體",
+  "es": "Español",
+  "fr": "Français",
+  "de": "Deutsch",
+  "de-AT": "Deutsch (Österreich)",
+  "pt": "Português",
+  "pt-BR": "Português (Brasil)",
+  "ru": "Русский",
+  "it": "Italiano",
+  "ja": "日本語",
+  "ko": "한국어",
+  "nl": "Dutch",
+  "ar": "العربية ",
+  "tr": "Türkçe",
+  "pl": "Polski",
+  "sv": "Svenska",
+  "da": "Dansk",
+  "no": "Norsk",
+  "fi": "Suomi",
+  "cs": "Čeština",
+  "hu": "Magyar",
+  "el": "Ελληνικά",
+  "he": "עברית ",
+  "th": "ไทย ",
+  "id": "Bahasa Indonesia",
+  "uk": "Українська",
+  "ro": "Română",
+  "ms": "Bahasa Melayu",
+  "hi": "हिन्दी",
+  "vi": "Tiếng Việt",
+  "ca": "Català",
+  "bg": "Български"
+};
+
 class SettingsMainPage extends StatefulWidget {
   const SettingsMainPage({super.key});
 
@@ -115,24 +153,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     localizations.dark
                   ],
                   selectedValue:
-                      appState.sharedPreferencesProvider.getTheme() ==
-                              ThemeMode.system
-                          ? 0
-                          : appState.sharedPreferencesProvider.getTheme() ==
-                                  ThemeMode.dark
-                              ? 2
-                              : 1,
+                      appState.sharedPreferencesProvider.getTheme().index,
                   onChange: (int index) async {
-                    if (index == 0) {
-                      appState.sharedPreferencesProvider
-                          .setTheme(ThemeMode.system);
-                    } else if (index == 2) {
-                      appState.sharedPreferencesProvider
-                          .setTheme(ThemeMode.dark);
-                    } else {
-                      appState.sharedPreferencesProvider
-                          .setTheme(ThemeMode.light);
-                    }
+                    appState.sharedPreferencesProvider.setTheme(ThemeMode.values[index]);
                     appState.changesMade();
                   }),
               const SizedBox(height: 10),
@@ -142,9 +165,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               ),
               const SizedBox(height: 5),
               DropdownButton(
-                value: appState.sharedPreferencesProvider.sharedPreferences
-                        .getInt('app_theme_color') ??
-                    0,
+                value: appState.sharedPreferencesProvider.getThemeColorIndex(),
                 icon: const Icon(Icons.arrow_downward),
                 elevation: 16,
                 onChanged: (value) {
@@ -195,9 +216,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: DropdownButton(
-                  value: appState.sharedPreferencesProvider.sharedPreferences
-                          .getString('locale') ??
-                      'en',
+                  value: appState.sharedPreferencesProvider.getLocaleString(),
                   onChanged: (value) {
                     appState.sharedPreferencesProvider
                         .setLocale(Locale(value ?? 'en'));
@@ -207,7 +226,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     return DropdownMenuItem(
                       value: locale.toLanguageTag(),
                       child: Text(
-                          appState.sharedPreferencesProvider.getFlag(locale)),
+                        localeNameMap[locale.toLanguageTag()] ?? "Unknown"
+                      )
                     );
                   }).toList(),
                 ),
