@@ -215,7 +215,7 @@
   "read_gen1_card_data": "Gen1 \uce74\ub4dc \ub370\uc774\ud130 \uc77d\uae30",
   "card_tech": "Tech",
   "charge": "\ucda9\uc804",
-  "copy_all_keys": "\ubaa8\ub4e0 \ud0a4 \uc2a4\ud1a0\ud074\ub9bd \ubcf4\ub4dc \ubcf5\uc0ac",
+  "copy_all_keys": "\ubaa8\ub4e0 \ud0a4\ub97c \ud074\ub9bd\ubcf4\ub4dc\uc5d0 \ubcf5\uc0ac",
   "battery_info": "\ucda9\uc804: {percent}%\n\uc804\uc555: {voltage} mV",
   "edit_slot_data": "\uc2ac\ub86f \ub370\uc774\ud130 \ud3b8\uc9d1",
   "export_slot_data": "\uc2ac\ub86f \ub370\uc774\ud130 \ub0b4\ubcf4\ub0b4\uae30",
