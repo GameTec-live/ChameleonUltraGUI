@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/helpers/colors.dart' as colors;
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class Dictionary {
   String id;
   String name;
@@ -84,15 +86,12 @@ class CardSave {
     final ats = List<int>.from((data['ats'] ?? []) as List<dynamic>);
     final name = data['name'] as String;
     final tag = getTagTypeByValue(data['tag']);
-    if (data['color'] == null) {
-      data['color'] = colorToHex(Colors.deepOrange);
-    }
-    final color = hexToColor(data['color']);
-    final encodedData = data['data'] as List<dynamic>;
-    List<Uint8List> tagData = [];
-    for (var block in encodedData) {
-      tagData.add(Uint8List.fromList(List<int>.from(block)));
-    }
+    final color =
+        data['color'] == null ? Colors.deepOrange : hexToColor(data['color']);
+    List<Uint8List> tagData = (data['data'] as List<dynamic>)
+        .map((e) => Uint8List.fromList(List<int>.from(e)))
+        .toList();
+
     return CardSave(
         id: id,
         uid: uid,
@@ -147,36 +146,17 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   late SharedPreferences _sharedPreferences;
 
-  SharedPreferences get sharedPreferences => _sharedPreferences;
-
   Future<void> load() async {
     _sharedPreferences = await SharedPreferences.getInstance();
   }
 
   ThemeMode getTheme() {
     final themeValue = _sharedPreferences.getInt('app_theme') ?? 0;
-    switch (themeValue) {
-      case 1:
-        return ThemeMode.light;
-      case 2:
-        return ThemeMode.dark;
-      default:
-        return ThemeMode.system;
-    }
+    return ThemeMode.values[themeValue];
   }
 
   void setTheme(ThemeMode theme) {
-    switch (theme) {
-      case ThemeMode.light:
-        _sharedPreferences.setInt('app_theme', 1);
-        break;
-      case ThemeMode.dark:
-        _sharedPreferences.setInt('app_theme', 2);
-        break;
-      default:
-        _sharedPreferences.remove('app_theme');
-        break;
-    }
+    _sharedPreferences.setInt('app_theme', theme.index);
   }
 
   bool getSideBarAutoExpansion() {
@@ -203,90 +183,17 @@ class SharedPreferencesProvider extends ChangeNotifier {
     _sharedPreferences.setInt('sidebar_expanded_index', index);
   }
 
+  int getThemeColorIndex() {
+    return _sharedPreferences.getInt('app_theme_color') ?? 0;
+  }
+
   MaterialColor getThemeColor() {
-    final themeValue = _sharedPreferences.getInt('app_theme_color') ?? 0;
-    switch (themeValue) {
-      case 1:
-        return Colors.deepPurple;
-      case 2:
-        return Colors.blue;
-      case 3:
-        return Colors.green;
-      case 4:
-        return Colors.indigo;
-      case 5:
-        return Colors.lime;
-      case 6:
-        return Colors.red;
-      case 7:
-        return Colors.yellow;
-      default:
-        return Colors.deepOrange;
-    }
+    return colors.getThemeColor(getThemeColorIndex());
   }
 
   Color getThemeComplementaryColor() {
-    final themeValue = _sharedPreferences.getInt('app_theme_color') ?? 0;
     final themeMode = _sharedPreferences.getInt('app_theme') ?? 2;
-    switch (themeMode) {
-      case 1:
-        switch (themeValue) {
-          case 1:
-            return const Color.fromARGB(255, 238, 227, 252);
-          case 2:
-            return const Color.fromARGB(255, 234, 252, 255);
-          case 3:
-            return const Color.fromARGB(255, 238, 255, 248);
-          case 4:
-            return const Color.fromARGB(248, 248, 239, 255);
-          case 5:
-            return const Color.fromARGB(255, 255, 255, 240);
-          case 6:
-            return const Color.fromARGB(255, 253, 238, 238);
-          case 7:
-            return const Color.fromARGB(255, 248, 252, 216);
-          default:
-            return const Color.fromARGB(255, 255, 236, 236);
-        }
-      case 2:
-        switch (themeValue) {
-          case 1:
-            return const Color.fromARGB(30, 116, 58, 183);
-          case 2:
-            return const Color.fromARGB(44, 62, 216, 243);
-          case 3:
-            return const Color.fromARGB(50, 175, 76, 172);
-          case 4:
-            return const Color.fromARGB(46, 130, 51, 196);
-          case 5:
-            return const Color.fromARGB(48, 110, 116, 29);
-          case 6:
-            return const Color.fromARGB(47, 188, 43, 201);
-          case 7:
-            return const Color.fromARGB(44, 58, 104, 202);
-          default:
-            return const Color.fromARGB(16, 202, 43, 43);
-        }
-      default:
-        switch (themeValue) {
-          case 1:
-            return const Color.fromARGB(30, 116, 58, 183);
-          case 2:
-            return const Color.fromARGB(44, 62, 216, 243);
-          case 3:
-            return const Color.fromARGB(50, 175, 76, 172);
-          case 4:
-            return const Color.fromARGB(46, 130, 51, 196);
-          case 5:
-            return const Color.fromARGB(48, 110, 116, 29);
-          case 6:
-            return const Color.fromARGB(47, 188, 43, 201);
-          case 7:
-            return const Color.fromARGB(44, 58, 104, 202);
-          default:
-            return const Color.fromARGB(16, 202, 43, 43);
-        }
-    }
+    return colors.getThemeComplementary(themeMode, getThemeColorIndex());
   }
 
   void setThemeColor(int color) {
@@ -349,104 +256,29 @@ class SharedPreferencesProvider extends ChangeNotifier {
     }
   }
 
+  String getLocaleString() {
+    return _sharedPreferences.getString("locale") ?? "en";
+  }
+
   Locale getLocale() {
-    final loc = _sharedPreferences.getString('locale');
-    if (loc != null && loc.contains("-")) {
-      var lcode = loc.toString().split("-").first;
-      var ccode = loc.toString().split("-").last;
-      if (!AppLocalizations.supportedLocales.contains(Locale(lcode, ccode))) {
-        return const Locale('en');
-      } else {
-        return Locale(lcode, ccode);
-      }
-    } else if (loc != null) {
-      if (!AppLocalizations.supportedLocales.contains(Locale(loc.toString()))) {
-        return const Locale('en');
-      } else {
-        return Locale(loc.toString());
-      }
+    final localeId = getLocaleString();
+    Locale locale;
+    if (localeId.contains("-")) {
+      final [lcode, ccode] = localeId.toString().split("-");
+      locale = Locale(lcode, ccode);
+    } else {
+      locale = Locale(localeId);
     }
-    return const Locale('en');
+    if (!AppLocalizations.supportedLocales.contains(locale)) {
+      return const Locale('en');
+    } else {
+      return locale;
+    }
   }
 
   void clearLocale() {
     _sharedPreferences.setString('locale', "en");
     notifyListeners();
-  }
-
-  String getFlag(Locale loc) {
-    switch (loc.toLanguageTag()) {
-      case 'en':
-        return 'English';
-      case 'zh':
-        return '中文';
-      case 'zh-TW':
-        return '臺灣正體';
-      case 'es':
-        return 'Español';
-      case 'fr':
-        return 'Français';
-      case 'de':
-        return 'Deutsch';
-      case 'de-AT':
-        return 'Deutsch (Österreich)';
-      case 'pt':
-        return 'Português';
-      case 'pt-BR':
-        return 'Português (Brasil)';
-      case 'ru':
-        return 'Русский';
-      case 'it':
-        return 'Italiano';
-      case 'ja':
-        return '日本語';
-      case 'ko':
-        return '한국어';
-      case 'nl':
-        return 'Dutch';
-      case 'ar':
-        return 'العربية ';
-      case 'tr':
-        return 'Türkçe';
-      case 'pl':
-        return 'Polski';
-      case 'sv':
-        return 'Svenska';
-      case 'da':
-        return 'Dansk';
-      case 'no':
-        return 'Norsk';
-      case 'fi':
-        return 'Suomi';
-      case 'cs':
-        return 'Čeština';
-      case 'hu':
-        return 'Magyar';
-      case 'el':
-        return 'Ελληνικά';
-      case 'he':
-        return 'עברית ';
-      case 'th':
-        return 'ไทย ';
-      case 'id':
-        return 'Bahasa Indonesia';
-      case 'uk':
-        return 'Українська';
-      case 'ro':
-        return 'Română';
-      case 'ms':
-        return 'Bahasa Melayu';
-      case 'hi':
-        return 'हिन्दी';
-      case 'vi':
-        return 'Tiếng Việt';
-      case 'ca':
-        return 'Català';
-      case 'bg':
-        return 'Български';
-      default:
-        return 'Unknown';
-    }
   }
 
   bool isDebugLogging() {
@@ -481,54 +313,53 @@ class SharedPreferencesProvider extends ChangeNotifier {
     Map<String, dynamic> settingsMap = {};
 
     for (var key in _sharedPreferences.getKeys()) {
-      dynamic value = _sharedPreferences.get(key);
-      String typeKey = '${value.runtimeType};$key';
-      if (value is List<String>) {
-        settingsMap[typeKey] = jsonEncode(value);
-      } else {
-        settingsMap[typeKey] = value.toString();
+      if (key == "debug_logging_value") {
+        continue;
       }
+      var value = _sharedPreferences.get(key) as dynamic;
+      if (value == null) {
+        continue;
+      }
+      if (value is List<String>) {
+        // this hack is needed in order to output proper json with objects instead of objects-in-strings
+        value = value.map((e) => jsonDecode(e)).toList();
+      }
+      settingsMap[key] = value;
     }
-    String jsonSettings = jsonEncode(settingsMap); // This will create the nested json
 
-    return jsonSettings;
+    return jsonEncode(settingsMap);
   }
 
   void restoreSettingsFromJson(String jsonSettings) {
     Map<String, dynamic> settingsMap = jsonDecode(jsonSettings);
 
     for (var key in settingsMap.keys) {
-      var splitKey = key.split(';');
-      var type = splitKey[0];
-      var actualKey = splitKey[1];
-
       dynamic value = settingsMap[key];
 
-      if (value != null) {
-        switch (type) {
-          case 'String':
-            _sharedPreferences.setString(actualKey, value);
-            break;
-          case 'int':
-            _sharedPreferences.setInt(actualKey, int.parse(value));
-            break;
-          case 'double':
-            _sharedPreferences.setDouble(actualKey, double.parse(value));
-            break;
-          case 'bool':
-            _sharedPreferences.setBool(actualKey, value == 'true');
-            break;
-          case 'List<String>':
-            // Decode the JSON array string back to List<String>
-            List<String> listValue = List<String>.from(jsonDecode(value));
-            _sharedPreferences.setStringList(actualKey, listValue);
-            break;
-          default:
-            break;
-        }
+      if (value == null) {
+        continue;
+      }
+      switch (value) {
+        case String s:
+          _sharedPreferences.setString(key, s);
+          break;
+        case int i:
+          _sharedPreferences.setInt(key, i);
+          break;
+        case double d:
+          _sharedPreferences.setDouble(key, d);
+          break;
+        case bool b:
+          _sharedPreferences.setBool(key, b);
+          break;
+        case List l:
+          // this is the reverse of the hack above :)
+          _sharedPreferences.setStringList(
+              key, l.map((e) => jsonEncode(e)).toList());
+          break;
+        default:
+          break;
       }
     }
   }
-
-
 }
