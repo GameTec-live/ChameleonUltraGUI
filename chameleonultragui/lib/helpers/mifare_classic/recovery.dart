@@ -346,7 +346,7 @@ class MifareClassicRecovery {
         }
       }
     }
-
+    update();
     allKeysExists = true;
   }
 
