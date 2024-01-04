@@ -362,4 +362,12 @@ class SharedPreferencesProvider extends ChangeNotifier {
       }
     }
   }
+
+  bool getConfirmDelete() {
+    return _sharedPreferences.getBool('confirm_delete') ?? true;
+  }
+
+  void setConfirmDelete(bool value) {
+    _sharedPreferences.setBool('confirm_delete', value);
+  }
 }

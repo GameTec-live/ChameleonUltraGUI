@@ -233,6 +233,26 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 ),
               ),
               const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    localizations.confirm_deletions,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 5),
+                  Switch(
+                    value: appState.sharedPreferencesProvider
+                        .getConfirmDelete(),
+                    onChanged: (value) async {
+                      appState.sharedPreferencesProvider
+                          .setConfirmDelete(value);
+                      appState.changesMade();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: TextButton(

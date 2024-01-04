@@ -272,5 +272,9 @@
   "next": "Next",
   "back": "Back",
   "reset": "Reset",
-  "write_again": "Write again"
+  "write_again": "Write again",
+  "confirm_deletions": "Confirm deletions",
+  "confirm_deletion": "Confirm deletion",
+  "confirm_deletion_text": "Are you sure you want to delete {name}?",
+  "delete": "Delete"
 }

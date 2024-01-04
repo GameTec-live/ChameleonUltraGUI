@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_view.dart';
 import 'package:uuid/uuid.dart';
+import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -542,6 +543,21 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 ),
                                 IconButton(
                                   onPressed: () async {
+                                    if (appState.sharedPreferencesProvider
+                                            .getConfirmDelete() ==
+                                        true) {
+                                      var confirm = await showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return ConfirmDeletionMenu(
+                                              thingBeingDeleted: tag.name);
+                                        },
+                                      );
+
+                                      if (confirm != true) {
+                                        return;
+                                      }
+                                    }
                                     var tags = appState
                                         .sharedPreferencesProvider
                                         .getCards();
@@ -703,6 +719,22 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 ),
                                 IconButton(
                                   onPressed: () async {
+                                    if (appState.sharedPreferencesProvider
+                                            .getConfirmDelete() ==
+                                        true) {
+                                      var confirm = await showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return ConfirmDeletionMenu(
+                                              thingBeingDeleted:
+                                                  dictionary.name);
+                                        },
+                                      );
+
+                                      if (confirm != true) {
+                                        return;
+                                      }
+                                    }
                                     var dictionaries = appState
                                         .sharedPreferencesProvider
                                         .getDictionaries();
