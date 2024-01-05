@@ -9,6 +9,7 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
+import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -119,6 +120,19 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
         ),
         IconButton(
           onPressed: () async {
+            if (appState.sharedPreferencesProvider.getConfirmDelete() == true) {
+              var confirm = await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return ConfirmDeletionMenu(
+                      thingBeingDeleted: widget.dictionary.name);
+                },
+              );
+
+              if (confirm != true) {
+                return;
+              }
+            }
             var dictionaries =
                 appState.sharedPreferencesProvider.getDictionaries();
             List<Dictionary> output = [];

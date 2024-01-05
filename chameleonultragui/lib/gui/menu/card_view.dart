@@ -8,6 +8,7 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/services.dart';
+import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -173,6 +174,18 @@ class CardViewMenuState extends State<CardViewMenu> {
         ),
         IconButton(
           onPressed: () async {
+            if (appState.sharedPreferencesProvider.getConfirmDelete() == true) {
+              var confirm = await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return ConfirmDeletionMenu(thingBeingDeleted: widget.tagSave.name);
+                },
+              );
+
+              if (confirm != true) {
+                return;
+              }
+            }
             var tags = appState.sharedPreferencesProvider.getCards();
             List<CardSave> output = [];
             for (var tagTest in tags) {
@@ -182,7 +195,9 @@ class CardViewMenuState extends State<CardViewMenu> {
             }
             appState.sharedPreferencesProvider.setCards(output);
             appState.changesMade();
-            Navigator.pop(context);
+            if (context.mounted) {
+              Navigator.pop(context);
+            }
           },
           icon: const Icon(Icons.delete_outline),
         ),

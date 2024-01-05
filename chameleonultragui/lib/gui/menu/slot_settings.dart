@@ -4,6 +4,7 @@ import 'package:chameleonultragui/gui/menu/slot_export.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
 
 // Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -167,6 +168,21 @@ class SlotSettingsState extends State<SlotSettings> {
                       ),
                       IconButton(
                         onPressed: () async {
+                          if (appState.sharedPreferencesProvider
+                                  .getConfirmDelete() ==
+                              true) {
+                            var confirm = await showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return ConfirmDeletionMenu(
+                                    thingBeingDeleted: names.hf);
+                              },
+                            );
+
+                            if (confirm != true) {
+                              return;
+                            }
+                          }
                           await appState.communicator!
                               .deleteSlotInfo(widget.slot, TagFrequency.hf);
                           await appState.communicator!.setSlotTagName(
@@ -226,6 +242,21 @@ class SlotSettingsState extends State<SlotSettings> {
                       ),
                       IconButton(
                         onPressed: () async {
+                          if (appState.sharedPreferencesProvider
+                                  .getConfirmDelete() ==
+                              true) {
+                            var confirm = await showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return ConfirmDeletionMenu(
+                                    thingBeingDeleted: names.lf);
+                              },
+                            );
+
+                            if (confirm != true) {
+                              return;
+                            }
+                          }
                           await appState.communicator!
                               .deleteSlotInfo(widget.slot, TagFrequency.lf);
                           await appState.communicator!.setSlotTagName(
