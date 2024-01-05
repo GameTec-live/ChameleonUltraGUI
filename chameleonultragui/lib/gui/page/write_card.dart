@@ -357,6 +357,7 @@ class WriteCardPageState extends State<WriteCardPage> {
       body: SingleChildScrollView(
           child: Center(
               child: Stepper(
+        physics: const ClampingScrollPhysics(),
         controlsBuilder: (BuildContext context, ControlsDetails details) {
           return Column(children: [
             const SizedBox(height: 8),
