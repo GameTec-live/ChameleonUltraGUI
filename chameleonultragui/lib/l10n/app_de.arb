@@ -272,5 +272,9 @@
   "next": "Weiter",
   "back": "Zur\u00fcck",
   "reset": "Zur\u00fccksetzen",
-  "write_again": "Erneut schreiben"
+  "write_again": "Erneut schreiben",
+  "confirm_deletions": "L\u00f6schen best\u00e4tigen",
+  "confirm_deletion": "L\u00f6schen best\u00e4tigen",
+  "confirm_deletion_text": "Soll {name} wirklich gel\u00f6scht werden?",
+  "delete": "L\u00f6schen"
 }
