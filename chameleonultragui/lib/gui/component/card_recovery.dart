@@ -323,6 +323,49 @@ class CardRecoveryState extends State<CardRecovery> {
                   }
                 : null,
             child: Text(localizations.check_keys_dict),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: (widget.mfcInfo.state == MifareClassicState.checkKeys)
+                ? () async {
+                    setState(() {
+                      widget.mfcInfo.state =
+                          MifareClassicState.checkKeysOngoing;
+                    });
+
+                    try {
+                      await widget.mfcInfo.recovery!.autopwn();
+
+                      if (widget.mfcInfo.recovery!.allKeysExists) {
+                        // all keys exists
+                        setState(() {
+                          widget.mfcInfo.state = MifareClassicState.dump;
+                        });
+                      } else {
+                        setState(() {
+                          widget.mfcInfo.state = MifareClassicState.checkKeys;
+                        });
+                      }
+                    } catch (_) {
+                      for (var checkmark = 0; checkmark < 80; checkmark++) {
+                        if (widget.mfcInfo.recovery?.checkMarks[checkmark] ==
+                            ChameleonKeyCheckmark.checking) {
+                          widget.mfcInfo.recovery?.checkMarks[checkmark] =
+                              ChameleonKeyCheckmark.none;
+                        }
+                      }
+
+                      setState(() {
+                        widget.mfcInfo.recovery?.checkMarks =
+                            widget.mfcInfo.recovery!.checkMarks;
+                        widget.mfcInfo.recovery?.error =
+                            localizations.autopwn_error;
+                        widget.mfcInfo.state = MifareClassicState.checkKeys;
+                      });
+                    }
+                  }
+                : null,
+            child: Text(localizations.check_keys_autopwn),
           )
         ]),
       if ((widget.mfcInfo.state == MifareClassicState.dump ||

