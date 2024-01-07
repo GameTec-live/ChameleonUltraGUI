@@ -156,7 +156,9 @@ MifareClassicType mfClassicGetCardTypeByBlockCount(int blockCount) {
 }
 
 int mfClassicGetSectorTrailerBlockBySector(int sector) {
-  if (sector < 32) {
+  if (sector == 0) {
+    return 3;
+  } else if (sector < 32) {
     return sector * 4 + 3;
   } else {
     return 32 * 4 + (sector - 32) * 16 + 15;
