@@ -322,15 +322,15 @@ class MifareClassicRecovery {
                 appState.log!.d("Found keys: $keys. Checking them...");
 
                 for (var key in keys) {
-                  var keyBytes = u64ToBytes(key);
+                  var keyBytes = u64ToBytes(key).sublist(2, 8);
                   if ((await appState.communicator!.mf1Auth(
                       mfClassicGetSectorTrailerBlockBySector(sector),
                       0x60 + keyType,
-                      keyBytes.sublist(2, 8)))) {
+                      keyBytes))) {
                     appState.log!.i(
-                        "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
+                        "Found valid key! Key ${bytesToHex(keyBytes)}");
                     found = true;
-                    validKeys[sector + (keyType * 40)] = keyBytes.sublist(2, 8);
+                    validKeys[sector + (keyType * 40)] = keyBytes;
                     checkMarks[sector + (keyType * 40)] =
                         ChameleonKeyCheckmark.found;
                     await recheckKey(keyBytes);
