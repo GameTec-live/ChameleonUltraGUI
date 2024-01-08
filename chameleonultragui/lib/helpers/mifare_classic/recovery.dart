@@ -329,9 +329,9 @@ class MifareClassicRecovery {
                   if ((await appState.communicator!.mf1Auth(
                       mfClassicGetSectorTrailerBlockBySector(sector),
                       0x60 + keyType,
-                      keyBytes.sublist(2, 8)))) {
+                      keyBytes))) {
                     appState.log!.i(
-                        "Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
+                        "Found valid key! Key ${bytesToHex(keyBytes)}");
                     found = true;
                     validKeys[sector + (keyType * 40)] = keyBytes;
                     checkMarks[sector + (keyType * 40)] =

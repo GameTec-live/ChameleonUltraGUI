@@ -167,8 +167,8 @@
   "dump_partial_data": "Dump partial data",
   "additional_key_dict": "Additional key dictionary",
   "check_keys_dict": "Check keys from dictionary",
-  "check_keys_autopwn": "Try automatic recovery",	
-  "autopwn_error": "Something went wrong in automatic recovery",
+  "try_automatic_recovery": "Try automatic recovery",	
+  "automatic_recovery_error": "Something went wrong in automatic recovery",
   "dump_card": "Dump card",
   "save_as": "Save as {name}",
   "correct_tag_data": "Correct tag details",
@@ -278,5 +278,6 @@
   "confirm_deletions": "Confirm deletions",
   "confirm_deletion": "Confirm deletion",
   "confirm_deletion_text": "Are you sure you want to delete {name}?",
-  "delete": "Delete"
+  "delete": "Delete",
+  "automatic_recovery_less_control": "Automatic recovery tries its best to maximize speed but offers less control"
 }
