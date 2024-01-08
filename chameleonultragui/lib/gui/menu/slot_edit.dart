@@ -199,12 +199,14 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                   if (!(value.replaceAll(" ", "").length ==
                                               14 ||
                                           value.replaceAll(" ", "").length ==
-                                              8) &&
+                                              8 ||
+                                          value.replaceAll(" ", "").length ==
+                                              20) &&
                                       chameleonTagToFrequency(selectedType ??
                                               widget.slotType) !=
                                           TagFrequency.lf) {
                                     return localizations.must_or(
-                                        4, 7, localizations.uid);
+                                        "4, 7", "10", localizations.uid);
                                   }
                                   if (value.replaceAll(" ", "").length != 10 &&
                                       chameleonTagToFrequency(selectedType ??

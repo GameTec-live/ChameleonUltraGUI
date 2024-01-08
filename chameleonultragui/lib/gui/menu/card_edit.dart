@@ -172,10 +172,12 @@ class CardEditMenuState extends State<CardEditMenu> {
                             .please_enter_something(localizations.uid);
                       }
                       if (!(value.replaceAll(" ", "").length == 14 ||
-                              value.replaceAll(" ", "").length == 8) &&
+                              value.replaceAll(" ", "").length == 8 ||
+                              value.replaceAll(" ", "").length == 20) &&
                           chameleonTagToFrequency(selectedType) !=
                               TagFrequency.lf) {
-                        return localizations.must_or(4, 7, localizations.uid);
+                        return localizations.must_or(
+                            "4, 7", "10", localizations.uid);
                       }
                       if (value.replaceAll(" ", "").length != 10 &&
                           chameleonTagToFrequency(selectedType) ==
