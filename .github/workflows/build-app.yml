@@ -108,7 +108,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: linux-legacy
-          path: chameleonultragui/build/linux/x64/release
+          path: chameleonultragui/build/linux/x64/release/debian
 
   build-macos:
     needs: check
