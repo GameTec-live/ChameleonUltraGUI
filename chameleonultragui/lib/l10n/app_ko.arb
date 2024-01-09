@@ -271,5 +271,9 @@
   "next": "\ub2e4\uc74c",
   "back": "\ub4a4\ub85c",
   "reset": "\ub9ac\uc14b",
-  "write_again": "\ub2e4\uc2dc \uc4f0\uae30"
+  "write_again": "\ub2e4\uc2dc \uc4f0\uae30",
+  "confirm_deletions": "\uc0ad\uc81c\uc2dc \ud655\uc778 \ud31d\uc5c5 \uc5ec\ubd80",
+  "confirm_deletion": "\uc0ad\uc81c \ud655\uc778",
+  "confirm_deletion_text": "\uc815\ub9d0\ub85c {name} \uc744(\ub97c) \uc0ad\uc81c\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?",
+  "delete": "\uc0ad\uc81c"
 }
