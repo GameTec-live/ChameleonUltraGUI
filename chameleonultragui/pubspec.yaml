@@ -65,6 +65,8 @@ dependencies:
   wakelock_plus: ^1.1.1
   qr_flutter: ^4.1.0
   mobile_scanner: ^3.5.2
+  desktop_drop: ^0.4.4
+  cross_file: ^0.3.3+8 # desktop_drop wants it, but its also required for handling said dropped files in our code, so we just specify it here
 
 dev_dependencies:
   flutter_test:

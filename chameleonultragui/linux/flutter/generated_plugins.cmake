@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  desktop_drop
   file_saver
   flutter_libserialport
   url_launcher_linux

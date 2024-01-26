@@ -81,6 +81,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.1"
+  cross_file:
+    dependency: "direct main"
+    description:
+      name: cross_file
+      sha256: fedaadfa3a6996f75211d835aaeb8fede285dae94262485698afd832371b9a5e
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.3+8"
   crypto:
     dependency: "direct main"
     description:
@@ -97,6 +105,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.10"
+  desktop_drop:
+    dependency: "direct main"
+    description:
+      name: desktop_drop
+      sha256: d55a010fe46c8e8fcff4ea4b451a9ff84a162217bdb3b2a0aa1479776205e15d
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.4"
   dylib:
     dependency: "direct main"
     description:
