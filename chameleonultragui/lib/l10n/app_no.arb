@@ -136,7 +136,7 @@
   "slot_status": "Status",
   "hf": "HF",
   "lf": "LF",
-  "mifare_classic_emulator_settings": "Mifare Klassisk etterligningsinnstillinger",
+  "mifare_classic_emulator_settings": "Mifare Classic etterligningsinnstillinger",
   "mode_gen1a": "Gen1A Magisk modus",
   "mode_gen2": "Gen2 Magisk modus",
   "use_from_block": "Bruk UID/SAK/ATQA fra 0 blokk",
