@@ -94,7 +94,7 @@ class CardRecoveryState extends State<CardRecovery> {
               ? TagType.mifare1K
               : mfClassicGetChameleonTagType(widget.mfcInfo.type),
           data: widget.mfcInfo.recovery!.cardData,
-          ats: (widget.hfInfo.ats != "No")
+          ats: (widget.hfInfo.ats != localizations.no)
               ? hexToBytesSpace(widget.hfInfo.ats)
               : Uint8List(0)));
       appState.sharedPreferencesProvider.setCards(tags);
