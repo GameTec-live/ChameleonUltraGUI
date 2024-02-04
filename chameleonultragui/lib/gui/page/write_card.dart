@@ -1,10 +1,7 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
-import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/write/gen2.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -22,8 +19,6 @@ class WriteCardPage extends StatefulWidget {
 }
 
 class WriteCardPageState extends State<WriteCardPage> {
-  HFCardInfo? hfInfo;
-  MifareClassicInfo? mfcInfo;
   int step = 0;
   int progress = -1;
   bool written = false;
@@ -103,71 +98,9 @@ class WriteCardPageState extends State<WriteCardPage> {
     scaffoldMessenger.showSnackBar(snackBar);
   }
 
-  Future<void> prepareMifareClassic() async {
-    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
-    var localizations = AppLocalizations.of(context)!;
-
-    if (!await appState.communicator!.isReaderDeviceMode()) {
-      await appState.communicator!.setReaderDeviceMode(true);
-    }
-
-    try {
-      CardData card = await appState.communicator!.scan14443aTag();
-      bool isMifareClassic = false;
-      MifareClassicType mifareClassicType = MifareClassicType.none;
-
-      try {
-        isMifareClassic = await appState.communicator!.detectMf1Support();
-        mifareClassicType = await mfClassicGetType(appState.communicator!);
-      } catch (_) {}
-
-      bool isMifareClassicEV1 = isMifareClassic
-          ? (await appState.communicator!
-              .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]))
-          : false;
-
-      setState(() {
-        hfInfo = HFCardInfo();
-        mfcInfo = MifareClassicInfo();
-      });
-
-      if (isMifareClassic) {
-        setState(() {
-          mfcInfo!.recovery = helper!.getExtraData()[0];
-        });
-      }
-
-      setState(() {
-        hfInfo!.uid = bytesToHexSpace(card.uid);
-        hfInfo!.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
-        hfInfo!.atqa = bytesToHexSpace(card.atqa);
-        hfInfo!.ats = (card.ats.isNotEmpty)
-            ? bytesToHexSpace(card.ats)
-            : localizations.no;
-        mfcInfo!.isEV1 = isMifareClassicEV1;
-        mfcInfo!.type = mifareClassicType;
-        mfcInfo!.state = (mfcInfo!.type != MifareClassicType.none)
-            ? MifareClassicState.checkKeys
-            : MifareClassicState.none;
-        hfInfo!.tech = isMifareClassic
-            ? "Mifare Classic ${mfClassicGetName(mfcInfo!.type)}${isMifareClassicEV1 ? " EV1" : ""}"
-            : localizations.other;
-      });
-    } catch (_) {
-      setState(() {
-        hfInfo = HFCardInfo();
-        mfcInfo = MifareClassicInfo();
-      });
-
-      setState(() {
-        hfInfo!.cardExist = false;
-      });
-    }
-  }
-
   void updateState() {
     setState(() {
-      mfcInfo = mfcInfo;
+      helper = helper;
     });
   }
 
@@ -238,11 +171,6 @@ class WriteCardPageState extends State<WriteCardPage> {
     if (step != 2) {
       if (step == 1) {
         await helper?.reset();
-
-        setState(() {
-          hfInfo = null;
-          mfcInfo = null;
-        });
       }
       setState(() {
         step++;
@@ -280,11 +208,6 @@ class WriteCardPageState extends State<WriteCardPage> {
 
     if (step == 1) {
       await helper?.reset();
-
-      setState(() {
-        hfInfo = null;
-        mfcInfo = null;
-      });
     }
   }
 
@@ -444,16 +367,13 @@ class WriteCardPageState extends State<WriteCardPage> {
                 title: (progress == -1)
                     ? (helper != null && helper!.isReady())
                         ? (helper != null &&
-                                helper!.name ==
-                                    MifareClassicGen2WriteHelper.staticName &&
-                                helper!.getExtraData()[1].isNotEmpty)
+                                helper!.getFailedBlocks().isNotEmpty)
                             ? Text(
-                                "${localizations.otp_magic_warning(localizations.write_data_to_magic_card)} ${localizations.some_blocks_failed_to_write}: ${helper!.getExtraData()[1].join(", ")}")
+                                "${localizations.otp_magic_warning(localizations.write_data_to_magic_card)} ${localizations.some_blocks_failed_to_write}: ${helper!.getFailedBlocks().join(", ")}")
                             : Text(localizations.otp_magic_warning(
                                 localizations.write_data_to_magic_card))
                         : (helper != null && helper!.writeWidgetSupported())
-                            ? helper!.getWriteWidget(context,
-                                [hfInfo, mfcInfo, prepareMifareClassic])
+                            ? helper!.getWriteWidget(context, setState)
                             : Text(localizations.error)
                     : LinearProgressIndicator(value: progress.toDouble() / 100),
               ),

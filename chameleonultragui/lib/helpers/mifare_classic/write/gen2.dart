@@ -150,8 +150,8 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
   }
 
   @override
-  List<dynamic> getExtraData() {
-    return [recovery, failedBlocks];
+  List<int> getFailedBlocks() {
+    return failedBlocks;
   }
 
   @override

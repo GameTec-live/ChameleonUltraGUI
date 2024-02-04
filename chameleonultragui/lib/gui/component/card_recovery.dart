@@ -312,13 +312,15 @@ class CardRecoveryState extends State<CardRecovery> {
                         }
                       }
 
-                      setState(() {
-                        widget.mfcInfo.recovery?.checkMarks =
-                            widget.mfcInfo.recovery!.checkMarks;
-                        widget.mfcInfo.recovery?.error =
-                            localizations.recovery_error_dict;
-                        widget.mfcInfo.state = MifareClassicState.checkKeys;
-                      });
+                      try {
+                        setState(() {
+                          widget.mfcInfo.recovery?.checkMarks =
+                              widget.mfcInfo.recovery!.checkMarks;
+                          widget.mfcInfo.recovery?.error =
+                              localizations.recovery_error_dict;
+                          widget.mfcInfo.state = MifareClassicState.checkKeys;
+                        });
+                      } catch (_) {}
                     }
                   }
                 : null,

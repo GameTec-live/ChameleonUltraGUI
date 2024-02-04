@@ -46,7 +46,11 @@ abstract class AbstractWriteHelper {
 
   Future<bool> writeData(CardSave card, dynamic update);
 
-  Widget getWriteWidget(BuildContext context, dynamic data);
+  Widget getWriteWidget(BuildContext context, dynamic setState);
+
+  List<int> getFailedBlocks() {
+    return [];
+  }
 
   bool writeWidgetSupported() {
     return false;
