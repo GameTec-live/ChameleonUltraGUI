@@ -125,10 +125,10 @@ packages:
     dependency: "direct main"
     description:
       name: ffigen
-      sha256: "0a4e9c5437c5c4600fa583141508beaf90fe29b58b0fd7437a9b022cda228747"
+      sha256: dead012f29db2be71ea152458f5eab600de98fbc244e01088ae6bf2616bceca7
       url: "https://pub.dev"
     source: hosted
-    version: "10.0.0"
+    version: "11.0.0"
   file:
     dependency: transitive
     description:
@@ -361,10 +361,10 @@ packages:
     dependency: "direct main"
     description:
       name: mobile_scanner
-      sha256: c3e5bba1cb626b6ab4fc46610f72a136803f6854267967e19f4a4a6a31ff9b74
+      sha256: "619ed5fd43ca9007a151f00c3dc43feedeaf235fe5647735d0237c38849d49dc"
       url: "https://pub.dev"
     source: hosted
-    version: "3.5.5"
+    version: "4.0.0"
   nested:
     dependency: transitive
     description:

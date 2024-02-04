@@ -46,7 +46,7 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
     type = MifareClassicType.none;
 
     if (mifare) {
-      type = mfClassicGetType(card.atqa, card.sak);
+      type = await mfClassicGetType(communicator);
     }
   }
 
