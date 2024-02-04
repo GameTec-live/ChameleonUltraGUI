@@ -1,7 +1,6 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
-import 'package:chameleonultragui/gui/component/card_recovery.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
@@ -138,7 +137,7 @@ class WriteCardPageState extends State<WriteCardPage> {
         });
       }
 
-      setState(() async {
+      setState(() {
         hfInfo!.uid = bytesToHexSpace(card.uid);
         hfInfo!.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
         hfInfo!.atqa = bytesToHexSpace(card.atqa);
@@ -452,37 +451,9 @@ class WriteCardPageState extends State<WriteCardPage> {
                                 "${localizations.otp_magic_warning(localizations.write_data_to_magic_card)} ${localizations.some_blocks_failed_to_write}: ${helper!.getExtraData()[1].join(", ")}")
                             : Text(localizations.otp_magic_warning(
                                 localizations.write_data_to_magic_card))
-                        : (helper != null &&
-                                helper!.name ==
-                                    MifareClassicGen2WriteHelper.staticName)
-                            ? FutureBuilder(
-                                future: (hfInfo != null)
-                                    ? Future.value([])
-                                    : prepareMifareClassic(),
-                                builder: (BuildContext context,
-                                    AsyncSnapshot snapshot) {
-                                  if (hfInfo != null &&
-                                      mfcInfo != null &&
-                                      mfcInfo!.recovery != null) {
-                                    return CardRecovery(
-                                        hfInfo: hfInfo!,
-                                        mfcInfo: mfcInfo!,
-                                        allowSave: false);
-                                  } else if (hfInfo != null &&
-                                      mfcInfo != null &&
-                                      mfcInfo!.type == MifareClassicType.none) {
-                                    if (hfInfo!.cardExist) {
-                                      return Text(localizations
-                                          .not_mifare_classic_card);
-                                    } else {
-                                      return Text(localizations.no_card_found);
-                                    }
-                                  } else {
-                                    return const Column(children: [
-                                      CircularProgressIndicator()
-                                    ]);
-                                  }
-                                })
+                        : (helper != null && helper!.writeWidgetSupported())
+                            ? helper!.getWriteWidget(context,
+                                [hfInfo, mfcInfo, prepareMifareClassic])
                             : Text(localizations.error)
                     : LinearProgressIndicator(value: progress.toDouble() / 100),
               ),

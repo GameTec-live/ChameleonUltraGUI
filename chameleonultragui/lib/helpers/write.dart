@@ -4,6 +4,7 @@ import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/material.dart';
 
 abstract class AbstractWriteHelper {
   final ChameleonCommunicator communicator;
@@ -44,6 +45,12 @@ abstract class AbstractWriteHelper {
   }
 
   Future<bool> writeData(CardSave card, dynamic update);
+
+  Widget getWriteWidget(BuildContext context, dynamic data);
+
+  bool writeWidgetSupported() {
+    return false;
+  }
 
   @override
   bool operator ==(dynamic other) => other != null && name == other.name;

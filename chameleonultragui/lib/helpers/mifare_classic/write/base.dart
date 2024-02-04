@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/component/card_recovery.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
@@ -8,6 +9,10 @@ import 'package:chameleonultragui/helpers/mifare_classic/write/gen1.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/gen2.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/material.dart';
+
+// Localizations
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
   late MifareClassicRecovery recovery;
@@ -154,5 +159,31 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
   Future<void> reset() async {
     recovery = MifareClassicRecovery(
         appState: recovery.appState, update: recovery.update);
+  }
+
+  @override
+  Widget getWriteWidget(BuildContext context, dynamic data) {
+    var [hfInfo, mfcInfo, prepareMifareClassic] = data;
+
+    var localizations = AppLocalizations.of(context)!;
+
+    return FutureBuilder(
+        future: (hfInfo != null) ? Future.value([]) : prepareMifareClassic(),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (hfInfo != null && mfcInfo != null && mfcInfo!.recovery != null) {
+            return CardRecovery(
+                hfInfo: hfInfo!, mfcInfo: mfcInfo!, allowSave: false);
+          } else if (hfInfo != null &&
+              mfcInfo != null &&
+              mfcInfo!.type == MifareClassicType.none) {
+            if (hfInfo!.cardExist) {
+              return Text(localizations.not_mifare_classic_card);
+            } else {
+              return Text(localizations.no_card_found);
+            }
+          } else {
+            return const Column(children: [CircularProgressIndicator()]);
+          }
+        });
   }
 }
