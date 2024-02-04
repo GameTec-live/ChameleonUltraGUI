@@ -142,7 +142,7 @@ class ReadCardPageState extends State<ReadCardPage> {
             ? "Mifare Classic ${mfClassicGetName(mfcInfo.type)}${isMifareClassicEV1 ? " EV1" : ""}"
             : localizations.other;
       });
-    } catch (e) {
+    } catch (_) {
       setState(() {
         hfInfo.cardExist = false;
       });

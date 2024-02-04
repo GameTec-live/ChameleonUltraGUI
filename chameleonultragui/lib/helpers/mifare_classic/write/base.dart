@@ -41,7 +41,6 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
       await communicator.setReaderDeviceMode(true);
     }
 
-    var card = await communicator.scan14443aTag();
     var mifare = await communicator.detectMf1Support();
     type = MifareClassicType.none;
 
