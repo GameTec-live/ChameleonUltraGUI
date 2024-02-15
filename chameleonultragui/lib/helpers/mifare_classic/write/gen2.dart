@@ -46,6 +46,16 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
     return true;
   }
 
+  Future<bool> writeBlockModifier(CardSave card, int block, Uint8List data,
+      {bool tryBothKeys = false, bool useGenericKey = false}) async {
+    try {
+      return writeBlock(block, data,
+          tryBothKeys: tryBothKeys, useGenericKey: useGenericKey);
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Future<bool> writeBlock(int block, Uint8List data,
       {bool tryBothKeys = false, bool useGenericKey = false}) async {
@@ -104,8 +114,9 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
     for (var sector = 0; sector < mfClassicGetSectorCount(type); sector++) {
       var block = mfClassicGetSectorTrailerBlockBySector(sector);
       if (data.length > block && data[block].isNotEmpty) {
-        cleanSectors[sector] =
-            await writeBlock(block, data[block], tryBothKeys: true);
+        cleanSectors[sector] = await writeBlockModifier(
+            card, block, data[block],
+            tryBothKeys: true);
       }
     }
 
@@ -121,7 +132,7 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
         }
 
         if (data.length > blockToWrite && data[blockToWrite].isNotEmpty) {
-          if (!(await writeBlock(blockToWrite, data[blockToWrite],
+          if (!(await writeBlockModifier(card, blockToWrite, data[blockToWrite],
                       useGenericKey: cleanSectors[sector], tryBothKeys: true) &&
                   cleanSectors[sector]) &&
               blockToWrite != 0) {
@@ -138,7 +149,7 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
       if (cleanSectors[sector] &&
           data.length > block &&
           data[block].isNotEmpty) {
-        if (!(await writeBlock(block, data[block],
+        if (!(await writeBlockModifier(card, block, data[block],
             tryBothKeys: true, useGenericKey: true))) {
           // how we went here? We set to default sector trailer and now we can't write to it. Probably card is lost
           return false;

@@ -8,6 +8,7 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/gen1.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/gen2.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/write/gen3.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -37,6 +38,16 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
   List<AbstractWriteHelper> getAvailableMethods() {
     return [
       MifareClassicGen1WriteHelper(communicator, recovery: recovery),
+      MifareClassicGen2WriteHelper(communicator, recovery: recovery),
+      MifareClassicGen3WriteHelper(communicator, recovery: recovery)
+    ];
+  }
+
+  @override
+  List<AbstractWriteHelper> getAvailableMethodsByPriority() {
+    return [
+      MifareClassicGen1WriteHelper(communicator, recovery: recovery),
+      MifareClassicGen3WriteHelper(communicator, recovery: recovery),
       MifareClassicGen2WriteHelper(communicator, recovery: recovery)
     ];
   }

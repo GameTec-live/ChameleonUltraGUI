@@ -25,8 +25,10 @@ abstract class AbstractWriteHelper {
   Future<bool> isCompatible(
       CardSave card); // is current magic card compatible with selected dump
 
+  List<AbstractWriteHelper> getAvailableMethods(); // get available methods
+
   List<AbstractWriteHelper>
-      getAvailableMethods(); // get available methods for automatic check with priority
+      getAvailableMethodsByPriority(); // get available methods for automatic check with priority
 
   Future<void> getCardType(); // get required data from card
 

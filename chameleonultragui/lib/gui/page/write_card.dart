@@ -53,6 +53,9 @@ class WriteCardPageState extends State<WriteCardPage> {
       });
     }
 
+    await helper?.getCardType();
+
+    if (!context.mounted) return;
     close(context, selectedCard.name);
   }
 
@@ -70,6 +73,12 @@ class WriteCardPageState extends State<WriteCardPage> {
         setState(() {
           helper = magicHelper;
         });
+
+        try {
+          await helper?.getCardType();
+        } catch (_) {
+          await helper?.getCardType();
+        }
 
         appState.log!.i("Detected Magic card type: ${magicHelper.name}");
         scaffoldMessenger.hideCurrentSnackBar();
