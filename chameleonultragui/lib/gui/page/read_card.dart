@@ -105,9 +105,11 @@ class ReadCardPageState extends State<ReadCardPage> {
 
       CardData card = await appState.communicator!.scan14443aTag();
       bool isMifareClassic = false;
+      MifareClassicType mifareClassicType = MifareClassicType.none;
 
       try {
         isMifareClassic = await appState.communicator!.detectMf1Support();
+        mifareClassicType = await mfClassicGetType(appState.communicator!);
       } catch (_) {}
 
       bool isMifareClassicEV1 = isMifareClassic
@@ -132,9 +134,7 @@ class ReadCardPageState extends State<ReadCardPage> {
             ? bytesToHexSpace(card.ats)
             : localizations.no;
         mfcInfo.isEV1 = isMifareClassicEV1;
-        mfcInfo.type = isMifareClassic
-            ? mfClassicGetType(card.atqa, card.sak)
-            : MifareClassicType.none;
+        mfcInfo.type = mifareClassicType;
         mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
             ? MifareClassicState.checkKeys
             : MifareClassicState.none;

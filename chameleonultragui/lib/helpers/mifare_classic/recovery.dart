@@ -45,12 +45,11 @@ class MifareClassicRecovery {
       await appState.communicator!.setReaderDeviceMode(true);
     }
 
-    var card = await appState.communicator!.scan14443aTag();
     var mifare = await appState.communicator!.detectMf1Support();
     var mf1Type = MifareClassicType.none;
 
     if (mifare) {
-      mf1Type = mfClassicGetType(card.atqa, card.sak);
+      mf1Type = await mfClassicGetType(appState.communicator!);
     } else {
       appState.log!.e("Not Mifare Classic tag!");
       return;
@@ -86,12 +85,11 @@ class MifareClassicRecovery {
       await appState.communicator!.setReaderDeviceMode(true);
     }
 
-    var card = await appState.communicator!.scan14443aTag();
     var mifare = await appState.communicator!.detectMf1Support();
     var mf1Type = MifareClassicType.none;
 
     if (mifare) {
-      mf1Type = mfClassicGetType(card.atqa, card.sak);
+      mf1Type = await mfClassicGetType(appState.communicator!);
     } else {
       appState.log!.e("Not Mifare Classic tag!");
       return;
@@ -162,13 +160,12 @@ class MifareClassicRecovery {
       await appState.communicator!.setReaderDeviceMode(true);
     }
 
-    var card = await appState.communicator!.scan14443aTag();
     var mifare = await appState.communicator!.detectMf1Support();
     var mf1Type = MifareClassicType.none;
     error = "";
 
     if (mifare) {
-      mf1Type = mfClassicGetType(card.atqa, card.sak);
+      mf1Type = await mfClassicGetType(appState.communicator!);
     } else {
       appState.log!.e("Not Mifare Classic tag!");
       return;
@@ -327,8 +324,8 @@ class MifareClassicRecovery {
                       mfClassicGetSectorTrailerBlockBySector(sector),
                       0x60 + keyType,
                       keyBytes))) {
-                    appState.log!.i(
-                        "Found valid key! Key ${bytesToHex(keyBytes)}");
+                    appState.log!
+                        .i("Found valid key! Key ${bytesToHex(keyBytes)}");
                     found = true;
                     validKeys[sector + (keyType * 40)] = keyBytes;
                     checkMarks[sector + (keyType * 40)] =
@@ -353,12 +350,11 @@ class MifareClassicRecovery {
   Future<void> dumpData() async {
     cardData = List.generate(256, (_) => Uint8List(0));
 
-    var card = await appState.communicator!.scan14443aTag();
     var mifare = await appState.communicator!.detectMf1Support();
     var mf1Type = MifareClassicType.none;
 
     if (mifare) {
-      mf1Type = mfClassicGetType(card.atqa, card.sak);
+      mf1Type = await mfClassicGetType(appState.communicator!);
     } else {
       appState.log!.e("Not Mifare Classic tag!");
       return;

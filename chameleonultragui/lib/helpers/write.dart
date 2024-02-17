@@ -4,6 +4,7 @@ import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/material.dart';
 
 abstract class AbstractWriteHelper {
   final ChameleonCommunicator communicator;
@@ -24,8 +25,10 @@ abstract class AbstractWriteHelper {
   Future<bool> isCompatible(
       CardSave card); // is current magic card compatible with selected dump
 
+  List<AbstractWriteHelper> getAvailableMethods(); // get available methods
+
   List<AbstractWriteHelper>
-      getAvailableMethods(); // get available methods for automatic check with priority
+      getAvailableMethodsByPriority(); // get available methods for automatic check with priority
 
   Future<void> getCardType(); // get required data from card
 
@@ -44,6 +47,16 @@ abstract class AbstractWriteHelper {
   }
 
   Future<bool> writeData(CardSave card, dynamic update);
+
+  Widget getWriteWidget(BuildContext context, dynamic setState);
+
+  List<int> getFailedBlocks() {
+    return [];
+  }
+
+  bool writeWidgetSupported() {
+    return false;
+  }
 
   @override
   bool operator ==(dynamic other) => other != null && name == other.name;

@@ -24,10 +24,7 @@ class MifareClassicGen1WriteHelper extends BaseMifareClassicMagicCardHelper {
 
       if (data.isNotEmpty && data[0] == 0x0a) {
         data = await communicator.send14ARaw(Uint8List.fromList([0x43]),
-            appendCrc: false,
-            autoSelect: false,
-            checkResponseCrc: false,
-            keepRfField: true);
+            appendCrc: false, autoSelect: false, checkResponseCrc: false);
         return data.isNotEmpty && data[0] == 0x0a;
       }
 

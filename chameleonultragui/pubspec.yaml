@@ -38,7 +38,7 @@ dependencies:
   logger: ^2.0.1
   convert: ^3.1.1
   shared_preferences: ^2.2.1
-  ffigen: ^10.0.0
+  ffigen: ^11.0.0
   dylib: ^0.3.3
   ffi: ^2.1.0
   usb_serial:
@@ -64,7 +64,7 @@ dependencies:
   intl: any
   wakelock_plus: ^1.1.1
   qr_flutter: ^4.1.0
-  mobile_scanner: ^3.5.2
+  mobile_scanner: ^4.0.0
 
 dev_dependencies:
   flutter_test:
