@@ -89,7 +89,7 @@ Future<MifareClassicType> mfClassicGetType(
     return MifareClassicType.m4k;
   }
 
-  if ((await communicator.send14ARaw(Uint8List.fromList([0x60, 64]),
+  if ((await communicator.send14ARaw(Uint8List.fromList([0x60, 80]),
               checkResponseCrc: false))
           .length ==
       4) {
