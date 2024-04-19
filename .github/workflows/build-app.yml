@@ -112,7 +112,7 @@ jobs:
 
   build-macos:
     needs: check
-    runs-on: macos-latest
+    runs-on: macos-13`
     defaults:
       run:
         working-directory: ./chameleonultragui
