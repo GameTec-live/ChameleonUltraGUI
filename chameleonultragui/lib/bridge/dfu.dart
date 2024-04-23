@@ -235,6 +235,10 @@ class DFUCommunicator {
       mtu = 2051;
     }
 
+    if (mtu == 0) {
+      mtu = 2051;
+    }
+
     return mtu;
   }
 
