@@ -120,7 +120,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
 
     appState.sharedPreferencesProvider.setCards(tags);
 
-    if (context.mounted) {
+    if (mounted) {
       Navigator.pop(context);
     }
   }

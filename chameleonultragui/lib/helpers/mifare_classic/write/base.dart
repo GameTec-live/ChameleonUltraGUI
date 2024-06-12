@@ -124,7 +124,7 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
 
   Uint8List createBlock0FromSave(CardSave card) {
     List<int> block = [];
-    Uint8List uid = hexToBytesSpace(card.uid);
+    Uint8List uid = hexToBytes(card.uid);
     block.addAll(uid);
     if (uid.length == 4) {
       int bcc = 0;
@@ -153,7 +153,7 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
       return false;
     }
 
-    if (magicCard.uid.length != hexToBytesSpace(card.uid).length) {
+    if (magicCard.uid.length != hexToBytes(card.uid).length) {
       return false;
     }
 

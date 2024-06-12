@@ -73,7 +73,7 @@ class MifareClassicGen3WriteHelper extends MifareClassicGen2WriteHelper {
     // Try to write UID only
     await communicator.send14ARaw(
         Uint8List.fromList(
-            [0x90, 0xFB, 0xCC, 0xCC, 0x07, ...hexToBytesSpace(dump.uid)]),
+            [0x90, 0xFB, 0xCC, 0xCC, 0x07, ...hexToBytes(dump.uid)]),
         checkResponseCrc: false);
 
     // Card doesn't respond with anything, just compare UID

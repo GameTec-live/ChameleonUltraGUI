@@ -55,7 +55,7 @@ class WriteCardPageState extends State<WriteCardPage> {
 
     await helper?.getCardType();
 
-    if (!context.mounted) return;
+    if (!mounted) return;
     close(context, selectedCard.name);
   }
 

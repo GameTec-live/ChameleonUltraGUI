@@ -141,7 +141,7 @@ class ConnectPage extends StatelessWidget {
                                 }
                               },
                               style: ButtonStyle(
-                                shape: MaterialStateProperty.all<
+                                shape: WidgetStateProperty.all<
                                     RoundedRectangleBorder>(
                                   RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(18.0),

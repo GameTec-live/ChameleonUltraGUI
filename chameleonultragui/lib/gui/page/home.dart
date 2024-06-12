@@ -106,14 +106,14 @@ class HomePageState extends State<HomePage> {
     } catch (_) {}
 
     if (commitHash.isEmpty) {
-      if (context.mounted) {
+      if (mounted) {
         commitHash = AppLocalizations.of(context)!.outdated_fw;
       } else {
         commitHash = "Outdated FW";
       }
     }
 
-    if (context.mounted && isLegacyFirmware) {
+    if (mounted && isLegacyFirmware) {
       var localizations = AppLocalizations.of(context)!;
       showDialog<void>(
         context: context,

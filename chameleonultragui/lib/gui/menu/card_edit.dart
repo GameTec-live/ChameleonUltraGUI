@@ -277,13 +277,13 @@ class CardEditMenuState extends State<CardEditMenu> {
                 name: nameController.text,
                 sak: chameleonTagToFrequency(selectedType) == TagFrequency.lf
                     ? widget.tagSave.sak
-                    : hexToBytesSpace(sakController.text)[0],
-                atqa: hexToBytesSpace(atqaController.text),
-                uid: bytesToHexSpace(hexToBytesSpace(uidController.text)),
+                    : hexToBytes(sakController.text)[0],
+                atqa: hexToBytes(atqaController.text),
+                uid: bytesToHexSpace(hexToBytes(uidController.text)),
                 tag: selectedType,
                 data: widget.tagSave.data,
                 color: currentColor,
-                ats: hexToBytesSpace(atsController.text));
+                ats: hexToBytes(atsController.text));
 
             var tags = appState.sharedPreferencesProvider.getCards();
             var index =
