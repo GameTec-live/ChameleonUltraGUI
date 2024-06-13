@@ -88,14 +88,14 @@ class CardRecoveryState extends State<CardRecovery> {
       tags.add(CardSave(
           uid: widget.hfInfo.uid,
           sak: hexToBytes(widget.hfInfo.sak)[0],
-          atqa: hexToBytesSpace(widget.hfInfo.atqa),
+          atqa: hexToBytes(widget.hfInfo.atqa),
           name: dumpName,
           tag: (skipDump)
               ? TagType.mifare1K
               : mfClassicGetChameleonTagType(widget.mfcInfo.type),
           data: widget.mfcInfo.recovery!.cardData,
           ats: (widget.hfInfo.ats != localizations.no)
-              ? hexToBytesSpace(widget.hfInfo.ats)
+              ? hexToBytes(widget.hfInfo.ats)
               : Uint8List(0)));
       appState.sharedPreferencesProvider.setCards(tags);
     }

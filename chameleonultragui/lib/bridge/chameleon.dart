@@ -841,13 +841,14 @@ class ChameleonCommunicator {
   }
 
   Future<void> writeEM410XtoT55XX(
-      Uint8List uid, Uint8List key, List<Uint8List> oldKeys) async {
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
     List<int> keys = [];
+    keys.addAll(newKey);
     for (var oldKey in oldKeys) {
       keys.addAll(oldKey);
     }
     await sendCmd(ChameleonCommand.writeEM410XtoT5577,
-        data: Uint8List.fromList([...key, ...keys]));
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
   }
 
   Future<void> setSlotTagName(

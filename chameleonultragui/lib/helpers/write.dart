@@ -2,6 +2,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
+import 'package:chameleonultragui/helpers/t55xx/write/base.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
@@ -30,17 +31,23 @@ abstract class AbstractWriteHelper {
   List<AbstractWriteHelper>
       getAvailableMethodsByPriority(); // get available methods for automatic check with priority
 
-  Future<void> getCardType(); // get required data from card
+  Future<void> getCardType() async {} // get required data from card
 
-  List<dynamic> getExtraData(); // if you want to get data from specific helpers
+  List<dynamic> getExtraData() {
+    return [];
+  } // if you want to get data from specific helpers
 
-  Future<void> reset(); // delete data from helper
+  Future<void> reset() async {} // delete data from helper
 
   static AbstractWriteHelper? getClassByCardType(
       TagType type, ChameleonGUIState appState, void Function() update) {
     if (chameleonTagTypeGetMfClassicType(type) != MifareClassicType.none) {
       return BaseMifareClassicMagicCardHelper(appState.communicator!,
           recovery: MifareClassicRecovery(appState: appState, update: update));
+    }
+
+    if (type == TagType.em410X) {
+      return BaseT55XXCardHelper(appState.communicator!);
     }
 
     return null; // writing is not supported

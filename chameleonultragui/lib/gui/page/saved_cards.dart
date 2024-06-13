@@ -114,7 +114,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     }
 
     for (var block in blocks) {
-      tagData.add(hexToBytesSpace(block));
+      tagData.add(hexToBytes(block));
     }
 
     return CardSave(
@@ -159,7 +159,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     }
 
     for (var block in blocks) {
-      tagData.add(hexToBytesSpace(block));
+      tagData.add(hexToBytes(block));
     }
 
     return CardSave(
@@ -379,10 +379,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           .getCards();
                                       var tag = CardSave(
                                           name: nameController.text,
-                                          sak: hexToBytesSpace(
+                                          sak: hexToBytes(
                                               sak4Controller.text)[0],
-                                          atqa: hexToBytesSpace(
-                                              atqa4Controller.text),
+                                          atqa:
+                                              hexToBytes(atqa4Controller.text),
                                           uid: uid4Controller.text,
                                           tag: mfClassicGetChameleonTagType(
                                               selectedType),
@@ -409,10 +409,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           .getCards();
                                       var tag = CardSave(
                                           name: nameController.text,
-                                          sak: hexToBytesSpace(
+                                          sak: hexToBytes(
                                               sak7Controller.text)[0],
-                                          atqa: hexToBytesSpace(
-                                              atqa7Controller.text),
+                                          atqa:
+                                              hexToBytes(atqa7Controller.text),
                                           uid: uid7Controller.text,
                                           tag: mfClassicGetChameleonTagType(
                                               selectedType),
@@ -441,13 +441,13 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       }
                     },
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                        (Set<MaterialState> states) {
+                      backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                        (Set<WidgetState> states) {
                           return appState.sharedPreferencesProvider
                               .getThemeComplementaryColor();
                         },
                       ),
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),
@@ -634,13 +634,13 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       }
                     },
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                        (Set<MaterialState> states) {
+                      backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                        (Set<WidgetState> states) {
                           return appState.sharedPreferencesProvider
                               .getThemeComplementaryColor();
                         },
                       ),
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),
@@ -846,6 +846,7 @@ class DictMergeDelegate extends SearchDelegate<String> {
   Widget buildResults(BuildContext context) {
     final results = dicts
         .where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
+    var localizations = AppLocalizations.of(context)!;
 
     return ListView.builder(
       itemCount: results.length,
@@ -858,7 +859,8 @@ class DictMergeDelegate extends SearchDelegate<String> {
           value: selectedDicts[index],
           title: Text(dict.name),
           secondary: Icon(Icons.key, color: dict.color),
-          subtitle: Text("${dict.keys.length.toString()} keys"),
+          subtitle: Text(
+              "${dict.keys.length.toString()} ${localizations.total_keys.toLowerCase()}"),
           onChanged: (value) {},
         );
       },
@@ -869,6 +871,7 @@ class DictMergeDelegate extends SearchDelegate<String> {
   Widget buildSuggestions(BuildContext context) {
     final results = dicts
         .where((dict) => dict.name.toLowerCase().contains(query.toLowerCase()));
+    var localizations = AppLocalizations.of(context)!;
 
     return ListView.builder(
       itemCount: results.length,
@@ -882,7 +885,8 @@ class DictMergeDelegate extends SearchDelegate<String> {
           value: selectedDicts[index],
           title: Text(dict.name),
           secondary: Icon(Icons.key, color: dict.color),
-          subtitle: Text("${dict.keys.length.toString()} keys"),
+          subtitle: Text(
+              "${dict.keys.length.toString()} ${localizations.total_keys.toLowerCase()}"),
           onChanged: (value) {
             selectedDicts[index] = value!;
             appState.changesMade();

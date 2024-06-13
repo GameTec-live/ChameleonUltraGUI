@@ -63,13 +63,13 @@ class SavedCardState extends State<SavedCard> {
         child: ElevatedButton(
             onPressed: widget.onPressed,
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                (Set<MaterialState> states) {
+              backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                (Set<WidgetState> states) {
                   return appState.sharedPreferencesProvider
                       .getThemeComplementaryColor();
                 },
               ),
-              shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+              shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                 RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18.0),
                 ),

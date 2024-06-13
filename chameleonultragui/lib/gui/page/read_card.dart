@@ -183,12 +183,12 @@ class ReadCardPageState extends State<ReadCardPage> {
     tags.add(CardSave(
         uid: hfInfo.uid,
         sak: hexToBytes(hfInfo.sak)[0],
-        atqa: hexToBytesSpace(hfInfo.atqa),
+        atqa: hexToBytes(hfInfo.atqa),
         name: dumpName,
         tag: TagType.mifare1K,
         data: [],
         ats: (hfInfo.ats != localizations.no)
-            ? hexToBytesSpace(hfInfo.ats)
+            ? hexToBytes(hfInfo.ats)
             : Uint8List(0)));
 
     appState.sharedPreferencesProvider.setCards(tags);

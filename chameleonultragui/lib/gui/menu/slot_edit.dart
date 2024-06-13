@@ -102,13 +102,13 @@ class SlotEditMenuState extends State<SlotEditMenu> {
 
     if (selectedType == TagType.em410X) {
       await appState.communicator!
-          .setEM410XEmulatorID(hexToBytesSpace(uidController.text));
+          .setEM410XEmulatorID(hexToBytes(uidController.text));
     } else if (isMifareClassic(selectedType!)) {
       var cardData = CardData(
-          uid: hexToBytesSpace(uidController.text),
-          atqa: hexToBytesSpace(atqaController.text),
-          sak: bytesToU8(hexToBytesSpace(sakController.text)),
-          ats: hexToBytesSpace(atsController.text));
+          uid: hexToBytes(uidController.text),
+          atqa: hexToBytes(atqaController.text),
+          sak: bytesToU8(hexToBytes(sakController.text)),
+          ats: hexToBytes(atsController.text));
       await appState.communicator!.setMf1AntiCollision(cardData);
     }
 

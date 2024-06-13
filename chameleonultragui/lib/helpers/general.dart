@@ -30,16 +30,13 @@ String bytesToHexSpace(Uint8List bytes) {
 }
 
 Uint8List hexToBytes(String hex) {
+  hex = hex.replaceAll(" ", "");
   List<int> bytes = [];
   for (int i = 0; i < hex.length; i += 2) {
     int byte = int.parse(hex.substring(i, i + 2), radix: 16);
     bytes.add(byte);
   }
   return Uint8List.fromList(bytes);
-}
-
-Uint8List hexToBytesSpace(String hex) {
-  return hexToBytes(hex.replaceAll(" ", ""));
 }
 
 int bytesToU8(Uint8List byteArray) {

@@ -243,12 +243,12 @@ Future<SendPort> _helperIsolateSendPort = () async {
           pointer.ref.uid = data.darkside.uid;
           var i = 0;
           for (var item in data.darkside.items) {
-            var value = itemPointer.elementAt(i);
-            value.ref.ar = item.ar;
-            value.ref.ks1 = item.ks1;
-            value.ref.nr = item.nr;
-            value.ref.nt1 = item.nt1;
-            value.ref.par = item.par;
+            var value = itemPointer[i];
+            value.ar = item.ar;
+            value.ks1 = item.ks1;
+            value.nr = item.nr;
+            value.nt1 = item.nt1;
+            value.par = item.par;
             i++;
           }
           pointer.ref.items = itemPointer;
@@ -259,7 +259,7 @@ Future<SendPort> _helperIsolateSendPort = () async {
           List<int> keys = [];
           final Pointer<Uint64> result = _bindings.darkside(pointer, count);
           for (var i = 0; i < count.value; i++) {
-            keys.add(result.elementAt(i).value);
+            keys.add(result[i]);
           }
           final KeyResponse response = KeyResponse(data.id, keys);
           sendPort.send(response);
@@ -280,7 +280,7 @@ Future<SendPort> _helperIsolateSendPort = () async {
           List<int> keys = [];
           final Pointer<Uint64> result = _bindings.nested(pointer, count);
           for (var i = 0; i < count.value; i++) {
-            keys.add(result.elementAt(i).value);
+            keys.add(result[i]);
           }
           final KeyResponse response = KeyResponse(data.id, keys);
           sendPort.send(response);
@@ -314,7 +314,7 @@ Future<SendPort> _helperIsolateSendPort = () async {
           final Pointer<Uint64> result =
               _bindings.static_nested(pointer, count);
           for (var i = 0; i < count.value; i++) {
-            keys.add(result.elementAt(i).value);
+            keys.add(result[i]);
           }
           final KeyResponse response = KeyResponse(data.id, keys);
           sendPort.send(response);

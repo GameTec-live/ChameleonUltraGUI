@@ -140,7 +140,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       var cardData = CardData(
-          uid: hexToBytesSpace(card.uid),
+          uid: hexToBytes(card.uid),
           atqa: card.atqa,
           sak: card.sak,
           ats: card.ats);
@@ -199,8 +199,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!.activateSlot(gridPosition);
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      await appState.communicator!
-          .setEM410XEmulatorID(hexToBytesSpace(card.uid));
+      await appState.communicator!.setEM410XEmulatorID(hexToBytes(card.uid));
       await appState.communicator!.setSlotTagName(
           gridPosition,
           (card.name.isEmpty) ? localizations.no_name : card.name,
@@ -266,7 +265,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                               cardSelectDialog(context);
                             },
                             style: ButtonStyle(
-                              shape: MaterialStateProperty.all<
+                              shape: WidgetStateProperty.all<
                                   RoundedRectangleBorder>(
                                 RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(18.0),
