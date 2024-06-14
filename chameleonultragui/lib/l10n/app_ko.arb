@@ -217,6 +217,7 @@
   "charge": "\ucda9\uc804",
   "copy_all_keys": "\ubaa8\ub4e0 \ud0a4\ub97c \ud074\ub9bd\ubcf4\ub4dc\uc5d0 \ubcf5\uc0ac",
   "battery_info": "\ucda9\uc804: {percent}%\n\uc804\uc555: {voltage} mV",
+  "x_byte_uid": "{length} \ubc14\uc774\ud2b8 UID",
   "edit_slot_data": "\uc2ac\ub86f \ub370\uc774\ud130 \ud3b8\uc9d1",
   "export_slot_data": "\uc2ac\ub86f \ub370\uc774\ud130 \ub0b4\ubcf4\ub0b4\uae30",
   "frequency_to_export": "\ub0b4\ubcf4\ub0bc \uc8fc\ud30c\uc218",
@@ -275,5 +276,8 @@
   "confirm_deletions": "\uc0ad\uc81c\uc2dc \ud655\uc778 \ud31d\uc5c5 \uc5ec\ubd80",
   "confirm_deletion": "\uc0ad\uc81c \ud655\uc778",
   "confirm_deletion_text": "\uc815\ub9d0\ub85c {name} \uc744(\ub97c) \uc0ad\uc81c\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?",
-  "delete": "\uc0ad\uc81c"
+  "delete": "\uc0ad\uc81c",
+  "total_keys": "\ud0a4",
+  "key": "\ud0a4",
+  "t55xx_key_prompt": "T55XX \ud0a4\ub97c \uc785\ub825\ud558\uc2ed\uc2dc\uc624. \uae30\ubcf8 CU \ud0a4\ub294 20206666\uc785\ub2c8\ub2e4."
 }

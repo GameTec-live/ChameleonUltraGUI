@@ -276,5 +276,8 @@
   "confirm_deletions": "Confirma esborrar",
   "confirm_deletion": "Confirma esborrar",
   "confirm_deletion_text": "Segur que voleu suprimir {name}?",
-  "delete": "Suprimeix"
+  "delete": "Suprimeix",
+  "total_keys": "clau(s)",
+  "key": "Clau",
+  "t55xx_key_prompt": "Introdu\u00efu la clau T55XX. La clau per defecte del Chameleon Ultra \u00e9s 20206666"
 }
