@@ -276,5 +276,8 @@
   "confirm_deletions": "L\u00f6schen best\u00e4tigen",
   "confirm_deletion": "L\u00f6schen best\u00e4tigen",
   "confirm_deletion_text": "Soll {name} wirklich gel\u00f6scht werden?",
-  "delete": "L\u00f6schen"
+  "delete": "L\u00f6schen",
+  "total_keys": "Schl\u00fcssel",
+  "key": "Schl\u00fcssel",
+  "t55xx_key_prompt": "T55XX Schl\u00fcssel eingeben. Der Standard des CU ist 20206666"
 }
