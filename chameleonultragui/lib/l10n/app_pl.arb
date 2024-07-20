@@ -276,5 +276,8 @@
   "confirm_deletions": "Potwied\u017a usuni\u0119cie",
   "confirm_deletion": "Potwied\u017a usuni\u0119cie",
   "confirm_deletion_text": "Czy na pewno chcesz usun\u0105\u0107 {name}?",
-  "delete": "Usu\u0144"
+  "delete": "Usu\u0144",
+  "total_keys": "klucz(e)",
+  "key": "Klucz",
+  "t55xx_key_prompt": "Wprowad\u017a klucz T55XX. Domy\u015blny klucz CU to 20206666"
 }
