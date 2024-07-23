@@ -354,8 +354,8 @@ class SharedPreferencesProvider extends ChangeNotifier {
           break;
         case List l:
           // this is the reverse of the hack above :)
-          _sharedPreferences.setStringList(
-              key, l.map((e) => jsonEncode(e)).toList());
+          _sharedPreferences.setStringList( // FIXME: This is weird, all of the sudden started breaking, not decoding fixes it...
+              key, l.map((e) => e.toString()).toList());
           break;
         default:
           break;
