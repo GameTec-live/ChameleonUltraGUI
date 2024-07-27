@@ -142,7 +142,7 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
 
   @override
   bool isReady() {
-    return currentKey.length == 8;
+    return currentKey.length == 8 && newKey.length == 8;
   }
 
   @override
