@@ -17,8 +17,10 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
   String get name => "T55XX";
 
   static String get staticName => "T55XX";
-  TextEditingController keyController = TextEditingController();
-  String key = "";
+  TextEditingController newKeyController = TextEditingController();
+  TextEditingController currentKeyController = TextEditingController();
+  String currentKey = "";
+  String newKey = "";
 
   BaseT55XXCardHelper(super.communicator);
 
@@ -44,37 +46,83 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
           key: formKey,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Expanded(
-              child: TextFormField(
-            controller: keyController,
-            decoration: InputDecoration(
-                labelText: localizations.key,
-                hintText: localizations
-                    .enter_something(localizations.t55xx_key_prompt)),
-            validator: (String? value) {
-              if (value!.isNotEmpty && !isValidHexString(value)) {
-                return localizations.must_be_valid_hex;
-              }
+              child: Column(
+            children: [
+              TextFormField(
+                controller: currentKeyController,
+                decoration: InputDecoration(
+                    labelText: localizations.key,
+                    hintMaxLines: 4,
+                    hintText: localizations
+                        .enter_something(localizations.t55xx_key_prompt)),
+                validator: (String? value) {
+                  if (value!.isNotEmpty && !isValidHexString(value)) {
+                    return localizations.must_be_valid_hex;
+                  }
 
-              if (value.length != 8) {
-                return localizations.must_be(4, localizations.key);
-              }
+                  if (value.length != 8) {
+                    return localizations.must_be(4, localizations.key);
+                  }
 
-              return null;
-            },
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: newKeyController,
+                decoration: InputDecoration(
+                    labelText: localizations.new_key,
+                    hintMaxLines: 4,
+                    hintText: localizations
+                        .enter_something(localizations.t55xx_new_key_prompt)),
+                validator: (String? value) {
+                  if (value!.isNotEmpty && !isValidHexString(value)) {
+                    return localizations.must_be_valid_hex;
+                  }
+
+                  if (value.length != 8) {
+                    return localizations.must_be(4, localizations.key);
+                  }
+
+                  return null;
+                },
+              )
+            ],
           ))),
       TextButton(
         onPressed: () => {
-          if (keyController.text.isNotEmpty)
+          if (newKeyController.text.isNotEmpty)
             {
-              setState(() {
-                key = keyController.text;
-              })
+              if (currentKeyController.text.isNotEmpty)
+                {
+                  setState(() {
+                    currentKey = currentKeyController.text;
+                    newKey = newKeyController.text;
+                  })
+                }
+              else
+                {
+                  setState(() {
+                    currentKey = "20206666";
+                    newKey = "20206666";
+                  })
+                }
             }
           else
             {
-              setState(() {
-                key = "20206666";
-              })
+              if (currentKeyController.text.isNotEmpty)
+                {
+                  setState(() {
+                    currentKey = currentKeyController.text;
+                    newKey = currentKeyController.text;
+                  })
+                }
+              else
+                {
+                  setState(() {
+                    currentKey = "20206666";
+                    newKey = "20206666";
+                  })
+                }
             }
         },
         child: Text(localizations.next),
@@ -94,7 +142,7 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
 
   @override
   bool isReady() {
-    return key.length == 8;
+    return currentKey.length == 8;
   }
 
   @override
@@ -104,13 +152,14 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
 
   @override
   Future<void> reset() async {
-    key = "";
+    currentKey = "";
+    newKey = "";
   }
 
   @override
   Future<bool> writeData(CardSave card, update) async {
-    await communicator
-        .writeEM410XtoT55XX(hexToBytes(card.uid), hexToBytes(key), []);
+    await communicator.writeEM410XtoT55XX(
+        hexToBytes(card.uid), hexToBytes(newKey), [hexToBytes(currentKey)]);
     var newCard = await communicator.readEM410X();
     return newCard == card.uid;
   }

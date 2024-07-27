@@ -279,5 +279,7 @@
   "delete": "Delete",
   "total_keys": "key(s)",
   "key": "Key",
-  "t55xx_key_prompt": "Enter T55XX key. Default CU key is 20206666"
+  "t55xx_key_prompt": "current T55XX key. Default CU key is 20206666",
+  "t55xx_new_key_prompt": "new T55XX key if you want to change it",
+  "new_key": "New key"
 }
