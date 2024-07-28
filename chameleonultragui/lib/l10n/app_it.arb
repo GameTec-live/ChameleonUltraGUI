@@ -279,5 +279,7 @@
   "delete": "Elimina",
   "total_keys": "chiavi",
   "key": "Chiave",
-  "t55xx_key_prompt": "Inserisci la chiave T55XX. La chiave predefinita del CU \u00e8 20206666"
+  "t55xx_key_prompt": "Inserisci la chiave T55XX. La chiave predefinita del CU \u00e8 20206666",
+  "t55xx_new_key_prompt": "nuova chiave T55XX se vuoi cambiarla",
+  "new_key": "Nuova chiave"
 }
