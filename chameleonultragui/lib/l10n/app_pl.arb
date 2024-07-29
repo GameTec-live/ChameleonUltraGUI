@@ -279,5 +279,7 @@
   "delete": "Usu\u0144",
   "total_keys": "klucz(e)",
   "key": "Klucz",
-  "t55xx_key_prompt": "Wprowad\u017a klucz T55XX. Domy\u015blny klucz CU to 20206666"
+  "t55xx_key_prompt": "wprowad\u017a klucz T55XX. Domy\u015blny klucz CU to 20206666",
+  "t55xx_new_key_prompt": "nowy klucz T55XX je\u015bli chcesz go zmieni\u0107",
+  "new_key": "Nowy klucz"
 }
