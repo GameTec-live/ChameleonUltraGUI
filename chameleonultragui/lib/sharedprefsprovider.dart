@@ -320,7 +320,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
       if (value == null) {
         continue;
       }
-      if (value is List<String>) {
+      if (value is List) {
         // this hack is needed in order to output proper json with objects instead of objects-in-strings
         value = value.map((e) => jsonDecode(e)).toList();
       }
