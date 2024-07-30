@@ -279,5 +279,7 @@
   "delete": "Suprimeix",
   "total_keys": "clau(s)",
   "key": "Clau",
-  "t55xx_key_prompt": "Introdu\u00efu la clau T55XX. La clau per defecte del Chameleon Ultra \u00e9s 20206666"
+  "t55xx_key_prompt": "Introdu\u00efu la clau T55XX. La clau per defecte del Chameleon Ultra \u00e9s 20206666",
+  "t55xx_new_key_prompt": "nova clau T55XX si voleu canviar-la",
+  "new_key": "Nova clau"
 }
