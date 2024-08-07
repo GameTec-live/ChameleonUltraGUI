@@ -340,7 +340,9 @@ uint8_t lfsr_rollback_bit(struct Crypto1State *s, uint32_t in, int fb)
     uint32_t t;
 
     s->odd &= 0xffffff;
-    t = s->odd, s->odd = s->even, s->even = t;
+    t = s->odd;
+    s->odd = s->even;
+    s->even = t;
 
     out = s->even & 1;
     out ^= LF_POLY_EVEN & (s->even >>= 1);

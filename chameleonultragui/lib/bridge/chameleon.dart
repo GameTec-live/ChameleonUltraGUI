@@ -70,6 +70,8 @@ enum ChameleonCommand {
   mf1CheckKey(2007),
   mf1ReadBlock(2008),
   mf1WriteBlock(2009),
+  mf1ManipulateValueBlock(2011),
+  mf1CheckKeysOfSectors(2012), // not implemented
   hf14ARawCommand(2010),
 
   // lf commands
@@ -96,6 +98,19 @@ enum ChameleonCommand {
   mf1GetWriteMode(4016),
   mf1SetWriteMode(4017),
 
+  mf0NtagGetUidMagicMode(4019),
+  mf0NtagSetUidMagicMode(4020),
+  mf0NtagReadEmuPageData(4021),
+  mf0NtagWriteEmuPageData(4022),
+  mf0NtagGetVersionData(4023),
+  mf0NtagSetVersionData(4024),
+  mf0NtagGetSignatureData(4025),
+  mf0NtagSetSignatureData(4026),
+  mf0NtagGetCounterData(4027),
+  mf0NtagSetCounterData(4028),
+  mf0NtagResetAuthCount(4029),
+  mf0NtagGetPageCount(4030),
+
   // read slot info
   mf1GetBlockData(4008),
   mf1GetAntiCollData(4018),
@@ -115,9 +130,15 @@ enum TagType {
   mifare1K(1001),
   mifare2K(1002),
   mifare4K(1003),
+  ntag210(1107),
+  ntag212(1108),
   ntag213(1100),
   ntag215(1101),
-  ntag216(1102);
+  ntag216(1102),
+  ultralight(1103),
+  ultralightC(1104),
+  ultralight11(1105),
+  ultralight21(1106);
 
   const TagType(this.value);
   final int value;
@@ -332,6 +353,15 @@ class DeviceSettings {
       this.bLongPress = ButtonConfig.disable,
       this.pairingEnabled = false,
       this.key = ""});
+}
+
+enum MifareClassicValueBlockOperator {
+  decrement(0xC0),
+  increment(0xC1),
+  restore(0xC2);
+
+  const MifareClassicValueBlockOperator(this.value);
+  final int value;
 }
 
 // Some ChatGPT magic
@@ -1148,6 +1178,31 @@ class ChameleonCommunicator {
     return commands;
   }
 
+  Future<void> manipulateValueBlock(
+      int srcBlock,
+      int srcKeyType,
+      Uint8List srcKey,
+      MifareClassicValueBlockOperator op,
+      int value,
+      int dstBlock,
+      int dstKeyType,
+      Uint8List dstKey) async {
+    await sendCmd(ChameleonCommand.mf1ManipulateValueBlock,
+        data: Uint8List.fromList([
+          srcKeyType,
+          srcBlock,
+          ...srcKey,
+          op.value,
+          value >> 24,
+          value >> 16 & 0xFF,
+          value >> 8 & 0xFF,
+          value & 0xFF,
+          dstKeyType,
+          dstBlock,
+          ...dstKey
+        ]));
+  }
+
   Future<Uint8List> send14ARaw(Uint8List data,
       {int respTimeoutMs = 100,
       int? bitLen,
@@ -1187,5 +1242,70 @@ class ChameleonCommunicator {
               ...data
             ])))!
         .data;
+  }
+
+  Future<bool> mf0GetMagicMode() async {
+    return (await sendCmd(ChameleonCommand.mf0NtagGetUidMagicMode))!.data[0] ==
+        1;
+  }
+
+  Future<void> mf0SetMagicMode(bool enabled) async {
+    await sendCmd(ChameleonCommand.mf0NtagSetUidMagicMode,
+        data: Uint8List.fromList([enabled ? 1 : 0]));
+  }
+
+  Future<Uint8List> mf0EmulatorReadPages(int from, int count) async {
+    return (await sendCmd(ChameleonCommand.mf0NtagReadEmuPageData,
+            data: Uint8List.fromList([from, count])))!
+        .data;
+  }
+
+  Future<void> mf0EmulatorWritePages(int from, Uint8List data) async {
+    await sendCmd(ChameleonCommand.mf0NtagWriteEmuPageData,
+        data: Uint8List.fromList([from, data.length >> 2, ...data]));
+  }
+
+  Future<Uint8List> mf0EmulatorGetVersionData() async {
+    return (await sendCmd(ChameleonCommand.mf0NtagGetVersionData))!.data;
+  }
+
+  Future<void> mf0EmulatorSetVersionData(Uint8List data) async {
+    await sendCmd(ChameleonCommand.mf0NtagSetVersionData,
+        data: Uint8List.fromList([...data]));
+  }
+
+  Future<Uint8List> mf0EmulatorGetSignatureData() async {
+    return (await sendCmd(ChameleonCommand.mf0NtagGetSignatureData))!.data;
+  }
+
+  Future<void> mf0EmulatorSetSignatureData(Uint8List data) async {
+    await sendCmd(ChameleonCommand.mf0NtagSetSignatureData,
+        data: Uint8List.fromList([...data]));
+  }
+
+  Future<int> mf0ResetAuthCount() async {
+    return (await sendCmd(ChameleonCommand.mf0NtagResetAuthCount))!.data[0];
+  }
+
+  Future<int> mf0EmulatorGetPageCount() async {
+    return (await sendCmd(ChameleonCommand.mf0NtagGetPageCount))!.data[0];
+  }
+
+  Future<(int, bool)> mf0EmulatorGetCounterData(int index) async {
+    Uint8List data = (await sendCmd(ChameleonCommand.mf0NtagGetCounterData,
+            data: Uint8List.fromList([index])))!
+        .data;
+    return (((data[0] << 16) | (data[1] << 8) | data[2]), data[3] == 0xBD);
+  }
+
+  Future<void> mf0EmulatorSetCounterData(
+      int index, int value, bool resetTearing) async {
+    await sendCmd(ChameleonCommand.mf0NtagSetCounterData,
+        data: Uint8List.fromList([
+          index | ((resetTearing ? 1 : 0) << 7),
+          (value >> 16) & 0xFF,
+          (value >> 8) & 0xFF,
+          value & 0xFF
+        ]));
   }
 }

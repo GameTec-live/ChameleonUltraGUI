@@ -23,7 +23,7 @@ int compare_uint64(const void *a, const void *b)
 }
 
 // create the intersection (common members) of two sorted lists. Lists are terminated by -1. Result will be in list1. Number of elements is returned.
-uint32_t intersection(uint64_t *listA, uint64_t *listB)
+uint64_t intersection(uint64_t *listA, uint64_t *listB)
 {
     if (listA == NULL || listB == NULL)
         return 0;

@@ -75,6 +75,8 @@ class CardSave {
   String name;
   TagType tag;
   List<Uint8List> data;
+  String ultralightSignature;
+  String ultralightVersion;
   Color color;
 
   factory CardSave.fromJson(String json) {
@@ -86,6 +88,8 @@ class CardSave {
     final ats = List<int>.from((data['ats'] ?? []) as List<dynamic>);
     final name = data['name'] as String;
     final tag = getTagTypeByValue(data['tag']);
+    final ultralightSignature = (data['ultralightSignature'] ?? "") as String;
+    final ultralightVersion = (data['ultralightVersion'] ?? "") as String;
     final color =
         data['color'] == null ? Colors.deepOrange : hexToColor(data['color']);
     List<Uint8List> tagData = (data['data'] as List<dynamic>)
@@ -100,6 +104,8 @@ class CardSave {
         tag: tag,
         data: tagData,
         color: color,
+        ultralightSignature: ultralightSignature,
+        ultralightVersion: ultralightVersion,
         ats: Uint8List.fromList(ats),
         atqa: Uint8List.fromList(atqa));
   }
@@ -115,6 +121,8 @@ class CardSave {
       'tag': tag.value,
       'color': colorToHex(color),
       'data': data.map((data) => data.toList()).toList(),
+      'ultralightSignature': ultralightSignature,
+      'ultralightVersion': ultralightVersion
     });
   }
 
@@ -127,7 +135,9 @@ class CardSave {
       Uint8List? atqa,
       Uint8List? ats,
       this.color = Colors.deepOrange,
-      this.data = const []})
+      this.data = const [],
+      this.ultralightSignature = "",
+      this.ultralightVersion = ""})
       : id = id ?? const Uuid().v4(),
         sak = sak ?? 0,
         atqa = atqa ?? Uint8List(0),

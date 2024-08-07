@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
-import 'package:chameleonultragui/gui/component/card_recovery.dart';
+import 'package:chameleonultragui/gui/component/mifare/classic.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
@@ -250,7 +250,7 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
         future: (hfInfo != null) ? Future.value([]) : prepareMifareClassic(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (hfInfo != null && mfcInfo != null && mfcInfo!.recovery != null) {
-            return CardRecovery(
+            return MifareClassicHelper(
                 hfInfo: hfInfo!, mfcInfo: mfcInfo!, allowSave: false);
           } else if (hfInfo != null &&
               mfcInfo != null &&
