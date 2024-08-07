@@ -193,11 +193,12 @@ packages:
   flutter_libserialport:
     dependency: "direct main"
     description:
-      name: flutter_libserialport
-      sha256: "20c320dcde8592a16f9badc0cacad61b1fb283dbec647b6ebfc1020f8274c67b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.0"
+      path: "."
+      ref: "0.5.0"
+      resolved-ref: "6d8b2807c132041da9fa06c34bce8a6f831ff1f5"
+      url: "https://github.com/snabble/flutter_libserialport.git"
+    source: git
+    version: "0.5.0"
   flutter_lints:
     dependency: "direct dev"
     description:
