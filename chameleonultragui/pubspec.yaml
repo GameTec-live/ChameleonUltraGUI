@@ -66,6 +66,7 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^5.1.1
 
+  flutter_gen: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
