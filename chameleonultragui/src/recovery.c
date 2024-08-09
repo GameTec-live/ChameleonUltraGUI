@@ -49,11 +49,11 @@ typedef struct
   uint32_t endPos;
 } RecPar;
 
-FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint32_t *outputKeyCount)
+FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint64_t *outputKeyCount)
 {
   uint32_t uid = data->uid;
   uint32_t count = 0, i = 0;
-  uint32_t keycount = 0;
+  uint64_t keycount = 0;
   uint64_t *keylist = NULL, *last_keylist = NULL;
   DarksideParam *dps = calloc(1, sizeof(DarksideParam) * data->count);
   uint64_t *keys = malloc(sizeof(uint64_t) * 256);
@@ -95,7 +95,7 @@ FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint32_t *outputKeyCount)
         continue;
       }
     }
-    uint8_t key_tmp[6] = {0};
+
     if (keycount > 0)
     {
       no_key_recover = false;
@@ -261,7 +261,6 @@ static void nested_recover(RecPar *rp)
 uint64_t *nested_run(NtpKs1 *pNK, uint32_t sizePNK, uint32_t authuid, uint32_t *keyCount, uint32_t *outputKeyCount)
 {
   *keyCount = 0;
-  uint32_t i;
 
   RecPar *pRPs = malloc(sizeof(RecPar));
   if (pRPs == NULL)
@@ -364,9 +363,9 @@ FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *outputKeyCount)
 FFI_PLUGIN_EXPORT uint64_t *static_nested(StaticNested *data, uint32_t *outputKeyCount)
 {
   NtpKs1 *pNK = NULL;
-  uint32_t i, m;
+  uint32_t i;
   uint32_t j = 0;
-  uint32_t nt1, nt2, nttest, ks1, dist;
+  uint32_t nt1, nt2, nttest, ks1, dist = 0;
 
   uint32_t authuid = data->uid;
   uint8_t type = (uint8_t)data->key_type; // target key type

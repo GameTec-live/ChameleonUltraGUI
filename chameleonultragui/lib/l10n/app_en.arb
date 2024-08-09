@@ -281,5 +281,11 @@
   "key": "Key",
   "t55xx_key_prompt": "current T55XX key. Default CU key is 20206666",
   "t55xx_new_key_prompt": "new T55XX key if you want to change it",
-  "new_key": "New key"
+  "new_key": "New key",
+  "ultralight_key_prompt": "Ultralight key (HEX, 4 bytes)",
+  "read_with_key": "Read with key",
+  "read_without_key": "Read without key",
+  "invalid_password": "Invalid password",
+  "ultralight_version": "Ultralight version",
+  "ultralight_signature": "Ultralight signature"
 }

@@ -5,6 +5,7 @@ import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/gui/menu/slot_settings.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
@@ -204,6 +205,52 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           gridPosition,
           (card.name.isEmpty) ? localizations.no_name : card.name,
           TagFrequency.lf);
+      await appState.communicator!.saveSlotData();
+      appState.changesMade();
+      refreshSlot(gridPosition);
+    } else if (isMifareUltralight(card.tag)) {
+      close(context, card.name);
+      setUploadState(0);
+
+      await appState.communicator!.setReaderDeviceMode(false);
+      await appState.communicator!
+          .enableSlot(gridPosition, TagFrequency.hf, true);
+      await appState.communicator!.activateSlot(gridPosition);
+      await appState.communicator!.setSlotType(gridPosition, card.tag);
+      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
+      var cardData = CardData(
+          uid: hexToBytes(card.uid),
+          atqa: card.atqa,
+          sak: card.sak,
+          ats: card.ats);
+      await appState.communicator!.setMf1AntiCollision(cardData);
+
+      for (var page = 0; page < mfUltralightGetPagesCount(card.tag); page++) {
+        await appState.communicator!
+            .mf0EmulatorWritePages(page, card.data[page]);
+
+        setUploadState(
+            (page / mfUltralightGetPagesCount(card.tag) * 100).round());
+
+        await asyncSleep(1);
+      }
+
+      if (card.ultralightVersion.isNotEmpty) {
+        await appState.communicator!
+            .mf0EmulatorSetVersionData(hexToBytes(card.ultralightVersion));
+      }
+
+      if (card.ultralightSignature.isNotEmpty) {
+        await appState.communicator!
+            .mf0EmulatorSetSignatureData(hexToBytes(card.ultralightSignature));
+      }
+
+      setUploadState(100);
+
+      await appState.communicator!.setSlotTagName(
+          gridPosition,
+          (card.name.isEmpty) ? localizations.no_name : card.name,
+          TagFrequency.hf);
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot(gridPosition);
