@@ -276,5 +276,7 @@
   "confirm_deletions": "\u5220\u9664\u9700\u786e\u8ba4",
   "confirm_deletion": "\u786e\u8ba4\u5220\u9664",
   "confirm_deletion_text": "\u786e\u5b9e\u8981\u5220\u9664 {name}?",
-  "delete": "\u5220\u9664"
+  "delete": "\u5220\u9664",
+  "key": "\u5bc6\u94a5",
+  "new_key": "\u65b0\u5bc6\u94a5"
 }
