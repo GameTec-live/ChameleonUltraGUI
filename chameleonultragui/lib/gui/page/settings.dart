@@ -35,7 +35,7 @@ const localeNameMap = {
   "it": "Italiano",
   "ja": "日本語",
   "ko": "한국어",
-  "nl": "Dutch",
+  "nl": "Nederlands",
   "ar": "العربية ",
   "tr": "Türkçe",
   "pl": "Polski",
