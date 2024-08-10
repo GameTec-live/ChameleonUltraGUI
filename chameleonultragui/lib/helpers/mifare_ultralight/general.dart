@@ -48,6 +48,11 @@ TagType mfUltralightGetType(Uint8List version) {
   return TagType.ultralight;
 }
 
+// https://www.nxp.com/docs/en/data-sheet/MF0ICU2.pdf
+// https://www.nxp.com/docs/en/data-sheet/MF0ULX1.pdf
+// https://www.nxp.com/docs/en/data-sheet/NTAG210_212.pdf
+// https://www.nxp.com/docs/en/data-sheet/NTAG213_215_216.pdf
+
 int mfUltralightGetPagesCount(TagType type) {
   if (type == TagType.ultralight) {
     return 16;
@@ -67,6 +72,29 @@ int mfUltralightGetPagesCount(TagType type) {
     return 135;
   } else if (type == TagType.ntag216) {
     return 231;
+  }
+  return 0;
+}
+
+int mfUltralightGetPasswordPage(TagType type) {
+  if (type == TagType.ultralight) {
+    return 0; // Don't have password support
+  } else if (type == TagType.ultralightC) {
+    return 0; // 44 to 47, custom logic required for Ultralight C
+  } else if (type == TagType.ultralight11) {
+    return 18;
+  } else if (type == TagType.ultralight21) {
+    return 39;
+  } else if (type == TagType.ntag210) {
+    return 18;
+  } else if (type == TagType.ntag212) {
+    return 39;
+  } else if (type == TagType.ntag213) {
+    return 43;
+  } else if (type == TagType.ntag215) {
+    return 133;
+  } else if (type == TagType.ntag216) {
+    return 229;
   }
   return 0;
 }

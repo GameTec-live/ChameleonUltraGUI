@@ -83,6 +83,12 @@ class CardReaderState extends State<MifareUltralightHelper> {
     signature =
         bytesToHexSpace(await mfUltralightGetSignature(appState.communicator!));
 
+    // Save password to dump if was used
+    int passwordPage = mfUltralightGetPasswordPage(widget.hfInfo.type);
+    if (passwordPage != 0 && withPassword) {
+      cardData[passwordPage] = hexToBytes(keyController.text);
+    }
+
     setState(() {
       error = "";
       state = MifareUltralightState.save;
