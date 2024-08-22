@@ -41,8 +41,10 @@ class CardEditMenuState extends State<CardEditMenu> {
     sakController.text = bytesToHexSpace(u8ToBytes(widget.tagSave.sak));
     atqaController.text = bytesToHexSpace(widget.tagSave.atqa);
     atsController.text = bytesToHexSpace(widget.tagSave.ats);
-    ultralightVersionController.text = widget.tagSave.ultralightVersion;
-    ultralightSignatureController.text = widget.tagSave.ultralightSignature;
+    ultralightVersionController.text =
+        bytesToHexSpace(widget.tagSave.extraData.ultralightVersion);
+    ultralightSignatureController.text =
+        bytesToHexSpace(widget.tagSave.extraData.ultralightSignature);
     nameController.text = widget.tagSave.name;
     pickerColor = widget.tagSave.color;
     currentColor = widget.tagSave.color;
@@ -313,8 +315,12 @@ class CardEditMenuState extends State<CardEditMenu> {
                     : hexToBytes(sakController.text)[0],
                 atqa: hexToBytes(atqaController.text),
                 uid: bytesToHexSpace(hexToBytes(uidController.text)),
-                ultralightVersion: ultralightVersionController.text,
-                ultralightSignature: ultralightSignatureController.text,
+                extraData: CardSaveExtra(
+                  ultralightSignature:
+                      hexToBytes(ultralightVersionController.text),
+                  ultralightVersion:
+                      hexToBytes(ultralightSignatureController.text),
+                ),
                 tag: selectedType,
                 data: widget.tagSave.data,
                 color: currentColor,

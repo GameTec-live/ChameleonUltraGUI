@@ -235,14 +235,14 @@ class SlotManagerPageState extends State<SlotManagerPage> {
         await asyncSleep(1);
       }
 
-      if (card.ultralightVersion.isNotEmpty) {
+      if (card.extraData.ultralightVersion.isNotEmpty) {
         await appState.communicator!
-            .mf0EmulatorSetVersionData(hexToBytes(card.ultralightVersion));
+            .mf0EmulatorSetVersionData(card.extraData.ultralightVersion);
       }
 
-      if (card.ultralightSignature.isNotEmpty) {
+      if (card.extraData.ultralightSignature.isNotEmpty) {
         await appState.communicator!
-            .mf0EmulatorSetSignatureData(hexToBytes(card.ultralightSignature));
+            .mf0EmulatorSetSignatureData(card.extraData.ultralightSignature);
       }
 
       setUploadState(100);

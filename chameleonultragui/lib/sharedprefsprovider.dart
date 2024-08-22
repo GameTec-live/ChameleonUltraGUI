@@ -75,8 +75,7 @@ class CardSave {
   String name;
   TagType tag;
   List<Uint8List> data;
-  String ultralightSignature;
-  String ultralightVersion;
+  CardSaveExtra extraData;
   Color color;
 
   factory CardSave.fromJson(String json) {
@@ -88,8 +87,7 @@ class CardSave {
     final ats = List<int>.from((data['ats'] ?? []) as List<dynamic>);
     final name = data['name'] as String;
     final tag = getTagTypeByValue(data['tag']);
-    final ultralightSignature = (data['ultralightSignature'] ?? "") as String;
-    final ultralightVersion = (data['ultralightVersion'] ?? "") as String;
+    final extraData = CardSaveExtra.import(data['extra'] ?? {});
     final color =
         data['color'] == null ? Colors.deepOrange : hexToColor(data['color']);
     List<Uint8List> tagData = (data['data'] as List<dynamic>)
@@ -104,8 +102,7 @@ class CardSave {
         tag: tag,
         data: tagData,
         color: color,
-        ultralightSignature: ultralightSignature,
-        ultralightVersion: ultralightVersion,
+        extraData: extraData,
         ats: Uint8List.fromList(ats),
         atqa: Uint8List.fromList(atqa));
   }
@@ -121,27 +118,63 @@ class CardSave {
       'tag': tag.value,
       'color': colorToHex(color),
       'data': data.map((data) => data.toList()).toList(),
-      'ultralightSignature': ultralightSignature,
-      'ultralightVersion': ultralightVersion
+      'extra': extraData.export(),
     });
   }
 
-  CardSave(
-      {String? id,
-      required this.uid,
-      required this.name,
-      required this.tag,
-      int? sak,
-      Uint8List? atqa,
-      Uint8List? ats,
-      this.color = Colors.deepOrange,
-      this.data = const [],
-      this.ultralightSignature = "",
-      this.ultralightVersion = ""})
-      : id = id ?? const Uuid().v4(),
+  CardSave({
+    String? id,
+    required this.uid,
+    required this.name,
+    required this.tag,
+    int? sak,
+    Uint8List? atqa,
+    Uint8List? ats,
+    CardSaveExtra? extraData,
+    this.color = Colors.deepOrange,
+    this.data = const [],
+  })  : id = id ?? const Uuid().v4(),
         sak = sak ?? 0,
         atqa = atqa ?? Uint8List(0),
-        ats = ats ?? Uint8List(0);
+        ats = ats ?? Uint8List(0),
+        extraData = extraData ?? CardSaveExtra();
+}
+
+class CardSaveExtra {
+  Uint8List ultralightSignature;
+  Uint8List ultralightVersion;
+
+  factory CardSaveExtra.import(Map<String, dynamic> data) {
+    List<int> readBytes(Map<String, dynamic> data, String key) {
+      return List<int>.from(
+          data[key] != null ? data[key] as List<dynamic> : []);
+    }
+
+    final ultralightSignature = readBytes(data, 'ultralightSignature');
+    final ultralightVersion = readBytes(data, 'ultralightVersion');
+
+    return CardSaveExtra(
+        ultralightSignature: Uint8List.fromList(ultralightSignature),
+        ultralightVersion: Uint8List.fromList(ultralightVersion));
+  }
+
+  Map<String, dynamic> export() {
+    Map<String, dynamic> json = {};
+
+    if (ultralightSignature.isNotEmpty) {
+      json['ultralightSignature'] = ultralightSignature;
+    }
+
+    if (ultralightVersion.isNotEmpty) {
+      json['ultralightVersion'] = ultralightVersion;
+    }
+
+    return json;
+  }
+
+  CardSaveExtra({Uint8List? ultralightSignature, Uint8List? ultralightVersion})
+      : ultralightSignature = ultralightSignature ?? Uint8List(0),
+        ultralightVersion = ultralightVersion ?? Uint8List(0);
 }
 
 class SharedPreferencesProvider extends ChangeNotifier {

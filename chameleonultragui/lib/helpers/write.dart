@@ -66,5 +66,6 @@ abstract class AbstractWriteHelper {
   }
 
   @override
-  bool operator ==(dynamic other) => other != null && name == other.name;
+  bool operator ==(Object other) =>
+      other is AbstractWriteHelper && name == other.name;
 }

@@ -137,8 +137,10 @@ class CardReaderState extends State<MifareUltralightHelper> {
           name: dumpName,
           tag: widget.hfInfo.type,
           data: cardData,
-          ultralightSignature: signature,
-          ultralightVersion: version,
+          extraData: CardSaveExtra(
+            ultralightSignature: hexToBytes(signature),
+            ultralightVersion: hexToBytes(version),
+          ),
           ats: (widget.hfInfo.ats != localizations.no)
               ? hexToBytes(widget.hfInfo.ats)
               : Uint8List(0)));

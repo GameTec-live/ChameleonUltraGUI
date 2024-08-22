@@ -123,12 +123,14 @@ class CardViewMenuState extends State<CardViewMenu> {
                 Row(
                   children: [
                     Text(
-                        "${localizations.ultralight_version}: ${widget.tagSave.ultralightVersion.isNotEmpty ? widget.tagSave.ultralightVersion : localizations.unavailable}"),
+                        "${localizations.ultralight_version}: ${widget.tagSave.extraData.ultralightVersion.isNotEmpty ? bytesToHexSpace(widget.tagSave.extraData.ultralightVersion) : localizations.unavailable}"),
                     IconButton(
                       onPressed: () async {
                         ClipboardData data = ClipboardData(
-                            text: widget.tagSave.ultralightVersion.isNotEmpty
-                                ? widget.tagSave.ultralightVersion
+                            text: widget.tagSave.extraData.ultralightVersion
+                                    .isNotEmpty
+                                ? bytesToHexSpace(
+                                    widget.tagSave.extraData.ultralightVersion)
                                 : localizations.unavailable);
                         await Clipboard.setData(data);
                       },
@@ -139,12 +141,14 @@ class CardViewMenuState extends State<CardViewMenu> {
                 Row(
                   children: [
                     Text(
-                        "${localizations.ultralight_signature}: ${widget.tagSave.ultralightSignature.isNotEmpty ? widget.tagSave.ultralightSignature : localizations.unavailable}"),
+                        "${localizations.ultralight_signature}: ${widget.tagSave.extraData.ultralightSignature.isNotEmpty ? bytesToHexSpace(widget.tagSave.extraData.ultralightSignature) : localizations.unavailable}"),
                     IconButton(
                       onPressed: () async {
                         ClipboardData data = ClipboardData(
-                            text: widget.tagSave.ultralightVersion.isNotEmpty
-                                ? widget.tagSave.ultralightVersion
+                            text: widget.tagSave.extraData.ultralightVersion
+                                    .isNotEmpty
+                                ? bytesToHexSpace(
+                                    widget.tagSave.extraData.ultralightVersion)
                                 : localizations.unavailable);
                         await Clipboard.setData(data);
                       },
