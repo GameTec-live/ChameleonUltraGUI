@@ -287,5 +287,10 @@
   "read_without_key": "Read without key",
   "invalid_password": "Invalid password",
   "ultralight_version": "Ultralight version",
-  "ultralight_signature": "Ultralight signature"
+  "ultralight_signature": "Ultralight signature",
+  "no_key": "No key",
+  "gen1": "Gen1",
+  "gen2": "Gen2 / Generic",
+  "gen3": "Gen3",
+  "t55xx": "T55XX"
 }

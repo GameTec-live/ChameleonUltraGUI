@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
@@ -138,6 +139,16 @@ String chameleonTagToString(TagType tag) {
   } else {
     return "Unknown";
   }
+}
+
+String chameleonCardToString(CardSave card) {
+  String name = chameleonTagToString(card.tag);
+
+  if (chameleonTagSaveCheckForMifareClassicEV1(card)) {
+    name += " EV1";
+  }
+
+  return name;
 }
 
 TagType numberToChameleonTag(int type) {

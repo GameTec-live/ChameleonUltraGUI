@@ -6,14 +6,14 @@ import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
-class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
+class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
   List<int> failedBlocks = [];
   MifareClassicGen2WriteHelper(super.communicator, {required super.recovery});
 
   @override
-  String get name => "Gen2 / Generic";
+  String get name => "gen2";
 
-  static String get staticName => "Gen2 / Generic";
+  static String get staticName => "gen2";
 
   @override
   Future<bool> isMagic(dynamic data) async {
@@ -99,10 +99,17 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicMagicCardHelper {
   }
 
   @override
-  Future<bool> writeData(CardSave card, dynamic update) async {
+  Future<bool> writeData(
+      CardSave card, Function(int writeProgress) update) async {
     List<Uint8List> data = card.data;
     List<bool> cleanSectors = List.generate(40, (index) => false);
     failedBlocks = [];
+
+    try {
+      await communicator.scan14443aTag();
+    } catch (e) {
+      return false;
+    }
 
     if (data.isEmpty || data[0].isEmpty) {
       if (data.isEmpty) {

@@ -14,9 +14,9 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
   bool get autoDetect => true;
 
   @override
-  String get name => "T55XX";
+  String get name => "t55xx";
 
-  static String get staticName => "T55XX";
+  static String get staticName => "t55xx";
   TextEditingController newKeyController = TextEditingController();
   TextEditingController currentKeyController = TextEditingController();
   String currentKey = "";
@@ -157,7 +157,8 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
   }
 
   @override
-  Future<bool> writeData(CardSave card, update) async {
+  Future<bool> writeData(
+      CardSave card, Function(int writeProgress) update) async {
     await communicator.writeEM410XtoT55XX(
         hexToBytes(card.uid), hexToBytes(newKey), [hexToBytes(currentKey)]);
     var newCard = await communicator.readEM410X();

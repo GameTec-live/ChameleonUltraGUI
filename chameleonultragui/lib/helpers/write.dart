@@ -2,6 +2,8 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/write/base.dart';
 import 'package:chameleonultragui/helpers/t55xx/write/base.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -41,9 +43,13 @@ abstract class AbstractWriteHelper {
 
   static AbstractWriteHelper? getClassByCardType(
       TagType type, ChameleonGUIState appState, void Function() update) {
-    if (chameleonTagTypeGetMfClassicType(type) != MifareClassicType.none) {
-      return BaseMifareClassicMagicCardHelper(appState.communicator!,
+    if (isMifareClassic(type)) {
+      return BaseMifareClassicWriteHelper(appState.communicator!,
           recovery: MifareClassicRecovery(appState: appState, update: update));
+    }
+
+    if (isMifareUltralight(type)) {
+      return BaseMifareUltralightWriteHelper(appState.communicator!);
     }
 
     if (type == TagType.em410X) {
@@ -53,7 +59,7 @@ abstract class AbstractWriteHelper {
     return null; // writing is not supported
   }
 
-  Future<bool> writeData(CardSave card, dynamic update);
+  Future<bool> writeData(CardSave card, Function(int writeProgress) update);
 
   Widget getWriteWidget(BuildContext context, dynamic setState);
 

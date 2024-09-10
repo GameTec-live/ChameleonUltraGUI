@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
+class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
   late MifareClassicRecovery recovery;
   late MifareClassicType type;
   late bool isEV1;
@@ -29,7 +29,7 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
   @override
   bool get autoDetect => true;
 
-  BaseMifareClassicMagicCardHelper(super.communicator,
+  BaseMifareClassicWriteHelper(super.communicator,
       {required this.recovery,
       this.type = MifareClassicType.m1k,
       this.isEV1 = false});
@@ -92,8 +92,15 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
   }
 
   @override
-  Future<bool> writeData(CardSave card, dynamic update) async {
+  Future<bool> writeData(
+      CardSave card, Function(int writeProgress) update) async {
     List<Uint8List> data = card.data;
+
+    try {
+      await communicator.scan14443aTag();
+    } catch (e) {
+      return false;
+    }
 
     if (data.isEmpty || data[0].isEmpty) {
       if (data.isEmpty) {
@@ -215,6 +222,12 @@ class BaseMifareClassicMagicCardHelper extends AbstractWriteHelper {
           setState(() {
             mfcInfo!.recovery = getExtraData()[0];
           });
+        } else {
+          setState(() {
+            hfInfo!.cardExist = false;
+          });
+
+          return;
         }
 
         setState(() {
