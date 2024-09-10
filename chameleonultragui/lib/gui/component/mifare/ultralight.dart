@@ -43,6 +43,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
   Future<void> readCard({bool withPassword = false}) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     var localizations = AppLocalizations.of(context)!;
+    Uint8List? pack;
     setState(() {
       cardData = [];
       error = "";
@@ -53,10 +54,10 @@ class CardReaderState extends State<MifareUltralightHelper> {
         page < mfUltralightGetPagesCount(widget.hfInfo.type);
         page++) {
       if (withPassword) {
-        Uint8List resp = await appState.communicator!.send14ARaw(
+        pack = await appState.communicator!.send14ARaw(
             Uint8List.fromList([0x1B, ...hexToBytes(keyController.text)]),
             keepRfField: true);
-        if (resp.length < 2) {
+        if (pack.length < 2) {
           setState(() {
             state = MifareUltralightState.none;
             error = localizations.invalid_password;
@@ -87,6 +88,9 @@ class CardReaderState extends State<MifareUltralightHelper> {
     int passwordPage = mfUltralightGetPasswordPage(widget.hfInfo.type);
     if (passwordPage != 0 && withPassword) {
       cardData[passwordPage] = hexToBytes(keyController.text);
+      for (var byte = 0; byte < pack!.length; byte++) {
+        cardData[passwordPage + 1][byte] = pack[byte];
+      }
     }
 
     setState(() {
