@@ -478,11 +478,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   : Icons.wifi,
                               iconColor: tag.color,
                               firstLine: tag.name.isEmpty ? "⠀" : tag.name,
-                              secondLine: chameleonTagToString(tag.tag) +
-                                  ((chameleonTagSaveCheckForMifareClassicEV1(
-                                          tag))
-                                      ? " EV1"
-                                      : ""),
+                              secondLine: chameleonCardToString(tag),
                               itemIndex: index,
                               onPressed: () {
                                 showDialog(

@@ -11,9 +11,9 @@ class MifareClassicGen3WriteHelper extends MifareClassicGen2WriteHelper {
   MifareClassicGen3WriteHelper(super.communicator, {required super.recovery});
 
   @override
-  String get name => "Gen3";
+  String get name => "gen3";
 
-  static String get staticName => "Gen3";
+  static String get staticName => "gen3";
 
   @override
   Future<bool> isMagic(dynamic data) async {

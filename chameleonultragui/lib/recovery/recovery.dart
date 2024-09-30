@@ -254,7 +254,7 @@ Future<SendPort> _helperIsolateSendPort = () async {
           pointer.ref.items = itemPointer;
           pointer.ref.count = i;
 
-          Pointer<Uint32> count = calloc();
+          Pointer<Uint64> count = calloc();
           count.value = 0;
           List<int> keys = [];
           final Pointer<Uint64> result = _bindings.darkside(pointer, count);

@@ -35,7 +35,7 @@ const localeNameMap = {
   "it": "Italiano",
   "ja": "日本語",
   "ko": "한국어",
-  "nl": "Dutch",
+  "nl": "Nederlands",
   "ar": "العربية ",
   "tr": "Türkçe",
   "pl": "Polski",
@@ -155,7 +155,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   selectedValue:
                       appState.sharedPreferencesProvider.getTheme().index,
                   onChange: (int index) async {
-                    appState.sharedPreferencesProvider.setTheme(ThemeMode.values[index]);
+                    appState.sharedPreferencesProvider
+                        .setTheme(ThemeMode.values[index]);
                     appState.changesMade();
                   }),
               const SizedBox(height: 10),
@@ -224,11 +225,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   },
                   items: AppLocalizations.supportedLocales.map((locale) {
                     return DropdownMenuItem(
-                      value: locale.toLanguageTag(),
-                      child: Text(
-                        localeNameMap[locale.toLanguageTag()] ?? "Unknown"
-                      )
-                    );
+                        value: locale.toLanguageTag(),
+                        child: Text(localeNameMap[locale.toLanguageTag()] ??
+                            "Unknown"));
                   }).toList(),
                 ),
               ),
@@ -242,8 +241,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                   const SizedBox(width: 5),
                   Switch(
-                    value: appState.sharedPreferencesProvider
-                        .getConfirmDelete(),
+                    value:
+                        appState.sharedPreferencesProvider.getConfirmDelete(),
                     onChanged: (value) async {
                       appState.sharedPreferencesProvider
                           .setConfirmDelete(value);
