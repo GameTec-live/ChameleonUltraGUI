@@ -2,6 +2,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_export.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -61,66 +62,102 @@ class CardViewMenuState extends State<CardViewMenu> {
               ),
             ],
           ),
-          ...(chameleonTagToFrequency(widget.tagSave.tag) == TagFrequency.hf)
-              ? [
-                  Row(
-                    children: [
-                      Text(
-                          "${localizations.sak}: ${widget.tagSave.sak == 0 ? localizations.unavailable : bytesToHex(u8ToBytes(widget.tagSave.sak))}"),
-                      IconButton(
-                        onPressed: () async {
-                          ClipboardData data = ClipboardData(
-                              text: widget.tagSave.sak == 0
-                                  ? localizations.unavailable
-                                  : bytesToHex(u8ToBytes(widget.tagSave.sak)));
-                          await Clipboard.setData(data);
-                        },
-                        icon: const Icon(Icons.copy),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Text(
-                          "${localizations.atqa}: ${widget.tagSave.atqa.isNotEmpty ? bytesToHexSpace(widget.tagSave.atqa) : localizations.unavailable}"),
-                      IconButton(
-                        onPressed: () async {
-                          ClipboardData data = ClipboardData(
-                              text: widget.tagSave.atqa.isNotEmpty
-                                  ? bytesToHex(widget.tagSave.atqa)
-                                  : localizations.unavailable);
-                          await Clipboard.setData(data);
-                        },
-                        icon: const Icon(Icons.copy),
-                      ),
-                    ],
-                  ),
-                  if (isMifareClassic(widget.tagSave.tag))
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                            onPressed: (mfClassicGetKeysFromDump(
-                                        widget.tagSave.data)
-                                    .isNotEmpty)
-                                ? () async {
-                                    List<Uint8List> keys =
-                                        mfClassicGetKeysFromDump(
-                                            widget.tagSave.data);
-                                    await showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return DictionaryExportMenu(keys: keys);
-                                      },
-                                    );
-                                  }
-                                : null,
-                            child: Text(localizations.export_to_dictionary)),
-                      ],
-                    )
-                ]
-              : [],
+          if (chameleonTagToFrequency(widget.tagSave.tag) ==
+              TagFrequency.hf) ...[
+            Row(
+              children: [
+                Text(
+                    "${localizations.sak}: ${bytesToHex(u8ToBytes(widget.tagSave.sak))}"),
+                IconButton(
+                  onPressed: () async {
+                    ClipboardData data = ClipboardData(
+                        text: widget.tagSave.sak == 0
+                            ? localizations.unavailable
+                            : bytesToHex(u8ToBytes(widget.tagSave.sak)));
+                    await Clipboard.setData(data);
+                  },
+                  icon: const Icon(Icons.copy),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Text(
+                    "${localizations.atqa}: ${widget.tagSave.atqa.isNotEmpty ? bytesToHexSpace(widget.tagSave.atqa) : localizations.unavailable}"),
+                IconButton(
+                  onPressed: () async {
+                    ClipboardData data = ClipboardData(
+                        text: widget.tagSave.atqa.isNotEmpty
+                            ? bytesToHex(widget.tagSave.atqa)
+                            : localizations.unavailable);
+                    await Clipboard.setData(data);
+                  },
+                  icon: const Icon(Icons.copy),
+                ),
+              ],
+            ),
+            if (isMifareClassic(widget.tagSave.tag))
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                      onPressed: (mfClassicGetKeysFromDump(widget.tagSave.data)
+                              .isNotEmpty)
+                          ? () async {
+                              List<Uint8List> keys =
+                                  mfClassicGetKeysFromDump(widget.tagSave.data);
+                              await showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return DictionaryExportMenu(keys: keys);
+                                },
+                              );
+                            }
+                          : null,
+                      child: Text(localizations.export_to_dictionary)),
+                ],
+              ),
+            if (isMifareUltralight(widget.tagSave.tag))
+              Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Row(
+                  children: [
+                    Text(
+                        "${localizations.ultralight_version}: ${widget.tagSave.extraData.ultralightVersion.isNotEmpty ? bytesToHexSpace(widget.tagSave.extraData.ultralightVersion) : localizations.unavailable}"),
+                    IconButton(
+                      onPressed: () async {
+                        ClipboardData data = ClipboardData(
+                            text: widget.tagSave.extraData.ultralightVersion
+                                    .isNotEmpty
+                                ? bytesToHexSpace(
+                                    widget.tagSave.extraData.ultralightVersion)
+                                : localizations.unavailable);
+                        await Clipboard.setData(data);
+                      },
+                      icon: const Icon(Icons.copy),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Text(
+                        "${localizations.ultralight_signature}: ${widget.tagSave.extraData.ultralightSignature.isNotEmpty ? bytesToHexSpace(widget.tagSave.extraData.ultralightSignature) : localizations.unavailable}"),
+                    IconButton(
+                      onPressed: () async {
+                        ClipboardData data = ClipboardData(
+                            text: widget.tagSave.extraData.ultralightVersion
+                                    .isNotEmpty
+                                ? bytesToHexSpace(
+                                    widget.tagSave.extraData.ultralightVersion)
+                                : localizations.unavailable);
+                        await Clipboard.setData(data);
+                      },
+                      icon: const Icon(Icons.copy),
+                    ),
+                  ],
+                ),
+              ])
+          ],
         ],
       )),
       actions: [
@@ -178,7 +215,8 @@ class CardViewMenuState extends State<CardViewMenu> {
               var confirm = await showDialog(
                 context: context,
                 builder: (BuildContext context) {
-                  return ConfirmDeletionMenu(thingBeingDeleted: widget.tagSave.name);
+                  return ConfirmDeletionMenu(
+                      thingBeingDeleted: widget.tagSave.name);
                 },
               );
 

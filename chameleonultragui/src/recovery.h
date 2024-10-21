@@ -64,7 +64,7 @@ typedef struct
     uint32_t ar1_enc; // second encrypted reader response
 } Mfkey32;
 
-FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint32_t *keyCount);
+FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint64_t *keyCount);
 
 FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *keyCount);
 

@@ -1,9 +1,11 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
-import 'package:chameleonultragui/gui/component/card_recovery.dart';
+import 'package:chameleonultragui/gui/component/mifare/classic.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
+import 'package:chameleonultragui/gui/component/mifare/ultralight.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -32,6 +34,7 @@ class HFCardInfo {
   String atqa;
   String tech;
   String ats;
+  TagType type;
   bool cardExist;
 
   HFCardInfo(
@@ -40,6 +43,7 @@ class HFCardInfo {
       this.atqa = '',
       this.tech = '',
       this.ats = '',
+      this.type = TagType.unknown,
       this.cardExist = true});
 }
 
@@ -105,11 +109,14 @@ class ReadCardPageState extends State<ReadCardPage> {
 
       CardData card = await appState.communicator!.scan14443aTag();
       bool isMifareClassic = false;
+      TagType type = TagType.unknown;
       MifareClassicType mifareClassicType = MifareClassicType.none;
 
       try {
         isMifareClassic = await appState.communicator!.detectMf1Support();
-        mifareClassicType = await mfClassicGetType(appState.communicator!);
+        if (isMifareClassic) {
+          mifareClassicType = await mfClassicGetType(appState.communicator!);
+        }
       } catch (_) {}
 
       bool isMifareClassicEV1 = isMifareClassic
@@ -126,6 +133,16 @@ class ReadCardPageState extends State<ReadCardPage> {
         });
       }
 
+      if (!isMifareClassic) {
+        Uint8List version =
+            await mfUltralightGetVersion(appState.communicator!);
+        if (version.length == 8) {
+          type = mfUltralightGetType(version);
+        }
+      } else {
+        type = mfClassicGetChameleonTagType(mifareClassicType);
+      }
+
       setState(() {
         hfInfo.uid = bytesToHexSpace(card.uid);
         hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
@@ -133,14 +150,14 @@ class ReadCardPageState extends State<ReadCardPage> {
         hfInfo.ats = (card.ats.isNotEmpty)
             ? bytesToHexSpace(card.ats)
             : localizations.no;
+        hfInfo.type = type;
         mfcInfo.isEV1 = isMifareClassicEV1;
         mfcInfo.type = mifareClassicType;
         mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
             ? MifareClassicState.checkKeys
             : MifareClassicState.none;
-        hfInfo.tech = isMifareClassic
-            ? "Mifare Classic ${mfClassicGetName(mfcInfo.type)}${isMifareClassicEV1 ? " EV1" : ""}"
-            : localizations.other;
+        hfInfo.tech =
+            chameleonTagToString(type) + (isMifareClassicEV1 ? " EV1" : "");
       });
     } catch (_) {
       setState(() {
@@ -341,8 +358,10 @@ class ReadCardPageState extends State<ReadCardPage> {
                           child: Text(localizations.save_only_uid),
                         ),
                       ],
-                      if (mfcInfo.type != MifareClassicType.none)
-                        CardRecovery(mfcInfo: mfcInfo, hfInfo: hfInfo)
+                      if (isMifareClassic(hfInfo.type))
+                        MifareClassicHelper(mfcInfo: mfcInfo, hfInfo: hfInfo),
+                      if (isMifareUltralight(hfInfo.type))
+                        MifareUltralightHelper(hfInfo: hfInfo)
                     ],
                   ),
                 ),
