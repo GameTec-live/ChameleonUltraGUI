@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
       - name: Load Secret
         uses: mobiledevops/secret-to-file-action@v1
         with:
