@@ -280,6 +280,12 @@ class WriteCardPageState extends State<WriteCardPage> {
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
+    var typeLocalization = {
+      'gen1': localizations.gen1,
+      'gen2': localizations.gen2,
+      'gen3': localizations.gen3,
+      't55xx': localizations.t55xx,
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -345,7 +351,8 @@ class WriteCardPageState extends State<WriteCardPage> {
                                       (AbstractWriteHelper helperClass) {
                                 return DropdownMenuItem<AbstractWriteHelper>(
                                   value: helperClass,
-                                  child: Text(helperClass.name),
+                                  child:
+                                      Text(typeLocalization[helperClass.name]!),
                                 );
                               }).toList(),
                               onChanged: (AbstractWriteHelper? helperClass) {

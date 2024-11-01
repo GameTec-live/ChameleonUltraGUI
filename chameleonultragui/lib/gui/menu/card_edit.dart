@@ -1,4 +1,4 @@
-import 'package:chameleonultragui/helpers/ntag/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -27,6 +27,8 @@ class CardEditMenuState extends State<CardEditMenu> {
   TextEditingController sakController = TextEditingController();
   TextEditingController atqaController = TextEditingController();
   TextEditingController atsController = TextEditingController();
+  TextEditingController ultralightVersionController = TextEditingController();
+  TextEditingController ultralightSignatureController = TextEditingController();
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -39,6 +41,10 @@ class CardEditMenuState extends State<CardEditMenu> {
     sakController.text = bytesToHexSpace(u8ToBytes(widget.tagSave.sak));
     atqaController.text = bytesToHexSpace(widget.tagSave.atqa);
     atsController.text = bytesToHexSpace(widget.tagSave.ats);
+    ultralightVersionController.text =
+        bytesToHexSpace(widget.tagSave.extraData.ultralightVersion);
+    ultralightSignatureController.text =
+        bytesToHexSpace(widget.tagSave.extraData.ultralightSignature);
     nameController.text = widget.tagSave.name;
     pickerColor = widget.tagSave.color;
     currentColor = widget.tagSave.color;
@@ -130,17 +136,8 @@ class CardEditMenuState extends State<CardEditMenu> {
               const SizedBox(height: 8),
               DropdownButton<TagType>(
                 value: selectedType,
-                items: [
-                  TagType.mifare1K,
-                  TagType.mifare2K,
-                  TagType.mifare4K,
-                  TagType.mifareMini,
-                  TagType.ntag213,
-                  TagType.ntag215,
-                  TagType.ntag216,
-                  TagType.em410X,
-                  TagType.unknown
-                ].map<DropdownMenuItem<TagType>>((TagType type) {
+                items: getTagTypes()
+                    .map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
                     value: type,
                     child: Text(
@@ -149,7 +146,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                   );
                 }).toList(),
                 onChanged: (TagType? newValue) {
-                  if (newValue != TagType.unknown && !isNTAG(newValue!)) {
+                  if (newValue! != TagType.unknown) {
                     setState(() {
                       selectedType = newValue;
                     });
@@ -252,6 +249,44 @@ class CardEditMenuState extends State<CardEditMenu> {
                               }
                               return null;
                             }),
+                        if (isMifareUltralight(selectedType)) ...[
+                          const SizedBox(height: 20),
+                          TextFormField(
+                              controller: ultralightVersionController,
+                              decoration: InputDecoration(
+                                  labelText: localizations.ultralight_version,
+                                  hintText: localizations.enter_something(
+                                      localizations.ultralight_version)),
+                              validator: (value) {
+                                if (value!.replaceAll(" ", "").length % 2 !=
+                                    0) {
+                                  return localizations.must_be_valid_hex;
+                                }
+
+                                if (value.isNotEmpty &&
+                                    value.replaceAll(" ", "").length != 16 &&
+                                    isMifareUltralight(selectedType)) {
+                                  return localizations.must_be(
+                                      8, localizations.ultralight_version);
+                                }
+
+                                return null;
+                              }),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                              controller: ultralightSignatureController,
+                              decoration: InputDecoration(
+                                  labelText: localizations.ultralight_signature,
+                                  hintText: localizations.enter_something(
+                                      localizations.ultralight_signature)),
+                              validator: (value) {
+                                if (value!.replaceAll(" ", "").length % 2 !=
+                                    0) {
+                                  return localizations.must_be_valid_hex;
+                                }
+                                return null;
+                              }),
+                        ]
                       ]))
                 ]),
               )
@@ -280,6 +315,12 @@ class CardEditMenuState extends State<CardEditMenu> {
                     : hexToBytes(sakController.text)[0],
                 atqa: hexToBytes(atqaController.text),
                 uid: bytesToHexSpace(hexToBytes(uidController.text)),
+                extraData: CardSaveExtra(
+                  ultralightSignature:
+                      hexToBytes(ultralightSignatureController.text),
+                  ultralightVersion:
+                      hexToBytes(ultralightVersionController.text),
+                ),
                 tag: selectedType,
                 data: widget.tagSave.data,
                 color: currentColor,

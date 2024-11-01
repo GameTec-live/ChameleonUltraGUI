@@ -30,7 +30,7 @@ class Recovery {
 
   ffi.Pointer<ffi.Uint64> darkside(
     ffi.Pointer<Darkside> data,
-    ffi.Pointer<ffi.Uint32> keyCount,
+    ffi.Pointer<ffi.Uint64> keyCount,
   ) {
     return _darkside(
       data,
@@ -41,10 +41,10 @@ class Recovery {
   late final _darksidePtr = _lookup<
       ffi.NativeFunction<
           ffi.Pointer<ffi.Uint64> Function(
-              ffi.Pointer<Darkside>, ffi.Pointer<ffi.Uint32>)>>('darkside');
+              ffi.Pointer<Darkside>, ffi.Pointer<ffi.Uint64>)>>('darkside');
   late final _darkside = _darksidePtr.asFunction<
       ffi.Pointer<ffi.Uint64> Function(
-          ffi.Pointer<Darkside>, ffi.Pointer<ffi.Uint32>)>();
+          ffi.Pointer<Darkside>, ffi.Pointer<ffi.Uint64>)>();
 
   ffi.Pointer<ffi.Uint64> nested(
     ffi.Pointer<Nested> data,

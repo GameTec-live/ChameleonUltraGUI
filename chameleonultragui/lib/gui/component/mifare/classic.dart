@@ -19,22 +19,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-class CardRecovery extends StatefulWidget {
+class MifareClassicHelper extends StatefulWidget {
   final HFCardInfo hfInfo;
   final MifareClassicInfo mfcInfo;
   final bool allowSave;
 
-  const CardRecovery(
+  const MifareClassicHelper(
       {super.key,
       required this.hfInfo,
       required this.mfcInfo,
       this.allowSave = true});
 
   @override
-  State<StatefulWidget> createState() => CardRecoveryState();
+  State<StatefulWidget> createState() => CardReaderState();
 }
 
-class CardRecoveryState extends State<CardRecovery> {
+class CardReaderState extends State<MifareClassicHelper> {
   String dumpName = "";
   bool skipDefaultDictionary = false;
 
@@ -47,7 +47,7 @@ class CardRecoveryState extends State<CardRecovery> {
     );
   }
 
-  Future<void> saveHFCard({bool bin = false, bool skipDump = false}) async {
+  Future<void> saveCard({bool bin = false, bool skipDump = false}) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
     List<int> cardDump = [];
@@ -396,7 +396,7 @@ class CardRecoveryState extends State<CardRecovery> {
                         actions: [
                           ElevatedButton(
                             onPressed: () async {
-                              await saveHFCard();
+                              await saveCard();
                               if (context.mounted) {
                                 Navigator.pop(context);
                               }
@@ -420,7 +420,7 @@ class CardRecoveryState extends State<CardRecovery> {
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: () async {
-                  await saveHFCard(bin: true);
+                  await saveCard(bin: true);
                 },
                 child: Text(localizations.save_as(".bin")),
               ),

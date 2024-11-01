@@ -1,7 +1,6 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
-import 'package:chameleonultragui/helpers/ntag/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:provider/provider.dart';
@@ -159,7 +158,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                   );
                 }).toList(),
                 onChanged: (TagType? newValue) {
-                  if (newValue != TagType.unknown && !isNTAG(newValue!)) {
+                  if (newValue! != TagType.unknown) {
                     setState(() {
                       selectedType = newValue;
                     });

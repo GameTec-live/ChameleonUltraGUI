@@ -1,6 +1,5 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 
@@ -157,10 +156,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
               color: card.color),
           title: Text(card.name),
           subtitle: Text(
-            chameleonTagToString(card.tag) +
-                ((chameleonTagSaveCheckForMifareClassicEV1(card))
-                    ? " EV1"
-                    : ""),
+            chameleonCardToString(card),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

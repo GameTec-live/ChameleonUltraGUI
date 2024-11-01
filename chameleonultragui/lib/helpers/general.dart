@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
@@ -117,15 +118,37 @@ String chameleonTagToString(TagType tag) {
     return "Mifare Classic 4K";
   } else if (tag == TagType.em410X) {
     return "EM410X";
+  } else if (tag == TagType.ntag210) {
+    return "NTAG210";
+  } else if (tag == TagType.ntag212) {
+    return "NTAG212";
   } else if (tag == TagType.ntag213) {
     return "NTAG213";
   } else if (tag == TagType.ntag215) {
     return "NTAG215";
   } else if (tag == TagType.ntag216) {
     return "NTAG216";
+  } else if (tag == TagType.ultralight) {
+    return "Ultralight";
+  } else if (tag == TagType.ultralightC) {
+    return "Ultralight C";
+  } else if (tag == TagType.ultralight11) {
+    return "Ultralight EV1 (20)";
+  } else if (tag == TagType.ultralight21) {
+    return "Ultralight EV1 (41)";
   } else {
     return "Unknown";
   }
+}
+
+String chameleonCardToString(CardSave card) {
+  String name = chameleonTagToString(card.tag);
+
+  if (chameleonTagSaveCheckForMifareClassicEV1(card)) {
+    name += " EV1";
+  }
+
+  return name;
 }
 
 TagType numberToChameleonTag(int type) {
@@ -139,15 +162,47 @@ TagType numberToChameleonTag(int type) {
     return TagType.mifare4K;
   } else if (type == TagType.em410X.value) {
     return TagType.em410X;
+  } else if (type == TagType.ntag210.value) {
+    return TagType.ntag210;
+  } else if (type == TagType.ntag212.value) {
+    return TagType.ntag212;
   } else if (type == TagType.ntag213.value) {
     return TagType.ntag213;
   } else if (type == TagType.ntag215.value) {
     return TagType.ntag215;
   } else if (type == TagType.ntag216.value) {
     return TagType.ntag216;
+  } else if (type == TagType.ultralight.value) {
+    return TagType.ultralight;
+  } else if (type == TagType.ultralight11.value) {
+    return TagType.ultralight11;
+  } else if (type == TagType.ultralight21.value) {
+    return TagType.ultralight21;
+  } else if (type == TagType.ultralightC.value) {
+    return TagType.ultralightC;
   } else {
     return TagType.unknown;
   }
+}
+
+List<TagType> getTagTypes() {
+  return [
+    TagType.mifare1K,
+    TagType.mifare2K,
+    TagType.mifare4K,
+    TagType.mifareMini,
+    TagType.em410X,
+    TagType.ultralight,
+    TagType.ultralightC,
+    TagType.ultralight11,
+    TagType.ultralight21,
+    TagType.ntag210,
+    TagType.ntag212,
+    TagType.ntag213,
+    TagType.ntag215,
+    TagType.ntag216,
+    TagType.unknown
+  ];
 }
 
 TagType getTagTypeByValue(int value) {
@@ -303,9 +358,15 @@ List<TagType> getTagTypeByFrequency(TagFrequency frequency) {
       TagType.mifare2K,
       TagType.mifare4K,
       TagType.mifareMini,
+      TagType.ntag210,
+      TagType.ntag212,
       TagType.ntag213,
       TagType.ntag215,
       TagType.ntag216,
+      TagType.ultralight,
+      TagType.ultralightC,
+      TagType.ultralight11,
+      TagType.ultralight21
     ];
   } else if (frequency == TagFrequency.lf) {
     return [TagType.em410X];

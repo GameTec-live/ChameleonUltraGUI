@@ -2,13 +2,13 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
 
-class MifareClassicGen1WriteHelper extends BaseMifareClassicMagicCardHelper {
+class MifareClassicGen1WriteHelper extends BaseMifareClassicWriteHelper {
   MifareClassicGen1WriteHelper(super.communicator, {required super.recovery});
 
   @override
-  String get name => "Gen1";
+  String get name => "gen1";
 
-  static String get staticName => "Gen1";
+  static String get staticName => "gen1";
 
   @override
   Future<bool> isMagic(dynamic data) async {

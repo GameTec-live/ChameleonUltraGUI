@@ -1,29 +1,9 @@
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
-    }
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id "dev.flutter.flutter-gradle-plugin"
 }
-
-def flutterRoot = localProperties.getProperty('flutter.sdk')
-if (flutterRoot == null) {
-    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
-}
-
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
-if (flutterVersionCode == null) {
-    flutterVersionCode = '1'
-}
-
-def flutterVersionName = localProperties.getProperty('flutter.versionName')
-if (flutterVersionName == null) {
-    flutterVersionName = '1.0'
-}
-
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
@@ -32,31 +12,28 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    compileSdkVersion Math.max(flutter.compileSdkVersion, 34)
-    ndkVersion flutter.ndkVersion
+    namespace = "io.chameleon.ultra"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
-    }
-
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
+        jvmTarget = JavaVersion.VERSION_1_8
     }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "io.chameleon.ultra"
+        applicationId = "io.chameleon.ultra"
         // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdkVersion 21
-        targetSdkVersion Math.max(flutter.targetSdkVersion, 34)
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
 
     signingConfigs {
@@ -66,19 +43,20 @@ android {
            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
            storePassword keystoreProperties['storePassword']
        }
-   }
-   buildTypes {
-       release {
-            if (keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']).exists() : false) {
-                println "Info: upload-keystore.jks found. Signing for release."
-                signingConfig signingConfigs.release
-            }
-            else {
-                println "Warning: upload-keystore.jks not found. Signing for debug."
-                signingConfig signingConfigs.debug
-            }
-       }
-   }
+    }
+
+    buildTypes {
+        release {
+                if (keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']).exists() : false) {
+                    println "Info: upload-keystore.jks found. Signing for release."
+                    signingConfig signingConfigs.release
+                }
+                else {
+                    println "Warning: upload-keystore.jks not found. Signing for debug."
+                    signingConfig signingConfigs.debug
+                }
+        }
+    }
 
     externalNativeBuild {
         cmake {
@@ -88,10 +66,9 @@ android {
 }
 
 flutter {
-    source '../..'
+    source = "../.."
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.polidea.rxandroidble2:rxandroidble:1.17.2"
 }
