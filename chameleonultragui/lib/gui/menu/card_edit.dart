@@ -317,9 +317,9 @@ class CardEditMenuState extends State<CardEditMenu> {
                 uid: bytesToHexSpace(hexToBytes(uidController.text)),
                 extraData: CardSaveExtra(
                   ultralightSignature:
-                      hexToBytes(ultralightVersionController.text),
-                  ultralightVersion:
                       hexToBytes(ultralightSignatureController.text),
+                  ultralightVersion:
+                      hexToBytes(ultralightVersionController.text),
                 ),
                 tag: selectedType,
                 data: widget.tagSave.data,

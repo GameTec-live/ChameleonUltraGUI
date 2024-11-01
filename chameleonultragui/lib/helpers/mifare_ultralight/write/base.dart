@@ -120,6 +120,10 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
       CardSave card, Function(int writeProgress) update) async {
     int totalBlocks = card.data.length;
 
+    if (!await communicator.isReaderDeviceMode()) {
+      await communicator.setReaderDeviceMode(true);
+    }
+
     try {
       await communicator.scan14443aTag();
     } catch (e) {
