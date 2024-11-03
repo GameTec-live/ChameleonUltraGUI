@@ -281,5 +281,16 @@
   "key": "Clau",
   "t55xx_key_prompt": "Introdu\u00efu la clau T55XX. La clau per defecte del Chameleon Ultra \u00e9s 20206666",
   "t55xx_new_key_prompt": "nova clau T55XX si voleu canviar-la",
-  "new_key": "Nova clau"
+  "new_key": "Nova clau",
+  "ultralight_key_prompt": "Clau Ultralight (Hex, 4 bytes)",
+  "read_with_key": "Llegir amb clau",
+  "read_without_key": "Llegir sense clau",
+  "invalid_password": "Contrasenya inv\u00e0lida",
+  "ultralight_version": "Versi\u00f3 Ultralight",
+  "ultralight_signature": "Signatura Ultralight",
+  "no_key": "Sense clau",
+  "gen1": "Gen1",
+  "gen2": "Gen2 / Gen\u00e8ric",
+  "gen3": "Gen3",
+  "t55xx": "T55XX"
 }
