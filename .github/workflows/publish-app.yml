@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
       - name: Load Secret
         uses: mobiledevops/secret-to-file-action@v1
         with:
@@ -102,8 +102,8 @@ jobs:
         working-directory: "./chameleonultragui"
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          app-store-connect fetch-signing-files run.chameleon.gui --platform MAC_OS  --type MAC_APP_STORE --certificate-key=@file:cert_key --create
-          app-store-connect list-certificates --type MAC_INSTALLER_DISTRIBUTION --certificate-key=@file:cert_key --save
+          app-store-connect fetch-signing-files run.chameleon.gui --platform MAC_OS --type MAC_APP_STORE --certificate-key=@file:cert_key --create
+          app-store-connect certificates list --type DISTRIBUTION --certificate-key=@file:cert_key --save
           keychain initialize
           keychain add-certificates
           xcode-project use-profiles
@@ -123,7 +123,7 @@ jobs:
           INSTALLER_CERT_NAME=$(keychain list-certificates \
                     | jq '[.[]
                       | select(.common_name
-                      | contains("Mac Developer Installer"))
+                      | contains("Apple Distribution"))
                       | .common_name][0]' \
                     | xargs)
           xcrun productsign --sign "$INSTALLER_CERT_NAME" unsigned.pkg "$PACKAGE_NAME"
@@ -216,53 +216,3 @@ jobs:
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect builds submit-to-testflight $BUILD_ID || true
           app-store-connect beta-groups add-build $BUILD_ID --beta-group="Open beta testing" || true
-# Skip automatically pushing to AUR...   
-  #build-aur: 
-  #  runs-on: ubuntu-latest
-  #  defaults:
-  #    run:
-  #      working-directory: ./chameleonultragui
-  #  steps:
-  #    - uses: actions/checkout@v3
-  #      with:
-  #        fetch-depth: 100
-  #    - uses: webfactory/ssh-agent@v0.8.0
-  #      with:
-  #        ssh-private-key: ${{ secrets.AUR_KEY }}
-  #    - name: configure ssh
-  #      run: |
-  #        mkdir -p ~/.ssh
-  #        ssh-keyscan -t rsa aur.archlinux.org >> ~/.ssh/known_hosts
-  #        echo -e "Host aur.archlinux.org\n\tStrictHostKeyChecking no\n\tUser aur" >> ~/.ssh/config
-  #    - name: configure git
-  #      run: |
-  #        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-  #        git config --global user.name "github-actions[bot]"
-  #    - run: cp ../release-PKGBUILD PKGBUILD
-  #      working-directory: "./chameleonultragui/"
-  #    - run: cp ../release-.SRCINFO .SRCINFO
-  #      working-directory: "./chameleonultragui/"
-  #    - name: Update pakagerel in PKGBUILD
-  #      run: sed -i "s/pkgrel=.*/pkgrel=${{ github.run_number }}/" PKGBUILD
-  #      working-directory: "./chameleonultragui/"       
-  #    - name: Update pkgrel in .SRCINFO
-  #      run: sed -i "s/pkgrel = .*/pkgrel = ${{ github.run_number }}/" .SRCINFO
-  #      working-directory: "./chameleonultragui/"
-  #    - name: clone aur
-  #      run: git -c init.defaultbranch=master clone ssh://aur@aur.archlinux.org/chameleonultragui.git
-  #      working-directory: "./chameleonultragui/"
-  #    - name: copy PKGBUILD
-  #      run: cp ../PKGBUILD ./
-  #      working-directory: "./chameleonultragui/chameleonultragui/"
-  #    - name: copy .SRCINFO
-  #      run: cp ../.SRCINFO ./
-  #      working-directory: "./chameleonultragui/chameleonultragui/"
-  #    - name: commit
-  #      run: |
-  #        git add PKGBUILD
-  #        git add .SRCINFO
-  #        git commit -m "Update to ${{ github.run_number }}"
-  #      working-directory: "./chameleonultragui/chameleonultragui/"
-  #    - name: push
-  #      run: git push
-  #      working-directory: "./chameleonultragui/chameleonultragui/"
