@@ -26,10 +26,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "io.chameleon.ultra"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -47,14 +44,14 @@ android {
 
     buildTypes {
         release {
-                if (keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']).exists() : false) {
-                    println "Info: upload-keystore.jks found. Signing for release."
-                    signingConfig signingConfigs.release
-                }
-                else {
-                    println "Warning: upload-keystore.jks not found. Signing for debug."
-                    signingConfig signingConfigs.debug
-                }
+            if (keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']).exists() : false) {
+                println "Info: upload-keystore.jks found. Signing for release."
+                signingConfig = signingConfigs.release
+            }
+            else {
+                println "Warning: upload-keystore.jks not found. Signing for debug."
+                signingConfig = signingConfigs.debug
+            }
         }
     }
 
