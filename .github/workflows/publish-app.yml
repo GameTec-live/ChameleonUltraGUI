@@ -67,7 +67,7 @@ jobs:
         run: fastlane production
         working-directory: "./chameleonultragui/"
   build-macos:
-    runs-on: macos-13
+    runs-on: macos-latest
     env:
         APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
@@ -85,7 +85,7 @@ jobs:
       - name: Install tools
         run: brew install automake libtool create-dmg
       - name: Install Codemagic
-        run: pip3 install codemagic-cli-tools
+        run: pip3 install codemagic-cli-tools --break-system-packages
       - name: Export private key
         uses: mobiledevops/secret-to-file-action@v1
         with:
@@ -103,7 +103,7 @@ jobs:
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect fetch-signing-files run.chameleon.gui --platform MAC_OS --type MAC_APP_STORE --certificate-key=@file:cert_key --create
-          app-store-connect certificates list --type DISTRIBUTION --certificate-key=@file:cert_key --save
+          app-store-connect certificates list --type MAC_INSTALLER_DISTRIBUTION --certificate-key=@file:cert_key --save 2>&1 | grep -q 'Did not find' && app-store-connect certificates create --type MAC_INSTALLER_DISTRIBUTION --certificate-key=@file:cert_key --save
           keychain initialize
           keychain add-certificates
           xcode-project use-profiles
@@ -123,7 +123,7 @@ jobs:
           INSTALLER_CERT_NAME=$(keychain list-certificates \
                     | jq '[.[]
                       | select(.common_name
-                      | contains("Apple Distribution"))
+                      | contains("Mac Developer Installer"))
                       | .common_name][0]' \
                     | xargs)
           xcrun productsign --sign "$INSTALLER_CERT_NAME" unsigned.pkg "$PACKAGE_NAME"
