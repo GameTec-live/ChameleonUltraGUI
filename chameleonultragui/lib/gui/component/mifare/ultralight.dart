@@ -88,6 +88,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
     int passwordPage = mfUltralightGetPasswordPage(widget.hfInfo.type);
     if (passwordPage != 0 && withPassword) {
       cardData[passwordPage] = hexToBytes(keyController.text);
+      cardData[passwordPage + 1] = Uint8List(4);
       for (var byte = 0; byte < pack!.length; byte++) {
         cardData[passwordPage + 1][byte] = pack[byte];
       }

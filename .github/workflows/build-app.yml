@@ -126,3 +126,18 @@ jobs:
       - name: Install tools
         run: brew install automake libtool create-dmg
       - run: flutter build macos --release
+
+  build-ios:
+    needs: check
+    runs-on: macos-13
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Install tools
+        run: brew install automake libtool create-dmg
+      - run: flutter build ios --release
