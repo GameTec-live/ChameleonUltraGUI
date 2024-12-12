@@ -140,4 +140,4 @@ jobs:
           channel: 'stable'
       - name: Install tools
         run: brew install automake libtool create-dmg
-      - run: flutter build ios --release 2>&1 | grep -q "Xcode build done" && exit 0 || exit 1
+      - run: flutter build ios --release 2>&1 | tee /dev/tty | grep -q "Xcode build done" && exit 0 || exit 1
