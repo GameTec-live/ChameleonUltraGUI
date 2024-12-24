@@ -277,6 +277,20 @@
   "confirm_deletion": "\u786e\u8ba4\u5220\u9664",
   "confirm_deletion_text": "\u786e\u5b9e\u8981\u5220\u9664 {name}?",
   "delete": "\u5220\u9664",
+  "total_keys": "\u5bc6\u94a5",
   "key": "\u5bc6\u94a5",
-  "new_key": "\u65b0\u5bc6\u94a5"
+  "t55xx_key_prompt": "\u5f53\u524dT55XX \u5bc6\u94a5\u3002\u9ed8\u8ba4CU \u5bc6\u94a5\u4e3a2020666",
+  "t55xx_new_key_prompt": "\u65b0\u7684 T55XX \u5bc6\u94a5 \u5982\u679c\u4f60\u60f3\u8981\u66f4\u6539\u5b83",
+  "new_key": "\u65b0\u5bc6\u94a5",
+  "ultralight_key_prompt": "Ultralight\u5bc6\u94a5 (HEX, 4 \u5b57\u8282)",
+  "read_with_key": "\u4f7f\u7528\u5bc6\u94a5\u8bfb\u53d6",
+  "read_without_key": "\u4e0d\u4f7f\u7528\u5bc6\u94a5\u8bfb\u53d6",
+  "invalid_password": "\u5bc6\u7801\u65e0\u6548",
+  "ultralight_version": "Ultralight\u7248\u672c",
+  "ultralight_signature": "Ultralight\u7b7e\u540d",
+  "no_key": "\u6ca1\u6709\u5bc6\u94a5",
+  "gen1": "Gen1",
+  "gen2": "Gen2 / Generic",
+  "gen3": "Gen3",
+  "t55xx": "T55XX"
 }
