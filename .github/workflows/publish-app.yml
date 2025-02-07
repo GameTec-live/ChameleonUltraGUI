@@ -41,7 +41,7 @@ jobs:
           channel: 'stable'
       - run: flutter pub get
       - run: flutter build appbundle --build-number ${{ github.run_number }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: appbundle
           path: chameleonultragui/build/app/outputs/bundle/release/app-release.aab
