@@ -310,9 +310,15 @@ class _MainPageState extends State<MainPage> {
                       )
                     : const SizedBox(),
                 Expanded(
-                  child: Container(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    child: page,
+                  child: SafeArea(
+                    left: false,
+                    right: false,
+                    top: false,
+                    bottom: true,
+                    child: Container(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      child: page,
+                    ),
                   ),
                 ),
               ],
