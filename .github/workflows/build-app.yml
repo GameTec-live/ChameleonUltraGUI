@@ -32,7 +32,7 @@ jobs:
           channel: 'stable'
       - run: flutter pub get
       - run: flutter build apk --build-number ${{ github.run_number }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: apk
           path: chameleonultragui/build/app/outputs/flutter-apk/app-release.apk
@@ -51,7 +51,7 @@ jobs:
       - run: flutter config --enable-windows-desktop
       - run: flutter build windows --build-number ${{ github.run_number }}
       - run: flutter test
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: windows
           path: chameleonultragui/build/windows/x64/runner/Release/
@@ -59,7 +59,7 @@ jobs:
         uses: joncloud/makensis-action@v4
         with:
           script-file: nsis-installer.nsi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: windows-installer
           path: chameleonultragui-setup-win.exe
@@ -79,13 +79,13 @@ jobs:
       - run: flutter config --enable-linux-desktop
       - run: flutter build linux --build-number ${{ github.run_number }}
       - run: flutter test
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: linux
           path: chameleonultragui/build/linux/x64/release
       - run: dart pub global activate flutter_to_debian
       - run: flutter_to_debian
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: linux-debian
           path: chameleonultragui/build/linux/x64/release/debian
@@ -105,7 +105,7 @@ jobs:
       - run: flutter config --enable-linux-desktop
       - run: flutter build linux --build-number ${{ github.run_number }}
       - run: flutter test
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: linux-legacy
           path: chameleonultragui/build/linux/x64/release
