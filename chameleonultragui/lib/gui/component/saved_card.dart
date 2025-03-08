@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -62,19 +63,7 @@ class SavedCardState extends State<SavedCard> {
         constraints: BoxConstraints(maxHeight: !shouldMoveIcons() ? 90 : 130),
         child: ElevatedButton(
             onPressed: widget.onPressed,
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                (Set<WidgetState> states) {
-                  return appState.sharedPreferencesProvider
-                      .getThemeComplementaryColor();
-                },
-              ),
-              shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18.0),
-                ),
-              ),
-            ),
+            style: customCardButtonStyle(appState),
             child: Padding(
               padding: const EdgeInsets.only(top: 8.0, left: 8.0, bottom: 6.0),
               child: Column(

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
 import 'package:chameleonultragui/gui/component/key_check_marks.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_export.dart';
@@ -201,6 +202,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                               }
                             }
                           : null,
+                      style: customCardButtonStyle(appState),
                       child: Text(localizations.recover_keys),
                     ),
                     if (widget.allowSave) ...[
@@ -232,6 +234,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                                 }
                               }
                             : null,
+                        style: customCardButtonStyle(appState),
                         child: Text(localizations.dump_partial_data),
                       )
                     ],
@@ -240,6 +243,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                       onPressed: () async {
                         await exportFoundKeys();
                       },
+                      style: customCardButtonStyle(appState),
                       child: Text(localizations.export_to_dictionary),
                     ),
                   ])),
@@ -328,6 +332,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                       }
                     }
                   : null,
+              style: customCardButtonStyle(appState),
               child: Text(localizations.check_keys_dict),
             )
           ]),
@@ -369,6 +374,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                   onPressed: () async {
                     await exportFoundKeys();
                   },
+                  style: customCardButtonStyle(appState),
                   child: Text(localizations.export_to_dictionary),
                 ),
               ])),
@@ -415,6 +421,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                     },
                   );
                 },
+                style: customCardButtonStyle(appState),
                 child: Text(localizations.save),
               ),
               const SizedBox(width: 8),
@@ -422,6 +429,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                 onPressed: () async {
                   await saveCard(bin: true);
                 },
+                style: customCardButtonStyle(appState),
                 child: Text(localizations.save_as(".bin")),
               ),
             ])),

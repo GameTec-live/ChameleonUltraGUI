@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -155,6 +156,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
 
   @override
   Widget build(BuildContext context) {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     var localizations = AppLocalizations.of(context)!;
 
     return Column(
@@ -254,6 +256,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
                       },
                     );
                   },
+                  style: customCardButtonStyle(appState),
                   child: Text(localizations.save),
                 ),
                 const SizedBox(width: 8),
@@ -261,6 +264,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
                   onPressed: () async {
                     await saveCard(bin: true);
                   },
+                  style: customCardButtonStyle(appState),
                   child: Text(localizations.save_as(".bin")),
                 ),
               ])),
