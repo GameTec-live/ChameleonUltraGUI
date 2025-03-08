@@ -110,7 +110,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
                 leading: Icon(
                     (chameleonTagToFrequency(card.tag) == TagFrequency.hf)
                         ? Icons.credit_card
-                        : Icons.wifi,
+                        : Icons.contactless,
                     color: card.color),
                 title: Text(
                   card.name,
@@ -152,7 +152,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
           leading: Icon(
               (chameleonTagToFrequency(card.tag) == TagFrequency.hf)
                   ? Icons.credit_card
-                  : Icons.wifi,
+                  : Icons.contactless,
               color: card.color),
           title: Text(card.name),
           subtitle: Text(
