@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/mifare/classic.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
 import 'package:chameleonultragui/gui/component/mifare/ultralight.dart';
@@ -315,6 +316,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                             appState.changesMade();
                           }
                         },
+                        style: customCardButtonStyle(appState),
                         child: Text(localizations.read),
                       ),
                       if (hfInfo.uid != "") ...[
@@ -355,6 +357,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                               },
                             );
                           },
+                          style: customCardButtonStyle(appState),
                           child: Text(localizations.save_only_uid),
                         ),
                       ],
@@ -424,6 +427,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                             appState.changesMade();
                           }
                         },
+                        style: customCardButtonStyle(appState),
                         child: Text(localizations.read),
                       ),
                       if (lfInfo.uid != "") ...[
@@ -464,6 +468,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                               },
                             );
                           },
+                          style: customCardButtonStyle(appState),
                           child: Text(localizations.save),
                         ),
                       ],
