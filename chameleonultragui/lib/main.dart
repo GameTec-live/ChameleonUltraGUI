@@ -260,13 +260,13 @@ class _MainPageState extends State<MainPage> {
                           destinations: [
                             // Sidebar Items
                             NavigationRailDestination(
-                              icon: const Icon(Icons.home),
+                              icon: const Icon(Icons.home_outlined),
                               label: Text(
                                   AppLocalizations.of(context)!.home), // Home
                             ),
                             NavigationRailDestination(
                               disabled: !appState.connector!.connected,
-                              icon: const Icon(Icons.widgets),
+                              icon: const Icon(Icons.widgets_outlined),
                               label: Text(
                                   AppLocalizations.of(context)!.slot_manager),
                             ),
@@ -278,24 +278,24 @@ class _MainPageState extends State<MainPage> {
                             ),
                             NavigationRailDestination(
                               disabled: !appState.connector!.connected,
-                              icon: const Icon(Icons.wifi),
+                              icon: const Icon(Icons.sensors_outlined),
                               label:
                                   Text(AppLocalizations.of(context)!.read_card),
                             ),
                             NavigationRailDestination(
                               disabled: !appState.connector!.connected,
-                              icon: const Icon(Icons.credit_card),
+                              icon: const Icon(Icons.input),
                               label: Text(
                                   AppLocalizations.of(context)!.write_card),
                             ),
                             NavigationRailDestination(
-                              icon: const Icon(Icons.settings),
+                              icon: const Icon(Icons.settings_outlined),
                               label:
                                   Text(AppLocalizations.of(context)!.settings),
                             ),
                             if (appState.devMode)
                               NavigationRailDestination(
-                                icon: const Icon(Icons.bug_report),
+                                icon: const Icon(Icons.bug_report_outlined),
                                 label: Text(
                                     '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
                               ),
