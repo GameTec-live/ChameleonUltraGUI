@@ -84,7 +84,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                               (chameleonTagToFrequency(widget.tagSave.tag) ==
                                       TagFrequency.hf)
                                   ? Icons.credit_card
-                                  : Icons.contactless,
+                                  : Icons.contactless_outlined,
                               color: currentColor),
                           onPressed: () async {
                             showDialog(

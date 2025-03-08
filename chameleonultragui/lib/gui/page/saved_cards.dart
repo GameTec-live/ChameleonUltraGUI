@@ -475,7 +475,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                               icon: (chameleonTagToFrequency(tag.tag) ==
                                       TagFrequency.hf)
                                   ? Icons.credit_card
-                                  : Icons.contactless,
+                                  : Icons.contactless_outlined,
                               iconColor: tag.color,
                               firstLine: tag.name.isEmpty ? "⠀" : tag.name,
                               secondLine: chameleonCardToString(tag),
