@@ -321,7 +321,7 @@ class WriteCardPageState extends State<WriteCardPage> {
                                 (chameleonTagToFrequency(card!.tag) ==
                                         TagFrequency.hf)
                                     ? Icons.credit_card
-                                    : Icons.contactless_outlined,
+                                    : Icons.wifi,
                                 color: card!.color),
                           )
                         : null,

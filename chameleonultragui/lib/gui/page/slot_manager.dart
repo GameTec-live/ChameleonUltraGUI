@@ -362,7 +362,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.start,
                                           children: [
-                                            const Icon(Icons.contactless_outlined),
+                                            const Icon(Icons.wifi),
                                             const SizedBox(width: 5),
                                             Expanded(
                                                 child: Text(
