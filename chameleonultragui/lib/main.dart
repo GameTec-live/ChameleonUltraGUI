@@ -284,7 +284,7 @@ class _MainPageState extends State<MainPage> {
                             ),
                             NavigationRailDestination(
                               disabled: !appState.connector!.connected,
-                              icon: const Icon(Icons.input),
+                              icon: const Icon(Icons.system_update_alt),
                               label: Text(
                                   AppLocalizations.of(context)!.write_card),
                             ),
