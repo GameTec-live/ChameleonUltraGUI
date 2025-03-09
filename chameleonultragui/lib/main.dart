@@ -272,19 +272,19 @@ class _MainPageState extends State<MainPage> {
                             ),
                             NavigationRailDestination(
                               icon: const Icon(
-                                  Icons.auto_awesome_motion_outlined),
+                                  Icons.auto_awesome_motion),
                               label: Text(
                                   AppLocalizations.of(context)!.saved_cards),
                             ),
                             NavigationRailDestination(
                               disabled: !appState.connector!.connected,
-                              icon: const Icon(Icons.wifi),
+                              icon: const Icon(Icons.sensors),
                               label:
                                   Text(AppLocalizations.of(context)!.read_card),
                             ),
                             NavigationRailDestination(
                               disabled: !appState.connector!.connected,
-                              icon: const Icon(Icons.credit_card),
+                              icon: const Icon(Icons.system_update_alt),
                               label: Text(
                                   AppLocalizations.of(context)!.write_card),
                             ),
