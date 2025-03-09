@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/saved_card.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
 import 'package:chameleonultragui/gui/menu/card_view.dart';
@@ -440,19 +441,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                         }
                       }
                     },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                        (Set<WidgetState> states) {
-                          return appState.sharedPreferencesProvider
-                              .getThemeComplementaryColor();
-                        },
-                      ),
-                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
+                    style: customCardButtonStyle(appState),
                     child: const Icon(Icons.add),
                   ),
                 )
@@ -629,19 +618,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                         appState.changesMade();
                       }
                     },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                        (Set<WidgetState> states) {
-                          return appState.sharedPreferencesProvider
-                              .getThemeComplementaryColor();
-                        },
-                      ),
-                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
+                    style: customCardButtonStyle(appState),
                     child: const Icon(Icons.add),
                   ),
                 )
