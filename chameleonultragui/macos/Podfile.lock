@@ -6,7 +6,7 @@ PODS:
     - libserialport
   - FlutterMacOS (1.0.0)
   - libserialport (0.1.1)
-  - mobile_scanner (5.1.1):
+  - mobile_scanner (5.2.3):
     - FlutterMacOS
   - package_info_plus (0.0.1):
     - FlutterMacOS
@@ -62,18 +62,18 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/wakelock_plus/macos
 
 SPEC CHECKSUMS:
-  file_saver: 44e6fbf666677faf097302460e214e977fdd977b
-  flutter_libserialport: d1a505fd4b05785f7b50cc7c93b361937ea1c5bd
+  file_saver: e35bd97de451dde55ff8c38862ed7ad0f3418d0f
+  flutter_libserialport: 2c523cb8d8203fc6d1b0da88190da31ac970eb93
   FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
   libserialport: 1cb25e66ef3c92a8e59c2ea3820302c3fa2268cd
-  mobile_scanner: 1efac1e53c294b24e3bb55bcc7f4deee0233a86b
-  package_info_plus: fa739dd842b393193c5ca93c26798dff6e3d0e0c
-  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
-  recovery: 3dd1b9b85ac8e7f017ef8f6a3caea297d8559924
-  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
-  url_launcher_macos: 5f437abeda8c85500ceb03f5c1938a8c5a705399
-  wakelock_plus: 4783562c9a43d209c458cb9b30692134af456269
+  mobile_scanner: bd1e7cd9b67b442f4d903747f4778e040513f860
+  package_info_plus: f0052d280d17aa382b932f399edf32507174e870
+  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
+  recovery: e29d1a7599793733296fc8e92e424dc4e8149cc2
+  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  url_launcher_macos: 0fba8ddabfc33ce0a9afe7c5fef5aab3d8d2d673
+  wakelock_plus: 21ddc249ac4b8d018838dbdabd65c5976c308497
 
 PODFILE CHECKSUM: 58eeb33b8e458bd5d682f8fe36f300c258f4d19a
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

@@ -35,8 +35,8 @@ dependencies:
 
   flutter_libserialport:
     git:
-      url: https://github.com/snabble/flutter_libserialport.git # FIXME: When https://github.com/jpnurmi/flutter_libserialport/pull/109 merged, switch back to proper package
-      ref: 0.5.0
+      url: https://github.com/NeariX67/flutter_libserialport.git # FIXME: When https://github.com/jpnurmi/flutter_libserialport/pull/127 merged, switch back to proper package
+      ref: main
   provider: ^6.0.5
   logger: ^2.0.1
   convert: ^3.1.1
