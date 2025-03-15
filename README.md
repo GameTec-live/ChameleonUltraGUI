@@ -64,6 +64,8 @@ It is also highly recommended to either uninstall or disable ModemManager (`sudo
 ## Contributing
 Contributions are welcome, most stuff that needs to be done can either be found in our [issues](https://github.com/GameTec-live/ChameleonUltraGUI/issues) or on the [Project board](https://github.com/users/GameTec-live/projects/2)
 
+### Special thanks to [St.Ricky](https://github.com/Saint-Ricky) for designing the App icons
+
 ## Translations
 
 If you want to collaborate by adding your language to the application, you can do it through [our Crowdin project](https://crowdin.com/project/chameleonultragui). Do not contribute files into `chameleonultragui/lib/l10n/app_*.arb`. All translations should be added only to Crowdin. If your language is missing, you can create issue and ask to enable it. "Chameleon Ultra GUI", "Chameleon" and other trademarks should not be translated.

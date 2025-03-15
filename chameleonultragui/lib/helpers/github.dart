@@ -40,6 +40,12 @@ List<Map<String, String>> developers = [
     'avatarUrl': 'https://avatars.githubusercontent.com/u/40019177',
     'username': 'aruznieto'
   },
+  {
+    'name': 'St.Ricky',
+    'description': 'Icon designer',
+    'avatarUrl': 'https://avatars.githubusercontent.com/u/192366376',
+    'username': 'Saint-Ricky'
+  }
 ];
 
 List<String> excludedAccounts = ["github-actions[bot]", "ChameleonHelper"];
