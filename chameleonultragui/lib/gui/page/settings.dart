@@ -18,7 +18,7 @@ import 'package:chameleonultragui/gui/menu/qrcode_import.dart';
 import 'package:chameleonultragui/gui/menu/qrcode_settings.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 //TODO: remove and use a language provided string
 const localeNameMap = {

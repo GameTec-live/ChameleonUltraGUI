@@ -8,7 +8,7 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class CardEditMenu extends StatefulWidget {
   final CardSave tagSave;

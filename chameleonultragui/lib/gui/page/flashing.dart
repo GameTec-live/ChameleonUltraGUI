@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class FlashingPage extends StatelessWidget {
   const FlashingPage({super.key});

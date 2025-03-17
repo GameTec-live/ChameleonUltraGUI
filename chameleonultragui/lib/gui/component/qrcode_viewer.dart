@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 List<String> splitStringIntoQrChunks(String str, int chunkSize) {
   List<String> chunks = [];

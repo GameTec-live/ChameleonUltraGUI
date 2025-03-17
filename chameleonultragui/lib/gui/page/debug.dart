@@ -11,7 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class DebugPage extends StatelessWidget {
   // Home Page

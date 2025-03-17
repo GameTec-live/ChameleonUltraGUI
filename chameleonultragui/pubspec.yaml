@@ -41,7 +41,7 @@ dependencies:
   logger: ^2.0.1
   convert: ^3.1.1
   shared_preferences: ^2.2.1
-  ffigen: ^16.0.0
+  ffigen: ^18.0.0
   dylib: ^0.3.3
   ffi: ^2.1.0
   usb_serial:
