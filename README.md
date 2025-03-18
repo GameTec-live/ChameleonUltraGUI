@@ -48,7 +48,7 @@ Key:
 - apk: Android APK, download and install either via ADB or your app/file manager of choice
 - linux: zip file containing the linux build, either run the binary manually or install using cmake
 - linux-legacy: same as `linux`, but built on Ubuntu 20.04 LTS. Suited for users on old glibc
-- linux-debian: Debain Auto Packaging, download and install with dpkg
+- linux-debian: Debian Auto Packaging, download and install with dpkg or apt
 - windows: zip file containing windows build, run the binary manually
 - windows-installer: NSIS based Windows Installer, Installs the Windows build and creates Shortcuts
 
