@@ -58,3 +58,4 @@ android/fastlane/report.xml
 
 # Translation
 untranslated_messages.json
+lib/generated/i18n/

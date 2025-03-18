@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class ConfirmDeletionMenu extends StatefulWidget {
   final String thingBeingDeleted;
@@ -23,7 +23,8 @@ class ConfirmDeletionMenuState extends State<ConfirmDeletionMenu> {
           child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Text(localizations.confirm_deletion_text("\"${widget.thingBeingDeleted}\"")),
+          Text(localizations
+              .confirm_deletion_text("\"${widget.thingBeingDeleted}\"")),
         ],
       )),
       actions: [

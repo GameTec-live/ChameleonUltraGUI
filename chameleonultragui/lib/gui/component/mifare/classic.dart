@@ -17,7 +17,7 @@ import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 class MifareClassicHelper extends StatefulWidget {

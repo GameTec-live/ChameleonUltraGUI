@@ -22,7 +22,7 @@ import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});

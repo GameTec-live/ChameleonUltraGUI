@@ -25,7 +25,7 @@ import 'package:chameleonultragui/gui/page/write_card.dart';
 import 'package:chameleonultragui/gui/page/pending_connection.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 // Shared Preferences Provider
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -271,8 +271,7 @@ class _MainPageState extends State<MainPage> {
                                   AppLocalizations.of(context)!.slot_manager),
                             ),
                             NavigationRailDestination(
-                              icon: const Icon(
-                                  Icons.auto_awesome_motion),
+                              icon: const Icon(Icons.auto_awesome_motion),
                               label: Text(
                                   AppLocalizations.of(context)!.saved_cards),
                             ),

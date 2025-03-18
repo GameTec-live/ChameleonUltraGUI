@@ -11,7 +11,7 @@ import 'package:chameleonultragui/gui/component/slot_changer.dart';
 import 'dart:math';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

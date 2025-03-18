@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 Future<void> asyncSleep(int milliseconds) async {
@@ -211,7 +211,7 @@ TagType getTagTypeByValue(int value) {
 }
 
 String colorToHex(Color color) {
-  return '#${color.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+  return '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
 }
 
 Color hexToColor(String hex) {

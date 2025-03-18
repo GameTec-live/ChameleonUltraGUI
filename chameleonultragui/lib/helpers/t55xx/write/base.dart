@@ -5,7 +5,7 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class BaseT55XXCardHelper extends AbstractWriteHelper {
   LFCardInfo? lfInfo;

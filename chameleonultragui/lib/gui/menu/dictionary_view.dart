@@ -12,7 +12,7 @@ import 'package:file_saver/file_saver.dart';
 import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class DictionaryViewMenu extends StatefulWidget {
   final Dictionary dictionary;

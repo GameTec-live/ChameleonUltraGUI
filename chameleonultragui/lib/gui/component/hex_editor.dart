@@ -3,7 +3,7 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'dart:typed_data';
 
 // Localizations
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class HexEdit extends StatefulWidget {
   final List<Uint8List> data;

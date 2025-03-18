@@ -10,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 class AndroidSerial extends AbstractSerial {
   late BLESerial bleSerial = BLESerial(log: log);
   late MobileSerial mobileSerial = MobileSerial(log: log);
+  Future<bool>? permissionRequestFuture;
 
   AndroidSerial({required super.log});
 
@@ -42,27 +43,30 @@ class AndroidSerial extends AbstractSerial {
   }
 
   Future<bool> checkPermissions() async {
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.location,
-      Permission.bluetoothScan,
-      Permission.bluetoothAdvertise,
-      Permission.bluetoothConnect
-    ].request();
-    for (var status in statuses.entries) {
-      if (status.key == Permission.location) {
-        if (!status.value.isGranted) return false;
-      } else if (status.key == Permission.bluetoothScan) {
-        if (!status.value.isGranted) return false;
-      } else if (status.key == Permission.bluetoothAdvertise) {
-        if (!status.value.isGranted) return false;
-      } else if (status.key == Permission.bluetoothConnect) {
-        if (!status.value.isGranted) return false;
-      }
-
-      return true;
+    if (permissionRequestFuture != null) {
+      return await permissionRequestFuture!;
     }
 
-    return false;
+    final completer = Completer<bool>();
+    permissionRequestFuture = completer.future;
+
+    try {
+      final statuses = await [
+        Permission.location,
+        Permission.bluetoothScan,
+        Permission.bluetoothAdvertise,
+        Permission.bluetoothConnect
+      ].request();
+
+      final allGranted = statuses.values.every((status) => status.isGranted);
+      completer.complete(allGranted);
+      return allGranted;
+    } catch (e) {
+      completer.completeError(e);
+      rethrow;
+    } finally {
+      permissionRequestFuture = null;
+    }
   }
 
   @override
