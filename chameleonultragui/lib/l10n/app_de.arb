@@ -279,5 +279,18 @@
   "delete": "L\u00f6schen",
   "total_keys": "Schl\u00fcssel",
   "key": "Schl\u00fcssel",
-  "t55xx_key_prompt": "T55XX Schl\u00fcssel eingeben. Der Standard des CU ist 20206666"
+  "t55xx_key_prompt": "T55XX Schl\u00fcssel eingeben. Der Standard des CU ist 20206666",
+  "t55xx_new_key_prompt": "neuer T55XX Schl\u00fcssel, wenn Sie ihn \u00e4ndern m\u00f6chten",
+  "new_key": "Neuer Schl\u00fcssel",
+  "ultralight_key_prompt": "Ultralight Schl\u00fcssel (HEX, 4 Bytes)",
+  "read_with_key": "Mit Schl\u00fcssel lesen",
+  "read_without_key": "Ohne Schl\u00fcssel lesen",
+  "invalid_password": "Ung\u00fcltiges Passwort",
+  "ultralight_version": "Ultralight Version",
+  "ultralight_signature": "Ultralight Signatur",
+  "no_key": "Kein Schl\u00fcssel",
+  "gen1": "Gen1",
+  "gen2": "Gen2 / Generisch",
+  "gen3": "Gen3",
+  "t55xx": "T55XX"
 }
