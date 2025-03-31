@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 Future<List<String>> fetchOpenCollectiveContributors() async {
   final Uri url = Uri.parse('https://api.opencollective.com/graphql/v2');
@@ -28,8 +29,9 @@ Future<List<String>> fetchOpenCollectiveContributors() async {
 
     return contributorsList;
   } catch (e) {
-    List<String> error = [e.toString()];
-    return error;
+    Logger log = Logger();
+    log.d(e.toString());
+    return [""];
   }
 }
 
@@ -44,6 +46,8 @@ Future<double> fetchOpenCollectiveBalance() async {
     final json = jsonDecode(response.body);
     return json["data"]["account"]["stats"]["balance"];
   } catch (e) {
+    Logger log = Logger();
+    log.d(e.toString());
     return 0;
   }
 }
