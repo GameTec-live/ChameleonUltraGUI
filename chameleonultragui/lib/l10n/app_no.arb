@@ -276,5 +276,21 @@
   "confirm_deletions": "Bekreft slettingen",
   "confirm_deletion": "Bekreft sletting",
   "confirm_deletion_text": "Er du sikker p\u00e5 at du vil slette denne {name}?",
-  "delete": "Slett"
+  "delete": "Slett",
+  "total_keys": "n\u00f8kkel(n\u00f8kler)",
+  "key": "N\u00f8kkel",
+  "t55xx_key_prompt": "gjeldende T55XX n\u00f8kkel. Standard CU n\u00f8kkel er 20206666",
+  "t55xx_new_key_prompt": "ny T55XX n\u00f8kkel, hvis du vil endre den",
+  "new_key": "Ny n\u00f8kkel",
+  "ultralight_key_prompt": "Ultralight n\u00f8kkel (HEX, 4 bytes)",
+  "read_with_key": "Les med n\u00f8kkel",
+  "read_without_key": "Les uten n\u00f8kkel",
+  "invalid_password": "Ugyldig passord",
+  "ultralight_version": "Ultralight versjon",
+  "ultralight_signature": "Ultralight signatur",
+  "no_key": "Ingen n\u00f8kkel",
+  "gen1": "Gen1",
+  "gen2": "Gen2 / Generisk",
+  "gen3": "Gen3",
+  "t55xx": "T55XX"
 }
