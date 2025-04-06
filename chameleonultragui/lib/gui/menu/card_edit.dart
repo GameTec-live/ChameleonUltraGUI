@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/menu/hex_edit.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -295,6 +296,27 @@ class CardEditMenuState extends State<CardEditMenu> {
         ),
       ),
       actions: [
+        Visibility(
+          visible: chameleonTagToFrequency(selectedType) != TagFrequency.lf,
+          child: TextButton(
+              onPressed: () async {
+                final data = await showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return HexEditMenu(
+                      tagSave: widget.tagSave,
+                    );
+                  },
+                );
+
+                if (data != null) {
+                  setState(() {
+                    widget.tagSave.data = data;
+                  });
+                }
+              },
+              child: Text("Edit Hex")),
+        ),
         TextButton(
           onPressed: () {
             Navigator.pop(context);
