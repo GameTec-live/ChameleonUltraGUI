@@ -208,24 +208,25 @@ class ConnectPage extends StatelessWidget {
                           }),
                         ]),
                   ),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Row(
-                      children: [
-                        const Spacer(),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: IconButton(
-                            onPressed: () => showDialog<String>(
-                                context: context,
-                                builder: (BuildContext dialogContext) =>
-                                    const ManualConnect()),
-                            icon: const Icon(Icons.add),
+                  if (appState.connector!.isManualConnectionSupported())
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Row(
+                        children: [
+                          const Spacer(),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: IconButton(
+                              onPressed: () => showDialog<String>(
+                                  context: context,
+                                  builder: (BuildContext dialogContext) =>
+                                      const ManualConnect()),
+                              icon: const Icon(Icons.add),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

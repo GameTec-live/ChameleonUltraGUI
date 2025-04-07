@@ -12,6 +12,11 @@ class NativeSerial extends AbstractSerial {
 
   NativeSerial({required super.log});
 
+  @override
+  bool isManualConnectionSupported() {
+    return true;
+  }
+
   Future<List> availableDevices() async {
     return SerialPort.availablePorts;
   }

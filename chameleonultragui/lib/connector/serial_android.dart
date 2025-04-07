@@ -22,6 +22,11 @@ class AndroidSerial extends AbstractSerial {
   }
 
   @override
+  bool isManualConnectionSupported() {
+    return false;
+  }
+
+  @override
   Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
     List<Chameleon> output = [];
 

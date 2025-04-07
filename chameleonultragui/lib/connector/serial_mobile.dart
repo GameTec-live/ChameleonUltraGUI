@@ -13,6 +13,11 @@ class MobileSerial extends AbstractSerial {
   MobileSerial({required super.log});
 
   @override
+  bool isManualConnectionSupported() {
+    return false;
+  }
+
+  @override
   Future<bool> performDisconnect() async {
     device = ChameleonDevice.none;
     connectionType = ConnectionType.none;
