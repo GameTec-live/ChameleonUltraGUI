@@ -297,5 +297,6 @@
   "hardnested_calculating_key": "Calculating key...",
   "connect_manually": "Connect manually",
   "port": "Port",
-  "port_hint": "e.g. COM3, /dev/ttyUSB0"
+  "port_hint": "e.g. COM3, /dev/ttyUSB0",
+  "invalid_input": "One of the fields is filled in incorrectly"
 }
