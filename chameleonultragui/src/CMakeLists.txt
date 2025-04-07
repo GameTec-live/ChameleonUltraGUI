@@ -10,7 +10,17 @@ set(COMMON_FILES
     ${SRC_DIR}/crypto1.c
     ${SRC_DIR}/bucketsort.c
     ${SRC_DIR}/mfkey.c
-    ${SRC_DIR}/parity.c)
+    ${SRC_DIR}/parity.c
+    ${SRC_DIR}/hardnested/cmdhfmfhard.c
+    ${SRC_DIR}/hardnested/pm3/commonutil.c
+    ${SRC_DIR}/hardnested/pm3/ui.c
+    ${SRC_DIR}/hardnested/pm3/util_posix.c
+    ${SRC_DIR}/hardnested/pm3/util.c
+    ${SRC_DIR}/hardnested/hardnested/tables.c
+    ${SRC_DIR}/hardnested/hardnested/hardnested_bruteforce.c
+    ${SRC_DIR}/hardnested/hardnested/hardnested_bitarray_core.c
+    ${SRC_DIR}/hardnested/hardnested/hardnested_bf_core.c
+    )
 
 include_directories(
     ${SRC_DIR}/
@@ -23,6 +33,14 @@ add_library(recovery SHARED
   "bucketsort.c"
   "mfkey.c"
   "parity.c"
+  "hardnested/pm3/commonutil.c"
+  "hardnested/pm3/ui.c"
+  "hardnested/pm3/util_posix.c"
+  "hardnested/pm3/util.c"
+  "hardnested/hardnested/tables.c"
+  "hardnested/hardnested/hardnested_bruteforce.c"
+  "hardnested/hardnested/hardnested_bitarray_core.c"
+  "hardnested/hardnested/hardnested_bf_core.c"
 )
 
 add_compile_options(-O3 -Ofast)

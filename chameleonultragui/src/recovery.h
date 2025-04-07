@@ -64,6 +64,12 @@ typedef struct
     uint32_t ar1_enc; // second encrypted reader response
 } Mfkey32;
 
+typedef struct
+{
+    char *nonces;
+    uint32_t length;
+} HardNested;
+
 FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint64_t *keyCount);
 
 FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *keyCount);
@@ -71,3 +77,5 @@ FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *keyCount);
 FFI_PLUGIN_EXPORT uint64_t *static_nested(StaticNested *data, uint32_t *keyCount);
 
 FFI_PLUGIN_EXPORT uint64_t mfkey32(Mfkey32 *data);
+
+FFI_PLUGIN_EXPORT uint64_t hardnested(HardNested *data);

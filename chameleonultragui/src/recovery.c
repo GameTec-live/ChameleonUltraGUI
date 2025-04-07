@@ -18,6 +18,8 @@
 #include <sys/param.h>
 #endif
 
+#include "hardnested/cmdhfmfhard.c"
+
 #define MEM_CHUNK 10000
 #define TRY_KEYS 50
 
@@ -48,6 +50,13 @@ typedef struct
   uint32_t startPos;
   uint32_t endPos;
 } RecPar;
+
+FFI_PLUGIN_EXPORT uint64_t hardnested(HardNested *data)
+{
+  uint64_t foundkey = 0;
+  mfnestedhard(0, 0, NULL, 0, 0, NULL, false, false, false, &foundkey, data->nonces, data->length);
+  return foundkey;
+}
 
 FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint64_t *outputKeyCount)
 {

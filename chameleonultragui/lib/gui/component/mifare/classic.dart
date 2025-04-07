@@ -153,6 +153,18 @@ class CardReaderState extends State<MifareClassicHelper> {
           LinearProgressIndicator(value: widget.mfcInfo.recovery?.dumpProgress),
           const SizedBox(height: 8)
         ],
+        if (widget.mfcInfo.recovery?.hardnestedProgress != null) ...[
+          Text(widget.mfcInfo.recovery?.hardnestedProgress == 1.0
+              ? localizations.hardnested_calculating_key
+              : localizations.hardnested_collecting_nonces(
+                  (widget.mfcInfo.recovery!.hardnestedProgress! * 256)
+                      .toInt()
+                      .toString())),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+              value: widget.mfcInfo.recovery?.hardnestedProgress),
+          const SizedBox(height: 12)
+        ],
         if (widget.mfcInfo.state == MifareClassicState.recovery ||
             widget.mfcInfo.state == MifareClassicState.recoveryOngoing)
           FittedBox(
@@ -367,6 +379,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                           }
                         }
                       : null,
+                  style: customCardButtonStyle(appState),
                   child: Text(localizations.dump_card),
                 ),
                 const SizedBox(width: 8),

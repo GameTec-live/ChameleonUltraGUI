@@ -292,5 +292,7 @@
   "gen1": "Gen1",
   "gen2": "Gen2 / Generic",
   "gen3": "Gen3",
-  "t55xx": "T55XX"
+  "t55xx": "T55XX",
+  "hardnested_collecting_nonces": "Collecting required nonces {nonces}/256...",
+  "hardnested_calculating_key": "Calculating key..."
 }
