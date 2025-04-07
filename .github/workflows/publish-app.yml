@@ -111,7 +111,7 @@ jobs:
         working-directory: "./chameleonultragui"
         run: |
           sudo chown -R $USER . && sudo chmod -R a+rwx .
-          flutter build macos --release --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
+          flutter build macos --release --build-number ${{ github.run_number }} --build-name "1.2.${{ github.run_number }}"
           sudo chown -R $USER . && sudo chmod -R a+rwx .
       - name: Sign package
         working-directory: "./chameleonultragui"
@@ -145,7 +145,7 @@ jobs:
         working-directory: "./chameleonultragui"
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
+          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.2.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.2.${{ github.run_number }}" $BUILD_ID
       - name: Submit to TestFlight
         working-directory: "./chameleonultragui"
         run: |
@@ -191,7 +191,7 @@ jobs:
       - name: Build app
         working-directory: "./chameleonultragui"
         run: |
-          flutter build ipa --release --export-options-plist=$HOME/export_options.plist --build-number ${{ github.run_number }} --build-name "1.0.${{ github.run_number }}"
+          flutter build ipa --release --export-options-plist=$HOME/export_options.plist --build-number ${{ github.run_number }} --build-name "1.2.${{ github.run_number }}"
       - name: Upload app to App Store
         working-directory: "./chameleonultragui"
         run: |
@@ -209,7 +209,7 @@ jobs:
         working-directory: "./chameleonultragui"
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=IOS --version-string="1.0.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.0.${{ github.run_number }}" $BUILD_ID
+          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=IOS --version-string="1.2.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.2.${{ github.run_number }}" $BUILD_ID
       - name: Submit to TestFlight
         working-directory: "./chameleonultragui"
         run: |
