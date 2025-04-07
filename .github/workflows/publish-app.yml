@@ -83,7 +83,7 @@ jobs:
       - name: Enable macOS
         run: flutter config --enable-macos-desktop
       - name: Install tools
-        run: brew install automake libtool create-dmg
+        run: brew install automake libtool create-dmg xz
       - name: Install Codemagic
         run: pip3 install codemagic-cli-tools --break-system-packages
       - name: Export private key
@@ -165,7 +165,7 @@ jobs:
         with:
           channel: 'stable'
       - name: Install tools
-        run: brew install automake libtool create-dmg
+        run: brew install automake libtool create-dmg xz
       - name: Install Codemagic
         run: pip3 install codemagic-cli-tools
       - name: Export private key
