@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/gui/menu/manual_connect.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
@@ -207,6 +208,25 @@ class ConnectPage extends StatelessWidget {
                           }),
                         ]),
                   ),
+                  if (appState.connector!.isManualConnectionSupported())
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Row(
+                        children: [
+                          const Spacer(),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: IconButton(
+                              onPressed: () => showDialog<String>(
+                                  context: context,
+                                  builder: (BuildContext dialogContext) =>
+                                      const ManualConnect()),
+                              icon: const Icon(Icons.add),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -77,6 +77,11 @@ class BLESerial extends AbstractSerial {
   }
 
   @override
+  bool isManualConnectionSupported() {
+    return false;
+  }
+
+  @override
   Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
     List<Chameleon> output = [];
     for (var bleDevice in await availableDevices()) {
