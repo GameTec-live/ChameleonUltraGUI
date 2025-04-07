@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 class HexEditMenu extends StatefulWidget {
   final CardSave tagSave;
 
-  const HexEditMenu({Key? key, required this.tagSave}) : super(key: key);
+  const HexEditMenu({super.key, required this.tagSave});
 
   @override
   HexEditMenuState createState() => HexEditMenuState();
@@ -16,6 +16,7 @@ class HexEditMenu extends StatefulWidget {
 
 class HexEditMenuState extends State<HexEditMenu> {
   TextEditingController textController = TextEditingController();
+  int currentIndex = 0;
 
   @override
   void initState() {
@@ -25,7 +26,6 @@ class HexEditMenuState extends State<HexEditMenu> {
 
     // Diplay data. Every 16 bytes in a row
     for (Uint8List sector in data) {
-      displayText += "\n";
       for (int i = 0; i < sector.length; i += 16) {
         if (i % 64 == 0 && i != 0) {
           displayText += "\n";
@@ -37,6 +37,8 @@ class HexEditMenuState extends State<HexEditMenu> {
       }
     }
     textController.text = displayText;
+    textController.selection =
+        TextSelection(baseOffset: currentIndex, extentOffset: currentIndex + 1);
   }
 
   @override
@@ -56,7 +58,6 @@ class HexEditMenuState extends State<HexEditMenu> {
       title: Text("Edit HEX"),
       content: SingleChildScrollView(
           child: FocusScope(
-        autofocus: true,
         onKeyEvent: (node, event) {
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.enter) {
@@ -64,6 +65,64 @@ class HexEditMenuState extends State<HexEditMenu> {
               return KeyEventResult.handled;
             } else if (event.logicalKey == LogicalKeyboardKey.escape) {
               return KeyEventResult.ignored;
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              setState(() {
+                if (currentIndex < textController.text.length - 1) {
+                  currentIndex += 48;
+                  if (textController.text[currentIndex] == "\n" ||
+                      textController.text[currentIndex] == " ") {
+                    currentIndex++;
+                  }
+                  if (currentIndex > textController.text.length - 1) {
+                    currentIndex = textController.text.length - 1;
+                  }
+                }
+                textController.selection = TextSelection(
+                    baseOffset: currentIndex, extentOffset: currentIndex + 1);
+              });
+              return KeyEventResult.handled;
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+              setState(() {
+                if (currentIndex > 0) {
+                  currentIndex -= 48;
+                  if (textController.text[currentIndex] == "\n" ||
+                      textController.text[currentIndex] == " ") {
+                    currentIndex--;
+                  }
+                  if (currentIndex < 0) {
+                    currentIndex = 0;
+                  }
+                }
+                textController.selection = TextSelection(
+                    baseOffset: currentIndex, extentOffset: currentIndex + 1);
+              });
+              return KeyEventResult.handled;
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+              setState(() {
+                if (currentIndex > 0) {
+                  if (textController.text[currentIndex] == "\n" ||
+                      textController.text[currentIndex] == " ") {
+                    currentIndex--;
+                  }
+                  currentIndex--;
+                }
+                textController.selection = TextSelection(
+                    baseOffset: currentIndex, extentOffset: currentIndex + 1);
+              });
+              return KeyEventResult.handled;
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+              setState(() {
+                if (currentIndex < textController.text.length - 1) {
+                  currentIndex++;
+                  if (textController.text[currentIndex] == "\n" ||
+                      textController.text[currentIndex] == " ") {
+                    currentIndex++;
+                  }
+                }
+                textController.selection = TextSelection(
+                    baseOffset: currentIndex, extentOffset: currentIndex + 1);
+              });
+              return KeyEventResult.handled;
             }
             print("Key pressed: ${event.logicalKey}");
             return KeyEventResult.handled;
@@ -73,6 +132,7 @@ class HexEditMenuState extends State<HexEditMenu> {
         child: Column(
           children: [
             TextField(
+              autofocus: true,
               controller: textController,
               keyboardType: TextInputType.multiline,
               maxLines: null,
