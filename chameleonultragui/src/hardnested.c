@@ -22,7 +22,7 @@
 //   Computer and Communications Security, 2015
 //-----------------------------------------------------------------------------
 
-#include "cmdhfmfhard.h"
+#include "hardnested.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,8 +36,8 @@
 #include "pm3/commonutil.h" // ARRAYLEN
 #include "pm3/ui.h"
 #include "pm3/util_posix.h"
-#include "../crapto1.h"
-#include "../parity.h"
+#include "crapto1.h"
+#include "parity.h"
 #include "hardnested/tables.h"
 #include "hardnested/hardnested_bruteforce.h"
 #include "hardnested/hardnested_bf_core.h"
@@ -2327,7 +2327,6 @@ int mfnestedhard(uint8_t blockNo, uint8_t keyType, uint8_t *key, uint8_t trgBloc
     init_it_all();
 
     srand((unsigned)time(NULL));
-    // brute_force_per_second = brute_force_benchmark();
     brute_force_per_second = 0;
     write_stats = false;
 

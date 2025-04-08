@@ -18,7 +18,7 @@
 #include <sys/param.h>
 #endif
 
-#include "hardnested/cmdhfmfhard.c"
+#include "hardnested.h"
 
 #define MEM_CHUNK 10000
 #define TRY_KEYS 50

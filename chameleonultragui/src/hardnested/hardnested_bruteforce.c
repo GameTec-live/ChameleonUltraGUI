@@ -57,13 +57,13 @@ THE SOFTWARE.
 #include <stdlib.h>
 
 #include "../pm3/common.h"
-#include "../cmdhfmfhard.h"
+#include "../hardnested.h"
 #include "hardnested_bf_core.h"
 #include "../pm3/ui.h"
 #include "../pm3/util.h"
 #include "../pm3/util_posix.h"
-#include "../../crapto1.h"
-#include "../../parity.h"
+#include "../crapto1.h"
+#include "../parity.h"
 #include "hardnested_benchmark_data.h"
 
 #define NUM_BRUTE_FORCE_THREADS (num_CPUs())
@@ -429,138 +429,4 @@ bool brute_force_bs(float *bf_rate, statelist_t *candidates, uint32_t cuid, uint
         *found_key = found_bs_key;
 
     return (keys_found != 0);
-}
-
-static bool read_bench_data(statelist_t *test_candidates)
-{
-
-    size_t bytes_read = 0;
-    uint32_t temp = 0;
-    uint32_t num_states = 0;
-    uint32_t states_read = 0;
-
-    FILE *benchfile = fmemopen(client_resources_hardnested_bf_bench_data_bin, client_resources_hardnested_bf_bench_data_bin_len, "rb");
-    if (benchfile == NULL)
-    {
-        return false;
-    }
-
-    // read 4 bytes of data ?
-    bytes_read = fread(&nonces_to_bruteforce, 1, sizeof(uint32_t), benchfile);
-    if (bytes_read != sizeof(uint32_t) || (nonces_to_bruteforce >= 256))
-    {
-        fclose(benchfile);
-        return false;
-    }
-
-    for (uint32_t i = 0; i < nonces_to_bruteforce && i < 256; i++)
-    {
-        bytes_read = fread(&bf_test_nonce[i], 1, sizeof(uint32_t), benchfile);
-        if (bytes_read != sizeof(uint32_t))
-        {
-            fclose(benchfile);
-            return false;
-        }
-        bf_test_nonce_2nd_byte[i] = (bf_test_nonce[i] >> 16) & 0xff;
-        bytes_read = fread(&bf_test_nonce_par[i], 1, sizeof(uint8_t), benchfile);
-        if (bytes_read != sizeof(uint8_t))
-        {
-            fclose(benchfile);
-            return false;
-        }
-    }
-
-    bytes_read = fread(&num_states, 1, sizeof(uint32_t), benchfile);
-    if (bytes_read != sizeof(uint32_t))
-    {
-        fclose(benchfile);
-        return false;
-    }
-
-    for (states_read = 0; states_read < MIN(num_states, TEST_BENCH_SIZE); states_read++)
-    {
-        bytes_read = fread(test_candidates->states[EVEN_STATE] + states_read, 1, sizeof(uint32_t), benchfile);
-        if (bytes_read != sizeof(uint32_t))
-        {
-            fclose(benchfile);
-            return false;
-        }
-    }
-
-    for (uint32_t i = states_read; i < TEST_BENCH_SIZE; i++)
-    {
-        test_candidates->states[EVEN_STATE][i] = test_candidates->states[EVEN_STATE][i - states_read];
-    }
-
-    for (uint32_t i = states_read; i < num_states; i++)
-    {
-        bytes_read = fread(&temp, 1, sizeof(uint32_t), benchfile);
-        if (bytes_read != sizeof(uint32_t))
-        {
-            fclose(benchfile);
-            return false;
-        }
-    }
-
-    for (states_read = 0; states_read < MIN(num_states, TEST_BENCH_SIZE); states_read++)
-    {
-        bytes_read = fread(test_candidates->states[ODD_STATE] + states_read, 1, sizeof(uint32_t), benchfile);
-        if (bytes_read != sizeof(uint32_t))
-        {
-            fclose(benchfile);
-            return false;
-        }
-    }
-
-    for (uint32_t i = states_read; i < TEST_BENCH_SIZE; i++)
-    {
-        test_candidates->states[ODD_STATE][i] = test_candidates->states[ODD_STATE][i - states_read];
-    }
-
-    fclose(benchfile);
-    return true;
-}
-
-float brute_force_benchmark(void)
-{
-    const int num_brute_force_threads = NUM_BRUTE_FORCE_THREADS;
-    statelist_t test_candidates[num_brute_force_threads];
-
-    test_candidates[0].states[ODD_STATE] = calloc(1, (TEST_BENCH_SIZE + 1) * sizeof(uint32_t));
-    test_candidates[0].states[EVEN_STATE] = calloc(1, (TEST_BENCH_SIZE + 1) * sizeof(uint32_t));
-    for (uint32_t i = 0; i < num_brute_force_threads - 1; i++)
-    {
-        test_candidates[i].next = test_candidates + i + 1;
-        test_candidates[i + 1].states[ODD_STATE] = test_candidates[0].states[ODD_STATE];
-        test_candidates[i + 1].states[EVEN_STATE] = test_candidates[0].states[EVEN_STATE];
-    }
-    test_candidates[num_brute_force_threads - 1].next = NULL;
-
-    if (!read_bench_data(test_candidates))
-    {
-        PrintAndLogEx(NORMAL, "Couldn't read benchmark data. Assuming brute force rate of %1.0f states per second", DEFAULT_BRUTE_FORCE_RATE);
-        free(test_candidates[0].states[ODD_STATE]);
-        free(test_candidates[0].states[EVEN_STATE]);
-        return DEFAULT_BRUTE_FORCE_RATE;
-    }
-
-    for (uint32_t i = 0; i < num_brute_force_threads; i++)
-    {
-        test_candidates[i].len[ODD_STATE] = TEST_BENCH_SIZE;
-        test_candidates[i].len[EVEN_STATE] = TEST_BENCH_SIZE;
-        test_candidates[i].states[ODD_STATE][TEST_BENCH_SIZE] = -1;
-        test_candidates[i].states[EVEN_STATE][TEST_BENCH_SIZE] = -1;
-    }
-
-    uint64_t maximum_states = TEST_BENCH_SIZE * TEST_BENCH_SIZE * (uint64_t)num_brute_force_threads;
-
-    float bf_rate;
-    uint64_t found_key = 0;
-    brute_force_bs(&bf_rate, test_candidates, 0, 0, maximum_states, NULL, 0, &found_key);
-
-    free(test_candidates[0].states[ODD_STATE]);
-    free(test_candidates[0].states[EVEN_STATE]);
-    test_candidates[0].len[ODD_STATE] = 0;
-    test_candidates[0].len[EVEN_STATE] = 0;
-    return bf_rate;
 }

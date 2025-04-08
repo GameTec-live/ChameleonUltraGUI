@@ -57,8 +57,8 @@ THE SOFTWARE.
 #endif
 #include <stdio.h>
 #include <string.h>
-#include "../../crapto1.h"
-#include "../../parity.h"
+#include "../crapto1.h"
+#include "../parity.h"
 #include "../pm3/ui.h" // PrintAndLogEx
 // #include "common.h"
 
