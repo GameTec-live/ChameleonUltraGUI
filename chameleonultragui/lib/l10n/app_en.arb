@@ -295,5 +295,6 @@
   "t55xx": "T55XX",
   "connect_manually": "Connect manually",
   "port": "Port",
-  "port_hint": "e.g. COM3, /dev/ttyUSB0"
+  "port_hint": "e.g. COM3, /dev/ttyUSB0",
+  "force_device_type": "Force device type. This is not recommended and may cause issues."
 }

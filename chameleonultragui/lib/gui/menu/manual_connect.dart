@@ -16,7 +16,7 @@ class ManualConnect extends StatefulWidget {
 
 class ManualConnectState extends State<ManualConnect> {
   TextEditingController portController = TextEditingController();
-  ChameleonDevice type = ChameleonDevice.ultra;
+  ChameleonDevice type = ChameleonDevice.none;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +34,28 @@ class ManualConnectState extends State<ManualConnect> {
               labelText: localizations.port,
               hintText: localizations.port_hint,
             ),
+          ),
+          const SizedBox(height: 20),
+          Text(localizations.force_device_type),
+          DropdownButton<ChameleonDevice>(
+            value: type,
+            items: ChameleonDevice.values.map((ChameleonDevice device) {
+              if (device == ChameleonDevice.none) {
+                return DropdownMenuItem<ChameleonDevice>(
+                  value: device,
+                  child: Text(localizations.auto),
+                );
+              }
+              return DropdownMenuItem<ChameleonDevice>(
+                value: device,
+                child: Text(device.name),
+              );
+            }).toList(),
+            onChanged: (ChameleonDevice? newValue) {
+              setState(() {
+                type = newValue!;
+              });
+            },
           ),
         ],
       ),
@@ -53,6 +75,9 @@ class ManualConnectState extends State<ManualConnect> {
 
             await appState.connector!
                 .connectSpecificDevice(portController.text);
+            if (type != ChameleonDevice.none) {
+              appState.connector!.device = type;
+            }
             appState.communicator =
                 ChameleonCommunicator(appState.log!, port: appState.connector);
             appState.connector!.pendingConnection = false;
