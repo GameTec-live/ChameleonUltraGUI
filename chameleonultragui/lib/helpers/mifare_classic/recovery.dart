@@ -22,6 +22,7 @@ class MifareClassicRecovery {
   List<Uint8List> validKeys;
   List<Uint8List> cardData;
   double dumpProgress;
+  double? hardnestedProgress;
   void Function() update;
 
   MifareClassicRecovery(
@@ -236,13 +237,6 @@ class MifareClassicRecovery {
       update();
 
       var prng = await appState.communicator!.getMf1NTLevel();
-      if (prng == NTLevel.hard) {
-        // No hardnested implementation yet
-        error = "not_supported";
-
-        return;
-      }
-
       var validKey = Uint8List(0);
       var validKeyBlock = 0;
       var validKeyType = 0;
@@ -277,13 +271,27 @@ class MifareClassicRecovery {
             bool found = false;
             for (var i = 0; i < 0xFF && !found; i++) {
               List<int> keys = [];
-              if (prng == NTLevel.weak) {
-                var nonces = await appState.communicator!.getMf1NestedNonces(
+              NestedNonces nonces;
+              if (prng == NTLevel.hard) {
+                hardnestedProgress = 0;
+                update();
+                nonces = await collectHardnestedNonces(
                     validKeyBlock,
                     0x60 + validKeyType,
                     validKey,
                     mfClassicGetSectorTrailerBlockBySector(sector),
                     0x60 + keyType);
+              } else {
+                nonces = await appState.communicator!.getMf1NestedNonces(
+                    validKeyBlock,
+                    0x60 + validKeyType,
+                    validKey,
+                    mfClassicGetSectorTrailerBlockBySector(sector),
+                    0x60 + keyType,
+                    level: prng);
+              }
+
+              if (prng == NTLevel.weak) {
                 var nested = NestedDart(
                     uid: distance.uid,
                     distance: distance.distance,
@@ -296,13 +304,6 @@ class MifareClassicRecovery {
 
                 keys = await recovery.nested(nested);
               } else if (prng == NTLevel.static) {
-                var nonces = await appState.communicator!.getMf1NestedNonces(
-                    validKeyBlock,
-                    0x60 + validKeyType,
-                    validKey,
-                    mfClassicGetSectorTrailerBlockBySector(sector),
-                    0x60 + keyType,
-                    isStaticNested: true);
                 var nested = StaticNestedDart(
                   uid: distance.uid,
                   keyType: 0x60 + validKeyType,
@@ -313,6 +314,11 @@ class MifareClassicRecovery {
                 );
 
                 keys = await recovery.staticNested(nested);
+              } else if (prng == NTLevel.hard) {
+                var nested =
+                    HardNestedDart(nonces: nonces.getHardNested(distance.uid));
+                keys = await recovery.hardNested(nested);
+                hardnestedProgress = null;
               }
 
               if (keys.isNotEmpty) {
@@ -424,5 +430,51 @@ class MifareClassicRecovery {
         }
       }
     }
+  }
+
+  Future<NestedNonces> collectHardnestedNonces(int block, int keyType,
+      Uint8List knownKey, int targetBlock, int targetKeyType) async {
+    NestedNonces nonces = NestedNonces(nonces: []);
+    while (true) {
+      var collectedNonces = await appState.communicator!.getMf1NestedNonces(
+          block, keyType, knownKey, targetBlock, targetKeyType,
+          level: NTLevel.hard);
+      nonces.nonces.addAll(collectedNonces.nonces);
+      List info = nonces.getNoncesInfo();
+      appState.log!.d(
+          "Collected ${nonces.nonces.length} nonces, sum ${info[0]}, num ${info[1]}");
+      hardnestedProgress = info[1] / 256;
+      update();
+      if (info[1] == 256) {
+        if ([
+          0,
+          32,
+          56,
+          64,
+          80,
+          96,
+          104,
+          112,
+          120,
+          128,
+          136,
+          144,
+          152,
+          160,
+          176,
+          192,
+          200,
+          224,
+          256
+        ].contains(info[0])) {
+          break;
+        }
+
+        appState.log!.e("Got wrong sum, trying to collect nonces again...");
+        nonces.nonces = [];
+      }
+    }
+
+    return nonces;
   }
 }

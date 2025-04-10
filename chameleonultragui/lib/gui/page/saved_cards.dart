@@ -375,9 +375,31 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         }
                                         blocks.add(contents.sublist(i, i + 16));
                                       }
+
                                       var tags = appState
                                           .sharedPreferencesProvider
                                           .getCards();
+
+                                      if (sak4Controller.text.length != 2 ||
+                                          atqa4Controller.text.length != 5) {
+                                        return showDialog(
+                                          context: context,
+                                          barrierDismissible: true,
+                                          builder: (_) => AlertDialog(
+                                              title: Text(localizations.error),
+                                              actions: [
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: Text(localizations.ok),
+                                                ),
+                                              ],
+                                              content: Text(
+                                                  localizations.invalid_input)),
+                                        );
+                                      }
+
                                       var tag = CardSave(
                                           name: nameController.text,
                                           sak: hexToBytes(
@@ -405,9 +427,31 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           i += 16) {
                                         blocks.add(contents.sublist(i, i + 16));
                                       }
+
                                       var tags = appState
                                           .sharedPreferencesProvider
                                           .getCards();
+
+                                      if (sak7Controller.text.length != 2 ||
+                                          atqa7Controller.text.length != 5) {
+                                        return showDialog(
+                                          context: context,
+                                          barrierDismissible: true,
+                                          builder: (_) => AlertDialog(
+                                              title: Text(localizations.error),
+                                              actions: [
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: Text(localizations.ok),
+                                                ),
+                                              ],
+                                              content: Text(
+                                                  localizations.invalid_input)),
+                                        );
+                                      }
+
                                       var tag = CardSave(
                                           name: nameController.text,
                                           sak: hexToBytes(
