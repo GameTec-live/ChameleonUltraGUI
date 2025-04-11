@@ -292,5 +292,8 @@
   "gen1": "Gen1",
   "gen2": "Gen2 / Gen\u00e8ric",
   "gen3": "Gen3",
-  "t55xx": "T55XX"
+  "t55xx": "T55XX",
+  "connect_manually": "Connecta manualment",
+  "port": "Port",
+  "port_hint": "ex. COM3, /dev/ttyUSB0"
 }
