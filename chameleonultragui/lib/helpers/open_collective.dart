@@ -31,7 +31,7 @@ Future<List<String>> fetchOpenCollectiveContributors() async {
   } catch (e) {
     Logger log = Logger();
     log.d(e.toString());
-    return [""];
+    return ["(Failed to load contributors list, please try again later)"];
   }
 }
 
