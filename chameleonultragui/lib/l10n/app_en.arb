@@ -293,7 +293,10 @@
   "gen2": "Gen2 / Generic",
   "gen3": "Gen3",
   "t55xx": "T55XX",
+  "hardnested_collecting_nonces": "Collecting required nonces {nonces}/256...",
+  "hardnested_calculating_key": "Calculating key...",
   "connect_manually": "Connect manually",
   "port": "Port",
-  "port_hint": "e.g. COM3, /dev/ttyUSB0"
+  "port_hint": "e.g. COM3, /dev/ttyUSB0",
+  "invalid_input": "One of the fields is filled in incorrectly"
 }
