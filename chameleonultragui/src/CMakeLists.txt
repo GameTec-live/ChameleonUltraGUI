@@ -26,6 +26,7 @@ set(COMMON_FILES
 )
 
 include_directories(${SRC_DIR}/)
+add_subdirectory(minlzlib)
 
 add_library(recovery SHARED
   "recovery.c"
@@ -96,22 +97,4 @@ elseif(UNIX AND NOT APPLE)
   )
 endif()
 
-ExternalProject_Add(
-  xz_utils
-  URL https://tukaani.org/xz/xz-5.8.1.tar.gz
-  URL_HASH SHA256=507825b599356c10dca1cd720c9d0d0c9d5400b9de300af00e4d1ea150795543
-  CMAKE_ARGS ${XZ_CMAKE_ARGS}
-  BUILD_BYPRODUCTS ${XZ_INSTALL_DIR}/lib/liblzma.a
-)
-
-set(LZMA_INCLUDE_DIR ${XZ_INSTALL_DIR}/include)
-set(LZMA_LIBRARY ${XZ_INSTALL_DIR}/lib/liblzma.a)
-
-add_library(lzma STATIC IMPORTED)
-set_target_properties(lzma PROPERTIES
-  IMPORTED_LOCATION ${LZMA_LIBRARY}
-  INTERFACE_INCLUDE_DIRECTORIES ${LZMA_INCLUDE_DIR}
-)
-
-add_dependencies(lzma xz_utils)
-target_link_libraries(recovery PUBLIC lzma)
+target_link_libraries(recovery PUBLIC minlzlib)

@@ -78,12 +78,6 @@ THE SOFTWARE.
 
 #define MIN_BUCKETS_SIZE 128
 
-typedef enum
-{
-    EVEN_STATE = 0,
-    ODD_STATE = 1
-} odd_even_t;
-
 static uint32_t nonces_to_bruteforce = 0;
 static uint32_t bf_test_nonce[256];
 static uint8_t bf_test_nonce_2nd_byte[256];
@@ -174,9 +168,6 @@ static void *
         statelist_t *bucket = buckets[current_bucket];
         if (bucket)
         {
-#if defined(DEBUG_BRUTE_FORCE)
-            PrintAndLogEx(INFO, "Thread " _YELLOW_("%u") " starts working on bucket " _YELLOW_("%u") "\n", thread_id, current_bucket);
-#endif
             const uint64_t key = crack_states_bitsliced(thread_arg->cuid, thread_arg->best_first_bytes, bucket, &keys_found, &num_keys_tested, nonces_to_bruteforce, bf_test_nonce_2nd_byte, thread_arg->nonces);
             if (key != -1)
             {
@@ -186,7 +177,7 @@ static void *
                 char progress_text[80];
                 char keystr[19];
                 snprintf(keystr, sizeof(keystr), "%012" PRIX64 "  ", key);
-                snprintf(progress_text, sizeof(progress_text), "Brute force phase completed.  Key found: " _GREEN_("%s"), keystr);
+                snprintf(progress_text, sizeof(progress_text), "Brute force phase completed.  Key found: %s", keystr);
                 hardnested_print_progress(thread_arg->num_acquired_nonces, progress_text, 0.0, 0);
                 break;
             }
@@ -299,7 +290,7 @@ static void write_benchfile(statelist_t *candidates)
     FILE *benchfile = fopen(RESOURCES_SUBDIR TEST_BENCH_FILENAME, "wb");
     if (benchfile == NULL)
     {
-        PrintAndLogEx(ERR, "Can't write " RESOURCES_SUBDIR TEST_BENCH_FILENAME ", abort!");
+        PrintAndLogEx("Can't write " RESOURCES_SUBDIR TEST_BENCH_FILENAME ", abort!");
         return;
     }
     fwrite(&nonces_to_bruteforce, 1, sizeof(nonces_to_bruteforce), benchfile);
@@ -372,7 +363,7 @@ bool brute_force_bs(float *bf_rate, statelist_t *candidates, uint32_t cuid, uint
         {
             if (!ensure_buckets_alloc(bucket_count + 1))
             {
-                PrintAndLogEx(ERR, "Can't allocate buckets, abort!");
+                PrintAndLogEx("Can't allocate buckets, abort!");
                 return false;
             }
 

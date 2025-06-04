@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <lzma.h>
+#include "../pm3/ui.h"
 #include "../hardnested.h"
 
 typedef struct bitflip_info
@@ -30,15 +30,6 @@ typedef struct bitflip_info
     uint8_t *input_buffer;
 } bitflip_info;
 
-typedef enum
-{
-    EVEN_STATE = 0,
-    ODD_STATE = 1
-} odd_even_t;
-
 bitflip_info get_bitflip(odd_even_t odd_num, uint16_t id);
-bool decompress(lzma_stream *strm);
-void lzma_init_inflate(lzma_stream *strm, uint8_t *inbuf, uint32_t inbuf_len, uint8_t *outbuf, uint32_t outbuf_len);
-void lzma_init_decoder(lzma_stream *strm);
 
 #endif /* TABLES_H */

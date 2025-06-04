@@ -31,7 +31,8 @@ uint8_t g_printAndLog = PRINTANDLOG_PRINT | PRINTANDLOG_LOG;
 #endif
 
 // determine number of logical CPU cores (use for multithreaded functions)
-int num_CPUs(void) {
+int num_CPUs(void)
+{
 #if defined(_WIN32)
 #include <sysinfoapi.h>
     SYSTEM_INFO sysinfo;
