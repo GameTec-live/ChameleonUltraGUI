@@ -298,5 +298,6 @@
   "connect_manually": "Connect manually",
   "port": "Port",
   "port_hint": "e.g. COM3, /dev/ttyUSB0",
-  "invalid_input": "One of the fields is filled in incorrectly"
+  "invalid_input": "One of the fields is filled in incorrectly",
+  "failed_to_fetch_oc_contributors": "Failed to fetch OpenCollective contributors"
 }
