@@ -92,6 +92,7 @@ jobs:
 
   build-linux-legacy:
     needs: check
+    runs-on: ubuntu-latest
     container:
       image: ubuntu:20.04
     defaults:
