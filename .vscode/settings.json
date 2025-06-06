@@ -15,6 +15,7 @@
         "recovery.h": "c",
         "windows.h": "c",
         "random": "c",
-        "ratio": "c"
+        "ratio": "c",
+        "minlzlib.h": "c"
     }
 }

@@ -83,7 +83,7 @@ jobs:
       - name: Enable macOS
         run: flutter config --enable-macos-desktop
       - name: Install tools
-        run: brew install automake libtool create-dmg xz
+        run: brew install automake libtool create-dmg
       - name: Install Codemagic
         run: pip3 install codemagic-cli-tools --break-system-packages
       - name: Export private key
@@ -153,7 +153,7 @@ jobs:
           app-store-connect builds submit-to-testflight $BUILD_ID || true
           app-store-connect beta-groups add-build $BUILD_ID --beta-group="Open beta testing" || true
   build-ios:
-    runs-on: macos-13
+    runs-on: macos-latest
     env:
         APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
@@ -165,7 +165,7 @@ jobs:
         with:
           channel: 'stable'
       - name: Install tools
-        run: brew install automake libtool create-dmg xz
+        run: brew install automake libtool create-dmg
       - name: Install Codemagic
         run: pip3 install codemagic-cli-tools
       - name: Export private key

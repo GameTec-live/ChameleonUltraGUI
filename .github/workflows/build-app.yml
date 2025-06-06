@@ -92,7 +92,8 @@ jobs:
 
   build-linux-legacy:
     needs: check
-    runs-on: ubuntu-20.04
+    container:
+      image: ubuntu:20.04
     defaults:
       run:
         working-directory: ./chameleonultragui
@@ -112,7 +113,7 @@ jobs:
 
   build-macos:
     needs: check
-    runs-on: macos-13
+    runs-on: macos-latest
     defaults:
       run:
         working-directory: ./chameleonultragui
@@ -124,12 +125,12 @@ jobs:
       - name: Enable macOS
         run: flutter config --enable-macos-desktop
       - name: Install tools
-        run: brew install automake libtool create-dmg xz
+        run: brew install automake libtool create-dmg
       - run: flutter build macos --release
 
   build-ios:
     needs: check
-    runs-on: macos-13
+    runs-on: macos-latest
     defaults:
       run:
         working-directory: ./chameleonultragui
@@ -139,5 +140,5 @@ jobs:
         with:
           channel: 'stable'
       - name: Install tools
-        run: brew install automake libtool create-dmg xz
+        run: brew install automake libtool create-dmg
       - run: flutter build ios --release 2>&1 | tee /dev/tty | grep -q "Xcode build done" && exit 0 || exit 1
