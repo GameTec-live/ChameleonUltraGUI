@@ -41,7 +41,7 @@ dependencies:
   logger: ^2.0.1
   convert: ^3.1.1
   shared_preferences: ^2.2.1
-  ffigen: ^18.0.0
+  ffigen: ^19.0.0
   dylib: ^0.3.3
   ffi: ^2.1.0
   usb_serial:
@@ -58,7 +58,7 @@ dependencies:
   http: ^1.1.0
   archive: ^4.0.1
   flutter_reactive_ble: ^5.2.0
-  permission_handler: ^11.0.0
+  permission_handler: ^12.0.0+1
   protobuf: ^2.1.0
   collection: ^1.17.1
   crypto: ^3.0.3
