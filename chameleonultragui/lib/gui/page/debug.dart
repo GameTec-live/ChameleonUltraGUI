@@ -278,8 +278,23 @@ class DebugPage extends StatelessWidget {
                       ar: 0));
                   var keys = await recovery.darkside(darkside);
                   appState.log!.d("Darkside output: $keys");
-                  appState.log!.d(
-                      "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
+
+                  if (context.mounted) {
+                    showDialog<String>(
+                      context: context,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: Text(localizations.debug_mode),
+                        content: Text(
+                            "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}"),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(localizations.ok),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
                 },
                 child: Column(children: [
                   Text(localizations.test_darkside_lib),
@@ -299,8 +314,23 @@ class DebugPage extends StatelessWidget {
                       par1: 7);
                   var keys = await recovery.nested(nested);
                   appState.log!.d("Nested output: $keys");
-                  appState.log!.d(
-                      "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}");
+
+                  if (context.mounted) {
+                    showDialog<String>(
+                      context: context,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: Text(localizations.debug_mode),
+                        content: Text(
+                            "Self test: valid key exists in list ${keys.contains(0xFFFFFFFFFFFF)}"),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(localizations.ok),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
                 },
                 child: Column(children: [
                   Text(localizations.test_nested_lib),
@@ -316,6 +346,23 @@ class DebugPage extends StatelessWidget {
                   appState.log!.d("HardNested output: $keys");
                   appState.log!.d(
                       "Self test: valid key exists in list ${keys.contains(0xFBF225DC5D58)}");
+
+                  if (context.mounted) {
+                    showDialog<String>(
+                      context: context,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: Text(localizations.debug_mode),
+                        content: Text(
+                            "Self test: valid key exists in list ${keys.contains(0xFBF225DC5D58)}"),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(localizations.ok),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
                 },
                 child: Column(children: [
                   Text("${localizations.test_nested_lib} (hard)"),

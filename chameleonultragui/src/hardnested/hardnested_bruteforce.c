@@ -67,6 +67,7 @@ THE SOFTWARE.
 #include "hardnested_benchmark_data.h"
 
 #define NUM_BRUTE_FORCE_THREADS (num_CPUs())
+
 #define DEFAULT_BRUTE_FORCE_RATE (120000000.0) // if benchmark doesn't succeed
 #define TEST_BENCH_SIZE (6000)                 // number of odd and even states for brute force benchmark
 #define TEST_BENCH_FILENAME "hardnested_bf_bench_data.bin"
@@ -75,6 +76,45 @@ THE SOFTWARE.
 // debugging options
 // #define DEBUG_KEY_ELIMINATION 1
 // #define DEBUG_BRUTE_FORCE 1
+
+#ifdef _MSC_VER
+    #include <Windows.h>
+	#include <share.h>
+	#include <io.h>
+	#include <fcntl.h>
+	#include <sys/stat.h>
+    #define atomic_add(num, val) (InterlockedExchangeAdd64(num, val) + val)
+	FILE *fmemopen(void *buf, size_t len, const char *type)
+	{
+		int fd;
+		FILE *fp;
+		char tp[MAX_PATH - 13];
+		char fn[MAX_PATH + 1];
+		int * pfd = &fd;
+		int retner = -1;
+		char tfname[] = "MemTF_";
+		if (!GetTempPathA(sizeof(tp), tp))
+			return NULL;
+		if (!GetTempFileNameA(tp, tfname, 0, fn))
+			return NULL;
+		retner = _sopen_s(pfd, fn, _O_CREAT | _O_SHORT_LIVED | _O_TEMPORARY | _O_RDWR | _O_BINARY | _O_NOINHERIT, _SH_DENYRW, _S_IREAD | _S_IWRITE);
+		if (retner != 0)
+			return NULL;
+		if (fd == -1)
+			return NULL;
+		fp = _fdopen(fd, "wb+");
+		if (!fp) {
+			_close(fd);
+			return NULL;
+		}
+		/*File descriptors passed into _fdopen are owned by the returned FILE * stream.If _fdopen is successful, do not call _close on the file descriptor.Calling fclose on the returned FILE * also closes the file descriptor.*/
+		fwrite(buf, len, 1, fp);
+		rewind(fp);
+		return fp;
+	}
+#else
+    #define atomic_add __sync_fetch_and_add
+#endif
 
 #define MIN_BUCKETS_SIZE 128
 
@@ -171,8 +211,8 @@ static void *
             const uint64_t key = crack_states_bitsliced(thread_arg->cuid, thread_arg->best_first_bytes, bucket, &keys_found, &num_keys_tested, nonces_to_bruteforce, bf_test_nonce_2nd_byte, thread_arg->nonces);
             if (key != -1)
             {
-                __atomic_fetch_add(&keys_found, 1, __ATOMIC_SEQ_CST);
-                __atomic_fetch_add(&found_bs_key, key, __ATOMIC_SEQ_CST);
+                atomic_add(&keys_found, 1);
+				atomic_add(&found_bs_key, key);
 
                 char progress_text[80];
                 char keystr[19];
@@ -379,7 +419,7 @@ bool brute_force_bs(float *bf_rate, statelist_t *candidates, uint32_t cuid, uint
         return false;
 #endif
 
-    pthread_t threads[num_brute_force_threads];
+    pthread_t threads[1024];
     struct args
     {
         bool silent;
@@ -389,7 +429,7 @@ bool brute_force_bs(float *bf_rate, statelist_t *candidates, uint32_t cuid, uint
         uint64_t maximum_states;
         noncelist_t *nonces;
         uint8_t *best_first_bytes;
-    } thread_args[num_brute_force_threads];
+    } thread_args[1024];
 
     for (uint32_t i = 0; i < num_brute_force_threads; i++)
     {

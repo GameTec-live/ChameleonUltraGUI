@@ -66,20 +66,16 @@ if (WIN32)
     COMMAND ../../../src/post_build.bat $<CONFIG> $<TARGET_FILE_DIR:recovery>
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   )
+
+  include(FetchContent)
+  FetchContent_Declare(
+          pthreads4w
+          GIT_REPOSITORY "https://github.com/GerHobbelt/pthread-win32"
+          OVERRIDE_FIND_PACKAGE
+          EXCLUDE_FROM_ALL
+  )
+  find_package(pthreads4w CONFIG REQUIRED)
 endif (WIN32)
-
-include(ExternalProject)
-
-set(XZ_INSTALL_DIR ${CMAKE_BINARY_DIR}/xz_utils_install)
-
-file(MAKE_DIRECTORY ${XZ_INSTALL_DIR}/include)
-file(MAKE_DIRECTORY ${XZ_INSTALL_DIR}/lib)
-
-set(XZ_CMAKE_ARGS
-  -DCMAKE_INSTALL_PREFIX=${XZ_INSTALL_DIR}
-  -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-  -DBUILD_SHARED_LIBS=OFF
-)
 
 if(ANDROID)
   list(APPEND XZ_CMAKE_ARGS
@@ -97,4 +93,8 @@ elseif(UNIX AND NOT APPLE)
   )
 endif()
 
-target_link_libraries(recovery PUBLIC minlzlib)
+if (WIN32)
+  target_link_libraries(recovery PUBLIC pthreads4w::pthreadVC3 minlzlib)
+else ()
+  target_link_libraries(recovery PUBLIC minlzlib)
+endif(WIN32)

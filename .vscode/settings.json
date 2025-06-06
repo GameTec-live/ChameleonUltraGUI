@@ -3,6 +3,18 @@
         "cstdint": "c",
         "hash_map": "c",
         "algorithm": "c",
-        "format": "c"
+        "format": "c",
+        "crapto1.h": "c",
+        "parity.h": "c",
+        "ctype.h": "c",
+        "time.h": "c",
+        "string.h": "c",
+        "stdlib.h": "c",
+        "stdio.h": "c",
+        "inttypes.h": "c",
+        "recovery.h": "c",
+        "windows.h": "c",
+        "random": "c",
+        "ratio": "c"
     }
 }

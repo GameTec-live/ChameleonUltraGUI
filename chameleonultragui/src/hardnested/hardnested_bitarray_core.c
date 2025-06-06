@@ -26,7 +26,19 @@
 #include <malloc.h>
 #endif
 
-inline uint32_t *MALLOC_BITARRAY(uint32_t x)
+#ifndef __BIGGEST_ALIGNMENT__
+#include <stddef.h>
+static const size_t __BIGGEST_ALIGNMENT__ = _Alignof(long double);
+#endif
+
+#ifdef _MSC_VER
+#include <intrin.h> // For __popcnt64
+unsigned int __builtin_popcountl(unsigned long long x) {
+    return __popcnt64(x);
+}
+#endif
+
+uint32_t *malloc_bitarray(uint32_t x)
 {
 #if defined(_WIN32)
     return __builtin_assume_aligned(_aligned_malloc((x), __BIGGEST_ALIGNMENT__), __BIGGEST_ALIGNMENT__);
@@ -45,7 +57,7 @@ inline uint32_t *MALLOC_BITARRAY(uint32_t x)
 #endif
 }
 
-inline void FREE_BITARRAY(uint32_t *x)
+void free_bitarray(uint32_t *x)
 {
 #ifdef _WIN32
     _aligned_free(x);
@@ -54,12 +66,12 @@ inline void FREE_BITARRAY(uint32_t *x)
 #endif
 }
 
-inline uint32_t BITCOUNT(uint32_t a)
+uint32_t bitcount(uint32_t a)
 {
     return __builtin_popcountl(a);
 }
 
-inline uint32_t COUNT_STATES(uint32_t *A)
+uint32_t count_states(uint32_t *A)
 {
     uint32_t count = 0;
     for (uint32_t i = 0; i < (1 << 19); i++)
@@ -69,7 +81,7 @@ inline uint32_t COUNT_STATES(uint32_t *A)
     return count;
 }
 
-inline void BITARRAY_AND(uint32_t *restrict A, uint32_t *restrict B)
+void bitarray_AND(uint32_t *restrict A, uint32_t *restrict B)
 {
     A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
     B = __builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
@@ -79,7 +91,7 @@ inline void BITARRAY_AND(uint32_t *restrict A, uint32_t *restrict B)
     }
 }
 
-inline void BITARRAY_LOW20_AND(uint32_t *restrict A, uint32_t *restrict B)
+void bitarray_low20_AND(uint32_t *restrict A, uint32_t *restrict B)
 {
     uint16_t *a = (uint16_t *)__builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
     uint16_t *b = (uint16_t *)__builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
@@ -93,10 +105,10 @@ inline void BITARRAY_LOW20_AND(uint32_t *restrict A, uint32_t *restrict B)
     }
 }
 
-inline uint32_t COUNT_BITARRAY_AND(uint32_t *restrict A, uint32_t *restrict B)
+uint32_t count_bitarray_AND(uint32_t *restrict A, uint32_t *restrict B)
 {
-    // A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
-    // B = __builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
+    A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
+    B = __builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
     uint32_t count = 0;
     for (uint32_t i = 0; i < (1 << 19); i++)
     {
@@ -106,7 +118,7 @@ inline uint32_t COUNT_BITARRAY_AND(uint32_t *restrict A, uint32_t *restrict B)
     return count;
 }
 
-inline uint32_t COUNT_BITARRAY_LOW20_AND(uint32_t *restrict A, uint32_t *restrict B)
+uint32_t count_bitarray_low20_AND(uint32_t *restrict A, uint32_t *restrict B)
 {
     uint16_t *a = (uint16_t *)__builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
     uint16_t *b = (uint16_t *)__builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
@@ -123,7 +135,7 @@ inline uint32_t COUNT_BITARRAY_LOW20_AND(uint32_t *restrict A, uint32_t *restric
     return count;
 }
 
-inline void BITARRAY_AND4(uint32_t *restrict A, uint32_t *restrict B, uint32_t *restrict C, uint32_t *restrict D)
+void bitarray_AND4(uint32_t *restrict A, uint32_t *restrict B, uint32_t *restrict C, uint32_t *restrict D)
 {
     A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
     B = __builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
@@ -135,7 +147,7 @@ inline void BITARRAY_AND4(uint32_t *restrict A, uint32_t *restrict B, uint32_t *
     }
 }
 
-inline void BITARRAY_OR(uint32_t *restrict A, uint32_t *restrict B)
+void bitarray_OR(uint32_t *restrict A, uint32_t *restrict B)
 {
     A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
     B = __builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
@@ -145,7 +157,7 @@ inline void BITARRAY_OR(uint32_t *restrict A, uint32_t *restrict B)
     }
 }
 
-inline uint32_t COUNT_BITARRAY_AND2(uint32_t *restrict A, uint32_t *restrict B)
+uint32_t count_bitarray_AND2(uint32_t *restrict A, uint32_t *restrict B)
 {
     A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
     B = __builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
@@ -157,7 +169,7 @@ inline uint32_t COUNT_BITARRAY_AND2(uint32_t *restrict A, uint32_t *restrict B)
     return count;
 }
 
-inline uint32_t COUNT_BITARRAY_AND3(uint32_t *restrict A, uint32_t *restrict B, uint32_t *restrict C)
+uint32_t count_bitarray_AND3(uint32_t *restrict A, uint32_t *restrict B, uint32_t *restrict C)
 {
     A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
     B = __builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
@@ -170,7 +182,7 @@ inline uint32_t COUNT_BITARRAY_AND3(uint32_t *restrict A, uint32_t *restrict B, 
     return count;
 }
 
-inline uint32_t COUNT_BITARRAY_AND4(uint32_t *restrict A, uint32_t *restrict B, uint32_t *restrict C, uint32_t *restrict D)
+uint32_t count_bitarray_AND4(uint32_t *restrict A, uint32_t *restrict B, uint32_t *restrict C, uint32_t *restrict D)
 {
     A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
     B = __builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
@@ -182,72 +194,4 @@ inline uint32_t COUNT_BITARRAY_AND4(uint32_t *restrict A, uint32_t *restrict B, 
         count += __builtin_popcountl(A[i] & B[i] & C[i] & D[i]);
     }
     return count;
-}
-
-///////////////////////////////////////////////77
-// Entries to dispatched function calls
-
-uint32_t *malloc_bitarray(uint32_t x)
-{
-    return MALLOC_BITARRAY(x);
-}
-
-void free_bitarray(uint32_t *x)
-{
-    FREE_BITARRAY(x);
-}
-
-uint32_t bitcount(uint32_t a)
-{
-    return BITCOUNT(a);
-}
-
-uint32_t count_states(uint32_t *A)
-{
-    return COUNT_STATES(A);
-}
-
-void bitarray_AND(uint32_t *A, uint32_t *B)
-{
-    BITARRAY_AND(A, B);
-}
-
-void bitarray_low20_AND(uint32_t *A, uint32_t *B)
-{
-    BITARRAY_LOW20_AND(A, B);
-}
-
-uint32_t count_bitarray_AND(uint32_t *A, uint32_t *B)
-{
-    return COUNT_BITARRAY_AND(A, B);
-}
-
-uint32_t count_bitarray_low20_AND(uint32_t *A, uint32_t *B)
-{
-    return COUNT_BITARRAY_LOW20_AND(A, B);
-}
-
-void bitarray_AND4(uint32_t *A, uint32_t *B, uint32_t *C, uint32_t *D)
-{
-    BITARRAY_AND4(A, B, C, D);
-}
-
-void bitarray_OR(uint32_t *A, uint32_t *B)
-{
-    BITARRAY_OR(A, B);
-}
-
-uint32_t count_bitarray_AND2(uint32_t *A, uint32_t *B)
-{
-    return COUNT_BITARRAY_AND2(A, B);
-}
-
-uint32_t count_bitarray_AND3(uint32_t *A, uint32_t *B, uint32_t *C)
-{
-    return COUNT_BITARRAY_AND3(A, B, C);
-}
-
-uint32_t count_bitarray_AND4(uint32_t *A, uint32_t *B, uint32_t *C, uint32_t *D)
-{
-    return COUNT_BITARRAY_AND4(A, B, C, D);
 }

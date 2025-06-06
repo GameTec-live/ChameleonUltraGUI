@@ -43,12 +43,19 @@
 #include "hardnested/hardnested_bitarray_core.h"
 #include "minlzlib/xzstream.h"
 
+// Just hope we won't reach 1024 cores in near future
+// MSVC is "very good compiler"
 #if defined(_MSC_VER)
-#define NUM_CHECK_BITFLIPS_THREADS 128
+#define NUM_CHECK_BITFLIPS_THREADS 1024
 #else
 #define NUM_CHECK_BITFLIPS_THREADS (num_CPUs())
 #endif
+
+#if defined(_MSC_VER)
+#define NUM_REDUCTION_WORKING_THREADS 1024
+#else
 #define NUM_REDUCTION_WORKING_THREADS (num_CPUs())
+#endif
 
 // ignore bitflip arrays which have nearly only valid states
 #define IGNORE_BITFLIP_THRESHOLD 0.9901
@@ -1313,28 +1320,27 @@ static void
 static void check_for_BitFlipProperties(bool time_budget)
 {
     // create and run worker threads
-    const size_t num_check_bitflip_threads = NUM_CHECK_BITFLIPS_THREADS;
-    pthread_t thread_id[num_check_bitflip_threads];
+    pthread_t thread_id[NUM_CHECK_BITFLIPS_THREADS];
 
-    uint8_t args[num_check_bitflip_threads][3];
-    uint16_t bytes_per_thread = (256 + (num_check_bitflip_threads / 2)) / num_check_bitflip_threads;
-    for (uint32_t i = 0; i < num_check_bitflip_threads; i++)
+    uint8_t args[NUM_CHECK_BITFLIPS_THREADS][3];
+    uint16_t bytes_per_thread = (256 + (num_CPUs() / 2)) / num_CPUs();
+    for (uint32_t i = 0; i < num_CPUs(); i++)
     {
         args[i][0] = i * bytes_per_thread;
         args[i][1] = MIN(args[i][0] + bytes_per_thread - 1, 255);
         args[i][2] = time_budget;
     }
     // args[][] is uint8_t so max 255, no need to check it
-    // args[num_check_bitflip_threads - 1][1] = MAX(args[num_check_bitflip_threads - 1][1], 255);
+    // args[NUM_CHECK_BITFLIPS_THREADS - 1][1] = MAX(args[NUM_CHECK_BITFLIPS_THREADS - 1][1], 255);
 
     // start threads
-    for (uint32_t i = 0; i < num_check_bitflip_threads; i++)
+    for (uint32_t i = 0; i < num_CPUs(); i++)
     {
         pthread_create(&thread_id[i], NULL, check_for_BitFlipProperties_thread, args[i]);
     }
 
     // wait for threads to terminate:
-    for (uint32_t i = 0; i < num_check_bitflip_threads; i++)
+    for (uint32_t i = 0; i < num_CPUs(); i++)
     {
         pthread_join(thread_id[i], NULL);
     }
@@ -1342,7 +1348,7 @@ static void check_for_BitFlipProperties(bool time_budget)
     if (hardnested_stage & CHECK_2ND_BYTES)
     {
         hardnested_stage &= ~CHECK_1ST_BYTES; // we are done with 1st stage, except...
-        for (uint32_t i = 0; i < num_check_bitflip_threads; i++)
+        for (uint32_t i = 0; i < num_CPUs(); i++)
         {
             if (args[i][1] != 0)
             {
@@ -1950,11 +1956,10 @@ static void generate_candidates(uint8_t sum_a0_idx, uint8_t sum_a8_idx)
     init_book_of_work();
 
     // create and run worker threads
-    const size_t num_reduction_working_threads = NUM_REDUCTION_WORKING_THREADS;
-    pthread_t thread_id[num_reduction_working_threads];
+    pthread_t thread_id[NUM_REDUCTION_WORKING_THREADS];
 
-    uint16_t sums1[num_reduction_working_threads][3];
-    for (uint32_t i = 0; i < num_reduction_working_threads; i++)
+    uint16_t sums1[NUM_REDUCTION_WORKING_THREADS][3];
+    for (uint32_t i = 0; i < num_CPUs(); i++)
     {
         sums1[i][0] = sum_a0_idx;
         sums1[i][1] = sum_a8_idx;
@@ -1963,7 +1968,7 @@ static void generate_candidates(uint8_t sum_a0_idx, uint8_t sum_a8_idx)
     }
 
     // wait for threads to terminate:
-    for (uint32_t i = 0; i < num_reduction_working_threads; i++)
+    for (uint32_t i = 0; i < num_CPUs(); i++)
     {
         pthread_join(thread_id[i], NULL);
     }

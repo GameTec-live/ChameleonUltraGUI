@@ -66,22 +66,20 @@ THE SOFTWARE.
 // while AVX supports 256 bit vector floating point operations, we need integer operations for boolean logic
 // same for AVX2 and 512 bit vectors
 // using larger vectors works but seems to generate more register pressure
-#if defined(__AVX512F__)
-#define MAX_BITSLICES 512
-#elif defined(__AVX2__)
-#define MAX_BITSLICES 256
-#elif defined(__AVX__)
-#define MAX_BITSLICES 128
-#elif defined(__SSE2__)
-#define MAX_BITSLICES 128
-#elif defined(__ARM_NEON) && !defined(NOSIMD_BUILD)
-#define MAX_BITSLICES 128
-#else // MMX or SSE or NOSIMD
 #define MAX_BITSLICES 64
+#define VECTOR_SIZE (MAX_BITSLICES / 8)
+
+#ifdef _MSC_VER
+#include <Windows.h>
+#define atomic_add(num, val) (InterlockedExchangeAdd(num, val) + val)
+#pragma pack(push, VECTOR_SIZE)
+typedef uint32_t bitslice_value_t;
+#pragma pack(pop)
+#else
+#define atomic_add __sync_fetch_and_add
+typedef uint32_t __attribute__((aligned(VECTOR_SIZE))) __attribute__((vector_size(VECTOR_SIZE))) bitslice_value_t;
 #endif
 
-#define VECTOR_SIZE (MAX_BITSLICES / 8)
-typedef uint32_t __attribute__((aligned(VECTOR_SIZE))) __attribute__((vector_size(VECTOR_SIZE))) bitslice_value_t;
 typedef union
 {
     bitslice_value_t value;
@@ -238,7 +236,11 @@ uint64_t CRACK_STATES_BITSLICED(uint32_t cuid, uint8_t *best_first_bytes, statel
     bitslice_t *restrict state_p;
     uint64_t key = -1;
     uint64_t bucket_states_tested = 0;
+#ifdef _MSC_VER
+    uint32_t bucket_size[16384];
+#else
     uint32_t bucket_size[(p->len[EVEN_STATE] - 1) / MAX_BITSLICES + 1];
+#endif
     uint32_t bitsliced_blocks = 0;
     uint32_t const *restrict p_even_end = p->states[EVEN_STATE] + p->len[EVEN_STATE];
 #if defined(DEBUG_BRUTE_FORCE)
@@ -593,7 +595,7 @@ out:
     }
     free(bitsliced_even_states);
     free_bitslice(bitsliced_even_feedback);
-    __sync_fetch_and_add(num_keys_tested, bucket_states_tested);
+    atomic_add(num_keys_tested, bucket_states_tested);
 
 #if defined(DEBUG_BRUTE_FORCE)
     for (uint32_t i = 0; i < MAX_ELIMINATION_STEP; i++)
