@@ -33,7 +33,8 @@ static const size_t __BIGGEST_ALIGNMENT__ = _Alignof(long double);
 
 #ifdef _MSC_VER
 #include <intrin.h> // For __popcnt64
-unsigned int __builtin_popcountl(unsigned long long x) {
+unsigned int __builtin_popcountl(unsigned long long x)
+{
     return __popcnt64(x);
 }
 #endif
@@ -107,8 +108,8 @@ void bitarray_low20_AND(uint32_t *restrict A, uint32_t *restrict B)
 
 uint32_t count_bitarray_AND(uint32_t *restrict A, uint32_t *restrict B)
 {
-    A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
-    B = __builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
+    // A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
+    // B = __builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
     uint32_t count = 0;
     for (uint32_t i = 0; i < (1 << 19); i++)
     {
