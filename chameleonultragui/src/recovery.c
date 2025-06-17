@@ -270,6 +270,7 @@ static void nested_recover(RecPar *rp)
 uint64_t *nested_run(NtpKs1 *pNK, uint32_t sizePNK, uint32_t authuid, uint32_t *keyCount, uint32_t *outputKeyCount)
 {
   *keyCount = 0;
+  *outputKeyCount = 0;
 
   RecPar *pRPs = malloc(sizeof(RecPar));
   if (pRPs == NULL)
@@ -294,11 +295,10 @@ uint64_t *nested_run(NtpKs1 *pNK, uint32_t sizePNK, uint32_t authuid, uint32_t *
     {
       memcpy(keys, pRPs->keys, pRPs->keyCount * sizeof(uint64_t));
       free(pRPs->keys);
+      keys = most_frequent_uint64(keys, *keyCount, outputKeyCount);
     }
   }
   free(pRPs);
-
-  keys = most_frequent_uint64(keys, *keyCount, outputKeyCount);
 
   return keys;
 }
