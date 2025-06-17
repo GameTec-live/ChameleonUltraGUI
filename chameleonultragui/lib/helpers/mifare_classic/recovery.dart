@@ -41,7 +41,7 @@ class MifareClassicRecovery {
         validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
         cardData = cardData ?? List.generate(256, (_) => Uint8List(0));
 
-  Future<void> recheckKey(Uint8List key) async {
+  Future<void> recheckKey(Uint8List key, int startingSector) async {
     if (!await appState.communicator!.isReaderDeviceMode()) {
       await appState.communicator!.setReaderDeviceMode(true);
     }
@@ -56,7 +56,9 @@ class MifareClassicRecovery {
       return;
     }
 
-    for (var sector = 0; sector < mfClassicGetSectorCount(mf1Type); sector++) {
+    for (var sector = startingSector;
+        sector < mfClassicGetSectorCount(mf1Type);
+        sector++) {
       for (var keyType = 0; keyType < 2; keyType++) {
         if (checkMarks[sector + (keyType * 40)] == ChameleonKeyCheckmark.none) {
           appState.log!.d(
@@ -127,7 +129,7 @@ class MifareClassicRecovery {
                     ChameleonKeyCheckmark.found;
                 update();
 
-                await recheckKey(key);
+                await recheckKey(key, sector);
                 break;
               }
             }
@@ -217,7 +219,7 @@ class MifareClassicRecovery {
                   validKeys[40] = keyBytes.sublist(2, 8);
                   checkMarks[40] = ChameleonKeyCheckmark.found;
                   found = true;
-                  await recheckKey(keyBytes);
+                  await recheckKey(keyBytes, 0);
                   break;
                 }
               }
@@ -336,7 +338,7 @@ class MifareClassicRecovery {
                     validKeys[sector + (keyType * 40)] = keyBytes;
                     checkMarks[sector + (keyType * 40)] =
                         ChameleonKeyCheckmark.found;
-                    await recheckKey(keyBytes);
+                    await recheckKey(keyBytes, sector);
 
                     break;
                   }
