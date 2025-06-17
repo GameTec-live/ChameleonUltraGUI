@@ -128,8 +128,21 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         child: ElevatedButton(
                             onPressed: () async {
                               Navigator.pop(buildContext);
-                              await flashFirmwareZip(appState,
-                                  scaffoldMessenger: scaffoldMessenger);
+                              try {
+                                await flashFirmwareZip(appState,
+                                    scaffoldMessenger: scaffoldMessenger);
+                              } catch (e) {
+                                scaffoldMessenger.hideCurrentSnackBar();
+                                var snackBar = SnackBar(
+                                  content: Text(
+                                      '${localizations.update_error}: ${e.toString()}'),
+                                  action: SnackBarAction(
+                                    label: localizations.close,
+                                    onPressed: () {},
+                                  ),
+                                );
+                                scaffoldMessenger.showSnackBar(snackBar);
+                              }
                             },
                             child: Row(
                               children: [

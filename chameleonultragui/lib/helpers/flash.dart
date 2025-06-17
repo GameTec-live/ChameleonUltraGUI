@@ -91,8 +91,8 @@ Future<void> flashFirmware(ChameleonGUIState appState,
 
   (applicationDat, applicationBin) = await unpackFirmware(content);
 
-  flashFile(appState.communicator, appState, applicationDat, applicationBin,
-      (progress) => appState.setProgressBar(progress / 100),
+  await flashFile(appState.communicator, appState, applicationDat,
+      applicationBin, (progress) => appState.setProgressBar(progress / 100),
       firmwareZip: content,
       scaffoldMessenger: scaffoldMessenger,
       enterDFU: enterDFU);
@@ -110,8 +110,8 @@ Future<void> flashFirmwareZip(ChameleonGUIState appState,
     (applicationDat, applicationBin) =
         await unpackFirmware(await file.readAsBytes());
 
-    flashFile(appState.communicator, appState, applicationDat, applicationBin,
-        (progress) => appState.setProgressBar(progress / 100),
+    await flashFile(appState.communicator, appState, applicationDat,
+        applicationBin, (progress) => appState.setProgressBar(progress / 100),
         firmwareZip: await file.readAsBytes(),
         scaffoldMessenger: scaffoldMessenger,
         enterDFU: enterDFU);
