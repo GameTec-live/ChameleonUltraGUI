@@ -214,7 +214,7 @@ class ChameleonMessage {
       {required this.command, required this.status, required this.data});
 }
 
-enum NTLevel { static, weak, hard, unknown }
+enum NTLevel { static, weak, hard, staticEncrypted, unknown }
 
 enum DarksideResult {
   vulnerable,
@@ -656,6 +656,8 @@ class ChameleonCommunicator {
       return NTLevel.weak;
     } else if (resp == 2) {
       return NTLevel.hard;
+    } else if (resp == 3) {
+      return NTLevel.staticEncrypted;
     } else {
       return NTLevel.unknown;
     }

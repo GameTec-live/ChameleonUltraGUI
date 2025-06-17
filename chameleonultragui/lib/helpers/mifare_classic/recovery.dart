@@ -243,13 +243,17 @@ class MifareClassicRecovery {
       var validKeyBlock = 0;
       var validKeyType = 0;
 
-      // Check for static encrypted nonce one, just to make sure
-      // We should move it to Chameleon firmware mf1NTLevelDetect function
-      Uint8List data = await appState.communicator!.send14ARaw(
-          Uint8List.fromList([0x64, 0x00]),
-          autoSelect: true,
-          checkResponseCrc: false);
-      if (data.length == 4) {
+      if (prng != NTLevel.staticEncrypted) {
+        // Check for static encrypted nonce one, just to make sure (old firmware)
+        Uint8List data = await appState.communicator!.send14ARaw(
+            Uint8List.fromList([0x64, 0x00]),
+            autoSelect: true,
+            checkResponseCrc: false);
+        if (data.length == 4) {
+          error = "static_encrypted_nonce";
+          return;
+        }
+      } else {
         error = "static_encrypted_nonce";
         return;
       }
