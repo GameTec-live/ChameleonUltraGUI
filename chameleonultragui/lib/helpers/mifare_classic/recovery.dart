@@ -243,6 +243,17 @@ class MifareClassicRecovery {
       var validKeyBlock = 0;
       var validKeyType = 0;
 
+      // Check for static encrypted nonce one, just to make sure
+      // We should move it to Chameleon firmware mf1NTLevelDetect function
+      Uint8List data = await appState.communicator!.send14ARaw(
+          Uint8List.fromList([0x64, 0x00]),
+          autoSelect: true,
+          checkResponseCrc: false);
+      if (data.length == 4) {
+        error = "static_encrypted_nonce";
+        return;
+      }
+
       for (var sector = 0;
           sector < mfClassicGetSectorCount(mf1Type);
           sector++) {
@@ -277,12 +288,21 @@ class MifareClassicRecovery {
               if (prng == NTLevel.hard) {
                 hardnestedProgress = 0;
                 update();
-                nonces = await collectHardnestedNonces(
+                var result = await collectHardnestedNonces(
                     validKeyBlock,
                     0x60 + validKeyType,
                     validKey,
                     mfClassicGetSectorTrailerBlockBySector(sector),
                     0x60 + keyType);
+
+                if (result is String) {
+                  checkMarks[sector + (keyType * 40)] =
+                      ChameleonKeyCheckmark.none;
+                  error = result;
+                  return;
+                } else {
+                  nonces = result as NestedNonces;
+                }
               } else {
                 nonces = await appState.communicator!.getMf1NestedNonces(
                     validKeyBlock,
@@ -434,7 +454,7 @@ class MifareClassicRecovery {
     }
   }
 
-  Future<NestedNonces> collectHardnestedNonces(int block, int keyType,
+  Future<dynamic> collectHardnestedNonces(int block, int keyType,
       Uint8List knownKey, int targetBlock, int targetKeyType) async {
     NestedNonces nonces = NestedNonces(nonces: []);
     while (true) {
@@ -445,6 +465,11 @@ class MifareClassicRecovery {
       List info = nonces.getNoncesInfo();
       appState.log!.d(
           "Collected ${nonces.nonces.length} nonces, sum ${info[0]}, num ${info[1]}");
+
+      if (nonces.nonces.isEmpty) {
+        return "old_firmware";
+      }
+
       hardnestedProgress = info[1] / 256;
       update();
       if (info[1] == 256) {
