@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 class MifareClassicHelper extends StatefulWidget {
   final HFCardInfo hfInfo;
@@ -119,6 +120,13 @@ class CardReaderState extends State<MifareClassicHelper> {
         .insert(0, Dictionary(id: "", name: localizations.empty, keys: []));
     widget.mfcInfo.recovery?.selectedDictionary ??=
         widget.mfcInfo.recovery?.dictionaries[0];
+
+    WakelockPlus.toggle(
+        enable: [
+      MifareClassicState.checkKeysOngoing,
+      MifareClassicState.recoveryOngoing,
+      MifareClassicState.dumpOngoing
+    ].contains(widget.mfcInfo.state));
 
     return Column(children: [
       const SizedBox(height: 16),
