@@ -167,7 +167,7 @@ jobs:
       - name: Install tools
         run: brew install automake libtool create-dmg
       - name: Install Codemagic
-        run: pip3 install codemagic-cli-tools
+        run: pip3 install codemagic-cli-tools --break-system-packages
       - name: Export private key
         uses: mobiledevops/secret-to-file-action@v1
         with:
