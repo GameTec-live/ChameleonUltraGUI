@@ -22,6 +22,7 @@ class MifareClassicRecovery {
   List<Uint8List> validKeys;
   List<Uint8List> cardData;
   double dumpProgress;
+  double? hardnestedProgress;
   void Function() update;
 
   MifareClassicRecovery(
@@ -40,7 +41,7 @@ class MifareClassicRecovery {
         validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
         cardData = cardData ?? List.generate(256, (_) => Uint8List(0));
 
-  Future<void> recheckKey(Uint8List key) async {
+  Future<void> recheckKey(Uint8List key, int startingSector) async {
     if (!await appState.communicator!.isReaderDeviceMode()) {
       await appState.communicator!.setReaderDeviceMode(true);
     }
@@ -55,7 +56,9 @@ class MifareClassicRecovery {
       return;
     }
 
-    for (var sector = 0; sector < mfClassicGetSectorCount(mf1Type); sector++) {
+    for (var sector = startingSector;
+        sector < mfClassicGetSectorCount(mf1Type);
+        sector++) {
       for (var keyType = 0; keyType < 2; keyType++) {
         if (checkMarks[sector + (keyType * 40)] == ChameleonKeyCheckmark.none) {
           appState.log!.d(
@@ -126,7 +129,7 @@ class MifareClassicRecovery {
                     ChameleonKeyCheckmark.found;
                 update();
 
-                await recheckKey(key);
+                await recheckKey(key, sector);
                 break;
               }
             }
@@ -216,7 +219,7 @@ class MifareClassicRecovery {
                   validKeys[40] = keyBytes.sublist(2, 8);
                   checkMarks[40] = ChameleonKeyCheckmark.found;
                   found = true;
-                  await recheckKey(keyBytes);
+                  await recheckKey(keyBytes, 0);
                   break;
                 }
               }
@@ -236,16 +239,24 @@ class MifareClassicRecovery {
       update();
 
       var prng = await appState.communicator!.getMf1NTLevel();
-      if (prng == NTLevel.hard) {
-        // No hardnested implementation yet
-        error = "not_supported";
-
-        return;
-      }
-
       var validKey = Uint8List(0);
       var validKeyBlock = 0;
       var validKeyType = 0;
+
+      if (prng != NTLevel.staticEncrypted) {
+        // Check for static encrypted nonce one, just to make sure (old firmware)
+        Uint8List data = await appState.communicator!.send14ARaw(
+            Uint8List.fromList([0x64, 0x00]),
+            autoSelect: true,
+            checkResponseCrc: false);
+        if (data.length == 4) {
+          error = "static_encrypted_nonce";
+          return;
+        }
+      } else {
+        error = "static_encrypted_nonce";
+        return;
+      }
 
       for (var sector = 0;
           sector < mfClassicGetSectorCount(mf1Type);
@@ -277,13 +288,36 @@ class MifareClassicRecovery {
             bool found = false;
             for (var i = 0; i < 0xFF && !found; i++) {
               List<int> keys = [];
-              if (prng == NTLevel.weak) {
-                var nonces = await appState.communicator!.getMf1NestedNonces(
+              NestedNonces nonces;
+              if (prng == NTLevel.hard) {
+                hardnestedProgress = 0;
+                update();
+                var result = await collectHardnestedNonces(
                     validKeyBlock,
                     0x60 + validKeyType,
                     validKey,
                     mfClassicGetSectorTrailerBlockBySector(sector),
                     0x60 + keyType);
+
+                if (result is String) {
+                  checkMarks[sector + (keyType * 40)] =
+                      ChameleonKeyCheckmark.none;
+                  error = result;
+                  return;
+                } else {
+                  nonces = result as NestedNonces;
+                }
+              } else {
+                nonces = await appState.communicator!.getMf1NestedNonces(
+                    validKeyBlock,
+                    0x60 + validKeyType,
+                    validKey,
+                    mfClassicGetSectorTrailerBlockBySector(sector),
+                    0x60 + keyType,
+                    level: prng);
+              }
+
+              if (prng == NTLevel.weak) {
                 var nested = NestedDart(
                     uid: distance.uid,
                     distance: distance.distance,
@@ -296,13 +330,6 @@ class MifareClassicRecovery {
 
                 keys = await recovery.nested(nested);
               } else if (prng == NTLevel.static) {
-                var nonces = await appState.communicator!.getMf1NestedNonces(
-                    validKeyBlock,
-                    0x60 + validKeyType,
-                    validKey,
-                    mfClassicGetSectorTrailerBlockBySector(sector),
-                    0x60 + keyType,
-                    isStaticNested: true);
                 var nested = StaticNestedDart(
                   uid: distance.uid,
                   keyType: 0x60 + validKeyType,
@@ -313,6 +340,11 @@ class MifareClassicRecovery {
                 );
 
                 keys = await recovery.staticNested(nested);
+              } else if (prng == NTLevel.hard) {
+                var nested =
+                    HardNestedDart(nonces: nonces.getHardNested(distance.uid));
+                keys = await recovery.hardNested(nested);
+                hardnestedProgress = null;
               }
 
               if (keys.isNotEmpty) {
@@ -330,7 +362,7 @@ class MifareClassicRecovery {
                     validKeys[sector + (keyType * 40)] = keyBytes;
                     checkMarks[sector + (keyType * 40)] =
                         ChameleonKeyCheckmark.found;
-                    await recheckKey(keyBytes);
+                    await recheckKey(keyBytes, sector);
 
                     break;
                   }
@@ -424,5 +456,56 @@ class MifareClassicRecovery {
         }
       }
     }
+  }
+
+  Future<dynamic> collectHardnestedNonces(int block, int keyType,
+      Uint8List knownKey, int targetBlock, int targetKeyType) async {
+    NestedNonces nonces = NestedNonces(nonces: []);
+    while (true) {
+      var collectedNonces = await appState.communicator!.getMf1NestedNonces(
+          block, keyType, knownKey, targetBlock, targetKeyType,
+          level: NTLevel.hard);
+      nonces.nonces.addAll(collectedNonces.nonces);
+      List info = nonces.getNoncesInfo();
+      appState.log!.d(
+          "Collected ${nonces.nonces.length} nonces, sum ${info[0]}, num ${info[1]}");
+
+      if (nonces.nonces.isEmpty) {
+        return "old_firmware";
+      }
+
+      hardnestedProgress = info[1] / 256;
+      update();
+      if (info[1] == 256) {
+        if ([
+          0,
+          32,
+          56,
+          64,
+          80,
+          96,
+          104,
+          112,
+          120,
+          128,
+          136,
+          144,
+          152,
+          160,
+          176,
+          192,
+          200,
+          224,
+          256
+        ].contains(info[0])) {
+          break;
+        }
+
+        appState.log!.e("Got wrong sum, trying to collect nonces again...");
+        nonces.nonces = [];
+      }
+    }
+
+    return nonces;
   }
 }

@@ -72,6 +72,7 @@ enum ChameleonCommand {
   mf1WriteBlock(2009),
   mf1ManipulateValueBlock(2011),
   mf1CheckKeysOfSectors(2012), // not implemented
+  mf1HardNestedAcquire(2013),
   hf14ARawCommand(2010),
 
   // lf commands
@@ -213,7 +214,7 @@ class ChameleonMessage {
       {required this.command, required this.status, required this.data});
 }
 
-enum NTLevel { static, weak, hard, unknown }
+enum NTLevel { static, weak, hard, staticEncrypted, unknown }
 
 enum DarksideResult {
   vulnerable,
@@ -241,6 +242,50 @@ class NestedNonce {
 
 class NestedNonces {
   List<NestedNonce> nonces;
+
+  List<int> getNoncesInfo() {
+    Map<int, bool> map = {};
+    int firstByteSum = 0;
+    int firstByteNum = 0;
+
+    void processNonce(int value, int parity) {
+      int key = value >> 24;
+      if (!(map[key] ?? false)) {
+        firstByteSum += evenParity32((value & 0xff000000) | (parity & 0x08));
+        map[key] = true;
+        firstByteNum++;
+      }
+    }
+
+    for (NestedNonce nonce in nonces) {
+      processNonce(nonce.nt, nonce.parity >> 4);
+      processNonce(nonce.ntEnc, nonce.parity & 0x0F);
+    }
+
+    return [firstByteSum, firstByteNum];
+  }
+
+  Uint8List getHardNested(int uid) {
+    // format:
+    // 0-3 bytes - uid
+    // 4 byte - target block (unused)
+    // 5 byte - target key type (unused)
+    // next is loop with all nonces
+    // 0-3 bytes - nt
+    // 4-8 bytes - ntEnc
+    // 9 byte - parity
+    Uint8List list = Uint8List(6 + nonces.length * 9);
+    list.setRange(0, 4, u32ToBytes(uid));
+    int pointer = 6;
+    for (NestedNonce nonce in nonces) {
+      list.setRange(pointer, pointer + 4, u32ToBytes(nonce.nt));
+      list.setRange(pointer + 4, pointer + 8, u32ToBytes(nonce.ntEnc));
+      list[pointer + 8] = nonce.parity;
+      pointer += 9;
+    }
+
+    return list;
+  }
 
   NestedNonces({required this.nonces});
 }
@@ -611,6 +656,8 @@ class ChameleonCommunicator {
       return NTLevel.weak;
     } else if (resp == 2) {
       return NTLevel.hard;
+    } else if (resp == 3) {
+      return NTLevel.staticEncrypted;
     } else {
       return NTLevel.unknown;
     }
@@ -661,22 +708,34 @@ class ChameleonCommunicator {
   }
 
   Future<NestedNonces> getMf1NestedNonces(int block, int keyType,
-      Uint8List keyKnown, int targetBlock, int targetKeyType,
-      {bool isStaticNested = false}) async {
+      Uint8List knownKey, int targetBlock, int targetKeyType,
+      {NTLevel level = NTLevel.weak, bool slow = false}) async {
     // Collect nonces for nested attack
     // keyType 0x60 if A key, 0x61 B key
-    int i = isStaticNested ? 4 : 0;
-    var resp = await sendCmd(
-        isStaticNested
-            ? ChameleonCommand.mf1StaticNestedAcquire
-            : ChameleonCommand.mf1NestedAcquire,
-        data: Uint8List.fromList(
-            [keyType, block, ...keyKnown, targetKeyType, targetBlock]),
+    int i = level == NTLevel.static ? 4 : 0;
+    ChameleonCommand command = ChameleonCommand.mf1NestedAcquire;
+    List<int> padding = [];
+    if (level == NTLevel.static) {
+      command = ChameleonCommand.mf1StaticNestedAcquire;
+    } else if (level == NTLevel.hard) {
+      command = ChameleonCommand.mf1HardNestedAcquire;
+      padding = [slow ? 1 : 0];
+    }
+
+    var resp = await sendCmd(command,
+        data: Uint8List.fromList([
+          ...padding,
+          keyType,
+          block,
+          ...knownKey,
+          targetKeyType,
+          targetBlock
+        ]),
         timeout: const Duration(seconds: 30));
     var nonces = NestedNonces(nonces: []);
 
     while (i < resp!.data.length) {
-      if (isStaticNested) {
+      if (level == NTLevel.static) {
         nonces.nonces.add(NestedNonce(
             nt: bytesToU32(resp.data.sublist(i, i + 4)),
             ntEnc: bytesToU32(resp.data.sublist(i + 4, i + 8)),

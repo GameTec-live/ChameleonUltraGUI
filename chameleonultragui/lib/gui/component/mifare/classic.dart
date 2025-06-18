@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 class MifareClassicHelper extends StatefulWidget {
   final HFCardInfo hfInfo;
@@ -120,6 +121,13 @@ class CardReaderState extends State<MifareClassicHelper> {
     widget.mfcInfo.recovery?.selectedDictionary ??=
         widget.mfcInfo.recovery?.dictionaries[0];
 
+    WakelockPlus.toggle(
+        enable: [
+      MifareClassicState.checkKeysOngoing,
+      MifareClassicState.recoveryOngoing,
+      MifareClassicState.dumpOngoing
+    ].contains(widget.mfcInfo.state));
+
     return Column(children: [
       const SizedBox(height: 16),
       Text(
@@ -152,6 +160,19 @@ class CardReaderState extends State<MifareClassicHelper> {
         if (widget.mfcInfo.recovery?.dumpProgress != 0) ...[
           LinearProgressIndicator(value: widget.mfcInfo.recovery?.dumpProgress),
           const SizedBox(height: 8)
+        ],
+        if (widget.mfcInfo.recovery?.hardnestedProgress != null &&
+            widget.mfcInfo.recovery?.error == "") ...[
+          Text(widget.mfcInfo.recovery?.hardnestedProgress == 1.0
+              ? localizations.hardnested_calculating_key
+              : localizations.hardnested_collecting_nonces(
+                  (widget.mfcInfo.recovery!.hardnestedProgress! * 256)
+                      .toInt()
+                      .toString())),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+              value: widget.mfcInfo.recovery?.hardnestedProgress),
+          const SizedBox(height: 12)
         ],
         if (widget.mfcInfo.state == MifareClassicState.recovery ||
             widget.mfcInfo.state == MifareClassicState.recoveryOngoing)
@@ -192,6 +213,19 @@ class CardReaderState extends State<MifareClassicHelper> {
                                     widget.mfcInfo.recovery?.error =
                                         localizations
                                             .recovery_error_no_supported;
+                                  });
+                                } else if (widget.mfcInfo.recovery!.error ==
+                                    "static_encrypted_nonce") {
+                                  setState(() {
+                                    widget.mfcInfo.recovery?.error =
+                                        localizations
+                                            .recovery_static_encrypted_nonce;
+                                  });
+                                } else if (widget.mfcInfo.recovery!.error ==
+                                    "old_firmware") {
+                                  setState(() {
+                                    widget.mfcInfo.recovery?.error =
+                                        localizations.recovery_old_firmware;
                                   });
                                 }
                               } else {
@@ -250,45 +284,50 @@ class CardReaderState extends State<MifareClassicHelper> {
         if (widget.mfcInfo.state == MifareClassicState.checkKeys ||
             widget.mfcInfo.state == MifareClassicState.checkKeysOngoing)
           Column(children: [
-            Align(
-                alignment: Alignment.center,
-                child: SizedBox(
-                    width: 275, // WIP: center without this
-                    child: CheckboxListTile(
-                      title: Text(localizations.skip_default_dictionary),
-                      value: skipDefaultDictionary,
-                      onChanged: (bool? newValue) {
+            if (widget.mfcInfo.state == MifareClassicState.checkKeys)
+              Column(children: [
+                Align(
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                        width: 275, // WIP: center without this
+                        child: CheckboxListTile(
+                          title: Text(localizations.skip_default_dictionary),
+                          value: skipDefaultDictionary,
+                          onChanged: (bool? newValue) {
+                            setState(() {
+                              skipDefaultDictionary = newValue!;
+                            });
+                          },
+                          controlAffinity: ListTileControlAffinity.leading,
+                        ))),
+                const SizedBox(height: 8),
+                Text(localizations.additional_key_dict),
+                const SizedBox(height: 4),
+                DropdownButton<String>(
+                  value: widget.mfcInfo.recovery?.selectedDictionary!.id,
+                  items: widget.mfcInfo.recovery?.dictionaries
+                      .map<DropdownMenuItem<String>>((Dictionary dictionary) {
+                    return DropdownMenuItem<String>(
+                      value: dictionary.id,
+                      child: Text(
+                          "${dictionary.name} (${dictionary.keys.length} ${localizations.keys.toLowerCase()})"),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    for (var dictionary
+                        in widget.mfcInfo.recovery!.dictionaries) {
+                      if (dictionary.id == newValue) {
                         setState(() {
-                          skipDefaultDictionary = newValue!;
+                          widget.mfcInfo.recovery?.selectedDictionary =
+                              dictionary;
                         });
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                    ))),
-            const SizedBox(height: 8),
-            Text(localizations.additional_key_dict),
-            const SizedBox(height: 4),
-            DropdownButton<String>(
-              value: widget.mfcInfo.recovery?.selectedDictionary!.id,
-              items: widget.mfcInfo.recovery?.dictionaries
-                  .map<DropdownMenuItem<String>>((Dictionary dictionary) {
-                return DropdownMenuItem<String>(
-                  value: dictionary.id,
-                  child: Text(
-                      "${dictionary.name} (${dictionary.keys.length} ${localizations.keys.toLowerCase()})"),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                for (var dictionary in widget.mfcInfo.recovery!.dictionaries) {
-                  if (dictionary.id == newValue) {
-                    setState(() {
-                      widget.mfcInfo.recovery?.selectedDictionary = dictionary;
-                    });
-                    break;
-                  }
-                }
-              },
-            ),
-            const SizedBox(height: 8),
+                        break;
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 8),
+              ]),
             ElevatedButton(
               onPressed: (widget.mfcInfo.state == MifareClassicState.checkKeys)
                   ? () async {
@@ -367,6 +406,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                           }
                         }
                       : null,
+                  style: customCardButtonStyle(appState),
                   child: Text(localizations.dump_card),
                 ),
                 const SizedBox(width: 8),

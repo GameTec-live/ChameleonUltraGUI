@@ -4,6 +4,7 @@ import 'dart:ffi';
 import 'dart:io' as io;
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:dylib/dylib.dart';
 import 'bindings.dart';
@@ -71,6 +72,12 @@ class StaticNestedDart {
       required this.nt1Enc});
 }
 
+class HardNestedDart {
+  Uint8List nonces;
+
+  HardNestedDart({required this.nonces});
+}
+
 class Mfkey32Dart {
   int uid;
   int nt0;
@@ -104,6 +111,16 @@ Future<List<int>> nested(NestedDart nested) async {
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final NestedRequest request = NestedRequest(requestId, nested);
+  final Completer<List<int>> completer = Completer<List<int>>();
+  requests[requestId] = completer;
+  helperIsolateSendPort.send(request);
+  return completer.future;
+}
+
+Future<List<int>> hardNested(HardNestedDart nested) async {
+  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
+  final int requestId = _nextSumRequestId++;
+  final HardNestedRequest request = HardNestedRequest(requestId, nested);
   final Completer<List<int>> completer = Completer<List<int>>();
   requests[requestId] = completer;
   helperIsolateSendPort.send(request);
@@ -180,6 +197,13 @@ class StaticNestedRequest {
   final StaticNestedDart nested;
 
   const StaticNestedRequest(this.id, this.nested);
+}
+
+class HardNestedRequest {
+  final int id;
+  final HardNestedDart nested;
+
+  const HardNestedRequest(this.id, this.nested);
 }
 
 class Mfkey32Request {
@@ -316,6 +340,22 @@ Future<SendPort> _helperIsolateSendPort = () async {
           for (var i = 0; i < count.value; i++) {
             keys.add(result[i]);
           }
+          final KeyResponse response = KeyResponse(data.id, keys);
+          sendPort.send(response);
+          return;
+        } else if (data is HardNestedRequest) {
+          Pointer<HardNested> pointer = calloc();
+          final Pointer<Uint8> uint8Ptr =
+              calloc<Uint8>(data.nested.nonces.length);
+          uint8Ptr
+              .asTypedList(data.nested.nonces.length)
+              .setAll(0, data.nested.nonces);
+          pointer.ref.nonces = uint8Ptr.cast<Char>();
+          pointer.ref.length = data.nested.nonces.length;
+
+          List<int> keys = [];
+          final int result = _bindings.hardnested(pointer);
+          keys.add(result);
           final KeyResponse response = KeyResponse(data.id, keys);
           sendPort.send(response);
           return;

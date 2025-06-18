@@ -82,6 +82,11 @@ class SettingsMainPageState extends State<SettingsMainPage> {
 
   Future<String> fetchOCnames() async {
     final List<String> names = await fetchOpenCollectiveContributors();
+
+    if (names.isEmpty && mounted) {
+      return AppLocalizations.of(context)!.failed_to_fetch_oc_contributors;
+    }
+
     String finalNames = "";
     for (String name in names) {
       finalNames += "$name, ";

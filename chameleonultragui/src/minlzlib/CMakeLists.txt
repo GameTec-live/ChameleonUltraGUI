@@ -1,0 +1,17 @@
+set(MINLZLIB_SOURCES "inputbuf.c" "dictbuf.c" "lzma2dec.c" "lzmadec.c" "rangedec.c" "xzcrc.c" "xzstream.c" "lzmadec.h" "xzstream.h" "minlzlib.h")
+
+add_library (minlzlib STATIC ${MINLZLIB_SOURCES})
+set_target_properties(minlzlib PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED YES C_EXTENSIONS NO)
+target_compile_options(minlzlib PRIVATE -fPIC)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if(MSVC)
+    set(CMAKE_C_STANDARD_LIBRARIES "")
+    set_property(TARGET minlzlib PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    string(REGEX REPLACE "/W[1-3]" "/W4 /WX" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    set(CMAKE_C_FLAGS_RELWITHDEBINFO "/Ox /Ob2 /Oi /Ot /Oy /GF /Gy /MT /Zi /wd4214 /permissive-")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "/OPT:ICF /OPT:REF /NODEFAULTLIB /NOENTRY /DEBUG /EXPORT:XzDecode /EMITPOGOPHASEINFO /NOVCFEATURE /NOCOFFGRPINFO /FILEALIGN:512 /DRIVER /MANIFEST:NO /PDBALTPATH:minlzlib.pdb /MERGE:.edata=.rdata")
+else()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -Wconversion -Wno-sign-conversion -Wno-unknown-pragmas -Wno-multichar")
+    set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -Ofast -Wall -Werror -Wconversion -Wno-sign-conversion -Wno-multichar")
+endif()

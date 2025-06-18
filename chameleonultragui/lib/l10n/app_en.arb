@@ -293,7 +293,13 @@
   "gen2": "Gen2 / Generic",
   "gen3": "Gen3",
   "t55xx": "T55XX",
+  "hardnested_collecting_nonces": "Collecting required nonces {nonces}/256...",
+  "hardnested_calculating_key": "Calculating key...",
   "connect_manually": "Connect manually",
   "port": "Port",
-  "port_hint": "e.g. COM3, /dev/ttyUSB0"
+  "port_hint": "e.g. COM3, /dev/ttyUSB0",
+  "invalid_input": "One of the fields is filled in incorrectly",
+  "failed_to_fetch_oc_contributors": "Failed to fetch OpenCollective contributors",
+  "recovery_static_encrypted_nonce": "Detected Static Encrypted nonce tag. Recovery not yet available",
+  "recovery_old_firmware": "Failed to collect nonces, is your firmware up to date?"
 }
