@@ -282,7 +282,19 @@
   "t55xx_key_prompt": "T55XX \ud0a4\ub97c \uc785\ub825\ud558\uc2ed\uc2dc\uc624. \uae30\ubcf8 CU \ud0a4\ub294 20206666\uc785\ub2c8\ub2e4.",
   "t55xx_new_key_prompt": "\uc0c8\ub85c\uc6b4 T55XX \ud0a4\ub85c \ubcc0\uacbd",
   "new_key": "\uc0c8 \ud0a4",
-  "connect_manually": "\uc218\ub3d9 \uc5f0\uacb0",
+  "read_with_key": "\ud0a4\ub85c \uc77d\uae30",
+  "read_without_key": "\ud0a4 \uc5c6\uc774 \uc77d\uae30",
+  "invalid_password": "\uc798\ubabb\ub41c \ube44\ubc00\ubc88\ud638",
+  "ultralight_version": "\ucd08\uacbd\ub7c9 \ubc84\uc804",
+  "ultralight_signature": "\ucd08\uacbd\ub7c9 \uc11c\uba85",
+  "no_key": "\ud0a4 \uc5c6\uc74c",
+  "connect_manually": "\uc218\ub3d9\uc73c\ub85c \uc5f0\uacb0",
   "port": "\ud3ec\ud2b8",
-  "port_hint": "\uc608: COM3, /dev/ttyUSB0"
+  "port_hint": "\uc608: COM3, /dev/ttyUSB0",
+  "hardnested_collecting_nonces": "\ud544\uc694\ud55c \ub17c\uc2a4 {nonces}/256...",
+  "hardnested_calculating_key": "\ud0a4 \uacc4\uc0b0\ud558\ub294 \uc911...",
+  "invalid_input": "\ud544\ub4dc \uc911 \ud558\ub098\uac00 \uc798\ubabb \uc785\ub825\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
+  "failed_to_fetch_oc_contributors": "OpenCollective \uae30\uc5ec\uc790\ub97c \uac00\uc838\uc624\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4",
+  "recovery_static_encrypted_nonce": "\uc815\uc801 \uc554\ud638\ud654\ub41c \ub17c\uc2a4 \ud0dc\uadf8\uac00 \uac10\uc9c0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc544\uc9c1 \ubcf5\uad6c\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4",
+  "recovery_old_firmware": "\ub17c\uc2a4\ub97c \uc218\uc9d1\ud558\ub294 \ub370 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \ud38c\uc6e8\uc5b4\uac00 \ucd5c\uc2e0 \uc0c1\ud0dc\uc785\ub2c8\uae4c?"
 }
