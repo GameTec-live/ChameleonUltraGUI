@@ -12,6 +12,45 @@ import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
 enum ChameleonKeyCheckmark { none, found, checking }
 
+// Patrones para static encrypted y clones Fudan (ambos endianness y variantes)
+// Patrones más completos para static encrypted nonces
+const List<int> staticEncryptedNonces = [
+  // Clásicos conocidos (ambos endianness)
+  0x01200145, 0x45012001, // Patrón 1
+  0x009080A2, 0xA2809000, // Patrón 2
+  0x00000000, 0x11111111, // Patrones comunes
+  0xFFFFFFFF, 0x12345678,
+  0x87654321, 0xAAAAAAAA,
+  0x55555555, 0xDEADBEEF,
+  0xBEEFDEAD, 0xCAFEBABE,
+  0xBABECAFE,
+
+  // Fudan backdoor patterns - key1 (a396efa4e24f1f4b)
+  0xa396efa4, 0xa4ef96a3, // Primeros 4 bytes big/little
+  0xe24f1f4b, 0x4b1f4fe2, // Últimos 4 bytes big/little
+  
+  // Fudan backdoor patterns - key2 (a31667a8cec10bc8)
+  0xa31667a8, 0xa86716a3, // Primeros 4 bytes big/little
+  0xcec10bc8, 0xc80bc1ce, // Últimos 4 bytes big/little
+  
+  // Fudan backdoor patterns - key3 (518b3354e760e751)
+  0x518b3354, 0x54338b51, // Primeros 4 bytes big/little
+  0xe760e751, 0x51e760e7, // Últimos 4 bytes big/little
+
+  // Patrones adicionales observados en clones
+  0x96074C16, 0x164C0796,
+  0x6C78928C, 0x8C92786C,
+  0xB09A2D72, 0x722D9AB0,
+  0x3F03EE2B, 0x2BEE033F,
+  0x612C6023, 0x23602C61,
+  0x80FF8021, 0x2180FF80,
+  
+  // Otros patrones detectados en field
+  0x00112233, 0x33221100,
+  0x44556677, 0x77665544,
+  0x8899AABB, 0xBBAA9988,
+  0xCCDDEEFF, 0xFFEEDDCC,
+];
 class MifareClassicRecovery {
   late ChameleonGUIState appState;
   String error;
@@ -25,22 +64,21 @@ class MifareClassicRecovery {
   double? hardnestedProgress;
   void Function() update;
 
-  MifareClassicRecovery(
-      {required this.appState,
-      required this.update,
-      this.error = '',
-      this.allKeysExists = false,
-      this.dictionaries = const [],
-      this.dumpProgress = 0,
-      this.selectedDictionary,
-      List<ChameleonKeyCheckmark>? checkMarks,
-      List<Uint8List>? validKeys,
-      List<Uint8List>? cardData})
-      : checkMarks =
+  MifareClassicRecovery({
+    required this.appState,
+    required this.update,
+    this.error = '',
+    this.allKeysExists = false,
+    this.dictionaries = const [],
+    this.dumpProgress = 0,
+    this.selectedDictionary,
+    List<ChameleonKeyCheckmark>? checkMarks,
+    List<Uint8List>? validKeys,
+    List<Uint8List>? cardData,
+  })  : checkMarks =
             checkMarks ?? List.generate(80, (_) => ChameleonKeyCheckmark.none),
         validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
         cardData = cardData ?? List.generate(256, (_) => Uint8List(0));
-
   Future<void> recheckKey(Uint8List key, int startingSector) async {
     if (!await appState.communicator!.isReaderDeviceMode()) {
       await appState.communicator!.setReaderDeviceMode(true);
@@ -158,226 +196,285 @@ class MifareClassicRecovery {
     }
   }
 
-  Future<void> recoverKeys() async {
-    if (!await appState.communicator!.isReaderDeviceMode()) {
-      await appState.communicator!.setReaderDeviceMode(true);
-    }
 
-    var mifare = await appState.communicator!.detectMf1Support();
-    var mf1Type = MifareClassicType.none;
-    error = "";
 
-    if (mifare) {
-      mf1Type = await mfClassicGetType(appState.communicator!);
-    } else {
-      appState.log!.e("Not Mifare Classic tag!");
-      return;
-    }
+Future<bool> checkForStaticEncryptedNonces() async {
+  appState.log!.d("Checking for static encrypted nonces (varios bloques)...");
+  final blocksToCheck = [0, 3, 8];
+  const int attemptsPerBlock = 5;
+  const int maxUniqueNonces = 4; 
 
-    if (mifare) {
-      // Key check part competed, checking found keys
-      bool hasKey = false;
-      for (var sector = 0;
-          sector < mfClassicGetSectorCount(mf1Type) && !hasKey;
-          sector++) {
-        for (var keyType = 0; keyType < 2; keyType++) {
-          if (checkMarks[sector + (keyType * 40)] ==
-              ChameleonKeyCheckmark.found) {
-            hasKey = true;
-            break;
+  for (final block in blocksToCheck) {
+    List<int> collectedNonces = [];
+    for (int attempt = 0; attempt < attemptsPerBlock; attempt++) {
+      try {
+        // AUTH A (0x60)
+        Uint8List dataA = await appState.communicator!.send14ARaw(
+          Uint8List.fromList([0x60, block]),
+          autoSelect: true,
+          checkResponseCrc: false,
+        );
+        if (dataA.length >= 4) {
+          final nonceBig = dataA.buffer.asByteData().getUint32(0, Endian.big);
+          final nonceLittle = dataA.buffer.asByteData().getUint32(0, Endian.little);
+          collectedNonces.add(nonceBig);
+          appState.log!.d('Nonce [block $block] ${attempt + 1} (AUTH A): raw=${dataA.map((b) => b.toRadixString(16).padLeft(2, '0')).join()} big=0x${nonceBig.toRadixString(16)} little=0x${nonceLittle.toRadixString(16)}');
+          if (staticEncryptedNonces.contains(nonceBig) || staticEncryptedNonces.contains(nonceLittle)) {
+            appState.log!.w("Static encrypted nonce detected on block $block, attempt ${attempt + 1}!");
+            return true;
           }
         }
+        await Future.delayed(Duration(milliseconds: 100));
+        if (attempt % 2 == 1) {
+          Uint8List dataB = await appState.communicator!.send14ARaw(
+            Uint8List.fromList([0x61, block]),
+            autoSelect: true,
+            checkResponseCrc: false,
+          );
+          if (dataB.length >= 4) {
+            final nonceBigB = dataB.buffer.asByteData().getUint32(0, Endian.big);
+            final nonceLittleB = dataB.buffer.asByteData().getUint32(0, Endian.little);
+            collectedNonces.add(nonceBigB);
+            appState.log!.d('Nonce [block $block] ${attempt + 1} (AUTH B): raw=${dataB.map((b) => b.toRadixString(16).padLeft(2, '0')).join()} big=0x${nonceBigB.toRadixString(16)} little=0x${nonceLittleB.toRadixString(16)}');
+            if (staticEncryptedNonces.contains(nonceBigB) || staticEncryptedNonces.contains(nonceLittleB)) {
+              appState.log!.w("Static encrypted nonce detected on AUTH B block $block, attempt ${attempt + 1}!");
+              return true;
+            }
+          }
+        }
+      } catch (e) {
+        appState.log!.e("Error collecting nonce on block $block, attempt ${attempt + 1}: $e");
       }
+    }
+    if (collectedNonces.length > 1) {
+      var uniqueNonces = collectedNonces.toSet();
+      if (uniqueNonces.length == 1) {
+        appState.log!.w("All nonces on block $block are identical - static encrypted detected!");
+        return true;
+      }
+      if (uniqueNonces.length <= maxUniqueNonces) {
+        appState.log!.w("Very few different nonces (${uniqueNonces.length}) on block $block - pseudo-static encrypted detected!");
+        return true;
+      }
+    }
+  }
+  appState.log!.i("No static or pseudo-static encrypted nonces detected.");
+  return false;
+}
 
-      if (!hasKey) {
-        if (await appState.communicator!.checkMf1Darkside() ==
-            DarksideResult.vulnerable) {
-          // recover with darkside
-          var data =
-              await appState.communicator!.getMf1Darkside(0x03, 0x61, true, 15);
-          var darkside = DarksideDart(uid: data.uid, items: []);
-          checkMarks[40] = ChameleonKeyCheckmark.checking;
-          bool found = false;
 
-          for (var tries = 0; tries < 0xFF && !found; tries++) {
-            darkside.items.add(DarksideItemDart(
-                nt1: data.nt1,
-                ks1: data.ks1,
-                par: data.par,
-                nr: data.nr,
-                ar: data.ar));
+  Future<void> recoverKeys() async {
+  if (!await appState.communicator!.isReaderDeviceMode()) {
+    await appState.communicator!.setReaderDeviceMode(true);
+  }
 
-            var keys = await recovery.darkside(darkside);
-            if (keys.isNotEmpty) {
-              appState.log!.d("Darkside: Found keys: $keys. Checking them...");
-              for (var key in keys) {
-                var keyBytes = u64ToBytes(key);
-                if ((await appState.communicator!
-                    .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8)))) {
-                  appState.log!.i(
-                      "Darkside: Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
-                  validKeys[40] = keyBytes.sublist(2, 8);
-                  checkMarks[40] = ChameleonKeyCheckmark.found;
-                  found = true;
-                  await recheckKey(keyBytes, 0);
-                  break;
-                }
-              }
-            } else {
-              appState.log!.d("Can't find keys, retrying...");
-              data = await appState.communicator!
-                  .getMf1Darkside(0x03, 0x61, false, 15);
+  var mifare = await appState.communicator!.detectMf1Support();
+  var mf1Type = MifareClassicType.none;
+  error = "";
+
+  if (!mifare) {
+    appState.log!.e("Not Mifare Classic tag!");
+    return;
+  }
+
+  mf1Type = await mfClassicGetType(appState.communicator!);
+
+  if (await checkForStaticEncryptedNonces()) {
+    error = "static_encrypted_nonce";
+    update();
+    return;
+  }
+
+  final prng = await appState.communicator!.getMf1NTLevel();
+
+  bool hasKey = false;
+  for (var sector = 0;
+      sector < mfClassicGetSectorCount(mf1Type) && !hasKey;
+      sector++) {
+    for (var keyType = 0; keyType < 2; keyType++) {
+      if (checkMarks[sector + (keyType * 40)] ==
+          ChameleonKeyCheckmark.found) {
+        hasKey = true;
+        break;
+      }
+    }
+  }
+
+  if (!hasKey) {
+    final darksideStatus = await appState.communicator!.checkMf1Darkside();
+    appState.log!.d('Darkside check result: $darksideStatus');
+    if (darksideStatus == DarksideResult.vulnerable) {
+      // recover with darkside
+      var data = await appState.communicator!.getMf1Darkside(0x03, 0x61, true, 15);
+      var darkside = DarksideDart(uid: data.uid, items: []);
+      checkMarks[40] = ChameleonKeyCheckmark.checking;
+      bool found = false;
+
+      for (var tries = 0; tries < 0xFF && !found; tries++) {
+        darkside.items.add(DarksideItemDart(
+            nt1: data.nt1,
+            ks1: data.ks1,
+            par: data.par,
+            nr: data.nr,
+            ar: data.ar));
+
+        var keys = await recovery.darkside(darkside);
+        if (keys.isNotEmpty) {
+          appState.log!.d("Darkside: Found keys: $keys. Checking them...");
+          for (var key in keys) {
+            var keyBytes = u64ToBytes(key);
+            if ((await appState.communicator!
+                .mf1Auth(0x03, 0x61, keyBytes.sublist(2, 8)))) {
+              appState.log!.i(
+                  "Darkside: Found valid key! Key ${bytesToHex(keyBytes.sublist(2, 8))}");
+              validKeys[40] = keyBytes.sublist(2, 8);
+              checkMarks[40] = ChameleonKeyCheckmark.found;
+              found = true;
+              await recheckKey(keyBytes, 0);
+              break;
             }
           }
         } else {
-          error = "no_keys_darkside";
-
-          return;
+          appState.log!.d("Can't find keys, retrying...");
+          data = await appState.communicator!
+              .getMf1Darkside(0x03, 0x61, false, 15);
         }
       }
-
+    } else {
+      error = "no_keys_darkside";
+      appState.log!.w("Card is NOT vulnerable to Darkside attack (original or advanced clone).");
       update();
+      return;
+    }
+  }
 
-      var prng = await appState.communicator!.getMf1NTLevel();
-      var validKey = Uint8List(0);
-      var validKeyBlock = 0;
-      var validKeyType = 0;
+  update();
+  allKeysExists = true;
 
-      if (prng != NTLevel.staticEncrypted) {
-        // Check for static encrypted nonce one, just to make sure (old firmware)
-        Uint8List data = await appState.communicator!.send14ARaw(
-            Uint8List.fromList([0x64, 0x00]),
-            autoSelect: true,
-            checkResponseCrc: false);
-        if (data.length == 4) {
-          error = "static_encrypted_nonce";
-          return;
-        }
-      } else {
-        error = "static_encrypted_nonce";
-        return;
+  var validKey = Uint8List(0);
+  var validKeyBlock = 0;
+  var validKeyType = 0;
+
+  for (var sector = 0;
+      sector < mfClassicGetSectorCount(mf1Type);
+      sector++) {
+    for (var keyType = 0; keyType < 2; keyType++) {
+      if (checkMarks[sector + (keyType * 40)] ==
+          ChameleonKeyCheckmark.found) {
+        validKey = validKeys[sector + (keyType * 40)];
+        validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
+        validKeyType = keyType;
+        break;
       }
+    }
+  }
 
-      for (var sector = 0;
-          sector < mfClassicGetSectorCount(mf1Type);
-          sector++) {
-        for (var keyType = 0; keyType < 2; keyType++) {
-          if (checkMarks[sector + (keyType * 40)] ==
-              ChameleonKeyCheckmark.found) {
-            validKey = validKeys[sector + (keyType * 40)];
-            validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
-            validKeyType = keyType;
-            break;
-          }
-        }
-      }
+  for (var sector = 0;
+      sector < mfClassicGetSectorCount(mf1Type);
+      sector++) {
+    for (var keyType = 0; keyType < 2; keyType++) {
+      if (checkMarks[sector + (keyType * 40)] ==
+          ChameleonKeyCheckmark.none) {
+        checkMarks[sector + (keyType * 40)] =
+            ChameleonKeyCheckmark.checking;
 
-      for (var sector = 0;
-          sector < mfClassicGetSectorCount(mf1Type);
-          sector++) {
-        for (var keyType = 0; keyType < 2; keyType++) {
-          if (checkMarks[sector + (keyType * 40)] ==
-              ChameleonKeyCheckmark.none) {
-            checkMarks[sector + (keyType * 40)] =
-                ChameleonKeyCheckmark.checking;
+        update();
 
+        var distance = await appState.communicator!
+            .getMf1NTDistance(validKeyBlock, 0x60 + validKeyType, validKey);
+        bool found = false;
+        for (var i = 0; i < 0xFF && !found; i++) {
+          List<int> keys = [];
+          NestedNonces nonces;
+          if (prng == NTLevel.hard) {
+            hardnestedProgress = 0;
             update();
+            var result = await collectHardnestedNonces(
+                validKeyBlock,
+                0x60 + validKeyType,
+                validKey,
+                mfClassicGetSectorTrailerBlockBySector(sector),
+                0x60 + keyType);
 
-            var distance = await appState.communicator!
-                .getMf1NTDistance(validKeyBlock, 0x60 + validKeyType, validKey);
-            bool found = false;
-            for (var i = 0; i < 0xFF && !found; i++) {
-              List<int> keys = [];
-              NestedNonces nonces;
-              if (prng == NTLevel.hard) {
-                hardnestedProgress = 0;
-                update();
-                var result = await collectHardnestedNonces(
-                    validKeyBlock,
-                    0x60 + validKeyType,
-                    validKey,
-                    mfClassicGetSectorTrailerBlockBySector(sector),
-                    0x60 + keyType);
+            if (result is String) {
+              checkMarks[sector + (keyType * 40)] =
+                  ChameleonKeyCheckmark.none;
+              error = result;
+              update();
+              return;
+            } else {
+              nonces = result as NestedNonces;
+            }
+          } else {
+            nonces = await appState.communicator!.getMf1NestedNonces(
+                validKeyBlock,
+                0x60 + validKeyType,
+                validKey,
+                mfClassicGetSectorTrailerBlockBySector(sector),
+                0x60 + keyType,
+                level: prng);
+          }
 
-                if (result is String) {
-                  checkMarks[sector + (keyType * 40)] =
-                      ChameleonKeyCheckmark.none;
-                  error = result;
-                  return;
-                } else {
-                  nonces = result as NestedNonces;
-                }
-              } else {
-                nonces = await appState.communicator!.getMf1NestedNonces(
-                    validKeyBlock,
-                    0x60 + validKeyType,
-                    validKey,
-                    mfClassicGetSectorTrailerBlockBySector(sector),
-                    0x60 + keyType,
-                    level: prng);
-              }
+          if (prng == NTLevel.weak) {
+            var nested = NestedDart(
+                uid: distance.uid,
+                distance: distance.distance,
+                nt0: nonces.nonces[0].nt,
+                nt0Enc: nonces.nonces[0].ntEnc,
+                par0: nonces.nonces[0].parity,
+                nt1: nonces.nonces[1].nt,
+                nt1Enc: nonces.nonces[1].ntEnc,
+                par1: nonces.nonces[1].parity);
 
-              if (prng == NTLevel.weak) {
-                var nested = NestedDart(
-                    uid: distance.uid,
-                    distance: distance.distance,
-                    nt0: nonces.nonces[0].nt,
-                    nt0Enc: nonces.nonces[0].ntEnc,
-                    par0: nonces.nonces[0].parity,
-                    nt1: nonces.nonces[1].nt,
-                    nt1Enc: nonces.nonces[1].ntEnc,
-                    par1: nonces.nonces[1].parity);
+            keys = await recovery.nested(nested);
+          } else if (prng == NTLevel.static) {
+            var nested = StaticNestedDart(
+              uid: distance.uid,
+              keyType: 0x60 + validKeyType,
+              nt0: nonces.nonces[0].nt,
+              nt0Enc: nonces.nonces[0].ntEnc,
+              nt1: nonces.nonces[1].nt,
+              nt1Enc: nonces.nonces[1].ntEnc,
+            );
 
-                keys = await recovery.nested(nested);
-              } else if (prng == NTLevel.static) {
-                var nested = StaticNestedDart(
-                  uid: distance.uid,
-                  keyType: 0x60 + validKeyType,
-                  nt0: nonces.nonces[0].nt,
-                  nt0Enc: nonces.nonces[0].ntEnc,
-                  nt1: nonces.nonces[1].nt,
-                  nt1Enc: nonces.nonces[1].ntEnc,
-                );
+            keys = await recovery.staticNested(nested);
+          } else if (prng == NTLevel.hard) {
+            var nested =
+                HardNestedDart(nonces: nonces.getHardNested(distance.uid));
+            keys = await recovery.hardNested(nested);
+            hardnestedProgress = null;
+          }
 
-                keys = await recovery.staticNested(nested);
-              } else if (prng == NTLevel.hard) {
-                var nested =
-                    HardNestedDart(nonces: nonces.getHardNested(distance.uid));
-                keys = await recovery.hardNested(nested);
-                hardnestedProgress = null;
-              }
+          if (keys.isNotEmpty) {
+            appState.log!.d("Found keys: $keys. Checking them...");
 
-              if (keys.isNotEmpty) {
-                appState.log!.d("Found keys: $keys. Checking them...");
+            for (var key in keys) {
+              var keyBytes = u64ToBytes(key).sublist(2, 8);
+              if ((await appState.communicator!.mf1Auth(
+                  mfClassicGetSectorTrailerBlockBySector(sector),
+                  0x60 + keyType,
+                  keyBytes))) {
+                appState.log!
+                    .i("Found valid key! Key ${bytesToHex(keyBytes)}");
+                found = true;
+                validKeys[sector + (keyType * 40)] = keyBytes;
+                checkMarks[sector + (keyType * 40)] =
+                    ChameleonKeyCheckmark.found;
+                await recheckKey(keyBytes, sector);
 
-                for (var key in keys) {
-                  var keyBytes = u64ToBytes(key).sublist(2, 8);
-                  if ((await appState.communicator!.mf1Auth(
-                      mfClassicGetSectorTrailerBlockBySector(sector),
-                      0x60 + keyType,
-                      keyBytes))) {
-                    appState.log!
-                        .i("Found valid key! Key ${bytesToHex(keyBytes)}");
-                    found = true;
-                    validKeys[sector + (keyType * 40)] = keyBytes;
-                    checkMarks[sector + (keyType * 40)] =
-                        ChameleonKeyCheckmark.found;
-                    await recheckKey(keyBytes, sector);
-
-                    break;
-                  }
-                }
-              } else {
-                appState.log!.e("Can't find keys, retrying...");
+                break;
               }
             }
+          } else {
+            appState.log!.e("Can't find keys, retrying...");
           }
         }
       }
     }
-    update();
-    allKeysExists = true;
   }
+  update();
+  allKeysExists = true;
+}
 
   Future<void> dumpData() async {
     cardData = List.generate(256, (_) => Uint8List(0));
