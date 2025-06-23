@@ -82,6 +82,18 @@ final gMifareClassicKeys = gMifareClassicKeysList
 
 Future<MifareClassicType> mfClassicGetType(
     ChameleonCommunicator communicator) async {
+  // Lee la info básica de la tarjeta
+  final tagInfo = await communicator.scan14443aTag();
+  final atqa = tagInfo.atqa;
+  final sak = tagInfo.sak;
+
+  // Detección automática para Mifare Classic 1K y Plus en modo 1K!
+  // SAK 0x08 y ATQA 0x0004: fuerza siempre a 1K aunque responda como 2K
+  if (atqa.length == 2 && atqa[0] == 0x00 && atqa[1] == 0x04 && sak == 0x08) {
+    return MifareClassicType.m1k;
+  }
+
+  // Detección estándar por bloques disponibles
   if ((await communicator.send14ARaw(Uint8List.fromList([0x60, 255]),
               checkResponseCrc: false))
           .length ==
