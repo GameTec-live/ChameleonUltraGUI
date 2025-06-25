@@ -250,12 +250,10 @@ class MifareClassicRecovery {
             autoSelect: true,
             checkResponseCrc: false);
         if (data.length == 4) {
-          error = "static_encrypted_nonce";
-          return;
+          prng = NTLevel.hard;
         }
       } else {
-        error = "static_encrypted_nonce";
-        return;
+        prng = NTLevel.hard;
       }
 
       for (var sector = 0;
@@ -472,6 +470,10 @@ class MifareClassicRecovery {
 
       if (nonces.nonces.isEmpty) {
         return "old_firmware";
+      }
+
+      if (info[1] == 1) {
+        return "static_encrypted_nonce";
       }
 
       hardnestedProgress = info[1] / 256;
