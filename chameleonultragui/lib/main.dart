@@ -141,10 +141,12 @@ class _MainPageState extends State<MainPage> {
   Logger getLogger(ChameleonGUIState appState) {
     if (appState._sharedPreferencesProvider!.isDebugLogging()) {
       return Logger(
-          output: SharedPreferencesLogger(appState._sharedPreferencesProvider!),
-          printer: PrettyPrinter(
-            noBoxingByDefault: true,
-          ));
+        output: SharedPreferencesLogger(appState._sharedPreferencesProvider!),
+        printer: PrettyPrinter(
+          noBoxingByDefault: true,
+        ),
+        filter: ChameleonLogFilter(),
+      );
     } else {
       return Logger();
     }
