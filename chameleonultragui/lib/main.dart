@@ -3,6 +3,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
+import 'package:chameleonultragui/connector/serial_emulator.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -121,24 +122,41 @@ class _MainPageState extends State<MainPage> {
     super.reassemble();
   }
 
+  AbstractSerial getConnector(ChameleonGUIState appState) {
+    if (appState._sharedPreferencesProvider!.isEmulatedChameleon()) {
+      return EmulatorSerial(log: appState.log!);
+    }
+
+    if (Platform.isAndroid) {
+      return AndroidSerial(log: appState.log!);
+    }
+
+    if (Platform.isIOS) {
+      return BLESerial(log: appState.log!);
+    }
+
+    return NativeSerial(log: appState.log!);
+  }
+
+  Logger getLogger(ChameleonGUIState appState) {
+    if (appState._sharedPreferencesProvider!.isDebugLogging()) {
+      return Logger(
+          output: SharedPreferencesLogger(appState._sharedPreferencesProvider!),
+          printer: PrettyPrinter(
+            noBoxingByDefault: true,
+          ));
+    } else {
+      return Logger();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     appState._sharedPreferencesProvider = widget.sharedPreferencesProvider;
-    appState.log ??= Logger(
-        output: appState._sharedPreferencesProvider!.isDebugLogging()
-            ? SharedPreferencesLogger(appState._sharedPreferencesProvider!)
-            : ConsoleOutput(),
-        printer: PrettyPrinter(
-          noBoxingByDefault:
-              appState._sharedPreferencesProvider!.isDebugLogging(),
-        ),
-        filter: ChameleonLogFilter());
-    appState.connector ??= Platform.isAndroid
-        ? AndroidSerial(log: appState.log!)
-        : (Platform.isIOS
-            ? BLESerial(log: appState.log!)
-            : NativeSerial(log: appState.log!));
+    appState.log ??= getLogger(appState);
+    appState.connector ??= getConnector(appState);
+
     if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;
       if (width >= 600) {

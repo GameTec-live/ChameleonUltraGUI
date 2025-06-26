@@ -301,5 +301,7 @@
   "invalid_input": "One of the fields is filled in incorrectly",
   "failed_to_fetch_oc_contributors": "Failed to fetch OpenCollective contributors",
   "recovery_static_encrypted_nonce": "Detected Static Encrypted nonce tag. Recovery not yet available",
-  "recovery_old_firmware": "Failed to collect nonces, is your firmware up to date?"
+  "recovery_old_firmware": "Failed to collect nonces, is your firmware up to date?",
+  "emulate_device": "Emulated device",
+  "emulate_device_confirmation": "Are you sure you want to {mode} emulated device? You can enable this to check app functions without having Chameleon Ultra, all actions with emulated device will not be saved. You won't be able to connect to real device unless you will disable this."
 }

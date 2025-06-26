@@ -538,6 +538,39 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 onPressed: () => showDialog<String>(
                   context: context,
                   builder: (BuildContext context) => AlertDialog(
+                    title: Text(localizations.emulate_device),
+                    content: Text(localizations.emulate_device_confirmation(
+                        appState.sharedPreferencesProvider.isEmulatedChameleon()
+                            ? localizations.deactivate.toLowerCase()
+                            : localizations.activate.toLowerCase())),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(localizations.cancel),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          appState.sharedPreferencesProvider
+                              .setEmulatedChameleon(!appState
+                                  .sharedPreferencesProvider
+                                  .isEmulatedChameleon());
+                          appState.connector = null;
+                          appState.changesMade();
+                          Navigator.pop(context);
+                        },
+                        child: Text(localizations.ok),
+                      ),
+                    ],
+                  ),
+                ),
+                child: Text(
+                    "${appState.sharedPreferencesProvider.isEmulatedChameleon() ? localizations.deactivate : localizations.activate} ${localizations.emulate_device.toLowerCase()}"),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
                     title: Text(localizations.debug_mode),
                     content: Text(localizations.debug_mode_confirmation(
                         appState.sharedPreferencesProvider.isDebugMode()
