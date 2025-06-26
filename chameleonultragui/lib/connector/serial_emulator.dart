@@ -11,10 +11,6 @@ import 'package:flutter/services.dart';
 class EmulatorSerial extends AbstractSerial {
   EmulatorSerial({required super.log});
 
-  Future<List> availableDevices() async {
-    return [];
-  }
-
   @override
   Future<bool> performConnect() async {
     return true;
@@ -39,9 +35,6 @@ class EmulatorSerial extends AbstractSerial {
   Future<bool> connectDevice(String address, bool setPort) async {
     return true;
   }
-
-  @override
-  Future<void> open() async {}
 
   @override
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
