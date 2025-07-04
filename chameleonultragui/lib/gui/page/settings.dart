@@ -517,6 +517,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                 Text('${localizations.code_contributors}:'),
                                 const SizedBox(height: 10),
                                 DeveloperList(avatars: contributors),
+                                const SizedBox(height: 10),
+                                Text(localizations.trademarks_mifare),
+                                const SizedBox(height: 10),
+                                Text(localizations.trademarks_em),
                               ],
                             ));
                           }
