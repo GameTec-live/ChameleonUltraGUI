@@ -303,5 +303,10 @@
   "recovery_static_encrypted_nonce": "Detected Static Encrypted nonce tag. Recovery not yet available",
   "recovery_old_firmware": "Failed to collect nonces, is your firmware up to date?",
   "emulate_device": "Emulated device",
-  "emulate_device_confirmation": "Are you sure you want to {mode} emulated device? You can enable this to check app functions without having Chameleon Ultra, all actions with emulated device will not be saved. You won't be able to connect to real device unless you will disable this."
+  "emulate_device_confirmation": "Are you sure you want to {mode} emulated device? You can enable this to check app functions without having Chameleon Ultra, all actions with emulated device will not be saved. You won't be able to connect to real device unless you will disable this.",
+  "prng_type": "PRNG type",
+  "prng_type_static": "Static",
+  "prng_type_weak": "Weak",
+  "prng_type_hard": "Hard",
+  "has_backdoor_support": "Backdoor"
 }

@@ -61,12 +61,17 @@ class MifareClassicInfo {
   MifareClassicRecovery? recovery;
   MifareClassicType type;
   MifareClassicState state;
+  NTLevel? ntLevel;
+  bool? hasBackdoor;
 
-  MifareClassicInfo(
-      {MifareClassicRecovery? recovery,
-      this.isEV1 = false,
-      this.type = MifareClassicType.none,
-      this.state = MifareClassicState.none});
+  MifareClassicInfo({
+    MifareClassicRecovery? recovery,
+    this.isEV1 = false,
+    this.type = MifareClassicType.none,
+    this.state = MifareClassicState.none,
+    NTLevel? ntLevel,
+    bool? hasBackdoor,
+  });
 }
 
 class ReadCardPage extends StatefulWidget {
@@ -129,8 +134,13 @@ class ReadCardPageState extends State<ReadCardPage> {
         MifareClassicRecovery recovery = MifareClassicRecovery(
             update: updateMifareClassicRecovery, appState: appState);
 
+        NTLevel ntLevel = await appState.communicator!.getMf1NTLevel();
+        bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
+
         setState(() {
           mfcInfo.recovery = recovery;
+          mfcInfo.ntLevel = ntLevel;
+          mfcInfo.hasBackdoor = hasBackdoor;
         });
       }
 
@@ -285,6 +295,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                         style: TextStyle(fontSize: fieldFontSize),
                       ),
                       const SizedBox(height: 16),
+                      if (isMifareClassic(hfInfo.type)) ...[
+                        buildFieldRow(
+                            localizations.prng_type,
+                            mfClassicGetPrngType(
+                                mfcInfo.ntLevel!, localizations),
+                            fieldFontSize),
+                        buildFieldRow(
+                            localizations.has_backdoor_support,
+                            mfcInfo.hasBackdoor!
+                                ? localizations.yes
+                                : localizations.no,
+                            fieldFontSize),
+                        const SizedBox(height: 16),
+                      ],
                       if (!hfInfo.cardExist) ...[
                         ErrorMessage(errorMessage: localizations.no_card_found),
                         const SizedBox(height: 16)
