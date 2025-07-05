@@ -23,7 +23,6 @@ class MifareClassicRecovery {
   List<Uint8List> cardData;
   double dumpProgress;
   double? hardnestedProgress;
-  MifareClassicType? overrideCardType;
   void Function() update;
 
   MifareClassicRecovery(
@@ -34,7 +33,6 @@ class MifareClassicRecovery {
       this.dictionaries = const [],
       this.dumpProgress = 0,
       this.selectedDictionary,
-      this.overrideCardType,
       List<ChameleonKeyCheckmark>? checkMarks,
       List<Uint8List>? validKeys,
       List<Uint8List>? cardData})
@@ -43,30 +41,17 @@ class MifareClassicRecovery {
         validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
         cardData = cardData ?? List.generate(256, (_) => Uint8List(0));
 
-  // Helper method to get the correct card type (override or detected)
-  Future<MifareClassicType> getCardType() async {
-    if (overrideCardType != null) {
-      appState.log!.i("Using override card type: ${mfClassicGetName(overrideCardType!)}");
-      return overrideCardType!;
-    }
-    
-    var mifare = await appState.communicator!.detectMf1Support();
-    if (mifare) {
-      var detectedType = await mfClassicGetType(appState.communicator!);
-      appState.log!.i("Auto-detected card type: ${mfClassicGetName(detectedType)}");
-      return detectedType;
-    }
-    
-    return MifareClassicType.none;
-  }
-
   Future<void> recheckKey(Uint8List key, int startingSector) async {
     if (!await appState.communicator!.isReaderDeviceMode()) {
       await appState.communicator!.setReaderDeviceMode(true);
     }
 
-    var mf1Type = await getCardType();
-    if (mf1Type == MifareClassicType.none) {
+    var mifare = await appState.communicator!.detectMf1Support();
+    var mf1Type = MifareClassicType.none;
+
+    if (mifare) {
+      mf1Type = await mfClassicGetType(appState.communicator!);
+    } else {
       appState.log!.e("Not Mifare Classic tag!");
       return;
     }
@@ -178,22 +163,26 @@ class MifareClassicRecovery {
       await appState.communicator!.setReaderDeviceMode(true);
     }
 
-    var mf1Type = await getCardType();
+    var mifare = await appState.communicator!.detectMf1Support();
+    var mf1Type = MifareClassicType.none;
     error = "";
 
-    if (mf1Type == MifareClassicType.none) {
+    if (mifare) {
+      mf1Type = await mfClassicGetType(appState.communicator!);
+    } else {
       appState.log!.e("Not Mifare Classic tag!");
       return;
     }
 
-    // Key check part competed, checking found keys
-    bool hasKey = false;
-    for (var sector = 0;
-        sector < mfClassicGetSectorCount(mf1Type) && !hasKey;
-        sector++) {
-      for (var keyType = 0; keyType < 2; keyType++) {
-        if (checkMarks[sector + (keyType * 40)] ==
-            ChameleonKeyCheckmark.found) {
+    if (mifare) {
+      // Key check part competed, checking found keys
+      bool hasKey = false;
+      for (var sector = 0;
+          sector < mfClassicGetSectorCount(mf1Type) && !hasKey;
+          sector++) {
+        for (var keyType = 0; keyType < 2; keyType++) {
+          if (checkMarks[sector + (keyType * 40)] ==
+              ChameleonKeyCheckmark.found) {
             hasKey = true;
             break;
           }
@@ -383,6 +372,7 @@ class MifareClassicRecovery {
           }
         }
       }
+    }
     update();
     allKeysExists = true;
   }

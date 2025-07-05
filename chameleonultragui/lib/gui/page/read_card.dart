@@ -143,8 +143,7 @@ class ReadCardPageState extends State<ReadCardPage> {
       if (isMifareClassic) {
         MifareClassicRecovery recovery = MifareClassicRecovery(
             update: updateMifareClassicRecovery, 
-            appState: appState,
-            overrideCardType: mfcInfo.overrideType);
+            appState: appState);
 
         setState(() {
           mfcInfo.recovery = recovery;
@@ -303,59 +302,92 @@ class ReadCardPageState extends State<ReadCardPage> {
                       buildFieldRow(
                           localizations.ats, hfInfo.ats, fieldFontSize),
                       const SizedBox(height: 16),
-                      Text(
-                        '${localizations.card_tech}: ${hfInfo.tech}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: fieldFontSize),
-                      ),
-                      if (isMifareClassic(hfInfo.type)) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          'Override Card Type:',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: fieldFontSize - 2,
-                            fontWeight: FontWeight.w600,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${localizations.card_tech}: ${hfInfo.tech}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: fieldFontSize),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButton<MifareClassicType?>(
-                          isExpanded: true,
-                          value: mfcInfo.overrideType,
-                          hint: const Text('Auto-detect (default)'),
-                          onChanged: (MifareClassicType? newValue) async {
-                            setState(() {
-                              mfcInfo.overrideType = newValue;
-                            });
-                            // Automatically re-read the card when override changes
-                            if (hfInfo.uid.isNotEmpty) {
-                              await readHFInfo();
-                            }
-                          },
-                          items: [
-                            const DropdownMenuItem<MifareClassicType?>(
-                              value: null,
-                              child: Text('Auto-detect (default)'),
-                            ),
-                            DropdownMenuItem<MifareClassicType?>(
-                              value: MifareClassicType.mini,
-                              child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.mini)}'),
-                            ),
-                            DropdownMenuItem<MifareClassicType?>(
-                              value: MifareClassicType.m1k,
-                              child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m1k)}'),
-                            ),
-                            DropdownMenuItem<MifareClassicType?>(
-                              value: MifareClassicType.m2k,
-                              child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m2k)}'),
-                            ),
-                            DropdownMenuItem<MifareClassicType?>(
-                              value: MifareClassicType.m4k,
-                              child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m4k)}'),
+                          if (isMifareClassic(hfInfo.type)) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text('Override Card Type'),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text(
+                                            'Select a specific card type to override auto-detection:',
+                                            style: TextStyle(fontSize: 14),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          DropdownButton<MifareClassicType?>(
+                                            isExpanded: true,
+                                            value: mfcInfo.overrideType,
+                                            hint: const Text('Auto-detect (default)'),
+                                            onChanged: (MifareClassicType? newValue) async {
+                                              setState(() {
+                                                mfcInfo.overrideType = newValue;
+                                              });
+                                              // Automatically re-read the card when override changes
+                                              if (hfInfo.uid.isNotEmpty) {
+                                                await readHFInfo();
+                                              }
+                                              Navigator.of(context).pop();
+                                            },
+                                            items: [
+                                              const DropdownMenuItem<MifareClassicType?>(
+                                                value: null,
+                                                child: Text('Auto-detect (default)'),
+                                              ),
+                                              DropdownMenuItem<MifareClassicType?>(
+                                                value: MifareClassicType.mini,
+                                                child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.mini)}'),
+                                              ),
+                                              DropdownMenuItem<MifareClassicType?>(
+                                                value: MifareClassicType.m1k,
+                                                child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m1k)}'),
+                                              ),
+                                              DropdownMenuItem<MifareClassicType?>(
+                                                value: MifareClassicType.m2k,
+                                                child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m2k)}'),
+                                              ),
+                                              DropdownMenuItem<MifareClassicType?>(
+                                                value: MifareClassicType.m4k,
+                                                child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m4k)}'),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop(),
+                                          child: const Text('Cancel'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              icon: const Icon(Icons.edit),
+                              iconSize: 20,
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                              tooltip: 'Override card type',
                             ),
                           ],
-                        ),
-                      ],
+                        ],
+                      ),
                       const SizedBox(height: 16),
                       if (!hfInfo.cardExist) ...[
                         ErrorMessage(errorMessage: localizations.no_card_found),
