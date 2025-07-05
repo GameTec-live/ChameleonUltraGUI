@@ -142,7 +142,9 @@ class ReadCardPageState extends State<ReadCardPage> {
 
       if (isMifareClassic) {
         MifareClassicRecovery recovery = MifareClassicRecovery(
-            update: updateMifareClassicRecovery, appState: appState);
+            update: updateMifareClassicRecovery, 
+            appState: appState,
+            overrideCardType: mfcInfo.overrideType);
 
         setState(() {
           mfcInfo.recovery = recovery;
