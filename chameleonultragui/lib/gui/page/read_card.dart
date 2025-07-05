@@ -60,12 +60,14 @@ class MifareClassicInfo {
   bool isEV1;
   MifareClassicRecovery? recovery;
   MifareClassicType type;
+  MifareClassicType? overrideType;
   MifareClassicState state;
 
   MifareClassicInfo(
       {MifareClassicRecovery? recovery,
       this.isEV1 = false,
       this.type = MifareClassicType.none,
+      this.overrideType,
       this.state = MifareClassicState.none});
 }
 
@@ -100,7 +102,9 @@ class ReadCardPageState extends State<ReadCardPage> {
 
     setState(() {
       hfInfo = HFCardInfo();
-      mfcInfo = MifareClassicInfo();
+      // Preserve the override type when resetting
+      MifareClassicType? preservedOverrideType = mfcInfo.overrideType;
+      mfcInfo = MifareClassicInfo(overrideType: preservedOverrideType);
     });
 
     try {
@@ -116,9 +120,20 @@ class ReadCardPageState extends State<ReadCardPage> {
       try {
         isMifareClassic = await appState.communicator!.detectMf1Support();
         if (isMifareClassic) {
-          mifareClassicType = await mfClassicGetType(appState.communicator!);
+          // Use override type if available, otherwise detect automatically
+          if (mfcInfo.overrideType != null) {
+            mifareClassicType = mfcInfo.overrideType!;
+          } else {
+            mifareClassicType = await mfClassicGetType(appState.communicator!);
+          }
         }
-      } catch (_) {}
+      } catch (_) {
+        // If detection fails but we have an override, use it
+        if (mfcInfo.overrideType != null) {
+          isMifareClassic = true;
+          mifareClassicType = mfcInfo.overrideType!;
+        }
+      }
 
       bool isMifareClassicEV1 = isMifareClassic
           ? (await appState.communicator!
@@ -141,7 +156,9 @@ class ReadCardPageState extends State<ReadCardPage> {
           type = mfUltralightGetType(version);
         }
       } else {
-        type = mfClassicGetChameleonTagType(mifareClassicType);
+        // Use override type if available for TagType mapping
+        MifareClassicType finalType = mfcInfo.overrideType ?? mifareClassicType;
+        type = mfClassicGetChameleonTagType(finalType);
       }
 
       setState(() {
@@ -153,12 +170,17 @@ class ReadCardPageState extends State<ReadCardPage> {
             : localizations.no;
         hfInfo.type = type;
         mfcInfo.isEV1 = isMifareClassicEV1;
-        mfcInfo.type = mifareClassicType;
+        // Use override type if available, otherwise use detected type
+        mfcInfo.type = mfcInfo.overrideType ?? mifareClassicType;
         mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
             ? MifareClassicState.checkKeys
             : MifareClassicState.none;
         hfInfo.tech =
             chameleonTagToString(type) + (isMifareClassicEV1 ? " EV1" : "");
+        // Update tech display if type is overridden
+        if (mfcInfo.overrideType != null && isMifareClassic) {
+          hfInfo.tech = "Mifare Classic ${mfClassicGetName(mfcInfo.type)}${isMifareClassicEV1 ? " EV1" : ""}";
+        }
       });
     } catch (_) {
       setState(() {
@@ -284,6 +306,54 @@ class ReadCardPageState extends State<ReadCardPage> {
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: fieldFontSize),
                       ),
+                      if (isMifareClassic(hfInfo.type)) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'Override Card Type:',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: fieldFontSize - 2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButton<MifareClassicType?>(
+                          isExpanded: true,
+                          value: mfcInfo.overrideType,
+                          hint: const Text('Auto-detect (default)'),
+                          onChanged: (MifareClassicType? newValue) async {
+                            setState(() {
+                              mfcInfo.overrideType = newValue;
+                            });
+                            // Automatically re-read the card when override changes
+                            if (hfInfo.uid.isNotEmpty) {
+                              await readHFInfo();
+                            }
+                          },
+                          items: [
+                            const DropdownMenuItem<MifareClassicType?>(
+                              value: null,
+                              child: Text('Auto-detect (default)'),
+                            ),
+                            DropdownMenuItem<MifareClassicType?>(
+                              value: MifareClassicType.mini,
+                              child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.mini)}'),
+                            ),
+                            DropdownMenuItem<MifareClassicType?>(
+                              value: MifareClassicType.m1k,
+                              child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m1k)}'),
+                            ),
+                            DropdownMenuItem<MifareClassicType?>(
+                              value: MifareClassicType.m2k,
+                              child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m2k)}'),
+                            ),
+                            DropdownMenuItem<MifareClassicType?>(
+                              value: MifareClassicType.m4k,
+                              child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m4k)}'),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       if (!hfInfo.cardExist) ...[
                         ErrorMessage(errorMessage: localizations.no_card_found),
