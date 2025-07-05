@@ -62,6 +62,12 @@ final gMifareClassicKeysList = {
   0x96A301BCE267,
 };
 
+final gMifareClassicBackdoorKeysList = {
+  0xA396EFA4E24F,
+  0xA31667A8CEC1,
+  0x518B3354E760,
+};
+
 enum MifareClassicType {
   none,
   mini,
@@ -71,6 +77,17 @@ enum MifareClassicType {
 } // can't start with number...
 
 final gMifareClassicKeys = gMifareClassicKeysList
+    .map((key) => Uint8List.fromList([
+          (key >> 40) & 0xFF,
+          (key >> 32) & 0xFF,
+          (key >> 24) & 0xFF,
+          (key >> 16) & 0xFF,
+          (key >> 8) & 0xFF,
+          key & 0xFF,
+        ]))
+    .toList();
+
+final gMifareClassicBackdoorKeys = gMifareClassicBackdoorKeysList
     .map((key) => Uint8List.fromList([
           (key >> 40) & 0xFF,
           (key >> 32) & 0xFF,
@@ -280,4 +297,122 @@ List<Uint8List> mfClassicGetKeysFromDump(List<Uint8List> dump) {
   }
 
   return keys;
+}
+
+class StaticEncryptedKeysFilter {
+  static final List<int> _iLfsr16 = List<int>.filled(1 << 16, 0);
+  static final List<int> _sLfsr16 = List<int>.filled(1 << 16, 0);
+  static bool _initialized = false;
+
+  static void _initLfsr16Table() {
+    if (_initialized) return;
+
+    int x = 1;
+    for (int i = 1; i <= 0xFFFF; i++) {
+      int index = ((x & 0xFF) << 8) | (x >> 8);
+      _iLfsr16[index] = i;
+      _sLfsr16[i] = index;
+      x = (x >> 1) | (((x ^ (x >> 2) ^ (x >> 3) ^ (x >> 5)) & 1) << 15);
+    }
+    _initialized = true;
+  }
+
+  static int _prevLfsr16(int nonce) {
+    int i = _iLfsr16[nonce & 0xFFFF];
+    if (i == 0 || i == 1) {
+      i = 0xFFFF;
+    } else {
+      i--;
+    }
+    return _sLfsr16[i];
+  }
+
+  static int _computeSeednt16Nt32(int nt32, int key) {
+    const List<int> a = [0, 8, 9, 4, 6, 11, 1, 15, 12, 5, 2, 13, 10, 14, 3, 7];
+    const List<int> b = [0, 13, 1, 14, 4, 10, 15, 7, 5, 3, 8, 6, 9, 2, 12, 11];
+
+    int nt = (nt32 >> 16) & 0xFFFF;
+    int prev = 14;
+
+    for (int i = 0; i < prev; i++) {
+      nt = _prevLfsr16(nt);
+    }
+
+    int prevoff = 8;
+    bool odd = true;
+
+    for (int i = 0; i < 48; i += 8) {
+      if (odd) {
+        nt ^= a[(key >> i) & 0xF];
+        nt ^= (b[(key >> (i + 4)) & 0xF] << 4);
+      } else {
+        nt ^= b[(key >> i) & 0xF];
+        nt ^= (a[(key >> (i + 4)) & 0xF] << 4);
+      }
+      odd = !odd;
+      prev += prevoff;
+      for (int j = 0; j < prevoff; j++) {
+        nt = _prevLfsr16(nt);
+      }
+      nt &= 0xFFFF;
+    }
+
+    return nt;
+  }
+
+  static (List<int>, List<int>) filterKeys(
+      List<int> keys1, List<int> keys2, int nt1, int nt2) {
+    _initLfsr16Table();
+
+    final List<int> seednt1 = [];
+    final List<bool> filterKeys1 = List<bool>.filled(keys1.length, false);
+    final List<bool> filterKeys2 = List<bool>.filled(keys2.length, false);
+
+    for (int i = 0; i < keys1.length; i++) {
+      seednt1.add(_computeSeednt16Nt32(nt1, keys1[i]));
+    }
+
+    for (int j = 0; j < keys2.length; j++) {
+      int seednt2 = _computeSeednt16Nt32(nt2, keys2[j]);
+      for (int i = 0; i < keys1.length; i++) {
+        if (seednt2 == seednt1[i]) {
+          filterKeys1[i] = true;
+          filterKeys2[j] = true;
+        }
+      }
+    }
+
+    final List<int> filteredKeys1 = [];
+    final List<int> filteredKeys2 = [];
+
+    for (int i = 0; i < keys1.length; i++) {
+      if (filterKeys1[i]) {
+        filteredKeys1.add(keys1[i]);
+      }
+    }
+
+    for (int j = 0; j < keys2.length; j++) {
+      if (filterKeys2[j]) {
+        filteredKeys2.add(keys2[j]);
+      }
+    }
+
+    return (filteredKeys1, filteredKeys2);
+  }
+
+  static List<int> findMatchingKeys(
+      int nt1, int key1, int nt2, List<int> keys2) {
+    _initLfsr16Table();
+
+    final List<int> matchingKeys = [];
+    int seednt1 = _computeSeednt16Nt32(nt1, key1);
+
+    for (int i = 0; i < keys2.length; i++) {
+      if (seednt1 == _computeSeednt16Nt32(nt2, keys2[i])) {
+        matchingKeys.add(keys2[i]);
+      }
+    }
+
+    return matchingKeys;
+  }
 }

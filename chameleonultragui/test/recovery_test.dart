@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +27,34 @@ void main() {
         par1: 7);
     var keys = await recovery.nested(nested);
     expect(keys.contains(0xFFFFFFFFFFFF), true);
+  });
+
+  test('Test static encrypted nested', () async {
+    var nested = StaticEncryptedNestedDart(
+        uid: 0x72000003, nt: 0x82d91e42, ntEnc: 0x98b90e04, ntParEnc: 1011);
+    var keys = await recovery.staticEncryptedNested(nested);
+    expect(keys.contains(0x55654483DA14), true);
+  });
+
+  test('Test static encrypted nested second key recovery', () async {
+    var possibleAKeys = await recovery.staticEncryptedNested(
+        StaticEncryptedNestedDart(
+            uid: 0x72000003, nt: 647928510, ntEnc: 591664851, ntParEnc: 100));
+    var possibleBKeys = await recovery.staticEncryptedNested(
+        StaticEncryptedNestedDart(
+            uid: 0x72000003,
+            nt: 2195267138,
+            ntEnc: 2562264580,
+            ntParEnc: 1011));
+    expect(possibleAKeys.length, 34675);
+    expect(possibleBKeys.length, 35256);
+    var filtered = StaticEncryptedKeysFilter.filterKeys(
+        possibleAKeys, possibleBKeys, 647928510, 2195267138);
+    expect(filtered.$1.length, 14429);
+    expect(filtered.$2.length, 14294);
+    var keys = StaticEncryptedKeysFilter.findMatchingKeys(
+        2195267138, 0x55654483DA14, 647928510, possibleAKeys);
+    expect(keys.contains(0xC27E180BAF69), true);
   });
 
   test('Test hard nested', () async {

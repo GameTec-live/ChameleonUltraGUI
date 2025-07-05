@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:logger/logger.dart';
 
 enum ChameleonCommand {
@@ -73,6 +74,7 @@ enum ChameleonCommand {
   mf1ManipulateValueBlock(2011),
   mf1CheckKeysOfSectors(2012), // not implemented
   mf1HardNestedAcquire(2013),
+  mf1StaticEncryptedNestedAcquire(2014),
   hf14ARawCommand(2010),
 
   // lf commands
@@ -779,6 +781,35 @@ class ChameleonCommunicator {
         ks1: bytesToU64(resp.data.sublist(16, 24)),
         nr: bytesToU32(resp.data.sublist(24, 28)),
         ar: bytesToU32(resp.data.sublist(28, 32)));
+  }
+
+  Future<(NestedNonces, NestedNonces)?> getMf1StaticEncryptedNestedAcquire(
+      {int sectorCount = 16}) async {
+    for (var key in gMifareClassicBackdoorKeys) {
+      var resp = await sendCmd(ChameleonCommand.mf1StaticEncryptedNestedAcquire,
+          data: Uint8List.fromList([...key, sectorCount]));
+      if (resp!.status == 0) {
+        int i = 0;
+        var aNonces = NestedNonces(nonces: []);
+        var bNonces = NestedNonces(nonces: []);
+
+        while (i < resp!.data.length) {
+          aNonces.nonces.add(NestedNonce(
+              nt: reconstructFullNt(resp.data, i),
+              ntEnc: bytesToU32(resp.data.sublist(i + 3, i + 7)),
+              parity: parityToInt(resp.data[i + 2])));
+          bNonces.nonces.add(NestedNonce(
+              nt: reconstructFullNt(resp.data, i + 7),
+              ntEnc: bytesToU32(resp.data.sublist(i + 10, i + 14)),
+              parity: parityToInt(resp.data[i + 9])));
+          i += 14;
+        }
+
+        return (aNonces, bNonces);
+      }
+    }
+
+    return null;
   }
 
   Future<bool> mf1Auth(int block, int keyType, Uint8List key) async {

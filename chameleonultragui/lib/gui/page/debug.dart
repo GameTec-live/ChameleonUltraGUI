@@ -3,6 +3,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
@@ -366,6 +367,39 @@ class DebugPage extends StatelessWidget {
                 },
                 child: Column(children: [
                   Text("${localizations.test_nested_lib} (hard)"),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  var nested = StaticEncryptedNestedDart(
+                      uid: 0x72000003,
+                      nt: 0x82d91e42,
+                      ntEnc: 0x98b90e04,
+                      ntParEnc: 1011);
+                  var keys = await recovery.staticEncryptedNested(nested);
+                  appState.log!
+                      .d("Nested output: ${keys.length} possible keys");
+
+                  if (context.mounted) {
+                    showDialog<String>(
+                      context: context,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: Text(localizations.debug_mode),
+                        content: Text(
+                            "Self test: valid key exists in list ${keys.contains(0x55654483DA14)}"),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(localizations.ok),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                },
+                child: Column(children: [
+                  Text("${localizations.test_nested_lib} (static encrypted)"),
                 ]),
               ),
               const SizedBox(height: 10),
