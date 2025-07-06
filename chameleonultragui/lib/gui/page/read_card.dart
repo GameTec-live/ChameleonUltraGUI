@@ -349,22 +349,13 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                 value: null,
                                                 child: Text(localizations.auto_detect_default),
                                               ),
-                                              DropdownMenuItem<MifareClassicType?>(
-                                                value: MifareClassicType.mini,
-                                                child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.mini)}'),
-                                              ),
-                                              DropdownMenuItem<MifareClassicType?>(
-                                                value: MifareClassicType.m1k,
-                                                child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m1k)}'),
-                                              ),
-                                              DropdownMenuItem<MifareClassicType?>(
-                                                value: MifareClassicType.m2k,
-                                                child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m2k)}'),
-                                              ),
-                                              DropdownMenuItem<MifareClassicType?>(
-                                                value: MifareClassicType.m4k,
-                                                child: Text('Mifare Classic ${mfClassicGetName(MifareClassicType.m4k)}'),
-                                              ),
+                                              ...getAllMifareClassicTagTypes().map((tagType) {
+                                                final mifareType = chameleonTagTypeGetMfClassicType(tagType);
+                                                return DropdownMenuItem<MifareClassicType?>(
+                                                  value: mifareType,
+                                                  child: Text(chameleonTagToString(tagType)),
+                                                );
+                                              }),
                                             ],
                                           ),
                                         ],

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Mifare Classic keys from Proxmark3
@@ -236,6 +237,34 @@ bool isMifareClassic(TagType type) {
     TagType.mifare4K,
     TagType.mifareMini
   ].contains(type);
+}
+
+/// Returns a list of all possible Mifare Classic TagType values
+List<TagType> getAllMifareClassicTagTypes() {
+  return [
+    TagType.mifareMini,
+    TagType.mifare1K,
+    TagType.mifare2K,
+    TagType.mifare4K,
+  ];
+}
+
+/// Returns a map of all Mifare Classic TagType values to their string representations
+Map<TagType, String> getMifareClassicTagTypeStrings() {
+  final Map<TagType, String> tagTypeStrings = {};
+  
+  for (TagType tagType in getAllMifareClassicTagTypes()) {
+    tagTypeStrings[tagType] = chameleonTagToString(tagType);
+  }
+  
+  return tagTypeStrings;
+}
+
+/// Returns a list of all Mifare Classic tag type names as strings
+List<String> getAllMifareClassicTagTypeNames() {
+  return getAllMifareClassicTagTypes()
+      .map((tagType) => chameleonTagToString(tagType))
+      .toList();
 }
 
 List<Uint8List> mfClassicGetKeysFromDump(List<Uint8List> dump) {
