@@ -318,33 +318,36 @@ class ReadCardPageState extends State<ReadCardPage> {
                                   context: context,
                                   builder: (BuildContext context) {
                                     return AlertDialog(
-                                      title: const Text('Override Card Type'),
+                                      title: Text(localizations.override_card_type),
                                       content: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Text(
-                                            'Select a specific card type to override auto-detection:',
-                                            style: TextStyle(fontSize: 14),
+                                          Text(
+                                            localizations.override_card_type_description,
+                                            style: const TextStyle(fontSize: 14),
                                           ),
                                           const SizedBox(height: 16),
                                           DropdownButton<MifareClassicType?>(
                                             isExpanded: true,
                                             value: mfcInfo.overrideType,
-                                            hint: const Text('Auto-detect (default)'),
+                                            hint: Text(localizations.auto_detect_default),
                                             onChanged: (MifareClassicType? newValue) async {
                                               setState(() {
                                                 mfcInfo.overrideType = newValue;
                                               });
+                                              // Close dialog first to avoid BuildContext issues
+                                              if (context.mounted) {
+                                                Navigator.of(context).pop();
+                                              }
                                               // Automatically re-read the card when override changes
                                               if (hfInfo.uid.isNotEmpty) {
                                                 await readHFInfo();
                                               }
-                                              Navigator.of(context).pop();
                                             },
                                             items: [
-                                              const DropdownMenuItem<MifareClassicType?>(
+                                              DropdownMenuItem<MifareClassicType?>(
                                                 value: null,
-                                                child: Text('Auto-detect (default)'),
+                                                child: Text(localizations.auto_detect_default),
                                               ),
                                               DropdownMenuItem<MifareClassicType?>(
                                                 value: MifareClassicType.mini,
@@ -369,7 +372,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.of(context).pop(),
-                                          child: const Text('Cancel'),
+                                          child: Text(localizations.cancel),
                                         ),
                                       ],
                                     );
@@ -383,7 +386,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 minWidth: 32,
                                 minHeight: 32,
                               ),
-                              tooltip: 'Override card type',
+                              tooltip: localizations.override_card_type_tooltip,
                             ),
                           ],
                         ],

@@ -275,6 +275,11 @@
   "write_again": "Escribir de nuevo",
   "confirm_deletions": "Confirmar eliminaci\u00f3n",
   "confirm_deletion": "Confirmar eliminaci\u00f3n",
-  "confirm_deletion_text": "\u00bfEst\u00e1s segura de que quieres eliminar {name}?",
-  "delete": "Borrar"
+  "confirm_deletion_text": "¿Estás segura de que quieres eliminar {name}?",
+  "delete": "Borrar",
+  "override_card_type": "Anular Tipo de Tarjeta",
+  "override_card_type_description": "Selecciona un tipo específico de tarjeta para anular la detección automática:",
+  "auto_detect_default": "Detectar automáticamente (predeterminado)",
+  "override_card_type_tooltip": "Anular tipo de tarjeta",
+  "mifare_classic": "Mifare Classic"
 }
