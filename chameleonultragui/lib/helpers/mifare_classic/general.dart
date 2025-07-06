@@ -1,8 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
-import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Mifare Classic keys from Proxmark3
@@ -248,52 +246,6 @@ List<TagType> getAllMifareClassicTagTypes() {
     TagType.mifare2K,
     TagType.mifare4K,
   ];
-}
-
-/// Returns a map of all Mifare Classic TagType values to their string representations
-Map<TagType, String> getMifareClassicTagTypeStrings() {
-  final Map<TagType, String> tagTypeStrings = {};
-  
-  for (TagType tagType in getAllMifareClassicTagTypes()) {
-    // Create a temporary CardSave to use with chameleonCardToString
-    final tempCard = CardSave(
-      id: 'temp',
-      uid: '',
-      sak: 0,
-      atqa: Uint8List(0),
-      ats: Uint8List(0),
-      name: '',
-      tag: tagType,
-      data: [],
-      extraData: CardSaveExtra(),
-      color: Colors.blue,
-    );
-    tagTypeStrings[tagType] = chameleonCardToString(tempCard);
-  }
-  
-  return tagTypeStrings;
-}
-
-/// Returns a list of all Mifare Classic tag type names as strings
-List<String> getAllMifareClassicTagTypeNames() {
-  return getAllMifareClassicTagTypes()
-      .map((tagType) {
-        // Create a temporary CardSave to use with chameleonCardToString
-        final tempCard = CardSave(
-          id: 'temp',
-          uid: '',
-          sak: 0,
-          atqa: Uint8List(0),
-          ats: Uint8List(0),
-          name: '',
-          tag: tagType,
-          data: [],
-          extraData: CardSaveExtra(),
-          color: Colors.blue,
-        );
-        return chameleonCardToString(tempCard);
-      })
-      .toList();
 }
 
 List<Uint8List> mfClassicGetKeysFromDump(List<Uint8List> dump) {
