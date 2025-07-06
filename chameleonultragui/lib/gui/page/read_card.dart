@@ -351,9 +351,10 @@ class ReadCardPageState extends State<ReadCardPage> {
                                               ),
                                               ...getAllMifareClassicTagTypes().map((tagType) {
                                                 final mifareType = chameleonTagTypeGetMfClassicType(tagType);
+                                                final tagTypeStrings = getMifareClassicTagTypeStrings();
                                                 return DropdownMenuItem<MifareClassicType?>(
                                                   value: mifareType,
-                                                  child: Text(chameleonTagToString(tagType)),
+                                                  child: Text(tagTypeStrings[tagType] ?? 'Unknown'),
                                                 );
                                               }),
                                             ],
