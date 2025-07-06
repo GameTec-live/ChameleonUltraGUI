@@ -180,7 +180,8 @@ class ReadCardPageState extends State<ReadCardPage> {
             chameleonTagToString(type) + (isMifareClassicEV1 ? " EV1" : "");
         // Update tech display if type is overridden
         if (mfcInfo.overrideType != null && isMifareClassic) {
-          hfInfo.tech = "Mifare Classic ${mfClassicGetName(mfcInfo.type)}${isMifareClassicEV1 ? " EV1" : ""}";
+          final overrideTagType = mifareClassicTypeToTagType(mfcInfo.overrideType!);
+          hfInfo.tech = chameleonTagToString(overrideTagType) + (isMifareClassicEV1 ? " EV1" : "");
         }
       });
     } catch (_) {
