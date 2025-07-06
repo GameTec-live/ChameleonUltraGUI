@@ -276,6 +276,5 @@
   "confirm_deletions": "Confirmar eliminaci\u00f3n",
   "confirm_deletion": "Confirmar eliminaci\u00f3n",
   "confirm_deletion_text": "\u00bfEst\u00e1s segura de que quieres eliminar {name}?",
-  "delete": "Borrar",
-  "mifare_classic": "Mifare Classic"
+  "delete": "Borrar"
 }
