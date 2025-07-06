@@ -180,7 +180,7 @@ class ReadCardPageState extends State<ReadCardPage> {
             chameleonTagToString(type) + (isMifareClassicEV1 ? " EV1" : "");
         // Update tech display if type is overridden
         if (mfcInfo.overrideType != null && isMifareClassic) {
-          final overrideTagType = mifareClassicTypeToTagType(mfcInfo.overrideType!);
+          final overrideTagType = mfClassicGetChameleonTagType(mfcInfo.overrideType!);
           hfInfo.tech = chameleonTagToString(overrideTagType) + (isMifareClassicEV1 ? " EV1" : "");
         }
       });
@@ -352,10 +352,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                                               ),
                                               ...getAllMifareClassicTagTypes().map((tagType) {
                                                 final mifareType = chameleonTagTypeGetMfClassicType(tagType);
-                                                final tagTypeStrings = getMifareClassicTagTypeStrings();
                                                 return DropdownMenuItem<MifareClassicType?>(
                                                   value: mifareType,
-                                                  child: Text(tagTypeStrings[tagType] ?? 'Unknown'),
+                                                  child: Text(chameleonTagToString(tagType)),
                                                 );
                                               }),
                                             ],
