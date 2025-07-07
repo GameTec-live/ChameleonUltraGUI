@@ -783,17 +783,18 @@ class ChameleonCommunicator {
         ar: bytesToU32(resp.data.sublist(28, 32)));
   }
 
-  Future<(NestedNonces, NestedNonces)?> getMf1StaticEncryptedNestedAcquire(
-      {int sectorCount = 16}) async {
+  Future<(int, NestedNonces, NestedNonces)?> getMf1StaticEncryptedNestedAcquire(
+      {int sectorCount = 16, int startingSector = 0}) async {
     for (var key in gMifareClassicBackdoorKeys) {
       var resp = await sendCmd(ChameleonCommand.mf1StaticEncryptedNestedAcquire,
-          data: Uint8List.fromList([...key, sectorCount]));
+          data: Uint8List.fromList([...key, sectorCount, startingSector]));
       if (resp!.status == 0) {
-        int i = 0;
+        var uid = bytesToU32(Uint8List.fromList(resp.data.sublist(0, 4)));
+        int i = 4;
         var aNonces = NestedNonces(nonces: []);
         var bNonces = NestedNonces(nonces: []);
 
-        while (i < resp!.data.length) {
+        while (i < resp.data.length) {
           aNonces.nonces.add(NestedNonce(
               nt: reconstructFullNt(resp.data, i),
               ntEnc: bytesToU32(resp.data.sublist(i + 3, i + 7)),
@@ -805,7 +806,7 @@ class ChameleonCommunicator {
           i += 14;
         }
 
-        return (aNonces, bNonces);
+        return (uid, aNonces, bNonces);
       }
     }
 

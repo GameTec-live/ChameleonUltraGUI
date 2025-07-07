@@ -62,6 +62,7 @@ final gMifareClassicKeysList = {
   0x96A301BCE267,
 };
 
+// https://eprint.iacr.org/2024/1275
 final gMifareClassicBackdoorKeysList = {
   0xA396EFA4E24F,
   0xA31667A8CEC1,
@@ -360,6 +361,8 @@ class StaticEncryptedKeysFilter {
     return nt;
   }
 
+  // Rewritten from staticnested_2x1nt_rf08s by Doegox
+  // https://github.com/RfidResearchGroup/proxmark3/blob/master/tools/mfc/card_only/staticnested_2x1nt_rf08s.c
   static (List<int>, List<int>) filterKeys(
       List<int> keys1, List<int> keys2, int nt1, int nt2) {
     _initLfsr16Table();
@@ -400,6 +403,8 @@ class StaticEncryptedKeysFilter {
     return (filteredKeys1, filteredKeys2);
   }
 
+  // Rewritten from staticnested_2x1nt_rf08s_1key by Doegox
+  // https://github.com/RfidResearchGroup/proxmark3/blob/master/tools/mfc/card_only/staticnested_2x1nt_rf08s_1key.c
   static List<int> findMatchingKeys(
       int nt1, int key1, int nt2, List<int> keys2) {
     _initLfsr16Table();
