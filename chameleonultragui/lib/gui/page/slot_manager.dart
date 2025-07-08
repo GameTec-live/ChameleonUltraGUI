@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
+import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/slot_settings.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
@@ -254,8 +255,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
                   appState.connector!.performDisconnect();
-                  return Text(
-                      '${localizations.error}: ${snapshot.error.toString()}');
+                  return ErrorPage(errorMessage: snapshot.error.toString());
                 } else {
                   return Expanded(
                     child: AlignedGridView.count(

@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/slot_edit.dart';
 import 'package:chameleonultragui/gui/menu/slot_export.dart';
 import 'package:flutter/material.dart';
@@ -96,8 +97,7 @@ class SlotSettingsState extends State<SlotSettings> {
             appState.connector!.performDisconnect();
             return AlertDialog(
                 title: Text(localizations.slot_settings),
-                content: Text(
-                    '${localizations.error}: ${snapshot.error.toString()}'));
+                content: ErrorPage(errorMessage: snapshot.error.toString()));
           } else {
             return AlertDialog(
                 title: Row(

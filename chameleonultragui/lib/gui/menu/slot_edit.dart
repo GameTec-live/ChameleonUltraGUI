@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
@@ -178,8 +179,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                           children: [CircularProgressIndicator()]);
                     } else if (snapshot.hasError) {
                       appState.connector!.performDisconnect();
-                      return Text(
-                          '${localizations.error}: ${snapshot.error.toString()}');
+                      return ErrorPage(errorMessage: snapshot.error.toString());
                     } else {
                       return Visibility(
                           visible: selectedType != TagType.unknown,

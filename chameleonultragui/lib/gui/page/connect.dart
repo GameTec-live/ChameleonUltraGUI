@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/manual_connect.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -32,7 +33,11 @@ class ConnectPage extends StatelessWidget {
               body: const Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasError) {
           appState.connector!.performDisconnect();
-          return Text('${localizations.error}: ${snapshot.error}');
+          return Scaffold(
+              appBar: AppBar(
+                title: Text(localizations.connect),
+              ),
+              body: ErrorPage(errorMessage: snapshot.error.toString()));
         } else {
           final (result as List<Chameleon>) = snapshot.data;
 

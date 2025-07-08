@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/chameleon_settings.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -195,7 +196,7 @@ class HomePageState extends State<HomePage> {
             );
           } else if (snapshot.hasError) {
             appState.connector!.performDisconnect();
-            return Text('${localizations.error}: ${snapshot.error.toString()}');
+            return ErrorPage(errorMessage: snapshot.error.toString());
           } else {
             final (
               batteryInfo,
