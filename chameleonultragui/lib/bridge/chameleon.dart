@@ -218,7 +218,7 @@ class ChameleonMessage {
       {required this.command, required this.status, required this.data});
 }
 
-enum NTLevel { static, weak, hard, unknown }
+enum NTLevel { static, weak, hard, backdoor, unknown }
 
 enum DarksideResult {
   vulnerable,
@@ -820,6 +820,15 @@ class ChameleonCommunicator {
         .status;
 
     return status == 0;
+  }
+
+  Future<Uint8List?> mf1AuthMultipleKeys(
+      int block, int keyType, List<Uint8List> keys) async {
+    var resp = (await sendCmd(ChameleonCommand.mf1CheckKeysOnBlock,
+        data: Uint8List.fromList(
+            [block, keyType, keys.length, ...keys.expand((key) => key)])));
+
+    return resp!.status == 0 ? resp.data.sublist(1) : null;
   }
 
   Future<Uint8List> mf1ReadBlock(int block, int keyType, Uint8List key) async {

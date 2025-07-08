@@ -48,12 +48,12 @@ void main() {
             ntParEnc: 1011));
     expect(possibleAKeys.length, 34675);
     expect(possibleBKeys.length, 35256);
-    var filtered = StaticEncryptedKeysFilter.filterKeys(
+    var filtered = await StaticEncryptedKeysFilterAsync.filterKeys(
         possibleAKeys, possibleBKeys, 647928510, 2195267138);
     expect(filtered.$1.length, 14429);
     expect(filtered.$2.length, 14294);
-    var keys = StaticEncryptedKeysFilter.findMatchingKeys(
-        2195267138, 0x55654483DA14, 647928510, possibleAKeys);
+    var keys = await StaticEncryptedKeysFilterAsync.findMatchingKeys(
+        2195267138, 0x55654483DA14, 647928510, filtered.$1);
     expect(keys.contains(0xC27E180BAF69), true);
   });
 

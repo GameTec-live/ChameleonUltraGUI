@@ -1,7 +1,9 @@
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Mifare Classic keys from Proxmark3
@@ -13,7 +15,6 @@ final gMifareClassicKeysList = {
   0x5C8FF9990DA2, // MFC EV1 SIGNATURE 16 A
   0xD01AFEEB890A, // MFC EV1 SIGNATURE 16 B
   0x75CCB59C9BED, // MFC EV1 SIGNATURE 17 A
-  0xFC00018778F7, // PUBLIC TRANSPORT
   0x6471A5EF2D1A, // SIMONSVOSS
   0x4E3552426B32, // ID06
   0xEF1232AB18A0, // SCHLAGE
@@ -27,11 +28,6 @@ final gMifareClassicKeysList = {
   0x484558414354, // INTRATONE
   0xEC0A9B1A9E06, // VINGCARD
   0x66B31E64CA4B, // VINGCARD
-  0x97F5DA640B18, // BANGKOK METRO KEY
-  0xA8844B0BCA06, // METRO VALENCIA KEY
-  0xE4410EF8ED2D, // ARMENIAN METRO
-  0x857464D3AAD1, // HTC EINDHOVEN KEY
-  0x08B386463229, // TROIKA
   0xE00000000000, // ICOPY
   0x199404281970, // NSP A
   0x199404281998, // NSP B
@@ -41,7 +37,6 @@ final gMifareClassicKeysList = {
   0x204752454154, // HID
   0x3B7E4FD575AD, // HID
   0x11496F97752A, // HID
-  0x3E65E4FB65B3, // GYM
   0x000000000000, // BLANK KEY
   0xB0B1B2B3B4B5,
   0xAABBCCDDEEFF,
@@ -153,6 +148,16 @@ Future<bool> mfClassicIsStaticEncrypted(ChameleonCommunicator communicator,
       level: NTLevel.hard);
   nonces.nonces.addAll(collectedNonces.nonces);
   return nonces.getNoncesInfo()[1] == 1;
+}
+
+List<Uint8List> mfClassicConvertKeys(List<int> keys) {
+  List<Uint8List> out = [];
+
+  for (var key in keys) {
+    out.add(u64ToBytes(key).sublist(2, 8));
+  }
+
+  return out;
 }
 
 String mfClassicGetName(MifareClassicType type) {
@@ -300,6 +305,38 @@ List<Uint8List> mfClassicGetKeysFromDump(List<Uint8List> dump) {
   return keys;
 }
 
+typedef FilterResult = (List<int>, List<int>);
+
+class _FilterKeysParams {
+  final SendPort sendPort;
+  final List<int> keys1;
+  final List<int> keys2;
+  final int nt1;
+  final int nt2;
+  _FilterKeysParams(
+    this.sendPort,
+    this.keys1,
+    this.keys2,
+    this.nt1,
+    this.nt2,
+  );
+}
+
+class _FindParams {
+  final SendPort sendPort;
+  final int nt1;
+  final int key1;
+  final int nt2;
+  final List<int> keys2;
+  _FindParams(
+    this.sendPort,
+    this.nt1,
+    this.key1,
+    this.nt2,
+    this.keys2,
+  );
+}
+
 class StaticEncryptedKeysFilter {
   static final List<int> _iLfsr16 = List<int>.filled(1 << 16, 0);
   static final List<int> _sLfsr16 = List<int>.filled(1 << 16, 0);
@@ -419,5 +456,71 @@ class StaticEncryptedKeysFilter {
     }
 
     return matchingKeys;
+  }
+}
+
+extension StaticEncryptedKeysFilterAsync on StaticEncryptedKeysFilter {
+  static Future<FilterResult> filterKeys(
+    List<int> keys1,
+    List<int> keys2,
+    int nt1,
+    int nt2,
+  ) async {
+    final receivePort = ReceivePort();
+    await Isolate.spawn<_FilterKeysParams>(
+      _filterKeysEntry,
+      _FilterKeysParams(
+        receivePort.sendPort,
+        keys1,
+        keys2,
+        nt1,
+        nt2,
+      ),
+    );
+    final result = await receivePort.first as FilterResult;
+    receivePort.close();
+    return result;
+  }
+
+  static void _filterKeysEntry(_FilterKeysParams params) {
+    final r = StaticEncryptedKeysFilter.filterKeys(
+      params.keys1,
+      params.keys2,
+      params.nt1,
+      params.nt2,
+    );
+    params.sendPort.send(r);
+  }
+
+  static Future<List<int>> findMatchingKeys(
+    int nt1,
+    int key1,
+    int nt2,
+    List<int> keys2,
+  ) async {
+    final receivePort = ReceivePort();
+    await Isolate.spawn<_FindParams>(
+      _findEntry,
+      _FindParams(
+        receivePort.sendPort,
+        nt1,
+        key1,
+        nt2,
+        keys2,
+      ),
+    );
+    final result = await receivePort.first as List<int>;
+    receivePort.close();
+    return result;
+  }
+
+  static void _findEntry(_FindParams params) {
+    final r = StaticEncryptedKeysFilter.findMatchingKeys(
+      params.nt1,
+      params.key1,
+      params.nt2,
+      params.keys2,
+    );
+    params.sendPort.send(r);
   }
 }
