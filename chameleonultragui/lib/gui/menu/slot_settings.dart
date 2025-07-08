@@ -9,13 +9,6 @@ import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
-class SlotNames {
-  String hf;
-  String lf;
-
-  SlotNames({this.hf = "", this.lf = ""});
-}
-
 class SlotSettings extends StatefulWidget {
   final int slot;
   final dynamic refresh;
@@ -80,7 +73,7 @@ class SlotSettingsState extends State<SlotSettings> {
       slotTypes.lf = type;
     }
 
-    widget.refresh(widget.slot);
+    widget.refresh();
 
     setState(() {});
   }
@@ -151,7 +144,7 @@ class SlotSettingsState extends State<SlotSettings> {
                             enabledSlot.hf = value;
                           });
 
-                          widget.refresh(widget.slot);
+                          widget.refresh();
                         },
                       ),
                       IconButton(
@@ -198,7 +191,7 @@ class SlotSettingsState extends State<SlotSettings> {
                             slotTypes.hf = TagType.unknown;
                           });
 
-                          widget.refresh(widget.slot);
+                          widget.refresh();
                         },
                         icon: const Icon(Icons.clear_rounded),
                       ),
@@ -225,7 +218,7 @@ class SlotSettingsState extends State<SlotSettings> {
                             enabledSlot.lf = value;
                           });
 
-                          widget.refresh(widget.slot);
+                          widget.refresh();
                         },
                       ),
                       IconButton(
@@ -272,7 +265,7 @@ class SlotSettingsState extends State<SlotSettings> {
                             slotTypes.lf = TagType.unknown;
                           });
 
-                          widget.refresh(widget.slot);
+                          widget.refresh();
                         },
                         icon: const Icon(Icons.clear_rounded),
                       ),

@@ -39,77 +39,31 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     (_) => SlotNames(),
   );
 
-  int index = 0;
   int progress = -1;
   int gridPosition = 0;
   bool onlyOneSlot = false;
 
-  Future<void> executeNextFunction() async {
+  Future<void> loadSlotData() async {
+    if (progress != -1) {
+      return;
+    }
+
     var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
-    if (index == 0 || onlyOneSlot) {
-      try {
-        usedSlots = await appState.communicator!.getSlotTagTypes();
-      } catch (_) {
-        try {
-          await appState.communicator!.getFirmwareVersion();
-        } catch (_) {
-          appState.log!.e("Lost connection to Chameleon!");
-          appState.connector!.performDisconnect();
-          appState.changesMade();
-        }
-      }
-      try {
-        enabledSlots = await appState.communicator!.getEnabledSlots();
-      } catch (_) {}
-    }
+    usedSlots = await appState.communicator!.getSlotTagTypes();
+    enabledSlots = await appState.communicator!.getEnabledSlots();
+    slotData = await appState.communicator!.getSlotTagNames();
 
-    if (index < 8) {
-      slotData[index] = SlotNames();
-
-      for (var i = 0; i < 2; i++) {
-        try {
-          String name = (await appState.communicator!
-                  .getSlotTagName(index, TagFrequency.hf))
-              .trim();
-          if (name.isEmpty) {
-            slotData[index].hf = localizations.empty;
-          } else {
-            slotData[index].hf = name;
-          }
-        } catch (_) {}
-
-        try {
-          String name = (await appState.communicator!
-                  .getSlotTagName(index, TagFrequency.lf))
-              .trim();
-          if (name.isEmpty) {
-            slotData[index].lf = localizations.empty;
-          } else {
-            slotData[index].lf = name;
-          }
-        } catch (_) {}
-      }
-
-      if (!onlyOneSlot) {
-        setState(() {
-          index++;
-        });
-      } else {
-        setState(() {
-          index = 8;
-        });
-      }
+    for (SlotNames slot in slotData) {
+      slot.hf = slot.hf.isEmpty ? localizations.no_name : slot.hf;
+      slot.lf = slot.lf.isEmpty ? localizations.no_name : slot.lf;
     }
   }
 
-  void refreshSlot(int slot) {
+  void refreshSlot() {
     setUploadState(-1);
-    setState(() {
-      index = slot;
-      onlyOneSlot = true;
-    });
+
     var appState = context.read<ChameleonGUIState>();
     appState.changesMade();
   }
@@ -118,6 +72,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     setState(() {
       progress = progressBar;
     });
+
     var appState = context.read<ChameleonGUIState>();
     appState.changesMade();
   }
@@ -166,7 +121,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           }
         }
 
-        if (card.data.length > blockOffset) {
+        if (card.data.length > blockOffset &&
+            card.data[blockOffset].length == 16) {
           blockChunk.addAll(card.data[blockOffset]);
         }
 
@@ -191,7 +147,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           TagFrequency.hf);
       await appState.communicator!.saveSlotData();
       appState.changesMade();
-      refreshSlot(gridPosition);
+      refreshSlot();
     } else if (card.tag == TagType.em410X) {
       close(context, card.name);
       await appState.communicator!.setReaderDeviceMode(false);
@@ -207,7 +163,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           TagFrequency.lf);
       await appState.communicator!.saveSlotData();
       appState.changesMade();
-      refreshSlot(gridPosition);
+      refreshSlot();
     } else if (isMifareUltralight(card.tag)) {
       close(context, card.name);
       setUploadState(0);
@@ -253,7 +209,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           TagFrequency.hf);
       await appState.communicator!.saveSlotData();
       appState.changesMade();
-      refreshSlot(gridPosition);
+      refreshSlot();
     } else {
       appState.log!.e("Can't write this card type yet.");
       close(context, card.name);
@@ -279,6 +235,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
   @override
   Widget build(BuildContext context) {
+    var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -290,117 +247,134 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             FutureBuilder(
-              future: executeNextFunction(),
+              future: loadSlotData(),
               builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-                return Expanded(
-                  child: AlignedGridView.count(
-                      padding: const EdgeInsets.all(20),
-                      crossAxisCount:
-                          MediaQuery.of(context).size.width >= 700 ? 2 : 1,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      itemCount: 8,
-                      itemBuilder: (BuildContext context, int index) {
-                        return Container(
-                          constraints: const BoxConstraints(
-                              maxHeight: 160, minHeight: 100),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                gridPosition = index;
-                              });
-                              cardSelectDialog(context);
-                            },
-                            style: ButtonStyle(
-                              shape: WidgetStateProperty.all<
-                                  RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18.0),
+                if (snapshot.connectionState == ConnectionState.waiting ||
+                    progress != -1) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  appState.connector!.performDisconnect();
+                  return Text(
+                      '${localizations.error}: ${snapshot.error.toString()}');
+                } else {
+                  return Expanded(
+                    child: AlignedGridView.count(
+                        padding: const EdgeInsets.all(20),
+                        crossAxisCount:
+                            MediaQuery.of(context).size.width >= 700 ? 2 : 1,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        itemCount: 8,
+                        itemBuilder: (BuildContext context, int index) {
+                          return Container(
+                            constraints: const BoxConstraints(
+                                maxHeight: 160, minHeight: 100),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  gridPosition = index;
+                                });
+                                cardSelectDialog(context);
+                              },
+                              style: ButtonStyle(
+                                shape: WidgetStateProperty.all<
+                                    RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18.0),
+                                  ),
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                    top: 8.0, left: 8.0, bottom: 6.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.nfc,
+                                            color: enabledSlots[index].any()
+                                                ? Colors.green
+                                                : Colors.deepOrange),
+                                        const SizedBox(width: 5),
+                                        Expanded(
+                                          child: Text(
+                                            "${localizations.slot} ${index + 1}",
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        const Icon(Icons.credit_card),
+                                        const SizedBox(width: 5),
+                                        Expanded(
+                                            child: Text(
+                                          "${slotData[index].hf} (${chameleonTagToString(usedSlots[index].hf)})",
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ))
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            children: [
+                                              const Icon(Icons.wifi),
+                                              const SizedBox(width: 5),
+                                              Expanded(
+                                                  child: Text(
+                                                "${slotData[index].lf} (${chameleonTagToString(usedSlots[index].lf)})",
+                                                //maxLines: 2,
+                                                overflow: TextOverflow.clip,
+                                              ))
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return SlotSettings(
+                                                    slot: index,
+                                                    refresh: refreshSlot);
+                                              },
+                                            );
+                                          },
+                                          icon: const Icon(Icons.settings),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.only(
-                                  top: 8.0, left: 8.0, bottom: 6.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.nfc,
-                                          color: enabledSlots[index].any()
-                                              ? Colors.green
-                                              : Colors.deepOrange),
-                                      const SizedBox(width: 5),
-                                      Expanded(
-                                        child: Text(
-                                          "${localizations.slot} ${index + 1}",
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      const Icon(Icons.credit_card),
-                                      const SizedBox(width: 5),
-                                      Expanded(
-                                          child: Text(
-                                        "${slotData[index].hf} (${chameleonTagToString(usedSlots[index].hf)})",
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ))
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          children: [
-                                            const Icon(Icons.wifi),
-                                            const SizedBox(width: 5),
-                                            Expanded(
-                                                child: Text(
-                                              "${slotData[index].lf} (${chameleonTagToString(usedSlots[index].lf)})",
-                                              //maxLines: 2,
-                                              overflow: TextOverflow.clip,
-                                            ))
-                                          ],
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return SlotSettings(
-                                                  slot: index,
-                                                  refresh: refreshSlot);
-                                            },
-                                          );
-                                        },
-                                        icon: const Icon(Icons.settings),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                );
+                          );
+                        }),
+                  );
+                }
               },
             ),
-            if (progress != -1)
-              LinearProgressIndicator(
-                value: (progress / 100).toDouble(),
-              )
+            if (progress != -1) ...[
+              const SizedBox(height: 32),
+              Text(localizations.uploading_dump),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: LinearProgressIndicator(
+                  value: (progress / 100).toDouble(),
+                ),
+              ),
+            ]
           ],
         ),
       ),
