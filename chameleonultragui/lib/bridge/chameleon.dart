@@ -76,6 +76,7 @@ enum ChameleonCommand {
   mf1CheckKeysOfSectors(2012), // not implemented
   mf1HardNestedAcquire(2013),
   mf1StaticEncryptedNestedAcquire(2014),
+  mf1CheckKeysOnBlock(2015), // not implemented
   hf14ARawCommand(2010),
 
   // lf commands

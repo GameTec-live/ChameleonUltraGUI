@@ -30,7 +30,7 @@ class HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  Future<((Icon, BatteryCharge), String, List<String>, bool)>
+  Future<((Icon, BatteryCharge), String, List<String>, bool, bool)>
       getFutureData() async {
     var appState = context.read<ChameleonGUIState>();
     List<SlotTypes> slotTypes = [];
@@ -44,8 +44,33 @@ class HomePageState extends State<HomePage> {
       await getBatteryInfo(),
       await getUsedSlotsOut8(slotTypes),
       await getVersion(),
-      await isReaderDeviceMode()
+      await isReaderDeviceMode(),
+      await areCapabilitiesSupported()
     );
+  }
+
+  Future<bool> areCapabilitiesSupported() async {
+    // Checks that firmware supports all functions of current app
+    // If not, prompt user to update firmware (as outdated firmware might break app)
+
+    int ultraCapability = ChameleonCommand.mf1CheckKeysOnBlock.value;
+    int liteCapability = ChameleonCommand.getAllSlotNicks.value;
+
+    var appState = context.read<ChameleonGUIState>();
+    List<int> capabilities =
+        await appState.communicator!.getDeviceCapabilities();
+
+    if (appState.connector!.device == ChameleonDevice.ultra &&
+        !capabilities.contains(ultraCapability)) {
+      return false;
+    }
+
+    if (appState.connector!.device == ChameleonDevice.lite &&
+        !capabilities.contains(liteCapability)) {
+      return false;
+    }
+
+    return true;
   }
 
   Future<(Icon, BatteryCharge)> getBatteryInfo() async {
@@ -203,6 +228,7 @@ class HomePageState extends State<HomePage> {
               usedSlots,
               fwVersion,
               isReaderDeviceMode,
+              areCapabilitiesSupported,
             ) = snapshot.data;
 
             return Scaffold(
@@ -416,6 +442,58 @@ class HomePageState extends State<HomePage> {
                         ),
                       ],
                     ),
+                    if (!areCapabilitiesSupported)
+                      Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: appState.sharedPreferencesProvider
+                              .getThemeComplementaryColor(),
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(8.0)),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                            ),
+                            const SizedBox(width: 16.0),
+                            Expanded(
+                              child: Text(
+                                localizations.please_update_firmware,
+                                style: const TextStyle(
+                                  fontSize: 16.0,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                var localizations =
+                                    AppLocalizations.of(context)!;
+                                var scaffoldMessenger =
+                                    ScaffoldMessenger.of(context);
+                                var snackBar = SnackBar(
+                                  content: Text(localizations.downloading_fw(
+                                      chameleonDeviceName(
+                                          appState.connector!.device))),
+                                  action: SnackBarAction(
+                                    label: localizations.close,
+                                    onPressed: () {
+                                      scaffoldMessenger.hideCurrentSnackBar();
+                                    },
+                                  ),
+                                );
+
+                                scaffoldMessenger.showSnackBar(snackBar);
+                                await flashFirmware(appState,
+                                    scaffoldMessenger: scaffoldMessenger);
+                              },
+                              child: Text(localizations.update),
+                            ),
+                          ],
+                        ),
+                      ),
                     Align(
                       alignment: Alignment.bottomRight,
                       child: Row(
