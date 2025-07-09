@@ -106,8 +106,11 @@ class MifareClassicRecovery {
       }
     }
 
-    checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.none;
-    update();
+    if (checkMarks[sector + (keyType * 40)] == ChameleonKeyCheckmark.checking) {
+      checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.none;
+      update();
+    }
+
     keyCheckProgress = null;
     return false;
   }
