@@ -57,8 +57,12 @@ class HomePageState extends State<HomePage> {
     int liteCapability = ChameleonCommand.getAllSlotNicks.value;
 
     var appState = context.read<ChameleonGUIState>();
-    List<int> capabilities =
-        await appState.communicator!.getDeviceCapabilities();
+    List<int> capabilities;
+    try {
+      capabilities = await appState.communicator!.getDeviceCapabilities();
+    } catch (_) {
+      return false;
+    }
 
     if (appState.connector!.device == ChameleonDevice.ultra &&
         !capabilities.contains(ultraCapability)) {
