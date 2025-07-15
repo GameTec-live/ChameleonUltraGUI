@@ -7,22 +7,20 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
-class CardEditMenu extends StatefulWidget {
-  final CardSave tagSave;
-  final bool isNew;
-
-  const CardEditMenu({super.key, required this.tagSave, this.isNew = false});
+class CardCreateMenu extends StatefulWidget {
+  const CardCreateMenu({super.key});
 
   @override
-  CardEditMenuState createState() => CardEditMenuState();
+  CardCreateMenuState createState() => CardCreateMenuState();
 }
 
-class CardEditMenuState extends State<CardEditMenu> {
-  TagType selectedType = TagType.unknown;
+class CardCreateMenuState extends State<CardCreateMenu> {
+  TagType selectedType = TagType.mifare1K;
   TextEditingController nameController = TextEditingController();
   TextEditingController uidController = TextEditingController();
   TextEditingController sakController = TextEditingController();
@@ -34,21 +32,102 @@ class CardEditMenuState extends State<CardEditMenu> {
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  @override
-  void initState() {
-    super.initState();
-    selectedType = widget.tagSave.tag;
-    uidController.text = widget.tagSave.uid;
-    sakController.text = bytesToHexSpace(u8ToBytes(widget.tagSave.sak));
-    atqaController.text = bytesToHexSpace(widget.tagSave.atqa);
-    atsController.text = bytesToHexSpace(widget.tagSave.ats);
-    ultralightVersionController.text =
-        bytesToHexSpace(widget.tagSave.extraData.ultralightVersion);
-    ultralightSignatureController.text =
-        bytesToHexSpace(widget.tagSave.extraData.ultralightSignature);
-    nameController.text = widget.tagSave.name;
-    pickerColor = widget.tagSave.color;
-    currentColor = widget.tagSave.color;
+  List<Uint8List> generateMifareClassicBlocks() {
+    final uid = hexToBytes(uidController.text);
+    final sak = hexToBytes(sakController.text)[0];
+    final atqa = hexToBytes(atqaController.text);
+
+    List<Uint8List> blocks = [];
+
+    for (int sector = 0;
+        sector <
+            mfClassicGetSectorCount(
+                chameleonTagTypeGetMfClassicType(selectedType));
+        sector++) {
+      for (int block = 0;
+          block < mfClassicGetBlockCountBySector(sector) - 1;
+          block++) {
+        blocks.add(Uint8List(16));
+      }
+
+      blocks.add(Uint8List.fromList([
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0x07,
+        0x80,
+        0x69,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF
+      ]));
+    }
+
+    final block0 = Uint8List(16);
+    if (uid.length == 4) {
+      block0.setAll(0, uid);
+      block0[4] = calculateBcc(uid);
+      block0[5] = sak + 0x80;
+      block0.setAll(6, atqa);
+      block0.setAll(8, [0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69]);
+    } else if (uid.length == 7) {
+      block0.setAll(0, uid);
+      block0[7] = sak + 0x80;
+      block0.setAll(8, atqa);
+      block0.setAll(10, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+    }
+
+    blocks[0] = block0;
+
+    return blocks;
+  }
+
+  List<Uint8List> generateMifareUltralightBlocks() {
+    final uid = hexToBytes(uidController.text);
+
+    final List<Uint8List> blocks = [];
+
+    final block0 = Uint8List(4);
+    block0.setAll(0, uid.sublist(0, 3));
+    block0[3] =
+        calculateBcc(Uint8List.fromList([0x88, uid[0], uid[1], uid[2]]));
+    blocks.add(block0);
+
+    final block1 = Uint8List(4);
+    block1.setAll(0, uid.sublist(3, 7));
+    blocks.add(block1);
+
+    final block2 = Uint8List(4);
+    block2[0] = calculateBcc(uid.sublist(3, 7));
+    block2[1] = 0x48;
+    block2[2] = 0x00;
+    block2[3] = 0x00;
+    blocks.add(block2);
+
+    final totalBlocks = getBlockCountForTagType(selectedType);
+    for (int i = 3; i < totalBlocks; i++) {
+      if (i == 3) {
+        final cc = Uint8List(4);
+        cc[0] = 0xE1;
+        cc[1] = 0x10;
+        cc[2] = (getMemorySizeForTagType(selectedType) ~/ 8) & 0xFF;
+        cc[3] = 0x00;
+        blocks.add(cc);
+      } else if (i >= totalBlocks - 5) {
+        blocks.add(Uint8List(4));
+      } else {
+        blocks.add(Uint8List(4));
+      }
+    }
+
+    return blocks;
   }
 
   @override
@@ -57,7 +136,7 @@ class CardEditMenuState extends State<CardEditMenu> {
     var localizations = AppLocalizations.of(context)!;
 
     return AlertDialog(
-      title: Text(localizations.edit_card),
+      title: Text(localizations.create_card),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -82,7 +161,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                         transform: Matrix4.translationValues(0, 7, 0),
                         child: IconButton(
                           icon: Icon(
-                              (chameleonTagToFrequency(widget.tagSave.tag) ==
+                              (chameleonTagToFrequency(selectedType) ==
                                       TagFrequency.hf)
                                   ? Icons.credit_card
                                   : Icons.wifi,
@@ -137,7 +216,7 @@ class CardEditMenuState extends State<CardEditMenu> {
               const SizedBox(height: 8),
               DropdownButton<TagType>(
                 value: selectedType,
-                items: getTagTypes()
+                items: getTagTypesByFrequency(TagFrequency.hf)
                     .map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
                     value: type,
@@ -266,7 +345,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                               }
                               return null;
                             }),
-                        if (isMifareUltralight(selectedType)) ...[
+                        if (isMifareUltralight(selectedType)) ...[ 
                           const SizedBox(height: 20),
                           TextFormField(
                               controller: ultralightVersionController,
@@ -332,14 +411,22 @@ class CardEditMenuState extends State<CardEditMenu> {
               return;
             }
 
+            final uid = hexToBytes(uidController.text);
+            final sak = chameleonTagToFrequency(selectedType) == TagFrequency.lf
+                ? 0
+                : hexToBytes(sakController.text)[0];
+            final atqa = hexToBytes(atqaController.text);
+            final ats = hexToBytes(atsController.text);
+
+            final blocks = isMifareUltralight(selectedType)
+                ? generateMifareUltralightBlocks()
+                : generateMifareClassicBlocks();
+
             var tag = CardSave(
-                id: widget.tagSave.id,
                 name: nameController.text,
-                sak: chameleonTagToFrequency(selectedType) == TagFrequency.lf
-                    ? widget.tagSave.sak
-                    : hexToBytes(sakController.text)[0],
-                atqa: hexToBytes(atqaController.text),
-                uid: bytesToHexSpace(hexToBytes(uidController.text)),
+                sak: sak,
+                atqa: atqa,
+                uid: bytesToHexSpace(uid),
                 extraData: CardSaveExtra(
                   ultralightSignature:
                       hexToBytes(ultralightSignatureController.text),
@@ -347,23 +434,18 @@ class CardEditMenuState extends State<CardEditMenu> {
                       hexToBytes(ultralightVersionController.text),
                 ),
                 tag: selectedType,
-                data: widget.tagSave.data,
+                data: blocks,
                 color: currentColor,
-                ats: hexToBytes(atsController.text));
+                ats: ats);
 
             var tags = appState.sharedPreferencesProvider.getCards();
-            var index =
-                tags.indexWhere((element) => element.id == widget.tagSave.id);
-
-            if (index != -1) {
-              tags[index] = tag;
-            }
+            tags.add(tag);
 
             appState.sharedPreferencesProvider.setCards(tags);
             appState.changesMade();
             Navigator.pop(context);
           },
-          child: Text(localizations.save),
+          child: Text(localizations.create_card),
         ),
       ],
     );

@@ -4,6 +4,7 @@ import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 
@@ -404,6 +405,10 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
 
                                             return null;
                                           },
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter.allow(
+                                                RegExp(r'[0-9]'))
+                                          ],
                                           decoration: InputDecoration(
                                             labelText: localizations.ble_pin,
                                             hintText: localizations.enter_pin,

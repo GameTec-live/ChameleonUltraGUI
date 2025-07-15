@@ -248,6 +248,68 @@ TagFrequency chameleonTagToFrequency(TagType tag) {
   }
 }
 
+int calculateBcc(Uint8List data) {
+  int bcc = 0;
+  for (int byte in data) {
+    bcc ^= byte;
+  }
+  return bcc;
+}
+
+int getBlockCountForTagType(TagType tagType) {
+  switch (tagType) {
+    case TagType.mifareMini:
+      return 20;
+    case TagType.mifare1K:
+      return 64;
+    case TagType.mifare2K:
+      return 128;
+    case TagType.mifare4K:
+      return 256;
+    case TagType.ultralight:
+    case TagType.ultralightC:
+      return 16;
+    case TagType.ultralight11:
+    case TagType.ultralight21:
+      return 20;
+    case TagType.ntag210:
+      return 16;
+    case TagType.ntag212:
+      return 41;
+    case TagType.ntag213:
+      return 45;
+    case TagType.ntag215:
+      return 135;
+    case TagType.ntag216:
+      return 231;
+    default:
+      return 64;
+  }
+}
+
+int getMemorySizeForTagType(TagType tagType) {
+  switch (tagType) {
+    case TagType.ultralight:
+    case TagType.ultralightC:
+      return 64;
+    case TagType.ultralight11:
+    case TagType.ultralight21:
+      return 80;
+    case TagType.ntag210:
+      return 64;
+    case TagType.ntag212:
+      return 164;
+    case TagType.ntag213:
+      return 180;
+    case TagType.ntag215:
+      return 540;
+    case TagType.ntag216:
+      return 924;
+    default:
+      return 64;
+  }
+}
+
 class SharedPreferencesLogger extends LogOutput {
   SharedPreferencesProvider? provider;
 

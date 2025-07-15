@@ -311,5 +311,6 @@
   "has_backdoor_support": "Backdoor",
   "demo_firmware": "Demo, not real Chameleon",
   "trademarks_mifare": "MIFARE®, MIFARE® Classic and MIFARE® Ultralight are registered trademarks of NXP Semiconductors B.V.",
-  "trademarks_em": "EM Microelectronic-Marin, EM Microelectronic, EM and all product designations beginning with “EM” are registered trademarks of EM Microelectronic"
+  "trademarks_em": "EM Microelectronic-Marin, EM Microelectronic, EM and all product designations beginning with “EM” are registered trademarks of EM Microelectronic",
+  "create_card": "Create card"
 }
