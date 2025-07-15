@@ -214,7 +214,7 @@ class ChameleonMessage {
       {required this.command, required this.status, required this.data});
 }
 
-enum NTLevel { static, weak, hard, staticEncrypted, unknown }
+enum NTLevel { static, weak, hard, unknown }
 
 enum DarksideResult {
   vulnerable,
@@ -656,8 +656,6 @@ class ChameleonCommunicator {
       return NTLevel.weak;
     } else if (resp == 2) {
       return NTLevel.hard;
-    } else if (resp == 3) {
-      return NTLevel.staticEncrypted;
     } else {
       return NTLevel.unknown;
     }
@@ -666,7 +664,7 @@ class ChameleonCommunicator {
   Future<DarksideResult> checkMf1Darkside() async {
     // Check card vulnerability to Mifare Classic darkside attack
     var message = (await sendCmd(ChameleonCommand.mf1DarksideAcquire,
-        data: Uint8List.fromList([0, 0, 1, 15]),
+        data: Uint8List.fromList([0x61, 0x03, 1, 15]),
         timeout: const Duration(seconds: 30)))!;
     int status = message.status;
     if (message.data.isNotEmpty) {

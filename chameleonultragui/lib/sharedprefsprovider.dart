@@ -251,6 +251,14 @@ class SharedPreferencesProvider extends ChangeNotifier {
     _sharedPreferences.setBool('debug', value);
   }
 
+  bool isEmulatedChameleon() {
+    return _sharedPreferences.getBool('emulate_device') ?? false;
+  }
+
+  void setEmulatedChameleon(bool value) {
+    _sharedPreferences.setBool('emulate_device', value);
+  }
+
   List<Dictionary> getDictionaries() {
     List<Dictionary> output = [];
     final data = _sharedPreferences.getStringList('dictionaries') ?? [];

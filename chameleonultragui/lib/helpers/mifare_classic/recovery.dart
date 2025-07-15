@@ -243,19 +243,6 @@ class MifareClassicRecovery {
       var validKeyBlock = 0;
       var validKeyType = 0;
 
-      if (prng != NTLevel.staticEncrypted) {
-        // Check for static encrypted nonce one, just to make sure (old firmware)
-        Uint8List data = await appState.communicator!.send14ARaw(
-            Uint8List.fromList([0x64, 0x00]),
-            autoSelect: true,
-            checkResponseCrc: false);
-        if (data.length == 4) {
-          prng = NTLevel.hard;
-        }
-      } else {
-        prng = NTLevel.hard;
-      }
-
       for (var sector = 0;
           sector < mfClassicGetSectorCount(mf1Type);
           sector++) {
@@ -268,6 +255,12 @@ class MifareClassicRecovery {
             break;
           }
         }
+      }
+
+      if (await mfClassicIsStaticEncrypted(
+          appState.communicator!, validKeyBlock, validKeyType, validKey)) {
+        error = "static_encrypted_nonce";
+        return;
       }
 
       for (var sector = 0;
