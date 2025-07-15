@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -34,6 +35,10 @@ class CardEditMenuState extends State<CardEditMenu> {
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  String originalUid = '';
+  String originalSak = '';
+  String originalAtqa = '';
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +54,62 @@ class CardEditMenuState extends State<CardEditMenu> {
     nameController.text = widget.tagSave.name;
     pickerColor = widget.tagSave.color;
     currentColor = widget.tagSave.color;
+
+    originalUid = widget.tagSave.uid;
+    originalSak = bytesToHexSpace(u8ToBytes(widget.tagSave.sak));
+    originalAtqa = bytesToHexSpace(widget.tagSave.atqa);
+  }
+
+  bool hasDataChanged() {
+    return uidController.text != originalUid ||
+        sakController.text != originalSak ||
+        atqaController.text != originalAtqa;
+  }
+
+  Future<bool> showUpdateDataDialog(BuildContext context) async {
+    final localizations = AppLocalizations.of(context)!;
+
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(localizations.update_data_title),
+              content: Text(localizations.update_data_message),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(localizations.no),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(localizations.yes),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+  }
+
+  List<Uint8List> updateCardData(List<Uint8List> originalData) {
+    List<Uint8List> updatedData = List.from(originalData);
+
+    if (isMifareClassic(selectedType)) {
+      final uid = hexToBytes(uidController.text);
+      final sak = hexToBytes(sakController.text)[0];
+      final atqa = hexToBytes(atqaController.text);
+
+      updatedData[0] = mfClassicGenerateFirstBlock(uid, sak, atqa);
+    } else if (isMifareUltralight(selectedType)) {
+      final uid = hexToBytes(uidController.text);
+      final newBlocks = mfUltralightGenerateFirstBlocks(uid, selectedType);
+
+      for (int i = 0; i < newBlocks.length && i < updatedData.length; i++) {
+        updatedData[i] = newBlocks[i];
+      }
+    }
+
+    return updatedData;
   }
 
   @override
@@ -327,9 +388,20 @@ class CardEditMenuState extends State<CardEditMenu> {
           child: Text(localizations.cancel),
         ),
         TextButton(
-          onPressed: () {
+          onPressed: () async {
             if (!_formKey.currentState!.validate()) {
               return;
+            }
+
+            List<Uint8List> cardData = widget.tagSave.data;
+
+            if (hasDataChanged() &&
+                (isMifareClassic(selectedType) ||
+                    isMifareUltralight(selectedType))) {
+              bool shouldUpdateData = await showUpdateDataDialog(context);
+              if (shouldUpdateData) {
+                cardData = updateCardData(widget.tagSave.data);
+              }
             }
 
             var tag = CardSave(
@@ -347,7 +419,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                       hexToBytes(ultralightVersionController.text),
                 ),
                 tag: selectedType,
-                data: widget.tagSave.data,
+                data: cardData,
                 color: currentColor,
                 ats: hexToBytes(atsController.text));
 
@@ -361,7 +433,9 @@ class CardEditMenuState extends State<CardEditMenu> {
 
             appState.sharedPreferencesProvider.setCards(tags);
             appState.changesMade();
-            Navigator.pop(context);
+            if (context.mounted) {
+              Navigator.pop(context);
+            }
           },
           child: Text(localizations.save),
         ),

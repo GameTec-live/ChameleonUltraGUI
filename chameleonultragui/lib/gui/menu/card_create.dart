@@ -70,21 +70,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
       ]));
     }
 
-    final block0 = Uint8List(16);
-    if (uid.length == 4) {
-      block0.setAll(0, uid);
-      block0[4] = calculateBcc(uid);
-      block0[5] = sak + 0x80;
-      block0.setAll(6, atqa);
-      block0.setAll(8, [0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69]);
-    } else if (uid.length == 7) {
-      block0.setAll(0, uid);
-      block0[7] = sak + 0x80;
-      block0.setAll(8, atqa);
-      block0.setAll(10, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-    }
-
-    blocks[0] = block0;
+    blocks[0] = mfClassicGenerateFirstBlock(uid, sak, atqa);
 
     return blocks;
   }
@@ -92,39 +78,19 @@ class CardCreateMenuState extends State<CardCreateMenu> {
   List<Uint8List> generateMifareUltralightBlocks() {
     final uid = hexToBytes(uidController.text);
 
-    final List<Uint8List> blocks = [];
-
-    final block0 = Uint8List(4);
-    block0.setAll(0, uid.sublist(0, 3));
-    block0[3] =
-        calculateBcc(Uint8List.fromList([0x88, uid[0], uid[1], uid[2]]));
-    blocks.add(block0);
-
-    final block1 = Uint8List(4);
-    block1.setAll(0, uid.sublist(3, 7));
-    blocks.add(block1);
-
-    final block2 = Uint8List(4);
-    block2[0] = calculateBcc(uid.sublist(3, 7));
-    block2[1] = 0x48;
-    block2[2] = 0x00;
-    block2[3] = 0x00;
-    blocks.add(block2);
+    final List<Uint8List> blocks =
+        mfUltralightGenerateFirstBlocks(uid, selectedType);
 
     final totalBlocks = getBlockCountForTagType(selectedType);
-    for (int i = 3; i < totalBlocks; i++) {
-      if (i == 3) {
-        final cc = Uint8List(4);
-        cc[0] = 0xE1;
-        cc[1] = 0x10;
-        cc[2] = (getMemorySizeForTagType(selectedType) ~/ 8) & 0xFF;
-        cc[3] = 0x00;
-        blocks.add(cc);
-      } else if (i >= totalBlocks - 5) {
-        blocks.add(Uint8List(4));
-      } else {
-        blocks.add(Uint8List(4));
-      }
+    final cc = Uint8List(4);
+    cc[0] = 0xE1;
+    cc[1] = 0x10;
+    cc[2] = (getMemorySizeForTagType(selectedType) ~/ 8) & 0xFF;
+    cc[3] = 0x00;
+    blocks.add(cc);
+
+    for (int i = 4; i < totalBlocks; i++) {
+      blocks.add(Uint8List(4));
     }
 
     return blocks;
@@ -345,7 +311,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                               }
                               return null;
                             }),
-                        if (isMifareUltralight(selectedType)) ...[ 
+                        if (isMifareUltralight(selectedType)) ...[
                           const SizedBox(height: 20),
                           TextFormField(
                               controller: ultralightVersionController,
