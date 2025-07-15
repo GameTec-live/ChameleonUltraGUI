@@ -351,7 +351,7 @@ void updateNavigationRailWidth(BuildContext context) async {
   }
 }
 
-List<TagType> getTagTypeByFrequency(TagFrequency frequency) {
+List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
   if (frequency == TagFrequency.hf) {
     return [
       TagType.mifare1K,
@@ -383,4 +383,37 @@ int evenParity32(int n) {
     }
   }
   return ret % 2;
+}
+
+TagType getTagTypeByDumpSize(int size) {
+  switch (size) {
+    // Mifare Classic
+    case 320:
+      return TagType.mifareMini;
+    case 1024:
+      return TagType.mifare1K;
+    case 1088: // EV1
+    case 2048:
+      return TagType.mifare2K;
+    case 4096:
+      return TagType.mifare4K;
+
+    // Ultralight/NTAG
+    case 64:
+      return TagType.ultralight;
+    case 192:
+      return TagType.ultralightC;
+    case 80:
+      return TagType.ultralight11; // also NTAG210
+    case 164:
+      return TagType.ultralight21; // also NTAG212
+    case 180:
+      return TagType.ntag213;
+    case 540:
+      return TagType.ntag215;
+    case 924:
+      return TagType.ntag216;
+  }
+
+  return TagType.unknown;
 }

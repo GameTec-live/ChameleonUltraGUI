@@ -147,7 +147,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
               DropdownButton<TagType>(
                 value: selectedType,
                 items: [
-                  ...getTagTypeByFrequency(widget.frequency),
+                  ...getTagTypesByFrequency(widget.frequency),
                   TagType.unknown
                 ].map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
