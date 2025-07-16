@@ -39,7 +39,7 @@ class AndroidSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecificDevice(devicePort) async {
+  Future<bool> connectSpecificDevice(dynamic devicePort) async {
     if (devicePort.contains(":")) {
       return bleSerial.connectSpecificDevice(devicePort);
     } else {

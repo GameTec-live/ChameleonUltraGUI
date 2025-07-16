@@ -144,7 +144,7 @@ class DFUCommunicator {
     }
   }
 
-  open(AbstractSerial port) {
+  dynamic open(AbstractSerial port) {
     _serialInstance = port;
   }
 
