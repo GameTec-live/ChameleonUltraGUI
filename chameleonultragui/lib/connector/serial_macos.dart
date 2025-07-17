@@ -35,26 +35,26 @@ class MacOSSerial extends AbstractSerial {
 
   @override
   Future<bool> connectSpecificDevice(dynamic devicePort) async {
-    if (devicePort.contains(":")) {
-      return bleSerial.connectSpecificDevice(devicePort);
+    if (devicePort.contains("/dev")) {
+      return await nativeSerial.connectSpecificDevice(devicePort);
     } else {
-      return nativeSerial.connectSpecificDevice(devicePort);
+      return await bleSerial.connectSpecificDevice(devicePort);
     }
   }
 
   @override
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
     if (bleSerial.connected) {
-      return bleSerial.write(command, firmware: firmware);
+      return await bleSerial.write(command, firmware: firmware);
     } else {
-      return nativeSerial.write(command, firmware: firmware);
+      return await nativeSerial.write(command, firmware: firmware);
     }
   }
 
   @override
   Future<void> registerCallback(dynamic callback) async {
-    bleSerial.messageCallback = callback;
-    nativeSerial.messageCallback = callback;
+    await bleSerial.registerCallback(callback);
+    await nativeSerial.registerCallback(callback);
   }
 
   @override
@@ -88,4 +88,13 @@ class MacOSSerial extends AbstractSerial {
   @override
   set pendingConnection(pendingConnection) =>
       {bleSerial.pendingConnection = pendingConnection};
+
+  @override
+  Future<void> open() async {
+    if (bleSerial.connected) {
+      await bleSerial.open();
+    } else {
+      await nativeSerial.open();
+    }
+  }
 }

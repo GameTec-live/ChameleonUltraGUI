@@ -41,9 +41,9 @@ class AndroidSerial extends AbstractSerial {
   @override
   Future<bool> connectSpecificDevice(dynamic devicePort) async {
     if (devicePort.contains(":")) {
-      return bleSerial.connectSpecificDevice(devicePort);
+      return await bleSerial.connectSpecificDevice(devicePort);
     } else {
-      return mobileSerial.connectSpecificDevice(devicePort);
+      return await mobileSerial.connectSpecificDevice(devicePort);
     }
   }
 
@@ -77,16 +77,16 @@ class AndroidSerial extends AbstractSerial {
   @override
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
     if (bleSerial.connected) {
-      return bleSerial.write(command, firmware: firmware);
+      return await bleSerial.write(command, firmware: firmware);
     } else {
-      return mobileSerial.write(command, firmware: firmware);
+      return await mobileSerial.write(command, firmware: firmware);
     }
   }
 
   @override
   Future<void> registerCallback(dynamic callback) async {
-    bleSerial.messageCallback = callback;
-    mobileSerial.messageCallback = callback;
+    await bleSerial.registerCallback(callback);
+    await mobileSerial.registerCallback(callback);
   }
 
   @override
