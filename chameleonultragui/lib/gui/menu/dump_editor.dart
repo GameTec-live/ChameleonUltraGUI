@@ -680,12 +680,37 @@ class DumpEditorState extends State<DumpEditor> {
     );
   }
 
-  List<TextSpan> _buildHighlightedTextWithBlockNumbers(int controllerIndex) {
+  List<TextSpan> _buildHighlightedTextOnly(int controllerIndex) {
     List<String> lines = controllers[controllerIndex].text.split('\n');
     List<TextSpan> spans = [];
 
     for (int i = 0; i < lines.length; i++) {
       String line = lines[i].trim();
+      if (spans.isNotEmpty) {
+        spans.add(const TextSpan(text: '\n'));
+      }
+
+      if (line.isEmpty) {
+        spans.add(TextSpan(
+          text: '',
+          style: TextStyle(color: _getDefaultHighlightColor()),
+        ));
+        continue;
+      }
+
+      List<TextSpan> lineSpans =
+          _getHighlightedLineSpans(line, controllerIndex, i);
+      spans.addAll(lineSpans);
+    }
+
+    return spans;
+  }
+
+  List<TextSpan> _buildBlockNumbers(int controllerIndex) {
+    List<String> lines = controllers[controllerIndex].text.split('\n');
+    List<TextSpan> spans = [];
+
+    for (int i = 0; i < lines.length; i++) {
       if (spans.isNotEmpty) {
         spans.add(const TextSpan(text: '\n'));
       }
@@ -703,18 +728,6 @@ class DumpEditorState extends State<DumpEditor> {
           fontWeight: FontWeight.normal,
         ),
       ));
-
-      if (line.isEmpty) {
-        spans.add(TextSpan(
-          text: '',
-          style: TextStyle(color: _getDefaultHighlightColor()),
-        ));
-        continue;
-      }
-
-      List<TextSpan> lineSpans =
-          _getHighlightedLineSpans(line, controllerIndex, i);
-      spans.addAll(lineSpans);
     }
 
     return spans;
@@ -753,6 +766,177 @@ class DumpEditorState extends State<DumpEditor> {
         : MifareClassicDumpHighlighter.getDefaultColor(context);
   }
 
+  Widget _buildAdaptiveEditor(int controllerIndex) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double optimalFontSize =
+            _guessOptimalFontSize(controllerIndex, context);
+        return _buildOriginalEditor(controllerIndex, fontSize: optimalFontSize);
+      },
+    );
+  }
+
+  double _guessOptimalFontSize(int controllerIndex, BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+
+    double maxWidth = isUltralight ? 145 : 395;
+    double actualWidth = screenWidth < maxWidth ? screenWidth : maxWidth;
+
+    double availableWidth = actualWidth - 28;
+
+    String sampleText = _getLongestLine(controllerIndex);
+    if (sampleText.isEmpty) {
+      return 14.0;
+    }
+
+    for (double fontSize = 16.0; fontSize >= 10.0; fontSize -= 0.1) {
+      if (_doesTextFitOnOneLine(sampleText, fontSize, availableWidth)) {
+        return fontSize;
+      }
+    }
+
+    return 10.0;
+  }
+
+  double _calculateLeftPadding(BuildContext context, double fontSize) {
+    final TextPainter blockNumberPainter = TextPainter(
+      text: TextSpan(
+        text: '999: ',
+        style: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: fontSize,
+          height: 1.2,
+          letterSpacing: 0.0,
+          fontWeight: FontWeight.normal,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    blockNumberPainter.layout();
+
+    return blockNumberPainter.size.width - 1;
+  }
+
+  String _getLongestLine(int controllerIndex) {
+    if (controllerIndex >= controllers.length) return '';
+
+    List<String> lines = controllers[controllerIndex].text.split('\n');
+    String longestLine = '';
+
+    for (String line in lines) {
+      String trimmedLine = line.trim();
+      if (trimmedLine.length > longestLine.length) {
+        longestLine = trimmedLine;
+      }
+    }
+
+    return '999: $longestLine';
+  }
+
+  bool _doesTextFitOnOneLine(
+      String text, double fontSize, double availableWidth) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: fontSize,
+          height: 1.2,
+          letterSpacing: 0.0,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    );
+
+    textPainter.layout(maxWidth: availableWidth);
+
+    bool fitsInLines = !textPainter.didExceedMaxLines;
+    bool fitsInWidth = textPainter.size.width <= availableWidth;
+
+    return fitsInLines && fitsInWidth;
+  }
+
+  Widget _buildOriginalEditor(int controllerIndex, {double fontSize = 14.0}) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            child: IgnorePointer(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: fontSize,
+                        height: 1.2,
+                        letterSpacing: 0.0,
+                      ),
+                      children: _buildBlockNumbers(controllerIndex),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: fontSize,
+                          height: 1.2,
+                          letterSpacing: 0.0,
+                        ),
+                        children: _buildHighlightedTextOnly(controllerIndex),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(12, 8, 12, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: _calculateLeftPadding(context, fontSize),
+              ),
+              Expanded(
+                child: TextFormField(
+                  controller: controllers[controllerIndex],
+                  maxLines: null,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: fontSize,
+                    color: Colors.transparent,
+                    height: 1.2,
+                    letterSpacing: 0.0,
+                  ),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    hintText: '',
+                    isDense: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                        RegExp(r'[0-9A-Fa-f\n\s-]')),
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      return _handleTextInput(oldValue, newValue);
+                    }),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildEditor(int controllerIndex) {
     var localizations = AppLocalizations.of(context)!;
     String title = isUltralight
@@ -788,53 +972,7 @@ class DumpEditorState extends State<DumpEditor> {
             ),
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                  child: IgnorePointer(
-                    child: Text.rich(
-                      TextSpan(
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 14,
-                          height: 1.2,
-                          letterSpacing: 0.0,
-                        ),
-                        children: _buildHighlightedTextWithBlockNumbers(
-                            controllerIndex),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              TextFormField(
-                controller: controllers[controllerIndex],
-                maxLines: null,
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 14,
-                  color: Colors.transparent,
-                  height: 1.2,
-                  letterSpacing: 0.0,
-                ),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.fromLTRB(47, 12, 12, 12),
-                  hintText: '',
-                  isDense: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(
-                      RegExp(r'[0-9A-Fa-f\n\s-]')),
-                  TextInputFormatter.withFunction((oldValue, newValue) {
-                    return _handleTextInput(oldValue, newValue);
-                  }),
-                ],
-              ),
-            ],
-          ),
+          child: _buildAdaptiveEditor(controllerIndex),
         ),
         const SizedBox(height: 16),
       ],
