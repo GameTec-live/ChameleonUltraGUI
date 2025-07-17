@@ -424,10 +424,12 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                                         () {
                                                                       Navigator.pop(
                                                                           context);
-                                                                      Navigator.push(
+                                                                      Navigator
+                                                                          .push(
                                                                         context,
                                                                         MaterialPageRoute(
-                                                                          builder: (context) => const Mfkey32Menu(),
+                                                                          builder: (context) =>
+                                                                              const Mfkey32Menu(),
                                                                         ),
                                                                       );
                                                                     },

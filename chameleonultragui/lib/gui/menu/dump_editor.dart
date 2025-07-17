@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/dump_highlighter.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/dump_analyzer.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/dump_highlighter.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/dump_analyzer.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Localizations
@@ -25,22 +28,27 @@ class DumpEditor extends StatefulWidget {
 
 class DumpEditorState extends State<DumpEditor> {
   late List<Uint8List> dumpData;
-  late List<TextEditingController> sectorControllers;
-  late List<String>
-      initialSectorTexts; // Store initial text content for change tracking
+  late List<TextEditingController> controllers;
+  late List<String> initialTexts;
   bool hasUnsavedChanges = false;
   bool isInsertMode = false;
   ScrollController scrollController = ScrollController();
+  late bool isUltralight;
+  late int bytesPerBlock;
+  late int hexCharsPerBlock;
 
   @override
   void initState() {
     super.initState();
+    isUltralight = isMifareUltralight(widget.cardSave.tag);
+    bytesPerBlock = isUltralight ? 4 : 16;
+    hexCharsPerBlock = bytesPerBlock * 2;
     initEditor();
   }
 
   @override
   void dispose() {
-    for (var controller in sectorControllers) {
+    for (var controller in controllers) {
       controller.dispose();
     }
     scrollController.dispose();
@@ -48,13 +56,32 @@ class DumpEditorState extends State<DumpEditor> {
   }
 
   void initEditor() {
-    // Create a deep copy of the dump data to avoid modifying the original
     dumpData =
         widget.cardSave.data.map((bytes) => Uint8List.fromList(bytes)).toList();
+    controllers = [];
+    initialTexts = [];
 
-    // Initialize controllers for each sector
-    sectorControllers = [];
-    initialSectorTexts = []; // Initialize the initial text storage
+    if (isUltralight) {
+      _initUltralightEditor();
+    } else {
+      _initClassicEditor();
+    }
+  }
+
+  void _initUltralightEditor() {
+    TextEditingController controller = TextEditingController();
+    String dumpText = '';
+    for (int i = 0; i < dumpData.length; i++) {
+      if (i > 0) dumpText += '\n';
+      dumpText += _formatHexData(dumpData[i]);
+    }
+    controller.text = dumpText;
+    controller.addListener(() => _onDataChanged(0));
+    controllers.add(controller);
+    initialTexts.add(dumpText);
+  }
+
+  void _initClassicEditor() {
     MifareClassicType cardType =
         chameleonTagTypeGetMfClassicType(widget.cardSave.tag);
     int sectorCount = mfClassicGetSectorCount(cardType);
@@ -63,37 +90,37 @@ class DumpEditorState extends State<DumpEditor> {
       int blocksPerSector = mfClassicGetBlockCountBySector(sector);
       int firstBlock = mfClassicGetFirstBlockCountBySector(sector);
 
-      // Build sector data text with spaces between bytes
       String sectorText = '';
       for (int block = 0; block < blocksPerSector; block++) {
         int blockIndex = firstBlock + block;
         if (blockIndex < dumpData.length && dumpData[blockIndex].isNotEmpty) {
           if (block > 0) sectorText += '\n';
-          String hexData = bytesToHex(dumpData[blockIndex]).toUpperCase();
-          // Add space after every 2 hex characters (1 byte)
-          String spacedHex = '';
-          for (int i = 0; i < hexData.length; i += 2) {
-            if (i > 0) spacedHex += ' ';
-            spacedHex += hexData.substring(i, i + 2);
-          }
-          sectorText += spacedHex;
+          sectorText += _formatHexData(dumpData[blockIndex]);
         }
       }
 
       TextEditingController controller =
           TextEditingController(text: sectorText);
-      controller.addListener(() => _onSectorDataChanged(sector));
-      sectorControllers.add(controller);
-      initialSectorTexts.add(sectorText); // Store initial text content
+      controller.addListener(() => _onDataChanged(sector));
+      controllers.add(controller);
+      initialTexts.add(sectorText);
     }
   }
 
-  void _onSectorDataChanged(int sector) {
-    // Only mark as changed if the actual text content has changed
-    if (sector < sectorControllers.length &&
-        sector < initialSectorTexts.length) {
-      String currentText = sectorControllers[sector].text;
-      String initialText = initialSectorTexts[sector];
+  String _formatHexData(Uint8List data) {
+    String hexData = bytesToHex(data).toUpperCase();
+    String spacedHex = '';
+    for (int i = 0; i < hexData.length; i += 2) {
+      if (i > 0) spacedHex += ' ';
+      spacedHex += hexData.substring(i, i + 2);
+    }
+    return spacedHex;
+  }
+
+  void _onDataChanged(int index) {
+    if (index < controllers.length && index < initialTexts.length) {
+      String currentText = controllers[index].text;
+      String initialText = initialTexts[index];
 
       if (currentText != initialText) {
         setState(() {
@@ -103,118 +130,219 @@ class DumpEditorState extends State<DumpEditor> {
     }
   }
 
+  TextEditingValue _handleTextInput(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    if (isInsertMode) {
+      return _handleInsertMode(oldValue, newValue);
+    } else {
+      return _handleOverwriteMode(oldValue, newValue);
+    }
+  }
+
   TextEditingValue _handleInsertMode(
       TextEditingValue oldValue, TextEditingValue newValue) {
-    // In insert mode, characters are inserted and existing text shifts right
-    // But we need to respect the 32-character limit per line
-
     if (newValue.text.length <= oldValue.text.length) {
-      // Not an insertion (deletion or same), handle as normal
-      return _processTextWithSpacing(newValue, false);
+      return _processTextWithSpacing(newValue);
     }
 
-    // Process each line separately to handle insert mode correctly
-    List<String> oldLines = oldValue.text.split('\n');
-    List<String> newLines = newValue.text.split('\n');
-    List<String> processedLines = [];
+    String oldText = oldValue.text;
+    String newText = newValue.text;
+    int insertionPos = oldValue.selection.baseOffset;
 
-    // Calculate cursor position
-    int oldCursorPos = newValue.selection.baseOffset;
-    int newCursorPos = oldCursorPos;
+    // Find what was inserted
+    String insertedText = '';
+    if (newText.length > oldText.length) {
+      int insertLength = newText.length - oldText.length;
+      insertedText =
+          newText.substring(insertionPos, insertionPos + insertLength);
+    }
+
+    // Remove any non-hex characters from insertion
+    insertedText = insertedText.replaceAll(RegExp(r'[^0-9A-Fa-f]'), '');
+
+    if (insertedText.isEmpty) {
+      return _processTextWithSpacing(newValue);
+    }
+
+    // Find which line we're inserting into
+    List<String> lines = oldText.split('\n');
     int currentPos = 0;
-    int processedPos = 0;
+    int lineIndex = 0;
+    int posInLine = 0;
 
-    for (int lineIndex = 0; lineIndex < newLines.length; lineIndex++) {
-      String newLine = newLines[lineIndex];
-      String oldLine = lineIndex < oldLines.length ? oldLines[lineIndex] : '';
-
-      // Clean both lines (remove spaces)
-      String cleanNewLine = newLine.replaceAll(' ', '');
-      String cleanOldLine = oldLine.replaceAll(' ', '');
-
-      // If this line got longer, we need to handle insert mode
-      if (cleanNewLine.length > cleanOldLine.length) {
-        // Limit to 32 characters - if insert would exceed, truncate from the end
-        if (cleanNewLine.length > 32) {
-          cleanNewLine = cleanNewLine.substring(0, 32);
-        }
-      } else {
-        // Normal case, just limit to 32
-        if (cleanNewLine.length > 32) {
-          cleanNewLine = cleanNewLine.substring(0, 32);
-        }
+    for (int i = 0; i < lines.length; i++) {
+      if (currentPos + lines[i].length >= insertionPos) {
+        lineIndex = i;
+        posInLine = insertionPos - currentPos;
+        break;
       }
-
-      // Add spaces back between bytes
-      String spacedLine = '';
-      for (int i = 0; i < cleanNewLine.length; i += 2) {
-        if (i > 0) spacedLine += ' ';
-        spacedLine += cleanNewLine.substring(i, i + 2);
-      }
-      processedLines.add(spacedLine);
-
-      // Calculate cursor position for this line
-      int lineStartPos = currentPos;
-      int lineEndPos = currentPos + newLine.length;
-      int processedLineStartPos = processedPos;
-      int processedLineEndPos = processedPos + spacedLine.length;
-
-      if (oldCursorPos >= lineStartPos && oldCursorPos <= lineEndPos) {
-        // Cursor is in this line, calculate relative position
-        int relativePos = oldCursorPos - lineStartPos;
-        int cleanRelativePos = 0;
-        int originalIndex = 0;
-
-        // Map cursor position from original line to clean line
-        for (int i = 0;
-            i < newLine.length && originalIndex < relativePos;
-            i++) {
-          if (newLine[i] != ' ') {
-            cleanRelativePos++;
-          }
-          originalIndex++;
-        }
-
-        // Map clean position to spaced position
-        int spacedRelativePos = 0;
-        for (int i = 0; i < cleanRelativePos; i++) {
-          if (i > 0 && i % 2 == 0) {
-            spacedRelativePos++; // Add space
-          }
-          spacedRelativePos++;
-        }
-
-        newCursorPos = processedLineStartPos +
-            spacedRelativePos.clamp(0, spacedLine.length);
-      }
-
-      currentPos = lineEndPos + 1; // +1 for newline
-      processedPos = processedLineEndPos + 1; // +1 for newline
+      currentPos += lines[i].length + 1; // +1 for newline
     }
 
-    String processedText = processedLines.join('\n').toUpperCase();
+    if (lineIndex >= lines.length) {
+      return _processTextWithSpacing(newValue);
+    }
+
+    String line = lines[lineIndex];
+    String cleanLine = line.replaceAll(' ', '');
+
+    // Calculate position in clean line
+    int cleanPos = 0;
+    for (int i = 0; i < posInLine && i < line.length; i++) {
+      if (line[i] != ' ') {
+        cleanPos++;
+      }
+    }
+
+    // Insert characters into clean line
+    String newCleanLine = cleanLine.substring(0, cleanPos) +
+        insertedText +
+        cleanLine.substring(cleanPos);
+
+    // Limit to hex chars per block
+    if (newCleanLine.length > hexCharsPerBlock) {
+      newCleanLine = newCleanLine.substring(0, hexCharsPerBlock);
+    }
+
+    // Re-add spacing
+    String newSpacedLine = '';
+    for (int i = 0; i < newCleanLine.length; i += 2) {
+      if (i > 0) newSpacedLine += ' ';
+      newSpacedLine += newCleanLine.substring(i, i + 2);
+    }
+
+    // Update the line
+    lines[lineIndex] = newSpacedLine;
+
+    // Calculate new cursor position
+    int newCleanPos = cleanPos + insertedText.length;
+    int newSpacedPos =
+        newCleanPos + (newCleanPos > 0 ? (newCleanPos - 1) ~/ 2 : 0);
+
+    int newCursorPos = currentPos + newSpacedPos;
+
+    String finalText = lines.join('\n').toUpperCase();
 
     return TextEditingValue(
-      text: processedText,
+      text: finalText,
       selection: TextSelection.collapsed(
-        offset: newCursorPos.clamp(0, processedText.length),
-      ),
+          offset: newCursorPos.clamp(0, finalText.length)),
     );
   }
 
   TextEditingValue _handleOverwriteMode(
       TextEditingValue oldValue, TextEditingValue newValue) {
-    // In overwrite mode, just process the text normally - no insertion detection
-    // Characters replace existing ones at cursor position
-    return _processTextWithSpacing(newValue, false);
+    if (newValue.text.length <= oldValue.text.length) {
+      return _processTextWithSpacing(newValue);
+    }
+
+    String oldText = oldValue.text;
+    String newText = newValue.text;
+    int insertionPos = oldValue.selection.baseOffset;
+
+    // Find what was typed
+    String typedText = '';
+    if (newText.length > oldText.length) {
+      int insertLength = newText.length - oldText.length;
+      typedText = newText.substring(insertionPos, insertionPos + insertLength);
+    }
+
+    // Remove any non-hex characters from typed text
+    typedText = typedText.replaceAll(RegExp(r'[^0-9A-Fa-f]'), '');
+
+    if (typedText.isEmpty) {
+      return _processTextWithSpacing(newValue);
+    }
+
+    // Find which line we're typing into
+    List<String> lines = oldText.split('\n');
+    int currentPos = 0;
+    int lineIndex = 0;
+    int posInLine = 0;
+
+    for (int i = 0; i < lines.length; i++) {
+      if (currentPos + lines[i].length >= insertionPos) {
+        lineIndex = i;
+        posInLine = insertionPos - currentPos;
+        break;
+      }
+      currentPos += lines[i].length + 1; // +1 for newline
+    }
+
+    if (lineIndex >= lines.length) {
+      return _processTextWithSpacing(newValue);
+    }
+
+    String line = lines[lineIndex];
+    String cleanLine = line.replaceAll(' ', '');
+
+    // Calculate position in clean line
+    int cleanPos = 0;
+    for (int i = 0; i < posInLine && i < line.length; i++) {
+      if (line[i] != ' ') {
+        cleanPos++;
+      }
+    }
+
+    // In overwrite mode, replace characters instead of inserting them
+    String newCleanLine = cleanLine;
+    for (int i = 0;
+        i < typedText.length && cleanPos + i < cleanLine.length;
+        i++) {
+      if (cleanPos + i < newCleanLine.length) {
+        newCleanLine = newCleanLine.substring(0, cleanPos + i) +
+            typedText[i] +
+            newCleanLine.substring(cleanPos + i + 1);
+      }
+    }
+
+    // If we're at the end of the line, we can extend it up to the limit
+    if (cleanPos >= cleanLine.length &&
+        newCleanLine.length < hexCharsPerBlock) {
+      int remainingChars = hexCharsPerBlock - newCleanLine.length;
+      int charsToAdd =
+          typedText.length < remainingChars ? typedText.length : remainingChars;
+      newCleanLine += typedText.substring(0, charsToAdd);
+    }
+
+    // Limit to hex chars per block
+    if (newCleanLine.length > hexCharsPerBlock) {
+      newCleanLine = newCleanLine.substring(0, hexCharsPerBlock);
+    }
+
+    // Re-add spacing
+    String newSpacedLine = '';
+    for (int i = 0; i < newCleanLine.length; i += 2) {
+      if (i > 0) newSpacedLine += ' ';
+      newSpacedLine += newCleanLine.substring(i, i + 2);
+    }
+
+    // Update the line
+    lines[lineIndex] = newSpacedLine;
+
+    // Calculate new cursor position
+    int newCleanPos = cleanPos + typedText.length;
+    if (newCleanPos > newCleanLine.length) {
+      newCleanPos = newCleanLine.length;
+    }
+    int newSpacedPos =
+        newCleanPos + (newCleanPos > 0 ? (newCleanPos - 1) ~/ 2 : 0);
+
+    int newCursorPos = currentPos + newSpacedPos;
+
+    String finalText = lines.join('\n').toUpperCase();
+
+    return TextEditingValue(
+      text: finalText,
+      selection: TextSelection.collapsed(
+          offset: newCursorPos.clamp(0, finalText.length)),
+    );
   }
 
-  TextEditingValue _processTextWithSpacing(
-      TextEditingValue value, bool allowLongerLines) {
+  TextEditingValue _processTextWithSpacing(TextEditingValue value) {
     List<String> lines = value.text.split('\n');
     List<String> processedLines = [];
 
-    // Calculate cursor position mapping
     int oldCursorPos = value.selection.baseOffset;
     int newCursorPos = oldCursorPos;
     int currentPos = 0;
@@ -223,20 +351,10 @@ class DumpEditorState extends State<DumpEditor> {
     for (String line in lines) {
       String cleanLine = line.replaceAll(' ', '');
 
-      // Apply length limits
-      if (allowLongerLines) {
-        // In insert mode, allow temporary expansion but cap at reasonable limit
-        if (cleanLine.length > 48) {
-          cleanLine = cleanLine.substring(0, 48);
-        }
-      } else {
-        // In overwrite mode, strict 32 character limit
-        if (cleanLine.length > 32) {
-          cleanLine = cleanLine.substring(0, 32);
-        }
+      if (cleanLine.length > hexCharsPerBlock) {
+        cleanLine = cleanLine.substring(0, hexCharsPerBlock);
       }
 
-      // Add spaces back between bytes
       String spacedLine = '';
       for (int i = 0; i < cleanLine.length; i += 2) {
         if (i > 0) spacedLine += ' ';
@@ -244,19 +362,16 @@ class DumpEditorState extends State<DumpEditor> {
       }
       processedLines.add(spacedLine);
 
-      // Calculate new cursor position
       int lineStartPos = currentPos;
       int lineEndPos = currentPos + line.length;
       int processedLineStartPos = processedPos;
       int processedLineEndPos = processedPos + spacedLine.length;
 
       if (oldCursorPos >= lineStartPos && oldCursorPos <= lineEndPos) {
-        // Cursor is in this line, calculate relative position
         int relativePos = oldCursorPos - lineStartPos;
         int cleanRelativePos = 0;
         int originalIndex = 0;
 
-        // Map cursor position from original line to clean line
         for (int i = 0; i < line.length && originalIndex < relativePos; i++) {
           if (line[i] != ' ') {
             cleanRelativePos++;
@@ -264,11 +379,10 @@ class DumpEditorState extends State<DumpEditor> {
           originalIndex++;
         }
 
-        // Map clean position to spaced position
         int spacedRelativePos = 0;
         for (int i = 0; i < cleanRelativePos; i++) {
           if (i > 0 && i % 2 == 0) {
-            spacedRelativePos++; // Add space
+            spacedRelativePos++;
           }
           spacedRelativePos++;
         }
@@ -277,8 +391,8 @@ class DumpEditorState extends State<DumpEditor> {
             spacedRelativePos.clamp(0, spacedLine.length);
       }
 
-      currentPos = lineEndPos + 1; // +1 for newline
-      processedPos = processedLineEndPos + 1; // +1 for newline
+      currentPos = lineEndPos + 1;
+      processedPos = processedLineEndPos + 1;
     }
 
     String processedText = processedLines.join('\n').toUpperCase();
@@ -286,29 +400,32 @@ class DumpEditorState extends State<DumpEditor> {
     return TextEditingValue(
       text: processedText,
       selection: TextSelection.collapsed(
-        offset: newCursorPos.clamp(0, processedText.length),
-      ),
+          offset: newCursorPos.clamp(0, processedText.length)),
     );
   }
 
-  bool _validateSectorDataForSave(String sectorData) {
-    List<String> lines = sectorData.split('\n');
-    int sector = sectorControllers.indexOf(sectorControllers.firstWhere(
-      (controller) => controller.text == sectorData,
-      orElse: () => sectorControllers[0],
-    ));
+  bool _validateDataForSave(String data, int controllerIndex) {
+    List<String> lines = data.split('\n');
 
-    int expectedBlocks = mfClassicGetBlockCountBySector(sector);
-
-    if (lines.length != expectedBlocks) {
-      return false;
-    }
-
-    for (String line in lines) {
-      // Remove spaces and check if line is valid hex and exactly 32 characters (16 bytes)
-      String cleanLine = line.replaceAll(' ', '').trim();
-      if (!RegExp(r'^[0-9A-Fa-f-]{32}$').hasMatch(cleanLine)) {
+    if (isUltralight) {
+      for (String line in lines) {
+        String cleanLine = line.replaceAll(' ', '').trim();
+        if (cleanLine.isNotEmpty &&
+            !RegExp(r'^[0-9A-Fa-f-]{8}$').hasMatch(cleanLine)) {
+          return false;
+        }
+      }
+    } else {
+      int expectedBlocks = mfClassicGetBlockCountBySector(controllerIndex);
+      if (lines.length != expectedBlocks) {
         return false;
+      }
+
+      for (String line in lines) {
+        String cleanLine = line.replaceAll(' ', '').trim();
+        if (!RegExp(r'^[0-9A-Fa-f-]{32}$').hasMatch(cleanLine)) {
+          return false;
+        }
       }
     }
 
@@ -334,45 +451,49 @@ class DumpEditorState extends State<DumpEditor> {
 
   void _saveDump() {
     var localizations = AppLocalizations.of(context)!;
-
-    // Validate and save the dump
     List<Uint8List> updatedDump = List.from(dumpData);
 
-    for (int sector = 0; sector < sectorControllers.length; sector++) {
-      if (!_validateSectorDataForSave(sectorControllers[sector].text)) {
-        _showErrorDialog('${localizations.invalid_data_in_sector} $sector');
-        return;
-      }
-
-      List<String> lines = sectorControllers[sector].text.split('\n');
-      int firstBlock = mfClassicGetFirstBlockCountBySector(sector);
-
-      for (int block = 0; block < lines.length; block++) {
-        int blockIndex = firstBlock + block;
-        if (blockIndex < updatedDump.length) {
-          String hexData =
-              lines[block].replaceAll(' ', '').trim().toUpperCase();
-          if (hexData != '-' * 32) {
-            updatedDump[blockIndex] = hexToBytes(hexData);
-          }
+    if (isUltralight) {
+      List<String> lines = controllers[0].text.split('\n');
+      for (int i = 0; i < lines.length; i++) {
+        String hexData = lines[i].replaceAll(' ', '').trim().toUpperCase();
+        if (hexData.length != 8) {
+          _showErrorDialog('${localizations.invalid_data_in_block} $i');
+          return;
+        }
+        if (hexData != '-' * 8) {
+          updatedDump[i] = hexToBytes(hexData);
         }
       }
-    }
+      initialTexts[0] = controllers[0].text;
+    } else {
+      for (int sector = 0; sector < controllers.length; sector++) {
+        if (!_validateDataForSave(controllers[sector].text, sector)) {
+          _showErrorDialog('${localizations.invalid_data_in_sector} $sector');
+          return;
+        }
 
-    // Call the save callback
-    widget.onSave(updatedDump);
+        List<String> lines = controllers[sector].text.split('\n');
+        int firstBlock = mfClassicGetFirstBlockCountBySector(sector);
 
-    // Update initial text content after successful save
-    for (int sector = 0; sector < sectorControllers.length; sector++) {
-      if (sector < initialSectorTexts.length) {
-        initialSectorTexts[sector] = sectorControllers[sector].text;
+        for (int block = 0; block < lines.length; block++) {
+          int blockIndex = firstBlock + block;
+          if (blockIndex < updatedDump.length) {
+            String hexData =
+                lines[block].replaceAll(' ', '').trim().toUpperCase();
+            if (hexData != '-' * 32) {
+              updatedDump[blockIndex] = hexToBytes(hexData);
+            }
+          }
+        }
+        initialTexts[sector] = controllers[sector].text;
       }
     }
 
+    widget.onSave(updatedDump);
     setState(() {
       hasUnsavedChanges = false;
     });
-
     Navigator.pop(context);
   }
 
@@ -391,8 +512,8 @@ class DumpEditorState extends State<DumpEditor> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Close editor
+                Navigator.pop(context);
+                Navigator.pop(context);
               },
               child: Text(localizations.discard),
             ),
@@ -406,20 +527,30 @@ class DumpEditorState extends State<DumpEditor> {
 
   void _showAsciiView() {
     var localizations = AppLocalizations.of(context)!;
-
-    // Convert current dump data to ASCII
     List<String> asciiData = [];
-    for (int sector = 0; sector < sectorControllers.length; sector++) {
-      List<String> lines = sectorControllers[sector].text.split('\n');
-      asciiData.add('${localizations.sector}: $sector');
-      for (int block = 0; block < lines.length; block++) {
-        String hexData = lines[block].replaceAll(' ', '').trim();
+
+    if (isUltralight) {
+      List<String> lines = controllers[0].text.split('\n');
+      for (int i = 0; i < lines.length; i++) {
+        String hexData = lines[i].replaceAll(' ', '').trim();
         if (hexData.isNotEmpty) {
-          String ascii = DumpAnalyzer.hexToAscii(hexData);
-          asciiData.add('${localizations.block} $block: $ascii');
+          String ascii = MifareUltralightDumpAnalyzer.hexToAscii(hexData);
+          asciiData.add('${localizations.block} $i: $ascii');
         }
       }
-      asciiData.add('');
+    } else {
+      for (int sector = 0; sector < controllers.length; sector++) {
+        List<String> lines = controllers[sector].text.split('\n');
+        asciiData.add('${localizations.sector}: $sector');
+        for (int block = 0; block < lines.length; block++) {
+          String hexData = lines[block].replaceAll(' ', '').trim();
+          if (hexData.isNotEmpty) {
+            String ascii = MifareClassicDumpAnalyzer.hexToAscii(hexData);
+            asciiData.add('${localizations.block} $block: $ascii');
+          }
+        }
+        asciiData.add('');
+      }
     }
 
     showDialog(
@@ -447,18 +578,19 @@ class DumpEditorState extends State<DumpEditor> {
   }
 
   void _showAccessConditions() {
+    if (isUltralight) return;
     var localizations = AppLocalizations.of(context)!;
 
     List<String> acData = [];
-    for (int sector = 0; sector < sectorControllers.length; sector++) {
-      List<String> lines = sectorControllers[sector].text.split('\n');
+    for (int sector = 0; sector < controllers.length; sector++) {
+      List<String> lines = controllers[sector].text.split('\n');
       if (lines.isNotEmpty) {
-        // Get the sector trailer (last line)
         String sectorTrailer = lines.last.replaceAll(' ', '').trim();
         if (sectorTrailer.length >= 20) {
           String accessConditions = sectorTrailer.substring(12, 20);
           Map<String, dynamic> decoded =
-              DumpAnalyzer.decodeAccessConditions(accessConditions, context);
+              MifareClassicDumpAnalyzer.decodeAccessConditions(
+                  accessConditions, context);
 
           acData.add('${localizations.sector} $sector:');
           if (decoded['readable']) {
@@ -499,17 +631,18 @@ class DumpEditorState extends State<DumpEditor> {
   }
 
   void _showValueBlocks() {
+    if (isUltralight) return;
     var localizations = AppLocalizations.of(context)!;
 
     List<String> valueData = [];
     bool foundValueBlocks = false;
 
-    for (int sector = 0; sector < sectorControllers.length; sector++) {
-      List<String> lines = sectorControllers[sector].text.split('\n');
+    for (int sector = 0; sector < controllers.length; sector++) {
+      List<String> lines = controllers[sector].text.split('\n');
       for (int block = 0; block < lines.length; block++) {
         String hexData = lines[block].replaceAll(' ', '').trim();
         if (hexData.isNotEmpty) {
-          int? value = DumpAnalyzer.valueBlockToInt(hexData);
+          int? value = MifareClassicDumpAnalyzer.valueBlockToInt(hexData);
           if (value != null) {
             foundValueBlocks = true;
             valueData.add(
@@ -547,24 +680,19 @@ class DumpEditorState extends State<DumpEditor> {
     );
   }
 
-  List<TextSpan> _buildHighlightedTextWithBlockNumbers(int sector) {
-    List<String> lines = sectorControllers[sector].text.split('\n');
+  List<TextSpan> _buildHighlightedTextWithBlockNumbers(int controllerIndex) {
+    List<String> lines = controllers[controllerIndex].text.split('\n');
     List<TextSpan> spans = [];
 
-    int firstBlock = mfClassicGetFirstBlockCountBySector(sector);
-
-    for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-      String line = lines[lineIndex].trim();
-
-      // Add newline if not the first line
+    for (int i = 0; i < lines.length; i++) {
+      String line = lines[i].trim();
       if (spans.isNotEmpty) {
         spans.add(const TextSpan(text: '\n'));
       }
 
-      // Calculate block number
-      int blockNumber = firstBlock + lineIndex;
-
-      // Add block number with consistent padding (spaces instead of zeros)
+      int blockNumber = isUltralight
+          ? i
+          : mfClassicGetFirstBlockCountBySector(controllerIndex) + i;
       String blockNumberStr = blockNumber.toString().padLeft(3, ' ');
       spans.add(TextSpan(
         text: '$blockNumberStr: ',
@@ -576,20 +704,16 @@ class DumpEditorState extends State<DumpEditor> {
         ),
       ));
 
-      // Handle empty lines
       if (line.isEmpty) {
         spans.add(TextSpan(
           text: '',
-          style: TextStyle(color: DumpHighlighter.getDefaultColor(context)),
+          style: TextStyle(color: _getDefaultHighlightColor()),
         ));
         continue;
       }
 
-      // Get highlighted spans for this line
       List<TextSpan> lineSpans =
-          _getHighlightedLineSpans(line, sector, lineIndex, context);
-
-      // Add the highlighted line content
+          _getHighlightedLineSpans(line, controllerIndex, i);
       spans.addAll(lineSpans);
     }
 
@@ -597,43 +721,51 @@ class DumpEditorState extends State<DumpEditor> {
   }
 
   List<TextSpan> _getHighlightedLineSpans(
-      String line, int sector, int lineIndex, BuildContext context) {
+      String line, int controllerIndex, int lineIndex) {
     if (line.isEmpty) {
       return [
-        TextSpan(
-          text: '',
-          style: TextStyle(color: DumpHighlighter.getDefaultColor(context)),
-        )
+        TextSpan(text: '', style: TextStyle(color: _getDefaultHighlightColor()))
       ];
     }
 
-    // Get the number of blocks per sector to determine if this is the last block (sector trailer)
-    int blocksPerSector = mfClassicGetBlockCountBySector(sector);
-    bool isSectorTrailer = lineIndex == blocksPerSector - 1;
-
-    // Check if this is the first block of sector 0 (contains UID)
-    bool isFirstBlock = sector == 0 && lineIndex == 0;
-
-    if (isSectorTrailer) {
-      return DumpHighlighter.highlightSectorTrailer(line, context);
-    } else if (isFirstBlock) {
-      return DumpHighlighter.highlightFirstBlock(line, context);
+    if (isUltralight) {
+      return MifareUltralightDumpHighlighter.highlightBlock(
+          line, lineIndex, context, widget.cardSave);
     } else {
-      return DumpHighlighter.highlightDataBlock(line, context);
+      int blocksPerSector = mfClassicGetBlockCountBySector(controllerIndex);
+      bool isSectorTrailer = lineIndex == blocksPerSector - 1;
+      bool isFirstBlock = controllerIndex == 0 && lineIndex == 0;
+
+      if (isSectorTrailer) {
+        return MifareClassicDumpHighlighter.highlightSectorTrailer(
+            line, context);
+      } else if (isFirstBlock) {
+        return MifareClassicDumpHighlighter.highlightFirstBlock(line, context);
+      } else {
+        return MifareClassicDumpHighlighter.highlightDataBlock(line, context);
+      }
     }
   }
 
-  Widget _buildSectorEditor(int sector) {
+  Color _getDefaultHighlightColor() {
+    return isUltralight
+        ? MifareUltralightDumpHighlighter.getDefaultColor(context)
+        : MifareClassicDumpHighlighter.getDefaultColor(context);
+  }
+
+  Widget _buildEditor(int controllerIndex) {
     var localizations = AppLocalizations.of(context)!;
+    String title = isUltralight
+        ? localizations.dump
+        : '${localizations.sector}: $controllerIndex';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Sector header
         Container(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Text(
-            '${localizations.sector}: $sector',
+            title,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -643,8 +775,6 @@ class DumpEditorState extends State<DumpEditor> {
             ),
           ),
         ),
-
-        // Sector data editor with highlighting
         Container(
           decoration: BoxDecoration(
             color: Theme.of(context).inputDecorationTheme.fillColor ??
@@ -660,7 +790,6 @@ class DumpEditorState extends State<DumpEditor> {
           ),
           child: Stack(
             children: [
-              // Highlighted text overlay
               Positioned.fill(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -673,15 +802,15 @@ class DumpEditorState extends State<DumpEditor> {
                           height: 1.2,
                           letterSpacing: 0.0,
                         ),
-                        children: _buildHighlightedTextWithBlockNumbers(sector),
+                        children: _buildHighlightedTextWithBlockNumbers(
+                            controllerIndex),
                       ),
                     ),
                   ),
                 ),
               ),
-              // Transparent text field for input
               TextFormField(
-                controller: sectorControllers[sector],
+                controller: controllers[controllerIndex],
                 maxLines: null,
                 style: const TextStyle(
                   fontFamily: 'monospace',
@@ -700,20 +829,13 @@ class DumpEditorState extends State<DumpEditor> {
                   FilteringTextInputFormatter.allow(
                       RegExp(r'[0-9A-Fa-f\n\s-]')),
                   TextInputFormatter.withFunction((oldValue, newValue) {
-                    if (isInsertMode) {
-                      // Insert mode: insert character and shift remaining characters
-                      return _handleInsertMode(oldValue, newValue);
-                    } else {
-                      // Overwrite mode: replace characters at cursor position
-                      return _handleOverwriteMode(oldValue, newValue);
-                    }
+                    return _handleTextInput(oldValue, newValue);
                   }),
                 ],
               ),
             ],
           ),
         ),
-
         const SizedBox(height: 16),
       ],
     );
@@ -721,6 +843,44 @@ class DumpEditorState extends State<DumpEditor> {
 
   Widget _buildColorLegend() {
     var localizations = AppLocalizations.of(context)!;
+
+    List<Widget> legendItems = [];
+
+    if (isUltralight) {
+      legendItems = [
+        _buildLegendItem(localizations.uid,
+            MifareUltralightDumpHighlighter.getUidColor(context)),
+        _buildLegendItem(localizations.bcc,
+            MifareUltralightDumpHighlighter.getBccColor(context)),
+        _buildLegendItem(localizations.lock_bytes,
+            MifareUltralightDumpHighlighter.getLockColor(context)),
+        _buildLegendItem(localizations.password,
+            MifareUltralightDumpHighlighter.getPasswordColor(context)),
+        _buildLegendItem(
+            localizations.block_index,
+            Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey.shade400
+                : Colors.grey.shade600),
+      ];
+    } else {
+      legendItems = [
+        _buildLegendItem(localizations.uid,
+            MifareClassicDumpHighlighter.getUidColor(context)),
+        _buildLegendItem(localizations.value_block,
+            MifareClassicDumpHighlighter.getValueBlockColor(context)),
+        _buildLegendItem(localizations.key_a,
+            MifareClassicDumpHighlighter.getKeyAColor(context)),
+        _buildLegendItem(localizations.key_b,
+            MifareClassicDumpHighlighter.getKeyBColor(context)),
+        _buildLegendItem(localizations.access_conditions,
+            MifareClassicDumpHighlighter.getAccessConditionsColor(context)),
+        _buildLegendItem(
+            localizations.block_index,
+            Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey.shade400
+                : Colors.grey.shade600),
+      ];
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -739,7 +899,7 @@ class DumpEditorState extends State<DumpEditor> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: DumpHighlighter.getDefaultColor(context),
+                  color: _getDefaultHighlightColor(),
                 ),
               ),
               Row(
@@ -748,7 +908,7 @@ class DumpEditorState extends State<DumpEditor> {
                   Text(
                     '${localizations.insert_mode}: ',
                     style: TextStyle(
-                      color: DumpHighlighter.getDefaultColor(context),
+                      color: _getDefaultHighlightColor(),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -768,23 +928,7 @@ class DumpEditorState extends State<DumpEditor> {
           Wrap(
             spacing: 16,
             runSpacing: 8,
-            children: [
-              _buildLegendItem(
-                  localizations.uid, DumpHighlighter.getUidColor(context)),
-              _buildLegendItem(localizations.value_block,
-                  DumpHighlighter.getValueBlockColor(context)),
-              _buildLegendItem(
-                  localizations.key_a, DumpHighlighter.getKeyAColor(context)),
-              _buildLegendItem(
-                  localizations.key_b, DumpHighlighter.getKeyBColor(context)),
-              _buildLegendItem(localizations.access_conditions,
-                  DumpHighlighter.getAccessConditionsColor(context)),
-              _buildLegendItem(
-                  localizations.block_index,
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey.shade400
-                      : Colors.grey.shade600),
-            ],
+            children: legendItems,
           ),
         ],
       ),
@@ -806,7 +950,7 @@ class DumpEditorState extends State<DumpEditor> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(color: DumpHighlighter.getDefaultColor(context)),
+          style: TextStyle(color: _getDefaultHighlightColor()),
         ),
       ],
     );
@@ -845,39 +989,32 @@ class DumpEditorState extends State<DumpEditor> {
         ),
         body: Column(
           children: [
-            // Scrollable content
             Expanded(
               child: ListView(
                 controller: scrollController,
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // Color legend
                   Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 395),
                       child: _buildColorLegend(),
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Sector editors
                   ...List.generate(
-                    sectorControllers.length,
+                    controllers.length,
                     (index) => Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 395),
-                        child: _buildSectorEditor(index),
+                        constraints:
+                            BoxConstraints(maxWidth: isUltralight ? 145 : 395),
+                        child: _buildEditor(index),
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 16),
                 ],
               ),
             ),
-
-            // Fixed bottom toolbar
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -898,14 +1035,16 @@ class DumpEditorState extends State<DumpEditor> {
                     onPressed: _showAsciiView,
                     child: Text(localizations.ascii),
                   ),
-                  ElevatedButton(
-                    onPressed: _showAccessConditions,
-                    child: Text(localizations.ac),
-                  ),
-                  ElevatedButton(
-                    onPressed: _showValueBlocks,
-                    child: Text(localizations.value),
-                  ),
+                  if (!isUltralight) ...[
+                    ElevatedButton(
+                      onPressed: _showAccessConditions,
+                      child: Text(localizations.acl),
+                    ),
+                    ElevatedButton(
+                      onPressed: _showValueBlocks,
+                      child: Text(localizations.value),
+                    ),
+                  ],
                 ],
               ),
             ),

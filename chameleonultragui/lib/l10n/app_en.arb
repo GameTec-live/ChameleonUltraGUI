@@ -329,7 +329,7 @@
   "no_value_blocks_found": "No value blocks found in dump.",
   "invalid_data_in_sector": "Invalid data in sector",
   "ascii": "ASCII",
-  "ac": "AC",
+  "acl": "ACL",
   "value": "Value",
   "read": "Read",
   "write": "Write",
@@ -338,5 +338,11 @@
   "unknown": "Unknown",
   "invalid_access_conditions_length": "Invalid access conditions length",
   "failed_to_decode_access_conditions": "Failed to decode access conditions",
-  "sector_trailer": "Sector Trailer"
+  "sector_trailer": "Sector Trailer",
+  "bcc": "BCC",
+  "internal": "Internal",
+  "lock_bytes": "Lock Bytes",
+  "password": "Password",
+  "dump": "Dump",
+  "invalid_data_in_block": "Invalid data in block"
 }

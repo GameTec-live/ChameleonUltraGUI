@@ -173,7 +173,8 @@ class CardViewMenuState extends State<CardViewMenu> {
           },
           icon: const Icon(Icons.edit),
         ),
-        if (isMifareClassic(widget.tagSave.tag))
+        if (isMifareClassic(widget.tagSave.tag) ||
+            isMifareUltralight(widget.tagSave.tag))
           IconButton(
             onPressed: () {
               Navigator.push(
@@ -212,7 +213,7 @@ class CardViewMenuState extends State<CardViewMenu> {
               );
             },
             icon: const Icon(Icons.edit_document),
-            tooltip: 'Edit Dump',
+            tooltip: localizations.dump_editor,
           ),
         IconButton(
           onPressed: () async {
