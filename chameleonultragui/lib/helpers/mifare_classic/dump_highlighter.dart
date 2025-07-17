@@ -211,7 +211,6 @@ class MifareClassicDumpHighlighter {
         bytes[i] = int.parse(blockData.substring(i * 2, i * 2 + 2), radix: 16);
       }
 
-
       for (int i = 0; i < 4; i++) {
         if (bytes[i] != bytes[i + 8]) return false;
       }
@@ -245,7 +244,7 @@ class MifareClassicDumpHighlighter {
     return RichText(
       text: TextSpan(
         style: TextStyle(
-          fontFamily: 'monospace',
+          fontFamily: 'RobotoMono',
           fontSize: 14,
           color: getDefaultColor(context),
           height: 1.0,

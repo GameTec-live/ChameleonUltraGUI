@@ -563,7 +563,7 @@ class DumpEditorState extends State<DumpEditor> {
           child: SingleChildScrollView(
             child: Text(
               asciiData.join('\n'),
-              style: const TextStyle(fontFamily: 'monospace'),
+              style: const TextStyle(fontFamily: 'RobotoMono'),
             ),
           ),
         ),
@@ -616,7 +616,7 @@ class DumpEditorState extends State<DumpEditor> {
           child: SingleChildScrollView(
             child: Text(
               acData.join('\n'),
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 12),
             ),
           ),
         ),
@@ -666,7 +666,7 @@ class DumpEditorState extends State<DumpEditor> {
           child: SingleChildScrollView(
             child: Text(
               valueData.join('\n'),
-              style: const TextStyle(fontFamily: 'monospace'),
+              style: const TextStyle(fontFamily: 'RobotoMono'),
             ),
           ),
         ),
@@ -803,7 +803,7 @@ class DumpEditorState extends State<DumpEditor> {
       text: TextSpan(
         text: '999: ',
         style: TextStyle(
-          fontFamily: 'monospace',
+          fontFamily: 'RobotoMono',
           fontSize: fontSize,
           height: 1.2,
           letterSpacing: 0.0,
@@ -839,7 +839,7 @@ class DumpEditorState extends State<DumpEditor> {
       text: TextSpan(
         text: text,
         style: TextStyle(
-          fontFamily: 'monospace',
+          fontFamily: 'RobotoMono',
           fontSize: fontSize,
           height: 1.2,
           letterSpacing: 0.0,
@@ -870,7 +870,7 @@ class DumpEditorState extends State<DumpEditor> {
                   Text.rich(
                     TextSpan(
                       style: TextStyle(
-                        fontFamily: 'monospace',
+                        fontFamily: 'RobotoMono',
                         fontSize: fontSize,
                         height: 1.2,
                         letterSpacing: 0.0,
@@ -882,7 +882,7 @@ class DumpEditorState extends State<DumpEditor> {
                     child: Text.rich(
                       TextSpan(
                         style: TextStyle(
-                          fontFamily: 'monospace',
+                          fontFamily: 'RobotoMono',
                           fontSize: fontSize,
                           height: 1.2,
                           letterSpacing: 0.0,
@@ -909,7 +909,7 @@ class DumpEditorState extends State<DumpEditor> {
                   controller: controllers[controllerIndex],
                   maxLines: null,
                   style: TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'RobotoMono',
                     fontSize: fontSize,
                     color: Colors.transparent,
                     height: 1.2,
