@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/gui/menu/mfkey32.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -423,10 +424,12 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                                         () {
                                                                       Navigator.pop(
                                                                           context);
-                                                                      appState.forceMfkey32Page =
-                                                                          true;
-                                                                      appState
-                                                                          .changesMade();
+                                                                      Navigator.push(
+                                                                        context,
+                                                                        MaterialPageRoute(
+                                                                          builder: (context) => const Mfkey32Menu(),
+                                                                        ),
+                                                                      );
                                                                     },
                                                                     child: Row(
                                                                       children: [

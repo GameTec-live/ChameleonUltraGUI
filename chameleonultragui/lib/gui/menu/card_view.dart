@@ -1,6 +1,7 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_export.dart';
+import 'package:chameleonultragui/gui/menu/dump_editor.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:flutter/material.dart';
@@ -172,6 +173,47 @@ class CardViewMenuState extends State<CardViewMenu> {
           },
           icon: const Icon(Icons.edit),
         ),
+        if (isMifareClassic(widget.tagSave.tag))
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DumpEditor(
+                    cardSave: widget.tagSave,
+                    onSave: (dumpData) {
+                      // Update card data
+                      var updatedCard = CardSave(
+                        id: widget.tagSave.id,
+                        uid: widget.tagSave.uid,
+                        sak: widget.tagSave.sak,
+                        atqa: widget.tagSave.atqa,
+                        name: widget.tagSave.name,
+                        tag: widget.tagSave.tag,
+                        data: dumpData,
+                        ats: widget.tagSave.ats,
+                        extraData: widget.tagSave.extraData,
+                      );
+
+                      // Update the card in storage
+                      var cards = appState.sharedPreferencesProvider.getCards();
+                      for (int i = 0; i < cards.length; i++) {
+                        if (cards[i].id == widget.tagSave.id) {
+                          cards[i] = updatedCard;
+                          break;
+                        }
+                      }
+                      appState.sharedPreferencesProvider.setCards(cards);
+                      appState.changesMade();
+                      Navigator.pop(context); // Close the card view dialog
+                    },
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.edit_document),
+            tooltip: 'Edit Dump',
+          ),
         IconButton(
           onPressed: () async {
             await showDialog(
