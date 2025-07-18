@@ -301,5 +301,15 @@
   "invalid_input": "Un dels camps est\u00e0 emplenat incorrectament",
   "failed_to_fetch_oc_contributors": "No s'han pogut obtenir els col\u00b7laboradors d'OpenCollective",
   "recovery_static_encrypted_nonce": "S'ha detectat un nonce d'una etiqueta amb xifrat est\u00e0tic. La recuperaci\u00f3 encara no est\u00e0 disponible",
-  "recovery_old_firmware": "No s'han pogut recollir els nonces, est\u00e0 actualitzat el vostre firmware?"
+  "recovery_old_firmware": "No s'han pogut recollir els nonces, est\u00e0 actualitzat el vostre firmware?",
+  "emulate_device": "Dispositiu emulat",
+  "emulate_device_confirmation": "Esteu segur que voleu {mode} el dispositiu emulat? Podeu activar aix\u00f2 per comprovar les funcions de l'aplicaci\u00f3 sense tenir un Chameleon Ultra, totes les accions amb el dispositiu emulat no es desaran. No podreu connectar amb el dispositiu real si no desactiveu aix\u00f2.",
+  "prng_type": "Tipus de PRNG",
+  "prng_type_static": "Est\u00e0tic",
+  "prng_type_weak": "Feble",
+  "prng_type_hard": "Dif\u00edcil",
+  "has_backdoor_support": "Porta del darrere",
+  "demo_firmware": "Demo, no el Chameleon real",
+  "trademarks_mifare": "MIFARE\u00ae, MIFARE\u00ae Classic i MIFARE\u00ae Ultralight s\u00f3n marques registrades de NXP Semiconductors B.V.",
+  "trademarks_em": "EM Microelectronic-Marin, EM Microelectronic, EM i totes les designacions de producte que comencen per \u201cEM\u201d s\u00f3n marques registrades d'EM Microelectronic"
 }
