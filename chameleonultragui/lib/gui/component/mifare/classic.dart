@@ -174,6 +174,11 @@ class CardReaderState extends State<MifareClassicHelper> {
               value: widget.mfcInfo.recovery?.hardnestedProgress),
           const SizedBox(height: 12)
         ],
+        if (widget.mfcInfo.recovery?.keyCheckProgress != null) ...[
+          LinearProgressIndicator(
+              value: widget.mfcInfo.recovery?.keyCheckProgress),
+          const SizedBox(height: 12)
+        ],
         if (widget.mfcInfo.state == MifareClassicState.recovery ||
             widget.mfcInfo.state == MifareClassicState.recoveryOngoing)
           FittedBox(
