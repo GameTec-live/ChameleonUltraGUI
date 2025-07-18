@@ -98,3 +98,25 @@ int mfUltralightGetPasswordPage(TagType type) {
   }
   return 0;
 }
+
+List<Uint8List> mfUltralightGenerateFirstBlocks(Uint8List uid, TagType type) {
+  final List<Uint8List> blocks = [];
+
+  final block0 = Uint8List(4);
+  block0.setAll(0, uid.sublist(0, 3));
+  block0[3] = calculateBcc(Uint8List.fromList([0x88, uid[0], uid[1], uid[2]]));
+  blocks.add(block0);
+
+  final block1 = Uint8List(4);
+  block1.setAll(0, uid.sublist(3, 7));
+  blocks.add(block1);
+
+  final block2 = Uint8List(4);
+  block2[0] = calculateBcc(uid.sublist(3, 7));
+  block2[1] = 0x48;
+  block2[2] = 0x00;
+  block2[3] = 0x00;
+  blocks.add(block2);
+
+  return blocks;
+}

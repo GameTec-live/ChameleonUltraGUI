@@ -235,9 +235,9 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: main
-      resolved-ref: "6740aae075505a220a98492910b090824efc7910"
-      url: "https://github.com/NeariX67/flutter_libserialport.git"
+      ref: patches
+      resolved-ref: "7658817580ee45080b07486ebf499657129da3f2"
+      url: "https://github.com/Foxushka/flutter_libserialport.git"
     source: git
     version: "0.5.0"
   flutter_lints:
@@ -370,10 +370,11 @@ packages:
   libserialport:
     dependency: transitive
     description:
-      name: libserialport
-      sha256: "392e1592def65282429832ec66fa25e9e163d3b37716b97691482e2406720727"
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "75c301df73aceb7e381a36b25d85b81d0be97bdb"
+      resolved-ref: "75c301df73aceb7e381a36b25d85b81d0be97bdb"
+      url: "https://github.com/AurelienBallier/libserialport.dart.git"
+    source: git
     version: "0.3.0+1"
   lints:
     dependency: transitive

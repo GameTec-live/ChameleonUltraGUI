@@ -71,7 +71,8 @@ class QRCodeSettingsState extends State<QRCodeSettings> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return AppLocalizations.of(context)!
-                          .please_enter_something("Split Size");
+                          .please_enter_something(
+                              AppLocalizations.of(context)!.split_size);
                     }
                     if (int.tryParse(value) == null) {
                       return AppLocalizations.of(context)!
@@ -128,7 +129,8 @@ class QRCodeSettingsState extends State<QRCodeSettings> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return AppLocalizations.of(context)!
-                          .please_enter_something("Error Correction");
+                          .please_enter_something(
+                              AppLocalizations.of(context)!.error_correction);
                     }
                     if (int.tryParse(value) == null) {
                       return AppLocalizations.of(context)!

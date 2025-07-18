@@ -38,7 +38,13 @@ class CardViewMenuState extends State<CardViewMenu> {
         children: [
           Row(
             children: [
-              Text("${localizations.uid}: ${widget.tagSave.uid}"),
+              Expanded(
+                child: Text(
+                  "${localizations.uid}: ${widget.tagSave.uid}",
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                ),
+              ),
               IconButton(
                 onPressed: () async {
                   ClipboardData data = ClipboardData(text: widget.tagSave.uid);
@@ -50,8 +56,13 @@ class CardViewMenuState extends State<CardViewMenu> {
           ),
           Row(
             children: [
-              Text(
-                  "${localizations.tag_type}: ${chameleonTagToString(widget.tagSave.tag)}"),
+              Expanded(
+                child: Text(
+                  "${localizations.tag_type}: ${chameleonTagToString(widget.tagSave.tag)}",
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                ),
+              ),
               IconButton(
                 onPressed: () async {
                   ClipboardData data = ClipboardData(
@@ -66,8 +77,13 @@ class CardViewMenuState extends State<CardViewMenu> {
               TagFrequency.hf) ...[
             Row(
               children: [
-                Text(
-                    "${localizations.sak}: ${bytesToHex(u8ToBytes(widget.tagSave.sak))}"),
+                Expanded(
+                  child: Text(
+                    "${localizations.sak}: ${bytesToHex(u8ToBytes(widget.tagSave.sak))}",
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
+                  ),
+                ),
                 IconButton(
                   onPressed: () async {
                     ClipboardData data = ClipboardData(
@@ -82,8 +98,13 @@ class CardViewMenuState extends State<CardViewMenu> {
             ),
             Row(
               children: [
-                Text(
-                    "${localizations.atqa}: ${widget.tagSave.atqa.isNotEmpty ? bytesToHexSpace(widget.tagSave.atqa) : localizations.unavailable}"),
+                Expanded(
+                  child: Text(
+                    "${localizations.atqa}: ${widget.tagSave.atqa.isNotEmpty ? bytesToHexSpace(widget.tagSave.atqa) : localizations.unavailable}",
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
+                  ),
+                ),
                 IconButton(
                   onPressed: () async {
                     ClipboardData data = ClipboardData(
@@ -122,8 +143,13 @@ class CardViewMenuState extends State<CardViewMenu> {
               Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Row(
                   children: [
-                    Text(
-                        "${localizations.ultralight_version}: ${widget.tagSave.extraData.ultralightVersion.isNotEmpty ? bytesToHexSpace(widget.tagSave.extraData.ultralightVersion) : localizations.unavailable}"),
+                    Expanded(
+                      child: Text(
+                        "${localizations.ultralight_version}: ${widget.tagSave.extraData.ultralightVersion.isNotEmpty ? bytesToHexSpace(widget.tagSave.extraData.ultralightVersion) : localizations.unavailable}",
+                        softWrap: true,
+                        overflow: TextOverflow.visible,
+                      ),
+                    ),
                     IconButton(
                       onPressed: () async {
                         ClipboardData data = ClipboardData(
@@ -140,15 +166,20 @@ class CardViewMenuState extends State<CardViewMenu> {
                 ),
                 Row(
                   children: [
-                    Text(
-                        "${localizations.ultralight_signature}: ${widget.tagSave.extraData.ultralightSignature.isNotEmpty ? bytesToHexSpace(widget.tagSave.extraData.ultralightSignature) : localizations.unavailable}"),
+                    Expanded(
+                      child: Text(
+                        "${localizations.ultralight_signature}: ${widget.tagSave.extraData.ultralightSignature.isNotEmpty ? bytesToHexSpace(widget.tagSave.extraData.ultralightSignature) : localizations.unavailable}",
+                        softWrap: true,
+                        overflow: TextOverflow.visible,
+                      ),
+                    ),
                     IconButton(
                       onPressed: () async {
                         ClipboardData data = ClipboardData(
-                            text: widget.tagSave.extraData.ultralightVersion
+                            text: widget.tagSave.extraData.ultralightSignature
                                     .isNotEmpty
-                                ? bytesToHexSpace(
-                                    widget.tagSave.extraData.ultralightVersion)
+                                ? bytesToHexSpace(widget
+                                    .tagSave.extraData.ultralightSignature)
                                 : localizations.unavailable);
                         await Clipboard.setData(data);
                       },

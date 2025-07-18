@@ -74,4 +74,7 @@ abstract class AbstractWriteHelper {
   @override
   bool operator ==(Object other) =>
       other is AbstractWriteHelper && name == other.name;
+
+  @override
+  int get hashCode => name.hashCode;
 }

@@ -32,8 +32,6 @@ class SavedCardState extends State<SavedCard> {
     super.initState();
   }
 
-  // good luck understanding it
-  // some values went from Flutter Inspector, some logically calculated
   bool shouldMoveIcons() {
     var appState = context.read<ChameleonGUIState>();
 
@@ -41,7 +39,7 @@ class SavedCardState extends State<SavedCard> {
     double predictedElementWidth = readWidth >= 700
         ? (readWidth - appState.navigationRailSize!.width - 38) / 2
         : (readWidth - appState.navigationRailSize!.width - 28);
-    double iconsWidth = widget.children.length * 40 + 8; // 8 - padding
+    double iconsWidth = widget.children.length * 40 + 8;
     double textWidth = (TextPainter(
             text: TextSpan(text: widget.secondLine),
             maxLines: 1,
@@ -50,7 +48,7 @@ class SavedCardState extends State<SavedCard> {
           ..layout())
         .size
         .width;
-    double textEndsAt = textWidth + 85; // icon + padding
+    double textEndsAt = textWidth + 85;
 
     return textEndsAt + iconsWidth > predictedElementWidth;
   }
@@ -69,69 +67,46 @@ class SavedCardState extends State<SavedCard> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(children: [
-                    Expanded(
-                        child: FittedBox(
-                            alignment: Alignment.centerLeft,
-                            fit: BoxFit.scaleDown,
-                            child: Row(
-                              children: [
-                                Transform(
-                                  transform:
-                                      Matrix4.translationValues(-5, 18, 0),
-                                  child: Icon(widget.icon,
-                                      color: widget.iconColor),
-                                ),
-                                const SizedBox(width: 5),
-                                FittedBox(
-                                  alignment: Alignment.centerLeft,
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    widget.firstLine,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            )))
-                  ]),
-                  if (shouldMoveIcons()) const SizedBox(height: 10),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      Transform(
+                        transform: Matrix4.translationValues(-5, 0, 0),
+                        child: Icon(
+                          widget.icon,
+                          color: widget.iconColor,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
-                          child: FittedBox(
-                        alignment: Alignment.centerLeft,
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(width: 30),
-                            FittedBox(
-                                alignment: Alignment.centerLeft,
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  widget.secondLine,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ))
+                            Text(
+                              widget.firstLine,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.secondLine,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ],
                         ),
-                      )),
+                      ),
                       if (!shouldMoveIcons()) ...widget.children
                     ],
                   ),
-                  ...(shouldMoveIcons())
-                      ? [
-                          const SizedBox(height: 10),
-                          FittedBox(
-                              alignment: Alignment.centerRight,
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: widget.children,
-                              ))
-                        ]
-                      : []
+                  if (shouldMoveIcons()) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: widget.children,
+                    ),
+                  ]
                 ],
               ),
             )));

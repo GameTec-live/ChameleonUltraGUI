@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+import 'package:flutter/services.dart';
 
 class BaseT55XXCardHelper extends AbstractWriteHelper {
   LFCardInfo? lfInfo;
@@ -55,6 +56,9 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
                     hintMaxLines: 4,
                     hintText: localizations
                         .enter_something(localizations.t55xx_key_prompt)),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f: ]'))
+                ],
                 validator: (String? value) {
                   if (value!.isNotEmpty && !isValidHexString(value)) {
                     return localizations.must_be_valid_hex;
@@ -74,6 +78,9 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
                     hintMaxLines: 4,
                     hintText: localizations
                         .enter_something(localizations.t55xx_new_key_prompt)),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f: ]'))
+                ],
                 validator: (String? value) {
                   if (value!.isNotEmpty && !isValidHexString(value)) {
                     return localizations.must_be_valid_hex;
