@@ -225,7 +225,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           ats: card.ats);
       await appState.communicator!.setMf1AntiCollision(cardData);
 
-      for (var page = 0; page < mfUltralightGetPagesCount(card.tag); page++) {
+      for (var page = 0;
+          page < mfUltralightGetPagesCount(card.tag) && card.data.length > page;
+          page++) {
         await appState.communicator!
             .mf0EmulatorWritePages(page, card.data[page]);
 
