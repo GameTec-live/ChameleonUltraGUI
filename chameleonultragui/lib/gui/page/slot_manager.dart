@@ -247,6 +247,17 @@ class SlotManagerPageState extends State<SlotManagerPage> {
             .mf0EmulatorSetSignatureData(card.extraData.ultralightSignature);
       }
 
+      if (card.extraData.ultralightCounters.isNotEmpty) {
+        for (int i = 0; i < card.extraData.ultralightCounters.length; i++) {
+          await appState.communicator!.mf0EmulatorSetCounterData(
+              i, card.extraData.ultralightCounters[i], true);
+        }
+      }
+
+      if (mfUltralightHasCounters(card.tag)) {
+        await appState.communicator!.mf0ResetAuthCount();
+      }
+
       setUploadState(100);
 
       await appState.communicator!.setSlotTagName(
