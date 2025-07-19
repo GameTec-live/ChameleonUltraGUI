@@ -37,6 +37,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
   List<Uint8List> cardData = [];
   String version = "";
   String signature = "";
+  List<int> counters = [];
   String dumpName = "";
   String error = "";
   double progress = -1;
@@ -84,6 +85,11 @@ class CardReaderState extends State<MifareUltralightHelper> {
         bytesToHexSpace(await mfUltralightGetVersion(appState.communicator!));
     signature =
         bytesToHexSpace(await mfUltralightGetSignature(appState.communicator!));
+
+    if (mfUltralightHasCounters(widget.hfInfo.type)) {
+      counters = await mfUltralightReadAllCountersFromCard(
+          appState.communicator!, widget.hfInfo.type);
+    }
 
     // Save password to dump if was used
     int passwordPage = mfUltralightGetPasswordPage(widget.hfInfo.type);
@@ -146,6 +152,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
           extraData: CardSaveExtra(
             ultralightSignature: hexToBytes(signature),
             ultralightVersion: hexToBytes(version),
+            ultralightCounters: counters,
           ),
           ats: (widget.hfInfo.ats != localizations.no)
               ? hexToBytes(widget.hfInfo.ats)

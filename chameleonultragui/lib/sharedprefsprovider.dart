@@ -143,6 +143,7 @@ class CardSave {
 class CardSaveExtra {
   Uint8List ultralightSignature;
   Uint8List ultralightVersion;
+  List<int> ultralightCounters;
 
   factory CardSaveExtra.import(Map<String, dynamic> data) {
     List<int> readBytes(Map<String, dynamic> data, String key) {
@@ -152,10 +153,14 @@ class CardSaveExtra {
 
     final ultralightSignature = readBytes(data, 'ultralightSignature');
     final ultralightVersion = readBytes(data, 'ultralightVersion');
+    final ultralightCounters = data['ultralightCounters'] != null
+        ? List<int>.from(data['ultralightCounters'] as List<dynamic>)
+        : <int>[];
 
     return CardSaveExtra(
         ultralightSignature: Uint8List.fromList(ultralightSignature),
-        ultralightVersion: Uint8List.fromList(ultralightVersion));
+        ultralightVersion: Uint8List.fromList(ultralightVersion),
+        ultralightCounters: ultralightCounters);
   }
 
   Map<String, dynamic> export() {
@@ -169,12 +174,20 @@ class CardSaveExtra {
       json['ultralightVersion'] = ultralightVersion;
     }
 
+    if (ultralightCounters.isNotEmpty) {
+      json['ultralightCounters'] = ultralightCounters;
+    }
+
     return json;
   }
 
-  CardSaveExtra({Uint8List? ultralightSignature, Uint8List? ultralightVersion})
+  CardSaveExtra(
+      {Uint8List? ultralightSignature,
+      Uint8List? ultralightVersion,
+      List<int>? ultralightCounters})
       : ultralightSignature = ultralightSignature ?? Uint8List(0),
-        ultralightVersion = ultralightVersion ?? Uint8List(0);
+        ultralightVersion = ultralightVersion ?? Uint8List(0),
+        ultralightCounters = ultralightCounters ?? <int>[];
 }
 
 class SharedPreferencesProvider extends ChangeNotifier {
