@@ -46,5 +46,5 @@ modules:
 
       - type: file
         dest-filename: run.chameleon.png
-        url: https://raw.githubusercontent.com/GameTec-live/ChameleonUltraGUI/660cf1c95251c0cc7c99e63b25b7ebe879a7dcbf/chameleonultragui/debian/gui/chameleonultragui.png
-        sha256: 13bc0e5162fea45c699fcecea2a8182bdd5a583aa160aacaa768880a13b81a29
+        url: https://raw.githubusercontent.com/GameTec-live/ChameleonUltraGUI/660cf1c95251c0cc7c99e63b25b7ebe879a7dcbf/chameleonultragui/debian/gui/chameleonultragui_512px.png
+        sha256: ee9d50e44c849ffef0ffef791970682d50c6877e29828df0a210fa8a189514ea
