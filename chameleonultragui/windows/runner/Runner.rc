@@ -90,7 +90,7 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "Chameleon Development" "\0"
-            VALUE "FileDescription", "Chameleon Ultra GUI app" "\0"
+            VALUE "FileDescription", "Chameleon Ultra GUI" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "chameleonultragui" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2023 Chameleon Development. All rights reserved." "\0"
