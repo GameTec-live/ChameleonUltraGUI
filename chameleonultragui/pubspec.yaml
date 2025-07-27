@@ -35,8 +35,8 @@ dependencies:
 
   flutter_libserialport:
     git:
-      url: https://github.com/Foxushka/flutter_libserialport.git
-      ref: patches
+      url: https://github.com/Foxushka/flutter_libserialport_new.git
+      ref: main
   provider: ^6.0.5
   logger: ^2.0.1
   convert: ^3.1.1
