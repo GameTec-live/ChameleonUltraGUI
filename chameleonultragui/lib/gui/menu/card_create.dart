@@ -182,8 +182,10 @@ class CardCreateMenuState extends State<CardCreateMenu> {
               const SizedBox(height: 8),
               DropdownButton<TagType>(
                 value: selectedType,
-                items: getTagTypesByFrequency(TagFrequency.hf)
-                    .map<DropdownMenuItem<TagType>>((TagType type) {
+                items: [
+                  ...getTagTypesByFrequency(TagFrequency.hf),
+                  ...getTagTypesByFrequency(TagFrequency.lf)
+                ].map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
                     value: type,
                     child: Text(
@@ -381,12 +383,20 @@ class CardCreateMenuState extends State<CardCreateMenu> {
             final sak = chameleonTagToFrequency(selectedType) == TagFrequency.lf
                 ? 0
                 : hexToBytes(sakController.text)[0];
-            final atqa = hexToBytes(atqaController.text);
-            final ats = hexToBytes(atsController.text);
+            final atqa =
+                chameleonTagToFrequency(selectedType) == TagFrequency.lf
+                    ? Uint8List(0)
+                    : hexToBytes(atqaController.text);
+            final ats = chameleonTagToFrequency(selectedType) == TagFrequency.lf
+                ? Uint8List(0)
+                : hexToBytes(atsController.text);
 
-            final blocks = isMifareUltralight(selectedType)
-                ? generateMifareUltralightBlocks()
-                : generateMifareClassicBlocks();
+            final blocks =
+                chameleonTagToFrequency(selectedType) == TagFrequency.lf
+                    ? []
+                    : isMifareUltralight(selectedType)
+                        ? generateMifareUltralightBlocks()
+                        : generateMifareClassicBlocks();
 
             var tag = CardSave(
                 name: nameController.text,
