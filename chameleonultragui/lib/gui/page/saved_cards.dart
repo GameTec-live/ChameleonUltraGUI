@@ -739,7 +739,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       }
                     },
                     style: customCardButtonStyle(appState),
-                    child: const Icon(Icons.add),
+                    child: const Icon(Icons.upload),
                   ),
                 )
               ]),

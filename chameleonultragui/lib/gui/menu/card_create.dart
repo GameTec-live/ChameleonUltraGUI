@@ -411,7 +411,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
             appState.changesMade();
             Navigator.pop(context);
           },
-          child: Text(localizations.create_card),
+          child: Text(localizations.create),
         ),
       ],
     );

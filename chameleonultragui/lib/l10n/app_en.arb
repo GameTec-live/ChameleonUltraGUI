@@ -314,5 +314,6 @@
   "trademarks_em": "EM Microelectronic-Marin, EM Microelectronic, EM and all product designations beginning with \u201cEM\u201d are registered trademarks of EM Microelectronic",
   "create_card": "Create card",
   "update_data_title": "Update card data?",
-  "update_data_message": "You have changed the UID, SAK, or ATQA. Do you want to update the card data accordingly?"
+  "update_data_message": "You have changed the UID, SAK, or ATQA. Do you want to update the card data accordingly?",
+  "create": "Create"
 }

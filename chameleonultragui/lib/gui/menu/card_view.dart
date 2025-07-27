@@ -24,13 +24,33 @@ class CardViewMenu extends StatefulWidget {
 }
 
 class CardViewMenuState extends State<CardViewMenu> {
+  late CardSave currentSavedCard;
+
+  @override
+  void initState() {
+    super.initState();
+    currentSavedCard = widget.tagSave;
+  }
+
+  void _refreshCardData() {
+    var appState = context.read<ChameleonGUIState>();
+    var cards = appState.sharedPreferencesProvider.getCards();
+    var updatedCard = cards.firstWhere(
+      (card) => card.id == widget.tagSave.id,
+      orElse: () => widget.tagSave,
+    );
+    setState(() {
+      currentSavedCard = updatedCard;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
     var appState = context.watch<ChameleonGUIState>();
 
     return AlertDialog(
-      title: Text(widget.tagSave.name,
+      title: Text(currentSavedCard.name,
           maxLines: 3, overflow: TextOverflow.ellipsis),
       content: SingleChildScrollView(
           child: Column(
@@ -40,14 +60,15 @@ class CardViewMenuState extends State<CardViewMenu> {
             children: [
               Expanded(
                 child: Text(
-                  "${localizations.uid}: ${widget.tagSave.uid}",
+                  "${localizations.uid}: ${currentSavedCard.uid}",
                   softWrap: true,
                   overflow: TextOverflow.visible,
                 ),
               ),
               IconButton(
                 onPressed: () async {
-                  ClipboardData data = ClipboardData(text: widget.tagSave.uid);
+                  ClipboardData data =
+                      ClipboardData(text: currentSavedCard.uid);
                   await Clipboard.setData(data);
                 },
                 icon: const Icon(Icons.copy),
@@ -58,7 +79,7 @@ class CardViewMenuState extends State<CardViewMenu> {
             children: [
               Expanded(
                 child: Text(
-                  "${localizations.tag_type}: ${chameleonTagToString(widget.tagSave.tag)}",
+                  "${localizations.tag_type}: ${chameleonTagToString(currentSavedCard.tag)}",
                   softWrap: true,
                   overflow: TextOverflow.visible,
                 ),
@@ -66,20 +87,20 @@ class CardViewMenuState extends State<CardViewMenu> {
               IconButton(
                 onPressed: () async {
                   ClipboardData data = ClipboardData(
-                      text: chameleonTagToString(widget.tagSave.tag));
+                      text: chameleonTagToString(currentSavedCard.tag));
                   await Clipboard.setData(data);
                 },
                 icon: const Icon(Icons.copy),
               ),
             ],
           ),
-          if (chameleonTagToFrequency(widget.tagSave.tag) ==
+          if (chameleonTagToFrequency(currentSavedCard.tag) ==
               TagFrequency.hf) ...[
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    "${localizations.sak}: ${bytesToHex(u8ToBytes(widget.tagSave.sak))}",
+                    "${localizations.sak}: ${bytesToHex(u8ToBytes(currentSavedCard.sak))}",
                     softWrap: true,
                     overflow: TextOverflow.visible,
                   ),
@@ -87,9 +108,9 @@ class CardViewMenuState extends State<CardViewMenu> {
                 IconButton(
                   onPressed: () async {
                     ClipboardData data = ClipboardData(
-                        text: widget.tagSave.sak == 0
+                        text: currentSavedCard.sak == 0
                             ? localizations.unavailable
-                            : bytesToHex(u8ToBytes(widget.tagSave.sak)));
+                            : bytesToHex(u8ToBytes(currentSavedCard.sak)));
                     await Clipboard.setData(data);
                   },
                   icon: const Icon(Icons.copy),
@@ -100,7 +121,7 @@ class CardViewMenuState extends State<CardViewMenu> {
               children: [
                 Expanded(
                   child: Text(
-                    "${localizations.atqa}: ${widget.tagSave.atqa.isNotEmpty ? bytesToHexSpace(widget.tagSave.atqa) : localizations.unavailable}",
+                    "${localizations.atqa}: ${currentSavedCard.atqa.isNotEmpty ? bytesToHexSpace(currentSavedCard.atqa) : localizations.unavailable}",
                     softWrap: true,
                     overflow: TextOverflow.visible,
                   ),
@@ -108,8 +129,8 @@ class CardViewMenuState extends State<CardViewMenu> {
                 IconButton(
                   onPressed: () async {
                     ClipboardData data = ClipboardData(
-                        text: widget.tagSave.atqa.isNotEmpty
-                            ? bytesToHex(widget.tagSave.atqa)
+                        text: currentSavedCard.atqa.isNotEmpty
+                            ? bytesToHex(currentSavedCard.atqa)
                             : localizations.unavailable);
                     await Clipboard.setData(data);
                   },
@@ -117,35 +138,37 @@ class CardViewMenuState extends State<CardViewMenu> {
                 ),
               ],
             ),
-            if (isMifareClassic(widget.tagSave.tag))
+            if (isMifareClassic(currentSavedCard.tag))
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 8),
                   ElevatedButton(
-                      onPressed: (mfClassicGetKeysFromDump(widget.tagSave.data)
-                              .isNotEmpty)
-                          ? () async {
-                              List<Uint8List> keys =
-                                  mfClassicGetKeysFromDump(widget.tagSave.data);
-                              await showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return DictionaryExportMenu(keys: keys);
-                                },
-                              );
-                            }
-                          : null,
+                      onPressed:
+                          (mfClassicGetKeysFromDump(currentSavedCard.data)
+                                  .isNotEmpty)
+                              ? () async {
+                                  List<Uint8List> keys =
+                                      mfClassicGetKeysFromDump(
+                                          currentSavedCard.data);
+                                  await showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return DictionaryExportMenu(keys: keys);
+                                    },
+                                  );
+                                }
+                              : null,
                       child: Text(localizations.export_to_dictionary)),
                 ],
               ),
-            if (isMifareUltralight(widget.tagSave.tag))
+            if (isMifareUltralight(currentSavedCard.tag))
               Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Row(
                   children: [
                     Expanded(
                       child: Text(
-                        "${localizations.ultralight_version}: ${widget.tagSave.extraData.ultralightVersion.isNotEmpty ? bytesToHexSpace(widget.tagSave.extraData.ultralightVersion) : localizations.unavailable}",
+                        "${localizations.ultralight_version}: ${currentSavedCard.extraData.ultralightVersion.isNotEmpty ? bytesToHexSpace(currentSavedCard.extraData.ultralightVersion) : localizations.unavailable}",
                         softWrap: true,
                         overflow: TextOverflow.visible,
                       ),
@@ -153,10 +176,10 @@ class CardViewMenuState extends State<CardViewMenu> {
                     IconButton(
                       onPressed: () async {
                         ClipboardData data = ClipboardData(
-                            text: widget.tagSave.extraData.ultralightVersion
-                                    .isNotEmpty
-                                ? bytesToHexSpace(
-                                    widget.tagSave.extraData.ultralightVersion)
+                            text: currentSavedCard
+                                    .extraData.ultralightVersion.isNotEmpty
+                                ? bytesToHexSpace(currentSavedCard
+                                    .extraData.ultralightVersion)
                                 : localizations.unavailable);
                         await Clipboard.setData(data);
                       },
@@ -168,7 +191,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                   children: [
                     Expanded(
                       child: Text(
-                        "${localizations.ultralight_signature}: ${widget.tagSave.extraData.ultralightSignature.isNotEmpty ? bytesToHexSpace(widget.tagSave.extraData.ultralightSignature) : localizations.unavailable}",
+                        "${localizations.ultralight_signature}: ${currentSavedCard.extraData.ultralightSignature.isNotEmpty ? bytesToHexSpace(currentSavedCard.extraData.ultralightSignature) : localizations.unavailable}",
                         softWrap: true,
                         overflow: TextOverflow.visible,
                       ),
@@ -176,10 +199,10 @@ class CardViewMenuState extends State<CardViewMenu> {
                     IconButton(
                       onPressed: () async {
                         ClipboardData data = ClipboardData(
-                            text: widget.tagSave.extraData.ultralightSignature
-                                    .isNotEmpty
-                                ? bytesToHexSpace(widget
-                                    .tagSave.extraData.ultralightSignature)
+                            text: currentSavedCard
+                                    .extraData.ultralightSignature.isNotEmpty
+                                ? bytesToHexSpace(currentSavedCard
+                                    .extraData.ultralightSignature)
                                 : localizations.unavailable);
                         await Clipboard.setData(data);
                       },
@@ -193,13 +216,14 @@ class CardViewMenuState extends State<CardViewMenu> {
       )),
       actions: [
         IconButton(
-          onPressed: () {
-            showDialog(
+          onPressed: () async {
+            await showDialog(
               context: context,
               builder: (BuildContext context) {
-                return CardEditMenu(tagSave: widget.tagSave);
+                return CardEditMenu(tagSave: currentSavedCard);
               },
             );
+            _refreshCardData();
           },
           icon: const Icon(Icons.edit),
         ),
@@ -211,10 +235,10 @@ class CardViewMenuState extends State<CardViewMenu> {
                 return AlertDialog(
                   title: Text(localizations.select_save_format),
                   actions: [
-                    if (isMifareClassic(widget.tagSave.tag))
+                    if (isMifareClassic(currentSavedCard.tag))
                       ElevatedButton(
                         onPressed: () async {
-                          await saveTag(widget.tagSave, context, true);
+                          await saveTag(currentSavedCard, context, true);
                           if (context.mounted) {
                             Navigator.pop(context);
                           }
@@ -223,7 +247,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                       ),
                     ElevatedButton(
                       onPressed: () async {
-                        await saveTag(widget.tagSave, context, false);
+                        await saveTag(currentSavedCard, context, false);
                         if (context.mounted) {
                           Navigator.pop(context);
                         }
@@ -247,7 +271,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 context: context,
                 builder: (BuildContext context) {
                   return ConfirmDeletionMenu(
-                      thingBeingDeleted: widget.tagSave.name);
+                      thingBeingDeleted: currentSavedCard.name);
                 },
               );
 
@@ -258,7 +282,7 @@ class CardViewMenuState extends State<CardViewMenu> {
             var tags = appState.sharedPreferencesProvider.getCards();
             List<CardSave> output = [];
             for (var tagTest in tags) {
-              if (tagTest.id != widget.tagSave.id) {
+              if (tagTest.id != currentSavedCard.id) {
                 output.add(tagTest);
               }
             }

@@ -24,11 +24,25 @@ class DictionaryViewMenu extends StatefulWidget {
 
 class DictionaryViewMenuState extends State<DictionaryViewMenu> {
   late ScrollController _scrollController;
+  late Dictionary currentDictionary;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    currentDictionary = widget.dictionary;
+  }
+
+  void _refreshDictionaryData() {
+    var appState = context.read<ChameleonGUIState>();
+    var dictionaries = appState.sharedPreferencesProvider.getDictionaries();
+    var updatedDictionary = dictionaries.firstWhere(
+      (dict) => dict.id == widget.dictionary.id,
+      orElse: () => widget.dictionary,
+    );
+    setState(() {
+      currentDictionary = updatedDictionary;
+    });
   }
 
   @override
@@ -42,13 +56,13 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
     var localizations = AppLocalizations.of(context)!;
     var appState = context.watch<ChameleonGUIState>();
 
-    String output = widget.dictionary.keys
+    String output = currentDictionary.keys
         .map((key) => bytesToHex(key).toUpperCase())
         .join('\n');
 
     return AlertDialog(
       title: Text(
-        widget.dictionary.name,
+        currentDictionary.name,
         maxLines: 3,
         overflow: TextOverflow.ellipsis,
       ),
@@ -67,7 +81,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
                   children: [
                     Expanded(
                       child: Text(
-                        "${localizations.key_count}: ${widget.dictionary.keys.length}",
+                        "${localizations.key_count}: ${currentDictionary.keys.length}",
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
@@ -75,7 +89,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
                       onPressed: () async {
                         await Clipboard.setData(
                           ClipboardData(
-                            text: widget.dictionary.keys.length.toString(),
+                            text: currentDictionary.keys.length.toString(),
                           ),
                         );
                       },
@@ -129,13 +143,14 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
       ),
       actions: [
         IconButton(
-          onPressed: () {
-            showDialog(
+          onPressed: () async {
+            await showDialog(
               context: context,
               builder: (BuildContext context) {
-                return DictionaryEditMenu(dictionary: widget.dictionary);
+                return DictionaryEditMenu(dictionary: currentDictionary);
               },
             );
+            _refreshDictionaryData();
           },
           icon: const Icon(Icons.edit),
         ),
@@ -143,20 +158,20 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
           onPressed: () async {
             try {
               await FileSaver.instance.saveAs(
-                name: widget.dictionary.name,
-                bytes: widget.dictionary.toFile(),
+                name: currentDictionary.name,
+                bytes: currentDictionary.toFile(),
                 ext: 'dic',
                 mimeType: MimeType.other,
               );
             } on UnimplementedError catch (_) {
               String? outputFile = await FilePicker.platform.saveFile(
                 dialogTitle: '${localizations.output_file}:',
-                fileName: '${widget.dictionary.name}.dic',
+                fileName: '${currentDictionary.name}.dic',
               );
 
               if (outputFile != null) {
                 var file = File(outputFile);
-                await file.writeAsBytes(widget.dictionary.toFile());
+                await file.writeAsBytes(currentDictionary.toFile());
               }
             }
           },
@@ -169,7 +184,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
                 context: context,
                 builder: (BuildContext context) {
                   return ConfirmDeletionMenu(
-                    thingBeingDeleted: widget.dictionary.name,
+                    thingBeingDeleted: currentDictionary.name,
                   );
                 },
               );
@@ -182,7 +197,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
             var dictionaries =
                 appState.sharedPreferencesProvider.getDictionaries();
             var updatedDictionaries = dictionaries
-                .where((dict) => dict.id != widget.dictionary.id)
+                .where((dict) => dict.id != currentDictionary.id)
                 .toList();
 
             appState.sharedPreferencesProvider
