@@ -391,7 +391,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                 ? Uint8List(0)
                 : hexToBytes(atsController.text);
 
-            final blocks =
+            List<Uint8List> blocks =
                 chameleonTagToFrequency(selectedType) == TagFrequency.lf
                     ? []
                     : isMifareUltralight(selectedType)
