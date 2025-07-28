@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
@@ -15,6 +14,7 @@ import 'package:flutter/material.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 enum MifareUltralightState { none, read, save }
@@ -175,6 +175,9 @@ class CardReaderState extends State<MifareUltralightHelper> {
                       hintMaxLines: 4,
                       hintText: localizations.enter_something(
                           localizations.ultralight_key_prompt)),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f: ]'))
+                  ],
                   validator: (String? value) {
                     if (value!.isNotEmpty && !isValidHexString(value)) {
                       return localizations.must_be_valid_hex;
