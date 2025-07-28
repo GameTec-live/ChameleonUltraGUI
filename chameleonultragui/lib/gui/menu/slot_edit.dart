@@ -5,6 +5,7 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 
@@ -200,7 +201,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
               DropdownButton<TagType>(
                 value: selectedType,
                 items: [
-                  ...getTagTypeByFrequency(widget.frequency),
+                  ...getTagTypesByFrequency(widget.frequency),
                   TagType.unknown
                 ].map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
@@ -243,6 +244,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                     labelText: localizations.uid,
                                     hintText: localizations
                                         .enter_something(localizations.uid)),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp(r'[0-9A-Fa-f: ]'))
+                                ],
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return localizations.please_enter_something(
@@ -284,6 +289,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                             hintText:
                                                 localizations.enter_something(
                                                     localizations.sak)),
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.allow(
+                                              RegExp(r'[0-9A-Fa-f: ]'))
+                                        ],
                                         validator: (value) {
                                           if (value == null ||
                                               value.isEmpty &&
@@ -318,6 +327,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                             hintText:
                                                 localizations.enter_something(
                                                     localizations.atqa)),
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.allow(
+                                              RegExp(r'[0-9A-Fa-f: ]'))
+                                        ],
                                         validator: (value) {
                                           if (value == null ||
                                               value.isEmpty &&
@@ -352,6 +365,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                               hintText:
                                                   localizations.enter_something(
                                                       localizations.ats)),
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter.allow(
+                                                RegExp(r'[0-9A-Fa-f: ]'))
+                                          ],
                                           validator: (value) {
                                             if (value!
                                                         .replaceAll(" ", "")

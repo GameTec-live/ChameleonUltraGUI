@@ -130,7 +130,8 @@ class NativeSerial extends AbstractSerial {
       }
 
       return false;
-    } on SerialPortError {
+    } on SerialPortError catch (e) {
+      log.e(e);
       return false;
     }
   }
