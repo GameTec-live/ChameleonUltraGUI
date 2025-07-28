@@ -12,18 +12,15 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
-class CardEditMenu extends StatefulWidget {
-  final CardSave tagSave;
-  final bool isNew;
-
-  const CardEditMenu({super.key, required this.tagSave, this.isNew = false});
+class CardCreateMenu extends StatefulWidget {
+  const CardCreateMenu({super.key});
 
   @override
-  CardEditMenuState createState() => CardEditMenuState();
+  CardCreateMenuState createState() => CardCreateMenuState();
 }
 
-class CardEditMenuState extends State<CardEditMenu> {
-  TagType selectedType = TagType.unknown;
+class CardCreateMenuState extends State<CardCreateMenu> {
+  TagType selectedType = TagType.mifare1K;
   TextEditingController nameController = TextEditingController();
   TextEditingController uidController = TextEditingController();
   TextEditingController sakController = TextEditingController();
@@ -35,81 +32,68 @@ class CardEditMenuState extends State<CardEditMenu> {
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  String originalUid = '';
-  String originalSak = '';
-  String originalAtqa = '';
+  List<Uint8List> generateMifareClassicBlocks() {
+    final uid = hexToBytes(uidController.text);
+    final sak = hexToBytes(sakController.text)[0];
+    final atqa = hexToBytes(atqaController.text);
 
-  @override
-  void initState() {
-    super.initState();
-    selectedType = widget.tagSave.tag;
-    uidController.text = widget.tagSave.uid;
-    sakController.text = bytesToHexSpace(u8ToBytes(widget.tagSave.sak));
-    atqaController.text = bytesToHexSpace(widget.tagSave.atqa);
-    atsController.text = bytesToHexSpace(widget.tagSave.ats);
-    ultralightVersionController.text =
-        bytesToHexSpace(widget.tagSave.extraData.ultralightVersion);
-    ultralightSignatureController.text =
-        bytesToHexSpace(widget.tagSave.extraData.ultralightSignature);
-    nameController.text = widget.tagSave.name;
-    pickerColor = widget.tagSave.color;
-    currentColor = widget.tagSave.color;
+    List<Uint8List> blocks = [];
 
-    originalUid = widget.tagSave.uid;
-    originalSak = bytesToHexSpace(u8ToBytes(widget.tagSave.sak));
-    originalAtqa = bytesToHexSpace(widget.tagSave.atqa);
-  }
-
-  bool hasDataChanged() {
-    return uidController.text != originalUid ||
-        sakController.text != originalSak ||
-        atqaController.text != originalAtqa;
-  }
-
-  Future<bool> showUpdateDataDialog(BuildContext context) async {
-    final localizations = AppLocalizations.of(context)!;
-
-    return await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text(localizations.update_data_title),
-              content: Text(localizations.update_data_message),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(localizations.no),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text(localizations.yes),
-                ),
-              ],
-            );
-          },
-        ) ??
-        false;
-  }
-
-  List<Uint8List> updateCardData(List<Uint8List> originalData) {
-    List<Uint8List> updatedData = List.from(originalData);
-
-    if (isMifareClassic(selectedType)) {
-      final uid = hexToBytes(uidController.text);
-      final sak = hexToBytes(sakController.text)[0];
-      final atqa = hexToBytes(atqaController.text);
-
-      updatedData[0] = mfClassicGenerateFirstBlock(uid, sak, atqa);
-    } else if (isMifareUltralight(selectedType)) {
-      final uid = hexToBytes(uidController.text);
-      final newBlocks = mfUltralightGenerateFirstBlocks(uid, selectedType);
-
-      for (int i = 0; i < newBlocks.length && i < updatedData.length; i++) {
-        updatedData[i] = newBlocks[i];
+    for (int sector = 0;
+        sector <
+            mfClassicGetSectorCount(
+                chameleonTagTypeGetMfClassicType(selectedType));
+        sector++) {
+      for (int block = 0;
+          block < mfClassicGetBlockCountBySector(sector) - 1;
+          block++) {
+        blocks.add(Uint8List(16));
       }
+
+      blocks.add(Uint8List.fromList([
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0x07,
+        0x80,
+        0x69,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF
+      ]));
     }
 
-    return updatedData;
+    blocks[0] = mfClassicGenerateFirstBlock(uid, sak, atqa);
+
+    return blocks;
+  }
+
+  List<Uint8List> generateMifareUltralightBlocks() {
+    final uid = hexToBytes(uidController.text);
+
+    final List<Uint8List> blocks =
+        mfUltralightGenerateFirstBlocks(uid, selectedType);
+
+    final totalBlocks = getBlockCountForTagType(selectedType);
+    final cc = Uint8List(4);
+    cc[0] = 0xE1;
+    cc[1] = 0x10;
+    cc[2] = (getMemorySizeForTagType(selectedType) ~/ 8) & 0xFF;
+    cc[3] = 0x00;
+    blocks.add(cc);
+
+    for (int i = 4; i < totalBlocks; i++) {
+      blocks.add(Uint8List(4));
+    }
+
+    return blocks;
   }
 
   @override
@@ -118,7 +102,7 @@ class CardEditMenuState extends State<CardEditMenu> {
     var localizations = AppLocalizations.of(context)!;
 
     return AlertDialog(
-      title: Text(localizations.edit_card),
+      title: Text(localizations.create_card),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -143,7 +127,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                         transform: Matrix4.translationValues(0, 7, 0),
                         child: IconButton(
                           icon: Icon(
-                              (chameleonTagToFrequency(widget.tagSave.tag) ==
+                              (chameleonTagToFrequency(selectedType) ==
                                       TagFrequency.hf)
                                   ? Icons.credit_card
                                   : Icons.wifi,
@@ -198,8 +182,10 @@ class CardEditMenuState extends State<CardEditMenu> {
               const SizedBox(height: 8),
               DropdownButton<TagType>(
                 value: selectedType,
-                items: getTagTypes()
-                    .map<DropdownMenuItem<TagType>>((TagType type) {
+                items: [
+                  ...getTagTypesByFrequency(TagFrequency.hf),
+                  ...getTagTypesByFrequency(TagFrequency.lf)
+                ].map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
                     value: type,
                     child: Text(
@@ -388,30 +374,35 @@ class CardEditMenuState extends State<CardEditMenu> {
           child: Text(localizations.cancel),
         ),
         TextButton(
-          onPressed: () async {
+          onPressed: () {
             if (!_formKey.currentState!.validate()) {
               return;
             }
 
-            List<Uint8List> cardData = widget.tagSave.data;
+            final uid = hexToBytes(uidController.text);
+            final sak = chameleonTagToFrequency(selectedType) == TagFrequency.lf
+                ? 0
+                : hexToBytes(sakController.text)[0];
+            final atqa =
+                chameleonTagToFrequency(selectedType) == TagFrequency.lf
+                    ? Uint8List(0)
+                    : hexToBytes(atqaController.text);
+            final ats = chameleonTagToFrequency(selectedType) == TagFrequency.lf
+                ? Uint8List(0)
+                : hexToBytes(atsController.text);
 
-            if (hasDataChanged() &&
-                (isMifareClassic(selectedType) ||
-                    isMifareUltralight(selectedType))) {
-              bool shouldUpdateData = await showUpdateDataDialog(context);
-              if (shouldUpdateData) {
-                cardData = updateCardData(widget.tagSave.data);
-              }
-            }
+            List<Uint8List> blocks =
+                chameleonTagToFrequency(selectedType) == TagFrequency.lf
+                    ? []
+                    : isMifareUltralight(selectedType)
+                        ? generateMifareUltralightBlocks()
+                        : generateMifareClassicBlocks();
 
             var tag = CardSave(
-                id: widget.tagSave.id,
                 name: nameController.text,
-                sak: chameleonTagToFrequency(selectedType) == TagFrequency.lf
-                    ? widget.tagSave.sak
-                    : hexToBytes(sakController.text)[0],
-                atqa: hexToBytes(atqaController.text),
-                uid: bytesToHexSpace(hexToBytes(uidController.text)),
+                sak: sak,
+                atqa: atqa,
+                uid: bytesToHexSpace(uid),
                 extraData: CardSaveExtra(
                   ultralightSignature:
                       hexToBytes(ultralightSignatureController.text),
@@ -419,25 +410,18 @@ class CardEditMenuState extends State<CardEditMenu> {
                       hexToBytes(ultralightVersionController.text),
                 ),
                 tag: selectedType,
-                data: cardData,
+                data: blocks,
                 color: currentColor,
-                ats: hexToBytes(atsController.text));
+                ats: ats);
 
             var tags = appState.sharedPreferencesProvider.getCards();
-            var index =
-                tags.indexWhere((element) => element.id == widget.tagSave.id);
-
-            if (index != -1) {
-              tags[index] = tag;
-            }
+            tags.add(tag);
 
             appState.sharedPreferencesProvider.setCards(tags);
             appState.changesMade();
-            if (context.mounted) {
-              Navigator.pop(context);
-            }
+            Navigator.pop(context);
           },
-          child: Text(localizations.save),
+          child: Text(localizations.create),
         ),
       ],
     );

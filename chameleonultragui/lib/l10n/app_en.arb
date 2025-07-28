@@ -341,5 +341,9 @@
   "lock_bytes": "Lock Bytes",
   "password": "Password",
   "dump": "Dump",
-  "invalid_data_in_block": "Invalid data in block"
+  "invalid_data_in_block": "Invalid data in block",
+  "create_card": "Create card",
+  "update_data_title": "Update card data?",
+  "update_data_message": "You have changed the UID, SAK, or ATQA. Do you want to update the card data accordingly?",
+  "create": "Create"
 }

@@ -23,8 +23,12 @@ class ConfirmDeletionMenuState extends State<ConfirmDeletionMenu> {
           child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Text(localizations
-              .confirm_deletion_text("\"${widget.thingBeingDeleted}\"")),
+          Text(
+            localizations
+                .confirm_deletion_text("\"${widget.thingBeingDeleted}\""),
+            softWrap: true,
+            overflow: TextOverflow.visible,
+          ),
         ],
       )),
       actions: [
