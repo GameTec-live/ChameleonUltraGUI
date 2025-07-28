@@ -136,9 +136,9 @@ Future<int?> mfUltralightReadCounterFromCard(
     );
 
     if (counterResponse.length >= 3) {
-      int counterValue = (counterResponse[0] << 16) |
+      int counterValue = (counterResponse[0]) |
           (counterResponse[1] << 8) |
-          counterResponse[2];
+          counterResponse[2] << 16;
 
       return counterValue;
     }
