@@ -97,8 +97,7 @@ class MifareUltralightDumpHighlighter {
               color: getBccColor(context), fontWeight: FontWeight.bold)));
       spans.add(TextSpan(
           text: spacedData.substring(2, 5),
-          style: TextStyle(
-              color: getDefaultColor(context), fontWeight: FontWeight.bold)));
+          style: TextStyle(color: getDefaultColor(context))));
       spans.add(TextSpan(
           text: spacedData.substring(5),
           style: TextStyle(

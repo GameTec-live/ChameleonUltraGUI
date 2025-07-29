@@ -88,7 +88,7 @@ class MifareClassicDumpHighlighter {
       if (cleanData.length == 32) {
         String spacedData = _addSpacesToHex(cleanData);
 
-        String keyA = spacedData.substring(0, 17); // "XX XX XX XX XX XX"
+        String keyA = spacedData.substring(0, 17);
         spans.add(TextSpan(
           text: keyA,
           style: TextStyle(
@@ -97,7 +97,7 @@ class MifareClassicDumpHighlighter {
           ),
         ));
 
-        String ac = spacedData.substring(17, 29); // " XX XX XX XX"
+        String ac = spacedData.substring(17, 26);
         spans.add(TextSpan(
           text: ac,
           style: TextStyle(
@@ -106,7 +106,15 @@ class MifareClassicDumpHighlighter {
           ),
         ));
 
-        String keyB = spacedData.substring(29); // " XX XX XX XX XX XX"
+        String extraData = spacedData.substring(26, 29);
+        spans.add(TextSpan(
+          text: extraData,
+          style: TextStyle(
+            color: getDefaultColor(context),
+          ),
+        ));
+
+        String keyB = spacedData.substring(29);
         spans.add(TextSpan(
           text: keyB,
           style: TextStyle(
