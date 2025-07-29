@@ -142,7 +142,7 @@ class DumpEditorState extends State<DumpEditor> {
   TextEditingValue _handleInsertMode(
       TextEditingValue oldValue, TextEditingValue newValue) {
     if (newValue.text.length <= oldValue.text.length) {
-      return _processTextWithSpacing(newValue);
+      return _handleDeletion(oldValue, newValue);
     }
 
     String oldText = oldValue.text;
@@ -233,7 +233,7 @@ class DumpEditorState extends State<DumpEditor> {
   TextEditingValue _handleOverwriteMode(
       TextEditingValue oldValue, TextEditingValue newValue) {
     if (newValue.text.length <= oldValue.text.length) {
-      return _processTextWithSpacing(newValue);
+      return _handleDeletion(oldValue, newValue);
     }
 
     String oldText = oldValue.text;
@@ -336,6 +336,95 @@ class DumpEditorState extends State<DumpEditor> {
       text: finalText,
       selection: TextSelection.collapsed(
           offset: newCursorPos.clamp(0, finalText.length)),
+    );
+  }
+
+  TextEditingValue _handleDeletion(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    String oldText = oldValue.text;
+    String newText = newValue.text;
+    int oldCursorPos = oldValue.selection.baseOffset;
+
+    int deletionLength = oldText.length - newText.length;
+
+    if (deletionLength <= 0) {
+      return _processTextWithSpacing(newValue);
+    }
+
+    List<String> oldLines = oldText.split('\n');
+
+    int currentPos = 0;
+    int lineIndex = 0;
+    int posInLine = 0;
+
+    for (int i = 0; i < oldLines.length; i++) {
+      if (currentPos + oldLines[i].length >= oldCursorPos) {
+        lineIndex = i;
+        posInLine = oldCursorPos - currentPos;
+        break;
+      }
+      currentPos += oldLines[i].length + 1;
+    }
+
+    if (lineIndex >= oldLines.length) {
+      return _processTextWithSpacing(newValue);
+    }
+
+    String oldLine = oldLines[lineIndex];
+    String cleanOldLine = oldLine.replaceAll(' ', '');
+
+    int cleanCursorPos = 0;
+    for (int i = 0; i < posInLine && i < oldLine.length; i++) {
+      if (oldLine[i] != ' ') {
+        cleanCursorPos++;
+      }
+    }
+
+    String newCleanLine = cleanOldLine;
+    if (cleanCursorPos > 0) {
+      int replacePos = cleanCursorPos - 1;
+      if (replacePos < newCleanLine.length) {
+        newCleanLine =
+            '${newCleanLine.substring(0, replacePos)}0${newCleanLine.substring(replacePos + 1)}';
+      }
+    }
+
+    if (newCleanLine.length > hexCharsPerBlock) {
+      newCleanLine = newCleanLine.substring(0, hexCharsPerBlock);
+    }
+
+    String newSpacedLine = '';
+    for (int i = 0; i < newCleanLine.length; i += 2) {
+      if (i > 0) newSpacedLine += ' ';
+      newSpacedLine += newCleanLine.substring(i, i + 2);
+    }
+
+    List<String> updatedLines = List.from(oldLines);
+    updatedLines[lineIndex] = newSpacedLine;
+
+    String finalText = updatedLines.join('\n').toUpperCase();
+
+    int targetCleanPos = cleanCursorPos > 0 ? cleanCursorPos - 1 : 0;
+
+    int spacedRelativePos = 0;
+    for (int i = 0; i < targetCleanPos; i++) {
+      if (i > 0 && i % 2 == 0) {
+        spacedRelativePos++;
+      }
+      spacedRelativePos++;
+    }
+
+    int lineStartInFinalText = 0;
+    for (int i = 0; i < lineIndex; i++) {
+      lineStartInFinalText += updatedLines[i].length + 1;
+    }
+
+    int finalCursorPos = lineStartInFinalText + spacedRelativePos;
+
+    return TextEditingValue(
+      text: finalText,
+      selection: TextSelection.collapsed(
+          offset: finalCursorPos.clamp(0, finalText.length)),
     );
   }
 
