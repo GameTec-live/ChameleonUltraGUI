@@ -268,7 +268,6 @@ class CardViewMenuState extends State<CardViewMenu> {
               );
             },
             icon: const Icon(Icons.edit_document),
-            tooltip: localizations.dump_editor,
           ),
         IconButton(
           onPressed: () async {
