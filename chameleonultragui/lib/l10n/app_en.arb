@@ -345,5 +345,6 @@
   "create_card": "Create card",
   "update_data_title": "Update card data?",
   "update_data_message": "You have changed the UID, SAK, or ATQA. Do you want to update the card data accordingly?",
-  "create": "Create"
+  "create": "Create",
+  "logs": "Logs"
 }
