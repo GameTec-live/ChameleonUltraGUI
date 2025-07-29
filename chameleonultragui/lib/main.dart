@@ -77,7 +77,6 @@ class ChameleonGUIState extends ChangeNotifier {
   // Flashing easter egg
   bool easterEgg = false;
 
-
   GlobalKey navigationRailKey = GlobalKey();
   Size? navigationRailSize;
 
@@ -137,7 +136,8 @@ class _MainPageState extends State<MainPage> {
   }
 
   Logger getLogger(ChameleonGUIState appState) {
-    if (appState._sharedPreferencesProvider!.isDebugLogging()) {
+    if (appState._sharedPreferencesProvider!.isDebugLogging() &&
+        appState._sharedPreferencesProvider!.isDebugMode()) {
       return Logger(
         output: SharedPreferencesLogger(appState._sharedPreferencesProvider!),
         printer: PrettyPrinter(
@@ -216,7 +216,6 @@ class _MainPageState extends State<MainPage> {
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
-
 
     try {
       WakelockPlus.toggle(enable: page is FlashingPage);
