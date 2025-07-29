@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -946,6 +948,14 @@ class DumpEditorState extends State<DumpEditor> {
     return fitsInLines && fitsInWidth;
   }
 
+  EdgeInsets _getPadding() {
+    if (Platform.isIOS) {
+      return EdgeInsets.fromLTRB(9, 9, 12, 12);
+    } else {
+      return EdgeInsets.fromLTRB(12, 8, 12, 12);
+    }
+  }
+
   Widget _buildOriginalEditor(int controllerIndex, {double fontSize = 14.0}) {
     return Stack(
       children: [
@@ -986,7 +996,7 @@ class DumpEditorState extends State<DumpEditor> {
           ),
         ),
         Padding(
-          padding: EdgeInsets.fromLTRB(12, 8, 12, 12),
+          padding: _getPadding(),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
