@@ -31,6 +31,7 @@ class CardEditMenuState extends State<CardEditMenu> {
   TextEditingController atsController = TextEditingController();
   TextEditingController ultralightVersionController = TextEditingController();
   TextEditingController ultralightSignatureController = TextEditingController();
+  List<TextEditingController> ultralightCounterControllers = [];
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -51,6 +52,10 @@ class CardEditMenuState extends State<CardEditMenu> {
         bytesToHexSpace(widget.tagSave.extraData.ultralightVersion);
     ultralightSignatureController.text =
         bytesToHexSpace(widget.tagSave.extraData.ultralightSignature);
+
+    // Initialize counter controllers
+    initCounterControllers();
+
     nameController.text = widget.tagSave.name;
     pickerColor = widget.tagSave.color;
     currentColor = widget.tagSave.color;
@@ -110,6 +115,22 @@ class CardEditMenuState extends State<CardEditMenu> {
     }
 
     return updatedData;
+  }
+
+  void initCounterControllers() {
+    ultralightCounterControllers.clear();
+    int counterCount = mfUltralightGetCounterCount(selectedType);
+
+    for (int i = 0; i < counterCount; i++) {
+      TextEditingController controller = TextEditingController();
+      if (i < widget.tagSave.extraData.ultralightCounters.length) {
+        controller.text =
+            widget.tagSave.extraData.ultralightCounters[i].toString();
+      } else {
+        controller.text = '0';
+      }
+      ultralightCounterControllers.add(controller);
+    }
   }
 
   @override
@@ -211,6 +232,8 @@ class CardEditMenuState extends State<CardEditMenu> {
                   if (newValue! != TagType.unknown) {
                     setState(() {
                       selectedType = newValue;
+                      // Reinitialize counter controllers when tag type changes
+                      initCounterControllers();
                     });
                   }
                   appState.changesMade();
@@ -372,6 +395,39 @@ class CardEditMenuState extends State<CardEditMenu> {
                                 }
                                 return null;
                               }),
+                          if (mfUltralightHasCounters(selectedType)) ...[
+                            const SizedBox(height: 20),
+                            ...ultralightCounterControllers
+                                .asMap()
+                                .entries
+                                .map((entry) {
+                              int index = entry.key;
+                              TextEditingController controller = entry.value;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: TextFormField(
+                                  controller: controller,
+                                  decoration: InputDecoration(
+                                      labelText: localizations
+                                          .ultralight_counter(index),
+                                      hintText: localizations
+                                          .ultralight_counter_value),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return localizations.counter_value_empty;
+                                    }
+                                    int? counterValue = int.tryParse(value);
+                                    if (counterValue == null ||
+                                        counterValue < 0 ||
+                                        counterValue > 16777215) {
+                                      return localizations.counter_value_range;
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              );
+                            }),
+                          ],
                         ]
                       ]))
                 ]),
@@ -417,6 +473,9 @@ class CardEditMenuState extends State<CardEditMenu> {
                       hexToBytes(ultralightSignatureController.text),
                   ultralightVersion:
                       hexToBytes(ultralightVersionController.text),
+                  ultralightCounters: ultralightCounterControllers
+                      .map((controller) => int.tryParse(controller.text) ?? 0)
+                      .toList(),
                 ),
                 tag: selectedType,
                 data: cardData,
