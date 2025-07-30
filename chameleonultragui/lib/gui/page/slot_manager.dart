@@ -348,7 +348,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                                 "${slotData[index].lf} (${chameleonTagToString(usedSlots[index].lf)})",
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
-                                              softWrap: true,
+                                                softWrap: true,
                                               ))
                                             ],
                                           ),
