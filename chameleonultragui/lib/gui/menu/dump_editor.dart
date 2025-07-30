@@ -222,6 +222,9 @@ class DumpEditorState extends State<DumpEditor> {
         newCleanPos + (newCleanPos > 0 ? (newCleanPos - 1) ~/ 2 : 0);
 
     int newCursorPos = currentPos + newSpacedPos;
+    if (newSpacedPos > newSpacedLine.length) {
+      newCursorPos--;
+    }
 
     String finalText = lines.join('\n').toUpperCase();
 
