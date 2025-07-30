@@ -1415,7 +1415,7 @@ class ChameleonCommunicator {
     Uint8List data = (await sendCmd(ChameleonCommand.mf0NtagGetCounterData,
             data: Uint8List.fromList([index])))!
         .data;
-    return (((data[0] << 16) | (data[1] << 8) | data[2]), data[3] == 0xBD);
+    return (((data[2] << 16) | (data[1] << 8) | data[0]), data[3] == 0xBD);
   }
 
   Future<void> mf0EmulatorSetCounterData(
@@ -1423,9 +1423,9 @@ class ChameleonCommunicator {
     await sendCmd(ChameleonCommand.mf0NtagSetCounterData,
         data: Uint8List.fromList([
           index | ((resetTearing ? 1 : 0) << 7),
-          (value >> 16) & 0xFF,
+          value & 0xFF,
           (value >> 8) & 0xFF,
-          value & 0xFF
+          (value >> 16) & 0xFF
         ]));
   }
 }

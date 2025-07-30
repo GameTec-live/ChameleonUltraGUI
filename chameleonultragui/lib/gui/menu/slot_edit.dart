@@ -5,6 +5,7 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 
@@ -39,6 +40,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
   TextEditingController sakController = TextEditingController();
   TextEditingController atqaController = TextEditingController();
   TextEditingController atsController = TextEditingController();
+  TextEditingController ultralightVersionController = TextEditingController();
+  TextEditingController ultralightSignatureController = TextEditingController();
+  List<TextEditingController> ultralightCounterControllers = [];
   TagType? selectedType;
   TagType previousTagType = TagType.unknown;
   EmulatorSettings? emulatorSettings;
@@ -74,11 +78,35 @@ class SlotEditMenuState extends State<SlotEditMenu> {
         atqaController.text = bytesToHexSpace(data.atqa);
         atsController.text = bytesToHexSpace(data.ats);
 
-        emulatorSettings =
-            await appState.communicator!.getMf1EmulatorSettings();
+        if (isMifareClassic(selectedType!)) {
+          emulatorSettings =
+              await appState.communicator!.getMf1EmulatorSettings();
 
-        if (emulatorSettings!.isDetectionEnabled) {
-          detectionCount = await appState.communicator!.getMf1DetectionCount();
+          if (emulatorSettings!.isDetectionEnabled) {
+            detectionCount =
+                await appState.communicator!.getMf1DetectionCount();
+          }
+        } else if (isMifareUltralight(selectedType!)) {
+          Uint8List version =
+              await appState.communicator!.mf0EmulatorGetVersionData();
+          ultralightVersionController.text = bytesToHexSpace(version);
+
+          Uint8List signature =
+              await appState.communicator!.mf0EmulatorGetSignatureData();
+          ultralightSignatureController.text = bytesToHexSpace(signature);
+
+          if (mfUltralightHasCounters(selectedType!)) {
+            ultralightCounterControllers.clear();
+            int counterCount = mfUltralightGetCounterCount(selectedType!);
+
+            for (int i = 0; i < counterCount; i++) {
+              TextEditingController controller = TextEditingController();
+              var counterData =
+                  await appState.communicator!.mf0EmulatorGetCounterData(i);
+              controller.text = counterData.$1.toString();
+              ultralightCounterControllers.add(controller);
+            }
+          }
         }
       } catch (_) {}
     }
@@ -94,9 +122,13 @@ class SlotEditMenuState extends State<SlotEditMenu> {
     await appState.communicator!.activateSlot(widget.slot);
     if (widget.slotType != selectedType) {
       await appState.communicator!.setSlotType(widget.slot, selectedType!);
-      if (!isMifareClassic(selectedType!) ||
-          !(isMifareClassic(selectedType!) &&
-              isMifareClassic(widget.slotType))) {
+      bool oldIsClassic = isMifareClassic(widget.slotType);
+      bool newIsClassic = isMifareClassic(selectedType!);
+      bool oldIsUltralight = isMifareUltralight(widget.slotType);
+      bool newIsUltralight = isMifareUltralight(selectedType!);
+
+      if (!((oldIsClassic && newIsClassic) ||
+          (oldIsUltralight && newIsUltralight))) {
         await appState.communicator!
             .setDefaultDataToSlot(widget.slot, selectedType!);
       }
@@ -105,13 +137,32 @@ class SlotEditMenuState extends State<SlotEditMenu> {
     if (selectedType == TagType.em410X) {
       await appState.communicator!
           .setEM410XEmulatorID(hexToBytes(uidController.text));
-    } else if (isMifareClassic(selectedType!)) {
+    } else if (isMifareClassic(selectedType!) ||
+        isMifareUltralight(selectedType!)) {
       var cardData = CardData(
           uid: hexToBytes(uidController.text),
           atqa: hexToBytes(atqaController.text),
           sak: bytesToU8(hexToBytes(sakController.text)),
           ats: hexToBytes(atsController.text));
       await appState.communicator!.setMf1AntiCollision(cardData);
+
+      // Save Ultralight-specific data
+      if (isMifareUltralight(selectedType!)) {
+        await appState.communicator!.mf0EmulatorSetVersionData(
+            hexToBytes(ultralightVersionController.text));
+
+        await appState.communicator!.mf0EmulatorSetSignatureData(
+            hexToBytes(ultralightSignatureController.text));
+
+        if (mfUltralightHasCounters(selectedType!)) {
+          for (int i = 0; i < ultralightCounterControllers.length; i++) {
+            int counterValue =
+                int.tryParse(ultralightCounterControllers[i].text) ?? 0;
+            await appState.communicator!
+                .mf0EmulatorSetCounterData(i, counterValue, true);
+          }
+        }
+      }
     }
 
     await appState.communicator!
@@ -150,7 +201,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
               DropdownButton<TagType>(
                 value: selectedType,
                 items: [
-                  ...getTagTypeByFrequency(widget.frequency),
+                  ...getTagTypesByFrequency(widget.frequency),
                   TagType.unknown
                 ].map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
@@ -192,6 +243,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                     labelText: localizations.uid,
                                     hintText: localizations
                                         .enter_something(localizations.uid)),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp(r'[0-9A-Fa-f: ]'))
+                                ],
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return localizations.please_enter_something(
@@ -233,6 +288,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                             hintText:
                                                 localizations.enter_something(
                                                     localizations.sak)),
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.allow(
+                                              RegExp(r'[0-9A-Fa-f: ]'))
+                                        ],
                                         validator: (value) {
                                           if (value == null ||
                                               value.isEmpty &&
@@ -267,6 +326,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                             hintText:
                                                 localizations.enter_something(
                                                     localizations.atqa)),
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.allow(
+                                              RegExp(r'[0-9A-Fa-f: ]'))
+                                        ],
                                         validator: (value) {
                                           if (value == null ||
                                               value.isEmpty &&
@@ -301,6 +364,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                               hintText:
                                                   localizations.enter_something(
                                                       localizations.ats)),
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter.allow(
+                                                RegExp(r'[0-9A-Fa-f: ]'))
+                                          ],
                                           validator: (value) {
                                             if (value!
                                                         .replaceAll(" ", "")
@@ -312,6 +379,94 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                             }
                                             return null;
                                           }),
+                                      // Ultralight-specific fields
+                                      if (isMifareUltralight(
+                                          selectedType!)) ...[
+                                        const SizedBox(height: 20),
+                                        TextFormField(
+                                            controller:
+                                                ultralightVersionController,
+                                            decoration: InputDecoration(
+                                                labelText: localizations
+                                                    .ultralight_version,
+                                                hintText: localizations
+                                                    .enter_something(localizations
+                                                        .ultralight_version)),
+                                            validator: (value) {
+                                              if (value!
+                                                          .replaceAll(" ", "")
+                                                          .length %
+                                                      2 !=
+                                                  0) {
+                                                return localizations
+                                                    .must_be_valid_hex;
+                                              }
+                                              return null;
+                                            }),
+                                        const SizedBox(height: 20),
+                                        TextFormField(
+                                            controller:
+                                                ultralightSignatureController,
+                                            decoration: InputDecoration(
+                                                labelText: localizations
+                                                    .ultralight_signature,
+                                                hintText: localizations
+                                                    .enter_something(localizations
+                                                        .ultralight_signature)),
+                                            validator: (value) {
+                                              if (value!
+                                                          .replaceAll(" ", "")
+                                                          .length %
+                                                      2 !=
+                                                  0) {
+                                                return localizations
+                                                    .must_be_valid_hex;
+                                              }
+                                              return null;
+                                            }),
+                                        // Counter fields
+                                        if (mfUltralightHasCounters(
+                                            selectedType!)) ...[
+                                          const SizedBox(height: 20),
+                                          ...ultralightCounterControllers
+                                              .asMap()
+                                              .entries
+                                              .map((entry) {
+                                            int index = entry.key;
+                                            TextEditingController controller =
+                                                entry.value;
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 10),
+                                              child: TextFormField(
+                                                controller: controller,
+                                                decoration: InputDecoration(
+                                                    labelText: localizations
+                                                        .ultralight_counter(
+                                                            index),
+                                                    hintText: localizations
+                                                        .ultralight_counter_value),
+                                                validator: (value) {
+                                                  if (value == null ||
+                                                      value.isEmpty) {
+                                                    return localizations
+                                                        .counter_value_empty;
+                                                  }
+                                                  int? counterValue =
+                                                      int.tryParse(value);
+                                                  if (counterValue == null ||
+                                                      counterValue < 0 ||
+                                                      counterValue > 16777215) {
+                                                    return localizations
+                                                        .counter_value_range;
+                                                  }
+                                                  return null;
+                                                },
+                                              ),
+                                            );
+                                          }),
+                                        ],
+                                      ],
                                       if (isMifareClassic(selectedType!) &&
                                           emulatorSettings != null)
                                         Column(children: [

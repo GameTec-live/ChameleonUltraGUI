@@ -82,7 +82,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: linux
-          path: chameleonultragui/build/linux/x64/release
+          path: chameleonultragui/build/linux/x64/release/bundle
       - run: dart pub global activate flutter_to_debian
       - run: flutter_to_debian
       - uses: actions/upload-artifact@v4
@@ -111,7 +111,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: linux-legacy
-          path: chameleonultragui/build/linux/x64/release
+          path: chameleonultragui/build/linux/x64/release/bundle
 
   build-macos:
     needs: check
@@ -144,3 +144,86 @@ jobs:
       - name: Install tools
         run: brew install automake libtool create-dmg
       - run: flutter build ios --release 2>&1 | tee /dev/tty | grep -q "Xcode build done" && exit 0 || exit 1
+
+  create_dev_release:
+    permissions:
+      contents: write
+    name: Create dev pre-release with artifacts
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - build-android
+      - build-windows
+      - build-linux
+      - build-linux-legacy
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '{apk,windows,windows-installer,linux,linux-debian,linux-legacy}'
+          path: release-artifacts
+      - name: Create zip files from artifacts
+        run: |
+          cd release-artifacts
+          for dir in */; do
+            artifact_name="${dir%/}"
+            zip -r "${artifact_name}.zip" "$dir"
+          done
+      - name: Upload to dev release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            Auto-generated packages from latest commit on `main` branch.
+            Built from commit ${{ github.sha }}
+          tag_name: dev
+          name: Development release
+          draft: false
+          prerelease: true
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: release-artifacts/*.zip
+      - name: Fix up release tag
+        run: |
+          git tag -f dev
+          git push --tags -f
+
+  create_release:
+    permissions:
+      contents: write
+    name: Create tagged release with artifacts
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'dev')
+    needs:
+      - build-android
+      - build-windows
+      - build-linux
+      - build-linux-legacy
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '{apk,windows,windows-installer,linux,linux-debian,linux-legacy}'
+          path: release-artifacts
+      - name: Create zip files from artifacts
+        run: |
+          cd release-artifacts
+          for dir in */; do
+            artifact_name="${dir%/}"
+            zip -r "${artifact_name}.zip" "$dir"
+          done
+      - name: Upload to tagged release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            Auto-generated packages for release ${{ github.ref_name }}
+            Built from commit ${{ github.sha }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          append_body: true
+          files: release-artifacts/*.zip
