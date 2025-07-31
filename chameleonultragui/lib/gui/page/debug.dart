@@ -5,6 +5,7 @@ import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/gui/menu/logs_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
@@ -113,6 +114,20 @@ class DebugPage extends StatelessWidget {
                 },
                 child: Column(children: [
                   Text(localizations.copy_logs_to_clipboard),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LogsViewerPage(),
+                    ),
+                  );
+                },
+                child: Column(children: [
+                  Text(localizations.logs),
                 ]),
               ),
               const SizedBox(height: 10),

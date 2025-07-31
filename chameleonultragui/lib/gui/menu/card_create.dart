@@ -220,19 +220,26 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                         return localizations
                             .please_enter_something(localizations.uid);
                       }
-                      if (!(value.replaceAll(" ", "").length == 14 ||
-                              value.replaceAll(" ", "").length == 8 ||
-                              value.replaceAll(" ", "").length == 20) &&
-                          chameleonTagToFrequency(selectedType) !=
-                              TagFrequency.lf) {
-                        return localizations.must_or(
-                            "4, 7", "10", localizations.uid);
+
+                      if (isMifareUltralight(selectedType)) {
+                        if (!(value.replaceAll(" ", "").length == 14)) {
+                          return localizations.must_be(localizations.uid, "7");
+                        }
+                      } else if (chameleonTagToFrequency(selectedType) !=
+                          TagFrequency.lf) {
+                        if (!(value.replaceAll(" ", "").length == 14 ||
+                            value.replaceAll(" ", "").length == 8)) {
+                          return localizations.must_or(
+                              "4", "7", localizations.uid);
+                        }
                       }
+
                       if (value.replaceAll(" ", "").length != 10 &&
                           chameleonTagToFrequency(selectedType) ==
                               TagFrequency.lf) {
                         return localizations.must_be(5, localizations.uid);
                       }
+
                       return null;
                     },
                   ),
