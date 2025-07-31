@@ -124,150 +124,172 @@ class SlotSettingsState extends State<SlotSettings> {
                 ),
                 content: SingleChildScrollView(
                     child: Column(children: [
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${localizations.hf}:'),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: OutlinedButton(
-                        onPressed: null,
-                        child: Text(names.hf),
-                      )),
-                      const SizedBox(width: 8),
-                      Switch(
-                        value: enabledSlot.hf,
-                        onChanged: (bool value) async {
-                          await appState.communicator!
-                              .enableSlot(widget.slot, TagFrequency.hf, value);
+                      Row(
+                        children: [
+                          Text('${localizations.hf}:'),
+                          const Spacer(),
+                          IconButton(
+                            onPressed: () async {
+                              showDialog<String>(
+                                  context: context,
+                                  builder: (BuildContext context) =>
+                                      SlotEditMenu(
+                                          name: names.hf,
+                                          isEnabled: enabledSlot.hf,
+                                          slotType: slotTypes.hf,
+                                          frequency: TagFrequency.hf,
+                                          slot: widget.slot,
+                                          update: updateSlot));
+                            },
+                            icon: const Icon(Icons.edit),
+                          ),
+                          IconButton(
+                            onPressed: () async {
+                              if (appState.sharedPreferencesProvider
+                                      .getConfirmDelete() ==
+                                  true) {
+                                var confirm = await showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return ConfirmDeletionMenu(
+                                        thingBeingDeleted: names.hf);
+                                  },
+                                );
 
-                          setState(() {
-                            enabledSlot.hf = value;
-                          });
+                                if (confirm != true) {
+                                  return;
+                                }
+                              }
+                              await appState.communicator!
+                                  .deleteSlotInfo(widget.slot, TagFrequency.hf);
+                              await appState.communicator!.setSlotTagName(
+                                  widget.slot,
+                                  localizations.empty,
+                                  TagFrequency.hf);
+                              await appState.communicator!.saveSlotData();
 
-                          widget.refresh();
-                        },
+                              setState(() {
+                                names.hf = localizations.empty;
+                                slotTypes.hf = TagType.unknown;
+                              });
+
+                              widget.refresh();
+                            },
+                            icon: const Icon(Icons.clear_rounded),
+                          ),
+                          Switch(
+                            value: enabledSlot.hf,
+                            onChanged: (bool value) async {
+                              await appState.communicator!.enableSlot(
+                                  widget.slot, TagFrequency.hf, value);
+
+                              setState(() {
+                                enabledSlot.hf = value;
+                              });
+
+                              widget.refresh();
+                            },
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        onPressed: () async {
-                          showDialog<String>(
-                              context: context,
-                              builder: (BuildContext context) => SlotEditMenu(
-                                  name: names.hf,
-                                  isEnabled: enabledSlot.hf,
-                                  slotType: slotTypes.hf,
-                                  frequency: TagFrequency.hf,
-                                  slot: widget.slot,
-                                  update: updateSlot));
-                        },
-                        icon: const Icon(Icons.edit),
-                      ),
-                      IconButton(
-                        onPressed: () async {
-                          if (appState.sharedPreferencesProvider
-                                  .getConfirmDelete() ==
-                              true) {
-                            var confirm = await showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return ConfirmDeletionMenu(
-                                    thingBeingDeleted: names.hf);
-                              },
-                            );
-
-                            if (confirm != true) {
-                              return;
-                            }
-                          }
-                          await appState.communicator!
-                              .deleteSlotInfo(widget.slot, TagFrequency.hf);
-                          await appState.communicator!.setSlotTagName(
-                              widget.slot,
-                              localizations.empty,
-                              TagFrequency.hf);
-                          await appState.communicator!.saveSlotData();
-
-                          setState(() {
-                            names.hf = localizations.empty;
-                            slotTypes.hf = TagType.unknown;
-                          });
-
-                          widget.refresh();
-                        },
-                        icon: const Icon(Icons.clear_rounded),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: null,
+                          child: Text(
+                            names.hf,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${localizations.lf}:'),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: OutlinedButton(
-                        onPressed: null,
-                        child: Text(names.lf),
-                      )),
-                      const SizedBox(width: 8),
-                      Switch(
-                        value: enabledSlot.lf,
-                        onChanged: (bool value) async {
-                          await appState.communicator!
-                              .enableSlot(widget.slot, TagFrequency.lf, value);
+                      Row(
+                        children: [
+                          Text('${localizations.lf}:'),
+                          const Spacer(),
+                          IconButton(
+                            onPressed: () async {
+                              showDialog<String>(
+                                  context: context,
+                                  builder: (BuildContext context) =>
+                                      SlotEditMenu(
+                                          name: names.lf,
+                                          isEnabled: enabledSlot.lf,
+                                          slotType: slotTypes.lf,
+                                          frequency: TagFrequency.lf,
+                                          slot: widget.slot,
+                                          update: updateSlot));
+                            },
+                            icon: const Icon(Icons.edit),
+                          ),
+                          IconButton(
+                            onPressed: () async {
+                              if (appState.sharedPreferencesProvider
+                                      .getConfirmDelete() ==
+                                  true) {
+                                var confirm = await showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return ConfirmDeletionMenu(
+                                        thingBeingDeleted: names.lf);
+                                  },
+                                );
 
-                          setState(() {
-                            enabledSlot.lf = value;
-                          });
+                                if (confirm != true) {
+                                  return;
+                                }
+                              }
+                              await appState.communicator!
+                                  .deleteSlotInfo(widget.slot, TagFrequency.lf);
+                              await appState.communicator!.setSlotTagName(
+                                  widget.slot,
+                                  localizations.empty,
+                                  TagFrequency.lf);
+                              await appState.communicator!.saveSlotData();
 
-                          widget.refresh();
-                        },
+                              setState(() {
+                                names.lf = localizations.empty;
+                                slotTypes.lf = TagType.unknown;
+                              });
+
+                              widget.refresh();
+                            },
+                            icon: const Icon(Icons.clear_rounded),
+                          ),
+                          Switch(
+                            value: enabledSlot.lf,
+                            onChanged: (bool value) async {
+                              await appState.communicator!.enableSlot(
+                                  widget.slot, TagFrequency.lf, value);
+
+                              setState(() {
+                                enabledSlot.lf = value;
+                              });
+
+                              widget.refresh();
+                            },
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        onPressed: () async {
-                          showDialog<String>(
-                              context: context,
-                              builder: (BuildContext context) => SlotEditMenu(
-                                  name: names.lf,
-                                  isEnabled: enabledSlot.lf,
-                                  slotType: slotTypes.lf,
-                                  frequency: TagFrequency.lf,
-                                  slot: widget.slot,
-                                  update: updateSlot));
-                        },
-                        icon: const Icon(Icons.edit),
-                      ),
-                      IconButton(
-                        onPressed: () async {
-                          if (appState.sharedPreferencesProvider
-                                  .getConfirmDelete() ==
-                              true) {
-                            var confirm = await showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return ConfirmDeletionMenu(
-                                    thingBeingDeleted: names.lf);
-                              },
-                            );
-
-                            if (confirm != true) {
-                              return;
-                            }
-                          }
-                          await appState.communicator!
-                              .deleteSlotInfo(widget.slot, TagFrequency.lf);
-                          await appState.communicator!.setSlotTagName(
-                              widget.slot,
-                              localizations.empty,
-                              TagFrequency.lf);
-                          await appState.communicator!.saveSlotData();
-
-                          setState(() {
-                            names.lf = localizations.empty;
-                            slotTypes.lf = TagType.unknown;
-                          });
-
-                          widget.refresh();
-                        },
-                        icon: const Icon(Icons.clear_rounded),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: null,
+                          child: Text(
+                            names.lf,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
                     ],
                   ),
