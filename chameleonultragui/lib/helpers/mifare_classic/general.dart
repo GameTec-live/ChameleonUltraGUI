@@ -125,7 +125,15 @@ Future<bool> mfClassicHasBackdoor(ChameleonCommunicator communicator) async {
       Uint8List.fromList([0x64, 0x00]),
       autoSelect: true,
       checkResponseCrc: false);
-  return data.length == 4;
+
+  if (data.length != 4) {
+    return false;
+  }
+
+  (int, NestedNonces, NestedNonces)? response =
+      await communicator.getMf1StaticEncryptedNestedAcquire(sectorCount: 1);
+
+  return response != null;
 }
 
 String mfClassicGetPrngType(NTLevel ntLevel, AppLocalizations localizations) {

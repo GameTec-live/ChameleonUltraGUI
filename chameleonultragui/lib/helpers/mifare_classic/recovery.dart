@@ -241,15 +241,15 @@ class MifareClassicRecovery {
       }
 
       if (!hasKey) {
-        if (!hasBackdoor &&
-            await appState.communicator!.checkMf1Darkside() ==
-                DarksideResult.vulnerable) {
+        if (await appState.communicator!.checkMf1Darkside() ==
+            DarksideResult.vulnerable) {
           // recover with darkside
           var data =
               await appState.communicator!.getMf1Darkside(0x03, 0x61, true, 15);
           var darkside = DarksideDart(uid: data.uid, items: []);
           checkMarks[40] = ChameleonKeyCheckmark.checking;
           bool found = false;
+          update();
 
           for (var tries = 0; tries < 0xFF && !found; tries++) {
             darkside.items.add(DarksideItemDart(
@@ -363,7 +363,7 @@ class MifareClassicRecovery {
                 } else {
                   nonces = result as NestedNonces;
                 }
-              } else if (!hasBackdoor) {
+              } else if (prng != NTLevel.backdoor) {
                 nonces = await appState.communicator!.getMf1NestedNonces(
                     validKeyBlock,
                     0x60 + validKeyType,
