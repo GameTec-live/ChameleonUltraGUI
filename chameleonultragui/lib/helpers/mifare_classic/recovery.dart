@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
@@ -58,14 +59,16 @@ class MifareClassicRecovery {
       List<Uint8List> keys, int keyType, int sector) async {
     Uint8List? key;
     keyCheckProgress = null;
+    int chunkSize =
+        appState.connector!.connectionType == ConnectionType.ble ? 32 : 64;
 
     if (checkMarks[sector + (keyType * 40)] != ChameleonKeyCheckmark.found) {
       checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.checking;
       update();
 
-      int totalChunks = keys.partition(64).length;
+      int totalChunks = keys.partition(chunkSize).length;
 
-      for (var chunk in keys.partition(64)) {
+      for (var chunk in keys.partition(chunkSize)) {
         key = await appState.communicator!.mf1AuthMultipleKeys(
             mfClassicGetSectorTrailerBlockBySector(sector),
             0x60 + keyType,
