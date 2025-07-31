@@ -227,6 +227,7 @@ class MifareClassicRecovery {
       // Key check part competed, checking found keys
       bool hasKey = false;
       bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
+      DarksideResult darkside = DarksideResult.fixed;
 
       for (var sector = 0;
           sector < mfClassicGetSectorCount(mf1Type) && !hasKey;
@@ -241,8 +242,11 @@ class MifareClassicRecovery {
       }
 
       if (!hasKey) {
-        if (await appState.communicator!.checkMf1Darkside() ==
-            DarksideResult.vulnerable) {
+        try {
+          darkside = await appState.communicator!.checkMf1Darkside();
+        } catch (_) {}
+
+        if (darkside == DarksideResult.vulnerable) {
           // recover with darkside
           var data =
               await appState.communicator!.getMf1Darkside(0x03, 0x61, true, 15);
