@@ -326,7 +326,7 @@ class MifareClassicRecovery {
         prng = NTLevel.backdoor;
       }
 
-      if (validKeyType == -1) {
+      if (validKeyType == -1 && prng != NTLevel.backdoor) {
         error = "no_keys_darkside";
 
         return;
