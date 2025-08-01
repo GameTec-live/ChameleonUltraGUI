@@ -288,7 +288,7 @@ class MifareClassicRecovery {
       NTLevel prng = await appState.communicator!.getMf1NTLevel();
       Uint8List validKey = Uint8List(0);
       int validKeyBlock = 0;
-      int validKeyType = 0;
+      int validKeyType = -1;
       int? uid;
       NestedNonces? aNonces;
       NestedNonces? bNonces;
@@ -311,19 +311,25 @@ class MifareClassicRecovery {
         }
       }
 
-      if (isStaticEncrypted || (validKeyType == 0 && hasBackdoor)) {
+      if (isStaticEncrypted || (validKeyType == -1 && hasBackdoor)) {
         (int, NestedNonces, NestedNonces)? response =
             await appState.communicator!.getMf1StaticEncryptedNestedAcquire(
                 sectorCount: mfClassicGetSectorCount(mf1Type));
 
         if (response == null) {
-          error = "has_no_backdoor";
+          error = "no_keys_darkside";
 
           return;
         }
 
         (uid, aNonces, bNonces) = response;
         prng = NTLevel.backdoor;
+      }
+
+      if (validKeyType == -1) {
+        error = "no_keys_darkside";
+
+        return;
       }
 
       for (var sector = 0;
@@ -454,6 +460,14 @@ class MifareClassicRecovery {
                   }
                 }
 
+                if (checkMarks[sector] == ChameleonKeyCheckmark.checking) {
+                  checkMarks[sector] = ChameleonKeyCheckmark.none;
+                }
+
+                if (checkMarks[sector + 40] == ChameleonKeyCheckmark.checking) {
+                  checkMarks[sector + 40] = ChameleonKeyCheckmark.none;
+                }
+
                 // If we didn't found in first run, we will never find them
                 found = true;
                 break;
@@ -571,10 +585,6 @@ class MifareClassicRecovery {
 
       if (nonces.nonces.isEmpty) {
         return "old_firmware";
-      }
-
-      if (info[1] == 1) {
-        return "static_encrypted_nonce";
       }
 
       hardnestedProgress = info[1] / 256;

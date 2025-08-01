@@ -220,13 +220,6 @@ class CardReaderState extends State<MifareClassicHelper> {
                                             .recovery_error_no_supported;
                                   });
                                 } else if (widget.mfcInfo.recovery!.error ==
-                                    "static_encrypted_nonce") {
-                                  setState(() {
-                                    widget.mfcInfo.recovery?.error =
-                                        localizations
-                                            .recovery_static_encrypted_nonce;
-                                  });
-                                } else if (widget.mfcInfo.recovery!.error ==
                                     "old_firmware") {
                                   setState(() {
                                     widget.mfcInfo.recovery?.error =
