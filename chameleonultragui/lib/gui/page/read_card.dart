@@ -60,6 +60,7 @@ class MifareClassicInfo {
   bool isEV1;
   MifareClassicRecovery? recovery;
   MifareClassicType type;
+  MifareClassicType? overrideType;
   MifareClassicState state;
   NTLevel? ntLevel;
   bool? hasBackdoor;
@@ -68,6 +69,7 @@ class MifareClassicInfo {
     MifareClassicRecovery? recovery,
     this.isEV1 = false,
     this.type = MifareClassicType.none,
+    this.overrideType,
     this.state = MifareClassicState.none,
     NTLevel? ntLevel,
     bool? hasBackdoor,
@@ -105,7 +107,8 @@ class ReadCardPageState extends State<ReadCardPage> {
 
     setState(() {
       hfInfo = HFCardInfo();
-      mfcInfo = MifareClassicInfo();
+      MifareClassicType? preservedOverrideType = mfcInfo.overrideType;
+      mfcInfo = MifareClassicInfo(overrideType: preservedOverrideType);
     });
 
     try {
@@ -121,9 +124,18 @@ class ReadCardPageState extends State<ReadCardPage> {
       try {
         isMifareClassic = await appState.communicator!.detectMf1Support();
         if (isMifareClassic) {
-          mifareClassicType = await mfClassicGetType(appState.communicator!);
+          if (mfcInfo.overrideType != null) {
+            mifareClassicType = mfcInfo.overrideType!;
+          } else {
+            mifareClassicType = await mfClassicGetType(appState.communicator!);
+          }
         }
-      } catch (_) {}
+      } catch (_) {
+        if (mfcInfo.overrideType != null) {
+          isMifareClassic = true;
+          mifareClassicType = mfcInfo.overrideType!;
+        }
+      }
 
       bool isMifareClassicEV1 = isMifareClassic
           ? (await appState.communicator!
@@ -132,7 +144,8 @@ class ReadCardPageState extends State<ReadCardPage> {
 
       if (isMifareClassic) {
         MifareClassicRecovery recovery = MifareClassicRecovery(
-            update: updateMifareClassicRecovery, appState: appState);
+            update: updateMifareClassicRecovery,
+            appState: appState);
 
         NTLevel ntLevel = await appState.communicator!.getMf1NTLevel();
         bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
@@ -151,7 +164,9 @@ class ReadCardPageState extends State<ReadCardPage> {
           type = mfUltralightGetType(version);
         }
       } else {
-        type = mfClassicGetChameleonTagType(mifareClassicType);
+        // Use override type if available for TagType mapping
+        MifareClassicType finalType = mfcInfo.overrideType ?? mifareClassicType;
+        type = mfClassicGetChameleonTagType(finalType);
       }
 
       setState(() {
@@ -163,12 +178,18 @@ class ReadCardPageState extends State<ReadCardPage> {
             : localizations.no;
         hfInfo.type = type;
         mfcInfo.isEV1 = isMifareClassicEV1;
-        mfcInfo.type = mifareClassicType;
+
+        mfcInfo.type = mfcInfo.overrideType ?? mifareClassicType;
         mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
             ? MifareClassicState.checkKeys
             : MifareClassicState.none;
         hfInfo.tech =
             chameleonTagToString(type) + (isMifareClassicEV1 ? " EV1" : "");
+
+        if (mfcInfo.overrideType != null && isMifareClassic) {
+          final overrideTagType = mfClassicGetChameleonTagType(mfcInfo.overrideType!);
+          hfInfo.tech = chameleonTagToString(overrideTagType) + (isMifareClassicEV1 ? " EV1" : "");
+        }
       });
     } catch (_) {
       setState(() {
@@ -289,10 +310,83 @@ class ReadCardPageState extends State<ReadCardPage> {
                       buildFieldRow(
                           localizations.ats, hfInfo.ats, fieldFontSize),
                       const SizedBox(height: 16),
-                      Text(
-                        '${localizations.card_tech}: ${hfInfo.tech}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: fieldFontSize),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${localizations.card_tech}: ${hfInfo.tech}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: fieldFontSize),
+                          ),
+                          if (isMifareClassic(hfInfo.type)) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text(localizations.override_card_type),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            localizations.override_card_type_description,
+                                            style: const TextStyle(fontSize: 14),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          DropdownButton<MifareClassicType?>(
+                                            isExpanded: true,
+                                            value: mfcInfo.overrideType,
+                                            hint: Text(localizations.auto_detect_default),
+                                            onChanged: (MifareClassicType? newValue) async {
+                                              setState(() {
+                                                mfcInfo.overrideType = newValue;
+                                              });
+                                              if (context.mounted) {
+                                                Navigator.of(context).pop();
+                                              }
+                                              if (hfInfo.uid.isNotEmpty) {
+                                                await readHFInfo();
+                                              }
+                                            },
+                                            items: [
+                                              DropdownMenuItem<MifareClassicType?>(
+                                                value: null,
+                                                child: Text(localizations.auto_detect_default),
+                                              ),
+                                              ...getAllMifareClassicTagTypes().map((tagType) {
+                                                final mifareType = chameleonTagTypeGetMfClassicType(tagType);
+                                                return DropdownMenuItem<MifareClassicType?>(
+                                                  value: mifareType,
+                                                  child: Text(chameleonTagToString(tagType)),
+                                                );
+                                              }),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop(),
+                                          child: Text(localizations.cancel),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              icon: const Icon(Icons.edit),
+                              iconSize: 20,
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                              tooltip: localizations.override_card_type_tooltip,
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 16),
                       if (isMifareClassic(hfInfo.type)) ...[

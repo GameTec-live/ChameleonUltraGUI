@@ -84,6 +84,7 @@ final gMifareClassicKeys = gMifareClassicKeysList
 
 Future<MifareClassicType> mfClassicGetType(
     ChameleonCommunicator communicator) async {
+  // Detect card type by attempting authentication on specific blocks
   if ((await communicator.send14ARaw(Uint8List.fromList([0x60, 255]),
               checkResponseCrc: false))
           .length ==
@@ -267,6 +268,16 @@ bool isMifareClassic(TagType type) {
     TagType.mifare4K,
     TagType.mifareMini
   ].contains(type);
+}
+
+/// Returns a list of all possible Mifare Classic TagType values
+List<TagType> getAllMifareClassicTagTypes() {
+  return [
+    TagType.mifareMini,
+    TagType.mifare1K,
+    TagType.mifare2K,
+    TagType.mifare4K,
+  ];
 }
 
 List<Uint8List> mfClassicGetKeysFromDump(List<Uint8List> dump) {
