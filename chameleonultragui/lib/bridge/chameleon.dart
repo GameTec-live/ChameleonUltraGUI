@@ -214,7 +214,7 @@ class ChameleonMessage {
       {required this.command, required this.status, required this.data});
 }
 
-enum NTLevel { static, weak, hard, staticEncrypted, unknown }
+enum NTLevel { static, weak, hard, unknown }
 
 enum DarksideResult {
   vulnerable,
@@ -656,8 +656,6 @@ class ChameleonCommunicator {
       return NTLevel.weak;
     } else if (resp == 2) {
       return NTLevel.hard;
-    } else if (resp == 3) {
-      return NTLevel.staticEncrypted;
     } else {
       return NTLevel.unknown;
     }
@@ -666,7 +664,7 @@ class ChameleonCommunicator {
   Future<DarksideResult> checkMf1Darkside() async {
     // Check card vulnerability to Mifare Classic darkside attack
     var message = (await sendCmd(ChameleonCommand.mf1DarksideAcquire,
-        data: Uint8List.fromList([0, 0, 1, 15]),
+        data: Uint8List.fromList([0x61, 0x03, 1, 15]),
         timeout: const Duration(seconds: 30)))!;
     int status = message.status;
     if (message.data.isNotEmpty) {
@@ -1354,7 +1352,7 @@ class ChameleonCommunicator {
     Uint8List data = (await sendCmd(ChameleonCommand.mf0NtagGetCounterData,
             data: Uint8List.fromList([index])))!
         .data;
-    return (((data[0] << 16) | (data[1] << 8) | data[2]), data[3] == 0xBD);
+    return (((data[2] << 16) | (data[1] << 8) | data[0]), data[3] == 0xBD);
   }
 
   Future<void> mf0EmulatorSetCounterData(
@@ -1362,9 +1360,9 @@ class ChameleonCommunicator {
     await sendCmd(ChameleonCommand.mf0NtagSetCounterData,
         data: Uint8List.fromList([
           index | ((resetTearing ? 1 : 0) << 7),
-          (value >> 16) & 0xFF,
+          value & 0xFF,
           (value >> 8) & 0xFF,
-          value & 0xFF
+          (value >> 16) & 0xFF
         ]));
   }
 }

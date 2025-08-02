@@ -62,13 +62,18 @@ class MifareClassicInfo {
   MifareClassicType type;
   MifareClassicType? overrideType;
   MifareClassicState state;
+  NTLevel? ntLevel;
+  bool? hasBackdoor;
 
-  MifareClassicInfo(
-      {MifareClassicRecovery? recovery,
-      this.isEV1 = false,
-      this.type = MifareClassicType.none,
-      this.overrideType,
-      this.state = MifareClassicState.none});
+  MifareClassicInfo({
+    MifareClassicRecovery? recovery,
+    this.isEV1 = false,
+    this.type = MifareClassicType.none,
+    this.overrideType,
+    this.state = MifareClassicState.none,
+    NTLevel? ntLevel,
+    bool? hasBackdoor,
+  });
 }
 
 class ReadCardPage extends StatefulWidget {
@@ -102,7 +107,6 @@ class ReadCardPageState extends State<ReadCardPage> {
 
     setState(() {
       hfInfo = HFCardInfo();
-      // Preserve the override type when resetting
       MifareClassicType? preservedOverrideType = mfcInfo.overrideType;
       mfcInfo = MifareClassicInfo(overrideType: preservedOverrideType);
     });
@@ -120,7 +124,6 @@ class ReadCardPageState extends State<ReadCardPage> {
       try {
         isMifareClassic = await appState.communicator!.detectMf1Support();
         if (isMifareClassic) {
-          // Use override type if available, otherwise detect automatically
           if (mfcInfo.overrideType != null) {
             mifareClassicType = mfcInfo.overrideType!;
           } else {
@@ -128,7 +131,6 @@ class ReadCardPageState extends State<ReadCardPage> {
           }
         }
       } catch (_) {
-        // If detection fails but we have an override, use it
         if (mfcInfo.overrideType != null) {
           isMifareClassic = true;
           mifareClassicType = mfcInfo.overrideType!;
@@ -142,11 +144,16 @@ class ReadCardPageState extends State<ReadCardPage> {
 
       if (isMifareClassic) {
         MifareClassicRecovery recovery = MifareClassicRecovery(
-            update: updateMifareClassicRecovery, 
+            update: updateMifareClassicRecovery,
             appState: appState);
+
+        NTLevel ntLevel = await appState.communicator!.getMf1NTLevel();
+        bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
 
         setState(() {
           mfcInfo.recovery = recovery;
+          mfcInfo.ntLevel = ntLevel;
+          mfcInfo.hasBackdoor = hasBackdoor;
         });
       }
 
@@ -171,14 +178,14 @@ class ReadCardPageState extends State<ReadCardPage> {
             : localizations.no;
         hfInfo.type = type;
         mfcInfo.isEV1 = isMifareClassicEV1;
-        // Use override type if available, otherwise use detected type
+
         mfcInfo.type = mfcInfo.overrideType ?? mifareClassicType;
         mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
             ? MifareClassicState.checkKeys
             : MifareClassicState.none;
         hfInfo.tech =
             chameleonTagToString(type) + (isMifareClassicEV1 ? " EV1" : "");
-        // Update tech display if type is overridden
+
         if (mfcInfo.overrideType != null && isMifareClassic) {
           final overrideTagType = mfClassicGetChameleonTagType(mfcInfo.overrideType!);
           hfInfo.tech = chameleonTagToString(overrideTagType) + (isMifareClassicEV1 ? " EV1" : "");
@@ -336,11 +343,9 @@ class ReadCardPageState extends State<ReadCardPage> {
                                               setState(() {
                                                 mfcInfo.overrideType = newValue;
                                               });
-                                              // Close dialog first to avoid BuildContext issues
                                               if (context.mounted) {
                                                 Navigator.of(context).pop();
                                               }
-                                              // Automatically re-read the card when override changes
                                               if (hfInfo.uid.isNotEmpty) {
                                                 await readHFInfo();
                                               }
@@ -384,6 +389,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                         ],
                       ),
                       const SizedBox(height: 16),
+                      if (isMifareClassic(hfInfo.type)) ...[
+                        buildFieldRow(
+                            localizations.prng_type,
+                            mfClassicGetPrngType(
+                                mfcInfo.ntLevel!, localizations),
+                            fieldFontSize),
+                        buildFieldRow(
+                            localizations.has_backdoor_support,
+                            mfcInfo.hasBackdoor!
+                                ? localizations.yes
+                                : localizations.no,
+                            fieldFontSize),
+                        const SizedBox(height: 16),
+                      ],
                       if (!hfInfo.cardExist) ...[
                         ErrorMessage(errorMessage: localizations.no_card_found),
                         const SizedBox(height: 16)

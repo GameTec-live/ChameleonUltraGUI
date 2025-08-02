@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Mifare Classic keys from Proxmark3
@@ -105,6 +107,36 @@ Future<MifareClassicType> mfClassicGetType(
   }
 
   return MifareClassicType.mini;
+}
+
+Future<bool> mfClassicHasBackdoor(ChameleonCommunicator communicator) async {
+  Uint8List data = await communicator.send14ARaw(
+      Uint8List.fromList([0x64, 0x00]),
+      autoSelect: true,
+      checkResponseCrc: false);
+  return data.length == 4;
+}
+
+String mfClassicGetPrngType(NTLevel ntLevel, AppLocalizations localizations) {
+  if (ntLevel == NTLevel.hard) {
+    return localizations.prng_type_hard;
+  } else if (ntLevel == NTLevel.weak) {
+    return localizations.prng_type_weak;
+  } else if (ntLevel == NTLevel.static) {
+    return localizations.prng_type_static;
+  }
+
+  return localizations.unknown;
+}
+
+Future<bool> mfClassicIsStaticEncrypted(ChameleonCommunicator communicator,
+    int block, int keyType, Uint8List knownKey) async {
+  NestedNonces nonces = NestedNonces(nonces: []);
+  var collectedNonces = await communicator.getMf1NestedNonces(
+      block, 0x60 + keyType, knownKey, 3, 0x61,
+      level: NTLevel.hard);
+  nonces.nonces.addAll(collectedNonces.nonces);
+  return nonces.getNoncesInfo()[1] == 1;
 }
 
 String mfClassicGetName(MifareClassicType type) {
@@ -260,4 +292,21 @@ List<Uint8List> mfClassicGetKeysFromDump(List<Uint8List> dump) {
   }
 
   return keys;
+}
+
+Uint8List mfClassicGenerateFirstBlock(Uint8List uid, int sak, Uint8List atqa) {
+  final block0 = Uint8List(16);
+  if (uid.length == 4) {
+    block0.setAll(0, uid);
+    block0[4] = calculateBcc(uid);
+    block0[5] = sak + 0x80;
+    block0.setAll(6, atqa);
+    block0.setAll(8, [0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69]);
+  } else if (uid.length == 7) {
+    block0.setAll(0, uid);
+    block0[7] = sak + 0x80;
+    block0.setAll(8, atqa);
+    block0.setAll(10, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+  }
+  return block0;
 }

@@ -41,6 +41,8 @@ class SlotSettingsState extends State<SlotSettings> {
     var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
+    await appState.communicator!.activateSlot(widget.slot);
+
     try {
       String name = (await appState.communicator!
               .getSlotTagName(widget.slot, TagFrequency.hf))

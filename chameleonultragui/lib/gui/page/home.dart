@@ -96,6 +96,11 @@ class HomePageState extends State<HomePage> {
 
   Future<List<String>> getVersion() async {
     var appState = context.read<ChameleonGUIState>();
+
+    if (appState.connector!.portName == "Demo") {
+      return [AppLocalizations.of(context)!.demo_firmware, "Demo"];
+    }
+
     String commitHash = "";
     var firmware = await appState.communicator!.getFirmwareVersion();
     isLegacyFirmware = firmware.legacyProtocol;

@@ -166,6 +166,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
             }
 
             Dictionary dict = Dictionary(
+              id: widget.isNew ? null : widget.dictionary.id,
               name: nameController.text,
               keys: stringToDict(keysController.text),
               color: currentColor,

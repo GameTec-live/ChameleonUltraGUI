@@ -225,7 +225,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           ats: card.ats);
       await appState.communicator!.setMf1AntiCollision(cardData);
 
-      for (var page = 0; page < mfUltralightGetPagesCount(card.tag); page++) {
+      for (var page = 0;
+          page < mfUltralightGetPagesCount(card.tag) && card.data.length > page;
+          page++) {
         await appState.communicator!
             .mf0EmulatorWritePages(page, card.data[page]);
 
@@ -243,6 +245,17 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       if (card.extraData.ultralightSignature.isNotEmpty) {
         await appState.communicator!
             .mf0EmulatorSetSignatureData(card.extraData.ultralightSignature);
+      }
+
+      if (card.extraData.ultralightCounters.isNotEmpty) {
+        for (int i = 0; i < card.extraData.ultralightCounters.length; i++) {
+          await appState.communicator!.mf0EmulatorSetCounterData(
+              i, card.extraData.ultralightCounters[i], true);
+        }
+      }
+
+      if (mfUltralightHasCounters(card.tag)) {
+        await appState.communicator!.mf0ResetAuthCount();
       }
 
       setUploadState(100);
@@ -367,8 +380,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                             Expanded(
                                                 child: Text(
                                               "${slotData[index].lf} (${chameleonTagToString(usedSlots[index].lf)})",
-                                              //maxLines: 2,
-                                              overflow: TextOverflow.clip,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              softWrap: true,
                                             ))
                                           ],
                                         ),

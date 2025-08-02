@@ -222,7 +222,18 @@ class BLESerial extends AbstractSerial {
           try {
             await flutterReactiveBle.writeCharacteristicWithResponse(
                 rxCharacteristic!,
-                value: Uint8List(0));
+                value: Uint8List.fromList([
+                  0x11,
+                  0xef,
+                  0x03,
+                  0xfb,
+                  0x00,
+                  0x00,
+                  0x00,
+                  0x00,
+                  0x02,
+                  0x00
+                ]));
 
             connected = true;
             portName = devicePort;
