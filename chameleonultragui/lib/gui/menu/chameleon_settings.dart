@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -50,8 +51,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
             appState.connector!.performDisconnect();
             return AlertDialog(
                 title: Text(localizations.device_settings),
-                content: Text(
-                    '${localizations.error}: ${snapshot.error.toString()}'));
+                content: ErrorPage(errorMessage: snapshot.error.toString()));
           } else {
             DeviceSettings settings = snapshot.data;
             TextEditingController bleKeyController =

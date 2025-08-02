@@ -174,6 +174,11 @@ class CardReaderState extends State<MifareClassicHelper> {
               value: widget.mfcInfo.recovery?.hardnestedProgress),
           const SizedBox(height: 12)
         ],
+        if (widget.mfcInfo.recovery?.keyCheckProgress != null) ...[
+          LinearProgressIndicator(
+              value: widget.mfcInfo.recovery?.keyCheckProgress),
+          const SizedBox(height: 12)
+        ],
         if (widget.mfcInfo.state == MifareClassicState.recovery ||
             widget.mfcInfo.state == MifareClassicState.recoveryOngoing)
           FittedBox(
@@ -213,13 +218,6 @@ class CardReaderState extends State<MifareClassicHelper> {
                                     widget.mfcInfo.recovery?.error =
                                         localizations
                                             .recovery_error_no_supported;
-                                  });
-                                } else if (widget.mfcInfo.recovery!.error ==
-                                    "static_encrypted_nonce") {
-                                  setState(() {
-                                    widget.mfcInfo.recovery?.error =
-                                        localizations
-                                            .recovery_static_encrypted_nonce;
                                   });
                                 } else if (widget.mfcInfo.recovery!.error ==
                                     "old_firmware") {

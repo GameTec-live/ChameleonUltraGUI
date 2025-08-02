@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/gui/component/developer_list.dart';
+import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/github.dart';
@@ -467,7 +468,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                             return const Center(
                                 child: CircularProgressIndicator());
                           } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
+                            appState.connector!.performDisconnect();
+                            return ErrorPage(
+                                errorMessage: snapshot.error.toString());
                           } else {
                             final (names, contributors, packageInfo) =
                                 snapshot.data;
