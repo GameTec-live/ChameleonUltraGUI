@@ -55,8 +55,11 @@ class CardReaderState extends State<MifareClassicHelper> {
     List<int> cardDump = [];
     var localizations = AppLocalizations.of(context)!;
     if (!skipDump) {
+      // Use override type if available, otherwise use detected type
+      MifareClassicType effectiveType = widget.mfcInfo.overrideType ?? widget.mfcInfo.type;
+      
       for (var sector = 0;
-          sector < mfClassicGetSectorCount(widget.mfcInfo.type);
+          sector < mfClassicGetSectorCount(effectiveType);
           sector++) {
         for (var block = 0;
             block < mfClassicGetBlockCountBySector(sector);
@@ -86,6 +89,22 @@ class CardReaderState extends State<MifareClassicHelper> {
         }
       }
     } else {
+      // Use override type if available, otherwise use detected type
+      MifareClassicType effectiveType = widget.mfcInfo.overrideType ?? widget.mfcInfo.type;
+      
+      // Create properly sized data array based on effective type
+      List<Uint8List> cardData = [];
+      if (!skipDump) {
+        int blockCount = mfClassicGetBlockCount(effectiveType);
+        for (int i = 0; i < blockCount; i++) {
+          if (i < widget.mfcInfo.recovery!.cardData.length) {
+            cardData.add(widget.mfcInfo.recovery!.cardData[i]);
+          } else {
+            cardData.add(Uint8List(16)); // Empty block if data doesn't exist
+          }
+        }
+      }
+      
       var tags = appState.sharedPreferencesProvider.getCards();
       tags.add(CardSave(
           uid: widget.hfInfo.uid,
@@ -94,8 +113,8 @@ class CardReaderState extends State<MifareClassicHelper> {
           name: dumpName,
           tag: (skipDump)
               ? TagType.mifare1K
-              : mfClassicGetChameleonTagType(widget.mfcInfo.type),
-          data: widget.mfcInfo.recovery!.cardData,
+              : mfClassicGetChameleonTagType(effectiveType),
+          data: skipDump ? [] : cardData,
           ats: (widget.hfInfo.ats != localizations.no)
               ? hexToBytes(widget.hfInfo.ats)
               : Uint8List(0)));
