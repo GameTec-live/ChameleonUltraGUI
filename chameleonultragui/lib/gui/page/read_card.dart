@@ -101,14 +101,97 @@ class ReadCardPageState extends State<ReadCardPage> {
     });
   }
 
+  Future<void> updateCardInfoWithOverride() async {
+    if (hfInfo.uid.isEmpty) return;
+    
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
+    try {
+      if (!await appState.communicator!.isReaderDeviceMode()) {
+        await appState.communicator!.setReaderDeviceMode(true);
+      }
+
+      await appState.communicator!.scan14443aTag();
+      bool isMifareClassic = false;
+      TagType type = TagType.unknown;
+      MifareClassicType mifareClassicType = MifareClassicType.none;
+
+      try {
+        isMifareClassic = await appState.communicator!.detectMf1Support();
+        if (isMifareClassic) {
+          if (mfcInfo.overrideType != null) {
+            mifareClassicType = mfcInfo.overrideType!;
+          } else {
+            mifareClassicType = await mfClassicGetType(appState.communicator!);
+          }
+        }
+      } catch (_) {
+        if (mfcInfo.overrideType != null) {
+          isMifareClassic = true;
+          mifareClassicType = mfcInfo.overrideType!;
+        }
+      }
+
+      bool isMifareClassicEV1 = isMifareClassic
+          ? (await appState.communicator!
+              .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]))
+          : false;
+
+      if (isMifareClassic) {
+        MifareClassicRecovery recovery = MifareClassicRecovery(
+            update: updateMifareClassicRecovery,
+            appState: appState);
+
+        NTLevel ntLevel = await appState.communicator!.getMf1NTLevel();
+        bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
+
+        setState(() {
+          mfcInfo.recovery = recovery;
+          mfcInfo.ntLevel = ntLevel;
+          mfcInfo.hasBackdoor = hasBackdoor;
+        });
+      }
+
+      if (!isMifareClassic) {
+        Uint8List version =
+            await mfUltralightGetVersion(appState.communicator!);
+        if (version.length == 8) {
+          type = mfUltralightGetType(version);
+        }
+      } else {
+        // Use override type if available for TagType mapping
+        MifareClassicType finalType = mfcInfo.overrideType ?? mifareClassicType;
+        type = mfClassicGetChameleonTagType(finalType);
+      }
+
+      setState(() {
+        hfInfo.type = type;
+        mfcInfo.isEV1 = isMifareClassicEV1;
+        mfcInfo.type = mfcInfo.overrideType ?? mifareClassicType;
+        mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
+            ? MifareClassicState.checkKeys
+            : MifareClassicState.none;
+        hfInfo.tech =
+            chameleonTagToString(type) + (isMifareClassicEV1 ? " EV1" : "");
+
+        if (mfcInfo.overrideType != null && isMifareClassic) {
+          final overrideTagType = mfClassicGetChameleonTagType(mfcInfo.overrideType!);
+          hfInfo.tech = chameleonTagToString(overrideTagType) + (isMifareClassicEV1 ? " EV1" : "");
+        }
+      });
+    } catch (_) {
+      // Don't change cardExist status for override updates
+    }
+  }
+
   Future<void> readHFInfo() async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     var localizations = AppLocalizations.of(context)!;
 
     setState(() {
       hfInfo = HFCardInfo();
-      MifareClassicType? preservedOverrideType = mfcInfo.overrideType;
-      mfcInfo = MifareClassicInfo(overrideType: preservedOverrideType);
+      // Reset override type when reading a new card
+      mfcInfo = MifareClassicInfo();
     });
 
     try {
@@ -347,7 +430,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                 Navigator.of(context).pop();
                                               }
                                               if (hfInfo.uid.isNotEmpty) {
-                                                await readHFInfo();
+                                                await updateCardInfoWithOverride();
                                               }
                                             },
                                             items: [
