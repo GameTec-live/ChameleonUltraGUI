@@ -319,5 +319,7 @@
   "ultralight_counter": "Ultralight counter {index}",
   "ultralight_counter_value": "Counter value (0-16777215)",
   "counter_value_empty": "Counter value cannot be empty",
-  "counter_value_range": "Counter must be between 0 and 16777215"
+  "counter_value_range": "Counter must be between 0 and 16777215",
+  "override_card_type": "Override card type",
+  "override_card_type_description": "Select a specific card type to override auto-detection"
 }

@@ -132,7 +132,9 @@ class ReadCardPageState extends State<ReadCardPage> {
 
       if (isMifareClassic) {
         MifareClassicRecovery recovery = MifareClassicRecovery(
-            update: updateMifareClassicRecovery, appState: appState);
+            update: updateMifareClassicRecovery,
+            appState: appState,
+            mifareClassicType: mifareClassicType);
 
         NTLevel ntLevel = await appState.communicator!.getMf1NTLevel();
         bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
@@ -289,10 +291,102 @@ class ReadCardPageState extends State<ReadCardPage> {
                       buildFieldRow(
                           localizations.ats, hfInfo.ats, fieldFontSize),
                       const SizedBox(height: 16),
-                      Text(
-                        '${localizations.card_tech}: ${hfInfo.tech}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: fieldFontSize),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${localizations.card_tech}: ${hfInfo.tech}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: fieldFontSize),
+                          ),
+                          if (isMifareClassic(hfInfo.type)) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text(
+                                          localizations.override_card_type),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            localizations
+                                                .override_card_type_description,
+                                            style:
+                                                const TextStyle(fontSize: 14),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          DropdownButton<MifareClassicType?>(
+                                            isExpanded: true,
+                                            value: mfcInfo.type,
+                                            onChanged:
+                                                (MifareClassicType? newValue) {
+                                              MifareClassicRecovery recovery =
+                                                  MifareClassicRecovery(
+                                                      update:
+                                                          updateMifareClassicRecovery,
+                                                      appState: appState,
+                                                      mifareClassicType:
+                                                          newValue!);
+
+                                              setState(() {
+                                                hfInfo.type =
+                                                    mfClassicGetChameleonTagType(
+                                                        newValue);
+                                                hfInfo.tech = chameleonTagToString(
+                                                    mfClassicGetChameleonTagType(
+                                                        newValue));
+                                                mfcInfo.type = newValue;
+                                                mfcInfo.recovery = recovery;
+                                              });
+
+                                              if (context.mounted) {
+                                                Navigator.of(context).pop();
+                                              }
+                                            },
+                                            items: [
+                                              ...getAllMifareClassicTagTypes()
+                                                  .map((tagType) {
+                                                final mifareType =
+                                                    chameleonTagTypeGetMfClassicType(
+                                                        tagType);
+                                                return DropdownMenuItem<
+                                                    MifareClassicType?>(
+                                                  value: mifareType,
+                                                  child: Text(
+                                                      chameleonTagToString(
+                                                          tagType)),
+                                                );
+                                              }),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          child: Text(localizations.cancel),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              icon: const Icon(Icons.edit),
+                              iconSize: 20,
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                              tooltip: localizations.override_card_type,
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 16),
                       if (isMifareClassic(hfInfo.type)) ...[
