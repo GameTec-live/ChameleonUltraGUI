@@ -299,7 +299,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: fieldFontSize),
                           ),
-                          if (isMifareClassic(hfInfo.type)) ...[
+                          if (hfInfo.uid.isNotEmpty) ...[
                             const SizedBox(width: 8),
                             IconButton(
                               onPressed: () {
@@ -319,43 +319,49 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                 const TextStyle(fontSize: 14),
                                           ),
                                           const SizedBox(height: 16),
-                                          DropdownButton<MifareClassicType?>(
+                                          DropdownButton<TagType?>(
                                             isExpanded: true,
-                                            value: mfcInfo.type,
-                                            onChanged:
-                                                (MifareClassicType? newValue) {
-                                              MifareClassicRecovery recovery =
-                                                  MifareClassicRecovery(
-                                                      update:
-                                                          updateMifareClassicRecovery,
-                                                      appState: appState,
-                                                      mifareClassicType:
-                                                          newValue!);
+                                            value: hfInfo.type,
+                                            onChanged: (TagType? newValue) {
+                                              bool mifareClassic =
+                                                  isMifareClassic(newValue!);
 
                                               setState(() {
-                                                hfInfo.type =
-                                                    mfClassicGetChameleonTagType(
+                                                hfInfo.type = newValue;
+                                                hfInfo.tech =
+                                                    chameleonTagToString(
                                                         newValue);
-                                                hfInfo.tech = chameleonTagToString(
-                                                    mfClassicGetChameleonTagType(
-                                                        newValue));
-                                                mfcInfo.type = newValue;
-                                                mfcInfo.recovery = recovery;
                                               });
+
+                                              if (mifareClassic) {
+                                                MifareClassicRecovery recovery =
+                                                    MifareClassicRecovery(
+                                                        update:
+                                                            updateMifareClassicRecovery,
+                                                        appState: appState,
+                                                        mifareClassicType:
+                                                            chameleonTagTypeGetMfClassicType(
+                                                                newValue));
+
+                                                setState(() {
+                                                  mfcInfo.type =
+                                                      chameleonTagTypeGetMfClassicType(
+                                                          newValue);
+                                                  mfcInfo.recovery = recovery;
+                                                });
+                                              }
 
                                               if (context.mounted) {
                                                 Navigator.of(context).pop();
                                               }
                                             },
                                             items: [
-                                              ...getAllMifareClassicTagTypes()
+                                              ...getTagTypesByFrequency(
+                                                      TagFrequency.hf)
                                                   .map((tagType) {
-                                                final mifareType =
-                                                    chameleonTagTypeGetMfClassicType(
-                                                        tagType);
                                                 return DropdownMenuItem<
-                                                    MifareClassicType?>(
-                                                  value: mifareType,
+                                                    TagType?>(
+                                                  value: tagType,
                                                   child: Text(
                                                       chameleonTagToString(
                                                           tagType)),

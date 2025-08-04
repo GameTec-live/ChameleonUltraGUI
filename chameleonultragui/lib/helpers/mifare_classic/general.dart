@@ -299,12 +299,3 @@ Uint8List mfClassicGenerateFirstBlock(Uint8List uid, int sak, Uint8List atqa) {
   }
   return block0;
 }
-
-List<TagType> getAllMifareClassicTagTypes() {
-  return [
-    TagType.mifareMini,
-    TagType.mifare1K,
-    TagType.mifare2K,
-    TagType.mifare4K,
-  ];
-}
