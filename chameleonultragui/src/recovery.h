@@ -55,6 +55,14 @@ typedef struct
 
 typedef struct
 {
+    uint32_t uid;
+    uint32_t nt;
+    uint32_t nt_enc;
+    uint32_t nt_par_enc;
+} StaticEncryptedNested;
+
+typedef struct
+{
     uint32_t uid;     // serial number
     uint32_t nt0;     // tag challenge first
     uint32_t nt1;     // tag challenge second
@@ -70,11 +78,13 @@ typedef struct
     uint32_t length;
 } HardNested;
 
-FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint64_t *keyCount);
+FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint32_t *keyCount);
 
 FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *keyCount);
 
 FFI_PLUGIN_EXPORT uint64_t *static_nested(StaticNested *data, uint32_t *keyCount);
+
+FFI_PLUGIN_EXPORT uint64_t *static_encrypted_nested(StaticEncryptedNested *data, uint32_t *keyCount);
 
 FFI_PLUGIN_EXPORT uint64_t mfkey32(Mfkey32 *data);
 

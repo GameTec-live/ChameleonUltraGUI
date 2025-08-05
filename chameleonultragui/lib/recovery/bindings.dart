@@ -30,7 +30,7 @@ class Recovery {
 
   ffi.Pointer<ffi.Uint64> darkside(
     ffi.Pointer<Darkside> data,
-    ffi.Pointer<ffi.Uint64> keyCount,
+    ffi.Pointer<ffi.Uint32> keyCount,
   ) {
     return _darkside(
       data,
@@ -41,10 +41,10 @@ class Recovery {
   late final _darksidePtr = _lookup<
       ffi.NativeFunction<
           ffi.Pointer<ffi.Uint64> Function(
-              ffi.Pointer<Darkside>, ffi.Pointer<ffi.Uint64>)>>('darkside');
+              ffi.Pointer<Darkside>, ffi.Pointer<ffi.Uint32>)>>('darkside');
   late final _darkside = _darksidePtr.asFunction<
       ffi.Pointer<ffi.Uint64> Function(
-          ffi.Pointer<Darkside>, ffi.Pointer<ffi.Uint64>)>();
+          ffi.Pointer<Darkside>, ffi.Pointer<ffi.Uint32>)>();
 
   ffi.Pointer<ffi.Uint64> nested(
     ffi.Pointer<Nested> data,
@@ -81,6 +81,24 @@ class Recovery {
   late final _static_nested = _static_nestedPtr.asFunction<
       ffi.Pointer<ffi.Uint64> Function(
           ffi.Pointer<StaticNested>, ffi.Pointer<ffi.Uint32>)>();
+
+  ffi.Pointer<ffi.Uint64> static_encrypted_nested(
+    ffi.Pointer<StaticEncryptedNested> data,
+    ffi.Pointer<ffi.Uint32> keyCount,
+  ) {
+    return _static_encrypted_nested(
+      data,
+      keyCount,
+    );
+  }
+
+  late final _static_encrypted_nestedPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Uint64> Function(ffi.Pointer<StaticEncryptedNested>,
+              ffi.Pointer<ffi.Uint32>)>>('static_encrypted_nested');
+  late final _static_encrypted_nested = _static_encrypted_nestedPtr.asFunction<
+      ffi.Pointer<ffi.Uint64> Function(
+          ffi.Pointer<StaticEncryptedNested>, ffi.Pointer<ffi.Uint32>)>();
 
   int mfkey32(
     ffi.Pointer<Mfkey32> data,
@@ -182,6 +200,20 @@ final class StaticNested extends ffi.Struct {
 
   @ffi.Uint32()
   external int nt1_enc;
+}
+
+final class StaticEncryptedNested extends ffi.Struct {
+  @ffi.Uint32()
+  external int uid;
+
+  @ffi.Uint32()
+  external int nt;
+
+  @ffi.Uint32()
+  external int nt_enc;
+
+  @ffi.Uint32()
+  external int nt_par_enc;
 }
 
 final class Mfkey32 extends ffi.Struct {
