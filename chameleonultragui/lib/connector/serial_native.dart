@@ -75,7 +75,7 @@ class NativeSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecificDevice(devicePort) async {
+  Future<bool> connectSpecificDevice(dynamic devicePort) async {
     if (await connectDevice(devicePort, true)) {
       portName = devicePort;
       connected = true;
