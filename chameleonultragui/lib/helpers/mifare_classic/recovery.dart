@@ -288,14 +288,10 @@ class MifareClassicRecovery {
           .getMf1StaticEncryptedNestedAcquire(
               sectorCount: mfClassicGetSectorCount(mifareClassicType));
 
-      if (response == null) {
-        error = "no_keys_darkside";
-
-        return;
+      if (response != null) {
+        (uid, aNonces, bNonces) = response;
+        prng = NTLevel.backdoor;
       }
-
-      (uid, aNonces, bNonces) = response;
-      prng = NTLevel.backdoor;
     }
 
     if (validKeyType == -1 && prng != NTLevel.backdoor) {
