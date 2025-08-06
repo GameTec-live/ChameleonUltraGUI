@@ -311,5 +311,9 @@
   "has_backdoor_support": "Porta del darrere",
   "demo_firmware": "Demo, no el Chameleon real",
   "trademarks_mifare": "MIFARE\u00ae, MIFARE\u00ae Classic i MIFARE\u00ae Ultralight s\u00f3n marques registrades de NXP Semiconductors B.V.",
-  "trademarks_em": "EM Microelectronic-Marin, EM Microelectronic, EM i totes les designacions de producte que comencen per \u201cEM\u201d s\u00f3n marques registrades d'EM Microelectronic"
+  "trademarks_em": "EM Microelectronic-Marin, EM Microelectronic, EM i totes les designacions de producte que comencen per \u201cEM\u201d s\u00f3n marques registrades d'EM Microelectronic",
+  "ultralight_counter": "Comptador Ultralight {index}",
+  "ultralight_counter_value": "Valor del comptador (0-16777215)",
+  "counter_value_empty": "El valor del comptador no pot estar buit",
+  "counter_value_range": "El comptador ha d'estar entre 0 i 1677215"
 }

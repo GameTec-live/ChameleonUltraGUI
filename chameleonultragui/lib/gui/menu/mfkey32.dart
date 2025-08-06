@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_export.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
@@ -140,7 +141,7 @@ class Mfkey32MenuState extends State<Mfkey32Menu> {
             body: const Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasError) {
-          return Text('${localizations.error}: ${snapshot.error}');
+          return ErrorPage(errorMessage: snapshot.error.toString());
         } else {
           if (detectionCount == -1) {
             updateDetectionStatus();
