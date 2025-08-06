@@ -38,9 +38,9 @@ class KeyCheckMarks extends StatelessWidget {
         );
       case ChameleonKeyCheckmark.none:
         return const Icon(
-            Icons.close,
-            color: Colors.red,
-          );
+          Icons.close,
+          color: Colors.red,
+        );
       case ChameleonKeyCheckmark.checking:
         return const CircularProgressIndicator();
     }
@@ -109,7 +109,8 @@ class KeyCheckMarks extends StatelessWidget {
                 child: SizedBox(
                   width: checkmarkSize,
                   height: checkmarkSize,
-                  child: buildCheckmark(checkmarkIndex + index, tooltipBelow: false),
+                  child: buildCheckmark(checkmarkIndex + index,
+                      tooltipBelow: false),
                 ),
               ),
             ),
@@ -132,8 +133,8 @@ class KeyCheckMarks extends StatelessWidget {
                 child: SizedBox(
                   width: checkmarkSize,
                   height: checkmarkSize,
-                  child:
-                      buildCheckmark(40 + checkmarkIndex + index, tooltipBelow: true),
+                  child: buildCheckmark(40 + checkmarkIndex + index,
+                      tooltipBelow: true),
                 ),
               ),
             ),
