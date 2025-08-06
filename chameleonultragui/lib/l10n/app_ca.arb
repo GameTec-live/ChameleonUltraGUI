@@ -300,7 +300,6 @@
   "hardnested_calculating_key": "Calculant la clau...",
   "invalid_input": "Un dels camps est\u00e0 emplenat incorrectament",
   "failed_to_fetch_oc_contributors": "No s'han pogut obtenir els col\u00b7laboradors d'OpenCollective",
-  "recovery_static_encrypted_nonce": "S'ha detectat un nonce d'una etiqueta amb xifrat est\u00e0tic. La recuperaci\u00f3 encara no est\u00e0 disponible",
   "recovery_old_firmware": "No s'han pogut recollir els nonces, est\u00e0 actualitzat el vostre firmware?",
   "emulate_device": "Dispositiu emulat",
   "emulate_device_confirmation": "Esteu segur que voleu {mode} el dispositiu emulat? Podeu activar aix\u00f2 per comprovar les funcions de l'aplicaci\u00f3 sense tenir un Chameleon Ultra, totes les accions amb el dispositiu emulat no es desaran. No podreu connectar amb el dispositiu real si no desactiveu aix\u00f2.",
@@ -314,6 +313,5 @@
   "trademarks_em": "EM Microelectronic-Marin, EM Microelectronic, EM i totes les designacions de producte que comencen per \u201cEM\u201d s\u00f3n marques registrades d'EM Microelectronic",
   "ultralight_counter": "Comptador Ultralight {index}",
   "ultralight_counter_value": "Valor del comptador (0-16777215)",
-  "counter_value_empty": "El valor del comptador no pot estar buit",
-  "counter_value_range": "El comptador ha d'estar entre 0 i 1677215"
+  "counter_value_empty": "El valor del comptador no pot estar buit"
 }
