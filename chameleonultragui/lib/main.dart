@@ -20,7 +20,6 @@ import 'package:chameleonultragui/gui/page/connect.dart';
 import 'package:chameleonultragui/gui/page/debug.dart';
 import 'package:chameleonultragui/gui/page/slot_manager.dart';
 import 'package:chameleonultragui/gui/page/flashing.dart';
-import 'package:chameleonultragui/gui/page/mfkey32.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/gui/page/write_card.dart';
 import 'package:chameleonultragui/gui/page/pending_connection.dart';
@@ -77,8 +76,6 @@ class ChameleonGUIState extends ChangeNotifier {
 
   // Flashing easter egg
   bool easterEgg = false;
-
-  bool forceMfkey32Page = false;
 
   GlobalKey navigationRailKey = GlobalKey();
   Size? navigationRailSize;
@@ -139,7 +136,8 @@ class _MainPageState extends State<MainPage> {
   }
 
   Logger getLogger(ChameleonGUIState appState) {
-    if (appState._sharedPreferencesProvider!.isDebugLogging()) {
+    if (appState._sharedPreferencesProvider!.isDebugLogging() &&
+        appState._sharedPreferencesProvider!.isDebugMode()) {
       return Logger(
         output: SharedPreferencesLogger(appState._sharedPreferencesProvider!),
         printer: PrettyPrinter(
@@ -217,11 +215,6 @@ class _MainPageState extends State<MainPage> {
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
-    }
-
-    if (appState.forceMfkey32Page) {
-      appState.forceMfkey32Page = false;
-      page = const Mfkey32Page();
     }
 
     try {

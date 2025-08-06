@@ -11,14 +11,14 @@ import 'package:flutter/services.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
-class Mfkey32Page extends StatefulWidget {
-  const Mfkey32Page({super.key});
+class Mfkey32Menu extends StatefulWidget {
+  const Mfkey32Menu({super.key});
 
   @override
-  Mfkey32PageState createState() => Mfkey32PageState();
+  Mfkey32MenuState createState() => Mfkey32MenuState();
 }
 
-class Mfkey32PageState extends State<Mfkey32Page> {
+class Mfkey32MenuState extends State<Mfkey32Menu> {
   final TextEditingController controller = TextEditingController();
   late Future<(bool, int)> detectionStatusFuture;
   bool isDetectionMode = false;
@@ -120,8 +120,6 @@ class Mfkey32PageState extends State<Mfkey32Page> {
                 displayKeys = displayKeys;
                 progress = (i * 100 / item.value.length).round();
               });
-              appState.forceMfkey32Page = true;
-              appState.changesMade();
             }
           }
         }
