@@ -955,7 +955,12 @@ class ChameleonCommunicator {
 
   Future<String> readEM410X() async {
     var resp = await sendCmd(ChameleonCommand.scanEM410Xtag);
-    if (resp!.data.length == 5) {
+
+    if (resp!.data.isEmpty) {
+      return '';
+    }
+
+    if (resp.data.length == 5) {
       // Old firmware
       return bytesToHexSpace(resp.data);
     }
