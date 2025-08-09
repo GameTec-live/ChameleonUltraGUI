@@ -25,11 +25,19 @@ class CardViewMenu extends StatefulWidget {
 
 class CardViewMenuState extends State<CardViewMenu> {
   late CardSave currentSavedCard;
+  String uid = '';
 
   @override
   void initState() {
     super.initState();
     currentSavedCard = widget.tagSave;
+    if (chameleonTagToFrequency(currentSavedCard.tag) == TagFrequency.lf) {
+      LFCard card =
+          getLFCardFromUID(currentSavedCard.tag, currentSavedCard.uid);
+      uid = card.toViewableString();
+    } else {
+      uid = currentSavedCard.uid;
+    }
   }
 
   void _refreshCardData() {
@@ -39,6 +47,14 @@ class CardViewMenuState extends State<CardViewMenu> {
       (card) => card.id == widget.tagSave.id,
       orElse: () => widget.tagSave,
     );
+
+    if (chameleonTagToFrequency(updatedCard.tag) == TagFrequency.lf) {
+      LFCard card = getLFCardFromUID(updatedCard.tag, updatedCard.uid);
+      uid = card.toViewableString();
+    } else {
+      uid = updatedCard.uid;
+    }
+
     setState(() {
       currentSavedCard = updatedCard;
     });
@@ -60,7 +76,7 @@ class CardViewMenuState extends State<CardViewMenu> {
             children: [
               Expanded(
                 child: Text(
-                  "${localizations.uid}: ${currentSavedCard.uid}",
+                  "${localizations.uid}: $uid",
                   softWrap: true,
                   overflow: TextOverflow.visible,
                 ),
@@ -79,7 +95,7 @@ class CardViewMenuState extends State<CardViewMenu> {
             children: [
               Expanded(
                 child: Text(
-                  "${localizations.tag_type}: ${chameleonTagToString(currentSavedCard.tag)}",
+                  "${localizations.tag_type}: ${chameleonTagToString(currentSavedCard.tag, localizations)}",
                   softWrap: true,
                   overflow: TextOverflow.visible,
                 ),
@@ -87,7 +103,8 @@ class CardViewMenuState extends State<CardViewMenu> {
               IconButton(
                 onPressed: () async {
                   ClipboardData data = ClipboardData(
-                      text: chameleonTagToString(currentSavedCard.tag));
+                      text: chameleonTagToString(
+                          currentSavedCard.tag, localizations));
                   await Clipboard.setData(data);
                 },
                 icon: const Icon(Icons.copy),

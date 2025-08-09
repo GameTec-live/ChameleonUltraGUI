@@ -149,7 +149,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
-    } else if (card.tag == TagType.em410X) {
+    } else if (isEM410X(card.tag)) {
       close(context, card.name);
       await appState.communicator!.setReaderDeviceMode(false);
       await appState.communicator!
@@ -158,6 +158,22 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       await appState.communicator!.setEM410XEmulatorID(hexToBytes(card.uid));
+      await appState.communicator!.setSlotTagName(
+          gridPosition,
+          (card.name.isEmpty) ? localizations.no_name : card.name,
+          TagFrequency.lf);
+      await appState.communicator!.saveSlotData();
+      appState.changesMade();
+      refreshSlot();
+    } else if (card.tag == TagType.hidProx) {
+      close(context, card.name);
+      await appState.communicator!.setReaderDeviceMode(false);
+      await appState.communicator!
+          .enableSlot(gridPosition, TagFrequency.lf, true);
+      await appState.communicator!.activateSlot(gridPosition);
+      await appState.communicator!.setSlotType(gridPosition, card.tag);
+      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
+      await appState.communicator!.setHIDProxEmulatorID(hexToBytes(card.uid));
       await appState.communicator!.setSlotTagName(
           gridPosition,
           (card.name.isEmpty) ? localizations.no_name : card.name,
@@ -328,7 +344,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                         const SizedBox(width: 5),
                                         Expanded(
                                             child: Text(
-                                          "${slotData[index].hf} (${chameleonTagToString(usedSlots[index].hf)})",
+                                          "${slotData[index].hf} (${chameleonTagToString(usedSlots[index].hf, localizations)})",
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ))
@@ -345,7 +361,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                               const SizedBox(width: 5),
                                               Expanded(
                                                   child: Text(
-                                                "${slotData[index].lf} (${chameleonTagToString(usedSlots[index].lf)})",
+                                                "${slotData[index].lf} (${chameleonTagToString(usedSlots[index].lf, localizations)})",
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                                 softWrap: true,

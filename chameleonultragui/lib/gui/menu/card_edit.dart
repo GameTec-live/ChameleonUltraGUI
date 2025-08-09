@@ -29,9 +29,16 @@ class CardEditMenuState extends State<CardEditMenu> {
   TextEditingController sakController = TextEditingController();
   TextEditingController atqaController = TextEditingController();
   TextEditingController atsController = TextEditingController();
+
   TextEditingController ultralightVersionController = TextEditingController();
   TextEditingController ultralightSignatureController = TextEditingController();
   List<TextEditingController> ultralightCounterControllers = [];
+
+  TextEditingController hidTypeController = TextEditingController();
+  TextEditingController facilityCodeController = TextEditingController();
+  TextEditingController issueLevelController = TextEditingController();
+  TextEditingController oemController = TextEditingController();
+
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -53,8 +60,11 @@ class CardEditMenuState extends State<CardEditMenu> {
     ultralightSignatureController.text =
         bytesToHexSpace(widget.tagSave.extraData.ultralightSignature);
 
-    // Initialize counter controllers
     initCounterControllers();
+
+    if (selectedType == TagType.hidProx) {
+      initHIDFields();
+    }
 
     nameController.text = widget.tagSave.name;
     pickerColor = widget.tagSave.color;
@@ -131,6 +141,15 @@ class CardEditMenuState extends State<CardEditMenu> {
       }
       ultralightCounterControllers.add(controller);
     }
+  }
+
+  void initHIDFields() {
+    HIDCard hidCard = HIDCard.fromUID(widget.tagSave.uid);
+    uidController.text = bytesToHexSpace(hidCard.uid);
+    hidTypeController.text = hidCard.hidType.toString();
+    facilityCodeController.text = hidCard.facilityCode.toString();
+    issueLevelController.text = hidCard.issueLevel.toString();
+    oemController.text = hidCard.oem.toString();
   }
 
   @override
@@ -224,7 +243,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                   return DropdownMenuItem<TagType>(
                     value: type,
                     child: Text(
-                      chameleonTagToString(type),
+                      chameleonTagToString(type, localizations),
                     ),
                   );
                 }).toList(),
@@ -232,7 +251,6 @@ class CardEditMenuState extends State<CardEditMenu> {
                   if (newValue! != TagType.unknown) {
                     setState(() {
                       selectedType = newValue;
-                      // Reinitialize counter controllers when tag type changes
                       initCounterControllers();
                     });
                   }
@@ -257,18 +275,22 @@ class CardEditMenuState extends State<CardEditMenu> {
                         return localizations
                             .please_enter_something(localizations.uid);
                       }
-                      if (!(value.replaceAll(" ", "").length == 14 ||
-                              value.replaceAll(" ", "").length == 8 ||
-                              value.replaceAll(" ", "").length == 20) &&
-                          chameleonTagToFrequency(selectedType) !=
-                              TagFrequency.lf) {
-                        return localizations.must_or(
-                            "4, 7", "10", localizations.uid);
-                      }
-                      if (value.replaceAll(" ", "").length != 10 &&
-                          chameleonTagToFrequency(selectedType) ==
-                              TagFrequency.lf) {
-                        return localizations.must_be(5, localizations.uid);
+
+                      String cleanValue = value.replaceAll(" ", "");
+
+                      if (chameleonTagToFrequency(selectedType) ==
+                          TagFrequency.hf) {
+                        if (!(cleanValue.length == 14 ||
+                            cleanValue.length == 8 ||
+                            cleanValue.length == 20)) {
+                          return localizations.must_or(
+                              "4, 7", "10", localizations.uid);
+                        }
+                      } else if (chameleonTagToFrequency(selectedType) ==
+                          TagFrequency.lf) {
+                        if (cleanValue.length != 10) {
+                          return localizations.must_be(5, localizations.uid);
+                        }
                       }
                       return null;
                     },
@@ -420,7 +442,8 @@ class CardEditMenuState extends State<CardEditMenu> {
                                     if (counterValue == null ||
                                         counterValue < 0 ||
                                         counterValue > 16777215) {
-                                      return localizations.counter_value_range;
+                                      return localizations.must_be_between(
+                                          '0', '16,777,215');
                                     }
                                     return null;
                                   },
@@ -429,7 +452,83 @@ class CardEditMenuState extends State<CardEditMenu> {
                             }),
                           ],
                         ]
-                      ]))
+                      ])),
+                  if (selectedType == TagType.hidProx)
+                    Column(children: [
+                      const SizedBox(height: 20),
+                      DropdownButton<int>(
+                        value: int.tryParse(hidTypeController.text) ?? 1,
+                        items: List.generate(30, (index) => index + 1)
+                            .map<DropdownMenuItem<int>>((int type) {
+                          return DropdownMenuItem<int>(
+                            value: type,
+                            child: Text(getNameForHIDProxType(type)),
+                          );
+                        }).toList(),
+                        onChanged: (int? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              hidTypeController.text = newValue.toString();
+                            });
+                          }
+                        },
+                        isExpanded: true,
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: facilityCodeController,
+                        decoration: InputDecoration(
+                            labelText: localizations.facility_code,
+                            hintText: localizations
+                                .enter_something(localizations.facility_code)),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: (value) {
+                          int? fc = int.tryParse(value!);
+                          if (fc == null || fc < 0 || fc > 4294967295) {
+                            return localizations.must_be_between(
+                                '0', '4,294,967,295');
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: issueLevelController,
+                        decoration: InputDecoration(
+                            labelText: localizations.issue_level,
+                            hintText: localizations
+                                .enter_something(localizations.issue_level)),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: (value) {
+                          int? il = int.tryParse(value!);
+                          if (il == null || il < 0 || il > 255) {
+                            return localizations.must_be_between('0', '255');
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: oemController,
+                        decoration: InputDecoration(
+                            labelText: "OEM",
+                            hintText: localizations.enter_something('OEM')),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: (value) {
+                          int? oem = int.tryParse(value!);
+                          if (oem == null || oem < 0 || oem > 65535) {
+                            return localizations.must_be_between('0', '65,535');
+                          }
+                          return null;
+                        },
+                      ),
+                    ])
                 ]),
               )
             ],
@@ -460,6 +559,33 @@ class CardEditMenuState extends State<CardEditMenu> {
               }
             }
 
+            String finalUid;
+            if (selectedType == TagType.hidProx) {
+              try {
+                int hidType = int.parse(hidTypeController.text);
+                int facilityCode = int.parse(facilityCodeController.text);
+                int issueLevel = int.parse(issueLevelController.text);
+                int oem = int.parse(oemController.text);
+
+                Uint8List uid =
+                    hexToBytes(uidController.text.replaceAll(' ', ''));
+
+                HIDCard hidCard = HIDCard(
+                  hidType: hidType,
+                  facilityCode: facilityCode,
+                  uid: uid,
+                  issueLevel: issueLevel,
+                  oem: oem,
+                );
+
+                finalUid = hidCard.toString();
+              } catch (e) {
+                finalUid = bytesToHexSpace(hexToBytes(uidController.text));
+              }
+            } else {
+              finalUid = bytesToHexSpace(hexToBytes(uidController.text));
+            }
+
             var tag = CardSave(
                 id: widget.tagSave.id,
                 name: nameController.text,
@@ -467,7 +593,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                     ? widget.tagSave.sak
                     : hexToBytes(sakController.text)[0],
                 atqa: hexToBytes(atqaController.text),
-                uid: bytesToHexSpace(hexToBytes(uidController.text)),
+                uid: finalUid,
                 extraData: CardSaveExtra(
                   ultralightSignature:
                       hexToBytes(ultralightSignatureController.text),
