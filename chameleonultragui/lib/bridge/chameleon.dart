@@ -426,7 +426,7 @@ enum MifareClassicValueBlockOperator {
 class ChameleonCommunicator {
   int baudrate = 115200;
   int dataFrameSof = 0x11;
-  int dataMaxLength = 512;
+  int dataMaxLength = 4096;
   AbstractSerial? _serialInstance;
   List<int> dataBuffer = [];
   int dataPosition = 0;
