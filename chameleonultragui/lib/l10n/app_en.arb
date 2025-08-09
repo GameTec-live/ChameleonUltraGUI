@@ -318,7 +318,6 @@
   "ultralight_counter": "Ultralight counter {index}",
   "ultralight_counter_value": "Counter value (0-16777215)",
   "counter_value_empty": "Counter value cannot be empty",
-  "counter_value_range": "Counter must be between 0 and 16777215",
   "uploading_dump": "Uploading dump to emulator...",
   "please_update_firmware": "Update firmware for a seamless experience"
 }
