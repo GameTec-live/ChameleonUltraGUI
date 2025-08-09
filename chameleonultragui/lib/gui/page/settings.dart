@@ -56,7 +56,8 @@ const localeNameMap = {
   "hi": "हिन्दी",
   "vi": "Tiếng Việt",
   "ca": "Català",
-  "bg": "Български"
+  "bg": "Български",
+  "el-GR": "Ελληνικά"
 };
 
 class SettingsMainPage extends StatefulWidget {
@@ -233,7 +234,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     return DropdownMenuItem(
                         value: locale.toLanguageTag(),
                         child: Text(localeNameMap[locale.toLanguageTag()] ??
-                            "Unknown"));
+                            "Unknown (${locale.toLanguageTag()})"));
                   }).toList(),
                 ),
               ),

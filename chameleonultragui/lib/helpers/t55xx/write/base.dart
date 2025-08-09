@@ -1,4 +1,3 @@
-import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -9,8 +8,6 @@ import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:flutter/services.dart';
 
 class BaseT55XXCardHelper extends AbstractWriteHelper {
-  LFCardInfo? lfInfo;
-
   @override
   bool get autoDetect => true;
 
@@ -166,9 +163,16 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
   @override
   Future<bool> writeData(
       CardSave card, Function(int writeProgress) update) async {
-    await communicator.writeEM410XtoT55XX(
-        hexToBytes(card.uid), hexToBytes(newKey), [hexToBytes(currentKey)]);
-    var newCard = await communicator.readEM410X();
-    return newCard == card.uid;
+    if (isEM410X(card.tag)) {
+      await communicator.writeEM410XtoT55XX(
+          hexToBytes(card.uid), hexToBytes(newKey), [hexToBytes(currentKey)]);
+      var newCard = await communicator.readEM410X();
+      return newCard.toString() == card.uid;
+    } else {
+      await communicator.writeHIDProxToT55XX(
+          hexToBytes(card.uid), hexToBytes(newKey), [hexToBytes(currentKey)]);
+      var newCard = await communicator.readHIDProx();
+      return newCard.toString() == card.uid;
+    }
   }
 }

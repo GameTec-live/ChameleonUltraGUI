@@ -53,8 +53,8 @@ class HomePageState extends State<HomePage> {
     // Checks that firmware supports all functions of current app
     // If not, prompt user to update firmware (as outdated firmware might break app)
 
-    int ultraCapability = ChameleonCommand.mf1CheckKeysOnBlock.value;
-    int liteCapability = ChameleonCommand.getAllSlotNicks.value;
+    int ultraCapability = ChameleonCommand.scanHIDProxTag.value;
+    int liteCapability = ChameleonCommand.setHIDProxEmulatorID.value;
 
     var appState = context.read<ChameleonGUIState>();
     List<int> capabilities;
