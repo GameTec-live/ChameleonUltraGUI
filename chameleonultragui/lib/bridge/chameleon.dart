@@ -426,7 +426,7 @@ enum MifareClassicValueBlockOperator {
 class ChameleonCommunicator {
   int baudrate = 115200;
   int dataFrameSof = 0x11;
-  int dataMaxLength = 512;
+  int dataMaxLength = 4096;
   AbstractSerial? _serialInstance;
   List<int> dataBuffer = [];
   int dataPosition = 0;
@@ -955,7 +955,17 @@ class ChameleonCommunicator {
 
   Future<String> readEM410X() async {
     var resp = await sendCmd(ChameleonCommand.scanEM410Xtag);
-    return bytesToHexSpace(resp!.data);
+
+    if (resp!.data.isEmpty) {
+      return '';
+    }
+
+    if (resp.data.length == 5) {
+      // Old firmware
+      return bytesToHexSpace(resp.data);
+    }
+
+    return bytesToHexSpace(resp.data.sublist(2, 7));
   }
 
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
