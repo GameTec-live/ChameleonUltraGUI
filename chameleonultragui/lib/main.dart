@@ -247,7 +247,7 @@ class _MainPageState extends State<MainPage> {
                     .surface,
                 statusBarBrightness: Brightness.light,
                 statusBarIconBrightness: Brightness.dark)),
-      ),
+      ).useCustomSystemFont(Brightness.light),
       darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -263,7 +263,7 @@ class _MainPageState extends State<MainPage> {
                     .surface,
                 statusBarBrightness: Brightness.dark,
                 statusBarIconBrightness: Brightness.light)),
-      ),
+      ).useCustomSystemFont(Brightness.dark),
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
       home: LayoutBuilder(// Build Page
           builder: (context, constraints) {
