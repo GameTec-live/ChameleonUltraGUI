@@ -84,7 +84,7 @@ class MobileSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecificDevice(devicePort) async {
+  Future<bool> connectSpecificDevice(dynamic devicePort) async {
     await availableDevices();
     connected = false;
     if (deviceMap.containsKey(devicePort)) {

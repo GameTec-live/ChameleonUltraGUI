@@ -144,7 +144,7 @@ class DFUCommunicator {
     }
   }
 
-  open(AbstractSerial port) {
+  dynamic open(AbstractSerial port) {
     _serialInstance = port;
   }
 
@@ -344,7 +344,7 @@ class DFUCommunicator {
     // Windows has some issues with transmitting data
     // We work around it by sending message by parts with delay
     var offsetSize = 128;
-    if (isBLE) {
+    if (isBLE && !Platform.isMacOS) {
       offsetSize = 20;
     }
 
@@ -356,7 +356,7 @@ class DFUCommunicator {
             firmware: true);
       }
 
-      if (Platform.isIOS) {
+      if (isBLE && (Platform.isIOS || Platform.isMacOS)) {
         await asyncSleep(250);
       }
     } else {
