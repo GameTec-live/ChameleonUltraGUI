@@ -49,7 +49,7 @@ class EmulatorSerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecificDevice(devicePort) async {
+  Future<bool> connectSpecificDevice(dynamic devicePort) async {
     portName = "Demo";
     connected = true;
     device = ChameleonDevice.ultra;
