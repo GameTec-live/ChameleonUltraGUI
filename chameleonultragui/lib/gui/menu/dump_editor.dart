@@ -782,27 +782,19 @@ class DumpEditorState extends State<DumpEditor> {
     return LayoutBuilder(
       builder: (context, constraints) {
         double optimalFontSize =
-            _guessOptimalFontSize(controllerIndex, context);
+            _guessOptimalFontSize(controllerIndex, constraints);
         return _buildOriginalEditor(controllerIndex, fontSize: optimalFontSize);
       },
     );
   }
 
-  double _guessOptimalFontSize(int controllerIndex, BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-
-    double maxWidth = isUltralight ? 145 : 395;
-    double actualWidth = screenWidth < maxWidth ? screenWidth : maxWidth;
-
-    double availableWidth = actualWidth - 28;
-
+  double _guessOptimalFontSize(
+      int controllerIndex, BoxConstraints constraints) {
     String sampleText = _getLongestLine(controllerIndex);
-    if (sampleText.isEmpty) {
-      return 14.0;
-    }
 
     for (double fontSize = 16.0; fontSize >= 10.0; fontSize -= 0.1) {
-      if (_doesTextFitOnOneLine(sampleText, fontSize, availableWidth)) {
+      if (_doesTextFitOnOneLine(sampleText, fontSize,
+          constraints.maxWidth - _calculateLeftPadding(context, fontSize))) {
         return fontSize;
       }
     }
