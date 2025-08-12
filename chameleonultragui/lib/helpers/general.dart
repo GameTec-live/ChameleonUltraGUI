@@ -56,6 +56,39 @@ int bytesToU64(Uint8List byteArray) {
   return byteArray.buffer.asByteData().getUint64(0, Endian.big);
 }
 
+int parityToInt(int ntParErr) {
+  return int.parse([
+    (ntParErr >> 3) & 1,
+    (ntParErr >> 2) & 1,
+    (ntParErr >> 1) & 1,
+    ntParErr & 1
+  ].join(''));
+}
+
+int _swapEndian(int x) {
+  x = (x >> 8 & 0xff00ff) | (x & 0xff00ff) << 8;
+  x = (x >> 16) | (x << 16);
+  return x & 0xffffffff;
+}
+
+int prngSuccessor(int x, int n) {
+  x = _swapEndian(x);
+
+  while (n > 0) {
+    x = (x >> 1) | (((x >> 16) ^ (x >> 18) ^ (x >> 19) ^ (x >> 21)) << 31);
+    x = x & 0xffffffff;
+    n--;
+  }
+
+  return _swapEndian(x);
+}
+
+int reconstructFullNt(Uint8List responseData, int offset) {
+  int nt = bytesToU16(responseData.sublist(offset, offset + 2));
+
+  return (nt << 16) | prngSuccessor(nt, 16);
+}
+
 Uint8List u8ToBytes(int u8) {
   final ByteData byteData = ByteData(1)..setUint8(0, u8);
   return byteData.buffer.asUint8List();

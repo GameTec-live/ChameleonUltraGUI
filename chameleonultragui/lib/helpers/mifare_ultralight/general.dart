@@ -99,6 +99,69 @@ int mfUltralightGetPasswordPage(TagType type) {
   return 0;
 }
 
+bool mfUltralightHasCounters(TagType type) {
+  return [
+    TagType.ultralight11,
+    TagType.ultralight21,
+    TagType.ntag210,
+    TagType.ntag212,
+    TagType.ntag213,
+    TagType.ntag215,
+    TagType.ntag216
+  ].contains(type);
+}
+
+int mfUltralightGetCounterCount(TagType type) {
+  switch (type) {
+    case TagType.ultralight11:
+    case TagType.ultralight21:
+      return 3;
+    case TagType.ntag210:
+    case TagType.ntag212:
+    case TagType.ntag213:
+    case TagType.ntag215:
+    case TagType.ntag216:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+Future<int?> mfUltralightReadCounterFromCard(
+    ChameleonCommunicator communicator, int index) async {
+  try {
+    Uint8List counterResponse = await communicator.send14ARaw(
+      Uint8List.fromList([0x39, index]),
+      keepRfField: true,
+    );
+
+    if (counterResponse.length >= 3) {
+      int counterValue = (counterResponse[0]) |
+          (counterResponse[1] << 8) |
+          counterResponse[2] << 16;
+
+      return counterValue;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+Future<List<int>> mfUltralightReadAllCountersFromCard(
+    ChameleonCommunicator communicator, TagType type) async {
+  List<int> counters = [];
+  int counterCount = mfUltralightGetCounterCount(type);
+
+  for (int i = 0; i < counterCount; i++) {
+    var result = await mfUltralightReadCounterFromCard(communicator, i);
+    if (result != null) {
+      counters.add(result);
+    }
+  }
+  return counters;
+}
+
 List<Uint8List> mfUltralightGenerateFirstBlocks(Uint8List uid, TagType type) {
   final List<Uint8List> blocks = [];
 

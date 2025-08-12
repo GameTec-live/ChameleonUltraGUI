@@ -199,7 +199,7 @@ packages:
       path: "."
       ref: fix-windows
       resolved-ref: f479ab01e15caf4b69027e3efe53bda5abc3ff1b
-      url: "https://github.com/Foxushka/file_saver.git"
+      url: "https://github.com/ChameleonUltraGUI/file_saver.git"
     source: git
     version: "0.2.14"
   fixnum:
@@ -237,7 +237,7 @@ packages:
       path: "."
       ref: main
       resolved-ref: "23ffb3193a5d4d94d4a720597b782faab571aa91"
-      url: "https://github.com/Foxushka/flutter_libserialport_new.git"
+      url: "https://github.com/ChameleonUltraGUI/flutter_libserialport.git"
     source: git
     version: "0.5.0"
   flutter_lints:
@@ -858,8 +858,8 @@ packages:
     description:
       path: "."
       ref: fix-usbserial
-      resolved-ref: "9fcbacc92bec19ea02d33a40d9f39e45d19cf637"
-      url: "https://github.com/Foxushka/usbserial.git"
+      resolved-ref: "6e546df992f0e62589b592d81beed5f6bd24784c"
+      url: "https://github.com/ChameleonUltraGUI/usbserial.git"
     source: git
     version: "0.5.1"
   uuid:
