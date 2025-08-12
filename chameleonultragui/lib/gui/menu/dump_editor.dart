@@ -347,7 +347,7 @@ class DumpEditorState extends State<DumpEditor> {
     return TextEditingValue(
       text: oldValue.text,
       selection: TextSelection.collapsed(
-          offset: oldValue.selection.baseOffset.clamp(0, oldValue.text.length)),
+          offset: newValue.selection.baseOffset.clamp(0, oldValue.text.length)),
     );
   }
 
