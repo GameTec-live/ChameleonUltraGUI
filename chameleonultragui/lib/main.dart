@@ -4,6 +4,8 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
+import 'package:chameleonultragui/connector/serial_macos.dart';
+import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,7 +22,6 @@ import 'package:chameleonultragui/gui/page/connect.dart';
 import 'package:chameleonultragui/gui/page/debug.dart';
 import 'package:chameleonultragui/gui/page/slot_manager.dart';
 import 'package:chameleonultragui/gui/page/flashing.dart';
-import 'package:chameleonultragui/gui/page/mfkey32.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/gui/page/write_card.dart';
 import 'package:chameleonultragui/gui/page/pending_connection.dart';
@@ -78,8 +79,6 @@ class ChameleonGUIState extends ChangeNotifier {
   // Flashing easter egg
   bool easterEgg = false;
 
-  bool forceMfkey32Page = false;
-
   GlobalKey navigationRailKey = GlobalKey();
   Size? navigationRailSize;
 
@@ -127,6 +126,10 @@ class _MainPageState extends State<MainPage> {
       return EmulatorSerial(log: appState.log!);
     }
 
+    if (Platform.isMacOS) {
+      return MacOSSerial(log: appState.log!);
+    }
+
     if (Platform.isAndroid) {
       return AndroidSerial(log: appState.log!);
     }
@@ -139,7 +142,8 @@ class _MainPageState extends State<MainPage> {
   }
 
   Logger getLogger(ChameleonGUIState appState) {
-    if (appState._sharedPreferencesProvider!.isDebugLogging()) {
+    if (appState._sharedPreferencesProvider!.isDebugLogging() &&
+        appState._sharedPreferencesProvider!.isDebugMode()) {
       return Logger(
         output: SharedPreferencesLogger(appState._sharedPreferencesProvider!),
         printer: PrettyPrinter(
@@ -219,11 +223,6 @@ class _MainPageState extends State<MainPage> {
         throw UnimplementedError('no widget for $selectedIndex');
     }
 
-    if (appState.forceMfkey32Page) {
-      appState.forceMfkey32Page = false;
-      page = const Mfkey32Page();
-    }
-
     try {
       WakelockPlus.toggle(enable: page is FlashingPage);
     } catch (_) {}
@@ -247,7 +246,7 @@ class _MainPageState extends State<MainPage> {
                     .surface,
                 statusBarBrightness: Brightness.light,
                 statusBarIconBrightness: Brightness.dark)),
-      ),
+      ).useCustomSystemFont(Brightness.light),
       darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -263,7 +262,7 @@ class _MainPageState extends State<MainPage> {
                     .surface,
                 statusBarBrightness: Brightness.dark,
                 statusBarIconBrightness: Brightness.light)),
-      ),
+      ).useCustomSystemFont(Brightness.dark),
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
       home: LayoutBuilder(// Build Page
           builder: (context, constraints) {

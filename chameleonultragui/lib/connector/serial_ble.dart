@@ -123,7 +123,7 @@ class BLESerial extends AbstractSerial {
   }
 
   @override
-  Future<bool> connectSpecificDevice(devicePort) async {
+  Future<bool> connectSpecificDevice(dynamic devicePort) async {
     // As BLE is unstable, we try to connect 5 times
     // And fail only then
     bool ret = false;
@@ -137,7 +137,7 @@ class BLESerial extends AbstractSerial {
     return ret;
   }
 
-  Future<bool> connectSpecificInternal(devicePort) async {
+  Future<bool> connectSpecificInternal(dynamic devicePort) async {
     Completer<bool> completer = Completer<bool>();
     List<Uuid> services = [nrfUUID, uartRX, uartTX];
     if (chameleonMap[devicePort]!.dfu) {

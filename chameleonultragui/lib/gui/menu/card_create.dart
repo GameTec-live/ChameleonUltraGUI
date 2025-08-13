@@ -230,20 +230,24 @@ class CardCreateMenuState extends State<CardCreateMenu> {
 
                       String cleanValue = value.replaceAll(" ", "");
 
-                      if (chameleonTagToFrequency(selectedType) ==
-                          TagFrequency.hf) {
-                        if (!(cleanValue.length == 14 ||
-                            cleanValue.length == 8 ||
-                            cleanValue.length == 20)) {
-                          return localizations.must_or(
-                              "4, 7", "10", localizations.uid);
+                      if (isMifareUltralight(selectedType)) {
+                        if (cleanValue.length != 14) {
+                          return localizations.must_be(localizations.uid, "7");
                         }
-                      } else if (chameleonTagToFrequency(selectedType) ==
+                      } else if (chameleonTagToFrequency(selectedType) !=
                           TagFrequency.lf) {
-                        if (cleanValue.length != 10) {
-                          return localizations.must_be(5, localizations.uid);
+                        if (cleanValue != 14 || cleanValue != 8) {
+                          return localizations.must_or(
+                              "4", "7", localizations.uid);
                         }
                       }
+
+                      if (cleanValue.length != 10 &&
+                          chameleonTagToFrequency(selectedType) ==
+                              TagFrequency.lf) {
+                        return localizations.must_be(5, localizations.uid);
+                      }
+
                       return null;
                     },
                   ),

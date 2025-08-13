@@ -41,7 +41,7 @@ abstract class AbstractSerial {
 
   bool isManualConnectionSupported();
 
-  Future<bool> connectSpecificDevice(devicePort);
+  Future<bool> connectSpecificDevice(dynamic devicePort);
 
   Future<List<Chameleon>> availableChameleons(bool onlyDFU);
 
