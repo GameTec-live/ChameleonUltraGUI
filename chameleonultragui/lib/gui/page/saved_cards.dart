@@ -388,7 +388,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               return DropdownMenuItem<TagType>(
                                                 value: type,
                                                 child: Text(
-                                                    chameleonTagToString(type)),
+                                                    chameleonTagToString(
+                                                        type, localizations)),
                                               );
                                             }).toList(),
                                             onChanged: (TagType? newValue) {
@@ -587,7 +588,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   : Icons.wifi,
                               iconColor: tag.color,
                               firstLine: tag.name.isEmpty ? "⠀" : tag.name,
-                              secondLine: chameleonCardToString(tag),
+                              secondLine:
+                                  chameleonCardToString(tag, localizations),
                               itemIndex: index,
                               onPressed: () {
                                 showDialog(

@@ -40,12 +40,20 @@ class SlotExportMenuState extends State<SlotExportMenu> {
     var appState = context.read<ChameleonGUIState>();
 
     if (frequency == TagFrequency.lf) {
-      return CardSave(
-        uid:
-            bytesToHexSpace(await appState.communicator!.getEM410XEmulatorID()),
-        name: widget.names.lf,
-        tag: widget.slotTypes.lf,
-      );
+      if (isEM410X(widget.slotTypes.lf)) {
+        return CardSave(
+          uid: bytesToHexSpace(
+              await appState.communicator!.getEM410XEmulatorID()),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
+      } else {
+        return CardSave(
+          uid: (await appState.communicator!.getHIDProxEmulatorID()).toString(),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
+      }
     } else {
       CardData data = await appState.communicator!.mf1GetAntiCollData();
 
