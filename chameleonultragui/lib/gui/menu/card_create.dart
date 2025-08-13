@@ -234,15 +234,13 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                         if (cleanValue.length != 14) {
                           return localizations.must_be(localizations.uid, "7");
                         }
-                      } else if (chameleonTagToFrequency(selectedType) !=
-                          TagFrequency.lf) {
-                        if (cleanValue != 14 || cleanValue != 8) {
+                      } else if (chameleonTagToFrequency(selectedType) ==
+                          TagFrequency.hf) {
+                        if (cleanValue.length != 14 || cleanValue.length != 8) {
                           return localizations.must_or(
                               "4", "7", localizations.uid);
                         }
-                      }
-
-                      if (cleanValue.length != 10 &&
+                      } else if (cleanValue.length != 10 &&
                           chameleonTagToFrequency(selectedType) ==
                               TagFrequency.lf) {
                         return localizations.must_be(5, localizations.uid);
