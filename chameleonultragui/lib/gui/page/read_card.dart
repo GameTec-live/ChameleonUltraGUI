@@ -231,7 +231,7 @@ class ReadCardPageState extends State<ReadCardPage> {
       sak: hexToBytes(hfInfo.sak)[0],
       atqa: hexToBytes(hfInfo.atqa),
       name: dumpName,
-      tag: hfInfo.type,
+      tag: hfInfo.type != TagType.unknown ? hfInfo.type : TagType.mifare1K,
       data: [],
       ats: (hfInfo.ats != localizations.no)
           ? hexToBytes(hfInfo.ats)
