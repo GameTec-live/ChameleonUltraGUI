@@ -108,6 +108,14 @@ class SlotEditMenuState extends State<SlotEditMenu> {
               ultralightCounterControllers.add(controller);
             }
           }
+
+          emulatorSettings =
+              await appState.communicator!.mf0NtagGetEmulatorConfig();
+
+          if (emulatorSettings!.isDetectionEnabled) {
+            detectionCount =
+                await appState.communicator!.mf0NtagGetDetectionCount();
+          }
         }
       } catch (_) {}
     }
@@ -626,22 +634,209 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                 if (index == 0) {
                                                   await appState.communicator!
                                                       .setMf1WriteMode(
-                                                          MifareClassicWriteMode
+                                                          MifareWriteMode
                                                               .normal);
                                                 } else if (index == 1) {
                                                   await appState.communicator!
                                                       .setMf1WriteMode(
-                                                          MifareClassicWriteMode
+                                                          MifareWriteMode
                                                               .denied);
                                                 } else if (index == 2) {
                                                   await appState.communicator!
                                                       .setMf1WriteMode(
-                                                          MifareClassicWriteMode
+                                                          MifareWriteMode
                                                               .deceive);
                                                 } else if (index == 3) {
                                                   await appState.communicator!
                                                       .setMf1WriteMode(
-                                                          MifareClassicWriteMode
+                                                          MifareWriteMode
+                                                              .shadow);
+                                                }
+                                              }),
+                                        ]),
+                                      if (isMifareUltralight(selectedType!) &&
+                                          emulatorSettings != null)
+                                        Column(children: [
+                                          const SizedBox(height: 20),
+                                          Text(
+                                            localizations
+                                                .mifare_ultralight_emulator_settings,
+                                            textScaler:
+                                                const TextScaler.linear(1.1),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(localizations.mode_gen2),
+                                          const SizedBox(height: 8),
+                                          ToggleButtonsWrapper(
+                                              items: [
+                                                localizations.yes,
+                                                localizations.no
+                                              ],
+                                              selectedValue:
+                                                  emulatorSettings!.isGen2
+                                                      ? 0
+                                                      : 1,
+                                              onChange: (int index) async {
+                                                await appState.communicator!
+                                                    .mf0SetMagicMode(index == 0
+                                                        ? true
+                                                        : false);
+                                              }),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                              localizations.password_detection),
+                                          const SizedBox(height: 8),
+                                          ToggleButtonsWrapper(
+                                              items: [
+                                                localizations.yes,
+                                                localizations.no
+                                              ],
+                                              selectedValue: emulatorSettings!
+                                                      .isDetectionEnabled
+                                                  ? 0
+                                                  : 1,
+                                              onChange: (int index) async {
+                                                await appState.communicator!
+                                                    .mf0NtagSetDetectionEnable(
+                                                        index == 0
+                                                            ? true
+                                                            : false);
+                                              }),
+                                          ...(emulatorSettings!
+                                                  .isDetectionEnabled)
+                                              ? [
+                                                  ...(detectionCount == 0)
+                                                      ? [
+                                                          const SizedBox(
+                                                              height: 8),
+                                                          Text(
+                                                              localizations
+                                                                  .present_cham_reader_keys,
+                                                              textScaler:
+                                                                  const TextScaler
+                                                                      .linear(
+                                                                      0.8))
+                                                        ]
+                                                      : [
+                                                          const SizedBox(
+                                                              height: 8),
+                                                          Text(
+                                                              '${localizations.passwords_detected}: $detectionCount',
+                                                              textScaler:
+                                                                  const TextScaler
+                                                                      .linear(
+                                                                      0.9)),
+                                                          const SizedBox(
+                                                              height: 8),
+                                                          Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                TextButton(
+                                                                    onPressed:
+                                                                        () async {
+                                                                      List<String>
+                                                                          passwords =
+                                                                          await appState
+                                                                              .communicator!
+                                                                              .mf0NtagGetDetectionLog(0);
+
+                                                                      if (!context
+                                                                          .mounted) {
+                                                                        return;
+                                                                      }
+
+                                                                      showDialog(
+                                                                        context:
+                                                                            context,
+                                                                        builder:
+                                                                            (BuildContext
+                                                                                context) {
+                                                                          TextEditingController
+                                                                              passwordController =
+                                                                              TextEditingController();
+                                                                          passwordController.text = passwords
+                                                                              .join('\n')
+                                                                              .toUpperCase();
+
+                                                                          return AlertDialog(
+                                                                            title:
+                                                                                Text(localizations.detected_passwords),
+                                                                            content:
+                                                                                SizedBox(
+                                                                              width: double.maxFinite,
+                                                                              child: TextFormField(
+                                                                                maxLines: null,
+                                                                                controller: passwordController,
+                                                                                readOnly: true,
+                                                                                style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
+                                                                              ),
+                                                                            ),
+                                                                            actions: [
+                                                                              TextButton(
+                                                                                onPressed: () {
+                                                                                  Navigator.of(context).pop();
+                                                                                },
+                                                                                child: Text(localizations.close),
+                                                                              ),
+                                                                            ],
+                                                                          );
+                                                                        },
+                                                                      );
+                                                                    },
+                                                                    child: Row(
+                                                                      children: [
+                                                                        const Icon(
+                                                                            Icons.visibility),
+                                                                        Text(localizations
+                                                                            .view_passwords),
+                                                                      ],
+                                                                    )),
+                                                              ]),
+                                                        ],
+                                                ]
+                                              : [
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                      localizations
+                                                          .enable_password_detection,
+                                                      textScaler:
+                                                          const TextScaler
+                                                              .linear(0.8))
+                                                ],
+                                          const SizedBox(height: 8),
+                                          Text(localizations.write_mode),
+                                          const SizedBox(height: 8),
+                                          ToggleButtonsWrapper(
+                                              items: [
+                                                localizations.normal,
+                                                localizations.decline,
+                                                localizations.deceive,
+                                                localizations.shadow
+                                              ],
+                                              selectedValue: emulatorSettings!
+                                                  .writeMode.value,
+                                              onChange: (int index) async {
+                                                if (index == 0) {
+                                                  await appState.communicator!
+                                                      .mf0NtagSetWriteMode(
+                                                          MifareWriteMode
+                                                              .normal);
+                                                } else if (index == 1) {
+                                                  await appState.communicator!
+                                                      .mf0NtagSetWriteMode(
+                                                          MifareWriteMode
+                                                              .denied);
+                                                } else if (index == 2) {
+                                                  await appState.communicator!
+                                                      .mf0NtagSetWriteMode(
+                                                          MifareWriteMode
+                                                              .deceive);
+                                                } else if (index == 3) {
+                                                  await appState.communicator!
+                                                      .mf0NtagSetWriteMode(
+                                                          MifareWriteMode
                                                               .shadow);
                                                 }
                                               }),
