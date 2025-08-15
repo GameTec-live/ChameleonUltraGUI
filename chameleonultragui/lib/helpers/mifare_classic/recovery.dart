@@ -195,9 +195,15 @@ class MifareClassicRecovery {
 
   Future<void> recoverKeys() async {
     error = "";
-    // Key check part competed, checking found keys
     bool hasKey = false;
     bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
+    (int, NestedNonces, NestedNonces, Uint8List)? backdoorInfo;
+    if (hasBackdoor) {
+      backdoorInfo = await appState.communicator!
+          .getMf1StaticEncryptedNestedAcquire(
+              sectorCount: mfClassicGetSectorCount(mifareClassicType));
+    }
+
     DarksideResult darkside = DarksideResult.fixed;
     for (var sector = 0;
         sector < mfClassicGetSectorCount(mifareClassicType) && !hasKey;
@@ -239,6 +245,7 @@ class MifareClassicRecovery {
 
             if (await checkKeysOnSector(mfClassicConvertKeys(keys), 1, 0)) {
               found = true;
+              hasKey = true;
 
               break;
             }
@@ -256,14 +263,43 @@ class MifareClassicRecovery {
     }
 
     update();
-
     NTLevel prng = await appState.communicator!.getMf1NTLevel();
+
+    if (!hasKey && hasBackdoor && prng == NTLevel.weak) {
+      checkMarks[0] = ChameleonKeyCheckmark.checking;
+      update();
+
+      for (var i = 0; i < 3; i++) {
+        NTDistance distance = await appState.communicator!
+            .getMf1NTDistance(0, 0x64, backdoorInfo!.$4);
+
+        NestedNonces nonces = await appState.communicator!
+            .getMf1NestedNonces(0, 0x64, backdoorInfo.$4, 0, 0x60, level: prng);
+
+        var nested = NestedDart(
+            uid: distance.uid,
+            distance: distance.distance,
+            nt0: nonces.nonces[0].nt,
+            nt0Enc: nonces.nonces[0].ntEnc,
+            par0: nonces.nonces[0].parity,
+            nt1: nonces.nonces[1].nt,
+            nt1Enc: nonces.nonces[1].ntEnc,
+            par1: nonces.nonces[1].parity);
+
+        List<int> keys = await recovery.nested(nested);
+
+        if (keys.isNotEmpty) {
+          appState.log!.d("Found keys: $keys. Checking them...");
+          if (await checkKeysOnSector(mfClassicConvertKeys(keys), 0, 0)) {
+            break;
+          }
+        }
+      }
+    }
+
     Uint8List validKey = Uint8List(0);
     int validKeyBlock = 0;
     int validKeyType = -1;
-    int? uid;
-    NestedNonces? aNonces;
-    NestedNonces? bNonces;
 
     bool isStaticEncrypted = false;
 
@@ -283,15 +319,9 @@ class MifareClassicRecovery {
       }
     }
 
-    if (isStaticEncrypted || (validKeyType == -1 && hasBackdoor)) {
-      (int, NestedNonces, NestedNonces)? response = await appState.communicator!
-          .getMf1StaticEncryptedNestedAcquire(
-              sectorCount: mfClassicGetSectorCount(mifareClassicType));
-
-      if (response != null) {
-        (uid, aNonces, bNonces) = response;
-        prng = NTLevel.backdoor;
-      }
+    if ((isStaticEncrypted || (validKeyType == -1 && hasBackdoor)) &&
+        backdoorInfo != null) {
+      prng = NTLevel.backdoor;
     }
 
     if (validKeyType == -1 && prng != NTLevel.backdoor) {
@@ -380,23 +410,23 @@ class MifareClassicRecovery {
 
               var possibleAKeys = await recovery.staticEncryptedNested(
                   StaticEncryptedNestedDart(
-                      uid: uid!,
-                      nt: aNonces!.nonces[sector].nt,
-                      ntEnc: aNonces.nonces[sector].ntEnc,
-                      ntParEnc: aNonces.nonces[sector].parity));
+                      uid: backdoorInfo!.$1,
+                      nt: backdoorInfo.$2.nonces[sector].nt,
+                      ntEnc: backdoorInfo.$2.nonces[sector].ntEnc,
+                      ntParEnc: backdoorInfo.$2.nonces[sector].parity));
 
               var possibleBKeys = await recovery.staticEncryptedNested(
                   StaticEncryptedNestedDart(
-                      uid: uid,
-                      nt: bNonces!.nonces[sector].nt,
-                      ntEnc: bNonces.nonces[sector].ntEnc,
-                      ntParEnc: bNonces.nonces[sector].parity));
+                      uid: backdoorInfo.$1,
+                      nt: backdoorInfo.$3.nonces[sector].nt,
+                      ntEnc: backdoorInfo.$3.nonces[sector].ntEnc,
+                      ntParEnc: backdoorInfo.$3.nonces[sector].parity));
 
               var filtered = await StaticEncryptedKeysFilterAsync.filterKeys(
                   possibleAKeys,
                   possibleBKeys,
-                  aNonces.nonces[sector].nt,
-                  bNonces.nonces[sector].nt);
+                  backdoorInfo.$2.nonces[sector].nt,
+                  backdoorInfo.$3.nonces[sector].nt);
 
               if (await checkKeysOnSector(
                   mfClassicConvertKeys(filtered.$2.reversed.toList()),
@@ -406,10 +436,10 @@ class MifareClassicRecovery {
                 if (await checkKeysOnSector(
                     mfClassicConvertKeys(
                         await StaticEncryptedKeysFilterAsync.findMatchingKeys(
-                            bNonces.nonces[sector].nt,
+                            backdoorInfo.$3.nonces[sector].nt,
                             bytesToU64(Uint8List.fromList(
                                 [0, 0, ...validKeys[sector + 40]])),
-                            aNonces.nonces[sector].nt,
+                            backdoorInfo.$2.nonces[sector].nt,
                             possibleAKeys)),
                     0,
                     sector)) {

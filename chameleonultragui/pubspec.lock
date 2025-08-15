@@ -370,11 +370,10 @@ packages:
   libserialport:
     dependency: transitive
     description:
-      path: "."
-      ref: "75c301df73aceb7e381a36b25d85b81d0be97bdb"
-      resolved-ref: "75c301df73aceb7e381a36b25d85b81d0be97bdb"
-      url: "https://github.com/AurelienBallier/libserialport.dart.git"
-    source: git
+      name: libserialport
+      sha256: "392e1592def65282429832ec66fa25e9e163d3b37716b97691482e2406720727"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.3.0+1"
   lints:
     dependency: transitive
