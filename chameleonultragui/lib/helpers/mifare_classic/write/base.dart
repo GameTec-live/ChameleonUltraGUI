@@ -245,7 +245,7 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
               ? MifareClassicState.checkKeys
               : MifareClassicState.none;
           hfInfo!.tech = isMifareClassic
-              ? "Mifare Classic ${mfClassicGetName(mfcInfo!.type)}${isMifareClassicEV1 ? " EV1" : ""}"
+              ? "Mifare Classic ${mfClassicGetName(mfcInfo!.type, localizations)}${isMifareClassicEV1 ? " EV1" : ""}"
               : localizations.other;
         });
       } catch (_) {
