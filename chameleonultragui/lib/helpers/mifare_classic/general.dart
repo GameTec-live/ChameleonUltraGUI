@@ -168,7 +168,8 @@ List<Uint8List> mfClassicConvertKeys(List<int> keys) {
   return out;
 }
 
-String mfClassicGetName(MifareClassicType type) {
+String mfClassicGetName(
+    MifareClassicType type, AppLocalizations localizations) {
   if (type == MifareClassicType.m1k) {
     return "1K";
   } else if (type == MifareClassicType.m2k) {
@@ -178,7 +179,7 @@ String mfClassicGetName(MifareClassicType type) {
   } else if (type == MifareClassicType.mini) {
     return "Mini";
   } else {
-    return "Unknown";
+    return localizations.unknown;
   }
 }
 
