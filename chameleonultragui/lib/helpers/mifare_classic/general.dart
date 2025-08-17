@@ -62,6 +62,7 @@ final gMifareClassicBackdoorKeysList = {
   0xA396EFA4E24F,
   0xA31667A8CEC1,
   0x518B3354E760,
+  0x73B9836CF168,
 };
 
 enum MifareClassicType {
@@ -130,7 +131,7 @@ Future<bool> mfClassicHasBackdoor(ChameleonCommunicator communicator) async {
     return false;
   }
 
-  (int, NestedNonces, NestedNonces)? response =
+  (int, NestedNonces, NestedNonces, Uint8List)? response =
       await communicator.getMf1StaticEncryptedNestedAcquire(sectorCount: 1);
 
   return response != null;
