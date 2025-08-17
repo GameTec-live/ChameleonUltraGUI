@@ -202,7 +202,7 @@ jobs:
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect publish --path $(find $(pwd) -name "*.ipa")
           while [[ -z "$BUILD_ID" ]]; do
-              export BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 12.0" | awk '/^Id:/ {print $2}')
+              export BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 13.0" | awk '/^Id:/ {print $2}')
               if [[ -z "$BUILD_ID" ]]; then
                   echo "Build is not ready, retrying in 30 seconds..."
                   sleep 30
