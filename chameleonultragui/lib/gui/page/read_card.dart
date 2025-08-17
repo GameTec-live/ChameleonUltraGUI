@@ -73,6 +73,13 @@ class MifareClassicInfo {
   });
 }
 
+class MifareUltralightInfo {
+  Uint8List? version;
+  Uint8List? signature;
+
+  MifareUltralightInfo();
+}
+
 class ReadCardPage extends StatefulWidget {
   const ReadCardPage({super.key});
 
@@ -85,6 +92,7 @@ class ReadCardPageState extends State<ReadCardPage> {
   HFCardInfo hfInfo = HFCardInfo();
   LFCardInfo lfInfo = LFCardInfo();
   MifareClassicInfo mfcInfo = MifareClassicInfo();
+  MifareUltralightInfo mfuInfo = MifareUltralightInfo();
 
   void updateMifareClassicRecovery() {
     setState(() {
@@ -105,6 +113,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     setState(() {
       hfInfo = HFCardInfo();
       mfcInfo = MifareClassicInfo();
+      mfuInfo = MifareUltralightInfo();
     });
 
     try {
@@ -150,6 +159,13 @@ class ReadCardPageState extends State<ReadCardPage> {
             await mfUltralightGetVersion(appState.communicator!);
         if (version.length == 8) {
           type = mfUltralightGetType(version);
+          Uint8List signature =
+              await mfUltralightGetSignature(appState.communicator!);
+
+          setState(() {
+            mfuInfo.version = version;
+            mfuInfo.signature = signature;
+          });
         }
       } else {
         type = mfClassicGetChameleonTagType(mifareClassicType);
@@ -211,15 +227,21 @@ class ReadCardPageState extends State<ReadCardPage> {
 
     var tags = appState.sharedPreferencesProvider.getCards();
     tags.add(CardSave(
-        uid: hfInfo.uid,
-        sak: hexToBytes(hfInfo.sak)[0],
-        atqa: hexToBytes(hfInfo.atqa),
-        name: dumpName,
-        tag: TagType.mifare1K,
-        data: [],
-        ats: (hfInfo.ats != localizations.no)
-            ? hexToBytes(hfInfo.ats)
-            : Uint8List(0)));
+      uid: hfInfo.uid,
+      sak: hexToBytes(hfInfo.sak)[0],
+      atqa: hexToBytes(hfInfo.atqa),
+      name: dumpName,
+      tag: hfInfo.type != TagType.unknown ? hfInfo.type : TagType.mifare1K,
+      data: [],
+      ats: (hfInfo.ats != localizations.no)
+          ? hexToBytes(hfInfo.ats)
+          : Uint8List(0),
+      extraData: CardSaveExtra(
+        ultralightSignature: mfuInfo.signature,
+        ultralightVersion: mfuInfo.version,
+        ultralightCounters: [],
+      ),
+    ));
 
     appState.sharedPreferencesProvider.setCards(tags);
   }
