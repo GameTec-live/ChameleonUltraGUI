@@ -353,11 +353,13 @@
   "create": "Create",
   "logs": "Logs",
   "ultralight_counter": "Ultralight counter {index}",
-  "ultralight_counter_value": "Counter value (0-16777215)",
+  "ultralight_counter_value": "Counter value",
   "counter_value_empty": "Counter value cannot be empty",
-  "counter_value_range": "Counter must be between 0 and 16777215",
   "uploading_dump": "Uploading dump to emulator...",
   "please_update_firmware": "Update firmware for a seamless experience",
   "override_card_type": "Override card type",
-  "override_card_type_description": "Select a specific card type to override auto-detection"
+  "override_card_type_description": "Select a specific card type to override auto-detection",
+  "facility_code": "Facility Code",
+  "issue_level": "Issue Level",
+  "must_be_between": "Must be between {a} and {b}"
 }

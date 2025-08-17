@@ -49,11 +49,10 @@ class HFCardInfo {
 }
 
 class LFCardInfo {
-  String uid;
-  String tech;
+  LFCard? card;
   bool cardExist;
 
-  LFCardInfo({this.uid = '', this.tech = '', this.cardExist = true});
+  LFCardInfo({this.cardExist = true});
 }
 
 class MifareClassicInfo {
@@ -74,6 +73,13 @@ class MifareClassicInfo {
   });
 }
 
+class MifareUltralightInfo {
+  Uint8List? version;
+  Uint8List? signature;
+
+  MifareUltralightInfo();
+}
+
 class ReadCardPage extends StatefulWidget {
   const ReadCardPage({super.key});
 
@@ -86,6 +92,7 @@ class ReadCardPageState extends State<ReadCardPage> {
   HFCardInfo hfInfo = HFCardInfo();
   LFCardInfo lfInfo = LFCardInfo();
   MifareClassicInfo mfcInfo = MifareClassicInfo();
+  MifareUltralightInfo mfuInfo = MifareUltralightInfo();
 
   void updateMifareClassicRecovery() {
     setState(() {
@@ -106,6 +113,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     setState(() {
       hfInfo = HFCardInfo();
       mfcInfo = MifareClassicInfo();
+      mfuInfo = MifareUltralightInfo();
     });
 
     try {
@@ -151,6 +159,13 @@ class ReadCardPageState extends State<ReadCardPage> {
             await mfUltralightGetVersion(appState.communicator!);
         if (version.length == 8) {
           type = mfUltralightGetType(version);
+          Uint8List signature =
+              await mfUltralightGetSignature(appState.communicator!);
+
+          setState(() {
+            mfuInfo.version = version;
+            mfuInfo.signature = signature;
+          });
         }
       } else {
         type = mfClassicGetChameleonTagType(mifareClassicType);
@@ -169,8 +184,8 @@ class ReadCardPageState extends State<ReadCardPage> {
         mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
             ? MifareClassicState.checkKeys
             : MifareClassicState.none;
-        hfInfo.tech =
-            chameleonTagToString(type) + (isMifareClassicEV1 ? " EV1" : "");
+        hfInfo.tech = chameleonTagToString(type, localizations) +
+            (isMifareClassicEV1 ? " EV1" : "");
       });
     } catch (_) {
       setState(() {
@@ -191,11 +206,12 @@ class ReadCardPageState extends State<ReadCardPage> {
         await appState.communicator!.setReaderDeviceMode(true);
       }
 
-      var card = await appState.communicator!.readEM410X();
-      if (card != "") {
+      LFCard? card = await appState.communicator!.readEM410X();
+      card ??= await appState.communicator!.readHIDProx();
+
+      if (card != null) {
         setState(() {
-          lfInfo.uid = card;
-          lfInfo.tech = "EM-Marin EM4100/EM4102";
+          lfInfo.card = card;
         });
       } else {
         setState(() {
@@ -211,15 +227,21 @@ class ReadCardPageState extends State<ReadCardPage> {
 
     var tags = appState.sharedPreferencesProvider.getCards();
     tags.add(CardSave(
-        uid: hfInfo.uid,
-        sak: hexToBytes(hfInfo.sak)[0],
-        atqa: hexToBytes(hfInfo.atqa),
-        name: dumpName,
-        tag: TagType.mifare1K,
-        data: [],
-        ats: (hfInfo.ats != localizations.no)
-            ? hexToBytes(hfInfo.ats)
-            : Uint8List(0)));
+      uid: hfInfo.uid,
+      sak: hexToBytes(hfInfo.sak)[0],
+      atqa: hexToBytes(hfInfo.atqa),
+      name: dumpName,
+      tag: hfInfo.type != TagType.unknown ? hfInfo.type : TagType.mifare1K,
+      data: [],
+      ats: (hfInfo.ats != localizations.no)
+          ? hexToBytes(hfInfo.ats)
+          : Uint8List(0),
+      extraData: CardSaveExtra(
+        ultralightSignature: mfuInfo.signature,
+        ultralightVersion: mfuInfo.version,
+        ultralightCounters: [],
+      ),
+    ));
 
     appState.sharedPreferencesProvider.setCards(tags);
   }
@@ -228,7 +250,8 @@ class ReadCardPageState extends State<ReadCardPage> {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
     var tags = appState.sharedPreferencesProvider.getCards();
-    tags.add(CardSave(uid: lfInfo.uid, name: dumpName, tag: TagType.em410X));
+    tags.add(CardSave(
+        uid: lfInfo.card.toString(), name: dumpName, tag: lfInfo.card!.type));
     appState.sharedPreferencesProvider.setCards(tags);
   }
 
@@ -330,7 +353,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                 hfInfo.type = newValue;
                                                 hfInfo.tech =
                                                     chameleonTagToString(
-                                                        newValue);
+                                                        newValue,
+                                                        localizations);
                                               });
 
                                               if (mifareClassic) {
@@ -364,7 +388,8 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                   value: tagType,
                                                   child: Text(
                                                       chameleonTagToString(
-                                                          tagType)),
+                                                          tagType,
+                                                          localizations)),
                                                 );
                                               }),
                                             ],
@@ -512,10 +537,14 @@ class ReadCardPageState extends State<ReadCardPage> {
                       ),
                       const SizedBox(height: 8),
                       buildFieldRow(
-                          localizations.uid, lfInfo.uid, fieldFontSize),
+                          localizations.uid,
+                          lfInfo.card != null
+                              ? lfInfo.card!.toViewableString()
+                              : '',
+                          fieldFontSize),
                       const SizedBox(height: 16),
                       Text(
-                        '${localizations.card_tech}: ${lfInfo.tech}',
+                        '${localizations.card_tech}: ${(lfInfo.card != null ? chameleonTagToString(lfInfo.card!.type, localizations) : '')}',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: fieldFontSize),
                       ),
@@ -554,7 +583,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                         style: customCardButtonStyle(appState),
                         child: Text(localizations.read),
                       ),
-                      if (lfInfo.uid != "") ...[
+                      if (lfInfo.card != null) ...[
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () async {

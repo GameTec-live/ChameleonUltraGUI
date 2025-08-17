@@ -41,9 +41,16 @@ class SlotEditMenuState extends State<SlotEditMenu> {
   TextEditingController sakController = TextEditingController();
   TextEditingController atqaController = TextEditingController();
   TextEditingController atsController = TextEditingController();
+
   TextEditingController ultralightVersionController = TextEditingController();
   TextEditingController ultralightSignatureController = TextEditingController();
   List<TextEditingController> ultralightCounterControllers = [];
+
+  TextEditingController hidTypeController = TextEditingController();
+  TextEditingController facilityCodeController = TextEditingController();
+  TextEditingController issueLevelController = TextEditingController();
+  TextEditingController oemController = TextEditingController();
+
   TagType? selectedType;
   TagType previousTagType = TagType.unknown;
   EmulatorSettings? emulatorSettings;
@@ -65,10 +72,19 @@ class SlotEditMenuState extends State<SlotEditMenu> {
 
     await appState.communicator!.activateSlot(widget.slot);
 
-    if (selectedType == TagType.em410X) {
+    if (isEM410X(selectedType!)) {
       try {
         uidController.text =
             bytesToHexSpace(await appState.communicator!.getEM410XEmulatorID());
+      } catch (_) {}
+    } else if (selectedType! == TagType.hidProx) {
+      try {
+        HIDCard hidCard = await appState.communicator!.getHIDProxEmulatorID();
+        uidController.text = bytesToHexSpace(hidCard.uid);
+        hidTypeController.text = hidCard.hidType.toString();
+        facilityCodeController.text = hidCard.facilityCode.toString();
+        issueLevelController.text = hidCard.issueLevel.toString();
+        oemController.text = hidCard.oem.toString();
       } catch (_) {}
     } else if (isMifareClassic(selectedType!) ||
         isMifareUltralight(selectedType!)) {
@@ -143,9 +159,29 @@ class SlotEditMenuState extends State<SlotEditMenu> {
       }
     }
 
-    if (selectedType == TagType.em410X) {
+    if (isEM410X(selectedType!)) {
       await appState.communicator!
           .setEM410XEmulatorID(hexToBytes(uidController.text));
+    } else if (selectedType! == TagType.hidProx) {
+      try {
+        int hidType = int.parse(hidTypeController.text);
+        int facilityCode = int.parse(facilityCodeController.text);
+        int issueLevel = int.parse(issueLevelController.text);
+        int oem = int.parse(oemController.text);
+
+        Uint8List uid = hexToBytes(uidController.text.replaceAll(' ', ''));
+
+        HIDCard hidCard = HIDCard(
+          hidType: hidType,
+          facilityCode: facilityCode,
+          uid: uid,
+          issueLevel: issueLevel,
+          oem: oem,
+        );
+
+        await appState.communicator!
+            .setHIDProxEmulatorID(hexToBytes(hidCard.toString()));
+      } catch (_) {}
     } else if (isMifareClassic(selectedType!) ||
         isMifareUltralight(selectedType!)) {
       var cardData = CardData(
@@ -216,7 +252,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                   return DropdownMenuItem<TagType>(
                     value: type,
                     child: Text(
-                      chameleonTagToString(type),
+                      chameleonTagToString(type, localizations),
                     ),
                   );
                 }).toList(),
@@ -388,7 +424,6 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                             }
                                             return null;
                                           }),
-                                      // Ultralight-specific fields
                                       if (isMifareUltralight(
                                           selectedType!)) ...[
                                         const SizedBox(height: 20),
@@ -433,7 +468,6 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                               }
                                               return null;
                                             }),
-                                        // Counter fields
                                         if (mfUltralightHasCounters(
                                             selectedType!)) ...[
                                           const SizedBox(height: 20),
@@ -467,7 +501,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                       counterValue < 0 ||
                                                       counterValue > 16777215) {
                                                     return localizations
-                                                        .counter_value_range;
+                                                        .must_be_between(
+                                                            '0', '16,777,215');
                                                   }
                                                   return null;
                                                 },
@@ -843,7 +878,90 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                         ]),
                                     ],
                                   )),
-                            ])
+                            ]),
+                            if (selectedType == TagType.hidProx)
+                              Column(children: [
+                                const SizedBox(height: 20),
+                                DropdownButton<int>(
+                                  value:
+                                      int.tryParse(hidTypeController.text) ?? 1,
+                                  items: List.generate(30, (index) => index + 1)
+                                      .map<DropdownMenuItem<int>>((int type) {
+                                    return DropdownMenuItem<int>(
+                                      value: type,
+                                      child: Text(getNameForHIDProxType(type)),
+                                    );
+                                  }).toList(),
+                                  onChanged: (int? newValue) {
+                                    if (newValue != null) {
+                                      setState(() {
+                                        hidTypeController.text =
+                                            newValue.toString();
+                                      });
+                                    }
+                                  },
+                                  isExpanded: true,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: facilityCodeController,
+                                  decoration: InputDecoration(
+                                      labelText: localizations.facility_code,
+                                      hintText: localizations.enter_something(
+                                          localizations.facility_code)),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly
+                                  ],
+                                  validator: (value) {
+                                    int? fc = int.tryParse(value!);
+                                    if (fc == null ||
+                                        fc < 0 ||
+                                        fc > 4294967295) {
+                                      return localizations.must_be_between(
+                                          '0', '4,294,967,295');
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: issueLevelController,
+                                  decoration: InputDecoration(
+                                      labelText: localizations.issue_level,
+                                      hintText: localizations.enter_something(
+                                          localizations.issue_level)),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly
+                                  ],
+                                  validator: (value) {
+                                    int? il = int.tryParse(value!);
+                                    if (il == null || il < 0 || il > 255) {
+                                      return localizations.must_be_between(
+                                          '0', '255');
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: oemController,
+                                  decoration: InputDecoration(
+                                      labelText: "OEM",
+                                      hintText:
+                                          localizations.enter_something('OEM')),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly
+                                  ],
+                                  validator: (value) {
+                                    int? oem = int.tryParse(value!);
+                                    if (oem == null || oem < 0 || oem > 65535) {
+                                      return localizations.must_be_between(
+                                          '0', '65,535');
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ])
                           ]));
                     }
                   })

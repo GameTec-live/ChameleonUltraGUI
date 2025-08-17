@@ -76,12 +76,14 @@ enum ChameleonCommand {
   mf1CheckKeysOfSectors(2012), // not implemented
   mf1HardNestedAcquire(2013),
   mf1StaticEncryptedNestedAcquire(2014),
-  mf1CheckKeysOnBlock(2015), // not implemented
+  mf1CheckKeysOnBlock(2015),
   hf14ARawCommand(2010),
 
   // lf commands
   scanEM410Xtag(3000),
   writeEM410XtoT5577(3001),
+  scanHIDProxTag(3002),
+  writeHIDProxToT5577(3003),
 
   mf1LoadBlockData(4000),
   mf1SetAntiCollision(4001),
@@ -129,7 +131,10 @@ enum ChameleonCommand {
 
   // lf emulator
   setEM410XemulatorID(5000),
-  getEM410XemulatorID(5001);
+  getEM410XemulatorID(5001),
+
+  setHIDProxEmulatorID(5002),
+  getHIDProxEmulatorID(5003);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -138,6 +143,10 @@ enum ChameleonCommand {
 enum TagType {
   unknown(0),
   em410X(100),
+  em410X16(101),
+  em410X32(102),
+  em410X64(103),
+  hidProx(200),
   mifareMini(1000),
   mifare1K(1001),
   mifare2K(1002),
@@ -425,6 +434,102 @@ enum MifareClassicValueBlockOperator {
 
   const MifareClassicValueBlockOperator(this.value);
   final int value;
+}
+
+abstract class LFCard {
+  TagType type;
+  Uint8List uid;
+
+  @override
+  String toString() {
+    return bytesToHexSpace(uid);
+  }
+
+  String toViewableString() {
+    return toString();
+  }
+
+  LFCard({required this.type, required this.uid});
+}
+
+class EM410XCard extends LFCard {
+  factory EM410XCard.fromBytes(Uint8List bytes) {
+    return EM410XCard(
+        type: numberToChameleonTag(bytesToU16(bytes.sublist(0, 2))),
+        uid: bytes.sublist(2, 7));
+  }
+
+  factory EM410XCard.fromUID(String uid) {
+    return EM410XCard(type: TagType.em410X, uid: hexToBytes(uid));
+  }
+
+  EM410XCard({required super.type, required super.uid});
+}
+
+class HIDCard extends LFCard {
+  int hidType; // u8
+  int facilityCode; // u32
+  int issueLevel; // u8
+  int oem; // u16
+
+  factory HIDCard.fromBytes(Uint8List bytes) {
+    return HIDCard(
+        hidType: bytesToU8(bytes.sublist(0, 1)),
+        facilityCode: bytesToU32(bytes.sublist(1, 5)),
+        uid: bytes.sublist(5, 10),
+        issueLevel: bytesToU8(bytes.sublist(10, 11)),
+        oem: bytesToU16(bytes.sublist(11, 13)));
+  }
+
+  factory HIDCard.fromUID(String uid) {
+    return HIDCard.fromBytes(hexToBytes(uid));
+  }
+
+  @override
+  String toString() {
+    return bytesToHexSpace(Uint8List.fromList([
+      hidType,
+      ...u32ToBytes(facilityCode),
+      ...uid,
+      issueLevel,
+      ...u16ToBytes(oem)
+    ]));
+  }
+
+  @override
+  String toViewableString() {
+    int cnHigh = uid[0];
+    int cnLow = (uid[1] << 24) | (uid[2] << 16) | (uid[3] << 8) | uid[4];
+
+    int uidNumber = (cnHigh << 32) | cnLow;
+
+    String out =
+        '$uidNumber (${bytesToHexSpace(uid)}, ${getNameForHIDProxType(hidType)}';
+
+    if (facilityCode != 0) {
+      out += ', FC: $facilityCode';
+    }
+
+    if (issueLevel != 0) {
+      out += ', IL: $issueLevel';
+    }
+
+    if (oem != 0) {
+      out += ', OEM: $oem';
+    }
+
+    out += ')';
+
+    return out;
+  }
+
+  HIDCard(
+      {super.type = TagType.hidProx,
+      required this.hidType,
+      required this.facilityCode,
+      required super.uid,
+      required this.issueLevel,
+      required this.oem});
 }
 
 // Some ChatGPT magic
@@ -789,8 +894,9 @@ class ChameleonCommunicator {
         ar: bytesToU32(resp.data.sublist(28, 32)));
   }
 
-  Future<(int, NestedNonces, NestedNonces)?> getMf1StaticEncryptedNestedAcquire(
-      {int sectorCount = 16, int startingSector = 0}) async {
+  Future<(int, NestedNonces, NestedNonces, Uint8List)?>
+      getMf1StaticEncryptedNestedAcquire(
+          {int sectorCount = 16, int startingSector = 0}) async {
     for (var key in gMifareClassicBackdoorKeys) {
       var resp = await sendCmd(ChameleonCommand.mf1StaticEncryptedNestedAcquire,
           data: Uint8List.fromList([...key, sectorCount, startingSector]));
@@ -812,7 +918,7 @@ class ChameleonCommunicator {
           i += 14;
         }
 
-        return (uid, aNonces, bNonces);
+        return (uid, aNonces, bNonces, key);
       }
     }
 
@@ -960,23 +1066,32 @@ class ChameleonCommunicator {
         ]));
   }
 
-  Future<String> readEM410X() async {
+  Future<EM410XCard?> readEM410X() async {
     var resp = await sendCmd(ChameleonCommand.scanEM410Xtag);
 
     if (resp!.data.isEmpty) {
-      return '';
+      return null;
     }
 
-    if (resp.data.length == 5) {
-      // Old firmware
-      return bytesToHexSpace(resp.data);
+    return EM410XCard.fromBytes(resp.data);
+  }
+
+  Future<HIDCard?> readHIDProx() async {
+    var resp = await sendCmd(ChameleonCommand.scanHIDProxTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
     }
 
-    return bytesToHexSpace(resp.data.sublist(2, 7));
+    return HIDCard.fromBytes(resp.data);
   }
 
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setEM410XemulatorID, data: uid);
+  }
+
+  Future<void> setHIDProxEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setHIDProxEmulatorID, data: uid);
   }
 
   Future<void> writeEM410XtoT55XX(
@@ -987,6 +1102,20 @@ class ChameleonCommunicator {
       keys.addAll(oldKey);
     }
     await sendCmd(ChameleonCommand.writeEM410XtoT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+  }
+
+  Future<void> writeHIDProxToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeHIDProxToT5577,
         data: Uint8List.fromList([...uid, ...newKey, ...keys]));
   }
 
@@ -1280,6 +1409,11 @@ class ChameleonCommunicator {
 
   Future<Uint8List> getEM410XEmulatorID() async {
     return (await sendCmd(ChameleonCommand.getEM410XemulatorID))!.data;
+  }
+
+  Future<HIDCard> getHIDProxEmulatorID() async {
+    return HIDCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getHIDProxEmulatorID))!.data);
   }
 
   Future<DeviceSettings> getDeviceSettings() async {

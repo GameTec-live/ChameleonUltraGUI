@@ -140,7 +140,7 @@ int calculateCRC32(List<int> toTransmit, int crc) {
   return crc;
 }
 
-String chameleonTagToString(TagType tag) {
+String chameleonTagToString(TagType tag, AppLocalizations localizations) {
   if (tag == TagType.mifareMini) {
     return "Mifare Mini";
   } else if (tag == TagType.mifare1K) {
@@ -151,6 +151,14 @@ String chameleonTagToString(TagType tag) {
     return "Mifare Classic 4K";
   } else if (tag == TagType.em410X) {
     return "EM410X";
+  } else if (tag == TagType.em410X16) {
+    return "EM410X (16)";
+  } else if (tag == TagType.em410X32) {
+    return "EM410X (32)";
+  } else if (tag == TagType.em410X64) {
+    return "EM410X (64)";
+  } else if (tag == TagType.hidProx) {
+    return "HID Prox";
   } else if (tag == TagType.ntag210) {
     return "NTAG210";
   } else if (tag == TagType.ntag212) {
@@ -170,12 +178,12 @@ String chameleonTagToString(TagType tag) {
   } else if (tag == TagType.ultralight21) {
     return "Ultralight EV1 (41)";
   } else {
-    return "Unknown";
+    return localizations.unknown;
   }
 }
 
-String chameleonCardToString(CardSave card) {
-  String name = chameleonTagToString(card.tag);
+String chameleonCardToString(CardSave card, AppLocalizations localizations) {
+  String name = chameleonTagToString(card.tag, localizations);
 
   if (chameleonTagSaveCheckForMifareClassicEV1(card)) {
     name += " EV1";
@@ -195,6 +203,14 @@ TagType numberToChameleonTag(int type) {
     return TagType.mifare4K;
   } else if (type == TagType.em410X.value) {
     return TagType.em410X;
+  } else if (type == TagType.em410X16.value) {
+    return TagType.em410X16;
+  } else if (type == TagType.em410X32.value) {
+    return TagType.em410X32;
+  } else if (type == TagType.em410X64.value) {
+    return TagType.em410X64;
+  } else if (type == TagType.hidProx.value) {
+    return TagType.hidProx;
   } else if (type == TagType.ntag210.value) {
     return TagType.ntag210;
   } else if (type == TagType.ntag212.value) {
@@ -225,6 +241,10 @@ List<TagType> getTagTypes() {
     TagType.mifare4K,
     TagType.mifareMini,
     TagType.em410X,
+    TagType.em410X16,
+    TagType.em410X32,
+    TagType.em410X64,
+    TagType.hidProx,
     TagType.ultralight,
     TagType.ultralightC,
     TagType.ultralight11,
@@ -274,7 +294,7 @@ String numToVerCode(int versionCode) {
 }
 
 TagFrequency chameleonTagToFrequency(TagType tag) {
-  if (tag == TagType.em410X) {
+  if (getTagTypesByFrequency(TagFrequency.lf).contains(tag)) {
     return TagFrequency.lf;
   } else {
     return TagFrequency.hf;
@@ -464,7 +484,13 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.ultralight21
     ];
   } else if (frequency == TagFrequency.lf) {
-    return [TagType.em410X];
+    return [
+      TagType.em410X,
+      TagType.em410X16,
+      TagType.em410X32,
+      TagType.em410X64,
+      TagType.hidProx
+    ];
   }
 
   return [TagType.unknown];
@@ -511,4 +537,52 @@ TagType getTagTypeByDumpSize(int size) {
   }
 
   return TagType.unknown;
+}
+
+String getNameForHIDProxType(int type) {
+  return [
+    "HID H10301 26-bit",
+    "Indala 26-bit",
+    "Indala 27-bit",
+    "Indala ASC 27-bit",
+    "Tecom 27-bit",
+    "2804 Wiegand 28-bit",
+    "Indala 29-bit",
+    "ATS Wiegand 30-bit",
+    "HID ADT 31-bit",
+    "HID Check Point 32-bit",
+    "HID Hewlett-Packard 32-bit",
+    "Kastle 32-bit",
+    "Indala/Kantech KFS 32-bit",
+    "Wiegand 32-bit",
+    "HID D10202 33-bit",
+    "HID H10306 34-bit",
+    "Honeywell/Northern N10002 34-bit",
+    "Indala Optus 34-bit",
+    "Cardkey Smartpass 34-bit",
+    "BQT 34-bit",
+    "HID Corporate 1000 35-bit Std",
+    "HID KeyScan 36-bit",
+    "HID Simplex 36-bit",
+    "HID 36-bit Siemens",
+    "HID H10320 37-bit BCD",
+    "HID H10302 37-bit huge ID",
+    "HID H10304 37-bit",
+    "HID P10004 37-bit PCSC",
+    "HID Generic 37-bit",
+    "PointGuard MDI 37-bit",
+  ][type - 1];
+}
+
+LFCard getLFCardFromUID(TagType type, String uid) {
+  if (type == TagType.hidProx) {
+    return HIDCard.fromUID(uid);
+  }
+
+  return EM410XCard.fromUID(uid);
+}
+
+bool isEM410X(TagType type) {
+  return [TagType.em410X, TagType.em410X16, TagType.em410X32, TagType.em410X64]
+      .contains(type);
 }
