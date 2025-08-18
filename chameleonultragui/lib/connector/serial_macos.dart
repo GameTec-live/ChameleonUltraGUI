@@ -1,15 +1,19 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/connector/serial_ble.dart';
-import 'package:chameleonultragui/connector/serial_native.dart';
+import 'package:chameleonultragui/connector/serial_ble.dart' as ble;
+import 'package:chameleonultragui/connector/serial_native.dart' as serial;
 
 // Class combines macOS Native Serial and BLE serial
-class MacOSSerial extends AbstractSerial {
-  late BLESerial bleSerial = BLESerial(log: log);
-  late NativeSerial nativeSerial = NativeSerial(log: log);
+class SerialAdapter extends AbstractSerial {
+  late ble.SerialAdapter bleSerial = ble.SerialAdapter(log: log);
+  late serial.SerialAdapter nativeSerial = serial.SerialAdapter(log: log);
 
-  MacOSSerial({required super.log});
+  @override
+  // ignore: overridden_fields
+  String name = "macOS";
+
+  SerialAdapter({required super.log});
 
   @override
   Future<bool> performDisconnect() async {

@@ -6,11 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:usb_serial/usb_serial.dart';
 
 // Class for Android Serial Communication
-class MobileSerial extends AbstractSerial {
+class SerialAdapter extends AbstractSerial {
   Map<String, UsbDevice> deviceMap = {};
   UsbPort? port;
 
-  MobileSerial({required super.log});
+  @override
+  // ignore: overridden_fields
+  String name = "Android USB";
+
+  SerialAdapter({required super.log});
 
   @override
   bool isManualConnectionSupported() {

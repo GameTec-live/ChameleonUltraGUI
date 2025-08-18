@@ -5,6 +5,7 @@ import 'package:chameleonultragui/helpers/github.dart';
 import 'package:crypto/crypto.dart';
 import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -41,12 +42,6 @@ Future<(Uint8List, Uint8List)> unpackFirmware(Uint8List content) async {
   }
 
   return (applicationDat, applicationBin);
-}
-
-Future<File> createTempFile() async {
-  final tempDir = await Directory.systemTemp.createTemp('firmware');
-  final tempFile = File('${tempDir.path}/flash.zip');
-  return tempFile;
 }
 
 void validateFiles(Uint8List dat, Uint8List bin) {
@@ -131,9 +126,9 @@ Future<void> flashFile(
 
   // Flashing easter egg
   var rng = Random();
-  var randomNumber = rng.nextInt(100) + 1;
+  var randomNumber = rng.nextInt(100);
   appState.easterEgg = false;
-  if (randomNumber == 1) {
+  if (randomNumber == 69) {
     appState.easterEgg = true;
   }
 
@@ -146,49 +141,47 @@ Future<void> flashFile(
     await appState.connector!.performDisconnect();
   }
 
-  if (Platform.isAndroid) {
+  if (kIsWeb || Platform.isAndroid) {
     // BLE appears bit earlier than USB
     await asyncSleep(1000);
   }
 
   List<Chameleon> chameleons = [];
 
-  while (chameleons.isEmpty) {
-    await asyncSleep(250);
-    chameleons = await appState.connector!.availableChameleons(true);
-  }
-
-  var toFlash = chameleons[0];
-  Map<ConnectionType, bool> connections = {
-    ConnectionType.ble: false,
-    ConnectionType.usb: false
-  };
-
-  for (var chameleon in chameleons) {
-    if (connections[chameleon.type]!) {
-      throw ("More than one Chameleon in DFU. Please connect only one at a time");
+  if (!kIsWeb) {
+    while (chameleons.isEmpty) {
+      await asyncSleep(250);
+      chameleons = await appState.connector!.availableChameleons(true);
     }
 
-    connections[chameleon.type] = true;
-  }
+    Map<ConnectionType, bool> connections = {
+      ConnectionType.ble: false,
+      ConnectionType.usb: false
+    };
 
-  if (toFlash.type == ConnectionType.ble) {
     for (var chameleon in chameleons) {
-      if (chameleon.type != ConnectionType.ble) {
-        toFlash = chameleon;
-        break;
+      if (connections[chameleon.type]!) {
+        throw ("More than one Chameleon in DFU. Please connect only one at a time");
       }
+
+      connections[chameleon.type] = true;
     }
+
+    await appState.connector!.connectSpecificDevice(chameleons[0].port);
+  } else {
+    await asyncSleep(1000);
+    await appState.connector!.connectSpecificDevice(null);
   }
 
-  await appState.connector!.connectSpecificDevice(chameleons[0].port);
+  appState.changesMade();
 
   if (scaffoldMessenger != null) {
     scaffoldMessenger.removeCurrentSnackBar();
   }
 
   var dfu = DFUCommunicator(appState.log!,
-      port: appState.connector, viaBLE: toFlash.type == ConnectionType.ble);
+      port: appState.connector,
+      viaBLE: appState.connector!.connectionType == ConnectionType.ble);
   appState.changesMade();
   await dfu.setPRN();
   await dfu.getMTU();

@@ -255,9 +255,9 @@ class HomePageState extends State<HomePage> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 IconButton(
-                                  onPressed: () {
-                                    // Disconnect
-                                    appState.connector!.performDisconnect();
+                                  onPressed: () async {
+                                    await appState.connector!
+                                        .performDisconnect();
                                     appState.changesMade();
                                   },
                                   icon: const Icon(Icons.close),
@@ -365,6 +365,7 @@ class HomePageState extends State<HomePage> {
                                   latestCommit = await latestAvailableCommit(
                                       appState.connector!.device);
                                 } catch (e) {
+                                  appState.log!.e(e);
                                   if (context.mounted) {
                                     scaffoldMessenger.hideCurrentSnackBar();
                                     snackBar = SnackBar(
@@ -424,6 +425,7 @@ class HomePageState extends State<HomePage> {
                                     await flashFirmware(appState,
                                         scaffoldMessenger: scaffoldMessenger);
                                   } catch (e) {
+                                    appState.log!.e(e);
                                     if (context.mounted) {
                                       scaffoldMessenger.hideCurrentSnackBar();
                                       snackBar = SnackBar(

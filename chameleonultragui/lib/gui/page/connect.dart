@@ -5,6 +5,7 @@ import 'package:chameleonultragui/gui/menu/manual_connect.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -71,6 +72,26 @@ class ConnectPage extends StatelessWidget {
                         ),
                         scrollDirection: Axis.vertical,
                         children: [
+                          if (kIsWeb)
+                            Center(
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  await appState.connector!
+                                      .connectSpecificDevice(null);
+                                  if (appState.connector!.connected) {
+                                    appState.communicator =
+                                        ChameleonCommunicator(appState.log!,
+                                            port: appState.connector);
+                                    appState.connector!.device = await appState
+                                        .communicator!
+                                        .getDeviceType();
+                                    appState.changesMade();
+                                  }
+                                },
+                                icon: const Icon(Icons.add),
+                                label: const Text('Click to connect'),
+                              ),
+                            ),
                           ...result.map<Widget>((chameleonDevice) {
                             return ElevatedButton(
                               onPressed: () async {

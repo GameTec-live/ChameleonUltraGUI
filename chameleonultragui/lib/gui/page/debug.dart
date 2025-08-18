@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
@@ -35,9 +34,8 @@ class DebugPage extends StatelessWidget {
               Align(
                 alignment: Alignment.topRight,
                 child: IconButton(
-                  onPressed: () {
-                    // Disconnect
-                    appState.connector!.performDisconnect();
+                  onPressed: () async {
+                    await appState.connector!.performDisconnect();
                     appState.changesMade();
                   },
                   icon: const Icon(Icons.close),
@@ -53,8 +51,8 @@ class DebugPage extends StatelessWidget {
               ),
               Text('⚠️ ${localizations.warned} ⚠️',
                   textScaler: const TextScaler.linear(3)),
-              Text('${localizations.platform}: ${Platform.operatingSystem}'),
-              Text('${localizations.serial_protocol}: ${appState.connector}'),
+              Text(
+                  '${localizations.serial_protocol}: ${appState.connector!.name}'),
               Text(
                   '${localizations.chameleon_connected}: ${appState.connector!.connected}'),
               Text(
