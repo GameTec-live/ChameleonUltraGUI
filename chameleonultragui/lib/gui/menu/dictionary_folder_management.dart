@@ -149,7 +149,7 @@ class DictionaryFolderManagementMenuState
                   Text(localizations.confirm_deletion_text(folder.name)),
                   if (dictionariesInFolder.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    Text('${dictionariesInFolder.length} ${localizations.dictionaries.toLowerCase()} ${localizations.dictionaries.toLowerCase().endsWith('s') ? 'are' : 'is'} in this folder:'),
+                    Text(localizations.cards_in_this_folder(dictionariesInFolder.length.toString())),
                     const SizedBox(height: 8),
                     RadioListTile<bool>(
                       title: Text(localizations.move_cards_to_parent),

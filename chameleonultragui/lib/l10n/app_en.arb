@@ -370,5 +370,9 @@
   "root_folder": "Root",
   "no_folder": "No Folder",
   "search": "Search",
-  "empty": "Empty"
+  "empty": "Empty",
+  "folder_name_cannot_be_empty": "Folder name cannot be empty",
+  "folder_name_too_long": "Folder name is too long",
+  "cards_in_this_folder": "Cards in this folder: {count}",
+  "dictionaries_in_folder": "Dictionaries in this folder: {count}"
 }

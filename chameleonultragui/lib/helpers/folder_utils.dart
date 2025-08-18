@@ -1,4 +1,6 @@
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/widgets.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 /// Utility class for folder-related operations and validations
 class FolderUtils {
@@ -37,13 +39,15 @@ class FolderUtils {
     return count;
   }
 
-  /// Validate folder name
-  static String? validateFolderName(String name) {
+
+  /// Validate folder name with localization
+  static String? validateFolderNameLocalized(BuildContext context, String name) {
+    final localizations = AppLocalizations.of(context)!;
     if (name.trim().isEmpty) {
-      return "Folder name cannot be empty";
+      return localizations.folder_name_cannot_be_empty;
     }
     if (name.length > 50) {
-      return "Folder name is too long";
+      return localizations.folder_name_too_long;
     }
     return null;
   }

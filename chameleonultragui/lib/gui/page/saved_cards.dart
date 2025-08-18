@@ -1123,7 +1123,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   icon: dictCount > 0 ? Icons.folder : Icons.folder_outlined,
                                   iconColor: folder.color,
                                   firstLine: folder.name,
-                                  secondLine: "$dictCount dictionaries",
+                                  secondLine: localizations.dictionaries_in_folder(dictCount.toString()),
                                   itemIndex: index,
                                   onPressed: () {
                                     setState(() {
