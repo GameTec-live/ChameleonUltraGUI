@@ -15,6 +15,7 @@ class Dictionary {
   String name;
   List<Uint8List> keys;
   Color color;
+  String? folderId; // Add folder association
 
   factory Dictionary.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
@@ -25,11 +26,12 @@ class Dictionary {
       data['color'] = colorToHex(Colors.deepOrange);
     }
     final color = hexToColor(data['color']);
+    final folderId = data['folderId'] as String?;
     List<Uint8List> keys = [];
     for (var key in encodedKeys) {
       keys.add(Uint8List.fromList(List<int>.from(key)));
     }
-    return Dictionary(id: id, name: name, keys: keys, color: color);
+    return Dictionary(id: id, name: name, keys: keys, color: color, folderId: folderId);
   }
 
   String toJson() {
@@ -37,6 +39,7 @@ class Dictionary {
       'id': id,
       'name': name,
       'color': colorToHex(color),
+      'folderId': folderId,
       'keys': keys.map((key) => key.toList()).toList()
     });
   }
@@ -62,8 +65,103 @@ class Dictionary {
       {String? id,
       this.name = "",
       this.keys = const [],
-      this.color = Colors.deepOrange})
+      this.color = Colors.deepOrange,
+      this.folderId})
       : id = id ?? const Uuid().v4();
+}
+
+class DictionaryFolder {
+  String id;
+  String name;
+  Color color;
+  String? parentId;
+  List<String> dictionaryIds;
+  List<String> subFolderIds;
+
+  factory DictionaryFolder.fromJson(String json) {
+    Map<String, dynamic> data = jsonDecode(json);
+    final id = data['id'] as String;
+    final name = data['name'] as String;
+    final color = data['color'] == null ? Colors.blue : hexToColor(data['color']);
+    final parentId = data['parentId'] as String?;
+    final dictionaryIds = List<String>.from(data['dictionaryIds'] ?? []);
+    final subFolderIds = List<String>.from(data['subFolderIds'] ?? []);
+
+    return DictionaryFolder(
+        id: id,
+        name: name,
+        color: color,
+        parentId: parentId,
+        dictionaryIds: dictionaryIds,
+        subFolderIds: subFolderIds);
+  }
+
+  String toJson() {
+    return jsonEncode({
+      'id': id,
+      'name': name,
+      'color': colorToHex(color),
+      'parentId': parentId,
+      'dictionaryIds': dictionaryIds,
+      'subFolderIds': subFolderIds,
+    });
+  }
+
+  DictionaryFolder({
+    String? id,
+    required this.name,
+    this.color = Colors.blue,
+    this.parentId,
+    this.dictionaryIds = const [],
+    this.subFolderIds = const [],
+  }) : id = id ?? const Uuid().v4();
+}
+
+class CardFolder {
+  String id;
+  String name;
+  Color color;
+  String? parentId;
+  List<String> cardIds;
+  List<String> subFolderIds;
+
+  factory CardFolder.fromJson(String json) {
+    Map<String, dynamic> data = jsonDecode(json);
+    final id = data['id'] as String;
+    final name = data['name'] as String;
+    final color = data['color'] == null ? Colors.blue : hexToColor(data['color']);
+    final parentId = data['parentId'] as String?;
+    final cardIds = List<String>.from(data['cardIds'] ?? []);
+    final subFolderIds = List<String>.from(data['subFolderIds'] ?? []);
+
+    return CardFolder(
+        id: id,
+        name: name,
+        color: color,
+        parentId: parentId,
+        cardIds: cardIds,
+        subFolderIds: subFolderIds);
+  }
+
+  String toJson() {
+    return jsonEncode({
+      'id': id,
+      'name': name,
+      'color': colorToHex(color),
+      'parentId': parentId,
+      'cardIds': cardIds,
+      'subFolderIds': subFolderIds,
+    });
+  }
+
+  CardFolder({
+    String? id,
+    required this.name,
+    this.color = Colors.blue,
+    this.parentId,
+    this.cardIds = const [],
+    this.subFolderIds = const [],
+  }) : id = id ?? const Uuid().v4();
 }
 
 class CardSave {
@@ -77,6 +175,7 @@ class CardSave {
   List<Uint8List> data;
   CardSaveExtra extraData;
   Color color;
+  String? folderId; // Add folder association
 
   factory CardSave.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
@@ -90,6 +189,7 @@ class CardSave {
     final extraData = CardSaveExtra.import(data['extra'] ?? {});
     final color =
         data['color'] == null ? Colors.deepOrange : hexToColor(data['color']);
+    final folderId = data['folderId'] as String?;
     List<Uint8List> tagData = (data['data'] as List<dynamic>)
         .map((e) => Uint8List.fromList(List<int>.from(e)))
         .toList();
@@ -104,7 +204,8 @@ class CardSave {
         color: color,
         extraData: extraData,
         ats: Uint8List.fromList(ats),
-        atqa: Uint8List.fromList(atqa));
+        atqa: Uint8List.fromList(atqa),
+        folderId: folderId);
   }
 
   String toJson() {
@@ -119,6 +220,7 @@ class CardSave {
       'color': colorToHex(color),
       'data': data.map((data) => data.toList()).toList(),
       'extra': extraData.export(),
+      'folderId': folderId,
     });
   }
 
@@ -133,6 +235,7 @@ class CardSave {
     CardSaveExtra? extraData,
     this.color = Colors.deepOrange,
     this.data = const [],
+    this.folderId,
   })  : id = id ?? const Uuid().v4(),
         sak = sak ?? 0,
         atqa = atqa ?? Uint8List(0),
@@ -307,6 +410,297 @@ class SharedPreferencesProvider extends ChangeNotifier {
       output.add(card.toJson());
     }
     _sharedPreferences.setStringList('cards', output);
+  }
+
+  List<CardFolder> getFolders() {
+    List<CardFolder> output = [];
+    final data = _sharedPreferences.getStringList('card_folders') ?? [];
+    for (var folder in data) {
+      output.add(CardFolder.fromJson(folder));
+    }
+    return output;
+  }
+
+  void setFolders(List<CardFolder> folders) {
+    List<String> output = [];
+    for (var folder in folders) {
+      output.add(folder.toJson());
+    }
+    _sharedPreferences.setStringList('card_folders', output);
+  }
+
+  CardFolder? getFolder(String folderId) {
+    final folders = getFolders();
+    try {
+      return folders.firstWhere((folder) => folder.id == folderId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<CardSave> getCardsInFolder(String? folderId) {
+    final cards = getCards();
+    return cards.where((card) => card.folderId == folderId).toList();
+  }
+
+  List<CardFolder> getSubfolders(String? parentId) {
+    final folders = getFolders();
+    return folders.where((folder) => folder.parentId == parentId).toList();
+  }
+
+  void moveCardToFolder(String cardId, String? folderId) {
+    final cards = getCards();
+    final folders = getFolders();
+    
+    // Update card
+    for (var card in cards) {
+      if (card.id == cardId) {
+        // Remove from old folder
+        if (card.folderId != null) {
+          for (var folder in folders) {
+            if (folder.id == card.folderId) {
+              folder.cardIds.remove(cardId);
+              break;
+            }
+          }
+        }
+        
+        // Add to new folder
+        card.folderId = folderId;
+        if (folderId != null) {
+          for (var folder in folders) {
+            if (folder.id == folderId) {
+              if (!folder.cardIds.contains(cardId)) {
+                folder.cardIds.add(cardId);
+              }
+              break;
+            }
+          }
+        }
+        break;
+      }
+    }
+    
+    setCards(cards);
+    setFolders(folders);
+  }
+
+  void createFolder(String name, {String? parentId, Color? color}) {
+    final folders = getFolders();
+    final newFolder = CardFolder(
+      name: name,
+      parentId: parentId,
+      color: color ?? Colors.blue,
+    );
+    
+    // Add to parent if specified
+    if (parentId != null) {
+      for (var folder in folders) {
+        if (folder.id == parentId) {
+          folder.subFolderIds.add(newFolder.id);
+          break;
+        }
+      }
+    }
+    
+    folders.add(newFolder);
+    setFolders(folders);
+  }
+
+  void deleteFolder(String folderId, {bool moveCardsToParent = true}) {
+    final folders = getFolders();
+    final cards = getCards();
+    CardFolder? folderToDelete;
+    
+    // Find folder to delete
+    for (var folder in folders) {
+      if (folder.id == folderId) {
+        folderToDelete = folder;
+        break;
+      }
+    }
+    
+    if (folderToDelete == null) return;
+    
+    // Handle cards in folder
+    if (moveCardsToParent) {
+      for (var card in cards) {
+        if (card.folderId == folderId) {
+          card.folderId = folderToDelete.parentId;
+        }
+      }
+    } else {
+      // Delete cards in folder
+      cards.removeWhere((card) => card.folderId == folderId);
+    }
+    
+    // Handle subfolders - move to parent
+    for (var folder in folders) {
+      if (folder.parentId == folderId) {
+        folder.parentId = folderToDelete.parentId;
+      }
+    }
+    
+    // Remove from parent folder
+    if (folderToDelete.parentId != null) {
+      for (var folder in folders) {
+        if (folder.id == folderToDelete.parentId) {
+          folder.subFolderIds.remove(folderId);
+          break;
+        }
+      }
+    }
+    
+    // Remove folder
+    folders.removeWhere((folder) => folder.id == folderId);
+    
+    setCards(cards);
+    setFolders(folders);
+  }
+
+  void renameFolder(String folderId, String newName) {
+    final folders = getFolders();
+    for (var folder in folders) {
+      if (folder.id == folderId) {
+        folder.name = newName;
+        break;
+      }
+    }
+    setFolders(folders);
+  }
+
+  // Dictionary Folder Management Methods
+  List<DictionaryFolder> getDictionaryFolders() {
+    List<DictionaryFolder> output = [];
+    final data = _sharedPreferences.getStringList('dictionary_folders') ?? [];
+    for (var folder in data) {
+      output.add(DictionaryFolder.fromJson(folder));
+    }
+    return output;
+  }
+
+  void setDictionaryFolders(List<DictionaryFolder> folders) {
+    List<String> output = [];
+    for (var folder in folders) {
+      output.add(folder.toJson());
+    }
+    _sharedPreferences.setStringList('dictionary_folders', output);
+  }
+
+  DictionaryFolder? getDictionaryFolder(String folderId) {
+    final folders = getDictionaryFolders();
+    for (var folder in folders) {
+      if (folder.id == folderId) {
+        return folder;
+      }
+    }
+    return null;
+  }
+
+  List<DictionaryFolder> getDictionarySubfolders(String? parentId) {
+    final folders = getDictionaryFolders();
+    return folders.where((folder) => folder.parentId == parentId).toList();
+  }
+
+  List<Dictionary> getDictionariesInFolder(String? folderId) {
+    final dictionaries = getDictionaries();
+    return dictionaries.where((dict) => dict.folderId == folderId).toList();
+  }
+
+  void moveDictionaryToFolder(String dictionaryId, String? targetFolderId) {
+    final dictionaries = getDictionaries();
+    for (var dictionary in dictionaries) {
+      if (dictionary.id == dictionaryId) {
+        dictionary.folderId = targetFolderId;
+        break;
+      }
+    }
+    setDictionaries(dictionaries);
+  }
+
+  void createDictionaryFolder(String name, String? parentId, {Color color = Colors.blue}) {
+    final folders = getDictionaryFolders();
+    
+    final newFolder = DictionaryFolder(
+      name: name,
+      parentId: parentId,
+      color: color,
+    );
+
+    // Add to parent if specified
+    if (parentId != null) {
+      for (var folder in folders) {
+        if (folder.id == parentId) {
+          folder.subFolderIds.add(newFolder.id);
+          break;
+        }
+      }
+    }
+    
+    folders.add(newFolder);
+    setDictionaryFolders(folders);
+  }
+
+  void deleteDictionaryFolder(String folderId, {bool moveDictionariesToParent = true}) {
+    final folders = getDictionaryFolders();
+    final dictionaries = getDictionaries();
+    
+    // Find folder to delete
+    DictionaryFolder? folderToDelete;
+    for (var folder in folders) {
+      if (folder.id == folderId) {
+        folderToDelete = folder;
+        break;
+      }
+    }
+    
+    if (folderToDelete == null) return;
+    
+    // Handle dictionaries in folder
+    for (var dictionary in dictionaries) {
+      if (dictionary.folderId == folderId) {
+        if (moveDictionariesToParent) {
+          dictionary.folderId = folderToDelete.parentId;
+        } else {
+          // Delete dictionaries in folder
+          dictionaries.removeWhere((d) => d.id == dictionary.id);
+        }
+      }
+    }
+    
+    // Handle subfolders - move to parent
+    for (var folder in folders) {
+      if (folder.parentId == folderId) {
+        folder.parentId = folderToDelete.parentId;
+      }
+    }
+    
+    // Remove from parent folder
+    if (folderToDelete.parentId != null) {
+      for (var folder in folders) {
+        if (folder.id == folderToDelete.parentId) {
+          folder.subFolderIds.remove(folderId);
+          break;
+        }
+      }
+    }
+    
+    // Remove folder
+    folders.removeWhere((folder) => folder.id == folderId);
+    
+    setDictionaries(dictionaries);
+    setDictionaryFolders(folders);
+  }
+
+  void renameDictionaryFolder(String folderId, String newName) {
+    final folders = getDictionaryFolders();
+    for (var folder in folders) {
+      if (folder.id == folderId) {
+        folder.name = newName;
+        break;
+      }
+    }
+    setDictionaryFolders(folders);
   }
 
   void setLocale(Locale loc) {

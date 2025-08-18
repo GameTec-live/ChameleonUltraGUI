@@ -170,6 +170,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               name: nameController.text,
               keys: stringToDict(keysController.text),
               color: currentColor,
+              folderId: widget.isNew ? null : widget.dictionary.folderId,
             );
 
             var dictionaries =

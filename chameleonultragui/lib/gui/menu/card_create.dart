@@ -13,7 +13,9 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class CardCreateMenu extends StatefulWidget {
-  const CardCreateMenu({super.key});
+  final String? targetFolderId;
+  
+  const CardCreateMenu({super.key, this.targetFolderId});
 
   @override
   CardCreateMenuState createState() => CardCreateMenuState();
@@ -514,6 +516,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                 sak: sak,
                 atqa: atqa,
                 uid: finalUid,
+                folderId: widget.targetFolderId,
                 extraData: CardSaveExtra(
                   ultralightSignature:
                       hexToBytes(ultralightSignatureController.text),
