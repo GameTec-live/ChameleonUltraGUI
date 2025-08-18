@@ -61,6 +61,10 @@ enum ChameleonCommand {
   bleGetPairEnable(1036),
   bleSetPairEnable(1037),
 
+  // long press threshold
+  getLongPressThreshold(1038),
+  setLongPressThreshold(1039),
+
   // hf reader commands
   scan14ATag(2000),
   mf1SupportDetect(2001),
@@ -409,6 +413,7 @@ class DeviceSettings {
   ButtonConfig bLongPress;
   bool pairingEnabled;
   String key;
+  int longPressThreshold;
 
   DeviceSettings(
       {this.animation = AnimationSetting.none,
@@ -417,7 +422,8 @@ class DeviceSettings {
       this.aLongPress = ButtonConfig.disable,
       this.bLongPress = ButtonConfig.disable,
       this.pairingEnabled = false,
-      this.key = ""});
+      this.key = "",
+      this.longPressThreshold = 1000});
 }
 
 enum MifareClassicValueBlockOperator {
@@ -1411,7 +1417,7 @@ class ChameleonCommunicator {
 
   Future<DeviceSettings> getDeviceSettings() async {
     var resp = (await sendCmd(ChameleonCommand.getDeviceSettings))!.data;
-    if (resp[0] != 5) {
+    if (resp[0] != 5 && resp[0] != 6) {
       throw ("Invalid settings version");
     }
 
@@ -1421,6 +1427,14 @@ class ChameleonCommunicator {
         aLongPress = getButtonConfigType(resp[4]),
         bLongPress = getButtonConfigType(resp[5]);
 
+    // Default long press threshold is 1000ms
+    int longPressThreshold = 1000;
+    
+    // Version 6 includes the long press threshold
+    if (resp[0] == 6 && resp.length >= 15) {
+      longPressThreshold = bytesToU16(resp.sublist(13, 15));
+    }
+
     return DeviceSettings(
         animation: animationMode,
         aPress: aPress,
@@ -1428,7 +1442,8 @@ class ChameleonCommunicator {
         aLongPress: aLongPress,
         bLongPress: bLongPress,
         pairingEnabled: resp[6] == 1,
-        key: utf8.decode(resp.sublist(7, 13), allowMalformed: true));
+        key: utf8.decode(resp.sublist(7, 13), allowMalformed: true),
+        longPressThreshold: longPressThreshold);
   }
 
   Future<List<int>> getDeviceCapabilities() async {
@@ -1571,5 +1586,31 @@ class ChameleonCommunicator {
           (value >> 8) & 0xFF,
           (value >> 16) & 0xFF
         ]));
+  }
+
+  Future<int> getLongPressThreshold() async {
+    var resp = await sendCmd(ChameleonCommand.getLongPressThreshold);
+    if (resp!.data.length != 2) throw ("Invalid data length");
+    return bytesToU16(resp.data);
+  }
+
+  Future<bool> setLongPressThreshold(int threshold) async {
+    try {
+      // Enforce minimum value of 200ms
+      if (threshold < 200) {
+        threshold = 200;
+      }
+      // Maximum value is implicitly handled by uint16 (65535)
+      if (threshold > 65535) {
+        threshold = 65535;
+      }
+      
+      await sendCmd(ChameleonCommand.setLongPressThreshold,
+          data: Uint8List.fromList(u16ToBytes(threshold)));
+      return true;
+    } catch (e) {
+      log.e("Error setting long press threshold: $e");
+      return false;
+    }
   }
 }

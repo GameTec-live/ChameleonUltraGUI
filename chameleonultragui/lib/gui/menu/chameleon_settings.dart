@@ -20,9 +20,50 @@ class ChameleonSettings extends StatefulWidget {
 }
 
 class ChameleonSettingsState extends State<ChameleonSettings> {
+  int? currentLongPressThreshold;
+
   @override
   void initState() {
     super.initState();
+    // Fetch the current long press threshold when the widget initializes
+    _updateLongPressThreshold();
+  }
+
+  Future<void> _updateLongPressThreshold() async {
+    if (!mounted) return;
+    
+    var appState = context.read<ChameleonGUIState>();
+    
+    // Don't attempt to fetch if not connected
+    if (!appState.connector!.connected || appState.communicator == null) return;
+    
+    try {
+      int threshold = await appState.communicator!.getLongPressThreshold();
+      if (mounted) {
+        setState(() {
+          currentLongPressThreshold = threshold;
+        });
+      }
+    } catch (e) {
+      // Log the error but don't display it to the user, we'll use the default value
+      appState.log?.w("Error getting long press threshold: $e");
+      
+      // If this was a timeout or busy error, try again once after a short delay
+      if (e.toString().contains("Timeout") && mounted) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        try {
+          int threshold = await appState.communicator!.getLongPressThreshold();
+          if (mounted) {
+            setState(() {
+              currentLongPressThreshold = threshold;
+            });
+          }
+        } catch (retryError) {
+          // Just use the default from settings
+          appState.log?.w("Retry failed: $retryError");
+        }
+      }
+    }
   }
 
   Future<DeviceSettings> getSettingsData() async {
@@ -304,6 +345,113 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           setState(() {});
                           appState.changesMade();
                         }),
+                    const SizedBox(height: 10),
+                    Text("Buttons Long Press Threshold:",
+                        textScaler: const TextScaler.linear(0.9)),
+                    const SizedBox(height: 7),
+                    Builder(
+                      builder: (context) {
+                        // Use the directly fetched value if available, otherwise fall back to settings
+                        final threshold = currentLongPressThreshold ?? settings.longPressThreshold;
+                        
+                        // Create the controller outside of setState to persist the value
+                        final TextEditingController thresholdController = 
+                          TextEditingController(text: threshold.toString());
+                        final GlobalKey<FormFieldState> fieldKey = GlobalKey<FormFieldState>();
+                        
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                key: fieldKey,
+                                controller: thresholdController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: "Threshold (ms)",
+                                  helperText: "200-65535 ms",
+                                  hintText: "1000",
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return "Please enter a value";
+                                  }
+                                  int? threshold = int.tryParse(value);
+                                  if (threshold == null) {
+                                    return "Please enter a valid number";
+                                  }
+                                  if (threshold < 200) {
+                                    return "Minimum is 200ms";
+                                  }
+                                  if (threshold > 65535) {
+                                    return "Maximum is 65535ms";
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            ElevatedButton(
+                              child: const Text("Save"),
+                              onPressed: () async {
+                                if (fieldKey.currentState!.validate()) {
+                                  try {
+                                    int threshold = int.parse(thresholdController.text);
+                                    bool success = await appState.communicator!.setLongPressThreshold(threshold);
+                                    
+                                    if (success) {
+                                      await appState.communicator!.saveSettings();
+                                      
+                                      setState(() {
+                                        currentLongPressThreshold = threshold;
+                                      });
+                                      
+                                      appState.changesMade();
+                                      
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text("Failed to set threshold"),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("Error saving threshold: ${e.toString()}"),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    
+                                    if (!appState.connector!.connected) {
+                                      Navigator.of(context).pop();
+                                    }
+                                  }
+                                }
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.info_outline),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) => AlertDialog(
+                                    title: const Text("Long Press Threshold"),
+                                    content: const Text(
+                                        "Sets the time in milliseconds for how long a button needs to be pressed to be considered a 'long press'.\n\nDefault: 1000ms (1 second)"),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: Text(localizations.close),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        );
+                      }
+                    ),
                     const SizedBox(height: 10),
                     const Text("BLE:"),
                     const SizedBox(height: 10),
