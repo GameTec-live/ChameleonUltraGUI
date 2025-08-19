@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
-enum SearchFilter { all, hf, lf }
+enum SearchFilter { all, hf, lf, folder }
 
 class CardSearchDelegate extends SearchDelegate<String> {
   final List<CardSave> cards;
@@ -47,6 +47,14 @@ class CardSearchDelegate extends SearchDelegate<String> {
                 value: SearchFilter.lf,
                 child: Text(
                   localizations.lf,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              DropdownMenuItem(
+                value: SearchFilter.folder,
+                child: Text(
+                  localizations.folders,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

@@ -20,6 +20,10 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
 import 'package:chameleonultragui/gui/menu/card_create.dart';
 import 'package:chameleonultragui/gui/menu/dictionary_view.dart';
+import 'package:chameleonultragui/gui/menu/folder_management.dart';
+import 'package:chameleonultragui/gui/menu/move_card_to_folder.dart';
+import 'package:chameleonultragui/gui/menu/dictionary_folder_management.dart';
+import 'package:chameleonultragui/gui/menu/move_dictionary_to_folder.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
 
@@ -35,8 +39,147 @@ class SavedCardsPage extends StatefulWidget {
 
 class SavedCardsPageState extends State<SavedCardsPage> {
   TagType selectedType = TagType.unknown;
+  String? currentFolderId; // null means root folder
+  String? currentDictionaryFolderId; // null means root folder for dictionaries
+  bool showFolders = true; // For Cards
+  bool showDictionaryFolders = true; // For Dictionaries
+  final TextEditingController _folderNameController = TextEditingController();
 
-  CardSave pm3JsonToCardSave(String json) {
+  @override
+  void dispose() {
+    _folderNameController.dispose();
+    super.dispose();
+  }
+
+  void _showCreateFolderDialog() {
+    var localizations = AppLocalizations.of(context)!;
+    _folderNameController.clear();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(localizations.create_folder),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _folderNameController,
+                decoration: InputDecoration(
+                  labelText: localizations.folder_name,
+                  hintText: localizations.enter_folder_name,
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              if (currentFolderId != null) ...[
+                Text('${localizations.folder}: ${context.read<ChameleonGUIState>().sharedPreferencesProvider.getFolder(currentFolderId!)?.name ?? localizations.root_folder}'),
+              ] else ...[
+                Text('${localizations.folder}: ${localizations.root_folder}'),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(localizations.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                if (_folderNameController.text.isNotEmpty) {
+                  var appState = context.read<ChameleonGUIState>();
+                  appState.sharedPreferencesProvider.createFolder(
+                    _folderNameController.text,
+                    parentId: currentFolderId,
+                  );
+                  appState.changesMade();
+                  setState(() {});
+                  Navigator.of(context).pop();
+                  
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${localizations.folder} "${_folderNameController.text}" ${localizations.create}d'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              child: Text(localizations.create),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCreateDictionaryFolderDialog() {
+    var localizations = AppLocalizations.of(context)!;
+    _folderNameController.clear();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(localizations.create_folder),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _folderNameController,
+                decoration: InputDecoration(
+                  labelText: localizations.folder_name,
+                  hintText: localizations.enter_folder_name,
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              if (currentDictionaryFolderId != null) ...[
+                Text('${localizations.folder}: ${context.read<ChameleonGUIState>().sharedPreferencesProvider.getDictionaryFolder(currentDictionaryFolderId!)?.name ?? localizations.root_folder}'),
+              ] else ...[
+                Text('${localizations.folder}: ${localizations.root_folder}'),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(localizations.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                if (_folderNameController.text.isNotEmpty) {
+                  var appState = context.read<ChameleonGUIState>();
+                  appState.sharedPreferencesProvider.createDictionaryFolder(
+                    _folderNameController.text,
+                    currentDictionaryFolderId,
+                  );
+                  appState.changesMade();
+                  setState(() {});
+                  Navigator.of(context).pop();
+                  
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${localizations.folder} "${_folderNameController.text}" ${localizations.create}d'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              child: Text(localizations.create),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  CardSave pm3JsonToCardSave(String json, {String? folderId}) {
     Map<String, dynamic> data = jsonDecode(json);
 
     final String id = const Uuid().v4();
@@ -80,11 +223,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
         tag: tag,
         data: tagData,
         color: color,
+        folderId: folderId,
         ats: Uint8List.fromList(ats),
         atqa: Uint8List.fromList(atqa));
   }
 
-  CardSave flipperNfcToCardSave(String data) {
+  CardSave flipperNfcToCardSave(String data, {String? folderId}) {
     final String id = const Uuid().v4();
     final String uid =
         RegExp(r'UID:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!;
@@ -128,11 +272,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
         tag: tag,
         data: tagData,
         color: color,
+        folderId: folderId,
         ats: Uint8List.fromList(ats),
         atqa: Uint8List.fromList(atqa));
   }
 
-  CardSave mctToCardSave(String data) {
+  CardSave mctToCardSave(String data, {String? folderId}) {
     final String id = const Uuid().v4();
     final String uid = data.split("\n")[1].substring(0, 8);
     final int sak = hexToBytes(data.split("\n")[1].substring(10, 12))[0];
@@ -173,6 +318,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
         tag: tag,
         data: tagData,
         color: color,
+        folderId: folderId,
         ats: Uint8List.fromList(ats),
         atqa: Uint8List.fromList(atqa));
   }
@@ -183,10 +329,56 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     var dictionaries = appState.sharedPreferencesProvider.getDictionaries();
     var tags = appState.sharedPreferencesProvider.getCards();
     var localizations = AppLocalizations.of(context)!;
+
+    // Filter cards based on current folder
+    List<CardSave> displayCards = showFolders 
+        ? appState.sharedPreferencesProvider.getCardsInFolder(currentFolderId)
+        : tags;
+    
+    // Get subfolders of current folder
+    List<CardFolder> displayFolders = showFolders 
+        ? appState.sharedPreferencesProvider.getSubfolders(currentFolderId)
+        : [];
+
+    // Filter dictionaries based on current folder
+    List<Dictionary> displayDictionaries = showDictionaryFolders 
+        ? appState.sharedPreferencesProvider.getDictionariesInFolder(currentDictionaryFolderId)
+        : dictionaries;
+    
+    // Get dictionary subfolders of current folder
+    List<DictionaryFolder> displayDictionaryFolders = showDictionaryFolders 
+        ? appState.sharedPreferencesProvider.getDictionarySubfolders(currentDictionaryFolderId)
+        : [];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.saved_cards),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return const FolderManagementMenu();
+                },
+              );
+              setState(() {});
+            },
+            icon: const Icon(Icons.folder_outlined),
+            tooltip: localizations.folder_management,
+          ),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                showFolders = !showFolders;
+              });
+            },
+            icon: Icon(showFolders ? Icons.view_list : Icons.folder),
+            tooltip: showFolders ? localizations.cards : localizations.folders,
+          ),
+        ],
       ),
+
       body: Column(
         children: [
           Expanded(
@@ -227,16 +419,17 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 if (string
                                     .contains("\"Created\": \"proxmark3\",")) {
                                   // PM3 JSON
-                                  tag = pm3JsonToCardSave(string);
+                                  tag = pm3JsonToCardSave(string, folderId: currentFolderId);
                                 } else if (string
                                     .contains("Filetype: Flipper NFC device")) {
                                   // Flipper NFC
-                                  tag = flipperNfcToCardSave(string);
+                                  tag = flipperNfcToCardSave(string, folderId: currentFolderId);
                                 } else if (string.contains("+Sector: 0")) {
                                   // Mifare Classic Tool
-                                  tag = mctToCardSave(string);
+                                  tag = mctToCardSave(string, folderId: currentFolderId);
                                 } else {
                                   tag = CardSave.fromJson(string);
+                                  tag.folderId = currentFolderId;
                                 }
 
                                 tags.add(tag);
@@ -459,6 +652,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                   atqa: hexToBytes(
                                                       atqa4Controller.text),
                                                   uid: uid4Controller.text,
+                                                  folderId: currentFolderId,
                                                   tag: selectedType,
                                                   data: blocks);
                                               tags.add(tag);
@@ -521,6 +715,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                 atqa: hexToBytes(
                                                     atqa7Controller.text),
                                                 uid: uid7Controller.text,
+                                                folderId: currentFolderId,
                                                 tag: selectedType,
                                                 data: blocks);
                                             tags.add(tag);
@@ -553,10 +748,20 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: ElevatedButton(
+                          onPressed: () {
+                            _showCreateFolderDialog();
+                          },
+                          style: customCardButtonStyle(appState),
+                          child: const Icon(Icons.create_new_folder),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
                           onPressed: () async {
                             showDialog(
                               context: context,
-                              builder: (context) => const CardCreateMenu(),
+                              builder: (context) => CardCreateMenu(targetFolderId: currentFolderId),
                             );
                           },
                           style: customCardButtonStyle(appState),
@@ -569,18 +774,75 @@ class SavedCardsPageState extends State<SavedCardsPage> {
               ]),
               Expanded(
                   child: SingleChildScrollView(
-                      child: AlignedGridView.count(
-                          clipBehavior: Clip.antiAlias,
-                          physics: const NeverScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(10),
-                          crossAxisCount:
-                              MediaQuery.of(context).size.width >= 700 ? 2 : 1,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          itemCount: tags.length,
-                          shrinkWrap: true,
-                          itemBuilder: (BuildContext context, int index) {
-                            final tag = tags[index];
+                      child: Column(
+                        children: [
+                          // Show breadcrumb navigation if we're in a folder
+                          if (currentFolderId != null && showFolders) ...[
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        // Navigate to parent folder
+                                        CardFolder? currentFolder = appState.sharedPreferencesProvider.getFolder(currentFolderId!);
+                                        currentFolderId = currentFolder?.parentId;
+                                      });
+                                    },
+                                    icon: const Icon(Icons.arrow_back),
+                                  ),
+                                  Text(appState.sharedPreferencesProvider.getFolder(currentFolderId!)?.name ?? localizations.folder),
+                                ],
+                              ),
+                            ),
+                            const Divider(),
+                          ],
+                          // Show folders first if in folder view
+                          if (showFolders && displayFolders.isNotEmpty) ...[
+                            AlignedGridView.count(
+                              clipBehavior: Clip.antiAlias,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(10),
+                              crossAxisCount: MediaQuery.of(context).size.width >= 700 ? 2 : 1,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              itemCount: displayFolders.length,
+                              shrinkWrap: true,
+                              itemBuilder: (BuildContext context, int index) {
+                                final folder = displayFolders[index];
+                                int cardCount = appState.sharedPreferencesProvider.getCardsInFolder(folder.id).length;
+                                return SavedCard(
+                                  icon: cardCount > 0 ? Icons.folder : Icons.folder_outlined,
+                                  iconColor: folder.color,
+                                  firstLine: folder.name,
+                                  secondLine: cardCount > 0 
+                                      ? '$cardCount ${localizations.cards.toLowerCase()}'
+                                      : localizations.empty,
+                                  itemIndex: index,
+                                  onPressed: () {
+                                    setState(() {
+                                      currentFolderId = folder.id;
+                                    });
+                                  },
+                                  children: [],
+                                );
+                              },
+                            ),
+                          ],
+                          // Show cards
+                          AlignedGridView.count(
+                              clipBehavior: Clip.antiAlias,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(10),
+                              crossAxisCount:
+                                  MediaQuery.of(context).size.width >= 700 ? 2 : 1,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              itemCount: displayCards.length,
+                              shrinkWrap: true,
+                              itemBuilder: (BuildContext context, int index) {
+                                final tag = displayCards[index];
                             return SavedCard(
                               icon: (chameleonTagToFrequency(tag.tag) ==
                                       TagFrequency.hf)
@@ -610,6 +872,30 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   },
                                   icon: const Icon(Icons.edit),
                                 ),
+                                IconButton(
+                                  onPressed: () async {
+                                    await showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return MoveCardToFolderMenu(card: tag);
+                                      },
+                                    );
+                                    setState(() {});
+                                  },
+                                  icon: const Icon(Icons.folder),
+                                  tooltip: localizations.move_to_folder,
+                                ),
+                                if (showFolders && tag.folderId != null) ...[
+                                  IconButton(
+                                    onPressed: () {
+                                      appState.sharedPreferencesProvider
+                                          .moveCardToFolder(tag.id, null);
+                                      setState(() {});
+                                    },
+                                    icon: const Icon(Icons.folder_off),
+                                    tooltip: localizations.remove_from_folder,
+                                  ),
+                                ],
                                 IconButton(
                                   onPressed: () async {
                                     await showDialog(
@@ -682,7 +968,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 ),
                               ],
                             );
-                          }))),
+                          }),
+                        ],
+                      ))),
             ])),
           ),
           Expanded(
@@ -690,164 +978,294 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                 child: Column(children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  localizations.dictionaries,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        localizations.dictionaries,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () async {
+                        await showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return const DictionaryFolderManagementMenu();
+                          },
+                        );
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.folder_outlined),
+                      tooltip: localizations.folder_management,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          showDictionaryFolders = !showDictionaryFolders;
+                        });
+                      },
+                      icon: Icon(showDictionaryFolders ? Icons.view_list : Icons.folder),
+                      tooltip: showDictionaryFolders ? localizations.dictionaries : localizations.folders,
+                    ),
+                  ],
                 ),
               ),
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Container(
                   padding: const EdgeInsets.all(10),
                   constraints: const BoxConstraints(maxHeight: 100),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      FilePickerResult? result =
-                          await FilePicker.platform.pickFiles();
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            FilePickerResult? result =
+                                await FilePicker.platform.pickFiles();
 
-                      if (result != null) {
-                        File file = File(result.files.single.path!);
-                        String contents;
-                        try {
-                          contents = const Utf8Decoder()
-                              .convert(await file.readAsBytes());
-                        } catch (e) {
-                          return;
-                        }
+                            if (result != null) {
+                              File file = File(result.files.single.path!);
+                              String contents;
+                              try {
+                                contents = const Utf8Decoder()
+                                    .convert(await file.readAsBytes());
+                              } catch (e) {
+                                return;
+                              }
 
-                        List<Uint8List> keys = [];
-                        for (var key in contents.split("\n")) {
-                          key = key.trim();
-                          if (key.length == 12 && isValidHexString(key)) {
-                            keys.add(hexToBytes(key));
-                          }
-                        }
+                              List<Uint8List> keys = [];
+                              for (var key in contents.split("\n")) {
+                                key = key.trim();
+                                if (key.length == 12 && isValidHexString(key)) {
+                                  keys.add(hexToBytes(key));
+                                }
+                              }
 
-                        if (keys.isEmpty) {
-                          return;
-                        }
+                              if (keys.isEmpty) {
+                                return;
+                              }
 
-                        var dictionaries = appState.sharedPreferencesProvider
-                            .getDictionaries();
-                        dictionaries.add(Dictionary(
-                            name: result.files.single.name.split(".")[0],
-                            keys: keys));
-                        appState.sharedPreferencesProvider
-                            .setDictionaries(dictionaries);
-                        appState.changesMade();
-                      }
-                    },
-                    style: customCardButtonStyle(appState),
-                    child: const Icon(Icons.upload),
+                              var dictionaries = appState.sharedPreferencesProvider
+                                  .getDictionaries();
+                              dictionaries.add(Dictionary(
+                                  name: result.files.single.name.split(".")[0],
+                                  keys: keys,
+                                  folderId: currentDictionaryFolderId));
+                              appState.sharedPreferencesProvider
+                                  .setDictionaries(dictionaries);
+                              appState.changesMade();
+                            }
+                          },
+                          style: customCardButtonStyle(appState),
+                          child: const Icon(Icons.upload),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            _showCreateDictionaryFolderDialog();
+                          },
+                          style: customCardButtonStyle(appState),
+                          child: const Icon(Icons.create_new_folder),
+                        ),
+                      ),
+                    ],
                   ),
                 )
               ]),
               Expanded(
                   child: SingleChildScrollView(
-                      child: AlignedGridView.count(
-                          clipBehavior: Clip.antiAlias,
-                          physics: const NeverScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(10),
-                          crossAxisCount:
-                              MediaQuery.of(context).size.width >= 700 ? 2 : 1,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          itemCount: dictionaries.length,
-                          shrinkWrap: true,
-                          itemBuilder: (BuildContext context, int index) {
-                            final dictionary = dictionaries[index];
-                            return SavedCard(
-                              icon: Icons.key,
-                              iconColor: dictionary.color,
-                              firstLine: dictionary.name,
-                              secondLine:
-                                  "${localizations.key_count}: ${dictionary.keys.length}",
-                              itemIndex: index,
-                              onPressed: () {
-                                showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return DictionaryViewMenu(
-                                          dictionary: dictionary);
+                      child: Column(
+                        children: [
+                          // Show breadcrumb navigation if we're in a dictionary folder
+                          if (currentDictionaryFolderId != null && showDictionaryFolders) ...[
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        // Navigate to parent folder
+                                        DictionaryFolder? currentFolder = appState.sharedPreferencesProvider.getDictionaryFolder(currentDictionaryFolderId!);
+                                        currentDictionaryFolderId = currentFolder?.parentId;
+                                      });
+                                    },
+                                    icon: const Icon(Icons.arrow_back),
+                                  ),
+                                  Text(appState.sharedPreferencesProvider.getDictionaryFolder(currentDictionaryFolderId!)?.name ?? localizations.folder),
+                                ],
+                              ),
+                            ),
+                            const Divider(),
+                          ],
+                          // Show dictionary folders first if in folder view
+                          if (showDictionaryFolders && displayDictionaryFolders.isNotEmpty) ...[
+                            AlignedGridView.count(
+                              clipBehavior: Clip.antiAlias,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(10),
+                              crossAxisCount: MediaQuery.of(context).size.width >= 700 ? 2 : 1,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              itemCount: displayDictionaryFolders.length,
+                              shrinkWrap: true,
+                              itemBuilder: (BuildContext context, int index) {
+                                final folder = displayDictionaryFolders[index];
+                                int dictCount = appState.sharedPreferencesProvider.getDictionariesInFolder(folder.id).length;
+                                return SavedCard(
+                                  icon: dictCount > 0 ? Icons.folder : Icons.folder_outlined,
+                                  iconColor: folder.color,
+                                  firstLine: folder.name,
+                                  secondLine: localizations.dictionaries_in_folder(dictCount.toString()),
+                                  itemIndex: index,
+                                  onPressed: () {
+                                    setState(() {
+                                      currentDictionaryFolderId = folder.id;
                                     });
+                                  },
+                                  children: [],
+                                );
                               },
-                              children: [
-                                IconButton(
+                            ),
+                          ],
+                          // Show dictionaries
+                          AlignedGridView.count(
+                              clipBehavior: Clip.antiAlias,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(10),
+                              crossAxisCount:
+                                  MediaQuery.of(context).size.width >= 700 ? 2 : 1,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              itemCount: displayDictionaries.length,
+                              shrinkWrap: true,
+                              itemBuilder: (BuildContext context, int index) {
+                                final dictionary = displayDictionaries[index];
+                                return SavedCard(
+                                  icon: Icons.key,
+                                  iconColor: dictionary.color,
+                                  firstLine: dictionary.name,
+                                  secondLine:
+                                      "${localizations.key_count}: ${dictionary.keys.length}",
+                                  itemIndex: index,
                                   onPressed: () {
                                     showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return DictionaryEditMenu(
-                                            dictionary: dictionary);
-                                      },
-                                    );
-                                  },
-                                  icon: const Icon(Icons.edit),
-                                ),
-                                IconButton(
-                                  onPressed: () async {
-                                    try {
-                                      await FileSaver.instance.saveAs(
-                                          name: dictionary.name,
-                                          bytes: dictionary.toFile(),
-                                          ext: 'dic',
-                                          mimeType: MimeType.other);
-                                    } on UnimplementedError catch (_) {
-                                      String? outputFile =
-                                          await FilePicker.platform.saveFile(
-                                        dialogTitle:
-                                            '${localizations.output_file}:',
-                                        fileName: '${dictionary.name}.dic',
-                                      );
-
-                                      if (outputFile != null) {
-                                        var file = File(outputFile);
-                                        await file
-                                            .writeAsBytes(dictionary.toFile());
-                                      }
-                                    }
-                                  },
-                                  icon: const Icon(Icons.download),
-                                ),
-                                IconButton(
-                                  onPressed: () async {
-                                    if (appState.sharedPreferencesProvider
-                                            .getConfirmDelete() ==
-                                        true) {
-                                      var confirm = await showDialog(
                                         context: context,
                                         builder: (BuildContext context) {
-                                          return ConfirmDeletionMenu(
-                                              thingBeingDeleted:
-                                                  dictionary.name);
-                                        },
-                                      );
-
-                                      if (confirm != true) {
-                                        return;
-                                      }
-                                    }
-                                    var dictionaries = appState
-                                        .sharedPreferencesProvider
-                                        .getDictionaries();
-                                    List<Dictionary> output = [];
-                                    for (var dict in dictionaries) {
-                                      if (dict.id != dictionary.id) {
-                                        output.add(dict);
-                                      }
-                                    }
-                                    appState.sharedPreferencesProvider
-                                        .setDictionaries(output);
-                                    appState.changesMade();
+                                          return DictionaryViewMenu(
+                                              dictionary: dictionary);
+                                        });
                                   },
-                                  icon: const Icon(Icons.delete_outline),
-                                ),
-                              ],
-                            );
-                          }))),
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return DictionaryEditMenu(
+                                                dictionary: dictionary);
+                                          },
+                                        );
+                                      },
+                                      icon: const Icon(Icons.edit),
+                                    ),
+                                    IconButton(
+                                      onPressed: () async {
+                                        try {
+                                          await FileSaver.instance.saveAs(
+                                              name: dictionary.name,
+                                              bytes: dictionary.toFile(),
+                                              ext: 'dic',
+                                              mimeType: MimeType.other);
+                                        } on UnimplementedError catch (_) {
+                                          String? outputFile =
+                                              await FilePicker.platform.saveFile(
+                                            dialogTitle:
+                                                '${localizations.output_file}:',
+                                            fileName: '${dictionary.name}.dic',
+                                          );
+
+                                          if (outputFile != null) {
+                                            var file = File(outputFile);
+                                            await file
+                                                .writeAsBytes(dictionary.toFile());
+                                          }
+                                        }
+                                      },
+                                      icon: const Icon(Icons.download),
+                                    ),
+                                    if (showDictionaryFolders) ...[
+                                      IconButton(
+                                        onPressed: () async {
+                                          await showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return MoveDictionaryToFolderMenu(
+                                                  dictionary: dictionary);
+                                            },
+                                          );
+                                          setState(() {});
+                                        },
+                                        icon: const Icon(Icons.drive_file_move),
+                                        tooltip: localizations.move_to_folder,
+                                      ),
+                                      if (dictionary.folderId != null) ...[
+                                        IconButton(
+                                          onPressed: () {
+                                            appState.sharedPreferencesProvider
+                                                .moveDictionaryToFolder(dictionary.id, null);
+                                            setState(() {});
+                                          },
+                                          icon: const Icon(Icons.folder_off),
+                                          tooltip: localizations.remove_from_folder,
+                                        ),
+                                      ],
+                                    ],
+                                    IconButton(
+                                      onPressed: () async {
+                                        if (appState.sharedPreferencesProvider
+                                                .getConfirmDelete() ==
+                                            true) {
+                                          var confirm = await showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return ConfirmDeletionMenu(
+                                                  thingBeingDeleted:
+                                                      dictionary.name);
+                                            },
+                                          );
+
+                                          if (confirm != true) {
+                                            return;
+                                          }
+                                        }
+                                        var dictionaries = appState
+                                            .sharedPreferencesProvider
+                                            .getDictionaries();
+                                        List<Dictionary> output = [];
+                                        for (var dict in dictionaries) {
+                                          if (dict.id != dictionary.id) {
+                                            output.add(dict);
+                                          }
+                                        }
+                                        appState.sharedPreferencesProvider
+                                            .setDictionaries(output);
+                                        appState.changesMade();
+                                      },
+                                      icon: const Icon(Icons.delete_outline),
+                                    ),
+                                  ],
+                                );
+                              }),
+                        ],
+                      ))),
             ])),
           ),
         ],
