@@ -117,6 +117,13 @@ enum ChameleonCommand {
   mf0NtagSetCounterData(4028),
   mf0NtagResetAuthCount(4029),
   mf0NtagGetPageCount(4030),
+  mf0NtagGetWriteMode(4031),
+  mf0NtagSetWriteMode(4032),
+  mf0NtagSetDetectionEnable(4033),
+  mf0NtagGetDetectionCount(4034),
+  mf0NtagGetDetectionLog(4035),
+  mf0NtagGetDetectionEnable(4036),
+  mf0NtagGetEmulatorConfig(4037),
 
   // read slot info
   mf1GetBlockData(4008),
@@ -176,13 +183,13 @@ enum AnimationSetting {
   final int value;
 }
 
-enum MifareClassicWriteMode {
+enum MifareWriteMode {
   normal(0),
   denied(1),
   deceive(2),
   shadow(3);
 
-  const MifareClassicWriteMode(this.value);
+  const MifareWriteMode(this.value);
   final int value;
 }
 
@@ -391,7 +398,7 @@ class EmulatorSettings {
   bool isGen1a;
   bool isGen2;
   bool isAntiColl;
-  MifareClassicWriteMode writeMode;
+  MifareWriteMode writeMode;
 
   EmulatorSettings(
       {required this.isDetectionEnabled,
@@ -1228,14 +1235,14 @@ class ChameleonCommunicator {
 
   Future<EmulatorSettings> getMf1EmulatorSettings() async {
     var resp = await sendCmd(ChameleonCommand.mf1GetEmulatorConfig);
-    MifareClassicWriteMode mode = MifareClassicWriteMode.normal;
+    MifareWriteMode mode = MifareWriteMode.normal;
 
     if (resp!.data[4] == 1) {
-      mode = MifareClassicWriteMode.denied;
+      mode = MifareWriteMode.denied;
     } else if (resp.data[4] == 2) {
-      mode = MifareClassicWriteMode.deceive;
+      mode = MifareWriteMode.deceive;
     } else if (resp.data[4] == 3 || resp.data[4] == 4) {
-      mode = MifareClassicWriteMode.shadow;
+      mode = MifareWriteMode.shadow;
     }
 
     return EmulatorSettings(
@@ -1278,20 +1285,20 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([useColl ? 1 : 0]));
   }
 
-  Future<MifareClassicWriteMode> getMf1WriteMode() async {
+  Future<MifareWriteMode> getMf1WriteMode() async {
     var resp = await sendCmd(ChameleonCommand.mf1GetWriteMode);
     if (resp!.data[0] == 1) {
-      return MifareClassicWriteMode.denied;
+      return MifareWriteMode.denied;
     } else if (resp.data[0] == 2) {
-      return MifareClassicWriteMode.deceive;
+      return MifareWriteMode.deceive;
     } else if (resp.data[0] == 3) {
-      return MifareClassicWriteMode.shadow;
+      return MifareWriteMode.shadow;
     } else {
-      return MifareClassicWriteMode.normal;
+      return MifareWriteMode.normal;
     }
   }
 
-  Future<void> setMf1WriteMode(MifareClassicWriteMode mode) async {
+  Future<void> setMf1WriteMode(MifareWriteMode mode) async {
     await sendCmd(ChameleonCommand.mf1SetWriteMode,
         data: Uint8List.fromList([mode.value]));
   }
@@ -1571,5 +1578,74 @@ class ChameleonCommunicator {
           (value >> 8) & 0xFF,
           (value >> 16) & 0xFF
         ]));
+  }
+
+  Future<MifareWriteMode> mf0NtagGetWriteMode() async {
+    var resp = await sendCmd(ChameleonCommand.mf0NtagGetWriteMode);
+    if (resp!.data[0] == 1) {
+      return MifareWriteMode.denied;
+    } else if (resp.data[0] == 2) {
+      return MifareWriteMode.deceive;
+    } else if (resp.data[0] == 3) {
+      return MifareWriteMode.shadow;
+    } else {
+      return MifareWriteMode.normal;
+    }
+  }
+
+  Future<void> mf0NtagSetWriteMode(MifareWriteMode mode) async {
+    await sendCmd(ChameleonCommand.mf0NtagSetWriteMode,
+        data: Uint8List.fromList([mode.value]));
+  }
+
+  Future<bool> mf0NtagGetDetectionEnable() async {
+    var resp = await sendCmd(ChameleonCommand.mf0NtagGetDetectionEnable);
+    return resp!.data[0] == 1;
+  }
+
+  Future<void> mf0NtagSetDetectionEnable(bool enabled) async {
+    await sendCmd(ChameleonCommand.mf0NtagSetDetectionEnable,
+        data: Uint8List.fromList([enabled ? 1 : 0]));
+  }
+
+  Future<int> mf0NtagGetDetectionCount() async {
+    var resp = await sendCmd(ChameleonCommand.mf0NtagGetDetectionCount);
+    return bytesToU32(resp!.data);
+  }
+
+  Future<List<String>> mf0NtagGetDetectionLog(int index) async {
+    var resp = await sendCmd(ChameleonCommand.mf0NtagGetDetectionLog,
+        data: u32ToBytes(index));
+
+    List<String> resultList = [];
+    int pos = 0;
+    while (pos < resp!.data.length) {
+      var password = resp.data.sublist(pos, pos + 4);
+      resultList.add(bytesToHex(password));
+      pos += 4;
+    }
+
+    return resultList;
+  }
+
+  Future<EmulatorSettings> mf0NtagGetEmulatorConfig() async {
+    var resp = await sendCmd(ChameleonCommand.mf0NtagGetEmulatorConfig);
+    MifareWriteMode mode = MifareWriteMode.normal;
+
+    if (resp!.data[2] == 1) {
+      mode = MifareWriteMode.denied;
+    } else if (resp.data[2] == 2) {
+      mode = MifareWriteMode.deceive;
+    } else if (resp.data[2] == 3 || resp.data[2] == 4) {
+      mode = MifareWriteMode.shadow;
+    }
+
+    return EmulatorSettings(
+        isDetectionEnabled: resp.data[0] == 1, // is detection enabled
+        isGen1a: false,
+        isGen2: resp.data[1] == 1, // is uid magic mode enabled
+        isAntiColl: false,
+        writeMode: mode // write mode
+        );
   }
 }
