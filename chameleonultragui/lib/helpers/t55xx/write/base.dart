@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -8,6 +9,8 @@ import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:flutter/services.dart';
 
 class BaseT55XXCardHelper extends AbstractWriteHelper {
+  LFCardInfo? lfInfo;
+
   @override
   bool get autoDetect => true;
 
@@ -40,58 +43,60 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
     return Row(children: [
-      Form(
-          key: formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: Expanded(
+      Expanded(
+          child: Form(
+              key: formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
-            children: [
-              TextFormField(
-                controller: currentKeyController,
-                decoration: InputDecoration(
-                    labelText: localizations.key,
-                    hintMaxLines: 4,
-                    hintText: localizations
-                        .enter_something(localizations.t55xx_key_prompt)),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f: ]'))
+                children: [
+                  TextFormField(
+                    controller: currentKeyController,
+                    decoration: InputDecoration(
+                        labelText: localizations.key,
+                        hintMaxLines: 4,
+                        hintText: localizations
+                            .enter_something(localizations.t55xx_key_prompt)),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'[0-9A-Fa-f: ]'))
+                    ],
+                    validator: (String? value) {
+                      if (value!.isNotEmpty && !isValidHexString(value)) {
+                        return localizations.must_be_valid_hex;
+                      }
+
+                      if (value.length != 8) {
+                        return localizations.must_be(4, localizations.key);
+                      }
+
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: newKeyController,
+                    decoration: InputDecoration(
+                        labelText: localizations.new_key,
+                        hintMaxLines: 4,
+                        hintText: localizations.enter_something(
+                            localizations.t55xx_new_key_prompt)),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'[0-9A-Fa-f: ]'))
+                    ],
+                    validator: (String? value) {
+                      if (value!.isNotEmpty && !isValidHexString(value)) {
+                        return localizations.must_be_valid_hex;
+                      }
+
+                      if (value.length != 8) {
+                        return localizations.must_be(4, localizations.key);
+                      }
+
+                      return null;
+                    },
+                  )
                 ],
-                validator: (String? value) {
-                  if (value!.isNotEmpty && !isValidHexString(value)) {
-                    return localizations.must_be_valid_hex;
-                  }
-
-                  if (value.length != 8) {
-                    return localizations.must_be(4, localizations.key);
-                  }
-
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: newKeyController,
-                decoration: InputDecoration(
-                    labelText: localizations.new_key,
-                    hintMaxLines: 4,
-                    hintText: localizations
-                        .enter_something(localizations.t55xx_new_key_prompt)),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f: ]'))
-                ],
-                validator: (String? value) {
-                  if (value!.isNotEmpty && !isValidHexString(value)) {
-                    return localizations.must_be_valid_hex;
-                  }
-
-                  if (value.length != 8) {
-                    return localizations.must_be(4, localizations.key);
-                  }
-
-                  return null;
-                },
-              )
-            ],
-          ))),
+              ))),
       TextButton(
         onPressed: () => {
           if (newKeyController.text.isNotEmpty)

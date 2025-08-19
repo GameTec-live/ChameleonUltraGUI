@@ -380,9 +380,11 @@ class ReadCardPageState extends State<ReadCardPage> {
                                               }
                                             },
                                             items: [
-                                              ...getTagTypesByFrequency(
-                                                      TagFrequency.hf)
-                                                  .map((tagType) {
+                                              ...[
+                                                ...getTagTypesByFrequency(
+                                                    TagFrequency.hf),
+                                                TagType.unknown
+                                              ].map((tagType) {
                                                 return DropdownMenuItem<
                                                     TagType?>(
                                                   value: tagType,
