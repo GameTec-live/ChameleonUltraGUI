@@ -349,5 +349,8 @@
   "password": "Contrasenya",
   "dump": "Bolcat",
   "invalid_data_in_block": "Dades inv\u00e0lides al bloc",
-  "logs": "Registres"
+  "logs": "Registres",
+  "facility_code": "Codi d'instal\u00b7laci\u00f3",
+  "issue_level": "Nivell d'emissi\u00f3",
+  "must_be_between": "Ha d'estar entre {a} i {b}"
 }
