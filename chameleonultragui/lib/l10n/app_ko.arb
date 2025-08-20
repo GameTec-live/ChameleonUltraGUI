@@ -349,5 +349,14 @@
   "password": "\uc554\ud638",
   "dump": "\ub364\ud504",
   "invalid_data_in_block": "\ube14\ub85d\uc5d0 \uc798\ubabb\ub41c \ub370\uc774\ud130\uac00 \uc788\uc2b5\ub2c8\ub2e4",
-  "logs": "\uae30\ub85d"
+  "logs": "\uae30\ub85d",
+  "facility_code": "\uc2dc\uc124 \ucf54\ub4dc",
+  "issue_level": "\uc774\uc288 \ub808\ubca8",
+  "must_be_between": "{a}\uc640 {b} \uc0ac\uc774\uc5d0 \uc788\uc5b4\uc57c \ud569\ub2c8\ub2e4.",
+  "mifare_ultralight_emulator_settings": "Mifare Ultralight \uc5d0\ubbac\ub808\uc774\ud130 \uc124\uc815",
+  "passwords_detected": "\ube44\ubc00\ubc88\ud638 \ud0d0\uc9c0",
+  "enable_password_detection": "\ub9ac\ub354\ub85c\ubd80\ud130 Mifare Ultralight \ube44\ubc00\ubc88\ud638\ub97c \ucea1\ucc98\ud558\uae30 \uc704\ud574 \ube44\ubc00\ubc88\ud638 \uac10\uc9c0\ub97c \ud65c\uc131\ud654\ud558\uc2ed\uc2dc\uc624.",
+  "password_detection": "\ube44\ubc00\ubc88\ud638 \ud0d0\uc9c0",
+  "view_passwords": "\ube44\ubc00\ubc88\ud638 \ubcf4\uae30",
+  "detected_passwords": "\ud0d0\uc9c0\ub41c \ube44\ubc00\ubc88\ud638"
 }

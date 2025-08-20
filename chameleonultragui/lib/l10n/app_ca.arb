@@ -352,5 +352,10 @@
   "logs": "Registres",
   "facility_code": "Codi d'instal\u00b7laci\u00f3",
   "issue_level": "Nivell d'emissi\u00f3",
-  "must_be_between": "Ha d'estar entre {a} i {b}"
+  "must_be_between": "Ha d'estar entre {a} i {b}",
+  "passwords_detected": "Contrasenyes detectades",
+  "enable_password_detection": "Activeu la detecci\u00f3 de contrasenyes per capturar contrasenyes del lector Mifare Ultralight",
+  "password_detection": "Detecci\u00f3 de contrasenyes",
+  "view_passwords": "Veu contrasenyes",
+  "detected_passwords": "Contrasenyes detectades"
 }
