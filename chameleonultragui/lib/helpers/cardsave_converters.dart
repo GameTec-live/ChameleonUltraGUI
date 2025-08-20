@@ -162,7 +162,7 @@ CardSave flipperRfidToCardSave(String data) {
     case 'EM4100':
       tag = TagType.em410X;
       break;
-    case 'HIDProx':
+    case 'H10301':
       tag = TagType.hidProx;
       break;
     default:
