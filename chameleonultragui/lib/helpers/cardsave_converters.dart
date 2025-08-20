@@ -151,12 +151,10 @@ CardSave mctToCardSave(String data) {
 CardSave flipperRfidToCardSave(String data) {
   final String id = const Uuid().v4();
   final String type = RegExp(r'Key type:\s+(.*)').firstMatch(data)!.group(1)!;
-  final String uid =
-      RegExp(r'Data:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!;
-  final String name = uid;
   const Color color = Colors.deepOrange;
 
   final TagType tag;
+  String uid = RegExp(r'Data:\s+([\dA-Fa-f ]+)').firstMatch(data)!.group(1)!;
 
   switch (type) {
     case 'EM4100':
@@ -164,10 +162,17 @@ CardSave flipperRfidToCardSave(String data) {
       break;
     case 'H10301':
       tag = TagType.hidProx;
+      uid = HIDCard(
+              hidType: 0,
+              facilityCode: hexToBytes(uid)[0],
+              uid: hexToBytes(uid).sublist(1, 2),
+              issueLevel: 0,
+              oem: 0)
+          .toString();
       break;
     default:
       tag = TagType.unknown;
   }
 
-  return CardSave(id: id, uid: uid, name: name, tag: tag, color: color);
+  return CardSave(id: id, uid: uid, name: uid, tag: tag, color: color);
 }
