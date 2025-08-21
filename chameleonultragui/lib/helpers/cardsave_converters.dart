@@ -158,14 +158,21 @@ CardSave flipperRfidToCardSave(String data) {
 
   switch (type) {
     case 'EM4100':
-      tag = TagType.em410X;
+      tag = TagType.em410X64;
+      break;
+    case 'EM4100/32':
+      tag = TagType.em410X32;
+      break;
+    case 'EM4100/16':
+      tag = TagType.em410X16;
       break;
     case 'H10301':
       tag = TagType.hidProx;
       uid = HIDCard(
-              hidType: 0,
+              hidType: 1,
               facilityCode: hexToBytes(uid)[0],
-              uid: hexToBytes(uid).sublist(1, 2),
+              uid: Uint8List.fromList(
+                  [0, 0, 0, ...hexToBytes(uid).sublist(1, 3)]),
               issueLevel: 0,
               oem: 0)
           .toString();

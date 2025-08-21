@@ -17,6 +17,7 @@ import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/gui/menu/card_edit.dart';
 import 'package:chameleonultragui/gui/menu/card_create.dart';
@@ -102,6 +103,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   tag = CardSave.fromJson(string);
                                 }
 
+                                tag.name = basename(file.path).split('.')[0];
                                 tags.add(tag);
                                 appState.sharedPreferencesProvider
                                     .setCards(tags);
