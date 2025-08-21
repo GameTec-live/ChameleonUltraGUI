@@ -103,7 +103,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   tag = CardSave.fromJson(string);
                                 }
 
-                                tag.name = basename(file.path).split('.')[0];
+                                tag.name = basename(file.path).contains('.')
+                                    ? basename(file.path).split('.')[0]
+                                    : basename(file.path);
                                 tags.add(tag);
                                 appState.sharedPreferencesProvider
                                     .setCards(tags);
