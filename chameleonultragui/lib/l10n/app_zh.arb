@@ -352,5 +352,11 @@
   "logs": "\u65e5\u5fd7",
   "facility_code": "\u8bbe\u5907\u7f16\u7801",
   "issue_level": "\u95ee\u9898\u7b49\u7ea7",
-  "must_be_between": "\u5fc5\u987b\u4ecb\u4e8e {a} \u548c {b} \u4e4b\u95f4"
+  "must_be_between": "\u5fc5\u987b\u4ecb\u4e8e {a} \u548c {b} \u4e4b\u95f4",
+  "mifare_ultralight_emulator_settings": "Mifare Ultralight \u5361\u6a21\u62df\u5668\u8bbe\u7f6e",
+  "passwords_detected": "\u5df2\u68c0\u6d4b\u5230\u5bc6\u7801",
+  "enable_password_detection": "\u542f\u7528\u5bc6\u7801\u68c0\u6d4b\u4ee5\u4ece\u8bfb\u53d6\u5668\u6355\u83b7 Mifare Ultralight \u5bc6\u7801",
+  "password_detection": "\u5bc6\u7801\u68c0\u6d4b",
+  "view_passwords": "\u67e5\u770b\u5bc6\u7801",
+  "detected_passwords": "\u68c0\u6d4b\u5bc6\u7801"
 }
