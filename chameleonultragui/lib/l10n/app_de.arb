@@ -319,5 +319,13 @@
   "ultralight_counter_value": "Z\u00e4hlerwert (0-16777215)",
   "counter_value_empty": "Z\u00e4hlerwert darf nicht leer bleiben",
   "uploading_dump": "Lade Dump in Emulator hoch...",
-  "please_update_firmware": "Aktualisieren Sie die Firmware, um das Ger\u00e4t optimal zu nutzen"
+  "please_update_firmware": "Aktualisieren Sie die Firmware, um das Ger\u00e4t optimal zu nutzen",
+  "override_card_type": "Kartentyp \u00fcberschreiben",
+  "dump_editor": "Dump-Editor",
+  "unsaved_changes_message": "Es liegen nicht gespeicherte \u00c4nderungen vor. M\u00f6chten Sie sie wirklich verwerfen?",
+  "ascii": "ASCII",
+  "acl": "ACL",
+  "value": "Wert",
+  "bcc": "BCC",
+  "mifare_ultralight_emulator_settings": "Mifare Ultralight Emulator Einstellungen"
 }
