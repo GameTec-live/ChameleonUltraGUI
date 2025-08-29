@@ -18,6 +18,7 @@ import 'package:chameleonultragui/gui/component/qrcode_viewer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:chameleonultragui/gui/menu/qrcode_import.dart';
 import 'package:chameleonultragui/gui/menu/qrcode_settings.dart';
+import 'package:chameleonultragui/gui/menu/changelog_view.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -1424,6 +1425,14 @@ Public License instead of this License.  But first, please read
               TextButton(
                 onPressed: () => showLicensePage(context: context),
                 child: Text(localizations.licenses),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => const ChangelogView(),
+                ),
+                child: Text(localizations.changelog),
               ),
               const SizedBox(height: 10),
               TextButton(

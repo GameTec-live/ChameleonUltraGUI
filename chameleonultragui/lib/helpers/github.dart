@@ -212,3 +212,153 @@ Future<String> resolveCommit(String commitHash) async {
 
   return commitHash;
 }
+
+class ChangelogEntry {
+  final String version;
+  final String? tagName;
+  final DateTime publishedAt;
+  final String url;
+  final List<String> changes;
+  final bool isPrerelease;
+
+  ChangelogEntry({
+    required this.version,
+    this.tagName,
+    required this.publishedAt,
+    required this.url,
+    required this.changes,
+    required this.isPrerelease,
+  });
+
+  factory ChangelogEntry.fromGitHubRelease(Map<String, dynamic> release) {
+    // Parse the body to extract changelog items
+    String body = release['body'] ?? '';
+    List<String> changes = _parseChangelogFromBody(body);
+
+    return ChangelogEntry(
+      version: release['name'] ?? release['tag_name'] ?? 'Unknown',
+      tagName: release['tag_name'],
+      publishedAt: DateTime.parse(release['published_at']),
+      url: release['html_url'],
+      changes: changes,
+      isPrerelease: release['prerelease'] ?? false,
+    );
+  }
+
+  static List<String> _parseChangelogFromBody(String body) {
+    // Find the "## What's Changed" section
+    final RegExp whatsChangedRegex = RegExp(
+      r"## What's Changed\r?\n(.*?)(?:\r?\n\r?\n|$)",
+      dotAll: true,
+      caseSensitive: false,
+    );
+
+    final Match? match = whatsChangedRegex.firstMatch(body);
+    if (match == null) {
+      return [];
+    }
+
+    String changesSection = match.group(1) ?? '';
+
+    // Split by lines and filter for actual changelog items (usually start with * or -)
+    return changesSection
+        .split(RegExp(r'\r?\n'))
+        .where((line) => line.trim().isNotEmpty)
+        .map((line) => line.trim())
+        .where((line) =>
+            line.startsWith('*') ||
+            line.startsWith('-') ||
+            line.startsWith('+'))
+        .map((line) => line.replaceFirst(RegExp(r'^[*\-+]\s*'), ''))
+        .toList();
+  }
+}
+
+Future<List<ChangelogEntry>> fetchChangelogs() async {
+  try {
+    final List<ChangelogEntry> changelogs = [];
+    
+    // First, get unreleased changes
+    final unreleasedEntry = await fetchUnreleasedChanges();
+    if (unreleasedEntry != null) {
+      changelogs.add(unreleasedEntry);
+    }
+    
+    // Then get published releases
+    final response = json.decode((await http.get(Uri.parse(
+            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/releases")))
+        .body
+        .toString());
+
+    if (response is List) {
+      final publishedReleases = response
+          .where((release) => release['prerelease'] != true)
+          .map((release) => ChangelogEntry.fromGitHubRelease(release))
+          .toList();
+      changelogs.addAll(publishedReleases);
+    }
+
+    return changelogs;
+  } catch (_) {
+    return [];
+  }
+}
+
+Future<ChangelogEntry?> fetchUnreleasedChanges() async {
+  try {
+    // Get the latest release to find the commit it was based on
+    final releasesResponse = json.decode((await http.get(Uri.parse(
+            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/releases")))
+        .body
+        .toString());
+
+    if (releasesResponse is! List || releasesResponse.isEmpty) {
+      return null;
+    }
+
+    // Find the latest non-prerelease
+    final latestRelease = releasesResponse.firstWhere(
+      (release) => release['prerelease'] != true,
+      orElse: () => null,
+    );
+
+    if (latestRelease == null) {
+      return null;
+    }
+
+    final String latestReleaseCommit = latestRelease['target_commitish'];
+
+    // Get commits between the latest release and main branch
+    final commitsResponse = json.decode((await http.get(Uri.parse(
+            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/compare/$latestReleaseCommit...main")))
+        .body
+        .toString());
+
+    if (commitsResponse['commits'] == null || 
+        (commitsResponse['commits'] as List).isEmpty) {
+      return null;
+    }
+
+    final List<dynamic> commits = commitsResponse['commits'];
+    final List<String> changes = commits
+        .map((commit) => commit['commit']['message'].toString().split('\n')[0]) // First line only
+        .where((message) => message.trim().isNotEmpty)
+        .map((message) => message.trim())
+        .toList();
+
+    if (changes.isEmpty) {
+      return null;
+    }
+
+    return ChangelogEntry(
+      version: "Unreleased",
+      tagName: null,
+      publishedAt: DateTime.now(),
+      url: "https://github.com/GameTec-live/ChameleonUltraGUI/compare/$latestReleaseCommit...main",
+      changes: changes,
+      isPrerelease: false,
+    );
+  } catch (_) {
+    return null;
+  }
+}

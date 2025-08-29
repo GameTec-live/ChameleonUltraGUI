@@ -360,5 +360,15 @@
   "password_detection": "Password detection",
   "view_passwords": "View passwords",
   "detected_passwords": "Detected passwords",
-  "licenses": "Licenses"
+  "licenses": "Licenses",
+  "changelog": "Changelog",
+  "no_changelogs_available": "No changelogs available",
+  "changes": "Changes",
+  "recent_commits": "Recent commits",
+  "latest_commits": "Latest commits",
+  "latest_commits_from_main_branch": "Latest commits from main branch",
+  "view_commits": "View Commits",
+  "view_full_release": "View Full Release",
+  "no_changes_listed": "No changes listed",
+  "unreleased": "Unreleased"
 }
