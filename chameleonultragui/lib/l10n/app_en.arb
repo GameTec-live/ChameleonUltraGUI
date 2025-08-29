@@ -362,6 +362,7 @@
   "detected_passwords": "Detected passwords",
   "licenses": "Licenses",
   "changelog": "Changelog",
+  "help_translate": "Help Translate",
   "no_changelogs_available": "No changelogs available",
   "changes": "Changes",
   "recent_commits": "Recent commits",

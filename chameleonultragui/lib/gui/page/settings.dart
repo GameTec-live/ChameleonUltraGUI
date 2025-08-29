@@ -1436,6 +1436,15 @@ Public License instead of this License.  But first, please read
               ),
               const SizedBox(height: 10),
               TextButton(
+                onPressed: () async {
+                  if (await canLaunchUrl(Uri.parse('https://crowdin.com/project/chameleonultragui'))) {
+                    await launchUrl(Uri.parse('https://crowdin.com/project/chameleonultragui'));
+                  }
+                },
+                child: Text(localizations.help_translate),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
                 onPressed: () => showDialog<String>(
                   context: context,
                   builder: (BuildContext context) => AlertDialog(
