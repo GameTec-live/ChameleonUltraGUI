@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/write.dart';
@@ -173,11 +174,18 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
           hexToBytes(card.uid), hexToBytes(newKey), [hexToBytes(currentKey)]);
       var newCard = await communicator.readEM410X();
       return newCard.toString() == card.uid;
-    } else {
+    } else if (card.tag == TagType.hidProx) {
       await communicator.writeHIDProxToT55XX(
           hexToBytes(card.uid), hexToBytes(newKey), [hexToBytes(currentKey)]);
       var newCard = await communicator.readHIDProx();
       return newCard.toString() == card.uid;
+    } else if (card.tag == TagType.viking) {
+      await communicator.writeVikingToT55XX(
+          hexToBytes(card.uid), hexToBytes(newKey), [hexToBytes(currentKey)]);
+      var newCard = await communicator.readViking();
+      return newCard.toString() == card.uid;
     }
+
+    return false;
   }
 }

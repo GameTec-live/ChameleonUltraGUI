@@ -84,6 +84,8 @@ enum ChameleonCommand {
   writeEM410XtoT5577(3001),
   scanHIDProxTag(3002),
   writeHIDProxToT5577(3003),
+  scanVikingTag(3004),
+  writeVikingToT5577(3005),
 
   mf1LoadBlockData(4000),
   mf1SetAntiCollision(4001),
@@ -134,7 +136,10 @@ enum ChameleonCommand {
   getEM410XemulatorID(5001),
 
   setHIDProxEmulatorID(5002),
-  getHIDProxEmulatorID(5003);
+  getHIDProxEmulatorID(5003),
+
+  setVikingEmulatorID(5004),
+  getVikingEmulatorID(5005);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -146,6 +151,7 @@ enum TagType {
   em410X16(101),
   em410X32(102),
   em410X64(103),
+  viking(170),
   hidProx(200),
   mifareMini(1000),
   mifare1K(1001),
@@ -530,6 +536,21 @@ class HIDCard extends LFCard {
       required super.uid,
       required this.issueLevel,
       required this.oem});
+}
+
+class VikingCard extends LFCard {
+  factory VikingCard.fromBytes(Uint8List bytes) {
+    return VikingCard(uid: bytes);
+  }
+
+  factory VikingCard.fromUID(String uid) {
+    return VikingCard.fromBytes(hexToBytes(uid));
+  }
+
+  VikingCard({
+    super.type = TagType.viking,
+    required super.uid,
+  });
 }
 
 // Some ChatGPT magic
@@ -1086,12 +1107,26 @@ class ChameleonCommunicator {
     return HIDCard.fromBytes(resp.data);
   }
 
+  Future<VikingCard?> readViking() async {
+    var resp = await sendCmd(ChameleonCommand.scanVikingTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
+    }
+
+    return VikingCard.fromBytes(resp.data);
+  }
+
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setEM410XemulatorID, data: uid);
   }
 
   Future<void> setHIDProxEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setHIDProxEmulatorID, data: uid);
+  }
+
+  Future<void> setVikingEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setVikingEmulatorID, data: uid);
   }
 
   Future<void> writeEM410XtoT55XX(
@@ -1116,6 +1151,20 @@ class ChameleonCommunicator {
     }
 
     await sendCmd(ChameleonCommand.writeHIDProxToT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+  }
+
+  Future<void> writeVikingToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeVikingToT5577,
         data: Uint8List.fromList([...uid, ...newKey, ...keys]));
   }
 
@@ -1414,6 +1463,11 @@ class ChameleonCommunicator {
   Future<HIDCard> getHIDProxEmulatorID() async {
     return HIDCard.fromBytes(
         (await sendCmd(ChameleonCommand.getHIDProxEmulatorID))!.data);
+  }
+
+  Future<VikingCard> getVikingEmulatorID() async {
+    return VikingCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getVikingEmulatorID))!.data);
   }
 
   Future<DeviceSettings> getDeviceSettings() async {
