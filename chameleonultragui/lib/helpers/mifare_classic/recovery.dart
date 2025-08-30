@@ -315,6 +315,10 @@ class MifareClassicRecovery {
           validKey = validKeys[sector + (keyType * 40)];
           validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
           validKeyType = keyType;
+          if (!isStaticEncrypted) {
+            isStaticEncrypted = await mfClassicIsStaticEncrypted(
+                appState.communicator!, validKeyBlock, validKeyType, validKey);
+          }
           break;
         }
       }
