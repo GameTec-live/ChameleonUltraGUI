@@ -217,7 +217,16 @@ class MifareClassicRecovery {
       }
     }
 
-    if (!hasKey) {
+    update();
+
+    bool isStaticEncrypted = false;
+
+    if (hasBackdoor) {
+      isStaticEncrypted = await mfClassicIsStaticEncrypted(
+          appState.communicator!, 0, 4, backdoorInfo!.$4);
+    }
+
+    if (!hasKey && !isStaticEncrypted) {
       try {
         darkside = await appState.communicator!.checkMf1Darkside();
       } catch (_) {}
@@ -255,17 +264,13 @@ class MifareClassicRecovery {
                 .getMf1Darkside(0x03, 0x61, false, 15);
           }
         }
-      } else if (!hasBackdoor) {
-        error = "no_keys_darkside";
-
-        return;
       }
     }
 
     update();
     NTLevel prng = await appState.communicator!.getMf1NTLevel();
 
-    if (!hasKey && hasBackdoor && prng == NTLevel.weak) {
+    if (!hasKey && hasBackdoor && prng == NTLevel.weak && !isStaticEncrypted) {
       checkMarks[0] = ChameleonKeyCheckmark.checking;
       update();
 
@@ -301,8 +306,6 @@ class MifareClassicRecovery {
     int validKeyBlock = 0;
     int validKeyType = -1;
 
-    bool isStaticEncrypted = false;
-
     for (var sector = 0;
         sector < mfClassicGetSectorCount(mifareClassicType);
         sector++) {
@@ -312,8 +315,10 @@ class MifareClassicRecovery {
           validKey = validKeys[sector + (keyType * 40)];
           validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
           validKeyType = keyType;
-          isStaticEncrypted = await mfClassicIsStaticEncrypted(
-              appState.communicator!, validKeyBlock, validKeyType, validKey);
+          if (!isStaticEncrypted) {
+            isStaticEncrypted = await mfClassicIsStaticEncrypted(
+                appState.communicator!, validKeyBlock, validKeyType, validKey);
+          }
           break;
         }
       }
