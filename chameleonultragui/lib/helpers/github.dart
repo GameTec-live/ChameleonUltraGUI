@@ -220,6 +220,8 @@ class ChangelogEntry {
   final String url;
   final List<String> changes;
   final bool isPrerelease;
+  final String? currentVersionCommit;
+  final Map<String, String>? commitHashes; // Maps change message to commit hash
 
   ChangelogEntry({
     required this.version,
@@ -228,6 +230,8 @@ class ChangelogEntry {
     required this.url,
     required this.changes,
     required this.isPrerelease,
+    this.currentVersionCommit,
+    this.commitHashes,
   });
 
   factory ChangelogEntry.fromGitHubRelease(Map<String, dynamic> release) {
@@ -274,29 +278,51 @@ class ChangelogEntry {
   }
 }
 
-Future<List<ChangelogEntry>> fetchChangelogs() async {
+Future<List<dynamic>?> _fetchReleases() async {
   try {
-    final List<ChangelogEntry> changelogs = [];
-    
-    // First, get unreleased changes
-    final unreleasedEntry = await fetchUnreleasedChanges();
-    if (unreleasedEntry != null) {
-      changelogs.add(unreleasedEntry);
-    }
-    
-    // Then get published releases
     final response = json.decode((await http.get(Uri.parse(
             "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/releases")))
         .body
         .toString());
 
     if (response is List) {
-      final publishedReleases = response
-          .where((release) => release['prerelease'] != true)
-          .map((release) => ChangelogEntry.fromGitHubRelease(release))
-          .toList();
-      changelogs.addAll(publishedReleases);
+      return response;
     }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<List<ChangelogEntry>> fetchChangelogs([String? buildNumber]) async {
+  try {
+    final List<ChangelogEntry> changelogs = [];
+
+    // Fetch releases once and reuse for both functions
+    final releases = await _fetchReleases();
+    if (releases == null) {
+      return [];
+    }
+
+    // Find current version commit if build number is provided
+    String? currentVersionCommit;
+    if (buildNumber != null) {
+      currentVersionCommit = await findCurrentVersionCommit(buildNumber);
+    }
+
+    // First, get unreleased changes
+    final unreleasedEntry =
+        await fetchUnreleasedChanges(releases, currentVersionCommit);
+    if (unreleasedEntry != null) {
+      changelogs.add(unreleasedEntry);
+    }
+
+    // Then get published releases
+    final publishedReleases = releases
+        .where((release) => release['prerelease'] != true)
+        .map((release) => ChangelogEntry.fromGitHubRelease(release))
+        .toList();
+    changelogs.addAll(publishedReleases);
 
     return changelogs;
   } catch (_) {
@@ -304,15 +330,13 @@ Future<List<ChangelogEntry>> fetchChangelogs() async {
   }
 }
 
-Future<ChangelogEntry?> fetchUnreleasedChanges() async {
+Future<ChangelogEntry?> fetchUnreleasedChanges(
+    [List<dynamic>? releases, String? currentVersionCommit]) async {
   try {
-    // Get the latest release to find the commit it was based on
-    final releasesResponse = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/releases")))
-        .body
-        .toString());
+    // Use provided releases or fetch them if not provided
+    final releasesResponse = releases ?? await _fetchReleases();
 
-    if (releasesResponse is! List || releasesResponse.isEmpty) {
+    if (releasesResponse == null || releasesResponse.isEmpty) {
       return null;
     }
 
@@ -334,30 +358,79 @@ Future<ChangelogEntry?> fetchUnreleasedChanges() async {
         .body
         .toString());
 
-    if (commitsResponse['commits'] == null || 
+    if (commitsResponse['commits'] == null ||
         (commitsResponse['commits'] as List).isEmpty) {
       return null;
     }
 
     final List<dynamic> commits = commitsResponse['commits'];
-    final List<String> changes = commits
-        .map((commit) => commit['commit']['message'].toString().split('\n')[0]) // First line only
-        .where((message) => message.trim().isNotEmpty)
-        .map((message) => message.trim())
-        .toList();
+    final List<String> changes = [];
+    final Map<String, String> commitHashes = {};
+    
+    // Build changes list and commit hash mapping (reverse to show newest first)
+    for (var commit in commits.reversed) {
+      String message = commit['commit']['message']
+          .toString()
+          .split('\n')[0] // First line only
+          .trim();
+      
+      if (message.isNotEmpty) {
+        changes.add(message);
+        commitHashes[message] = commit['sha'];
+      }
+    }
 
     if (changes.isEmpty) {
       return null;
+    }
+
+    // Check if current version commit is among the unreleased commits
+    String? matchedCurrentVersionCommit;
+    if (currentVersionCommit != null) {
+      bool hasMatch = commits.any((commit) => commit['sha'] == currentVersionCommit);
+      if (hasMatch) {
+        matchedCurrentVersionCommit = currentVersionCommit;
+      }
     }
 
     return ChangelogEntry(
       version: "Unreleased",
       tagName: null,
       publishedAt: DateTime.now(),
-      url: "https://github.com/GameTec-live/ChameleonUltraGUI/compare/$latestReleaseCommit...main",
+      url:
+          "https://github.com/GameTec-live/ChameleonUltraGUI/compare/$latestReleaseCommit...main",
       changes: changes,
       isPrerelease: false,
+      currentVersionCommit: matchedCurrentVersionCommit,
+      commitHashes: commitHashes,
     );
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<String?> findCurrentVersionCommit(String buildNumber) async {
+  try {
+    // Fetch workflow runs for Publish APP or publish-app.yml
+    final response = json.decode((await http.get(Uri.parse(
+            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/actions/workflows/publish-app.yml/runs?status=success&per_page=50")))
+        .body
+        .toString());
+
+    if (response['workflow_runs'] == null) {
+      return null;
+    }
+
+    final List<dynamic> workflowRuns = response['workflow_runs'];
+
+    // Look for a workflow run with matching run number (build ID)
+    for (var run in workflowRuns) {
+      if (run['run_number'].toString() == buildNumber) {
+        return run['head_sha']; // Return the commit hash
+      }
+    }
+
+    return null;
   } catch (_) {
     return null;
   }

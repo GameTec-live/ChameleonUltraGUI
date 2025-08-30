@@ -3,6 +3,7 @@ import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -20,7 +21,16 @@ class ChangelogViewState extends State<ChangelogView> {
   @override
   void initState() {
     super.initState();
-    _changelogsFuture = fetchChangelogs();
+    _changelogsFuture = _fetchChangelogsWithBuildNumber();
+  }
+
+  Future<List<ChangelogEntry>> _fetchChangelogsWithBuildNumber() async {
+    try {
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      return await fetchChangelogs(packageInfo.buildNumber);
+    } catch (_) {
+      return await fetchChangelogs();
+    }
   }
 
   @override
@@ -125,24 +135,52 @@ class ChangelogViewState extends State<ChangelogView> {
                 ),
               ),
               const SizedBox(height: 8),
-              ...changelog.changes.map((change) => Padding(
-                    padding: const EdgeInsets.only(left: 16, bottom: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '• ',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.bold,
-                          ),
+              ...changelog.changes.map((change) {
+                bool isCurrentVersionCommit = changelog.currentVersionCommit != null && 
+                    changelog.commitHashes != null &&
+                    changelog.commitHashes![change] == changelog.currentVersionCommit;
+                    
+                return Padding(
+                  padding: const EdgeInsets.only(left: 16, bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '• ',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.bold,
                         ),
-                        Expanded(
-                          child: _buildRichText(change),
+                      ),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Expanded(child: _buildRichText(change)),
+                            if (isCurrentVersionCommit) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  localizations.your_version,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
-                    ),
-                  )),
+                      ),
+                    ],
+                  ),
+                );
+              }),
             ],
             const SizedBox(height: 12),
             Align(

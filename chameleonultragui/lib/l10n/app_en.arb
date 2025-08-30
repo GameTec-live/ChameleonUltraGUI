@@ -363,6 +363,7 @@
   "licenses": "Licenses",
   "changelog": "Changelog",
   "help_translate": "Help Translate",
+  "your_version": "Your Version",
   "no_changelogs_available": "No changelogs available",
   "changes": "Changes",
   "recent_commits": "Recent commits",
