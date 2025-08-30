@@ -161,6 +161,7 @@
   "no_supported": "Unsupported Action",
   "lite_no_read": "Chameleon Lite does not support reading cards",
   "read": "Read",
+  "continuous_scan": "Continuous scan",
   "write": "Write",
   "save_only_uid": "Save only UID",
   "letter_space": "{letter} ",
