@@ -86,6 +86,12 @@ class SlotEditMenuState extends State<SlotEditMenu> {
         issueLevelController.text = hidCard.issueLevel.toString();
         oemController.text = hidCard.oem.toString();
       } catch (_) {}
+    } else if (selectedType! == TagType.viking) {
+      try {
+        VikingCard vikingCard =
+            await appState.communicator!.getVikingEmulatorID();
+        uidController.text = bytesToHexSpace(vikingCard.uid);
+      } catch (_) {}
     } else if (isMifareClassic(selectedType!) ||
         isMifareUltralight(selectedType!)) {
       try {
@@ -309,12 +315,17 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                     return localizations.must_or(
                                         "4, 7", "10", localizations.uid);
                                   }
-                                  if (value.replaceAll(" ", "").length != 10 &&
+                                  if (value.replaceAll(" ", "").length !=
+                                          uidSizeForLfTag(selectedType ??
+                                                  widget.slotType) *
+                                              2 &&
                                       chameleonTagToFrequency(selectedType ??
                                               widget.slotType) ==
                                           TagFrequency.lf) {
                                     return localizations.must_be(
-                                        5, localizations.uid);
+                                        uidSizeForLfTag(
+                                            selectedType ?? widget.slotType),
+                                        localizations.uid);
                                   }
                                   return null;
                                 },

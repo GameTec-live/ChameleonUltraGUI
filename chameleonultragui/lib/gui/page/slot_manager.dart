@@ -182,6 +182,22 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
+    } else if (card.tag == TagType.viking) {
+      close(context, card.name);
+      await appState.communicator!.setReaderDeviceMode(false);
+      await appState.communicator!
+          .enableSlot(gridPosition, TagFrequency.lf, true);
+      await appState.communicator!.activateSlot(gridPosition);
+      await appState.communicator!.setSlotType(gridPosition, card.tag);
+      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
+      await appState.communicator!.setVikingEmulatorID(hexToBytes(card.uid));
+      await appState.communicator!.setSlotTagName(
+          gridPosition,
+          (card.name.isEmpty) ? localizations.no_name : card.name,
+          TagFrequency.lf);
+      await appState.communicator!.saveSlotData();
+      appState.changesMade();
+      refreshSlot();
     } else if (isMifareUltralight(card.tag)) {
       close(context, card.name);
       setUploadState(0);

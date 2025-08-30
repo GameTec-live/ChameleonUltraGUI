@@ -36,7 +36,7 @@ class SlotExportMenu extends StatefulWidget {
 class SlotExportMenuState extends State<SlotExportMenu> {
   TagFrequency exportFrequency = TagFrequency.unknown;
 
-  Future<CardSave> rebuildCardSaveFromSlot(TagFrequency frequency) async {
+  Future<CardSave?> rebuildCardSaveFromSlot(TagFrequency frequency) async {
     var appState = context.read<ChameleonGUIState>();
 
     if (frequency == TagFrequency.lf) {
@@ -47,9 +47,15 @@ class SlotExportMenuState extends State<SlotExportMenu> {
           name: widget.names.lf,
           tag: widget.slotTypes.lf,
         );
-      } else {
+      } else if (widget.slotTypes.lf == TagType.hidProx) {
         return CardSave(
           uid: (await appState.communicator!.getHIDProxEmulatorID()).toString(),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
+      } else if (widget.slotTypes.lf == TagType.viking) {
+        return CardSave(
+          uid: (await appState.communicator!.getVikingEmulatorID()).toString(),
           name: widget.names.lf,
           tag: widget.slotTypes.lf,
         );
@@ -151,6 +157,8 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         );
       }
     }
+
+    return null;
   }
 
   Future<void> onTap(CardSave card, dynamic close) async {
@@ -158,8 +166,12 @@ class SlotExportMenuState extends State<SlotExportMenu> {
     close(context, card.name);
 
     CardSave modify = card;
-    CardSave newCard =
+    CardSave? newCard =
         await rebuildCardSaveFromSlot(chameleonTagToFrequency(card.tag));
+
+    if (newCard == null) {
+      return;
+    }
 
     // modify only changeable values
     modify.uid = newCard.uid;
@@ -226,7 +238,12 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       actions: [
         ElevatedButton(
           onPressed: () async {
-            CardSave cardSave = await rebuildCardSaveFromSlot(exportFrequency);
+            CardSave? cardSave = await rebuildCardSaveFromSlot(exportFrequency);
+
+            if (cardSave == null) {
+              return;
+            }
+
             Uint8List export = const Utf8Encoder().convert(cardSave.toJson());
             try {
               await FileSaver.instance.saveAs(
@@ -253,8 +270,8 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         ),
         ElevatedButton(
           onPressed: () async {
-            CardSave tag = await rebuildCardSaveFromSlot(exportFrequency);
-            if (context.mounted) {
+            CardSave? tag = await rebuildCardSaveFromSlot(exportFrequency);
+            if (context.mounted && tag != null) {
               await showDialog(
                 context: context,
                 builder: (BuildContext dialogContext) {

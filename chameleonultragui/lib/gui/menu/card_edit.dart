@@ -288,8 +288,10 @@ class CardEditMenuState extends State<CardEditMenu> {
                         }
                       } else if (chameleonTagToFrequency(selectedType) ==
                           TagFrequency.lf) {
-                        if (cleanValue.length != 10) {
-                          return localizations.must_be(5, localizations.uid);
+                        if (cleanValue.length !=
+                            uidSizeForLfTag(selectedType) * 2) {
+                          return localizations.must_be(
+                              uidSizeForLfTag(selectedType), localizations.uid);
                         }
                       }
                       return null;
