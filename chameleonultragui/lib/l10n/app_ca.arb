@@ -357,5 +357,6 @@
   "enable_password_detection": "Activeu la detecci\u00f3 de contrasenyes per capturar contrasenyes del lector Mifare Ultralight",
   "password_detection": "Detecci\u00f3 de contrasenyes",
   "view_passwords": "Veu contrasenyes",
-  "detected_passwords": "Contrasenyes detectades"
+  "detected_passwords": "Contrasenyes detectades",
+  "continuous_scan": "Escaneig continu"
 }
