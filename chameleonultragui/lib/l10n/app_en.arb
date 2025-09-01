@@ -161,7 +161,6 @@
   "no_supported": "Unsupported Action",
   "lite_no_read": "Chameleon Lite does not support reading cards",
   "read": "Read",
-  "continuous_scan": "Continuous scan",
   "write": "Write",
   "save_only_uid": "Save only UID",
   "letter_space": "{letter} ",
@@ -359,5 +358,6 @@
   "enable_password_detection": "Enable password detection to capture Mifare Ultralight passwords from reader",
   "password_detection": "Password detection",
   "view_passwords": "View passwords",
-  "detected_passwords": "Detected passwords"
+  "detected_passwords": "Detected passwords",
+  "continuous_scan": "Continuous scan"
 }
