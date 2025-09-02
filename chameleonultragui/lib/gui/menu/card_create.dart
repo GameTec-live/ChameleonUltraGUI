@@ -240,10 +240,12 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                           return localizations.must_or(
                               "4", "7", localizations.uid);
                         }
-                      } else if (cleanValue.length != 10 &&
+                      } else if (cleanValue.length !=
+                              uidSizeForLfTag(selectedType) * 2 &&
                           chameleonTagToFrequency(selectedType) ==
                               TagFrequency.lf) {
-                        return localizations.must_be(5, localizations.uid);
+                        return localizations.must_be(
+                            uidSizeForLfTag(selectedType), localizations.uid);
                       }
 
                       return null;
