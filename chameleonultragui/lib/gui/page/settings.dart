@@ -3,6 +3,7 @@ import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/github.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +18,8 @@ import 'package:chameleonultragui/gui/component/qrcode_viewer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:chameleonultragui/gui/menu/qrcode_import.dart';
 import 'package:chameleonultragui/gui/menu/qrcode_settings.dart';
+import 'package:chameleonultragui/gui/menu/changelog_view.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -59,6 +62,10 @@ const localeNameMap = {
   "bg": "Български",
   "el-GR": "Ελληνικά"
 };
+
+Future<String> loadLicense(String license) async {
+  return await rootBundle.loadString('assets/licenses/$license.md');
+}
 
 class SettingsMainPage extends StatefulWidget {
   const SettingsMainPage({super.key});
@@ -104,6 +111,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.settings),
@@ -525,6 +533,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                 Text(localizations.trademarks_mifare),
                                 const SizedBox(height: 10),
                                 Text(localizations.trademarks_em),
+                                const SizedBox(height: 10),
+                                Text(localizations.trademarks_hid),
                               ],
                             ));
                           }
@@ -540,6 +550,72 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                 ),
                 child: Text(localizations.about),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () async {
+                  Map<String, String> licenses = {
+                    'BSD-3-Clause': await loadLicense('BSD-3-Clause'),
+                    'GPL3': await loadLicense('GPL3'),
+                    'LGPL3': await loadLicense('LGPL3'),
+                    'MIT': await loadLicense('MIT')
+                  };
+
+                  // font.dart
+                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
+                        LicenseEntryWithLineBreaks(
+                          <String>['chinese_font_library'],
+                          licenses['BSD-3-Clause']!,
+                        ),
+                      ));
+
+                  // ported hardnested to Windows + MSVC, separation from proxmark3 code
+                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
+                        LicenseEntryWithLineBreaks(
+                          <String>['FlipperNestedRecovery'],
+                          licenses['LGPL3']!,
+                        ),
+                      ));
+
+                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
+                        LicenseEntryWithLineBreaks(
+                          <String>['proxmark3'],
+                          licenses['GPL3']!,
+                        ),
+                      ));
+
+                  // hardnested tables uncompressor
+                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
+                        LicenseEntryWithLineBreaks(
+                          <String>['minlzma'],
+                          licenses['MIT']!,
+                        ),
+                      ));
+
+                  if (context.mounted) {
+                    showLicensePage(context: context);
+                  }
+                },
+                child: Text(localizations.licenses),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => const ChangelogView(),
+                ),
+                child: Text(localizations.changelog),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () async {
+                  if (await canLaunchUrl(Uri.parse(
+                      'https://crowdin.com/project/chameleonultragui'))) {
+                    await launchUrl(Uri.parse(
+                        'https://crowdin.com/project/chameleonultragui'));
+                  }
+                },
+                child: Text(localizations.help_translate),
               ),
               const SizedBox(height: 10),
               TextButton(
