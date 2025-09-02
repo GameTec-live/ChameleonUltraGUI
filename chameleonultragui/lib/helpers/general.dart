@@ -159,6 +159,8 @@ String chameleonTagToString(TagType tag, AppLocalizations localizations) {
     return "EM410X (64)";
   } else if (tag == TagType.hidProx) {
     return "HID Prox";
+  } else if (tag == TagType.viking) {
+    return "Viking";
   } else if (tag == TagType.ntag210) {
     return "NTAG210";
   } else if (tag == TagType.ntag212) {
@@ -211,6 +213,8 @@ TagType numberToChameleonTag(int type) {
     return TagType.em410X64;
   } else if (type == TagType.hidProx.value) {
     return TagType.hidProx;
+  } else if (type == TagType.viking.value) {
+    return TagType.viking;
   } else if (type == TagType.ntag210.value) {
     return TagType.ntag210;
   } else if (type == TagType.ntag212.value) {
@@ -245,6 +249,7 @@ List<TagType> getTagTypes() {
     TagType.em410X32,
     TagType.em410X64,
     TagType.hidProx,
+    TagType.viking,
     TagType.ultralight,
     TagType.ultralightC,
     TagType.ultralight11,
@@ -489,7 +494,8 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.em410X16,
       TagType.em410X32,
       TagType.em410X64,
-      TagType.hidProx
+      TagType.hidProx,
+      TagType.viking
     ];
   }
 
@@ -579,7 +585,23 @@ LFCard getLFCardFromUID(TagType type, String uid) {
     return HIDCard.fromUID(uid);
   }
 
+  if (type == TagType.viking) {
+    return VikingCard.fromUID(uid);
+  }
+
   return EM410XCard.fromUID(uid);
+}
+
+int uidSizeForLfTag(TagType type) {
+  if (isEM410X(type)) {
+    return 5;
+  } else if (type == TagType.hidProx) {
+    return 5;
+  } else if (type == TagType.viking) {
+    return 4;
+  }
+
+  return 0;
 }
 
 bool isEM410X(TagType type) {

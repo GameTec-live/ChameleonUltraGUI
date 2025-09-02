@@ -372,5 +372,6 @@
   "view_commits": "View Commits",
   "view_full_release": "View Full Release",
   "no_changes_listed": "No changes listed",
-  "unreleased": "Unreleased"
+  "unreleased": "Unreleased",
+  "continuous_scan": "Continuous scan"
 }
