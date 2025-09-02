@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:http/http.dart' as http;
@@ -366,14 +367,14 @@ Future<ChangelogEntry?> fetchUnreleasedChanges(
     final List<dynamic> commits = commitsResponse['commits'];
     final List<String> changes = [];
     final Map<String, String> commitHashes = {};
-    
+
     // Build changes list and commit hash mapping (reverse to show newest first)
     for (var commit in commits.reversed) {
       String message = commit['commit']['message']
           .toString()
           .split('\n')[0] // First line only
           .trim();
-      
+
       if (message.isNotEmpty) {
         changes.add(message);
         commitHashes[message] = commit['sha'];
@@ -387,7 +388,8 @@ Future<ChangelogEntry?> fetchUnreleasedChanges(
     // Check if current version commit is among the unreleased commits
     String? matchedCurrentVersionCommit;
     if (currentVersionCommit != null) {
-      bool hasMatch = commits.any((commit) => commit['sha'] == currentVersionCommit);
+      bool hasMatch =
+          commits.any((commit) => commit['sha'] == currentVersionCommit);
       if (hasMatch) {
         matchedCurrentVersionCommit = currentVersionCommit;
       }
@@ -410,10 +412,15 @@ Future<ChangelogEntry?> fetchUnreleasedChanges(
 }
 
 Future<String?> findCurrentVersionCommit(String buildNumber) async {
+  String workflowName =
+      (Platform.isAndroid || Platform.isMacOS || Platform.isIOS)
+          ? 'publish-app.yml'
+          : 'build-app.yml';
+
   try {
-    // Fetch workflow runs for Publish APP or publish-app.yml
+    // Fetch workflow runs
     final response = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/actions/workflows/publish-app.yml/runs?status=success&per_page=50")))
+            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/actions/workflows/$workflowName/runs?status=success&per_page=100")))
         .body
         .toString());
 
