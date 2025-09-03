@@ -358,5 +358,20 @@
   "enable_password_detection": "Wachtwoorddetectie inschakelen voor het vastleggen van Mifare Ultralight wachtwoorden van lezer",
   "password_detection": "Wachtwoord detectie",
   "view_passwords": "Wachtwoorden tonen",
-  "detected_passwords": "Gevonden wachtwoorden"
+  "detected_passwords": "Gevonden wachtwoorden",
+  "continuous_scan": "Continu scannen",
+  "trademarks_hid": "HIDTM en HID ProxCardTM zijn geregistreerde handelsmerken van HID Global Corporation",
+  "licenses": "Licenties",
+  "changelog": "Wijzigingslogboek",
+  "help_translate": "Helpen met vertalen",
+  "your_version": "Huidige versie",
+  "no_changelogs_available": "Geen wijzigingslogs beschikbaar",
+  "changes": "Wijzigingen",
+  "recent_commits": "Recente bijdragen",
+  "latest_commits": "Nieuwste bijdragen",
+  "latest_commits_from_main_branch": "Nieuwste bijdragen",
+  "view_commits": "Bijdragen bekijken",
+  "view_full_release": "Bekijk volledige release",
+  "no_changes_listed": "Geen wijzigingen vermeld",
+  "unreleased": "Niet uitgebracht"
 }
