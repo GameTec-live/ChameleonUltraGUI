@@ -359,5 +359,19 @@
   "password_detection": "\ube44\ubc00\ubc88\ud638 \ud0d0\uc9c0",
   "view_passwords": "\ube44\ubc00\ubc88\ud638 \ubcf4\uae30",
   "detected_passwords": "\ud0d0\uc9c0\ub41c \ube44\ubc00\ubc88\ud638",
-  "continuous_scan": "\uc5f0\uc18d \uc77d\uae30"
+  "continuous_scan": "\uc5f0\uc18d \uc77d\uae30",
+  "trademarks_hid": "HID\u2122 \ubc0f HID ProxCard\u2122 HID Global Corporation\uc758 \ub4f1\ub85d \uc0c1\ud45c\uc785\ub2c8\ub2e4.",
+  "licenses": "\ub77c\uc774\uc13c\uc2a4",
+  "changelog": "\ubcc0\uacbd \ub0b4\uc5ed",
+  "help_translate": "\ubc88\uc5ed \ub3c4\uc640\uc8fc\uae30",
+  "your_version": "\uc124\uce58\ub41c \ubc84\uc804",
+  "no_changelogs_available": "\ubcc0\uacbd \uc0ac\ud56d\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.",
+  "changes": "\ubcc0\uacbd",
+  "recent_commits": "\ucd5c\uadfc \ubcc0\uacbd \uc0ac\ud56d",
+  "latest_commits": "\ucd5c\uc2e0 \ucee4\ubc0b",
+  "latest_commits_from_main_branch": "\ucd5c\uadfc\uc5d0 \ubcf8\uc810\uc5d0\uc11c \ucee4\ubc0b\ud569\ub2c8\ub2e4.",
+  "view_commits": "\ucee4\ubc0b \ubcf4\uae30",
+  "view_full_release": "\uc804\uccb4 \ub9b4\ub9ac\uc2a4 \ubcf4\uae30",
+  "no_changes_listed": "\ubcc0\uacbd \uc0ac\ud56d \uc5c6\uc74c",
+  "unreleased": "\ubbf8\ucd9c\uc2dc"
 }

@@ -311,7 +311,6 @@
   "demo_firmware": "Demo, not real Chameleon Ultra. Disable in settings",
   "trademarks_mifare": "MIFARE\u00ae, MIFARE\u00ae Classic and MIFARE\u00ae Ultralight are registered trademarks of NXP Semiconductors B.V.",
   "trademarks_em": "EM Microelectronic-Marin, EM Microelectronic, EM and all product designations beginning with \u201cEM\u201d are registered trademarks of EM Microelectronic",
-  "trademarks_hid": "HID™ and HID ProxCard™ are registered trademarks of HID Global Corporation",
   "create_card": "Create card",
   "update_data_title": "Update card data?",
   "update_data_message": "You have changed the UID, SAK, or ATQA. Do you want to update the card data accordingly?",
@@ -360,6 +359,8 @@
   "password_detection": "Password detection",
   "view_passwords": "View passwords",
   "detected_passwords": "Detected passwords",
+  "continuous_scan": "Continuous scan",
+  "trademarks_hid": "HID\u2122 and HID ProxCard\u2122 are registered trademarks of HID Global Corporation",
   "licenses": "Licenses",
   "changelog": "Changelog",
   "help_translate": "Help Translate",
@@ -372,6 +373,5 @@
   "view_commits": "View Commits",
   "view_full_release": "View Full Release",
   "no_changes_listed": "No changes listed",
-  "unreleased": "Unreleased",
-  "continuous_scan": "Continuous scan"
+  "unreleased": "Unreleased"
 }
