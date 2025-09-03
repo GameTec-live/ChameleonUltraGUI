@@ -236,7 +236,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                         }
                       } else if (chameleonTagToFrequency(selectedType) ==
                           TagFrequency.hf) {
-                        if (cleanValue.length != 14 || cleanValue.length != 8) {
+                        if (cleanValue.length != 14 && cleanValue.length != 8) {
                           return localizations.must_or(
                               "4", "7", localizations.uid);
                         }

@@ -94,7 +94,7 @@ class ReadCardPageState extends State<ReadCardPage> {
   LFCardInfo lfInfo = LFCardInfo();
   MifareClassicInfo mfcInfo = MifareClassicInfo();
   MifareUltralightInfo mfuInfo = MifareUltralightInfo();
-  
+
   bool isContinuousHFScan = false;
   bool isContinuousLFScan = false;
   Timer? hfScanTimer;
@@ -230,29 +230,29 @@ class ReadCardPageState extends State<ReadCardPage> {
 
   Future<void> startContinuousHFScan() async {
     if (isContinuousHFScan) return;
-    
+
     setState(() {
       isContinuousHFScan = true;
     });
-    
+
     const scanInterval = Duration(seconds: 2);
     const maxDuration = Duration(minutes: 1);
-    
+
     DateTime startTime = DateTime.now();
-    
+
     hfScanTimer = Timer.periodic(scanInterval, (timer) async {
       if (DateTime.now().difference(startTime) > maxDuration || !mounted) {
         stopContinuousHFScan();
         return;
       }
-      
+
       await readHFInfo();
-      
+
       if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
         stopContinuousHFScan();
       }
     });
-    
+
     await readHFInfo();
     if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
       stopContinuousHFScan();
@@ -260,40 +260,43 @@ class ReadCardPageState extends State<ReadCardPage> {
   }
 
   void stopContinuousHFScan() {
-    hfScanTimer?.cancel();
-    hfScanTimer = null;
-    if (mounted) {
-      setState(() {
-        isContinuousHFScan = false;
-      });
+    if (hfScanTimer != null) {
+      hfScanTimer?.cancel();
+      hfScanTimer = null;
+
+      if (mounted) {
+        setState(() {
+          isContinuousHFScan = false;
+        });
+      }
     }
   }
 
   Future<void> startContinuousLFScan() async {
     if (isContinuousLFScan) return;
-    
+
     setState(() {
       isContinuousLFScan = true;
     });
-    
+
     const scanInterval = Duration(seconds: 2);
     const maxDuration = Duration(minutes: 1);
-    
+
     DateTime startTime = DateTime.now();
-    
+
     lfScanTimer = Timer.periodic(scanInterval, (timer) async {
       if (DateTime.now().difference(startTime) > maxDuration || !mounted) {
         stopContinuousLFScan();
         return;
       }
-      
+
       await readLFInfo();
-      
+
       if (lfInfo.cardExist && lfInfo.card != null) {
         stopContinuousLFScan();
       }
     });
-    
+
     await readLFInfo();
     if (lfInfo.cardExist && lfInfo.card != null) {
       stopContinuousLFScan();
@@ -301,12 +304,15 @@ class ReadCardPageState extends State<ReadCardPage> {
   }
 
   void stopContinuousLFScan() {
-    lfScanTimer?.cancel();
-    lfScanTimer = null;
-    if (mounted) {
-      setState(() {
-        isContinuousLFScan = false;
-      });
+    if (lfScanTimer != null) {
+      lfScanTimer?.cancel();
+      lfScanTimer = null;
+
+      if (mounted) {
+        setState(() {
+          isContinuousLFScan = false;
+        });
+      }
     }
   }
 
@@ -537,154 +543,180 @@ class ReadCardPageState extends State<ReadCardPage> {
                         const SizedBox(height: 16)
                       ],
                       isSmallScreen
-                        ? Column(
-                            children: [
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    if (appState.connector!.device ==
-                                        ChameleonDevice.ultra) {
-                                      await readHFInfo();
-                                    } else if (appState.connector!.device ==
-                                        ChameleonDevice.lite) {
-                                      showDialog<String>(
-                                        context: context,
-                                        builder: (BuildContext context) => AlertDialog(
-                                          title: Text(localizations.no_supported),
-                                          content: Text(localizations.lite_no_read,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                          actions: <Widget>[
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  context, localizations.ok),
-                                              child: Text(localizations.ok),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    } else {
-                                      appState.changesMade();
-                                    }
-                                  },
-                                  style: customCardButtonStyle(appState),
-                                  child: Text(localizations.read),
+                          ? Column(
+                              children: [
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      if (appState.connector!.device ==
+                                          ChameleonDevice.ultra) {
+                                        await readHFInfo();
+                                      } else if (appState.connector!.device ==
+                                          ChameleonDevice.lite) {
+                                        showDialog<String>(
+                                          context: context,
+                                          builder: (BuildContext context) =>
+                                              AlertDialog(
+                                            title: Text(
+                                                localizations.no_supported),
+                                            content: Text(
+                                                localizations.lite_no_read,
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, localizations.ok),
+                                                child: Text(localizations.ok),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      } else {
+                                        appState.changesMade();
+                                      }
+                                    },
+                                    style: customCardButtonStyle(appState),
+                                    child: Text(localizations.read),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: isContinuousHFScan 
-                                    ? () => stopContinuousHFScan()
-                                    : () async {
-                                        if (appState.connector!.device ==
-                                            ChameleonDevice.ultra) {
-                                          await startContinuousHFScan();
-                                        } else if (appState.connector!.device ==
-                                            ChameleonDevice.lite) {
-                                          showDialog<String>(
-                                            context: context,
-                                            builder: (BuildContext context) => AlertDialog(
-                                              title: Text(localizations.no_supported),
-                                              content: Text(localizations.lite_no_read,
-                                                  style: const TextStyle(
-                                                      fontWeight: FontWeight.bold)),
-                                              actions: <Widget>[
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(
-                                                      context, localizations.ok),
-                                                  child: Text(localizations.ok),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: isContinuousHFScan
+                                        ? () => stopContinuousHFScan()
+                                        : () async {
+                                            if (appState.connector!.device ==
+                                                ChameleonDevice.ultra) {
+                                              await startContinuousHFScan();
+                                            } else if (appState
+                                                    .connector!.device ==
+                                                ChameleonDevice.lite) {
+                                              showDialog<String>(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        AlertDialog(
+                                                  title: Text(localizations
+                                                      .no_supported),
+                                                  content: Text(
+                                                      localizations
+                                                          .lite_no_read,
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(context,
+                                                              localizations.ok),
+                                                      child: Text(
+                                                          localizations.ok),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                          );
-                                        } else {
-                                          appState.changesMade();
-                                        }
-                                      },
-                                  style: customCardButtonStyle(appState),
-                                  child: Text(isContinuousHFScan 
-                                    ? localizations.cancel 
-                                    : localizations.continuous_scan),
+                                              );
+                                            } else {
+                                              appState.changesMade();
+                                            }
+                                          },
+                                    style: customCardButtonStyle(appState),
+                                    child: Text(isContinuousHFScan
+                                        ? localizations.cancel
+                                        : localizations.continuous_scan),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          )
-                        : Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    if (appState.connector!.device ==
-                                        ChameleonDevice.ultra) {
-                                      await readHFInfo();
-                                    } else if (appState.connector!.device ==
-                                        ChameleonDevice.lite) {
-                                      showDialog<String>(
-                                        context: context,
-                                        builder: (BuildContext context) => AlertDialog(
-                                          title: Text(localizations.no_supported),
-                                          content: Text(localizations.lite_no_read,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                          actions: <Widget>[
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  context, localizations.ok),
-                                              child: Text(localizations.ok),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    } else {
-                                      appState.changesMade();
-                                    }
-                                  },
-                                  style: customCardButtonStyle(appState),
-                                  child: Text(localizations.read),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      if (appState.connector!.device ==
+                                          ChameleonDevice.ultra) {
+                                        await readHFInfo();
+                                      } else if (appState.connector!.device ==
+                                          ChameleonDevice.lite) {
+                                        showDialog<String>(
+                                          context: context,
+                                          builder: (BuildContext context) =>
+                                              AlertDialog(
+                                            title: Text(
+                                                localizations.no_supported),
+                                            content: Text(
+                                                localizations.lite_no_read,
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, localizations.ok),
+                                                child: Text(localizations.ok),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      } else {
+                                        appState.changesMade();
+                                      }
+                                    },
+                                    style: customCardButtonStyle(appState),
+                                    child: Text(localizations.read),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: isContinuousHFScan 
-                                    ? () => stopContinuousHFScan()
-                                    : () async {
-                                        if (appState.connector!.device ==
-                                            ChameleonDevice.ultra) {
-                                          await startContinuousHFScan();
-                                        } else if (appState.connector!.device ==
-                                            ChameleonDevice.lite) {
-                                          showDialog<String>(
-                                            context: context,
-                                            builder: (BuildContext context) => AlertDialog(
-                                              title: Text(localizations.no_supported),
-                                              content: Text(localizations.lite_no_read,
-                                                  style: const TextStyle(
-                                                      fontWeight: FontWeight.bold)),
-                                              actions: <Widget>[
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(
-                                                      context, localizations.ok),
-                                                  child: Text(localizations.ok),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: isContinuousHFScan
+                                        ? () => stopContinuousHFScan()
+                                        : () async {
+                                            if (appState.connector!.device ==
+                                                ChameleonDevice.ultra) {
+                                              await startContinuousHFScan();
+                                            } else if (appState
+                                                    .connector!.device ==
+                                                ChameleonDevice.lite) {
+                                              showDialog<String>(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        AlertDialog(
+                                                  title: Text(localizations
+                                                      .no_supported),
+                                                  content: Text(
+                                                      localizations
+                                                          .lite_no_read,
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(context,
+                                                              localizations.ok),
+                                                      child: Text(
+                                                          localizations.ok),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                          );
-                                        } else {
-                                          appState.changesMade();
-                                        }
-                                      },
-                                  style: customCardButtonStyle(appState),
-                                  child: Text(isContinuousHFScan 
-                                    ? localizations.cancel 
-                                    : localizations.continuous_scan),
+                                              );
+                                            } else {
+                                              appState.changesMade();
+                                            }
+                                          },
+                                    style: customCardButtonStyle(appState),
+                                    child: Text(isContinuousHFScan
+                                        ? localizations.cancel
+                                        : localizations.continuous_scan),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
                       if (hfInfo.uid != "") ...[
                         const SizedBox(height: 16),
                         ElevatedButton(
@@ -771,154 +803,180 @@ class ReadCardPageState extends State<ReadCardPage> {
                         const SizedBox(height: 16)
                       ],
                       isSmallScreen
-                        ? Column(
-                            children: [
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    if (appState.connector!.device ==
-                                        ChameleonDevice.ultra) {
-                                      await readLFInfo();
-                                    } else if (appState.connector!.device ==
-                                        ChameleonDevice.lite) {
-                                      showDialog<String>(
-                                        context: context,
-                                        builder: (BuildContext context) => AlertDialog(
-                                          title: Text(localizations.no_supported),
-                                          content: Text(localizations.lite_no_read,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                          actions: <Widget>[
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  context, localizations.ok),
-                                              child: Text(localizations.ok),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    } else {
-                                      appState.changesMade();
-                                    }
-                                  },
-                                  style: customCardButtonStyle(appState),
-                                  child: Text(localizations.read),
+                          ? Column(
+                              children: [
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      if (appState.connector!.device ==
+                                          ChameleonDevice.ultra) {
+                                        await readLFInfo();
+                                      } else if (appState.connector!.device ==
+                                          ChameleonDevice.lite) {
+                                        showDialog<String>(
+                                          context: context,
+                                          builder: (BuildContext context) =>
+                                              AlertDialog(
+                                            title: Text(
+                                                localizations.no_supported),
+                                            content: Text(
+                                                localizations.lite_no_read,
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, localizations.ok),
+                                                child: Text(localizations.ok),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      } else {
+                                        appState.changesMade();
+                                      }
+                                    },
+                                    style: customCardButtonStyle(appState),
+                                    child: Text(localizations.read),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: isContinuousLFScan 
-                                    ? () => stopContinuousLFScan()
-                                    : () async {
-                                        if (appState.connector!.device ==
-                                            ChameleonDevice.ultra) {
-                                          await startContinuousLFScan();
-                                        } else if (appState.connector!.device ==
-                                            ChameleonDevice.lite) {
-                                          showDialog<String>(
-                                            context: context,
-                                            builder: (BuildContext context) => AlertDialog(
-                                              title: Text(localizations.no_supported),
-                                              content: Text(localizations.lite_no_read,
-                                                  style: const TextStyle(
-                                                      fontWeight: FontWeight.bold)),
-                                              actions: <Widget>[
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(
-                                                      context, localizations.ok),
-                                                  child: Text(localizations.ok),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: isContinuousLFScan
+                                        ? () => stopContinuousLFScan()
+                                        : () async {
+                                            if (appState.connector!.device ==
+                                                ChameleonDevice.ultra) {
+                                              await startContinuousLFScan();
+                                            } else if (appState
+                                                    .connector!.device ==
+                                                ChameleonDevice.lite) {
+                                              showDialog<String>(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        AlertDialog(
+                                                  title: Text(localizations
+                                                      .no_supported),
+                                                  content: Text(
+                                                      localizations
+                                                          .lite_no_read,
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(context,
+                                                              localizations.ok),
+                                                      child: Text(
+                                                          localizations.ok),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                          );
-                                        } else {
-                                          appState.changesMade();
-                                        }
-                                      },
-                                  style: customCardButtonStyle(appState),
-                                  child: Text(isContinuousLFScan 
-                                    ? localizations.cancel 
-                                    : localizations.continuous_scan),
+                                              );
+                                            } else {
+                                              appState.changesMade();
+                                            }
+                                          },
+                                    style: customCardButtonStyle(appState),
+                                    child: Text(isContinuousLFScan
+                                        ? localizations.cancel
+                                        : localizations.continuous_scan),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          )
-                        : Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    if (appState.connector!.device ==
-                                        ChameleonDevice.ultra) {
-                                      await readLFInfo();
-                                    } else if (appState.connector!.device ==
-                                        ChameleonDevice.lite) {
-                                      showDialog<String>(
-                                        context: context,
-                                        builder: (BuildContext context) => AlertDialog(
-                                          title: Text(localizations.no_supported),
-                                          content: Text(localizations.lite_no_read,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                          actions: <Widget>[
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  context, localizations.ok),
-                                              child: Text(localizations.ok),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    } else {
-                                      appState.changesMade();
-                                    }
-                                  },
-                                  style: customCardButtonStyle(appState),
-                                  child: Text(localizations.read),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      if (appState.connector!.device ==
+                                          ChameleonDevice.ultra) {
+                                        await readLFInfo();
+                                      } else if (appState.connector!.device ==
+                                          ChameleonDevice.lite) {
+                                        showDialog<String>(
+                                          context: context,
+                                          builder: (BuildContext context) =>
+                                              AlertDialog(
+                                            title: Text(
+                                                localizations.no_supported),
+                                            content: Text(
+                                                localizations.lite_no_read,
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, localizations.ok),
+                                                child: Text(localizations.ok),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      } else {
+                                        appState.changesMade();
+                                      }
+                                    },
+                                    style: customCardButtonStyle(appState),
+                                    child: Text(localizations.read),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: isContinuousLFScan 
-                                    ? () => stopContinuousLFScan()
-                                    : () async {
-                                        if (appState.connector!.device ==
-                                            ChameleonDevice.ultra) {
-                                          await startContinuousLFScan();
-                                        } else if (appState.connector!.device ==
-                                            ChameleonDevice.lite) {
-                                          showDialog<String>(
-                                            context: context,
-                                            builder: (BuildContext context) => AlertDialog(
-                                              title: Text(localizations.no_supported),
-                                              content: Text(localizations.lite_no_read,
-                                                  style: const TextStyle(
-                                                      fontWeight: FontWeight.bold)),
-                                              actions: <Widget>[
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(
-                                                      context, localizations.ok),
-                                                  child: Text(localizations.ok),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: isContinuousLFScan
+                                        ? () => stopContinuousLFScan()
+                                        : () async {
+                                            if (appState.connector!.device ==
+                                                ChameleonDevice.ultra) {
+                                              await startContinuousLFScan();
+                                            } else if (appState
+                                                    .connector!.device ==
+                                                ChameleonDevice.lite) {
+                                              showDialog<String>(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        AlertDialog(
+                                                  title: Text(localizations
+                                                      .no_supported),
+                                                  content: Text(
+                                                      localizations
+                                                          .lite_no_read,
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(context,
+                                                              localizations.ok),
+                                                      child: Text(
+                                                          localizations.ok),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                          );
-                                        } else {
-                                          appState.changesMade();
-                                        }
-                                      },
-                                  style: customCardButtonStyle(appState),
-                                  child: Text(isContinuousLFScan 
-                                    ? localizations.cancel 
-                                    : localizations.continuous_scan),
+                                              );
+                                            } else {
+                                              appState.changesMade();
+                                            }
+                                          },
+                                    style: customCardButtonStyle(appState),
+                                    child: Text(isContinuousLFScan
+                                        ? localizations.cancel
+                                        : localizations.continuous_scan),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
                       if (lfInfo.card != null) ...[
                         const SizedBox(height: 16),
                         ElevatedButton(
