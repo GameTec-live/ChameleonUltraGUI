@@ -46,8 +46,7 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
           child: Form(
               key: formKey,
               autovalidateMode: AutovalidateMode.onUserInteraction,
-              child: Expanded(
-                  child: Column(
+              child: Column(
                 children: [
                   TextFormField(
                     controller: keyController,
@@ -73,7 +72,7 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
                     },
                   )
                 ],
-              )))),
+              ))),
       TextButton(
         onPressed: () => {
           setState(() {
