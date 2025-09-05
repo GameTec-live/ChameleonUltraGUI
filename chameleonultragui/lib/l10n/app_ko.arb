@@ -373,5 +373,6 @@
   "view_commits": "\ucee4\ubc0b \ubcf4\uae30",
   "view_full_release": "\uc804\uccb4 \ub9b4\ub9ac\uc2a4 \ubcf4\uae30",
   "no_changes_listed": "\ubcc0\uacbd \uc0ac\ud56d \uc5c6\uc74c",
-  "unreleased": "\ubbf8\ucd9c\uc2dc"
+  "unreleased": "\ubbf8\ucd9c\uc2dc",
+  "export_logs_to_file": "\ub85c\uadf8 \ud30c\uc77c \ucd9c\ub825"
 }
