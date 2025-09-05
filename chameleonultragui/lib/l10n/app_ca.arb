@@ -373,5 +373,6 @@
   "view_commits": "Mostra publicacions",
   "view_full_release": "Mostra tot el llan\u00e7ament",
   "no_changes_listed": "Sense canvis llistats",
-  "unreleased": "No publicat"
+  "unreleased": "No publicat",
+  "export_logs_to_file": "Exporta registres a fitxer"
 }
