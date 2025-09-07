@@ -38,13 +38,14 @@ class WriteCardPageState extends State<WriteCardPage> {
     );
   }
 
-  Future<void> onTap(CardSave selectedCard, dynamic close) async {
+  Future<void> onTap(CardSave selectedCard, dynamic close,
+      AppLocalizations localizations) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
     setState(() {
       card = selectedCard;
       baseHelper = AbstractWriteHelper.getClassByCardType(
-          selectedCard.tag, appState, updateState);
+          selectedCard.tag, appState, updateState, localizations);
     });
 
     if (baseHelper != null) {

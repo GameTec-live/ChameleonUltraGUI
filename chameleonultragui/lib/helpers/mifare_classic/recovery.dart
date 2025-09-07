@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
@@ -27,7 +28,9 @@ enum ChameleonKeyCheckmark { none, found, checking }
 
 class MifareClassicRecovery {
   late ChameleonGUIState appState;
+  late AppLocalizations localizations;
   String error;
+  String state;
   bool allKeysExists;
   List<Dictionary> dictionaries;
   Dictionary? selectedDictionary;
@@ -43,7 +46,9 @@ class MifareClassicRecovery {
   MifareClassicRecovery(
       {required this.appState,
       required this.update,
+      required this.localizations,
       this.error = '',
+      this.state = '',
       this.allKeysExists = false,
       this.dictionaries = const [],
       this.dumpProgress = 0,
@@ -59,6 +64,7 @@ class MifareClassicRecovery {
 
   Future<bool> checkKeysOnSector(
       List<Uint8List> keys, int keyType, int sector) async {
+    state = localizations.checking_keys(keys.length);
     Uint8List? key;
     keyCheckProgress = null;
     int chunkSize =
@@ -140,6 +146,7 @@ class MifareClassicRecovery {
         sector++) {
       for (var keyType = 0; keyType < 2; keyType++) {
         if (checkMarks[sector + (keyType * 40)] == ChameleonKeyCheckmark.none) {
+          state = localizations.checking_keys(1);
           appState.log!.d(
               "Checking found key ${bytesToHex(key)} on sector $sector, key type $keyType");
           checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.checking;
@@ -191,9 +198,15 @@ class MifareClassicRecovery {
         }
       }
     }
+
+    state = "";
+    update();
   }
 
   Future<void> recoverKeys() async {
+    state = localizations.checking_card_info;
+    update();
+
     error = "";
     bool hasKey = false;
     bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
@@ -226,17 +239,26 @@ class MifareClassicRecovery {
           appState.communicator!, 0, 4, backdoorInfo!.$4);
     }
 
-    if (!hasKey && !isStaticEncrypted) {
+    NTLevel prng = await appState.communicator!.getMf1NTLevel();
+    update();
+
+    if (!hasKey && !isStaticEncrypted && prng != NTLevel.static) {
+      state = localizations.checking_or_running_darkside;
+      update();
+
       try {
+        checkMarks[40] = ChameleonKeyCheckmark.checking;
         darkside = await appState.communicator!.checkMf1Darkside();
-      } catch (_) {}
+      } catch (_) {
+        checkMarks[40] = ChameleonKeyCheckmark.none;
+        ;
+      }
 
       if (darkside == DarksideResult.vulnerable) {
         // recover with darkside
         var data =
             await appState.communicator!.getMf1Darkside(0x03, 0x61, true, 15);
         var darkside = DarksideDart(uid: data.uid, items: []);
-        checkMarks[40] = ChameleonKeyCheckmark.checking;
         bool found = false;
         update();
 
@@ -264,13 +286,18 @@ class MifareClassicRecovery {
                 .getMf1Darkside(0x03, 0x61, false, 15);
           }
         }
+
+        if (!found) {
+          checkMarks[40] = ChameleonKeyCheckmark.none;
+          update();
+        }
       }
     }
 
     update();
-    NTLevel prng = await appState.communicator!.getMf1NTLevel();
 
     if (!hasKey && hasBackdoor && prng == NTLevel.weak && !isStaticEncrypted) {
+      state = localizations.backdoor_recovery_of_non_static_encrypted;
       checkMarks[0] = ChameleonKeyCheckmark.checking;
       update();
 
@@ -330,7 +357,8 @@ class MifareClassicRecovery {
     }
 
     if (validKeyType == -1 && prng != NTLevel.backdoor) {
-      error = "no_keys_darkside";
+      error = localizations.recovery_error_no_keys_darkside;
+      state = "";
       return;
     }
 
@@ -341,8 +369,23 @@ class MifareClassicRecovery {
         sector++) {
       for (var keyType = 0; keyType < 2; keyType++) {
         if (checkMarks[sector + (keyType * 40)] == ChameleonKeyCheckmark.none) {
-          checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.checking;
+          String attackType;
 
+          switch (prng) {
+            case NTLevel.static:
+              attackType = "Static Nested";
+            case NTLevel.weak:
+              attackType = "Nested";
+            case NTLevel.hard:
+              attackType = "HardNested";
+            case NTLevel.backdoor:
+              attackType = "Backdoor";
+            case NTLevel.unknown:
+              attackType = "";
+          }
+
+          state = localizations.collecting_nonces(attackType);
+          checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.checking;
           update();
 
           NTDistance? distance;
@@ -359,6 +402,7 @@ class MifareClassicRecovery {
             if (prng == NTLevel.hard) {
               hardnestedProgress = 0;
               update();
+
               var result = await collectHardnestedNonces(
                   validKeyBlock,
                   0x60 + validKeyType,
@@ -383,6 +427,9 @@ class MifareClassicRecovery {
                   0x60 + keyType,
                   level: prng);
             }
+
+            state = localizations.recovering_keys(attackType);
+            update();
 
             if (prng == NTLevel.weak) {
               var nested = NestedDart(
@@ -411,7 +458,6 @@ class MifareClassicRecovery {
               var nested =
                   HardNestedDart(nonces: nonces!.getHardNested(distance!.uid));
               keys = await recovery.hardNested(nested);
-              hardnestedProgress = null;
             } else if (prng == NTLevel.backdoor) {
               checkMarks[sector + 40] = ChameleonKeyCheckmark.checking;
 
@@ -490,8 +536,20 @@ class MifareClassicRecovery {
         }
       }
     }
-    update();
+
+    state = "";
     allKeysExists = true;
+    for (var sector = 0;
+        sector < mfClassicGetSectorCount(mifareClassicType);
+        sector++) {
+      for (var keyType = 0; keyType < 2; keyType++) {
+        if (checkMarks[sector + (keyType * 40)] !=
+            ChameleonKeyCheckmark.found) {
+          allKeysExists = false;
+        }
+      }
+    }
+    update();
   }
 
   Future<void> dumpData() async {
@@ -578,10 +636,12 @@ class MifareClassicRecovery {
           "Collected ${nonces.nonces.length} nonces, sum ${info[0]}, num ${info[1]}");
 
       if (nonces.nonces.isEmpty) {
-        return "old_firmware";
+        return localizations.recovery_old_firmware;
       }
 
       hardnestedProgress = info[1] / 256;
+      state = localizations.hardnested_collecting_nonces(
+          (hardnestedProgress! * 256).toInt().toString());
       update();
       if (info[1] == 256) {
         if ([
@@ -613,6 +673,7 @@ class MifareClassicRecovery {
       }
     }
 
+    hardnestedProgress = null;
     return nonces;
   }
 }

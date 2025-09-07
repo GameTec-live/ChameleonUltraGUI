@@ -184,7 +184,9 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
     hfInfo = null;
     mfcInfo = null;
     recovery = MifareClassicRecovery(
-        appState: recovery.appState, update: recovery.update);
+        appState: recovery.appState,
+        update: recovery.update,
+        localizations: recovery.localizations);
     await recovery.initialize();
   }
 

@@ -374,5 +374,11 @@
   "view_full_release": "View Full Release",
   "no_changes_listed": "No changes listed",
   "unreleased": "Unreleased",
-  "export_logs_to_file": "Export logs to file"
+  "export_logs_to_file": "Export logs to file",
+  "checking_card_info": "Checking card info",
+  "checking_or_running_darkside": "Checking and running Darkside attack",
+  "backdoor_recovery_of_non_static_encrypted": "Recovering first key via backdoor",
+  "collecting_nonces": "Collecting nonces ({type})",
+  "recovering_keys": "Recovering keys ({type})",
+  "checking_keys": "Checking keys ({count})"
 }

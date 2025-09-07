@@ -165,7 +165,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
             overflow: TextOverflow.ellipsis,
           ),
           onTap: () async {
-            onTap(card, close);
+            onTap(card, close, localizations);
           },
         );
       },

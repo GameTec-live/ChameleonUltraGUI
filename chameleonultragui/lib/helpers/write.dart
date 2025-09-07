@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
@@ -44,10 +45,16 @@ abstract class AbstractWriteHelper {
   Future<void> reset() async {} // delete data from helper
 
   static AbstractWriteHelper? getClassByCardType(
-      TagType type, ChameleonGUIState appState, void Function() update) {
+      TagType type,
+      ChameleonGUIState appState,
+      void Function() update,
+      AppLocalizations localizations) {
     if (isMifareClassic(type)) {
       return BaseMifareClassicWriteHelper(appState.communicator!,
-          recovery: MifareClassicRecovery(appState: appState, update: update));
+          recovery: MifareClassicRecovery(
+              appState: appState,
+              update: update,
+              localizations: localizations));
     }
 
     if (isMifareUltralight(type)) {
