@@ -240,7 +240,7 @@ class MifareClassicRecovery {
         bool found = false;
         update();
 
-        for (var tries = 0; tries < 0xFF && !found; tries++) {
+        for (var tries = 0; tries < 5 && !found; tries++) {
           darkside.items.add(DarksideItemDart(
               nt1: data.nt1,
               ks1: data.ks1,
@@ -334,6 +334,8 @@ class MifareClassicRecovery {
       return;
     }
 
+    int tries = prng == NTLevel.static ? 1 : 5;
+
     for (var sector = 0;
         sector < mfClassicGetSectorCount(mifareClassicType);
         sector++) {
@@ -351,7 +353,7 @@ class MifareClassicRecovery {
                 .getMf1NTDistance(validKeyBlock, 0x60 + validKeyType, validKey);
           }
           bool found = false;
-          for (var i = 0; i < 0xFF && !found; i++) {
+          for (var i = 0; i < tries && !found; i++) {
             List<int> keys = [];
 
             if (prng == NTLevel.hard) {
