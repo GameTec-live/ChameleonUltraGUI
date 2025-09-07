@@ -377,9 +377,9 @@ class MifareClassicRecovery {
             case NTLevel.weak:
               attackType = "Nested";
             case NTLevel.hard:
-              attackType = "HardNested";
+              attackType = "Hard Nested";
             case NTLevel.backdoor:
-              attackType = "Backdoor";
+              attackType = localizations.has_backdoor_support;
             case NTLevel.unknown:
               attackType = "";
           }
@@ -428,7 +428,7 @@ class MifareClassicRecovery {
                   level: prng);
             }
 
-            state = localizations.recovering_keys(attackType);
+            state = localizations.recovering_key(attackType);
             update();
 
             if (prng == NTLevel.weak) {

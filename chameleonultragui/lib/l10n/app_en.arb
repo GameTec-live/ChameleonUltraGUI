@@ -379,6 +379,6 @@
   "checking_or_running_darkside": "Checking and running Darkside attack",
   "backdoor_recovery_of_non_static_encrypted": "Recovering first key via backdoor",
   "collecting_nonces": "Collecting nonces ({type})",
-  "recovering_keys": "Recovering keys ({type})",
+  "recovering_key": "Recovering key ({type})",
   "checking_keys": "Checking keys ({count})"
 }
