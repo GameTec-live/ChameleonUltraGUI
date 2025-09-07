@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/colors.dart' as colors;
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';

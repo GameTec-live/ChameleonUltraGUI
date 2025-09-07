@@ -1,8 +1,8 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/mifare/classic.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
 import 'package:chameleonultragui/gui/component/mifare/ultralight.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
@@ -486,7 +486,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                                 ...getTagTypesByFrequency(
                                                     TagFrequency.hf),
                                                 TagType.unknown
-                                              ].map((tagType) {
+                                              ].map((TagType tagType) {
                                                 return DropdownMenuItem<
                                                     TagType?>(
                                                   value: tagType,
