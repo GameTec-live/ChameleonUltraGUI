@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>run.chameleon.gui</id>
+  <id>run.chameleon.chameleonultragui</id>
   <name>Chameleon Ultra GUI</name>
   <summary>Cross-platform Chameleon Ultra GUI</summary>
 
@@ -21,7 +21,7 @@
     <category>Utility</category>
   </categories>
 
-  <launchable type="desktop-id">run.chameleon.gui.desktop</launchable>
+  <launchable type="desktop-id">run.chameleon.chameleonultragui.desktop</launchable>
 
   <url type="homepage">https://github.com/GameTec-live/ChameleonUltraGUI</url>
   <url type="bugtracker">https://github.com/GameTec-live/ChameleonUltraGUI/issues</url>
