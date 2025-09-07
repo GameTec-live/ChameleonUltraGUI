@@ -115,7 +115,7 @@ class CardReaderState extends State<MifareClassicHelper> {
 
     var appState = context.watch<ChameleonGUIState>();
     widget.mfcInfo.recovery?.dictionaries =
-        appState.sharedPreferencesProvider.getDictionaries();
+        appState.sharedPreferencesProvider.getDictionaries(keyLength: 6);
     widget.mfcInfo.recovery?.dictionaries
         .insert(0, Dictionary(id: "", name: localizations.empty, keys: []));
     widget.mfcInfo.recovery?.selectedDictionary ??=

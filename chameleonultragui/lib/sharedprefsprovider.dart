@@ -15,6 +15,7 @@ class Dictionary {
   String name;
   List<Uint8List> keys;
   Color color;
+  int keyLength;
 
   factory Dictionary.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
@@ -24,12 +25,21 @@ class Dictionary {
     if (data['color'] == null) {
       data['color'] = colorToHex(Colors.deepOrange);
     }
+
+    if (data['keyLength'] == null) {
+      // legacy
+      data['keyLength'] = 6;
+    }
+
+    final keyLength = data['keyLength'] as int;
     final color = hexToColor(data['color']);
+
     List<Uint8List> keys = [];
     for (var key in encodedKeys) {
       keys.add(Uint8List.fromList(List<int>.from(key)));
     }
-    return Dictionary(id: id, name: name, keys: keys, color: color);
+    return Dictionary(
+        id: id, name: name, keys: keys, color: color, keyLength: keyLength);
   }
 
   String toJson() {
@@ -39,15 +49,6 @@ class Dictionary {
       'color': colorToHex(color),
       'keys': keys.map((key) => key.toList()).toList()
     });
-  }
-
-  factory Dictionary.fromFile(String file, String name) {
-    final lines = file.split("\n");
-    List<Uint8List> keys = [];
-    for (var key in lines) {
-      keys.add(hexToBytes(key));
-    }
-    return Dictionary(name: name, keys: keys);
   }
 
   Uint8List toFile() {
@@ -62,7 +63,8 @@ class Dictionary {
       {String? id,
       this.name = "",
       this.keys = const [],
-      this.color = Colors.deepOrange})
+      this.color = Colors.deepOrange,
+      this.keyLength = 0})
       : id = id ?? const Uuid().v4();
 }
 
@@ -272,11 +274,14 @@ class SharedPreferencesProvider extends ChangeNotifier {
     _sharedPreferences.setBool('emulate_device', value);
   }
 
-  List<Dictionary> getDictionaries() {
+  List<Dictionary> getDictionaries({int keyLength = 0}) {
     List<Dictionary> output = [];
     final data = _sharedPreferences.getStringList('dictionaries') ?? [];
     for (var dictionary in data) {
-      output.add(Dictionary.fromJson(dictionary));
+      Dictionary dict = Dictionary.fromJson(dictionary);
+      if (keyLength == 0 || dict.keyLength == keyLength) {
+        output.add(dict);
+      }
     }
     return output;
   }
