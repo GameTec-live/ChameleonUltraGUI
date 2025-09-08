@@ -149,7 +149,8 @@ class ReadCardPageState extends State<ReadCardPage> {
             update: updateMifareClassicRecovery,
             appState: appState,
             mifareClassicType: mifareClassicType,
-            localizations: localizations);
+            localizations: localizations,
+            isMifareClassicEV1: isMifareClassicEV1);
 
         NTLevel ntLevel = await appState.communicator!.getMf1NTLevel();
         bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
