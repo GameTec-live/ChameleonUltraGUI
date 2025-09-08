@@ -24,6 +24,7 @@ Download the Linux build
 - [Arch-based](https://aur.archlinux.org/packages/chameleonultragui-git)
 - [Other](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux.zip)
 - [Other (legacy, built on Ubuntu 20.04 LTS)](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-legacy.zip)
+- [Flathub (Not built in our CI, updates may be slower)](https://flathub.org/apps/run.chameleon.chameleonultragui)
 
 #### macOS / iOS / iPadOS
 
@@ -39,7 +40,6 @@ Or, plain [APK](https://github.com/GameTec-live/ChameleonUltraGUI/releases/downl
 
 #### Pending stores:
 - F-Store: not yet
-- Flathub: not yet
 - Chocolatey (Windows): not yet
 
 Note: Under some Linux systems, especially ones running KDE desktop environments, you may need to install the `zenity` package for the file picker to work correctly.
