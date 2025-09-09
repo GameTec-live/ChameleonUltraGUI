@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/edit.dart';
 import 'package:flutter/material.dart';
-import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -56,10 +55,6 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
     var localizations = AppLocalizations.of(context)!;
     var appState = context.watch<ChameleonGUIState>();
 
-    String output = currentDictionary.keys
-        .map((key) => bytesToHex(key).toUpperCase())
-        .join('\n');
-
     return AlertDialog(
       title: Text(
         currentDictionary.name,
@@ -81,7 +76,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
                   children: [
                     Expanded(
                       child: Text(
-                        "${localizations.key_count}: ${currentDictionary.keys.length}",
+                        "${localizations.key_count}: ${currentDictionary.keys.length} (${currentDictionary.keyLength})",
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
@@ -114,7 +109,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
                           controller: _scrollController,
                           padding: const EdgeInsets.all(16.0),
                           child: SelectableText(
-                            output,
+                            currentDictionary.toString(),
                             style: const TextStyle(
                               fontFamily: 'RobotoMono',
                               fontSize: 16.0,
@@ -128,7 +123,8 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
                       padding: const EdgeInsets.all(8.0),
                       child: TextButton.icon(
                         onPressed: () async {
-                          await Clipboard.setData(ClipboardData(text: output));
+                          await Clipboard.setData(ClipboardData(
+                              text: currentDictionary.toString()));
                         },
                         icon: const Icon(Icons.copy),
                         label: Text(localizations.copy_all_keys),

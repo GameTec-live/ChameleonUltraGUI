@@ -390,5 +390,19 @@
   "mifare_classic_gen4_description": "Configure Gen4 magic card",
   "t55xx_password_cleaner": "T55XX password cleaner",
   "t55xx_password_cleaner_description": "Removes passwords from T55XX tags",
-  "dictionary_download_success": "Dictionary {name} is downloaded. Check it in \"Saved Cards page\""
+  "dictionary_download_success": "Dictionary {name} is downloaded. Check it in \"Saved Cards page\"",
+  "t55xx_password_cleaner": "T55XX password cleaner",
+  "t55xx_password_cleaner_warning": "This tool may BREAK your card if it has no password (or in other cases). Use it at your own risk, we are not responsible for the damage.",
+  "select_t55xx_dictionary": "Select dictionary",
+  "no_t55xx_dictionaries": "No T55XX compatible dictionaries available. Please download some first.",
+  "download_dictionaries": "Download dictionaries",
+  "enter_new_password": "Enter new password (will be set if password will be found)",
+  "start_password_reset": "Start password reset",
+  "password_reset_progress": "Progress",
+  "password_found": "Password found",
+  "password_reset_failed": "Password reset failed",
+  "password_reset_success": "Previous password was: {password}",
+  "password_reset_no_match": "Unable to reset password. None of the password in the dictionary worked.",
+  "trying_password": "Trying password",
+  "cancel": "Cancel"
 }

@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
+import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -10,7 +11,6 @@ class ToolItem {
   final String name;
   final String description;
   final IconData icon;
-  final bool isWIP;
   final bool isDeviceRequired;
   final Widget? onPressed;
 
@@ -18,7 +18,6 @@ class ToolItem {
     required this.name,
     required this.description,
     required this.icon,
-    this.isWIP = false,
     this.isDeviceRequired = false,
     this.onPressed,
   });
@@ -44,16 +43,15 @@ class ToolsPageState extends State<ToolsPage> {
           icon: Icons.key,
           onPressed: const DictionaryDownloadMenu()),
       ToolItem(
-          name: localizations.mifare_classic_gen4,
-          description: localizations.mifare_classic_gen4_description,
-          icon: Icons.settings,
-          isWIP: true,
-          isDeviceRequired: true),
-      ToolItem(
           name: localizations.t55xx_password_cleaner,
           description: localizations.t55xx_password_cleaner_description,
           icon: Icons.password,
-          isWIP: true,
+          onPressed: const T55XXPasswordCleanerMenu(),
+          isDeviceRequired: true),
+      ToolItem(
+          name: localizations.mifare_classic_gen4,
+          description: localizations.mifare_classic_gen4_description,
+          icon: Icons.settings,
           isDeviceRequired: true),
     ];
 
@@ -82,7 +80,9 @@ class ToolsPageState extends State<ToolsPage> {
                       firstLine: tool.name,
                       secondLine: tool.description,
                       itemIndex: index,
-                      onPressed: tool.onPressed != null
+                      onPressed: tool.onPressed != null &&
+                              (!tool.isDeviceRequired ||
+                                  appState.connector!.connected)
                           ? () {
                               showDialog(
                                   context: context,
@@ -92,7 +92,7 @@ class ToolsPageState extends State<ToolsPage> {
                             }
                           : null,
                       children: []),
-                  if (tool.isWIP)
+                  if (tool.onPressed == null)
                     Positioned(
                       top: 8,
                       right: 8,

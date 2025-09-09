@@ -47,7 +47,8 @@ class Dictionary {
       'id': id,
       'name': name,
       'color': colorToHex(color),
-      'keys': keys.map((key) => key.toList()).toList()
+      'keys': keys.map((key) => key.toList()).toList(),
+      'keyLength': keyLength
     });
   }
 
