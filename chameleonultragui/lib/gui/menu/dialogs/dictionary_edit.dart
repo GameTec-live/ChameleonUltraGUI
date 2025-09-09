@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
-import 'dart:typed_data';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:chameleonultragui/helpers/general.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';

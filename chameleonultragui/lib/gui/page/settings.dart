@@ -1,6 +1,7 @@
 import 'package:chameleonultragui/gui/component/developer_list.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/qrcode_settings.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/foundation.dart';
@@ -16,9 +17,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:chameleonultragui/gui/component/qrcode_viewer.dart';
 import 'package:crypto/crypto.dart';
-import 'package:chameleonultragui/gui/menu/qrcode_import.dart';
-import 'package:chameleonultragui/gui/menu/qrcode_settings.dart';
-import 'package:chameleonultragui/gui/menu/changelog_view.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/qrcode_import.dart';
+import 'package:chameleonultragui/gui/menu/pages/changelog_view.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 // Localizations

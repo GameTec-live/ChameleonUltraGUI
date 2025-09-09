@@ -1,11 +1,11 @@
 import 'package:chameleonultragui/gui/component/error_page.dart';
-import 'package:chameleonultragui/gui/menu/slot_edit.dart';
-import 'package:chameleonultragui/gui/menu/slot_export.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/slot_edit.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/slot_export.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
-import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/confirm_delete.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';

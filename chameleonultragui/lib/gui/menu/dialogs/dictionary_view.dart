@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary_edit.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -9,7 +9,7 @@ import 'package:chameleonultragui/main.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
-import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/confirm_delete.dart';
 
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 

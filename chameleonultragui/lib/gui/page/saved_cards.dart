@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/saved_card.dart';
-import 'package:chameleonultragui/gui/menu/dictionary_edit.dart';
-import 'package:chameleonultragui/gui/menu/card_view.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary_edit.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/card_view.dart';
 import 'package:chameleonultragui/helpers/cardsave_converters.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -19,10 +19,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
-import 'package:chameleonultragui/gui/menu/card_edit.dart';
-import 'package:chameleonultragui/gui/menu/card_create.dart';
-import 'package:chameleonultragui/gui/menu/dictionary_view.dart';
-import 'package:chameleonultragui/gui/menu/confirm_delete.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/card_edit.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/card_create.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary_view.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/confirm_delete.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
