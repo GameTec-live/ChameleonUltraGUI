@@ -27,51 +27,11 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  String bytesToHex(Uint8List bytes) {
-    return bytes
-        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
-        .join()
-        .toUpperCase();
-  }
-
-  String dictToString(List<Uint8List> keys) {
-    String output = "";
-    for (var key in keys) {
-      output += "${bytesToHex(key)}\n";
-    }
-    return output.trim();
-  }
-
-  List<Uint8List> stringToDict(String input) {
-    List<Uint8List> keys = [];
-    List<int> allowedKeySizes = [
-      12, // 6 - Mifare Classic
-      8, // 4 - Mifare Ultralight / T55XX
-      32, // 16 - Mifare Ultralight C / AES / Mifare Plus
-    ];
-    int currentKeySize = 0;
-
-    for (var key in input.split("\n")) {
-      key = key.trim();
-      if (allowedKeySizes.contains(key.length) &&
-          isValidHexString(key) &&
-          (currentKeySize == 0 || currentKeySize == key.length)) {
-        if (currentKeySize == 0) {
-          currentKeySize = key.length;
-        }
-
-        keys.add(hexToBytes(key));
-      }
-    }
-    return keys;
-  }
-
   @override
   void initState() {
     super.initState();
     nameController = TextEditingController(text: widget.dictionary.name);
-    keysController =
-        TextEditingController(text: dictToString(widget.dictionary.keys));
+    keysController = TextEditingController(text: widget.dictionary.toString());
     pickerColor = widget.dictionary.color;
     currentColor = widget.dictionary.color;
   }
@@ -178,18 +138,14 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               return;
             }
 
-            List<Uint8List> keys = stringToDict(keysController.text);
+            Dictionary dict = Dictionary.fromString(keysController.text);
+            dict.id = (widget.isNew ? null : widget.dictionary.id)!;
+            dict.color = currentColor;
+            dict.name = nameController.text;
 
-            if (keys.isEmpty) {
+            if (dict.keys.isEmpty) {
               return;
             }
-
-            Dictionary dict = Dictionary(
-                id: widget.isNew ? null : widget.dictionary.id,
-                name: nameController.text,
-                keys: keys,
-                color: currentColor,
-                keyLength: keys[0].length);
 
             var dictionaries =
                 appState.sharedPreferencesProvider.getDictionaries();

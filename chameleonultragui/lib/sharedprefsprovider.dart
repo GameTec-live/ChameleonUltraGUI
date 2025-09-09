@@ -51,12 +51,52 @@ class Dictionary {
     });
   }
 
-  Uint8List toFile() {
+  @override
+  String toString() {
     String output = "";
     for (var key in keys) {
       output += "${bytesToHex(key).toUpperCase()}\n";
     }
-    return const Utf8Encoder().convert(output);
+    return output;
+  }
+
+  Uint8List toFile() {
+    return const Utf8Encoder().convert(toString());
+  }
+
+  factory Dictionary.fromString(String input, {String name = ''}) {
+    List<Uint8List> keys = [];
+    List<int> allowedKeySizes = [
+      12, // 6 - Mifare Classic
+      8, // 4 - Mifare Ultralight / T55XX
+      32, // 16 - Mifare Ultralight C / AES / Mifare Plus
+    ];
+    int currentKeySize = 0;
+
+    for (var key in input.split("\n")) {
+      key = key.trim().replaceAll('#', ' ');
+
+      if (key.contains(' ')) {
+        key = key.split(' ')[0];
+      }
+
+      if (allowedKeySizes.contains(key.length) &&
+          isValidHexString(key) &&
+          (currentKeySize == 0 || currentKeySize == key.length)) {
+        if (currentKeySize == 0) {
+          currentKeySize = key.length;
+        }
+
+        keys.add(hexToBytes(key));
+      }
+    }
+
+    return Dictionary(
+        id: const Uuid().v4(),
+        name: name,
+        keys: keys,
+        color: Colors.deepOrange,
+        keyLength: currentKeySize);
   }
 
   Dictionary(

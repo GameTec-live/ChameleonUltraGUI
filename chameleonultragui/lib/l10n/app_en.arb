@@ -380,5 +380,15 @@
   "backdoor_recovery_of_non_static_encrypted": "Recovering first key via backdoor",
   "collecting_nonces": "Collecting nonces ({type})",
   "recovering_key": "Recovering key ({type})",
-  "checking_keys": "Checking keys ({count})"
+  "checking_keys": "Checking keys ({count})",
+  "tools": "Tools",
+  "wip": "WIP",
+  "device_required": "Device required",
+  "dictionary_download": "Dictionary download",
+  "dictionary_download_description": "Download external dictionaries",
+  "mifare_classic_gen4": "Mifare Classic Gen4",
+  "mifare_classic_gen4_description": "Configure Gen4 magic card",
+  "t55xx_password_cleaner": "T55XX password cleaner",
+  "t55xx_password_cleaner_description": "Removes passwords from T55XX tags",
+  "dictionary_download_success": "Dictionary {name} is downloaded. Check it in \"Saved Cards page\""
 }
