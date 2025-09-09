@@ -15,10 +15,10 @@ import 'package:chameleonultragui/protobuf/dfu-cc.pb.dart';
 import 'dart:math';
 
 Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
-  var content = await fetchFirmwareFromReleases(device);
+  var content = await fetchFirmwareFromActions(device);
 
   if (content.isEmpty) {
-    content = await fetchFirmwareFromActions(device);
+    content = await fetchFirmwareFromReleases(device);
   }
 
   return content;
