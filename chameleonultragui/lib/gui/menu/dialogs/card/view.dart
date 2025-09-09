@@ -1,5 +1,5 @@
-import 'package:chameleonultragui/gui/menu/dialogs/card_edit.dart';
-import 'package:chameleonultragui/gui/menu/dialogs/dictionary_export.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/card/edit.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary/export.dart';
 import 'package:chameleonultragui/gui/menu/pages/dump_editor.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';

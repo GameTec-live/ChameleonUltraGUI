@@ -1,6 +1,6 @@
 import 'package:chameleonultragui/gui/component/error_page.dart';
-import 'package:chameleonultragui/gui/menu/dialogs/slot_edit.dart';
-import 'package:chameleonultragui/gui/menu/dialogs/slot_export.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/slot/edit.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/slot/export.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

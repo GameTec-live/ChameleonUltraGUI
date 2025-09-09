@@ -1,5 +1,5 @@
 import 'package:chameleonultragui/gui/component/error_page.dart';
-import 'package:chameleonultragui/gui/menu/dialogs/dictionary_export.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary/export.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';

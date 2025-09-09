@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:chameleonultragui/gui/menu/dialogs/dictionary_edit.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary/edit.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';

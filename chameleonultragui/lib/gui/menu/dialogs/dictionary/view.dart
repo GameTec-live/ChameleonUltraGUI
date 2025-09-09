@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:chameleonultragui/gui/menu/dialogs/dictionary_edit.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary/edit.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
