@@ -358,5 +358,21 @@
   "enable_password_detection": "\u542f\u7528\u5bc6\u7801\u68c0\u6d4b\u4ee5\u4ece\u8bfb\u53d6\u5668\u6355\u83b7 Mifare Ultralight \u5bc6\u7801",
   "password_detection": "\u5bc6\u7801\u68c0\u6d4b",
   "view_passwords": "\u67e5\u770b\u5bc6\u7801",
-  "detected_passwords": "\u68c0\u6d4b\u5bc6\u7801"
+  "detected_passwords": "\u68c0\u6d4b\u5bc6\u7801",
+  "continuous_scan": "\u8fde\u7eed\u626b\u63cf",
+  "trademarks_hid": "HID\u2122 \u548c HID ProxCard\u2122 \u662f HID Global Corporation  \u7684\u6ce8\u518c\u5546\u6807",
+  "licenses": "\u8bb8\u53ef\u534f\u8bae",
+  "changelog": "\u53d8\u66f4\u65e5\u5fd7",
+  "help_translate": "\u534f\u52a9\u7ffb\u8bd1",
+  "your_version": "\u60a8\u7684\u7248\u672c",
+  "no_changelogs_available": "\u65e0\u53ef\u7528\u7684\u53d8\u66f4\u65e5\u5fd7",
+  "changes": "\u53d8\u5316",
+  "recent_commits": "\u6700\u8fd1\u63d0\u4ea4",
+  "latest_commits": "\u6700\u65b0\u63d0\u4ea4",
+  "latest_commits_from_main_branch": "\u6765\u81ea\u4e3b\u5206\u652f\u7684\u6700\u65b0\u63d0\u4ea4",
+  "view_commits": "\u67e5\u770b\u63d0\u4ea4",
+  "view_full_release": "\u67e5\u770b\u5b8c\u6574\u7248\u672c",
+  "no_changes_listed": "\u672a\u5217\u51fa\u4efb\u4f55\u66f4\u6539",
+  "unreleased": "\u5f85\u53d1\u5e03",
+  "export_logs_to_file": "\u5bfc\u51fa\u65e5\u5fd7"
 }
