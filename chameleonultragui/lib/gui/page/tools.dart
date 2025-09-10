@@ -100,13 +100,13 @@ class ToolsPageState extends State<ToolsPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.orange,
+                          color: Theme.of(context).colorScheme.primary,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           localizations.wip,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.inversePrimary,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -121,13 +121,13 @@ class ToolsPageState extends State<ToolsPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.orange,
+                          color: Theme.of(context).colorScheme.primary,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           localizations.device_required,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.inversePrimary,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
