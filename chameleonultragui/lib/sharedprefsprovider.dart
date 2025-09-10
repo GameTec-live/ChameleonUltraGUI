@@ -28,7 +28,7 @@ class Dictionary {
 
     if (data['keyLength'] == null) {
       // legacy
-      data['keyLength'] = 6;
+      data['keyLength'] = 12;
     }
 
     final keyLength = data['keyLength'] as int;

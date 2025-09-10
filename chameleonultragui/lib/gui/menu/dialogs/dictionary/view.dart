@@ -76,7 +76,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
                   children: [
                     Expanded(
                       child: Text(
-                        "${localizations.key_count}: ${currentDictionary.keys.length} (${currentDictionary.keyLength})",
+                        "${localizations.key_count}: ${currentDictionary.keys.length}",
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
