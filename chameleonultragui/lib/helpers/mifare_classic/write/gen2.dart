@@ -88,7 +88,7 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
       }
 
       if (useGenericKey) {
-        if (await communicator.mf1WriteBlock(block, 0x60,
+        if (await communicator.mf1WriteBlock(block, 0x61,
             recovery.validKeys[40 + mfClassicGetSectorByBlock(block)], data)) {
           return true;
         }

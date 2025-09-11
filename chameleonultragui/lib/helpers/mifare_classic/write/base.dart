@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/mifare/classic.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
@@ -184,7 +184,9 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
     hfInfo = null;
     mfcInfo = null;
     recovery = MifareClassicRecovery(
-        appState: recovery.appState, update: recovery.update);
+        appState: recovery.appState,
+        update: recovery.update,
+        localizations: recovery.localizations);
     await recovery.initialize();
   }
 

@@ -1,6 +1,6 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/main.dart';
@@ -38,13 +38,14 @@ class WriteCardPageState extends State<WriteCardPage> {
     );
   }
 
-  Future<void> onTap(CardSave selectedCard, dynamic close) async {
+  Future<void> onTap(CardSave selectedCard, dynamic close,
+      AppLocalizations localizations) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
     setState(() {
       card = selectedCard;
       baseHelper = AbstractWriteHelper.getClassByCardType(
-          selectedCard.tag, appState, updateState);
+          selectedCard.tag, appState, updateState, localizations);
     });
 
     if (baseHelper != null) {
