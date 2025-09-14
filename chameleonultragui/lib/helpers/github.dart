@@ -97,11 +97,16 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
       throw error;
     }
 
-    for (var file in releases[0]["assets"]) {
-      if (file["name"] ==
-          "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
-        content = await http.readBytes(Uri.parse(file["browser_download_url"]));
-        break;
+    for (var release in releases) {
+      if (release["prerelease"]) {
+        for (var file in release["assets"]) {
+          if (file["name"] ==
+              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
+            content =
+                await http.readBytes(Uri.parse(file["browser_download_url"]));
+            break;
+          }
+        }
       }
     }
   } catch (_) {}
@@ -181,7 +186,8 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
     }
 
     for (var release in releases) {
-      if (release["author"]["login"] == "github-actions[bot]") {
+      if (release["author"]["login"] == "github-actions[bot]" &&
+          release["prerelease"]) {
         return release["target_commitish"];
       }
     }
