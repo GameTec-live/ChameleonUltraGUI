@@ -391,7 +391,6 @@
   "t55xx_password_cleaner": "T55XX password cleaner",
   "t55xx_password_cleaner_description": "Removes passwords from T55XX tags",
   "dictionary_download_success": "Dictionary {name} is downloaded. Check it in \"Saved Cards page\"",
-  "t55xx_password_cleaner": "T55XX password cleaner",
   "t55xx_password_cleaner_warning": "This tool may BREAK your card if it has no password (or in other cases). Use it at your own risk, we are not responsible for the damage.",
   "select_t55xx_dictionary": "Select dictionary",
   "no_t55xx_dictionaries": "No T55XX compatible dictionaries available. Please download some first.",
@@ -403,6 +402,5 @@
   "password_reset_failed": "Password reset failed",
   "password_reset_success": "Previous password was: {password}",
   "password_reset_no_match": "Unable to reset password. None of the password in the dictionary worked.",
-  "trying_password": "Trying password",
-  "cancel": "Cancel"
+  "trying_password": "Trying password"
 }

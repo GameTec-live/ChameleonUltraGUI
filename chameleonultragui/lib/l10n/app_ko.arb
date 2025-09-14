@@ -374,5 +374,20 @@
   "view_full_release": "\uc804\uccb4 \ub9b4\ub9ac\uc2a4 \ubcf4\uae30",
   "no_changes_listed": "\ubcc0\uacbd \uc0ac\ud56d \uc5c6\uc74c",
   "unreleased": "\ubbf8\ucd9c\uc2dc",
-  "export_logs_to_file": "\ub85c\uadf8 \ud30c\uc77c \ucd9c\ub825"
+  "export_logs_to_file": "\ub85c\uadf8 \ud30c\uc77c \ucd9c\ub825",
+  "checking_card_info": "\uce74\ub4dc \uc815\ubcf4 \ud655\uc778\uc911",
+  "checking_or_running_darkside": "Darkside \uacf5\uaca9 \ud655\uc778 \ubc0f \uc2e4\ud589\uc911",
+  "backdoor_recovery_of_non_static_encrypted": "\ubc31\ub3c4\uc5b4\ub97c \ud1b5\ud55c \uccab \ubc88\uc9f8 \ud0a4 \ubcf5\uad6c",
+  "collecting_nonces": "({type}) \ub17c\uc2a4 \uc218\uc9d1 \uc911",
+  "recovering_key": "({type}) \ud0a4 \ubcf5\uad6c \uc911",
+  "checking_keys": "\ud0a4 \ud655\uc778 \uc911 ({count}\uac1c)",
+  "tools": "\ub3c4\uad6c",
+  "wip": "\uac1c\ubc1c\uc911",
+  "device_required": "\uc7a5\uce58 \ud544\uc694\ud568",
+  "dictionary_download": "\uc0ac\uc804 \ub2e4\uc6b4\ub85c\ub4dc",
+  "dictionary_download_description": "\uc678\ubd80 \uc0ac\uc804 \ub2e4\uc6b4\ub85c\ub4dc",
+  "mifare_classic_gen4": "Mifare Classic Gen4",
+  "mifare_classic_gen4_description": "Gen4 magic card \uad6c\uc131",
+  "t55xx_password_cleaner": "T55XX \ube44\ubc00\ubc88\ud638 \ud074\ub9ac\ub108",
+  "t55xx_password_cleaner_description": "T55XX \ud0dc\uadf8\uc5d0\uc11c \uc554\ud638 \uc81c\uac70"
 }
