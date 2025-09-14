@@ -1,4 +1,4 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
@@ -165,7 +165,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
             overflow: TextOverflow.ellipsis,
           ),
           onTap: () async {
-            onTap(card, close);
+            onTap(card, close, localizations);
           },
         );
       },

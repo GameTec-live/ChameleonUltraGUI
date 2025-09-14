@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -195,72 +195,17 @@ String chameleonCardToString(CardSave card, AppLocalizations localizations) {
 }
 
 TagType numberToChameleonTag(int type) {
-  if (type == TagType.mifareMini.value) {
-    return TagType.mifareMini;
-  } else if (type == TagType.mifare1K.value) {
-    return TagType.mifare1K;
-  } else if (type == TagType.mifare2K.value) {
-    return TagType.mifare2K;
-  } else if (type == TagType.mifare4K.value) {
-    return TagType.mifare4K;
-  } else if (type == TagType.em410X.value) {
-    return TagType.em410X;
-  } else if (type == TagType.em410X16.value) {
-    return TagType.em410X16;
-  } else if (type == TagType.em410X32.value) {
-    return TagType.em410X32;
-  } else if (type == TagType.em410X64.value) {
-    return TagType.em410X64;
-  } else if (type == TagType.hidProx.value) {
-    return TagType.hidProx;
-  } else if (type == TagType.viking.value) {
-    return TagType.viking;
-  } else if (type == TagType.ntag210.value) {
-    return TagType.ntag210;
-  } else if (type == TagType.ntag212.value) {
-    return TagType.ntag212;
-  } else if (type == TagType.ntag213.value) {
-    return TagType.ntag213;
-  } else if (type == TagType.ntag215.value) {
-    return TagType.ntag215;
-  } else if (type == TagType.ntag216.value) {
-    return TagType.ntag216;
-  } else if (type == TagType.ultralight.value) {
-    return TagType.ultralight;
-  } else if (type == TagType.ultralight11.value) {
-    return TagType.ultralight11;
-  } else if (type == TagType.ultralight21.value) {
-    return TagType.ultralight21;
-  } else if (type == TagType.ultralightC.value) {
-    return TagType.ultralightC;
-  } else {
-    return TagType.unknown;
+  for (var value in TagType.values) {
+    if (value.value == type) {
+      return value;
+    }
   }
+
+  return TagType.unknown;
 }
 
 List<TagType> getTagTypes() {
-  return [
-    TagType.mifare1K,
-    TagType.mifare2K,
-    TagType.mifare4K,
-    TagType.mifareMini,
-    TagType.em410X,
-    TagType.em410X16,
-    TagType.em410X32,
-    TagType.em410X64,
-    TagType.hidProx,
-    TagType.viking,
-    TagType.ultralight,
-    TagType.ultralightC,
-    TagType.ultralight11,
-    TagType.ultralight21,
-    TagType.ntag210,
-    TagType.ntag212,
-    TagType.ntag213,
-    TagType.ntag215,
-    TagType.ntag216,
-    TagType.unknown
-  ];
+  return TagType.values;
 }
 
 TagType getTagTypeByValue(int value) {

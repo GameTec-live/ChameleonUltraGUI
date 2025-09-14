@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
 import 'package:chameleonultragui/gui/component/key_check_marks.dart';
-import 'package:chameleonultragui/gui/menu/dictionary_export.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary/export.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
@@ -115,7 +115,7 @@ class CardReaderState extends State<MifareClassicHelper> {
 
     var appState = context.watch<ChameleonGUIState>();
     widget.mfcInfo.recovery?.dictionaries =
-        appState.sharedPreferencesProvider.getDictionaries();
+        appState.sharedPreferencesProvider.getDictionaries(keyLength: 12);
     widget.mfcInfo.recovery?.dictionaries
         .insert(0, Dictionary(id: "", name: localizations.empty, keys: []));
     widget.mfcInfo.recovery?.selectedDictionary ??=
@@ -147,7 +147,8 @@ class CardReaderState extends State<MifareClassicHelper> {
                 validKeys: widget.mfcInfo.recovery!.validKeys,
                 fontSize: checkmarkFontSize,
                 checkmarkSize: checkmarkSize,
-                checkmarkCount: mfClassicGetSectorCount(widget.mfcInfo.type),
+                checkmarkCount: mfClassicGetSectorCount(widget.mfcInfo.type,
+                    isEV1: widget.mfcInfo.isEV1),
                 checkmarkPerRow: checkmarkPerRow),
             const Spacer(),
           ],
@@ -156,6 +157,10 @@ class CardReaderState extends State<MifareClassicHelper> {
           const SizedBox(height: 16),
           ErrorMessage(errorMessage: widget.mfcInfo.recovery!.error),
         ],
+        if (widget.mfcInfo.recovery?.state != "") ...[
+          const SizedBox(height: 8),
+          Text(widget.mfcInfo.recovery!.state),
+        ],
         const SizedBox(height: 12),
         if (widget.mfcInfo.recovery?.dumpProgress != 0) ...[
           LinearProgressIndicator(value: widget.mfcInfo.recovery?.dumpProgress),
@@ -163,13 +168,6 @@ class CardReaderState extends State<MifareClassicHelper> {
         ],
         if (widget.mfcInfo.recovery?.hardnestedProgress != null &&
             widget.mfcInfo.recovery?.error == "") ...[
-          Text(widget.mfcInfo.recovery?.hardnestedProgress == 1.0
-              ? localizations.hardnested_calculating_key
-              : localizations.hardnested_collecting_nonces(
-                  (widget.mfcInfo.recovery!.hardnestedProgress! * 256)
-                      .toInt()
-                      .toString())),
-          const SizedBox(height: 8),
           LinearProgressIndicator(
               value: widget.mfcInfo.recovery?.hardnestedProgress),
           const SizedBox(height: 12)
@@ -205,27 +203,6 @@ class CardReaderState extends State<MifareClassicHelper> {
                                   widget.mfcInfo.state =
                                       MifareClassicState.recovery;
                                 });
-                                if (widget.mfcInfo.recovery!.error ==
-                                    "no_keys_darkside") {
-                                  setState(() {
-                                    widget.mfcInfo.recovery?.error =
-                                        localizations
-                                            .recovery_error_no_keys_darkside;
-                                  });
-                                } else if (widget.mfcInfo.recovery!.error ==
-                                    "not_supported") {
-                                  setState(() {
-                                    widget.mfcInfo.recovery?.error =
-                                        localizations
-                                            .recovery_error_no_supported;
-                                  });
-                                } else if (widget.mfcInfo.recovery!.error ==
-                                    "old_firmware") {
-                                  setState(() {
-                                    widget.mfcInfo.recovery?.error =
-                                        localizations.recovery_old_firmware;
-                                  });
-                                }
                               } else {
                                 setState(() {
                                   widget.mfcInfo.state =

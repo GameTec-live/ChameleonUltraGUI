@@ -5,6 +5,7 @@ import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
 import 'package:chameleonultragui/connector/serial_macos.dart';
+import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
@@ -179,8 +180,9 @@ class _MainPageState extends State<MainPage> {
         selectedIndex != 0 &&
         selectedIndex != 2 &&
         selectedIndex != 5 &&
-        selectedIndex != 6) {
-      // If not connected, and not on home, settings or dev page, go to home page
+        selectedIndex != 6 &&
+        selectedIndex != 7) {
+      // If not connected, and not on home, tools, settings or dev page, go to home page
       selectedIndex = 0;
     }
 
@@ -214,9 +216,12 @@ class _MainPageState extends State<MainPage> {
         page = const WriteCardPage();
         break;
       case 5:
-        page = const SettingsMainPage();
+        page = const ToolsPage();
         break;
       case 6:
+        page = const SettingsMainPage();
+        break;
+      case 7:
         page = const DebugPage();
         break;
       default:
@@ -310,6 +315,11 @@ class _MainPageState extends State<MainPage> {
                                 icon: const Icon(Icons.system_update_alt),
                                 label: Text(
                                     AppLocalizations.of(context)!.write_card),
+                              ),
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.handyman),
+                                label:
+                                    Text(AppLocalizations.of(context)!.tools),
                               ),
                               NavigationRailDestination(
                                 icon: const Icon(Icons.settings),

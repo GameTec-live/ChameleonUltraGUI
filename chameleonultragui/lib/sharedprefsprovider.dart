@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/colors.dart' as colors;
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +15,7 @@ class Dictionary {
   String name;
   List<Uint8List> keys;
   Color color;
+  int keyLength;
 
   factory Dictionary.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
@@ -24,12 +25,21 @@ class Dictionary {
     if (data['color'] == null) {
       data['color'] = colorToHex(Colors.deepOrange);
     }
+
+    if (data['keyLength'] == null) {
+      // legacy
+      data['keyLength'] = 12;
+    }
+
+    final keyLength = data['keyLength'] as int;
     final color = hexToColor(data['color']);
+
     List<Uint8List> keys = [];
     for (var key in encodedKeys) {
       keys.add(Uint8List.fromList(List<int>.from(key)));
     }
-    return Dictionary(id: id, name: name, keys: keys, color: color);
+    return Dictionary(
+        id: id, name: name, keys: keys, color: color, keyLength: keyLength);
   }
 
   String toJson() {
@@ -37,32 +47,65 @@ class Dictionary {
       'id': id,
       'name': name,
       'color': colorToHex(color),
-      'keys': keys.map((key) => key.toList()).toList()
+      'keys': keys.map((key) => key.toList()).toList(),
+      'keyLength': keyLength
     });
   }
 
-  factory Dictionary.fromFile(String file, String name) {
-    final lines = file.split("\n");
-    List<Uint8List> keys = [];
-    for (var key in lines) {
-      keys.add(hexToBytes(key));
-    }
-    return Dictionary(name: name, keys: keys);
-  }
-
-  Uint8List toFile() {
+  @override
+  String toString() {
     String output = "";
     for (var key in keys) {
       output += "${bytesToHex(key).toUpperCase()}\n";
     }
-    return const Utf8Encoder().convert(output);
+    return output;
+  }
+
+  Uint8List toFile() {
+    return const Utf8Encoder().convert(toString());
+  }
+
+  factory Dictionary.fromString(String input, {String name = ''}) {
+    List<Uint8List> keys = [];
+    List<int> allowedKeySizes = [
+      12, // 6 - Mifare Classic
+      8, // 4 - Mifare Ultralight / T55XX
+      32, // 16 - Mifare Ultralight C / AES / Mifare Plus
+    ];
+    int currentKeySize = 0;
+
+    for (var key in input.split("\n")) {
+      key = key.trim().replaceAll('#', ' ');
+
+      if (key.contains(' ')) {
+        key = key.split(' ')[0];
+      }
+
+      if (allowedKeySizes.contains(key.length) &&
+          isValidHexString(key) &&
+          (currentKeySize == 0 || currentKeySize == key.length)) {
+        if (currentKeySize == 0) {
+          currentKeySize = key.length;
+        }
+
+        keys.add(hexToBytes(key));
+      }
+    }
+
+    return Dictionary(
+        id: const Uuid().v4(),
+        name: name,
+        keys: keys,
+        color: Colors.deepOrange,
+        keyLength: currentKeySize);
   }
 
   Dictionary(
       {String? id,
       this.name = "",
       this.keys = const [],
-      this.color = Colors.deepOrange})
+      this.color = Colors.deepOrange,
+      this.keyLength = 0})
       : id = id ?? const Uuid().v4();
 }
 
@@ -272,11 +315,14 @@ class SharedPreferencesProvider extends ChangeNotifier {
     _sharedPreferences.setBool('emulate_device', value);
   }
 
-  List<Dictionary> getDictionaries() {
+  List<Dictionary> getDictionaries({int keyLength = 0}) {
     List<Dictionary> output = [];
     final data = _sharedPreferences.getStringList('dictionaries') ?? [];
     for (var dictionary in data) {
-      output.add(Dictionary.fromJson(dictionary));
+      Dictionary dict = Dictionary.fromJson(dictionary);
+      if (keyLength == 0 || dict.keyLength == keyLength) {
+        output.add(dict);
+      }
     }
     return output;
   }
