@@ -78,9 +78,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     appState.changesMade();
   }
 
-  Future<void> onTap(CardSave card, dynamic close) async {
+  Future<void> onTap(
+      CardSave card, dynamic close, AppLocalizations localizations) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
-    var localizations = AppLocalizations.of(context)!;
 
     if (isMifareClassic(card.tag)) {
       close(context, card.name);
