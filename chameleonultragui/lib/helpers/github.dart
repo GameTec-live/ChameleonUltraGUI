@@ -119,7 +119,7 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
 
   try {
     final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts")))
+            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100")))
         .body
         .toString());
 
