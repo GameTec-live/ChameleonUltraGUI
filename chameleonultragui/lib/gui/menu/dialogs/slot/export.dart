@@ -161,7 +161,8 @@ class SlotExportMenuState extends State<SlotExportMenu> {
     return null;
   }
 
-  Future<void> onTap(CardSave card, dynamic close) async {
+  Future<void> onTap(
+      CardSave card, dynamic close, AppLocalizations localizations) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     close(context, card.name);
 
