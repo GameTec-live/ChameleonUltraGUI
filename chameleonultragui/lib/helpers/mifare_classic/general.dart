@@ -3,9 +3,14 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
+import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 // Mifare Classic keys from Proxmark3
 final gMifareClassicKeysList = {
@@ -551,4 +556,47 @@ Uint8List mfClassicGenerateFirstBlock(Uint8List uid, int sak, Uint8List atqa) {
     block0.setAll(10, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
   }
   return block0;
+}
+
+Future<(TagType, MifareClassicInfo)> performMifareClassicScan(
+    ChameleonCommunicator communicator,
+    MifareClassicInfo mfcInfo,
+    BuildContext context,
+    dynamic updateMifareClassicRecovery,
+    {TagType? override}) async {
+  var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+  var localizations = AppLocalizations.of(context)!;
+  MifareClassicType mifareClassicType;
+
+  if (override != null) {
+    mifareClassicType = chameleonTagTypeGetMfClassicType(override);
+  } else {
+    mifareClassicType = await mfClassicGetType(communicator);
+  }
+
+  NTLevel ntLevel = NTLevel.unknown;
+
+  bool isMifareClassicEV1 =
+      await communicator.mf1Auth(0x45, 0x61, gMifareClassicKeys[3]);
+
+  MifareClassicRecovery recovery = MifareClassicRecovery(
+      update: updateMifareClassicRecovery,
+      appState: appState,
+      mifareClassicType: mifareClassicType,
+      localizations: localizations,
+      isMifareClassicEV1: isMifareClassicEV1);
+
+  try {
+    ntLevel = await communicator.getMf1NTLevel();
+  } catch (_) {}
+
+  bool hasBackdoor = await mfClassicHasBackdoor(communicator);
+
+  mfcInfo.recovery = recovery;
+  mfcInfo.ntLevel = ntLevel;
+  mfcInfo.hasBackdoor = hasBackdoor;
+  mfcInfo.isEV1 = isMifareClassicEV1;
+  mfcInfo.type = mifareClassicType;
+
+  return (mfClassicGetChameleonTagType(mifareClassicType), mfcInfo);
 }

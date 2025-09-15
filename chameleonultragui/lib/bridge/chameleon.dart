@@ -218,7 +218,7 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([readerMode ? 1 : 0]));
   }
 
-  Future<CardData> scan14443aTag() async {
+  Future<CardData?> scan14443aTag() async {
     var resp = await sendCmd(ChameleonCommand.scan14ATag);
 
     if (resp!.data.isNotEmpty) {
@@ -232,7 +232,7 @@ class ChameleonCommunicator {
         ats: resp.data.sublist(uidLength + 5, uidLength + 5 + atsLength),
       );
     } else {
-      throw ("Invalid data length");
+      return null;
     }
   }
 

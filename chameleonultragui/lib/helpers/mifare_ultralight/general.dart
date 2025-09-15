@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/services.dart';
@@ -128,6 +129,52 @@ int mfUltralightGetCounterCount(TagType type) {
   }
 }
 
+Future<TagType> mfUltralightType(ChameleonCommunicator communicator) async {
+  if ((await communicator.send14ARaw(Uint8List.fromList([0x30, 15]),
+          checkResponseCrc: false))
+      .isEmpty) {
+    // early exit
+    return TagType.unknown;
+  }
+
+  if ((await communicator.send14ARaw(Uint8List.fromList([0x30, 230]),
+              checkResponseCrc: false))
+          .length !=
+      1) {
+    return TagType.ntag216;
+  }
+
+  if ((await communicator.send14ARaw(Uint8List.fromList([0x30, 134]),
+              checkResponseCrc: false))
+          .length !=
+      1) {
+    return TagType.ntag215;
+  }
+
+  if ((await communicator.send14ARaw(Uint8List.fromList([0x30, 44]),
+              checkResponseCrc: false))
+          .length !=
+      1) {
+    return TagType.ntag213;
+  }
+
+  if ((await communicator.send14ARaw(Uint8List.fromList([0x30, 40]),
+              checkResponseCrc: false))
+          .length !=
+      1) {
+    return TagType.ntag212;
+  }
+
+  if ((await communicator.send14ARaw(Uint8List.fromList([0x30, 19]),
+              checkResponseCrc: false))
+          .length !=
+      1) {
+    return TagType.ntag210;
+  }
+
+  return TagType.ultralight;
+}
+
 Future<int?> mfUltralightReadCounterFromCard(
     ChameleonCommunicator communicator, int index) async {
   try {
@@ -183,4 +230,28 @@ List<Uint8List> mfUltralightGenerateFirstBlocks(Uint8List uid, TagType type) {
   blocks.add(block2);
 
   return blocks;
+}
+
+Future<(TagType, MifareUltralightInfo)> performMifareUltralightScan(
+    ChameleonCommunicator communicator, MifareUltralightInfo mfuInfo,
+    {TagType? override}) async {
+  TagType type = TagType.unknown;
+  Uint8List version = await mfUltralightGetVersion(communicator);
+
+  if (version.isNotEmpty) {
+    type = override ?? mfUltralightGetType(version);
+  }
+
+  if (type == TagType.unknown) {
+    type = await mfUltralightType(communicator);
+  }
+
+  if (version.length == 8) {
+    Uint8List signature = await mfUltralightGetSignature(communicator);
+
+    mfuInfo.version = version;
+    mfuInfo.signature = signature;
+  }
+
+  return (type, mfuInfo);
 }

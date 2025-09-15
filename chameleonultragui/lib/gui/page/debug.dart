@@ -496,11 +496,13 @@ class DebugPage extends StatelessWidget {
                 onPressed: () async {
                   await appState.communicator!.setReaderDeviceMode(true);
                   var card = await appState.communicator!.scan14443aTag();
-                  appState.log!.d('Card UID: ${card.uid}');
-                  appState.log!.d('SAK: ${card.sak}');
-                  appState.log!.d('ATQA: ${card.atqa}');
-                  await appState.communicator!.setReaderDeviceMode(false);
-                  await appState.communicator!.setMf1AntiCollision(card);
+                  if (card != null) {
+                    appState.log!.d('Card UID: ${card.uid}');
+                    appState.log!.d('SAK: ${card.sak}');
+                    appState.log!.d('ATQA: ${card.atqa}');
+                    await appState.communicator!.setReaderDeviceMode(false);
+                    await appState.communicator!.setMf1AntiCollision(card);
+                  }
                 },
                 child: Column(children: [
                   Text(localizations.copy_uid),

@@ -112,96 +112,6 @@ class ReadCardPageState extends State<ReadCardPage> {
     });
   }
 
-  Future<void> readHFInfo() async {
-    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
-    var localizations = AppLocalizations.of(context)!;
-
-    setState(() {
-      hfInfo = HFCardInfo();
-      mfcInfo = MifareClassicInfo();
-      mfuInfo = MifareUltralightInfo();
-    });
-
-    try {
-      if (!await appState.communicator!.isReaderDeviceMode()) {
-        await appState.communicator!.setReaderDeviceMode(true);
-      }
-
-      CardData card = await appState.communicator!.scan14443aTag();
-      bool isMifareClassic = false;
-      TagType type = TagType.unknown;
-      MifareClassicType mifareClassicType = MifareClassicType.none;
-
-      try {
-        isMifareClassic = await appState.communicator!.detectMf1Support();
-        if (isMifareClassic) {
-          mifareClassicType = await mfClassicGetType(appState.communicator!);
-        }
-      } catch (_) {}
-
-      bool isMifareClassicEV1 = isMifareClassic
-          ? (await appState.communicator!
-              .mf1Auth(0x45, 0x61, gMifareClassicKeys[3]))
-          : false;
-
-      if (isMifareClassic) {
-        MifareClassicRecovery recovery = MifareClassicRecovery(
-            update: updateMifareClassicRecovery,
-            appState: appState,
-            mifareClassicType: mifareClassicType,
-            localizations: localizations,
-            isMifareClassicEV1: isMifareClassicEV1);
-
-        NTLevel ntLevel = await appState.communicator!.getMf1NTLevel();
-        bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
-
-        setState(() {
-          mfcInfo.recovery = recovery;
-          mfcInfo.ntLevel = ntLevel;
-          mfcInfo.hasBackdoor = hasBackdoor;
-        });
-      }
-
-      if (!isMifareClassic) {
-        Uint8List version =
-            await mfUltralightGetVersion(appState.communicator!);
-        if (version.length == 8) {
-          type = mfUltralightGetType(version);
-          Uint8List signature =
-              await mfUltralightGetSignature(appState.communicator!);
-
-          setState(() {
-            mfuInfo.version = version;
-            mfuInfo.signature = signature;
-          });
-        }
-      } else {
-        type = mfClassicGetChameleonTagType(mifareClassicType);
-      }
-
-      setState(() {
-        hfInfo.uid = bytesToHexSpace(card.uid);
-        hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
-        hfInfo.atqa = bytesToHexSpace(card.atqa);
-        hfInfo.ats = (card.ats.isNotEmpty)
-            ? bytesToHexSpace(card.ats)
-            : localizations.no;
-        hfInfo.type = type;
-        mfcInfo.isEV1 = isMifareClassicEV1;
-        mfcInfo.type = mifareClassicType;
-        mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
-            ? MifareClassicState.checkKeys
-            : MifareClassicState.none;
-        hfInfo.tech = chameleonTagToString(type, localizations) +
-            (isMifareClassicEV1 ? " EV1" : "");
-      });
-    } catch (_) {
-      setState(() {
-        hfInfo.cardExist = false;
-      });
-    }
-  }
-
   Future<void> readLFInfo() async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
@@ -248,14 +158,25 @@ class ReadCardPageState extends State<ReadCardPage> {
         return;
       }
 
-      await readHFInfo();
+      var info = await readHFInfo(context, updateMifareClassicRecovery);
+      setState(() {
+        hfInfo = info.$1;
+        mfcInfo = info.$2;
+        mfuInfo = info.$3;
+      });
 
       if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
         stopContinuousHFScan();
       }
     });
 
-    await readHFInfo();
+    var info = await readHFInfo(context, updateMifareClassicRecovery);
+    setState(() {
+      hfInfo = info.$1;
+      mfcInfo = info.$2;
+      mfuInfo = info.$3;
+    });
+
     if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
       stopContinuousHFScan();
     }
@@ -449,35 +370,36 @@ class ReadCardPageState extends State<ReadCardPage> {
                                           DropdownButton<TagType?>(
                                             isExpanded: true,
                                             value: hfInfo.type,
-                                            onChanged: (TagType? newValue) {
-                                              bool mifareClassic =
-                                                  isMifareClassic(newValue!);
-
+                                            onChanged:
+                                                (TagType? newValue) async {
                                               setState(() {
-                                                hfInfo.type = newValue;
+                                                hfInfo.type = newValue!;
                                                 hfInfo.tech =
                                                     chameleonTagToString(
                                                         newValue,
                                                         localizations);
                                               });
 
-                                              if (mifareClassic) {
-                                                MifareClassicRecovery recovery =
-                                                    MifareClassicRecovery(
-                                                        update:
-                                                            updateMifareClassicRecovery,
-                                                        appState: appState,
-                                                        localizations:
-                                                            localizations,
-                                                        mifareClassicType:
-                                                            chameleonTagTypeGetMfClassicType(
-                                                                newValue));
-
+                                              if (isMifareClassic(newValue!)) {
+                                                var info =
+                                                    await performMifareClassicScan(
+                                                        appState.communicator!,
+                                                        mfcInfo,
+                                                        context,
+                                                        updateMifareClassicRecovery,
+                                                        override: newValue);
                                                 setState(() {
-                                                  mfcInfo.type =
-                                                      chameleonTagTypeGetMfClassicType(
-                                                          newValue);
-                                                  mfcInfo.recovery = recovery;
+                                                  mfcInfo = info.$2;
+                                                });
+                                              } else if (isMifareUltralight(
+                                                  newValue)) {
+                                                var info =
+                                                    await performMifareUltralightScan(
+                                                        appState.communicator!,
+                                                        mfuInfo,
+                                                        override: newValue);
+                                                setState(() {
+                                                  mfuInfo = info.$2;
                                                 });
                                               }
 
@@ -529,22 +451,20 @@ class ReadCardPageState extends State<ReadCardPage> {
                       ),
                       const SizedBox(height: 16),
                       if (isMifareClassic(hfInfo.type)) ...[
-                        buildFieldRow(
-                            localizations.prng_type,
-                            mfClassicGetPrngType(
-                                mfcInfo.ntLevel!, localizations),
-                            fieldFontSize),
-                        buildFieldRow(
-                            localizations.has_backdoor_support,
-                            mfcInfo.hasBackdoor!
-                                ? localizations.yes
-                                : localizations.no,
-                            fieldFontSize),
+                        if (mfcInfo.ntLevel != null)
+                          buildFieldRow(
+                              localizations.prng_type,
+                              mfClassicGetPrngType(
+                                  mfcInfo.ntLevel!, localizations),
+                              fieldFontSize),
+                        if (mfcInfo.hasBackdoor != null)
+                          buildFieldRow(
+                              localizations.has_backdoor_support,
+                              mfcInfo.hasBackdoor!
+                                  ? localizations.yes
+                                  : localizations.no,
+                              fieldFontSize),
                         const SizedBox(height: 16),
-                      ],
-                      if (!hfInfo.cardExist) ...[
-                        ErrorMessage(errorMessage: localizations.no_card_found),
-                        const SizedBox(height: 16)
                       ],
                       isSmallScreen
                           ? Column(
@@ -555,7 +475,13 @@ class ReadCardPageState extends State<ReadCardPage> {
                                     onPressed: () async {
                                       if (appState.connector!.device ==
                                           ChameleonDevice.ultra) {
-                                        await readHFInfo();
+                                        var info = await readHFInfo(context,
+                                            updateMifareClassicRecovery);
+                                        setState(() {
+                                          hfInfo = info.$1;
+                                          mfcInfo = info.$2;
+                                          mfuInfo = info.$3;
+                                        });
                                       } else if (appState.connector!.device ==
                                           ChameleonDevice.lite) {
                                         showDialog<String>(
@@ -642,7 +568,13 @@ class ReadCardPageState extends State<ReadCardPage> {
                                     onPressed: () async {
                                       if (appState.connector!.device ==
                                           ChameleonDevice.ultra) {
-                                        await readHFInfo();
+                                        var info = await readHFInfo(context,
+                                            updateMifareClassicRecovery);
+                                        setState(() {
+                                          hfInfo = info.$1;
+                                          mfcInfo = info.$2;
+                                          mfuInfo = info.$3;
+                                        });
                                       } else if (appState.connector!.device ==
                                           ChameleonDevice.lite) {
                                         showDialog<String>(
@@ -721,6 +653,10 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 ),
                               ],
                             ),
+                      if (!hfInfo.cardExist) ...[
+                        const SizedBox(height: 16),
+                        ErrorMessage(errorMessage: localizations.no_card_found)
+                      ],
                       if (hfInfo.uid != "") ...[
                         const SizedBox(height: 16),
                         ElevatedButton(
@@ -802,10 +738,6 @@ class ReadCardPageState extends State<ReadCardPage> {
                         style: TextStyle(fontSize: fieldFontSize),
                       ),
                       const SizedBox(height: 16),
-                      if (!lfInfo.cardExist) ...[
-                        ErrorMessage(errorMessage: localizations.no_card_found),
-                        const SizedBox(height: 16)
-                      ],
                       isSmallScreen
                           ? Column(
                               children: [
@@ -981,6 +913,10 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 ),
                               ],
                             ),
+                      if (!lfInfo.cardExist) ...[
+                        const SizedBox(height: 16),
+                        ErrorMessage(errorMessage: localizations.no_card_found)
+                      ],
                       if (lfInfo.card != null) ...[
                         const SizedBox(height: 16),
                         ElevatedButton(

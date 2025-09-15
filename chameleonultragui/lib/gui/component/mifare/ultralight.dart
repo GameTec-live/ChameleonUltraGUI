@@ -81,6 +81,23 @@ class CardReaderState extends State<MifareUltralightHelper> {
       });
     }
 
+    bool hasValidData = false;
+    for (var block in cardData) {
+      if (block.isNotEmpty) {
+        hasValidData = true;
+      }
+    }
+
+    if (!hasValidData) {
+      setState(() {
+        progress = 0;
+        cardData = [];
+        error = localizations.failed_to_read_block;
+        state = MifareUltralightState.none;
+      });
+      return;
+    }
+
     version =
         bytesToHexSpace(await mfUltralightGetVersion(appState.communicator!));
     signature =
