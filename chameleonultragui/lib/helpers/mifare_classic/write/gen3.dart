@@ -64,7 +64,6 @@ class MifareClassicGen3WriteHelper extends MifareClassicGen2WriteHelper {
   }
 
   Future<bool> writeGen3Block(CardSave dump, Uint8List data) async {
-    CardData card = await communicator.scan14443aTag();
     // Try to write whole block
     await communicator.send14ARaw(
         Uint8List.fromList([0x90, 0xFB, 0xCC, 0xCC, 0x10, ...data]),
@@ -77,9 +76,10 @@ class MifareClassicGen3WriteHelper extends MifareClassicGen2WriteHelper {
         checkResponseCrc: false);
 
     // Card doesn't respond with anything, just compare UID
-    card = await communicator.scan14443aTag();
-    return bytesToHex(card.uid) ==
-            bytesToHex(data.sublist(0, card.uid.length)) ||
-        bytesToHexSpace(card.uid) == dump.uid;
+    CardData? card = await communicator.scan14443aTag();
+    return card != null &&
+            bytesToHex(card.uid) ==
+                bytesToHex(data.sublist(0, card.uid.length)) ||
+        card != null && bytesToHexSpace(card.uid) == dump.uid;
   }
 }

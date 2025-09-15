@@ -402,5 +402,6 @@
   "password_reset_failed": "Password reset failed",
   "password_reset_success": "Previous password was: {password}",
   "password_reset_no_match": "Unable to reset password. None of the password in the dictionary worked.",
-  "trying_password": "Trying password"
+  "trying_password": "Trying password",
+  "failed_to_read_block": "Failed to read any blocks. This is password protected card or not Mifare Ultralight card"
 }

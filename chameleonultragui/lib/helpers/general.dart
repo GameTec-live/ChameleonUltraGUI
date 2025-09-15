@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
@@ -552,4 +554,56 @@ int uidSizeForLfTag(TagType type) {
 bool isEM410X(TagType type) {
   return [TagType.em410X, TagType.em410X16, TagType.em410X32, TagType.em410X64]
       .contains(type);
+}
+
+Future<(HFCardInfo, MifareClassicInfo, MifareUltralightInfo)> readHFInfo(
+    BuildContext context, dynamic updateMifareClassicRecovery) async {
+  var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+  var localizations = AppLocalizations.of(context)!;
+
+  HFCardInfo hfInfo = HFCardInfo();
+  MifareClassicInfo mfcInfo = MifareClassicInfo();
+  MifareUltralightInfo mfuInfo = MifareUltralightInfo();
+
+  if (!await appState.communicator!.isReaderDeviceMode()) {
+    await appState.communicator!.setReaderDeviceMode(true);
+  }
+
+  CardData? card = await appState.communicator!.scan14443aTag();
+
+  if (card == null) {
+    hfInfo.cardExist = false;
+    return (hfInfo, mfcInfo, mfuInfo);
+  }
+
+  try {
+    TagType type = TagType.unknown;
+
+    if (!await appState.communicator!.detectMf1Support()) {
+      (type, mfuInfo) =
+          await performMifareUltralightScan(appState.communicator!, mfuInfo);
+    } else {
+      if (context.mounted) {
+        (type, mfcInfo) = await performMifareClassicScan(appState.communicator!,
+            mfcInfo, context, updateMifareClassicRecovery);
+      }
+    }
+
+    hfInfo.uid = bytesToHexSpace(card.uid);
+    hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
+    hfInfo.atqa = bytesToHexSpace(card.atqa);
+    hfInfo.ats =
+        (card.ats.isNotEmpty) ? bytesToHexSpace(card.ats) : localizations.no;
+    hfInfo.type = type;
+    mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
+        ? MifareClassicState.checkKeys
+        : MifareClassicState.none;
+    hfInfo.tech = chameleonTagToString(type, localizations) +
+        (mfcInfo.isEV1 ? " EV1" : "");
+  } catch (e) {
+    appState.log!.e(e.toString());
+    hfInfo.cardExist = false;
+  }
+
+  return (hfInfo, mfcInfo, mfuInfo);
 }

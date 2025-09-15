@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
@@ -17,17 +18,17 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
 
   @override
   Future<bool> isMagic(dynamic data) async {
-    try {
-      CardSave cardSave = data;
-      var card = await communicator.scan14443aTag();
-      if (cardSave.uid == bytesToHexSpace(card.uid)) {
-        return true; // if UID matches we can assume it is same card
-      }
-
-      return false; // we can't check
-    } catch (_) {
+    CardSave cardSave = data;
+    CardData? card = await communicator.scan14443aTag();
+    if (card == null) {
       return false;
     }
+
+    if (cardSave.uid == bytesToHexSpace(card.uid)) {
+      return true; // if UID matches we can assume it is same card
+    }
+
+    return false; // we can't check
   }
 
   @override

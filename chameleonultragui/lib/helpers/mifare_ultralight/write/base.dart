@@ -127,9 +127,7 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
       await communicator.setReaderDeviceMode(true);
     }
 
-    try {
-      await communicator.scan14443aTag();
-    } catch (e) {
+    if (await communicator.scan14443aTag() == null) {
       return false;
     }
 
