@@ -136,10 +136,9 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               return;
             }
 
-            Dictionary dict = Dictionary.fromString(keysController.text);
+            Dictionary dict = Dictionary.fromString(keysController.text,
+                name: nameController.text, color: currentColor);
             dict.id = (widget.isNew ? null : widget.dictionary.id)!;
-            dict.color = currentColor;
-            dict.name = nameController.text;
 
             if (dict.keys.isEmpty) {
               return;
