@@ -585,23 +585,18 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           return;
                         }
 
-                        List<Uint8List> keys = [];
-                        for (var key in contents.split("\n")) {
-                          key = key.trim();
-                          if (key.length == 12 && isValidHexString(key)) {
-                            keys.add(hexToBytes(key));
-                          }
-                        }
+                        var dictionaries = appState.sharedPreferencesProvider
+                            .getDictionaries();
 
-                        if (keys.isEmpty) {
+                        Dictionary dictionary = Dictionary.fromString(contents,
+                            name: result.files.single.name.split(".")[0]);
+
+                        if (dictionary.keys.isEmpty) {
                           return;
                         }
 
-                        var dictionaries = appState.sharedPreferencesProvider
-                            .getDictionaries();
-                        dictionaries.add(Dictionary(
-                            name: result.files.single.name.split(".")[0],
-                            keys: keys));
+                        dictionaries.add(dictionary);
+
                         appState.sharedPreferencesProvider
                             .setDictionaries(dictionaries);
                         appState.changesMade();

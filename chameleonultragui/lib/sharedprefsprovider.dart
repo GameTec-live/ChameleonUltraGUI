@@ -65,7 +65,8 @@ class Dictionary {
     return const Utf8Encoder().convert(toString());
   }
 
-  factory Dictionary.fromString(String input, {String name = ''}) {
+  factory Dictionary.fromString(String input,
+      {String name = '', Color color = Colors.deepOrange}) {
     List<Uint8List> keys = [];
     List<int> allowedKeySizes = [
       12, // 6 - Mifare Classic
@@ -96,7 +97,7 @@ class Dictionary {
         id: const Uuid().v4(),
         name: name,
         keys: keys,
-        color: Colors.deepOrange,
+        color: color,
         keyLength: currentKeySize);
   }
 

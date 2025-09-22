@@ -44,8 +44,12 @@ class DictionaryDownloadMenuState extends State<DictionaryDownloadMenu> {
       final response = await http.get(Uri.parse(dictLocation.url));
 
       if (response.statusCode == 200) {
-        Dictionary dict = Dictionary.fromString(response.body);
-        dict.name = dictLocation.name;
+        Dictionary dict =
+            Dictionary.fromString(response.body, name: dictLocation.name);
+
+        if (dict.keys.isEmpty) {
+          return;
+        }
 
         var dictionaries = appState.sharedPreferencesProvider.getDictionaries();
         dictionaries.add(dict);
