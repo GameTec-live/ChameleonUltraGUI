@@ -56,7 +56,7 @@ jobs:
           name: windows
           path: chameleonultragui/build/windows/x64/runner/Release/
       - name: Create NSIS installer
-        uses: joncloud/makensis-action@v4
+        uses: joncloud/makensis-action@v5
         with:
           script-file: nsis-installer.nsi
       - uses: actions/upload-artifact@v4
