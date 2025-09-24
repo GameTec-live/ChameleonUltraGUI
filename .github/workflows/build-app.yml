@@ -55,6 +55,10 @@ jobs:
         with:
           name: windows
           path: chameleonultragui/build/windows/x64/runner/Release/
+      - name: Install NSIS
+        uses: repolevedavaj/install-nsis@v1.0.3
+        with:
+          nsis-version: '3.11'
       - name: Create NSIS installer
         uses: joncloud/makensis-action@v5.0
         with:
