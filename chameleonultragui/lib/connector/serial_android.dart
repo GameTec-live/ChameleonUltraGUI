@@ -11,6 +11,7 @@ class AndroidSerial extends AbstractSerial {
   late BLESerial bleSerial = BLESerial(log: log);
   late MobileSerial mobileSerial = MobileSerial(log: log);
   Future<bool>? permissionRequestFuture;
+  late bool hasAllPermissions = true;
 
   AndroidSerial({required super.log});
 
@@ -31,7 +32,8 @@ class AndroidSerial extends AbstractSerial {
     List<Chameleon> output = [];
 
     output.addAll(await mobileSerial.availableChameleons(onlyDFU));
-    if (await checkPermissions()) {
+    hasAllPermissions = await checkPermissions();
+    if (hasAllPermissions) {
       output.addAll(await bleSerial.availableChameleons(onlyDFU));
     }
 

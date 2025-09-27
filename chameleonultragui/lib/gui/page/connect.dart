@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/manual_connect.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
@@ -40,6 +41,26 @@ class ConnectPage extends StatelessWidget {
               body: ErrorPage(errorMessage: snapshot.error.toString()));
         } else {
           final (result as List<Chameleon>) = snapshot.data;
+
+          if (result.isEmpty && appState.connector is AndroidSerial) {
+            final androidSerial = appState.connector as AndroidSerial;
+            if (!androidSerial.hasAllPermissions) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                var scaffoldMessenger = ScaffoldMessenger.of(context);
+                var localizations = AppLocalizations.of(context)!;
+                SnackBar snackBar = SnackBar(
+                  content: Text(localizations.android_ble_permissions_missing),
+                  action: SnackBarAction(
+                    label: localizations.close,
+                    onPressed: () {},
+                  ),
+                );
+
+                scaffoldMessenger.hideCurrentSnackBar();
+                scaffoldMessenger.showSnackBar(snackBar);
+              });
+            }
+          }
 
           return Scaffold(
             appBar: AppBar(
