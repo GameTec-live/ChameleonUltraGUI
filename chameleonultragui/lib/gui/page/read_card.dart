@@ -97,6 +97,7 @@ class ReadCardPageState extends State<ReadCardPage> {
 
   bool isContinuousHFScan = false;
   bool isContinuousLFScan = false;
+  bool scanInProgress = false;
   Timer? hfScanTimer;
   Timer? lfScanTimer;
 
@@ -115,29 +116,29 @@ class ReadCardPageState extends State<ReadCardPage> {
   Future<void> readLFInfo() async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
-    try {
+    setState(() {
+      lfInfo = LFCardInfo();
+    });
+
+    if (!await appState.communicator!.isReaderDeviceMode()) {
+      await appState.communicator!.setReaderDeviceMode(true);
+    }
+
+    LFCard? card = await appState.communicator!.readEM410X();
+    card ??= await appState.communicator!.readHIDProx();
+    card ??= await appState.communicator!.readViking();
+
+    if (card != null) {
       setState(() {
-        lfInfo = LFCardInfo();
+        lfInfo.card = card;
+        scanInProgress = false;
       });
-
-      if (!await appState.communicator!.isReaderDeviceMode()) {
-        await appState.communicator!.setReaderDeviceMode(true);
-      }
-
-      LFCard? card = await appState.communicator!.readEM410X();
-      card ??= await appState.communicator!.readHIDProx();
-      card ??= await appState.communicator!.readViking();
-
-      if (card != null) {
-        setState(() {
-          lfInfo.card = card;
-        });
-      } else {
-        setState(() {
-          lfInfo.cardExist = false;
-        });
-      }
-    } catch (_) {}
+    } else {
+      setState(() {
+        lfInfo.cardExist = false;
+        scanInProgress = false;
+      });
+    }
   }
 
   Future<void> startContinuousHFScan() async {
@@ -472,42 +473,54 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
-                                    onPressed: () async {
-                                      if (appState.connector!.device ==
-                                          ChameleonDevice.ultra) {
-                                        var info = await readHFInfo(context,
-                                            updateMifareClassicRecovery);
-                                        setState(() {
-                                          hfInfo = info.$1;
-                                          mfcInfo = info.$2;
-                                          mfuInfo = info.$3;
-                                        });
-                                      } else if (appState.connector!.device ==
-                                          ChameleonDevice.lite) {
-                                        showDialog<String>(
-                                          context: context,
-                                          builder: (BuildContext context) =>
-                                              AlertDialog(
-                                            title: Text(
-                                                localizations.no_supported),
-                                            content: Text(
-                                                localizations.lite_no_read,
-                                                style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                            actions: <Widget>[
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(
-                                                    context, localizations.ok),
-                                                child: Text(localizations.ok),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      } else {
-                                        appState.changesMade();
-                                      }
-                                    },
+                                    onPressed: scanInProgress
+                                        ? null
+                                        : () async {
+                                            if (appState.connector!.device ==
+                                                ChameleonDevice.ultra) {
+                                              setState(() {
+                                                scanInProgress = true;
+                                              });
+                                              var info = await readHFInfo(
+                                                  context,
+                                                  updateMifareClassicRecovery);
+                                              setState(() {
+                                                hfInfo = info.$1;
+                                                mfcInfo = info.$2;
+                                                mfuInfo = info.$3;
+                                                scanInProgress = false;
+                                              });
+                                            } else if (appState
+                                                    .connector!.device ==
+                                                ChameleonDevice.lite) {
+                                              showDialog<String>(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        AlertDialog(
+                                                  title: Text(localizations
+                                                      .no_supported),
+                                                  content: Text(
+                                                      localizations
+                                                          .lite_no_read,
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(context,
+                                                              localizations.ok),
+                                                      child: Text(
+                                                          localizations.ok),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            } else {
+                                              appState.changesMade();
+                                            }
+                                          },
                                     style: customCardButtonStyle(appState),
                                     child: Text(localizations.read),
                                   ),
@@ -744,36 +757,46 @@ class ReadCardPageState extends State<ReadCardPage> {
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
-                                    onPressed: () async {
-                                      if (appState.connector!.device ==
-                                          ChameleonDevice.ultra) {
-                                        await readLFInfo();
-                                      } else if (appState.connector!.device ==
-                                          ChameleonDevice.lite) {
-                                        showDialog<String>(
-                                          context: context,
-                                          builder: (BuildContext context) =>
-                                              AlertDialog(
-                                            title: Text(
-                                                localizations.no_supported),
-                                            content: Text(
-                                                localizations.lite_no_read,
-                                                style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                            actions: <Widget>[
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(
-                                                    context, localizations.ok),
-                                                child: Text(localizations.ok),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      } else {
-                                        appState.changesMade();
-                                      }
-                                    },
+                                    onPressed: scanInProgress
+                                        ? null
+                                        : () async {
+                                            if (appState.connector!.device ==
+                                                ChameleonDevice.ultra) {
+                                              setState(() {
+                                                scanInProgress = true;
+                                              });
+                                              await readLFInfo();
+                                            } else if (appState
+                                                    .connector!.device ==
+                                                ChameleonDevice.lite) {
+                                              showDialog<String>(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        AlertDialog(
+                                                  title: Text(localizations
+                                                      .no_supported),
+                                                  content: Text(
+                                                      localizations
+                                                          .lite_no_read,
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(context,
+                                                              localizations.ok),
+                                                      child: Text(
+                                                          localizations.ok),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            } else {
+                                              appState.changesMade();
+                                            }
+                                          },
                                     style: customCardButtonStyle(appState),
                                     child: Text(localizations.read),
                                   ),
