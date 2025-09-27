@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 
   g_autofree gchar *self_exe = g_self_exe();
   g_autofree gchar *librecovery_path =
-      g_build_filename(self_exe, "../shared", "librecovery.so", nullptr);
+      g_build_filename(self_exe, "lib", "librecovery.so", nullptr);
   g_setenv("LIBRECOVERY_PATH", librecovery_path, 0);
 
   return g_application_run(G_APPLICATION(app), argc, argv);
