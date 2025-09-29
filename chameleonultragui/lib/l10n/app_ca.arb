@@ -403,5 +403,6 @@
   "password_reset_success": "La contrasenya anterior era: {password}",
   "password_reset_no_match": "No s'ha pogut restablir la contrasenya. No ha funcionat cap contrasenya dels diccionaris.",
   "trying_password": "Intentant contrasenya",
-  "failed_to_read_block": "Error llegint blocs. Aquesta targeta est\u00e0 protegida per contrasenya o no \u00e9s una targeta Mifare Ultralight"
+  "failed_to_read_block": "Error llegint blocs. Aquesta targeta est\u00e0 protegida per contrasenya o no \u00e9s una targeta Mifare Ultralight",
+  "android_ble_permissions_missing": "Falten permisos per BLE o de localitzaci\u00f3. Per connectar a trav\u00e9s de BLE dona-li perm\u00eds a la configuraci\u00f3 del teu dispositiu."
 }
