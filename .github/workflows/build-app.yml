@@ -4,7 +4,7 @@ name: Build APP
 on:
   workflow_dispatch:
   push:
-  pull_request:
+  pull_request_target:
 
 jobs:
   check:
@@ -25,11 +25,11 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
-          java-version: '21'
+          distribution: "zulu"
+          java-version: "21"
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: "stable"
       - run: flutter pub get
       - run: flutter build apk --build-number ${{ github.run_number }}
       - uses: actions/upload-artifact@v4
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: "stable"
       - run: flutter config --enable-windows-desktop
       - run: flutter build windows --build-number ${{ github.run_number }}
       - run: flutter test
@@ -58,7 +58,7 @@ jobs:
       - name: Install NSIS
         uses: repolevedavaj/install-nsis@v1.0.3
         with:
-          nsis-version: '3.11'
+          nsis-version: "3.11"
       - name: Create NSIS installer
         uses: joncloud/makensis-action@v5.0
         with:
@@ -78,7 +78,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: "stable"
       - run: sudo apt-get update -y && sudo apt-get install -y ninja-build libgtk-3-dev clang
       - run: flutter config --enable-linux-desktop
       - run: flutter build linux --build-number ${{ github.run_number }}
@@ -107,7 +107,7 @@ jobs:
       - run: apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y ninja-build libgtk-3-dev clang jq build-essential curl git cmake
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: "stable"
       - run: git config --global safe.directory '*'
       - run: flutter config --enable-linux-desktop
       - run: flutter build linux --build-number ${{ github.run_number }}
@@ -127,7 +127,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: "stable"
       - name: Enable macOS
         run: flutter config --enable-macos-desktop
       - name: Install tools
@@ -144,7 +144,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: "stable"
       - name: Install tools
         run: brew install automake libtool create-dmg
       - run: flutter build ios --release 2>&1 | tee /dev/tty | grep -q "Xcode build done" && exit 0 || exit 1
@@ -166,7 +166,7 @@ jobs:
       - name: Download release artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: '{apk,windows,windows-installer,linux,linux-debian,linux-legacy}'
+          pattern: "{apk,windows,windows-installer,linux,linux-debian,linux-legacy}"
           path: release-artifacts
       - name: Create zip files from artifacts
         run: |
@@ -210,7 +210,7 @@ jobs:
       - name: Download release artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: '{apk,windows,windows-installer,linux,linux-debian,linux-legacy}'
+          pattern: "{apk,windows,windows-installer,linux,linux-debian,linux-legacy}"
           path: release-artifacts
       - name: Create zip files from artifacts
         run: |
