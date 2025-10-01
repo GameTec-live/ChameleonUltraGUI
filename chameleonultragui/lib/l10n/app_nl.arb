@@ -373,5 +373,20 @@
   "view_commits": "Bijdragen bekijken",
   "view_full_release": "Bekijk volledige release",
   "no_changes_listed": "Geen wijzigingen vermeld",
-  "unreleased": "Niet uitgebracht"
+  "unreleased": "Niet uitgebracht",
+  "export_logs_to_file": "Exporteer logs",
+  "tools": "Tools",
+  "device_required": "Vereist apparaat",
+  "dictionary_download": "Download woordenboek",
+  "dictionary_download_description": "Download extern woordenboek",
+  "mifare_classic_gen4": "Mifare Classic Gen4",
+  "mifare_classic_gen4_description": "Configureer Mifare Classic Gen4",
+  "t55xx_password_cleaner": "T55XX wachtwoorden verwijderen",
+  "t55xx_password_cleaner_description": "Verwijder wachtwoord van T55XX",
+  "dictionary_download_success": "Wachtwoordenlijst {name} is gedownload. Zie bewaarde kaarten pagina",
+  "select_t55xx_dictionary": "Selecteer wachtwoordenlijst",
+  "download_dictionaries": "Download wachtwoordenlijst",
+  "password_reset_progress": "Voortgang",
+  "password_found": "Wachtwoord gevonden",
+  "password_reset_success": "Vorige wachtwoord was: {password}"
 }
