@@ -1157,37 +1157,39 @@ class DumpEditorState extends State<DumpEditor> {
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey.shade600
-                        : Colors.grey.shade300,
+            SafeArea(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade600
+                          : Colors.grey.shade300,
+                    ),
                   ),
                 ),
-              ),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: _showAsciiView,
-                    child: Text(localizations.ascii),
-                  ),
-                  if (!isUltralight) ...[
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
                     ElevatedButton(
-                      onPressed: _showAccessConditions,
-                      child: Text(localizations.acl),
+                      onPressed: _showAsciiView,
+                      child: Text(localizations.ascii),
                     ),
-                    ElevatedButton(
-                      onPressed: _showValueBlocks,
-                      child: Text(localizations.value),
-                    ),
+                    if (!isUltralight) ...[
+                      ElevatedButton(
+                        onPressed: _showAccessConditions,
+                        child: Text(localizations.acl),
+                      ),
+                      ElevatedButton(
+                        onPressed: _showValueBlocks,
+                        child: Text(localizations.value),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ],
