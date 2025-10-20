@@ -320,7 +320,7 @@
   "counter_value_empty": "Z\u00e4hlerwert darf nicht leer bleiben",
   "uploading_dump": "Lade Dump in Emulator hoch...",
   "please_update_firmware": "Aktualisieren Sie die Firmware, um das Ger\u00e4t optimal zu nutzen",
-  "override_card_type": "Kartentyp \u00fcberschreiben",
+  "override_card_type": "Override card type",
   "override_card_type_description": "Camelion",
   "dump_editor": "Dump-Editor",
   "block": "Block",
@@ -331,5 +331,7 @@
   "acl": "ACL",
   "value": "Wert",
   "bcc": "BCC",
-  "mifare_ultralight_emulator_settings": "Mifare Ultralight Emulator Einstellungen"
+  "mifare_ultralight_emulator_settings": "Mifare Ultralight Emulator Einstellungen",
+  "tools": "Tools",
+  "password_reset_no_match": "Unable to reset password. None of the password in the dictionary 9worked."
 }
