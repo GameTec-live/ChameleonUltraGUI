@@ -136,7 +136,8 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
     for (var artifact in artifacts["artifacts"]) {
       if (artifact["name"] ==
               "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
-          artifact["workflow_run"]["head_branch"] == "main") {
+          artifact["workflow_run"]["head_branch"] == "main" &&
+          artifact["workflow_run"]["head_repository_id"] == 581338100) {
         content = await http.readBytes(Uri.parse(
             "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
         break;
@@ -168,7 +169,8 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
     for (var artifact in artifacts["artifacts"]) {
       if (artifact["name"] ==
               "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
-          artifact["workflow_run"]["head_branch"] == "main") {
+          artifact["workflow_run"]["head_branch"] == "main" &&
+          artifact["workflow_run"]["head_repository_id"] == 581338100) {
         return artifact["workflow_run"]["head_sha"];
       }
     }
