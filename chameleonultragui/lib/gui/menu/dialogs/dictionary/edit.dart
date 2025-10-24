@@ -6,6 +6,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+import 'package:uuid/uuid.dart';
 
 class DictionaryEditMenu extends StatefulWidget {
   final Dictionary dictionary;
@@ -138,7 +139,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
 
             Dictionary dict = Dictionary.fromString(keysController.text,
                 name: nameController.text, color: currentColor);
-            dict.id = (widget.isNew ? null : widget.dictionary.id)!;
+            dict.id = widget.isNew ? Uuid().v4() : widget.dictionary.id;
 
             if (dict.keys.isEmpty) {
               return;
