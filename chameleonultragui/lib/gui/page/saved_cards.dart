@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chameleonultragui/gui/component/card_button.dart';
-import 'package:chameleonultragui/gui/component/saved_card.dart';
+import 'package:chameleonultragui/gui/component/element_button.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/view.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/edit.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/view.dart';
@@ -448,7 +448,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           shrinkWrap: true,
                           itemBuilder: (BuildContext context, int index) {
                             final tag = tags[index];
-                            return SavedCard(
+                            return ElementButton(
                               icon: (chameleonTagToFrequency(tag.tag) ==
                                       TagFrequency.hf)
                                   ? Icons.credit_card
@@ -621,7 +621,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           shrinkWrap: true,
                           itemBuilder: (BuildContext context, int index) {
                             final dictionary = dictionaries[index];
-                            return SavedCard(
+                            return ElementButton(
                               icon: Icons.key,
                               iconColor: dictionary.color,
                               firstLine: dictionary.name,

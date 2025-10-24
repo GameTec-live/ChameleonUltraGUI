@@ -3,7 +3,7 @@ import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class SavedCard extends StatefulWidget {
+class ElementButton extends StatefulWidget {
   final IconData icon;
   final Color iconColor;
   final String firstLine;
@@ -11,8 +11,9 @@ class SavedCard extends StatefulWidget {
   final List<Widget> children;
   final int itemIndex;
   final VoidCallback? onPressed;
+  final int maxLineLines;
 
-  const SavedCard(
+  const ElementButton(
       {super.key,
       required this.icon,
       required this.iconColor,
@@ -20,13 +21,14 @@ class SavedCard extends StatefulWidget {
       required this.secondLine,
       required this.children,
       required this.itemIndex,
-      required this.onPressed});
+      required this.onPressed,
+      this.maxLineLines = 1});
 
   @override
-  SavedCardState createState() => SavedCardState();
+  ElementButtonState createState() => ElementButtonState();
 }
 
-class SavedCardState extends State<SavedCard> {
+class ElementButtonState extends State<ElementButton> {
   @override
   void initState() {
     super.initState();
@@ -41,16 +43,20 @@ class SavedCardState extends State<SavedCard> {
         : (readWidth - appState.navigationRailSize!.width - 28);
     double iconsWidth = widget.children.length * 40 + 8;
     double textWidth = (TextPainter(
-            text: TextSpan(text: widget.secondLine),
+            text: TextSpan(
+                text: widget.secondLine.length > widget.firstLine.length
+                    ? widget.secondLine
+                    : widget.firstLine),
             maxLines: 1,
             textScaler: MediaQuery.of(context).textScaler,
             textDirection: TextDirection.ltr)
           ..layout())
         .size
         .width;
-    double textEndsAt = textWidth + 85;
+    double textEndsAt = textWidth + 90;
 
-    return textEndsAt + iconsWidth > predictedElementWidth;
+    return textEndsAt + iconsWidth > predictedElementWidth &&
+        widget.children.isNotEmpty;
   }
 
   @override
@@ -85,13 +91,13 @@ class SavedCardState extends State<SavedCard> {
                           children: [
                             Text(
                               widget.firstLine,
-                              maxLines: 1,
+                              maxLines: widget.maxLineLines,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               widget.secondLine,
-                              maxLines: 1,
+                              maxLines: widget.maxLineLines,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],

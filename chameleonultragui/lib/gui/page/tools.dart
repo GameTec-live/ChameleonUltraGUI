@@ -4,7 +4,7 @@ import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:chameleonultragui/gui/component/saved_card.dart';
+import 'package:chameleonultragui/gui/component/element_button.dart';
 import 'package:provider/provider.dart';
 
 class ToolItem {
@@ -74,12 +74,13 @@ class ToolsPageState extends State<ToolsPage> {
               final tool = tools[index];
               return Stack(
                 children: [
-                  SavedCard(
+                  ElementButton(
                       icon: tool.icon,
                       iconColor: Theme.of(context).colorScheme.primary,
                       firstLine: tool.name,
                       secondLine: tool.description,
                       itemIndex: index,
+                      maxLineLines: 3,
                       onPressed: tool.onPressed != null &&
                               (!tool.isDeviceRequired ||
                                   appState.connector!.connected)
