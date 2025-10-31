@@ -140,28 +140,47 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
       }
     }
 
-    for (var block = 0; block < totalBlocks; block++) {
-      Uint8List write = await communicator.send14ARaw(
-          Uint8List.fromList([0xA2, block, ...card.data[block]]),
-          keepRfField: true,
-          checkResponseCrc: false,
-          autoSelect: block == 0 || block == 3);
-      if (write.isEmpty || write[0] != 0x0A || block == 2) {
-        await communicator.send14ARaw(Uint8List(1)); // reset
+    for (var pass = 0; pass < 2; pass++) {
+      for (var block = 0; block < totalBlocks; block++) {
+        if (card.data[block].isNotEmpty) {
+          List<int> blockData = List.from(card.data[block]);
 
-        if (key!.isNotEmpty) {
-          await communicator.send14ARaw(
-              Uint8List.fromList([0x1B, ...hexToBytes(key!)]),
-              keepRfField: true);
-        }
+          if (pass == 0) {
+            if (block == 2 && blockData.length >= 4) {
+              blockData[2] = 0x00;
+              blockData[3] = 0x00;
+            }
 
-        if (block > 2) {
-          // block is not UID
-          failedBlocks.add(block);
+            if (block == 3) {
+              blockData = Uint8List(4);
+            }
+          } else if (![2, 3].contains(block)) {
+            continue;
+          }
+
+          Uint8List write = await communicator.send14ARaw(
+              Uint8List.fromList([0xA2, block, ...blockData]),
+              keepRfField: true,
+              checkResponseCrc: false,
+              autoSelect: block == 0 || block == 3);
+          if (write.isEmpty || write[0] != 0x0A || block == 2) {
+            await communicator.send14ARaw(Uint8List(1)); // reset
+
+            if (key!.isNotEmpty) {
+              await communicator.send14ARaw(
+                  Uint8List.fromList([0x1B, ...hexToBytes(key!)]),
+                  keepRfField: true);
+            }
+
+            if (block > 2) {
+              // block is not UID
+              failedBlocks.add(block);
+            }
+          }
+
+          update((block / (totalBlocks + 2) * 100).round());
         }
       }
-
-      update((block / totalBlocks * 100).round());
     }
 
     return failedBlocks.isEmpty;
