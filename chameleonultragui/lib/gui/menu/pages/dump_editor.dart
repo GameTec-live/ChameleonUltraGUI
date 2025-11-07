@@ -598,8 +598,8 @@ class DumpEditorState extends State<DumpEditor> {
       List<String> lines = controllers[sector].text.split('\n');
       if (lines.isNotEmpty) {
         String sectorTrailer = lines.last.replaceAll(' ', '').trim();
-        if (sectorTrailer.length >= 20) {
-          String accessConditions = sectorTrailer.substring(12, 20);
+        if (sectorTrailer.length >= 18) {
+          String accessConditions = sectorTrailer.substring(14, 18);
           Map<String, dynamic> decoded =
               MifareClassicDumpAnalyzer.decodeAccessConditions(
                   accessConditions, context);
