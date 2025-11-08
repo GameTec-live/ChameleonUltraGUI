@@ -24,7 +24,7 @@ extension PartitionList<E> on List<E> {
   }
 }
 
-enum ChameleonKeyCheckmark { none, found, checking }
+enum ChameleonKeyCheckmark { none, found, checking, disabled }
 
 class MifareClassicRecovery {
   late ChameleonGUIState appState;
@@ -74,7 +74,8 @@ class MifareClassicRecovery {
     int chunkSize =
         appState.connector!.connectionType == ConnectionType.ble ? 32 : 64;
 
-    if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found) {
+    if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found &&
+        getSectorState(sector, keyType) != ChameleonKeyCheckmark.disabled) {
       setCheckingSector(sector, keyType);
       int totalChunks = keys.partition(chunkSize).length;
 
@@ -102,6 +103,7 @@ class MifareClassicRecovery {
     if (keyType == 0 &&
         getSectorState(sector, 0) == ChameleonKeyCheckmark.found &&
         getSectorState(sector, 1) != ChameleonKeyCheckmark.found &&
+        getSectorState(sector, 1) != ChameleonKeyCheckmark.disabled &&
         key != null) {
       Uint8List block = await appState.communicator!.mf1ReadBlock(
           mfClassicGetSectorTrailerBlockBySector(sector), 0x60 + keyType, key);
@@ -204,7 +206,8 @@ class MifareClassicRecovery {
                 isEV1: isMifareClassicEV1);
         sector++) {
       for (var keyType = 0; keyType < 2; keyType++) {
-        if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found) {
+        if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found &&
+            getSectorState(sector, keyType) != ChameleonKeyCheckmark.disabled) {
           allKeysExists = false;
         }
       }
@@ -549,7 +552,8 @@ class MifareClassicRecovery {
                 isEV1: isMifareClassicEV1);
         sector++) {
       for (var keyType = 0; keyType < 2; keyType++) {
-        if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found) {
+        if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found &&
+            getSectorState(sector, keyType) != ChameleonKeyCheckmark.disabled) {
           allKeysExists = false;
         }
       }

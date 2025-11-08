@@ -404,5 +404,7 @@
   "password_reset_no_match": "Unable to reset password. None of the password in the dictionary worked.",
   "trying_password": "Trying password",
   "failed_to_read_block": "Failed to read any blocks. This is password protected card or not Mifare Ultralight card",
-  "android_ble_permissions_missing": "Missing BLE or location permission. To connect via BLE, grant permissions in your device Settings app"
+  "android_ble_permissions_missing": "Missing BLE or location permission. To connect via BLE, grant permissions in your device Settings app",
+  "skip_recovery": "Skip recovery",
+  "resume_recovery": "Resume recovery"
 }
