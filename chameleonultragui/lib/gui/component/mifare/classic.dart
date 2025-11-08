@@ -149,7 +149,11 @@ class CardReaderState extends State<MifareClassicHelper> {
                 checkmarkSize: checkmarkSize,
                 checkmarkCount: mfClassicGetSectorCount(widget.mfcInfo.type,
                     isEV1: widget.mfcInfo.isEV1),
-                checkmarkPerRow: checkmarkPerRow),
+                checkmarkPerRow: checkmarkPerRow,
+                onCheckmarkChanged: (index, newValue) {
+                  widget.mfcInfo.recovery!.checkMarks[index] = newValue;
+                  widget.mfcInfo.recovery!.update();
+                }),
             const Spacer(),
           ],
         ),
