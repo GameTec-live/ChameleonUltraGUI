@@ -404,5 +404,7 @@
   "password_reset_no_match": "Impossibile reimpostare la password. Nessuna delle password nel dizionario ha funzionato.",
   "trying_password": "Tentativo password",
   "failed_to_read_block": "Impossibile leggere qualsiasi blocco. Questa \u00e8 una carta protetta da password o non \u00e8 una carta Mifare Ultralight",
-  "android_ble_permissions_missing": "Permessi BLE o di posizione mancanti.\nPer connetterti tramite BLE, concedi i permessi nell\u2019app Impostazioni del dispositivo"
+  "android_ble_permissions_missing": "Permessi BLE o di posizione mancanti.\nPer connetterti tramite BLE, concedi i permessi nell\u2019app Impostazioni del dispositivo",
+  "skip_recovery": "Salta recovery",
+  "resume_recovery": "Riprendi recovery"
 }
