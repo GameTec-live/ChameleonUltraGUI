@@ -81,6 +81,7 @@
   "restart_required": "\u9700\u8981\u91cd\u65b0\u542f\u52a8",
   "take_effects": "\u6539\u52a8\u5c06\u5728\u91cd\u542f\u540e\u751f\u6548.",
   "language": "\u5207\u6362\u8bed\u8a00",
+  "language_name": "\u4e2d\u6587",
   "sidebar_expansion": "\u4fa7\u8fb9\u680f\u6269\u5c55",
   "expand": "\u5c55\u5f00",
   "retract": "\u7f29\u56de",
