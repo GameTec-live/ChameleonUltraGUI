@@ -204,7 +204,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     final localeLocalizations = lookupAppLocalizations(locale);
                     return DropdownMenuItem(
                         value: locale.toLanguageTag(),
-                        child: Text(localeLocalizations.languageName));
+                        child: Text(localeLocalizations.language_name));
                   }).toList(),
                 ),
               ),
