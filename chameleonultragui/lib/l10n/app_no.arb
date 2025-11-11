@@ -81,6 +81,7 @@
   "restart_required": "Omstart kreves",
   "take_effects": "Endringer trer i kraft etter omstart",
   "language": "Spr\u00e5k",
+  "language_name": "Norsk",
   "sidebar_expansion": "Sidestolpe utvidelse",
   "expand": "Utvid",
   "retract": "Trekk tilbake",

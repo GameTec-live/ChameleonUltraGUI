@@ -24,44 +24,6 @@ import 'package:flutter/services.dart' show rootBundle;
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
-//TODO: remove and use a language provided string
-const localeNameMap = {
-  "en": "English",
-  "zh": "中文",
-  "zh-TW": "臺灣正體",
-  "es": "Español",
-  "fr": "Français",
-  "de": "Deutsch",
-  "de-AT": "Deutsch (Österreich)",
-  "pt": "Português",
-  "pt-BR": "Português (Brasil)",
-  "ru": "Русский",
-  "it": "Italiano",
-  "ja": "日本語",
-  "ko": "한국어",
-  "nl": "Nederlands",
-  "ar": "العربية ",
-  "tr": "Türkçe",
-  "pl": "Polski",
-  "sv": "Svenska",
-  "da": "Dansk",
-  "no": "Norsk",
-  "fi": "Suomi",
-  "cs": "Čeština",
-  "hu": "Magyar",
-  "el": "Ελληνικά",
-  "he": "עברית ",
-  "th": "ไทย ",
-  "id": "Bahasa Indonesia",
-  "uk": "Українська",
-  "ro": "Română",
-  "ms": "Bahasa Melayu",
-  "hi": "हिन्दी",
-  "vi": "Tiếng Việt",
-  "ca": "Català",
-  "bg": "Български",
-  "el-GR": "Ελληνικά"
-};
 
 Future<String> loadLicense(String license) async {
   return await rootBundle.loadString('assets/licenses/$license.md');
@@ -239,10 +201,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     appState.changesMade();
                   },
                   items: AppLocalizations.supportedLocales.map((locale) {
+                    final localeLocalizations = lookupAppLocalizations(locale);
                     return DropdownMenuItem(
                         value: locale.toLanguageTag(),
-                        child: Text(localeNameMap[locale.toLanguageTag()] ??
-                            "Unknown (${locale.toLanguageTag()})"));
+                        child: Text(localeLocalizations.language_name));
                   }).toList(),
                 ),
               ),
