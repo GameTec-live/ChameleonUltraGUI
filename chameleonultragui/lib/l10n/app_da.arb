@@ -69,6 +69,7 @@
   "restart_required": "Genstart p\u00e5kr\u00e6vet",
   "take_effects": "\u00c6ndringer tr\u00e6der i kraft efter genstart",
   "language": "Sprog",
+  "language_name": "Dansk",
   "sidebar_expansion": "Sidepanel Udvidelse",
   "expand": "Udvid",
   "retract": "Tilbagetr\u00e6k",

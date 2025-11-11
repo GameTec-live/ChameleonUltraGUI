@@ -81,6 +81,7 @@
   "restart_required": "Riavvio richiesto",
   "take_effects": "Le modifiche avranno effetto dopo il riavvio",
   "language": "Lingua",
+  "language_name": "Italiano",
   "sidebar_expansion": "Espansione Barra Laterale",
   "expand": "Espandi",
   "retract": "Ritira",
