@@ -81,7 +81,6 @@
   "restart_required": "Neustart erforderlich",
   "take_effects": "\u00c4nderungen werden nach dem Neustart \u00fcbernommen",
   "language": "Sprache",
-  "language_name": "Deutsch",
   "sidebar_expansion": "Seitenleiste Erweiterung",
   "expand": "Erweitern",
   "retract": "Zur\u00fcckziehen",
@@ -330,5 +329,6 @@
   "value": "Wert",
   "bcc": "BCC",
   "mifare_ultralight_emulator_settings": "Mifare Ultralight Emulator Einstellungen",
-  "tools": "Tools"
+  "tools": "Tools",
+  "language_name": "Deutsch"
 }

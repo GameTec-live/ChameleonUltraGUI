@@ -81,7 +81,6 @@
   "restart_required": "Reinicio requerido",
   "take_effects": "Los cambios surtir\u00e1n efecto tras el reinicio",
   "language": "Idioma",
-  "language_name": "Espa\u00f1ol",
   "sidebar_expansion": "Barra lateral",
   "expand": "Expandida",
   "retract": "Oculta",
@@ -375,5 +374,6 @@
   "view_full_release": "Ver versi\u00f3n completa",
   "no_changes_listed": "No se enumeran cambios",
   "unreleased": "In\u00e9dito",
-  "export_logs_to_file": "Exportar registros a un archivo"
+  "export_logs_to_file": "Exportar registros a un archivo",
+  "language_name": "Espa\u00f1ol"
 }

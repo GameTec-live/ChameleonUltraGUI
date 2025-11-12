@@ -81,7 +81,6 @@
   "restart_required": "Herstart vereist",
   "take_effects": "Wijzigingen worden van kracht na herstart",
   "language": "Taal",
-  "language_name": "Nederlands",
   "sidebar_expansion": "Zijbalk uitbreiding",
   "expand": "Uitbreiden",
   "retract": "Intrekken",
@@ -389,5 +388,6 @@
   "download_dictionaries": "Download wachtwoordenlijst",
   "password_reset_progress": "Voortgang",
   "password_found": "Wachtwoord gevonden",
-  "password_reset_success": "Vorige wachtwoord was: {password}"
+  "password_reset_success": "Vorige wachtwoord was: {password}",
+  "language_name": "Nederlands"
 }
