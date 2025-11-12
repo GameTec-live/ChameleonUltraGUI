@@ -43,7 +43,7 @@
   "debug_mode_confirmation": "\u60a8\u78ba\u5b9a\u8981{mode}\u9664\u932f\u6a21\u5f0f\u55ce\uff1f\u6b64\u6a21\u5f0f\u5c08\u70ba\u958b\u767c\u4eba\u54e1\u5728\u4e0d\u53d7\u652f\u63f4\u7684\u5e73\u53f0\u4e0a\u6e2c\u8a66\u7279\u5b9a\u61c9\u7528\u7a0b\u5f0f\u529f\u80fd\u800c\u8a2d\u8a08\u3002",
   "debug": "\u9664\u932f",
   "debug_page_warning": "\u4f7f\u7528\u6b64\u9078\u55ae\u53ef\u80fd\u6703\u6c38\u4e45\u640d\u58de\u60a8\u7684 Chameleon\u3002",
-  "warned": "\u6211\u5df2\u7d93\u8b66\u544a\u904e\u4f60\u4e86\u3002",
+  "warned": "\u60a8\u5df2\u88ab\u8b66\u544a\u3002",
   "platform": "\u5e73\u53f0",
   "android": "Android",
   "serial_protocol": "\u5e8f\u5217\u5354\u5b9a",
@@ -81,8 +81,7 @@
   "restart_required": "\u9700\u8981\u91cd\u65b0\u555f\u52d5",
   "take_effects": "\u8b8a\u66f4\u5c07\u5728\u91cd\u65b0\u555f\u52d5\u5f8c\u751f\u6548",
   "language": "\u8a9e\u8a00",
-  "language_name": "\u81fa\u7063\u6b63\u9ad4",
-  "sidebar_expansion": "\u64f4\u5c55\u908a\u6b04",
+  "sidebar_expansion": "\u5074\u908a\u6b04\u5c55\u958b",
   "expand": "\u5c55\u958b",
   "retract": "\u6536\u8d77",
   "auto": "\u81ea\u52d5",
@@ -250,7 +249,7 @@
   "please_enter_a_number_between": "\u8acb\u8f38\u5165 {min} \u5230 {max} \u4e4b\u9593\u7684\u6578\u5b57",
   "json_file": "JSON \u6a94\u6848",
   "export_settings": "\u532f\u51fa\u8a2d\u5b9a",
-  "import_settings": "\u200b\n\u532f\u5165\u8a2d\u5b9a",
+  "import_settings": "\u200b\u532f\u5165\u8a2d\u5b9a",
   "import_settings_description": "\u9078\u64c7\u60a8\u8981\u5982\u4f55\u532f\u5165\u8a2d\u5b9a",
   "qr_code_import_not_supported_description": "\u50c5\u884c\u52d5\u88dd\u7f6e\u652f\u63f4 QR Code \u532f\u5165",
   "test_qr_code": "\u6e2c\u8a66 QR Code",
@@ -407,5 +406,6 @@
   "failed_to_read_block": "\u7121\u6cd5\u8b80\u53d6\u4efb\u4f55\u5340\u584a\u3002\u9019\u662f\u53d7\u5bc6\u78bc\u4fdd\u8b77\u7684\u5361\u7247\u6216\u4e0d\u662f Mifare Ultralight \u5361\u7247",
   "android_ble_permissions_missing": "\u7f3a\u5c11\u85cd\u7259\u6216\u4f4d\u7f6e\u6b0a\u9650\u3002\u8981\u900f\u904e\u85cd\u7259\u9023\u63a5\uff0c\u8acb\u5728\u88dd\u7f6e\u7684\u8a2d\u5b9a\u61c9\u7528\u7a0b\u5f0f\u4e2d\u6388\u4e88\u6b0a\u9650",
   "skip_recovery": "\u8df3\u904e\u6062\u5fa9",
-  "resume_recovery": "\u7e7c\u7e8c\u6062\u5fa9"
+  "resume_recovery": "\u7e7c\u7e8c\u6062\u5fa9",
+  "language_name": "\u7e41\u9ad4\u4e2d\u6587"
 }

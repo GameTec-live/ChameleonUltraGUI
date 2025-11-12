@@ -81,7 +81,6 @@
   "restart_required": "Riavvio richiesto",
   "take_effects": "Le modifiche avranno effetto dopo il riavvio",
   "language": "Lingua",
-  "language_name": "Italiano",
   "sidebar_expansion": "Espansione Barra Laterale",
   "expand": "Espandi",
   "retract": "Ritira",
@@ -407,5 +406,6 @@
   "failed_to_read_block": "Impossibile leggere qualsiasi blocco. Questa \u00e8 una carta protetta da password o non \u00e8 una carta Mifare Ultralight",
   "android_ble_permissions_missing": "Permessi BLE o di posizione mancanti.\nPer connetterti tramite BLE, concedi i permessi nell\u2019app Impostazioni del dispositivo",
   "skip_recovery": "Salta recovery",
-  "resume_recovery": "Riprendi recovery"
+  "resume_recovery": "Riprendi recovery",
+  "language_name": "Italiano"
 }

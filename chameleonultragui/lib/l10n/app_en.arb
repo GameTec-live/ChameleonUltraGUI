@@ -81,7 +81,6 @@
   "restart_required": "Restart required",
   "take_effects": "Changes will take effect after a restart",
   "language": "Language",
-  "language_name": "English",
   "sidebar_expansion": "Sidebar Expansion",
   "expand": "Expand",
   "retract": "Retract",
@@ -407,5 +406,6 @@
   "failed_to_read_block": "Failed to read any blocks. This is password protected card or not Mifare Ultralight card",
   "android_ble_permissions_missing": "Missing BLE or location permission. To connect via BLE, grant permissions in your device Settings app",
   "skip_recovery": "Skip recovery",
-  "resume_recovery": "Resume recovery"
+  "resume_recovery": "Resume recovery",
+  "language_name": "English"
 }
