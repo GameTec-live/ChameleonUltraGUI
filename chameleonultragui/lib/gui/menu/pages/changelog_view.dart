@@ -187,9 +187,7 @@ class ChangelogViewState extends State<ChangelogView> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () async {
-                  if (await canLaunchUrl(Uri.parse(changelog.url))) {
-                    await launchUrl(Uri.parse(changelog.url));
-                  }
+                  await launchUrl(Uri.parse(changelog.url));
                 },
                 child: Text(isUnreleased ? localizations.view_commits : localizations.view_full_release),
               ),
@@ -239,9 +237,7 @@ class ChangelogViewState extends State<ChangelogView> {
           recognizer: TapGestureRecognizer()
             ..onTap = () async {
               final uri = Uri.parse(matchText);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri);
-              }
+              await launchUrl(uri);
             },
         ));
       } else if (matchText.startsWith('@')) {
@@ -257,9 +253,7 @@ class ChangelogViewState extends State<ChangelogView> {
             ..onTap = () async {
               final username = matchText.substring(1); // Remove @ symbol
               final uri = Uri.parse('https://github.com/$username');
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri);
-              }
+              await launchUrl(uri);
             },
         ));
       }
