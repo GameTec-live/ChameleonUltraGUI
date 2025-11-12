@@ -571,11 +571,11 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () async {
-                  if (await canLaunchUrl(Uri.parse(
-                      'https://crowdin.com/project/chameleonultragui'))) {
-                    await launchUrl(Uri.parse(
-                        'https://crowdin.com/project/chameleonultragui'));
-                  }
+                  final uri = Uri.parse('https://crowdin.com/project/chameleonultragui');
+                  await launchUrl(
+                    uri,
+                    mode: LaunchMode.externalApplication,
+                  );
                 },
                 child: Text(localizations.help_translate),
               ),
