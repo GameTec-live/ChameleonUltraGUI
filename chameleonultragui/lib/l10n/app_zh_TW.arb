@@ -249,7 +249,7 @@
   "please_enter_a_number_between": "\u8acb\u8f38\u5165 {min} \u5230 {max} \u4e4b\u9593\u7684\u6578\u5b57",
   "json_file": "JSON \u6a94\u6848",
   "export_settings": "\u532f\u51fa\u8a2d\u5b9a",
-  "import_settings": "\u200b\u532f\u5165\u8a2d\u5b9a",
+  "import_settings": "\u532f\u5165\u8a2d\u5b9a",
   "import_settings_description": "\u9078\u64c7\u60a8\u8981\u5982\u4f55\u532f\u5165\u8a2d\u5b9a",
   "qr_code_import_not_supported_description": "\u50c5\u884c\u52d5\u88dd\u7f6e\u652f\u63f4 QR Code \u532f\u5165",
   "test_qr_code": "\u6e2c\u8a66 QR Code",
