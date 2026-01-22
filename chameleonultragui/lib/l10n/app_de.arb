@@ -339,6 +339,7 @@
   "ascii": "ASCII",
   "acl": "ACL",
   "value": "Wert",
+  "inc": "",
   "invalid_access_conditions_length": "Ung\u00fcltige Zugriffsbedingungen L\u00e4nge",
   "failed_to_decode_access_conditions": "Fehler beim Dekodieren der Zugriffsbedingungen",
   "sector_trailer": "Sektor-Anhang",
