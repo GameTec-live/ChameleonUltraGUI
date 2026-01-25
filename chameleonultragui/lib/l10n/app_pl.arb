@@ -308,7 +308,7 @@
   "prng_type_weak": "S\u0142aby",
   "prng_type_hard": "Mocny",
   "has_backdoor_support": "Backdoor",
-  "demo_firmware": "Demo, nie prawdziwy Chameleon Ultra. Wy\u0142\u0105cz w ustawieniach",
+  "demo_firmware": "Demo, nieprawdziwy Kameleon Ultra. Wy\u0142\u0105cz w ustawieniach",
   "trademarks_mifare": "MIFARE\u00ae, MIFARE\u00ae Classic i MIFARE\u00ae Ultralight s\u0105 zarejestrowanymi znakami towarowymi firmy NXP Semiconductors B.V.",
   "trademarks_em": "EM Microelectronic-Marin, EM Microelectronic, EM i wszystkie oznaczenia produkt\u00f3w rozpoczynaj\u0105ce si\u0119 od \u201eEM\u201d s\u0105 zarejestrowanymi znakami towarowymi firmy EM Microelectronic",
   "create_card": "Utw\u00f3rz kart\u0119",
