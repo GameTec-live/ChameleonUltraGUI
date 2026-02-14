@@ -155,9 +155,12 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!
           .enableSlot(gridPosition, TagFrequency.lf, true);
       await appState.communicator!.activateSlot(gridPosition);
-      await appState.communicator!.setSlotType(gridPosition, TagType.em410X);
+      TagType slotTagType = card.tag == TagType.em410XElectra
+          ? TagType.em410XElectra
+          : TagType.em410X;
+      await appState.communicator!.setSlotType(gridPosition, slotTagType);
       await appState.communicator!
-          .setDefaultDataToSlot(gridPosition, TagType.em410X);
+          .setDefaultDataToSlot(gridPosition, slotTagType);
       await appState.communicator!.setEM410XEmulatorID(hexToBytes(card.uid));
       await appState.communicator!.setSlotTagName(
           gridPosition,
