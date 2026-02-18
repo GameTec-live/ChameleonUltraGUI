@@ -492,39 +492,65 @@ TagType getTagTypeByDumpSize(int size) {
   return TagType.unknown;
 }
 
+const _hidProxTypeNames = <int, String>{
+  1: "HID H10301 26-bit",
+  2: "Indala 26-bit",
+  3: "Indala 27-bit",
+  4: "Indala ASC 27-bit",
+  5: "Tecom 27-bit",
+  6: "2804 Wiegand 28-bit",
+  7: "Indala 29-bit",
+  8: "ATS Wiegand 30-bit",
+  9: "HID ADT 31-bit",
+  10: "HID Check Point 32-bit",
+  11: "HID Hewlett-Packard 32-bit",
+  12: "Kastle 32-bit",
+  13: "Indala/Kantech KFS 32-bit",
+  14: "Wiegand 32-bit",
+  15: "HID D10202 33-bit",
+  16: "HID H10306 34-bit",
+  17: "Honeywell/Northern N10002 34-bit",
+  18: "Indala Optus 34-bit",
+  19: "Cardkey Smartpass 34-bit",
+  20: "BQT 34-bit",
+  21: "HID Corporate 1000 35-bit Std",
+  22: "HID KeyScan 36-bit",
+  23: "HID Simplex 36-bit",
+  24: "HID 36-bit Siemens",
+  25: "HID H10320 37-bit BCD",
+  26: "HID H10302 37-bit huge ID",
+  27: "HID H10304 37-bit",
+  28: "HID P10004 37-bit PCSC",
+  29: "HID Generic 37-bit",
+  30: "PointGuard MDI 37-bit",
+  43: "HID 32-B 32-bit",
+};
+
 String getNameForHIDProxType(int type) {
-  return [
-    "HID H10301 26-bit",
-    "Indala 26-bit",
-    "Indala 27-bit",
-    "Indala ASC 27-bit",
-    "Tecom 27-bit",
-    "2804 Wiegand 28-bit",
-    "Indala 29-bit",
-    "ATS Wiegand 30-bit",
-    "HID ADT 31-bit",
-    "HID Check Point 32-bit",
-    "HID Hewlett-Packard 32-bit",
-    "Kastle 32-bit",
-    "Indala/Kantech KFS 32-bit",
-    "Wiegand 32-bit",
-    "HID D10202 33-bit",
-    "HID H10306 34-bit",
-    "Honeywell/Northern N10002 34-bit",
-    "Indala Optus 34-bit",
-    "Cardkey Smartpass 34-bit",
-    "BQT 34-bit",
-    "HID Corporate 1000 35-bit Std",
-    "HID KeyScan 36-bit",
-    "HID Simplex 36-bit",
-    "HID 36-bit Siemens",
-    "HID H10320 37-bit BCD",
-    "HID H10302 37-bit huge ID",
-    "HID H10304 37-bit",
-    "HID P10004 37-bit PCSC",
-    "HID Generic 37-bit",
-    "PointGuard MDI 37-bit",
-  ][type - 1];
+  return _hidProxTypeNames[type] ?? "HID format($type)";
+}
+
+List<int> getHidProxTypeOptions() {
+  final options = _hidProxTypeNames.keys.toList();
+  options.sort((a, b) {
+    final nameA = _hidProxTypeNames[a] ?? "";
+    final nameB = _hidProxTypeNames[b] ?? "";
+    final bitsA = _hidProxBitLength(nameA);
+    final bitsB = _hidProxBitLength(nameB);
+    if (bitsA != bitsB) {
+      return bitsA.compareTo(bitsB);
+    }
+    return nameA.compareTo(nameB);
+  });
+  return options;
+}
+
+int _hidProxBitLength(String name) {
+  final match = RegExp(r'(\d+)-bit').firstMatch(name);
+  if (match == null) {
+    return 0;
+  }
+  return int.tryParse(match.group(1) ?? '') ?? 0;
 }
 
 LFCard getLFCardFromUID(TagType type, String uid) {
