@@ -78,6 +78,7 @@ enum ChameleonCommand {
   // lf commands
   scanEM410Xtag(3000),
   writeEM410XtoT5577(3001),
+  writeEM410XElectraToT5577(3006),
   scanHIDProxTag(3002),
   writeHIDProxToT5577(3003),
   scanVikingTag(3004),
@@ -147,6 +148,7 @@ enum TagType {
   em410X16(101),
   em410X32(102),
   em410X64(103),
+  em410XElectra(104),
   viking(170),
   hidProx(200),
   mifareMini(1000),
@@ -456,13 +458,38 @@ abstract class LFCard {
 
 class EM410XCard extends LFCard {
   factory EM410XCard.fromBytes(Uint8List bytes) {
+    if (bytes.isEmpty) {
+      return EM410XCard(type: TagType.em410X, uid: Uint8List(0));
+    }
+
+    if (bytes.length == 5 || bytes.length == 13) {
+      return EM410XCard(
+          type: bytes.length == 13 ? TagType.em410XElectra : TagType.em410X,
+          uid: bytes);
+    }
+
+    TagType type = TagType.em410X;
+    Uint8List uid = bytes;
+
+    if (bytes.length >= 2) {
+      type = numberToChameleonTag(bytesToU16(bytes.sublist(0, 2)));
+      int uidLength = uidSizeForLfTag(type);
+      if (uidLength > 0 && bytes.length >= uidLength + 2) {
+        uid = bytes.sublist(2, 2 + uidLength);
+      } else {
+        uid = bytes.sublist(0, bytes.length > 5 ? 5 : bytes.length);
+        type = TagType.em410X;
+      }
+    }
+
     return EM410XCard(
-        type: numberToChameleonTag(bytesToU16(bytes.sublist(0, 2))),
-        uid: bytes.sublist(2, 7));
+      type: type,
+      uid: uid,
+    );
   }
 
-  factory EM410XCard.fromUID(String uid) {
-    return EM410XCard(type: TagType.em410X, uid: hexToBytes(uid));
+  factory EM410XCard.fromUID(String uid, {TagType type = TagType.em410X}) {
+    return EM410XCard(type: type, uid: hexToBytes(uid));
   }
 
   EM410XCard({required super.type, required super.uid});

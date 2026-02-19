@@ -159,6 +159,8 @@ String chameleonTagToString(TagType tag, AppLocalizations localizations) {
     return "EM410X (32)";
   } else if (tag == TagType.em410X64) {
     return "EM410X (64)";
+  } else if (tag == TagType.em410XElectra) {
+    return "EM410X Electra";
   } else if (tag == TagType.hidProx) {
     return "HID Prox";
   } else if (tag == TagType.viking) {
@@ -441,6 +443,7 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.em410X16,
       TagType.em410X32,
       TagType.em410X64,
+      TagType.em410XElectra,
       TagType.hidProx,
       TagType.viking
     ];
@@ -536,11 +539,13 @@ LFCard getLFCardFromUID(TagType type, String uid) {
     return VikingCard.fromUID(uid);
   }
 
-  return EM410XCard.fromUID(uid);
+  return EM410XCard.fromUID(uid, type: type);
 }
 
 int uidSizeForLfTag(TagType type) {
-  if (isEM410X(type)) {
+  if (type == TagType.em410XElectra) {
+    return 13;
+  } else if (isEM410X(type)) {
     return 5;
   } else if (type == TagType.hidProx) {
     return 5;
@@ -552,8 +557,13 @@ int uidSizeForLfTag(TagType type) {
 }
 
 bool isEM410X(TagType type) {
-  return [TagType.em410X, TagType.em410X16, TagType.em410X32, TagType.em410X64]
-      .contains(type);
+  return [
+    TagType.em410X,
+    TagType.em410X16,
+    TagType.em410X32,
+    TagType.em410X64,
+    TagType.em410XElectra
+  ].contains(type);
 }
 
 Future<(HFCardInfo, MifareClassicInfo, MifareUltralightInfo)> readHFInfo(

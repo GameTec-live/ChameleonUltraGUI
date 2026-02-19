@@ -590,8 +590,17 @@ class ChameleonCommunicator {
     for (var oldKey in oldKeys) {
       keys.addAll(oldKey);
     }
-    await sendCmd(ChameleonCommand.writeEM410XtoT5577,
-        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+    if (uid.length == 5) {
+      await sendCmd(ChameleonCommand.writeEM410XtoT5577,
+          data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+      return;
+    }
+    if (uid.length == 13) {
+      await sendCmd(ChameleonCommand.writeEM410XElectraToT5577,
+          data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+      return;
+    }
+    throw ("Invalid EM410X UID length");
   }
 
   Future<void> writeHIDProxToT55XX(
@@ -911,7 +920,37 @@ class ChameleonCommunicator {
   }
 
   Future<Uint8List> getEM410XEmulatorID() async {
-    return (await sendCmd(ChameleonCommand.getEM410XemulatorID))!.data;
+    Uint8List data = (await sendCmd(ChameleonCommand.getEM410XemulatorID))!.data;
+
+    if (data.length == 5 || data.length == 13) {
+      return data;
+    }
+
+    if (data.length >= 2) {
+      TagType type = numberToChameleonTag(bytesToU16(data.sublist(0, 2)));
+      int uidLength = uidSizeForLfTag(type);
+
+      if (uidLength > 0 && data.length >= uidLength + 2) {
+        return data.sublist(2, 2 + uidLength);
+      }
+    }
+
+    try {
+      int slot = await getActiveSlot();
+      TagType activeLfType = (await getSlotTagTypes())[slot].lf;
+      int uidLength = uidSizeForLfTag(activeLfType);
+
+      if (uidLength > 0) {
+        if (data.length >= uidLength + 2) {
+          return data.sublist(2, 2 + uidLength);
+        }
+        if (data.length >= uidLength) {
+          return data.sublist(0, uidLength);
+        }
+      }
+    } catch (_) {}
+
+    return data;
   }
 
   Future<HIDCard> getHIDProxEmulatorID() async {
