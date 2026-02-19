@@ -343,5 +343,8 @@
   "dec": "D\u00e9cr.",
   "invalid_access_conditions_length": "Longueur invalide des conditions d'acc\u00e8s",
   "failed_to_decode_access_conditions": "D\u00e9codage des conditions d'acc\u00e8s \u00e9chou\u00e9",
+  "password": "Mot de passe",
+  "must_be_between": "Doit \u00eatre compris entre {a} et {b}",
+  "password_detection": "D\u00e9tection de mot de passe",
   "language_name": "Fran\u00e7ais"
 }
