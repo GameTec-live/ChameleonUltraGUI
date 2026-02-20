@@ -181,7 +181,8 @@ enum TagFrequency {
 enum AnimationSetting {
   full(0),
   minimal(1),
-  none(2);
+  none(2),
+  symmetric(3);
 
   const AnimationSetting(this.value);
   final int value;

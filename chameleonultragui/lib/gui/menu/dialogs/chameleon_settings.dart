@@ -158,16 +158,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         items: [
                           localizations.full,
                           localizations.mini,
-                          localizations.none
+                          localizations.none,
+                          localizations.symmetric
                         ],
                         selectedValue: settings.animation.value,
                         onChange: (int index) async {
-                          var animation = AnimationSetting.full;
-                          if (index == 1) {
-                            animation = AnimationSetting.minimal;
-                          } else if (index == 2) {
-                            animation = AnimationSetting.none;
-                          }
+                          var animation = getAnimationModeType(index);
 
                           await appState.communicator!
                               .setAnimationMode(animation);

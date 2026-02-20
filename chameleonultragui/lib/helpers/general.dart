@@ -360,6 +360,10 @@ AnimationSetting getAnimationModeType(int value) {
     return AnimationSetting.full;
   } else if (value == 1) {
     return AnimationSetting.minimal;
+  } else if (value == 2) {
+    return AnimationSetting.none;
+  } else if (value == 3) {
+    return AnimationSetting.symmetric;
   } else {
     return AnimationSetting.none;
   }
