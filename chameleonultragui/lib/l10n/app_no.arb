@@ -297,6 +297,7 @@
   "port": "Port",
   "port_hint": "f.eks COM3, /dev/ttyUSB0",
   "hardnested_calculating_key": "Beregner n\u00f8kkel...",
+  "emulate_device_confirmation": "{mo: de}.",
   "prng_type": "PRNG type",
   "prng_type_static": "Statisk",
   "prng_type_weak": "Svak",
@@ -307,5 +308,7 @@
   "trademarks_em": "EM Microelectronic-Marin, EM Microelectronic, EM og alle produktbetegnelser som begynner med \"EM\", er registrerte varemerker for EM Microelectronic",
   "create_card": "Opprett kort",
   "update_data_title": "Oppdatere kortdata?",
+  "update_data_message": "?",
+  "ultralight_counter_value": "",
   "language_name": "Norsk"
 }
