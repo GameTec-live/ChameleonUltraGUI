@@ -127,6 +127,7 @@
   "factory_reset_confirmation": "Are you sure you want to factory reset your Chameleon?",
   "full": "Full",
   "mini": "Mini",
+  "symmetric": "Symmetric",
   "none": "None",
   "edit_dictionary": "Edit Dictionary",
   "enter_dict_name": "Enter name of dictionary",
