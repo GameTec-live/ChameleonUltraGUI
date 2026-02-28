@@ -375,5 +375,8 @@
   "no_changes_listed": "No se enumeran cambios",
   "unreleased": "In\u00e9dito",
   "export_logs_to_file": "Exportar registros a un archivo",
+  "checking_or_running_darkside": "Comprobando y ejecutando ataque de Darkside",
+  "backdoor_recovery_of_non_static_encrypted": "Recuperar primera clave por puerta trasera",
+  "dictionary_download_description": "Descargar diccionarios externos",
   "language_name": "Espa\u00f1ol"
 }
