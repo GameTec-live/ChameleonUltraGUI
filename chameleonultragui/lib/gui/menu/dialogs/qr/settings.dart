@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -68,26 +69,9 @@ class QRCodeSettingsState extends State<QRCodeSettings> {
                       child: const Icon(Icons.info_outline),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return AppLocalizations.of(context)!
-                          .please_enter_something(
-                              AppLocalizations.of(context)!.split_size);
-                    }
-                    if (int.tryParse(value) == null) {
-                      return AppLocalizations.of(context)!
-                          .please_enter_a_valid_number;
-                    }
-                    if (int.tryParse(value)! < 1) {
-                      return AppLocalizations.of(context)!
-                          .please_enter_a_number_greater_than("0");
-                    }
-                    if (int.tryParse(value)! > 2048) {
-                      return AppLocalizations.of(context)!
-                          .please_enter_a_valid_number;
-                    }
-                    return null;
-                  },
+                  validator: (value) => validateIntRange(
+                      value, AppLocalizations.of(context)!,
+                      min: 1, max: 2048),
                 ),
               ),
               const SizedBox(height: 50),
@@ -126,22 +110,9 @@ class QRCodeSettingsState extends State<QRCodeSettings> {
                       child: const Icon(Icons.info_outline),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return AppLocalizations.of(context)!
-                          .please_enter_something(
-                              AppLocalizations.of(context)!.error_correction);
-                    }
-                    if (int.tryParse(value) == null) {
-                      return AppLocalizations.of(context)!
-                          .please_enter_a_valid_number;
-                    }
-                    if (int.tryParse(value)! < 0 || int.tryParse(value)! > 3) {
-                      return AppLocalizations.of(context)!
-                          .please_enter_a_number_between("0", "3");
-                    }
-                    return null;
-                  },
+                  validator: (value) => validateIntRange(
+                      value, AppLocalizations.of(context)!,
+                      min: 0, max: 3),
                 ),
               ),
               const SizedBox(height: 50),
