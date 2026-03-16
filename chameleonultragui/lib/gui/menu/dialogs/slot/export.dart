@@ -36,7 +36,8 @@ class SlotExportMenu extends StatefulWidget {
 class SlotExportMenuState extends State<SlotExportMenu> {
   TagFrequency exportFrequency = TagFrequency.unknown;
 
-  Future<CardSave?> rebuildCardSaveFromSlot(TagFrequency frequency) async {
+  Future<CardSave?> rebuildCardSaveFromSlot(TagFrequency frequency,
+      {void Function(int current, int total)? onProgress}) async {
     var appState = context.read<ChameleonGUIState>();
 
     if (frequency == TagFrequency.lf) {
@@ -66,11 +67,46 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       if (isMifareUltralight(widget.slotTypes.hf)) {
         int pageCount = mfUltralightGetPagesCount(widget.slotTypes.hf);
         List<Uint8List> pages = [];
+        const int batchSize =
+            16; // Read 16 pages at a time for better performance
 
-        for (int page = 0; page < pageCount; page++) {
-          Uint8List pageData =
-              await appState.communicator!.mf0EmulatorReadPages(page, 1);
-          pages.add(pageData);
+        try {
+          for (int page = 0; page < pageCount; page += batchSize) {
+            int readCount =
+                (page + batchSize > pageCount) ? pageCount - page : batchSize;
+
+            try {
+              // Try batch read first
+              Uint8List batchData = await appState.communicator!
+                  .mf0EmulatorReadPages(page, readCount);
+
+              // Split batch into individual pages (4 bytes each)
+              for (int i = 0; i < readCount; i++) {
+                pages.add(batchData.sublist(i * 4, (i + 1) * 4));
+              }
+
+              // Report progress
+              if (onProgress != null) {
+                onProgress(page + readCount, pageCount);
+              }
+            } catch (e) {
+              // Fallback to single-page reads if batch fails;
+              // if these also throw, the outer catch returns null
+              for (int i = page; i < page + readCount; i++) {
+                Uint8List pageData =
+                    await appState.communicator!.mf0EmulatorReadPages(i, 1);
+                pages.add(pageData);
+
+                // Report progress
+                if (onProgress != null) {
+                  onProgress(i + 1, pageCount);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // Return null to indicate failure
+          return null;
         }
 
         CardSaveExtra extraData = CardSaveExtra();
@@ -166,11 +202,66 @@ class SlotExportMenuState extends State<SlotExportMenu> {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     close(context, card.name);
 
+    final TagFrequency frequency = chameleonTagToFrequency(card.tag);
+    final bool showProgress = isMifareUltralight(frequency == TagFrequency.hf
+        ? widget.slotTypes.hf
+        : widget.slotTypes.lf);
+
+    ValueNotifier<double?> progressNotifier = ValueNotifier(null);
+
+    // Only show progress dialog for Ultralight tags (the only type with pages to read)
+    if (showProgress && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (progressContext) {
+          return ValueListenableBuilder<double?>(
+            valueListenable: progressNotifier,
+            builder: (context, progress, child) {
+              return AlertDialog(
+                title: Text(localizations.exporting),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LinearProgressIndicator(value: progress),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    }
+
     CardSave modify = card;
-    CardSave? newCard =
-        await rebuildCardSaveFromSlot(chameleonTagToFrequency(card.tag));
+    CardSave? newCard = await rebuildCardSaveFromSlot(
+      frequency,
+      onProgress: (current, total) {
+        progressNotifier.value = current / total;
+      },
+    );
+
+    // Close progress dialog
+    if (showProgress && mounted) {
+      Navigator.pop(context);
+    }
 
     if (newCard == null) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(localizations.error),
+            content: Text(localizations.failed_to_export_slot),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(localizations.ok),
+              ),
+            ],
+          ),
+        );
+      }
       return;
     }
 
@@ -239,9 +330,65 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       actions: [
         ElevatedButton(
           onPressed: () async {
-            CardSave? cardSave = await rebuildCardSaveFromSlot(exportFrequency);
+            final bool showProgress = isMifareUltralight(
+                exportFrequency == TagFrequency.hf
+                    ? widget.slotTypes.hf
+                    : widget.slotTypes.lf);
+
+            ValueNotifier<double?> progressNotifier = ValueNotifier(null);
+
+            // Only show progress dialog for Ultralight tags (the only type with pages to read)
+            if (showProgress) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (progressContext) {
+                  return ValueListenableBuilder<double?>(
+                    valueListenable: progressNotifier,
+                    builder: (context, progress, child) {
+                      return AlertDialog(
+                        title: Text(localizations.exporting),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            LinearProgressIndicator(value: progress),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            }
+
+            CardSave? cardSave = await rebuildCardSaveFromSlot(
+              exportFrequency,
+              onProgress: (current, total) {
+                progressNotifier.value = current / total;
+              },
+            );
+
+            // Close progress dialog
+            if (showProgress && context.mounted) {
+              Navigator.pop(context);
+            }
 
             if (cardSave == null) {
+              if (context.mounted) {
+                showDialog(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: Text(localizations.error),
+                    content: Text(localizations.failed_to_export_slot),
+                    actions: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: Text(localizations.ok),
+                      ),
+                    ],
+                  ),
+                );
+              }
               return;
             }
 
@@ -271,8 +418,69 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         ),
         ElevatedButton(
           onPressed: () async {
-            CardSave? tag = await rebuildCardSaveFromSlot(exportFrequency);
-            if (context.mounted && tag != null) {
+            final bool showProgress = isMifareUltralight(
+                exportFrequency == TagFrequency.hf
+                    ? widget.slotTypes.hf
+                    : widget.slotTypes.lf);
+
+            ValueNotifier<double?> progressNotifier = ValueNotifier(null);
+
+            // Only show progress dialog for Ultralight tags (the only type with pages to read)
+            if (showProgress) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (progressContext) {
+                  return ValueListenableBuilder<double?>(
+                    valueListenable: progressNotifier,
+                    builder: (context, progress, child) {
+                      return AlertDialog(
+                        title: Text(localizations.exporting),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            LinearProgressIndicator(value: progress),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            }
+
+            CardSave? tag = await rebuildCardSaveFromSlot(
+              exportFrequency,
+              onProgress: (current, total) {
+                progressNotifier.value = current / total;
+              },
+            );
+
+            // Close progress dialog
+            if (showProgress && context.mounted) {
+              Navigator.pop(context);
+            }
+
+            if (tag == null) {
+              if (context.mounted) {
+                showDialog(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: Text(localizations.error),
+                    content: Text(localizations.failed_to_export_slot),
+                    actions: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: Text(localizations.ok),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return;
+            }
+
+            if (context.mounted) {
               await showDialog(
                 context: context,
                 builder: (BuildContext dialogContext) {
