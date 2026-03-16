@@ -1,10 +1,10 @@
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -257,10 +257,9 @@ class T55XXPasswordCleanerMenuState extends State<T55XXPasswordCleanerMenu> {
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f]')),
-                LengthLimitingTextInputFormatter(8),
-              ],
+              inputFormatters: hexFormatter,
+              validator: (value) => validateHex(value, localizations,
+                  exactBytes: 4, fieldName: localizations.key, required: true),
               onChanged: (value) {
                 setState(() {});
               },

@@ -4,6 +4,7 @@ import 'package:chameleonultragui/gui/menu/pages/mfkey32.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/services.dart';
@@ -238,15 +239,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
             children: [
               TextFormField(
                 controller: nameController,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return localizations.please_enter_name;
-                  }
-                  if (value.length > 19) {
-                    return localizations.too_long_name;
-                  }
-                  return null;
-                },
+                validator: (value) => validateName(value, localizations),
               ),
               const SizedBox(height: 8),
               DropdownButton<TagType>(
@@ -294,41 +287,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                     labelText: localizations.uid,
                                     hintText: localizations
                                         .enter_something(localizations.uid)),
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp(r'[0-9A-Fa-f: ]'))
-                                ],
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return localizations.please_enter_something(
-                                        localizations.uid);
-                                  }
-                                  if (!(value.replaceAll(" ", "").length ==
-                                              14 ||
-                                          value.replaceAll(" ", "").length ==
-                                              8 ||
-                                          value.replaceAll(" ", "").length ==
-                                              20) &&
-                                      chameleonTagToFrequency(selectedType ??
-                                              widget.slotType) !=
-                                          TagFrequency.lf) {
-                                    return localizations.must_or(
-                                        "4, 7", "10", localizations.uid);
-                                  }
-                                  if (value.replaceAll(" ", "").length !=
-                                          uidSizeForLfTag(selectedType ??
-                                                  widget.slotType) *
-                                              2 &&
-                                      chameleonTagToFrequency(selectedType ??
-                                              widget.slotType) ==
-                                          TagFrequency.lf) {
-                                    return localizations.must_be(
-                                        uidSizeForLfTag(
-                                            selectedType ?? widget.slotType),
-                                        localizations.uid);
-                                  }
-                                  return null;
-                                },
+                                inputFormatters: hexFormatter,
+                                validator: (value) => validateUid(
+                                    value, localizations,
+                                    selectedType ?? widget.slotType),
                               ),
                               Visibility(
                                   visible: chameleonTagToFrequency(
@@ -344,35 +306,19 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                             hintText:
                                                 localizations.enter_something(
                                                     localizations.sak)),
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter.allow(
-                                              RegExp(r'[0-9A-Fa-f: ]'))
-                                        ],
-                                        validator: (value) {
-                                          if (value == null ||
-                                              value.isEmpty &&
-                                                  chameleonTagToFrequency(
-                                                          selectedType ??
-                                                              widget
-                                                                  .slotType) !=
-                                                      TagFrequency.lf) {
-                                            return localizations
-                                                .please_enter_something(
-                                                    localizations.sak);
-                                          }
-                                          if (value
-                                                      .replaceAll(" ", "")
-                                                      .length !=
-                                                  2 &&
-                                              chameleonTagToFrequency(
-                                                      selectedType ??
-                                                          widget.slotType) !=
-                                                  TagFrequency.lf) {
-                                            return localizations.must_be(
-                                                1, localizations.sak);
-                                          }
-                                          return null;
-                                        },
+                                        inputFormatters: hexFormatter,
+                                        validator: (value) =>
+                                            chameleonTagToFrequency(
+                                                        selectedType ??
+                                                            widget.slotType) ==
+                                                    TagFrequency.lf
+                                                ? null
+                                                : validateHex(
+                                                    value, localizations,
+                                                    exactBytes: 1,
+                                                    fieldName:
+                                                        localizations.sak,
+                                                    required: true),
                                       ),
                                       const SizedBox(height: 20),
                                       TextFormField(
@@ -382,35 +328,19 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                             hintText:
                                                 localizations.enter_something(
                                                     localizations.atqa)),
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter.allow(
-                                              RegExp(r'[0-9A-Fa-f: ]'))
-                                        ],
-                                        validator: (value) {
-                                          if (value == null ||
-                                              value.isEmpty &&
-                                                  chameleonTagToFrequency(
-                                                          selectedType ??
-                                                              widget
-                                                                  .slotType) !=
-                                                      TagFrequency.lf) {
-                                            return localizations
-                                                .please_enter_something(
-                                                    localizations.atqa);
-                                          }
-                                          if (value
-                                                      .replaceAll(" ", "")
-                                                      .length !=
-                                                  4 &&
-                                              chameleonTagToFrequency(
-                                                      selectedType ??
-                                                          widget.slotType) !=
-                                                  TagFrequency.lf) {
-                                            return localizations.must_be(
-                                                2, localizations.atqa);
-                                          }
-                                          return null;
-                                        },
+                                        inputFormatters: hexFormatter,
+                                        validator: (value) =>
+                                            chameleonTagToFrequency(
+                                                        selectedType ??
+                                                            widget.slotType) ==
+                                                    TagFrequency.lf
+                                                ? null
+                                                : validateHex(
+                                                    value, localizations,
+                                                    exactBytes: 2,
+                                                    fieldName:
+                                                        localizations.atqa,
+                                                    required: true),
                                       ),
                                       const SizedBox(height: 20),
                                       TextFormField(
@@ -420,21 +350,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                               hintText:
                                                   localizations.enter_something(
                                                       localizations.ats)),
-                                          inputFormatters: [
-                                            FilteringTextInputFormatter.allow(
-                                                RegExp(r'[0-9A-Fa-f: ]'))
-                                          ],
-                                          validator: (value) {
-                                            if (value!
-                                                        .replaceAll(" ", "")
-                                                        .length %
-                                                    2 !=
-                                                0) {
-                                              return localizations
-                                                  .must_be_valid_hex;
-                                            }
-                                            return null;
-                                          }),
+                                          inputFormatters: hexFormatter,
+                                          validator: (value) =>
+                                              validateHex(
+                                                  value, localizations)),
                                       if (isMifareUltralight(
                                           selectedType!)) ...[
                                         const SizedBox(height: 20),
@@ -447,17 +366,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                 hintText: localizations
                                                     .enter_something(localizations
                                                         .ultralight_version)),
-                                            validator: (value) {
-                                              if (value!
-                                                          .replaceAll(" ", "")
-                                                          .length %
-                                                      2 !=
-                                                  0) {
-                                                return localizations
-                                                    .must_be_valid_hex;
-                                              }
-                                              return null;
-                                            }),
+                                            validator: (value) =>
+                                                validateHex(
+                                                    value, localizations)),
                                         const SizedBox(height: 20),
                                         TextFormField(
                                             controller:
@@ -468,17 +379,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                 hintText: localizations
                                                     .enter_something(localizations
                                                         .ultralight_signature)),
-                                            validator: (value) {
-                                              if (value!
-                                                          .replaceAll(" ", "")
-                                                          .length %
-                                                      2 !=
-                                                  0) {
-                                                return localizations
-                                                    .must_be_valid_hex;
-                                              }
-                                              return null;
-                                            }),
+                                            validator: (value) =>
+                                                validateHex(
+                                                    value, localizations)),
                                         if (mfUltralightHasCounters(
                                             selectedType!)) ...[
                                           const SizedBox(height: 20),
@@ -500,23 +403,14 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                             index),
                                                     hintText: localizations
                                                         .ultralight_counter_value),
-                                                validator: (value) {
-                                                  if (value == null ||
-                                                      value.isEmpty) {
-                                                    return localizations
-                                                        .counter_value_empty;
-                                                  }
-                                                  int? counterValue =
-                                                      int.tryParse(value);
-                                                  if (counterValue == null ||
-                                                      counterValue < 0 ||
-                                                      counterValue > 16777215) {
-                                                    return localizations
-                                                        .must_be_between(
-                                                            '0', '16,777,215');
-                                                  }
-                                                  return null;
-                                                },
+                                                validator: (value) =>
+                                                    validateIntRange(
+                                                        value, localizations,
+                                                        min: 0,
+                                                        max: 16777215,
+                                                        emptyMessage:
+                                                            localizations
+                                                                .counter_value_empty),
                                               ),
                                             );
                                           }),
@@ -923,16 +817,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly
                                   ],
-                                  validator: (value) {
-                                    int? fc = int.tryParse(value!);
-                                    if (fc == null ||
-                                        fc < 0 ||
-                                        fc > 4294967295) {
-                                      return localizations.must_be_between(
-                                          '0', '4,294,967,295');
-                                    }
-                                    return null;
-                                  },
+                                  validator: (value) => validateIntRange(
+                                      value, localizations,
+                                      min: 0, max: 4294967295),
                                 ),
                                 const SizedBox(height: 20),
                                 TextFormField(
@@ -944,14 +831,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly
                                   ],
-                                  validator: (value) {
-                                    int? il = int.tryParse(value!);
-                                    if (il == null || il < 0 || il > 255) {
-                                      return localizations.must_be_between(
-                                          '0', '255');
-                                    }
-                                    return null;
-                                  },
+                                  validator: (value) => validateIntRange(
+                                      value, localizations,
+                                      min: 0, max: 255),
                                 ),
                                 const SizedBox(height: 20),
                                 TextFormField(
@@ -963,14 +845,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly
                                   ],
-                                  validator: (value) {
-                                    int? oem = int.tryParse(value!);
-                                    if (oem == null || oem < 0 || oem > 65535) {
-                                      return localizations.must_be_between(
-                                          '0', '65,535');
-                                    }
-                                    return null;
-                                  },
+                                  validator: (value) => validateIntRange(
+                                      value, localizations,
+                                      min: 0, max: 65535),
                                 ),
                               ])
                           ]));

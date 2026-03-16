@@ -6,11 +6,12 @@ import 'package:chameleonultragui/gui/component/element_button.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/view.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/edit.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/view.dart';
-import 'package:chameleonultragui/helpers/cardsave_converters.dart';
+import 'package:chameleonultragui/helpers/card_save_converters.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
@@ -180,6 +181,14 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               const SizedBox(height: 10),
                                               TextFormField(
                                                 controller: uid4Controller,
+                                                inputFormatters: hexFormatter,
+                                                validator: (value) =>
+                                                    validateHex(
+                                                  value,
+                                                  localizations,
+                                                  exactBytes: 4,
+                                                  fieldName: localizations.uid,
+                                                ),
                                                 decoration: InputDecoration(
                                                     labelText:
                                                         localizations.uid,
@@ -190,6 +199,14 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               const SizedBox(height: 20),
                                               TextFormField(
                                                 controller: sak4Controller,
+                                                inputFormatters: hexFormatter,
+                                                validator: (value) =>
+                                                    validateHex(
+                                                  value,
+                                                  localizations,
+                                                  exactBytes: 1,
+                                                  fieldName: localizations.sak,
+                                                ),
                                                 decoration: InputDecoration(
                                                     labelText:
                                                         localizations.sak,
@@ -200,6 +217,14 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                               const SizedBox(height: 20),
                                               TextFormField(
                                                 controller: atqa4Controller,
+                                                inputFormatters: hexFormatter,
+                                                validator: (value) =>
+                                                    validateHex(
+                                                  value,
+                                                  localizations,
+                                                  exactBytes: 2,
+                                                  fieldName: localizations.atqa,
+                                                ),
                                                 decoration: InputDecoration(
                                                     labelText:
                                                         localizations.atqa,
@@ -214,6 +239,13 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             const SizedBox(height: 10),
                                             TextFormField(
                                               controller: uid7Controller,
+                                              inputFormatters: hexFormatter,
+                                              validator: (value) => validateHex(
+                                                value,
+                                                localizations,
+                                                exactBytes: 7,
+                                                fieldName: localizations.uid,
+                                              ),
                                               decoration: InputDecoration(
                                                   labelText: localizations.uid,
                                                   hintText: localizations
@@ -222,25 +254,39 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             const SizedBox(height: 20),
                                             TextFormField(
                                               controller: sak7Controller,
+                                              inputFormatters: hexFormatter,
+                                              validator: (value) => validateHex(
+                                                value,
+                                                localizations,
+                                                exactBytes: 1,
+                                                fieldName: localizations.sak,
+                                              ),
                                               decoration: InputDecoration(
                                                   labelText: localizations.sak,
                                                   hintText: localizations
-                                                      .enter_something(
-                                                          "SAK (08)")),
+                                                      .enter_something("SAK")),
                                             ),
                                             const SizedBox(height: 20),
                                             TextFormField(
                                               controller: atqa7Controller,
+                                              inputFormatters: hexFormatter,
+                                              validator: (value) => validateHex(
+                                                value,
+                                                localizations,
+                                                exactBytes: 2,
+                                                fieldName: localizations.atqa,
+                                              ),
                                               decoration: InputDecoration(
                                                   labelText: localizations.atqa,
                                                   hintText: localizations
-                                                      .enter_something(
-                                                          "ATQA (00 44)")),
+                                                      .enter_something("ATQA")),
                                             ),
                                             const SizedBox(height: 40)
                                           ]),
                                           TextFormField(
                                             controller: nameController,
+                                            validator: (value) => validateName(
+                                                value, localizations),
                                             decoration: InputDecoration(
                                                 labelText: localizations.name,
                                                 hintText: localizations

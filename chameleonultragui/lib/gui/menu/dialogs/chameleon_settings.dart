@@ -4,6 +4,7 @@ import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -382,28 +383,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                       child: TextFormField(
                                           controller: bleKeyController,
                                           maxLength: 6,
-                                          validator: (value) {
-                                            if (value == null ||
-                                                value.isEmpty ||
-                                                value.length != 6 ||
-                                                double.tryParse(value) ==
-                                                    null) {
-                                              return localizations
-                                                  .pin_must_be_6_digits;
-                                            }
-
-                                            if (0 < double.tryParse(value)! &&
-                                                double.tryParse(value)! >
-                                                    0xFFFFFFFF) {
-                                              return localizations
-                                                  .pin_must_be_6_digits;
-                                            }
-
-                                            return null;
-                                          },
+                                          validator: (value) =>
+                                              validateBlePin(
+                                                  value, localizations),
                                           inputFormatters: [
-                                            FilteringTextInputFormatter.allow(
-                                                RegExp(r'[0-9]'))
+                                            FilteringTextInputFormatter
+                                                .digitsOnly
                                           ],
                                           decoration: InputDecoration(
                                             labelText: localizations.ble_pin,

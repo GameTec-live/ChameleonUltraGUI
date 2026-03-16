@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
@@ -55,21 +56,9 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
                         hintMaxLines: 4,
                         hintText: localizations.enter_something(
                             localizations.ultralight_key_prompt)),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'[0-9A-Fa-f: ]'))
-                    ],
-                    validator: (String? value) {
-                      if (value!.isNotEmpty && !isValidHexString(value)) {
-                        return localizations.must_be_valid_hex;
-                      }
-
-                      if (value.length != 8) {
-                        return localizations.must_be(4, localizations.key);
-                      }
-
-                      return null;
-                    },
+                    inputFormatters: hexFormatter,
+                    validator: (value) => validateHex(value, localizations,
+                        exactBytes: 4, fieldName: localizations.key),
                   )
                 ],
               ))),
