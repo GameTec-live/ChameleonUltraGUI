@@ -460,7 +460,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                       const SizedBox(height: 20),
                       DropdownButton<int>(
                         value: int.tryParse(hidTypeController.text) ?? 1,
-                        items: List.generate(30, (index) => index + 1)
+                        items: getHidProxTypeOptions()
                             .map<DropdownMenuItem<int>>((int type) {
                           return DropdownMenuItem<int>(
                             value: type,
