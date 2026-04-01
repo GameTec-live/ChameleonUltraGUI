@@ -51,16 +51,21 @@ class MifareClassicGen3WriteHelper extends MifareClassicGen2WriteHelper {
   @override
   Future<bool> writeBlockModifier(CardSave card, int block, Uint8List data,
       {bool tryBothKeys = false, bool useGenericKey = false}) async {
-    try {
-      if (block == 0) {
-        return writeGen3Block(card, data);
-      } else {
-        return writeBlock(block, data,
-            tryBothKeys: tryBothKeys, useGenericKey: useGenericKey);
-      }
-    } catch (_) {
-      return false;
+    for (int retry = 0; retry < 5; retry++) {
+      try {
+        if (block == 0) {
+          if (await writeGen3Block(card, data)) return true;
+        } else {
+          if (await writeBlock(block, data,
+              tryBothKeys: tryBothKeys, useGenericKey: useGenericKey)) {
+            return true;
+          }
+        }
+        await Future.delayed(const Duration(milliseconds: 100));
+      } catch (_) {}
     }
+
+    return false;
   }
 
   Future<bool> writeGen3Block(CardSave dump, Uint8List data) async {
