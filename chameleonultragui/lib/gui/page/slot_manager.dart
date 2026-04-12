@@ -177,7 +177,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!.activateSlot(gridPosition);
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      await appState.communicator!.setHIDProxEmulatorID(hexToBytes(card.uid));
+      await appState.communicator!.setHIDProxEmulatorID(
+          hexToBytes(HIDCard.fromUID(card.uid).toString()));
       await appState.communicator!.setSlotTagName(
           gridPosition,
           (card.name.isEmpty) ? localizations.no_name : card.name,
