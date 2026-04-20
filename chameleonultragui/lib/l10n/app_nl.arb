@@ -300,7 +300,7 @@
   "hardnested_calculating_key": "Sleutel berekenen...",
   "invalid_input": "Een van de velden is onjuist ingevuld",
   "failed_to_fetch_oc_contributors": "Ophalen van OpenCollective bijdragers mislukt",
-  "recovery_old_firmware": "Mislukt om onzin op te halen, is uw firmware up-to-date?",
+  "recovery_old_firmware": "Kan nonces niet ophalen, is uw firmware up-to-date?",
   "emulate_device": "Geemuleerd apparaat",
   "emulate_device_confirmation": "Weet u zeker dat u het apparaat {mode} wilt emuleren? U kunt dit inschakelen om de applicatie - functie te controleren zonder Chameleon Ultra, alle acties met geemuleerd apparaat zullen niet worden opgeslagen. U kunt geen verbinding maken met een echt apparaat of als u dit uitschakelt.",
   "prng_type": "PRNG_type",
