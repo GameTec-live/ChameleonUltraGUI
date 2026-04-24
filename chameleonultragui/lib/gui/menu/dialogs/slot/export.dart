@@ -71,6 +71,12 @@ class SlotExportMenuState extends State<SlotExportMenu> {
           name: widget.names.lf,
           tag: widget.slotTypes.lf,
         );
+      } else if (widget.slotTypes.lf == TagType.idteck) {
+        return CardSave(
+          uid: (await appState.communicator!.getIdteckEmulatorID()).toString(),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
       }
     } else {
       CardData data = await appState.communicator!.mf1GetAntiCollData();
