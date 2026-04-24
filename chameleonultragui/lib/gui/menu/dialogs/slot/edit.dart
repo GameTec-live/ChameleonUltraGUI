@@ -93,6 +93,11 @@ class SlotEditMenuState extends State<SlotEditMenu> {
             await appState.communicator!.getVikingEmulatorID();
         uidController.text = bytesToHexSpace(vikingCard.uid);
       } catch (_) {}
+    } else if (selectedType! == TagType.pac) {
+      try {
+        PacCard pacCard = await appState.communicator!.getPacEmulatorID();
+        uidController.text = bytesToHexSpace(pacCard.uid);
+      } catch (_) {}
     } else if (selectedType! == TagType.ioProx) {
       try {
         IoProxCard ioProxCard =
@@ -195,6 +200,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
         await appState.communicator!
             .setHIDProxEmulatorID(hexToBytes(hidCard.toString()));
       } catch (_) {}
+    } else if (selectedType! == TagType.pac) {
+      await appState.communicator!.setPacEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (selectedType! == TagType.ioProx) {
       await appState.communicator!.setIoProxEmulatorID(
           hexToBytes(uidController.text.replaceAll(' ', '')));

@@ -85,6 +85,8 @@ enum ChameleonCommand {
   writeVikingToT5577(3005),
   scanIoProxTag(3010),
   writeIoProxToT5577(3011),
+  scanPacTag(3014),
+  writePacToT5577(3015),
 
   mf1LoadBlockData(4000),
   mf1SetAntiCollision(4001),
@@ -140,6 +142,9 @@ enum ChameleonCommand {
   setVikingEmulatorID(5004),
   getVikingEmulatorID(5005),
 
+  setPacEmulatorID(5006),
+  getPacEmulatorID(5007),
+
   setIoProxEmulatorID(5008),
   getIoProxEmulatorID(5009);
 
@@ -154,6 +159,7 @@ enum TagType {
   em410X32(102),
   em410X64(103),
   em410XElectra(104),
+  pac(150),
   viking(170),
   hidProx(200),
   ioProx(201),
@@ -579,6 +585,21 @@ class VikingCard extends LFCard {
 
   VikingCard({
     super.type = TagType.viking,
+    required super.uid,
+  });
+}
+
+class PacCard extends LFCard {
+  factory PacCard.fromBytes(Uint8List bytes) {
+    return PacCard(uid: bytes);
+  }
+
+  factory PacCard.fromUID(String uid) {
+    return PacCard.fromBytes(hexToBytes(uid));
+  }
+
+  PacCard({
+    super.type = TagType.pac,
     required super.uid,
   });
 }
