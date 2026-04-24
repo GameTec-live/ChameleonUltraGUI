@@ -121,10 +121,15 @@ class WriteCardPageState extends State<WriteCardPage> {
   }
 
   Future<void> writeCard() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     var scaffoldMessenger = ScaffoldMessenger.of(context);
     var localizations = AppLocalizations.of(context)!;
     SnackBar snackBar;
     updateProgress(0);
+
+    if (!await appState.communicator!.isReaderDeviceMode()) {
+      await appState.communicator!.setReaderDeviceMode(true);
+    }
 
     if (await helper!.writeData(card!, updateProgress)) {
       snackBar = SnackBar(
