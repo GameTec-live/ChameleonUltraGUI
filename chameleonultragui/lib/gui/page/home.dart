@@ -53,8 +53,8 @@ class HomePageState extends State<HomePage> {
     // Checks that firmware supports all functions of current app
     // If not, prompt user to update firmware (as outdated firmware might break app)
 
-    int ultraCapability = ChameleonCommand.setIoProxEmulatorID.value;
-    int liteCapability = ChameleonCommand.setIoProxEmulatorID.value;
+    int ultraCapability = ChameleonCommand.setIdteckEmulatorID.value;
+    int liteCapability = ChameleonCommand.setIdteckEmulatorID.value;
 
     var appState = context.read<ChameleonGUIState>();
     List<int> capabilities;

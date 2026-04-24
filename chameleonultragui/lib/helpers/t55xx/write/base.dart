@@ -166,6 +166,14 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
       var newCard = await communicator.readIoProx();
       return newCard.toString() == card.uid;
+    } else if (card.tag == TagType.idteck) {
+      await communicator.writeIdteckToT55XX(hexToBytes(card.uid),
+          hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+      // IDTECK read is not implemented in the firmware (PSK demodulation
+      // on the envelope-only tag-emulation ADC path is a follow-up), so we
+      // cannot read back the tag for verification. Assume the T55xx write
+      // succeeded if the firmware did not raise an error.
+      return true;
     }
 
     return false;
