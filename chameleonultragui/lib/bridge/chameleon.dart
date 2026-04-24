@@ -571,6 +571,16 @@ class ChameleonCommunicator {
     return VikingCard.fromBytes(resp.data);
   }
 
+  Future<IoProxCard?> readIoProx() async {
+    var resp = await sendCmd(ChameleonCommand.scanIoProxTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
+    }
+
+    return IoProxCard.fromBytes(resp.data);
+  }
+
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setEM410XemulatorID, data: uid);
   }
@@ -581,6 +591,10 @@ class ChameleonCommunicator {
 
   Future<void> setVikingEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setVikingEmulatorID, data: uid);
+  }
+
+  Future<void> setIoProxEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setIoProxEmulatorID, data: uid);
   }
 
   Future<void> writeEM410XtoT55XX(
@@ -628,6 +642,20 @@ class ChameleonCommunicator {
     }
 
     await sendCmd(ChameleonCommand.writeVikingToT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+  }
+
+  Future<void> writeIoProxToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeIoProxToT5577,
         data: Uint8List.fromList([...uid, ...newKey, ...keys]));
   }
 
@@ -961,6 +989,11 @@ class ChameleonCommunicator {
   Future<VikingCard> getVikingEmulatorID() async {
     return VikingCard.fromBytes(
         (await sendCmd(ChameleonCommand.getVikingEmulatorID))!.data);
+  }
+
+  Future<IoProxCard> getIoProxEmulatorID() async {
+    return IoProxCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getIoProxEmulatorID))!.data);
   }
 
   Future<DeviceSettings> getDeviceSettings() async {
