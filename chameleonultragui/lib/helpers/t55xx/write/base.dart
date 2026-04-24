@@ -161,6 +161,11 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
       var newCard = await communicator.readViking();
       return newCard.toString() == card.uid;
+    } else if (card.tag == TagType.ioProx) {
+      await communicator.writeIoProxToT55XX(hexToBytes(card.uid),
+          hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+      var newCard = await communicator.readIoProx();
+      return newCard.toString() == card.uid;
     }
 
     return false;

@@ -93,6 +93,12 @@ class SlotEditMenuState extends State<SlotEditMenu> {
             await appState.communicator!.getVikingEmulatorID();
         uidController.text = bytesToHexSpace(vikingCard.uid);
       } catch (_) {}
+    } else if (selectedType! == TagType.ioProx) {
+      try {
+        IoProxCard ioProxCard =
+            await appState.communicator!.getIoProxEmulatorID();
+        uidController.text = bytesToHexSpace(ioProxCard.uid);
+      } catch (_) {}
     } else if (isMifareClassic(selectedType!) ||
         isMifareUltralight(selectedType!)) {
       try {
@@ -189,6 +195,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
         await appState.communicator!
             .setHIDProxEmulatorID(hexToBytes(hidCard.toString()));
       } catch (_) {}
+    } else if (selectedType! == TagType.ioProx) {
+      await appState.communicator!.setIoProxEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (isMifareClassic(selectedType!) ||
         isMifareUltralight(selectedType!)) {
       var cardData = CardData(
