@@ -104,6 +104,12 @@ class SlotEditMenuState extends State<SlotEditMenu> {
             await appState.communicator!.getIoProxEmulatorID();
         uidController.text = bytesToHexSpace(ioProxCard.uid);
       } catch (_) {}
+    } else if (selectedType! == TagType.idteck) {
+      try {
+        IdteckCard idteckCard =
+            await appState.communicator!.getIdteckEmulatorID();
+        uidController.text = bytesToHexSpace(idteckCard.uid);
+      } catch (_) {}
     } else if (isMifareClassic(selectedType!) ||
         isMifareUltralight(selectedType!)) {
       try {
@@ -205,6 +211,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
           hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (selectedType! == TagType.ioProx) {
       await appState.communicator!.setIoProxEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
+    } else if (selectedType! == TagType.idteck) {
+      await appState.communicator!.setIdteckEmulatorID(
           hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (isMifareClassic(selectedType!) ||
         isMifareUltralight(selectedType!)) {

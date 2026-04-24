@@ -130,6 +130,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     card ??= await appState.communicator!.readPac();
     card ??= await appState.communicator!.readIoProx();
 
+
     if (card != null) {
       setState(() {
         lfInfo.card = card;

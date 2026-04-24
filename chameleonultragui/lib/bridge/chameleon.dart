@@ -611,6 +611,10 @@ class ChameleonCommunicator {
     await sendCmd(ChameleonCommand.setIoProxEmulatorID, data: uid);
   }
 
+  Future<void> setIdteckEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setIdteckEmulatorID, data: uid);
+  }
+
   Future<void> writeEM410XtoT55XX(
       Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
     List<int> keys = [];
@@ -727,6 +731,20 @@ class ChameleonCommunicator {
     }
 
     throw ('HF sniff failed with status 0x${resp.status.toRadixString(16)}');
+  }
+
+  Future<void> writeIdteckToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeIdteckToT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
   }
 
   Future<void> setSlotTagName(
@@ -1064,6 +1082,11 @@ class ChameleonCommunicator {
   Future<IoProxCard> getIoProxEmulatorID() async {
     return IoProxCard.fromBytes(
         (await sendCmd(ChameleonCommand.getIoProxEmulatorID))!.data);
+  }
+
+  Future<IdteckCard> getIdteckEmulatorID() async {
+    return IdteckCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getIdteckEmulatorID))!.data);
   }
 
   Future<DeviceSettings> getDeviceSettings() async {

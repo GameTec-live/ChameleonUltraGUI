@@ -90,6 +90,7 @@ enum ChameleonCommand {
   writeIoProxToT5577(3011),
   scanPacTag(3014),
   writePacToT5577(3015),
+  writeIdteckToT5577(3017),
   lfSniff(3031),
 
   mf1LoadBlockData(4000),
@@ -150,7 +151,10 @@ enum ChameleonCommand {
   getPacEmulatorID(5007),
 
   setIoProxEmulatorID(5008),
-  getIoProxEmulatorID(5009);
+  getIoProxEmulatorID(5009),
+
+  setIdteckEmulatorID(5010),
+  getIdteckEmulatorID(5011);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -167,6 +171,7 @@ enum TagType {
   viking(170),
   hidProx(200),
   ioProx(201),
+  idteck(310),
   mifareMini(1000),
   mifare1K(1001),
   mifare2K(1002),
@@ -621,6 +626,21 @@ class IoProxCard extends LFCard {
 
   IoProxCard({
     super.type = TagType.ioProx,
+    required super.uid,
+  });
+}
+
+class IdteckCard extends LFCard {
+  factory IdteckCard.fromBytes(Uint8List bytes) {
+    return IdteckCard(uid: bytes);
+  }
+
+  factory IdteckCard.fromUID(String uid) {
+    return IdteckCard.fromBytes(hexToBytes(uid));
+  }
+
+  IdteckCard({
+    super.type = TagType.idteck,
     required super.uid,
   });
 }
