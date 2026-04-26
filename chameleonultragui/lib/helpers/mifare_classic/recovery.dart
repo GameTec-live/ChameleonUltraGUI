@@ -366,18 +366,18 @@ class MifareClassicRecovery {
       }
     }
 
-    if ((isStaticEncrypted || (validKeyType == -1 && hasBackdoor)) &&
-        backdoorInfo != null) {
-      prng = NTLevel.backdoor;
-    }
+    NTLevel basePrng = prng;
+    bool useBackdoorRecovery =
+        (isStaticEncrypted || (validKeyType == -1 && hasBackdoor)) &&
+            backdoorInfo != null;
 
-    if (validKeyType == -1 && prng != NTLevel.backdoor) {
+    if (validKeyType == -1 && !useBackdoorRecovery) {
       error = localizations.recovery_error_no_keys_darkside;
       state = "";
       return;
     }
 
-    int tries = [NTLevel.backdoor, NTLevel.static].contains(prng) ? 1 : 5;
+    int tries = [NTLevel.static].contains(basePrng) ? 1 : 5;
 
     for (var sector = 0;
         sector <
@@ -386,9 +386,10 @@ class MifareClassicRecovery {
         sector++) {
       for (var keyType = 0; keyType < 2; keyType++) {
         if (getSectorState(sector, keyType) == ChameleonKeyCheckmark.none) {
+          NTLevel attackPrng = useBackdoorRecovery ? NTLevel.backdoor : basePrng;
           String attackType;
 
-          switch (prng) {
+          switch (attackPrng) {
             case NTLevel.static:
               attackType = "Static Nested";
             case NTLevel.weak:
@@ -407,16 +408,17 @@ class MifareClassicRecovery {
           NTDistance? distance;
           NestedNonces? nonces;
 
-          if (prng != NTLevel.backdoor) {
+          if (attackPrng != NTLevel.backdoor) {
             distance = await appState.communicator!
                 .getMf1NTDistance(validKeyBlock, 0x60 + validKeyType, validKey);
           }
 
           bool found = false;
-          for (var i = 0; i < tries && !found; i++) {
+          int sectorTries = attackPrng == NTLevel.backdoor ? 1 : tries;
+          for (var i = 0; i < sectorTries && !found; i++) {
             List<int> keys = [];
 
-            if (prng == NTLevel.hard) {
+            if (attackPrng == NTLevel.hard) {
               hardnestedProgress = 0;
               update();
 
@@ -434,7 +436,7 @@ class MifareClassicRecovery {
               } else {
                 nonces = result as NestedNonces;
               }
-            } else if (prng != NTLevel.backdoor) {
+            } else if (attackPrng != NTLevel.backdoor) {
               nonces = await appState.communicator!.getMf1NestedNonces(
                   validKeyBlock,
                   0x60 + validKeyType,
@@ -447,7 +449,7 @@ class MifareClassicRecovery {
             state = localizations.recovering_key(attackType);
             update();
 
-            if (prng == NTLevel.weak) {
+            if (attackPrng == NTLevel.weak) {
               var nested = NestedDart(
                   uid: distance!.uid,
                   distance: distance.distance,
@@ -459,7 +461,7 @@ class MifareClassicRecovery {
                   par1: nonces.nonces[1].parity);
 
               keys = await recovery.nested(nested);
-            } else if (prng == NTLevel.static) {
+            } else if (attackPrng == NTLevel.static) {
               var nested = StaticNestedDart(
                 uid: distance!.uid,
                 keyType: 0x60 + validKeyType,
@@ -470,11 +472,11 @@ class MifareClassicRecovery {
               );
 
               keys = await recovery.staticNested(nested);
-            } else if (prng == NTLevel.hard) {
+            } else if (attackPrng == NTLevel.hard) {
               var nested =
                   HardNestedDart(nonces: nonces!.getHardNested(distance!.uid));
               keys = await recovery.hardNested(nested);
-            } else if (prng == NTLevel.backdoor) {
+            } else if (attackPrng == NTLevel.backdoor) {
               setCheckingSector(sector, 1);
 
               var possibleAKeys = await recovery.staticEncryptedNested(
@@ -525,6 +527,64 @@ class MifareClassicRecovery {
 
               setMissingSector(sector, 0);
               setMissingSector(sector, 1);
+
+              if (validKeyType != -1 && basePrng != NTLevel.unknown) {
+                attackPrng = basePrng;
+                attackType = switch (attackPrng) {
+                  NTLevel.static => "Static Nested",
+                  NTLevel.weak => "Nested",
+                  NTLevel.hard => "Hard Nested",
+                  NTLevel.backdoor => localizations.has_backdoor_support,
+                  NTLevel.unknown => "",
+                };
+
+                state = localizations.collecting_nonces(attackType);
+                update();
+
+                if (attackPrng != NTLevel.backdoor) {
+                  distance = await appState.communicator!.getMf1NTDistance(
+                      validKeyBlock, 0x60 + validKeyType, validKey);
+                  nonces = await appState.communicator!.getMf1NestedNonces(
+                      validKeyBlock,
+                      0x60 + validKeyType,
+                      validKey,
+                      mfClassicGetSectorTrailerBlockBySector(sector),
+                      0x60 + keyType,
+                      level: attackPrng);
+                }
+
+                state = localizations.recovering_key(attackType);
+                update();
+
+                if (attackPrng == NTLevel.weak) {
+                  var nested = NestedDart(
+                      uid: distance!.uid,
+                      distance: distance.distance,
+                      nt0: nonces!.nonces[0].nt,
+                      nt0Enc: nonces.nonces[0].ntEnc,
+                      par0: nonces.nonces[0].parity,
+                      nt1: nonces.nonces[1].nt,
+                      nt1Enc: nonces.nonces[1].ntEnc,
+                      par1: nonces.nonces[1].parity);
+
+                  keys = await recovery.nested(nested);
+                } else if (attackPrng == NTLevel.static) {
+                  var nested = StaticNestedDart(
+                    uid: distance!.uid,
+                    keyType: 0x60 + validKeyType,
+                    nt0: nonces!.nonces[0].nt,
+                    nt0Enc: nonces.nonces[0].ntEnc,
+                    nt1: nonces.nonces[1].nt,
+                    nt1Enc: nonces.nonces[1].ntEnc,
+                  );
+
+                  keys = await recovery.staticNested(nested);
+                } else if (attackPrng == NTLevel.hard) {
+                  var nested =
+                      HardNestedDart(nonces: nonces!.getHardNested(distance!.uid));
+                  keys = await recovery.hardNested(nested);
+                }
+              }
             }
 
             if (keys.isNotEmpty) {
