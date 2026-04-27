@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:provider/provider.dart';
@@ -49,12 +50,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
             children: [
               TextFormField(
                 controller: nameController,
-                validator: (String? value) {
-                  if (value == null || value.isEmpty) {
-                    return localizations.please_enter_name;
-                  }
-                  return null;
-                },
+                validator: (value) => validateName(value, localizations),
                 decoration: InputDecoration(
                     labelText: localizations.name,
                     hintText: localizations.enter_dict_name,

@@ -83,6 +83,8 @@ enum ChameleonCommand {
   writeHIDProxToT5577(3003),
   scanVikingTag(3004),
   writeVikingToT5577(3005),
+  scanIoProxTag(3010),
+  writeIoProxToT5577(3011),
 
   mf1LoadBlockData(4000),
   mf1SetAntiCollision(4001),
@@ -136,7 +138,10 @@ enum ChameleonCommand {
   getHIDProxEmulatorID(5003),
 
   setVikingEmulatorID(5004),
-  getVikingEmulatorID(5005);
+  getVikingEmulatorID(5005),
+
+  setIoProxEmulatorID(5008),
+  getIoProxEmulatorID(5009);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -151,6 +156,7 @@ enum TagType {
   em410XElectra(104),
   viking(170),
   hidProx(200),
+  ioProx(201),
   mifareMini(1000),
   mifare1K(1001),
   mifare2K(1002),
@@ -573,6 +579,21 @@ class VikingCard extends LFCard {
 
   VikingCard({
     super.type = TagType.viking,
+    required super.uid,
+  });
+}
+
+class IoProxCard extends LFCard {
+  factory IoProxCard.fromBytes(Uint8List bytes) {
+    return IoProxCard(uid: bytes);
+  }
+
+  factory IoProxCard.fromUID(String uid) {
+    return IoProxCard.fromBytes(hexToBytes(uid));
+  }
+
+  IoProxCard({
+    super.type = TagType.ioProx,
     required super.uid,
   });
 }

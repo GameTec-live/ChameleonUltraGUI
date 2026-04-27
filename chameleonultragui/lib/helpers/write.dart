@@ -61,7 +61,10 @@ abstract class AbstractWriteHelper {
       return BaseMifareUltralightWriteHelper(appState.communicator!);
     }
 
-    if (isEM410X(type) || type == TagType.hidProx || type == TagType.viking) {
+    if (isEM410X(type) ||
+        type == TagType.hidProx ||
+        type == TagType.viking ||
+        type == TagType.ioProx) {
       return BaseT55XXCardHelper(appState.communicator!);
     }
 

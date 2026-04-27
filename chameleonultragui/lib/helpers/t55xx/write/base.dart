@@ -1,6 +1,7 @@
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
@@ -57,21 +58,9 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
                         hintMaxLines: 4,
                         hintText: localizations
                             .enter_something(localizations.t55xx_key_prompt)),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'[0-9A-Fa-f: ]'))
-                    ],
-                    validator: (String? value) {
-                      if (value!.isNotEmpty && !isValidHexString(value)) {
-                        return localizations.must_be_valid_hex;
-                      }
-
-                      if (value.length != 8) {
-                        return localizations.must_be(4, localizations.key);
-                      }
-
-                      return null;
-                    },
+                    inputFormatters: hexFormatter,
+                    validator: (value) => validateHex(value, localizations,
+                        exactBytes: 4, fieldName: localizations.key),
                   ),
                   TextFormField(
                     controller: newKeyController,
@@ -80,21 +69,9 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
                         hintMaxLines: 4,
                         hintText: localizations.enter_something(
                             localizations.t55xx_new_key_prompt)),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'[0-9A-Fa-f: ]'))
-                    ],
-                    validator: (String? value) {
-                      if (value!.isNotEmpty && !isValidHexString(value)) {
-                        return localizations.must_be_valid_hex;
-                      }
-
-                      if (value.length != 8) {
-                        return localizations.must_be(4, localizations.key);
-                      }
-
-                      return null;
-                    },
+                    inputFormatters: hexFormatter,
+                    validator: (value) => validateHex(value, localizations,
+                        exactBytes: 4, fieldName: localizations.key),
                   )
                 ],
               ))),
@@ -183,6 +160,11 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
       await communicator.writeVikingToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
       var newCard = await communicator.readViking();
+      return newCard.toString() == card.uid;
+    } else if (card.tag == TagType.ioProx) {
+      await communicator.writeIoProxToT55XX(hexToBytes(card.uid),
+          hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+      var newCard = await communicator.readIoProx();
       return newCard.toString() == card.uid;
     }
 
