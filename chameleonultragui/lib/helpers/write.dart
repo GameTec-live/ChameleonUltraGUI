@@ -64,7 +64,9 @@ abstract class AbstractWriteHelper {
     if (isEM410X(type) ||
         type == TagType.hidProx ||
         type == TagType.viking ||
-        type == TagType.ioProx) {
+        type == TagType.pac ||
+        type == TagType.ioProx ||
+        type == TagType.idteck) {
       return BaseT55XXCardHelper(appState.communicator!);
     }
 

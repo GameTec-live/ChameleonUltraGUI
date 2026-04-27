@@ -59,9 +59,21 @@ class SlotExportMenuState extends State<SlotExportMenu> {
           name: widget.names.lf,
           tag: widget.slotTypes.lf,
         );
+      } else if (widget.slotTypes.lf == TagType.pac) {
+        return CardSave(
+          uid: (await appState.communicator!.getPacEmulatorID()).toString(),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
       } else if (widget.slotTypes.lf == TagType.ioProx) {
         return CardSave(
           uid: (await appState.communicator!.getIoProxEmulatorID()).toString(),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
+      } else if (widget.slotTypes.lf == TagType.idteck) {
+        return CardSave(
+          uid: (await appState.communicator!.getIdteckEmulatorID()).toString(),
           name: widget.names.lf,
           tag: widget.slotTypes.lf,
         );
