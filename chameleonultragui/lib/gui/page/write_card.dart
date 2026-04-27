@@ -392,8 +392,15 @@ class WriteCardPageState extends State<WriteCardPage> {
                                 helper!.getFailedBlocks().isNotEmpty)
                             ? Text(
                                 "${localizations.otp_magic_warning(localizations.write_data_to_magic_card)} ${localizations.some_blocks_failed_to_write}: ${helper!.getFailedBlocks().join(", ")}")
-                            : Text(localizations.otp_magic_warning(
-                                localizations.write_data_to_magic_card))
+                            : Column(children: [
+                                Text(localizations.otp_magic_warning(
+                                    localizations.write_data_to_magic_card)),
+                                const SizedBox(height: 8),
+                                Text(localizations.keep_stable_warning,
+                                    style: const TextStyle(
+                                        color: Colors.orange,
+                                        fontWeight: FontWeight.bold))
+                              ])
                         : (helper != null && helper!.writeWidgetSupported())
                             ? helper!.getWriteWidget(context, setState)
                             : Text(localizations.error)

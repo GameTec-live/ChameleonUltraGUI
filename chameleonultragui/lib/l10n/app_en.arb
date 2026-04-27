@@ -262,6 +262,7 @@
   "detected_magic_card_type": "Detected Magic card type",
   "failed_to_detect_magic_card_type": "Failed to detect Magic card type. Maybe your Magic card doesn't support detection (Mifare Classic Gen2 or T55XX) or is missing",
   "otp_magic_warning": "Some Magic cards are writable only once. Make sure you selected correct card. Press \"{button}\" to write data to Magic card.",
+  "keep_stable_warning": "Keep your Chameleon stable and close to the card during writing. Moving the device may cause failure or damage the card.",
   "magic_success_write": "Card written successfully",
   "magic_failed_write": "Something went wrong in card writing",
   "skip_default_dictionary": "Skip default dictionary",
