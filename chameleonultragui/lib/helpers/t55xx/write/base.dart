@@ -149,21 +149,25 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
     if (isEM410X(card.tag)) {
       await communicator.writeEM410XtoT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+      await Future.delayed(const Duration(milliseconds: 500));
       var newCard = await communicator.readEM410X();
       return newCard.toString() == card.uid;
     } else if (card.tag == TagType.hidProx) {
       await communicator.writeHIDProxToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+      await Future.delayed(const Duration(milliseconds: 500));
       var newCard = await communicator.readHIDProx();
       return newCard.toString() == card.uid;
     } else if (card.tag == TagType.viking) {
       await communicator.writeVikingToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+      await Future.delayed(const Duration(milliseconds: 500));
       var newCard = await communicator.readViking();
       return newCard.toString() == card.uid;
     } else if (card.tag == TagType.ioProx) {
       await communicator.writeIoProxToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+      await Future.delayed(const Duration(milliseconds: 500));
       var newCard = await communicator.readIoProx();
       return newCard.toString() == card.uid;
     }
