@@ -132,6 +132,12 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
         cleanSectors[sector] = await writeBlockModifier(
             card, block, data[block],
             tryBothKeys: true);
+        if (cleanSectors[sector]) {
+          // Update keys to match the newly written trailer,
+          // so subsequent data block writes use the correct keys.
+          recovery.validKeys[sector] = data[block].sublist(0, 6);
+          recovery.validKeys[40 + sector] = data[block].sublist(10, 16);
+        }
       }
     }
 
