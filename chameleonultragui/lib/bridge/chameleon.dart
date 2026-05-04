@@ -862,15 +862,7 @@ class ChameleonCommunicator {
   Future<ButtonConfig> getButtonConfig(ButtonType type) async {
     var resp = await sendCmd(ChameleonCommand.getButtonPressConfig,
         data: Uint8List.fromList([type.value]));
-    if (resp!.data[0] == 1) {
-      return ButtonConfig.cycleForward;
-    } else if (resp.data[0] == 2) {
-      return ButtonConfig.cycleBackward;
-    } else if (resp.data[0] == 3) {
-      return ButtonConfig.cloneUID;
-    } else {
-      return ButtonConfig.disable;
-    }
+    return getButtonConfigType(resp!.data[0]);
   }
 
   Future<void> setButtonConfig(ButtonType type, ButtonConfig mode) async {
@@ -881,20 +873,22 @@ class ChameleonCommunicator {
   Future<ButtonConfig> getLongButtonConfig(ButtonType type) async {
     var resp = await sendCmd(ChameleonCommand.getLongButtonPressConfig,
         data: Uint8List.fromList([type.value]));
-    if (resp!.data[0] == 1) {
-      return ButtonConfig.cycleForward;
-    } else if (resp.data[0] == 2) {
-      return ButtonConfig.cycleBackward;
-    } else if (resp.data[0] == 3) {
-      return ButtonConfig.cloneUID;
-    } else {
-      return ButtonConfig.disable;
-    }
+    return getButtonConfigType(resp!.data[0]);
   }
 
   Future<void> setLongButtonConfig(ButtonType type, ButtonConfig mode) async {
     await sendCmd(ChameleonCommand.setLongButtonPressConfig,
         data: Uint8List.fromList([type.value, mode.value]));
+  }
+
+  Future<int> getSleepTimeout() async {
+    var resp = await sendCmd(ChameleonCommand.getSleepTimeout);
+    return resp!.data[0];
+  }
+
+  Future<void> setSleepTimeout(int seconds) async {
+    await sendCmd(ChameleonCommand.setSleepTimeout,
+        data: Uint8List.fromList([seconds]));
   }
 
   Future<void> clearBLEBoundedDevices() async {
@@ -948,7 +942,8 @@ class ChameleonCommunicator {
   }
 
   Future<Uint8List> getEM410XEmulatorID() async {
-    Uint8List data = (await sendCmd(ChameleonCommand.getEM410XemulatorID))!.data;
+    Uint8List data =
+        (await sendCmd(ChameleonCommand.getEM410XemulatorID))!.data;
 
     if (data.length == 5 || data.length == 13) {
       return data;
@@ -998,8 +993,8 @@ class ChameleonCommunicator {
 
   Future<DeviceSettings> getDeviceSettings() async {
     var resp = (await sendCmd(ChameleonCommand.getDeviceSettings))!.data;
-    if (resp[0] != 5) {
-      throw ("Invalid settings version");
+    if (resp.length < 13) {
+      throw ("Invalid settings payload");
     }
 
     AnimationSetting animationMode = getAnimationModeType(resp[1]);
@@ -1015,7 +1010,8 @@ class ChameleonCommunicator {
         aLongPress: aLongPress,
         bLongPress: bLongPress,
         pairingEnabled: resp[6] == 1,
-        key: utf8.decode(resp.sublist(7, 13), allowMalformed: true));
+        key: utf8.decode(resp.sublist(7, 13), allowMalformed: true),
+        wakeTimeSeconds: resp.length >= 14 ? resp[13] : null);
   }
 
   Future<List<int>> getDeviceCapabilities() async {
