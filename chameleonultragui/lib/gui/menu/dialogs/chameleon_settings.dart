@@ -21,9 +21,12 @@ class ChameleonSettings extends StatefulWidget {
 }
 
 class ChameleonSettingsState extends State<ChameleonSettings> {
+  late final Future<DeviceSettings> _settingsFuture;
+
   @override
   void initState() {
     super.initState();
+    _settingsFuture = getSettingsData();
   }
 
   Future<DeviceSettings> getSettingsData() async {
@@ -43,7 +46,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final GlobalKey<FormState> wakeTimeFormKey = GlobalKey<FormState>();
     return FutureBuilder(
-        future: getSettingsData(),
+        future: _settingsFuture,
         builder: (BuildContext buildContext, AsyncSnapshot snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return AlertDialog(
@@ -172,6 +175,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setAnimationMode(animation);
                           await appState.communicator!.saveSettings();
+                          settings.animation = animation;
                           setState(() {});
                           appState.changesMade();
                         }),
@@ -218,6 +222,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                                 wakeTimeController.text));
                                         await appState.communicator!
                                             .saveSettings();
+                                        settings.wakeTimeSeconds =
+                                            int.parse(wakeTimeController.text);
                                         setState(() {});
                                         appState.changesMade();
                                       },
@@ -257,6 +263,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setButtonConfig(ButtonType.a, mode);
                           await appState.communicator!.saveSettings();
+                          settings.aPress = mode;
                           setState(() {});
                           appState.changesMade();
                         }),
@@ -288,6 +295,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setButtonConfig(ButtonType.b, mode);
                           await appState.communicator!.saveSettings();
+                          settings.bPress = mode;
                           setState(() {});
                           appState.changesMade();
                         }),
@@ -322,6 +330,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setLongButtonConfig(ButtonType.a, mode);
                           await appState.communicator!.saveSettings();
+                          settings.aLongPress = mode;
                           setState(() {});
                           appState.changesMade();
                         }),
@@ -353,6 +362,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setLongButtonConfig(ButtonType.b, mode);
                           await appState.communicator!.saveSettings();
+                          settings.bLongPress = mode;
                           setState(() {});
                           appState.changesMade();
                         }),
@@ -371,6 +381,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setBLEPairEnabled(index == 0);
                           await appState.communicator!.saveSettings();
+                          settings.pairingEnabled = index == 0;
                           setState(() {});
                           appState.changesMade();
                         }),
