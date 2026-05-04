@@ -41,6 +41,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     var localizations = AppLocalizations.of(context)!;
     var scaffoldMessenger = ScaffoldMessenger.of(context);
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    final GlobalKey<FormState> wakeTimeFormKey = GlobalKey<FormState>();
     return FutureBuilder(
         future: getSettingsData(),
         builder: (BuildContext buildContext, AsyncSnapshot snapshot) {
@@ -57,6 +58,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
             DeviceSettings settings = snapshot.data;
             TextEditingController bleKeyController =
                 TextEditingController(text: settings.key);
+            TextEditingController wakeTimeController = TextEditingController(
+                text: settings.wakeTimeSeconds?.toString() ?? "");
             return AlertDialog(
                 title: Text(localizations.device_settings),
                 content: SingleChildScrollView(
@@ -172,6 +175,58 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           setState(() {});
                           appState.changesMade();
                         }),
+                    ...(settings.wakeTimeSeconds != null)
+                        ? [
+                            const SizedBox(height: 10),
+                            const Text("Wake time after button press (s):"),
+                            const SizedBox(height: 10),
+                            Form(
+                                key: wakeTimeFormKey,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                          controller: wakeTimeController,
+                                          keyboardType: TextInputType.number,
+                                          validator: (value) =>
+                                              validateIntRange(
+                                                value,
+                                                localizations,
+                                                min: 5,
+                                                max: 60,
+                                              ),
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter
+                                                .digitsOnly
+                                          ],
+                                          decoration: const InputDecoration(
+                                            labelText: "Wake time",
+                                            hintText: "5-60",
+                                          )),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        if (!wakeTimeFormKey.currentState!
+                                            .validate()) {
+                                          return;
+                                        }
+
+                                        await appState.communicator!
+                                            .setSleepTimeout(int.parse(
+                                                wakeTimeController.text));
+                                        await appState.communicator!
+                                            .saveSettings();
+                                        setState(() {});
+                                        appState.changesMade();
+                                      },
+                                      child: Text(localizations.save),
+                                    ),
+                                  ],
+                                )),
+                          ]
+                        : [],
                     const SizedBox(height: 10),
                     Text("${localizations.button_config}:"),
                     const SizedBox(height: 7),
@@ -383,9 +438,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                       child: TextFormField(
                                           controller: bleKeyController,
                                           maxLength: 6,
-                                          validator: (value) =>
-                                              validateBlePin(
-                                                  value, localizations),
+                                          validator: (value) => validateBlePin(
+                                              value, localizations),
                                           inputFormatters: [
                                             FilteringTextInputFormatter
                                                 .digitsOnly
