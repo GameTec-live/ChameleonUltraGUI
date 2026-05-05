@@ -110,6 +110,21 @@ class Mfkey32Dart {
       required this.ar1Enc});
 }
 
+class Mfkey64Dart {
+  int uid;
+  int nt;
+  int nrEnc;
+  int arEnc;
+  int atEnc;
+
+  Mfkey64Dart(
+      {required this.uid,
+      required this.nt,
+      required this.nrEnc,
+      required this.arEnc,
+      required this.atEnc});
+}
+
 Future<List<int>> darkside(DarksideDart darkside) async {
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
@@ -166,6 +181,16 @@ Future<List<int>> mfkey32(Mfkey32Dart mfkey) async {
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final Mfkey32Request request = Mfkey32Request(requestId, mfkey);
+  final Completer<List<int>> completer = Completer<List<int>>();
+  requests[requestId] = completer;
+  helperIsolateSendPort.send(request);
+  return completer.future;
+}
+
+Future<List<int>> mfkey64(Mfkey64Dart mfkey) async {
+  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
+  final int requestId = _nextSumRequestId++;
+  final Mfkey64Request request = Mfkey64Request(requestId, mfkey);
   final Completer<List<int>> completer = Completer<List<int>>();
   requests[requestId] = completer;
   helperIsolateSendPort.send(request);
@@ -243,6 +268,13 @@ class Mfkey32Request {
   final Mfkey32Dart mfkey32;
 
   const Mfkey32Request(this.id, this.mfkey32);
+}
+
+class Mfkey64Request {
+  final int id;
+  final Mfkey64Dart mfkey64;
+
+  const Mfkey64Request(this.id, this.mfkey64);
 }
 
 /// A response with the result of `sum`.
@@ -352,6 +384,18 @@ Future<SendPort> _helperIsolateSendPort = () async {
           pointer.ref.ar1_enc = data.mfkey32.ar1Enc;
 
           final int result = _bindings.mfkey32(pointer);
+          final KeyResponse response = KeyResponse(data.id, [result]);
+          sendPort.send(response);
+          return;
+        } else if (data is Mfkey64Request) {
+          Pointer<Mfkey64> pointer = calloc();
+          pointer.ref.uid = data.mfkey64.uid;
+          pointer.ref.nt = data.mfkey64.nt;
+          pointer.ref.nr_enc = data.mfkey64.nrEnc;
+          pointer.ref.ar_enc = data.mfkey64.arEnc;
+          pointer.ref.at_enc = data.mfkey64.atEnc;
+
+          final int result = _bindings.mfkey64(pointer);
           final KeyResponse response = KeyResponse(data.id, [result]);
           sendPort.send(response);
           return;

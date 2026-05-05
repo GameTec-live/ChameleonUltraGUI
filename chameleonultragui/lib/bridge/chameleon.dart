@@ -680,6 +680,27 @@ class ChameleonCommunicator {
     throw ('LF sniff failed with status 0x${resp.status.toRadixString(16)}');
   }
 
+  Future<Uint8List> hf14aSniff({int timeoutMs = 5000}) async {
+    timeoutMs = timeoutMs.clamp(1, 30000);
+    final resp = await sendCmd(ChameleonCommand.hf14aSniff,
+        data: Uint8List.fromList([(timeoutMs >> 8) & 0xFF, timeoutMs & 0xFF]),
+        timeout: Duration(seconds: timeoutMs ~/ 1000 + 5));
+
+    if (resp == null) {
+      throw ('No response from HF sniff command');
+    }
+
+    if (resp.status == 0x68 || resp.status == 0x00) {
+      return resp.data;
+    }
+
+    if (resp.status == 0x01) {
+      return Uint8List(0);
+    }
+
+    throw ('HF sniff failed with status 0x${resp.status.toRadixString(16)}');
+  }
+
   Future<void> setSlotTagName(
       int index, String name, TagFrequency frequency) async {
     await sendCmd(ChameleonCommand.setSlotTagNick,

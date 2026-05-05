@@ -74,6 +74,15 @@ typedef struct
 
 typedef struct
 {
+    uint32_t uid;    // serial number
+    uint32_t nt;     // tag challenge
+    uint32_t nr_enc; // encrypted reader challenge
+    uint32_t ar_enc; // encrypted reader response
+    uint32_t at_enc; // encrypted tag response / next nt
+} Mfkey64;
+
+typedef struct
+{
     char *nonces;
     uint32_t length;
 } HardNested;
@@ -87,5 +96,7 @@ FFI_PLUGIN_EXPORT uint64_t *static_nested(StaticNested *data, uint32_t *keyCount
 FFI_PLUGIN_EXPORT uint64_t *static_encrypted_nested(StaticEncryptedNested *data, uint32_t *keyCount);
 
 FFI_PLUGIN_EXPORT uint64_t mfkey32(Mfkey32 *data);
+
+FFI_PLUGIN_EXPORT uint64_t mfkey64(Mfkey64 *data);
 
 FFI_PLUGIN_EXPORT uint64_t hardnested(HardNested *data);
