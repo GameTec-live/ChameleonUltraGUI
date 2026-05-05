@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
+import 'package:chameleonultragui/gui/menu/tools/lf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +48,12 @@ class ToolsPageState extends State<ToolsPage> {
           description: localizations.t55xx_password_cleaner_description,
           icon: Icons.password,
           onPressed: const T55XXPasswordCleanerMenu(),
+          isDeviceRequired: true),
+      ToolItem(
+          name: localizations.lf_sniffing,
+          description: localizations.lf_sniffing_description,
+          icon: Icons.graphic_eq,
+          onPressed: const LfSniffingMenu(),
           isDeviceRequired: true),
       ToolItem(
           name: localizations.mifare_classic_gen4,

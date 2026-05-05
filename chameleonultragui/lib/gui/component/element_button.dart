@@ -95,8 +95,9 @@ class ElementButtonState extends State<ElementButton> {
               bool moveIcons = _shouldMoveIcons(context, constraints.maxWidth);
 
               return ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: !moveIcons ? 90 : 130),
+                constraints: BoxConstraints(minHeight: !moveIcons ? 90 : 130),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Row(

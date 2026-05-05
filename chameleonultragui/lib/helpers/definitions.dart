@@ -87,6 +87,7 @@ enum ChameleonCommand {
   writeVikingToT5577(3005),
   scanIoProxTag(3010),
   writeIoProxToT5577(3011),
+  lfSniff(3031),
 
   mf1LoadBlockData(4000),
   mf1SetAntiCollision(4001),
