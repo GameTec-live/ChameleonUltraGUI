@@ -120,6 +120,54 @@ class WriteCardPageState extends State<WriteCardPage> {
     });
   }
 
+  Widget _buildForceWriteToggle() {
+    var localizations = AppLocalizations.of(context)!;
+    return Row(
+      children: [
+        Checkbox(
+          value: helper?.forceWrite ?? false,
+          onChanged: (val) {
+            setState(() {
+              if (helper != null) {
+                helper!.forceWrite = val ?? false;
+              }
+            });
+          },
+        ),
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              if (helper != null) {
+                helper!.forceWrite = !helper!.forceWrite;
+              }
+            });
+          },
+          child: Text(localizations.disable_acl_safety_check,
+              style: const TextStyle(fontSize: 13, color: Colors.red)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAclWarnings() {
+    if (helper!.autoCorrectedBlocks.isEmpty &&
+        helper!.dangerousBlocks.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    var localizations = AppLocalizations.of(context)!;
+    return Column(children: [
+      const SizedBox(height: 8),
+      if (helper!.autoCorrectedBlocks.isNotEmpty)
+        Text(localizations.acl_invalid_corrected(
+            helper!.autoCorrectedBlocks.join(', ')),
+            style: const TextStyle(color: Colors.orange, fontSize: 12)),
+      if (helper!.dangerousBlocks.isNotEmpty)
+        Text(localizations.acl_dangerous_blocked(
+            helper!.dangerousBlocks.join(', ')),
+            style: const TextStyle(color: Colors.red, fontSize: 12)),
+    ]);
+  }
+
   Future<void> writeCard() async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     var scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -224,6 +272,9 @@ class WriteCardPageState extends State<WriteCardPage> {
     if (step == 1) {
       await helper?.reset();
     }
+
+    helper?.autoCorrectedBlocks.clear();
+    helper?.dangerousBlocks.clear();
   }
 
   void onStepReset() async {
@@ -375,7 +426,9 @@ class WriteCardPageState extends State<WriteCardPage> {
                                 },
                                 child:
                                     Text(localizations.auto_detect_magic_card),
-                              )
+                              ),
+                            const SizedBox(width: 16),
+                            _buildForceWriteToggle(),
                           ])
                     : Text(localizations.writing_is_not_yet_supported),
               ),
@@ -392,15 +445,21 @@ class WriteCardPageState extends State<WriteCardPage> {
                                 helper!.getFailedBlocks().isNotEmpty)
                             ? Text(
                                 "${localizations.otp_magic_warning(localizations.write_data_to_magic_card)} ${localizations.some_blocks_failed_to_write}: ${helper!.getFailedBlocks().join(", ")}")
-                            : Column(children: [
-                                Text(localizations.otp_magic_warning(
-                                    localizations.write_data_to_magic_card)),
-                                const SizedBox(height: 8),
-                                Text(localizations.keep_stable_warning,
-                                    style: const TextStyle(
-                                        color: Colors.orange,
-                                        fontWeight: FontWeight.bold))
-                              ])
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(localizations.otp_magic_warning(
+                                      localizations.write_data_to_magic_card)),
+                                  const SizedBox(height: 8),
+                                  Text(localizations.keep_stable_warning,
+                                      style: const TextStyle(
+                                          color: Colors.orange,
+                                          fontWeight: FontWeight.bold)),
+                                  _buildAclWarnings(),
+                                  const SizedBox(height: 12),
+                                  _buildForceWriteToggle(),
+                                ],
+                              )
                         : (helper != null && helper!.writeWidgetSupported())
                             ? helper!.getWriteWidget(context, setState)
                             : Text(localizations.error)

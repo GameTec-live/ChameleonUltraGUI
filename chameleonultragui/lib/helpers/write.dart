@@ -19,6 +19,17 @@ abstract class AbstractWriteHelper {
   bool readSupported = false; // can read data without authorization
   bool writeSupported = false; // can write data without authorization
 
+  /// When true, dangerous (read-only/locking) ACL is written as-is.
+  /// Invalid ACL (complement mismatch) is always auto-corrected regardless
+  /// of this setting. Default false (safety ON).
+  bool forceWrite = false;
+
+  /// Blocks with invalid ACL auto-corrected to FF 07 80 69.
+  final List<int> autoCorrectedBlocks = [];
+
+  /// Blocks with dangerous ACL that were blocked from writing.
+  final List<int> dangerousBlocks = [];
+
   String get name => "Abstract"; // name in dropdown
   static String get staticName => "Abstract"; // for comparing
 
