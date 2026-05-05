@@ -391,6 +391,25 @@
   "mifare_classic_gen4_description": "Configure Gen4 magic card",
   "t55xx_password_cleaner": "T55XX password cleaner",
   "t55xx_password_cleaner_description": "Removes passwords from T55XX tags",
+  "dictionary_download_success": "Dictionary {name} is downloaded. Check it in \"Saved Cards page\"",
+  "t55xx_password_cleaner_warning": "This tool may BREAK your card if it has no password (or in other cases). Use it at your own risk, we are not responsible for the damage.",
+  "select_t55xx_dictionary": "Select dictionary",
+  "no_t55xx_dictionaries": "No T55XX compatible dictionaries available. Please download some first.",
+  "download_dictionaries": "Download dictionaries",
+  "enter_new_password": "Enter new password (will be set if password will be found)",
+  "start_password_reset": "Start password reset",
+  "password_reset_progress": "Progress",
+  "password_found": "Password found",
+  "password_reset_failed": "Password reset failed",
+  "password_reset_success": "Previous password was: {password}",
+  "password_reset_no_match": "Unable to reset password. None of the password in the dictionary worked.",
+  "trying_password": "Trying password",
+  "failed_to_read_block": "Failed to read any blocks. This is password protected card or not Mifare Ultralight card",
+  "android_ble_permissions_missing": "Missing BLE or location permission. To connect via BLE, grant permissions in your device Settings app",
+  "skip_recovery": "Skip recovery",
+  "resume_recovery": "Resume recovery",
+  "language_name": "English",
+  "symmetric": "Symmetric",
   "lf_sniffing": "LF sniffing",
   "lf_sniffing_description": "Capture and analyze raw LF field samples",
   "lf_sniff_firmware_unsupported": "This firmware does not advertise LF sniffing support. Update the device firmware to enable this tool.",
@@ -399,17 +418,7 @@
   "lf_sniff_capture": "Capture",
   "lf_sniff_capture_prompt": "Run a capture to inspect LF field samples, waveform, and decode heuristics.",
   "lf_sniff_capture_in_progress": "Capturing LF field for {timeout} ms...",
-  "@lf_sniff_capture_in_progress": {
-    "placeholders": {
-      "timeout": {}
-    }
-  },
   "lf_sniff_capture_done": "Captured {count} samples.",
-  "@lf_sniff_capture_done": {
-    "placeholders": {
-      "count": {}
-    }
-  },
   "lf_sniff_no_samples": "No LF samples captured.",
   "lf_sniff_summary": "Summary",
   "lf_sniff_waveform": "Waveform",
@@ -419,56 +428,20 @@
   "lf_sniff_hex": "Hex",
   "lf_sniff_samples": "Samples",
   "lf_sniff_samples_value": "{value} samples",
-  "@lf_sniff_samples_value": {
-    "placeholders": {
-      "value": {}
-    }
-  },
   "lf_sniff_range": "Range",
   "lf_sniff_duration_value": "{duration} ms",
-  "@lf_sniff_duration_value": {
-    "placeholders": {
-      "duration": {}
-    }
-  },
   "lf_sniff_mean_value": "Mean: {value}",
-  "@lf_sniff_mean_value": {
-    "placeholders": {
-      "value": {}
-    }
-  },
   "lf_sniff_gaps": "Gaps",
   "lf_sniff_gap_threshold_value": "Threshold: {value}",
-  "@lf_sniff_gap_threshold_value": {
-    "placeholders": {
-      "value": {}
-    }
-  },
   "lf_sniff_modulation": "Modulation analysis",
   "lf_sniff_modulation_type": "Type",
   "lf_sniff_dynamic_range": "Dynamic range",
   "lf_sniff_nearest_clock": "Nearest clock",
   "lf_sniff_clock_value": "RF/{divisor}",
-  "@lf_sniff_clock_value": {
-    "placeholders": {
-      "divisor": {}
-    }
-  },
   "lf_sniff_half_period": "Half-period",
   "lf_sniff_period_value": "{samples} samples ({microseconds} us)",
-  "@lf_sniff_period_value": {
-    "placeholders": {
-      "samples": {},
-      "microseconds": {}
-    }
-  },
   "lf_sniff_full_period": "Full period",
   "lf_sniff_microseconds": "{value} us",
-  "@lf_sniff_microseconds": {
-    "placeholders": {
-      "value": {}
-    }
-  },
   "lf_sniff_modulation_none": "None",
   "lf_sniff_modulation_insufficient": "Insufficient transitions",
   "lf_sniff_modulation_manchester": "Manchester",
@@ -491,21 +464,8 @@
   "lf_sniff_hex_preview": "Hex preview",
   "lf_sniff_bitstream": "Bitstream",
   "lf_sniff_hex_help": "Showing the first {shown} bytes out of {total}. Export the capture to keep the full sample buffer.",
-  "@lf_sniff_hex_help": {
-    "placeholders": {
-      "shown": {},
-      "total": {}
-    }
-  },
   "lf_sniff_hex_color_title": "Byte colors",
   "lf_sniff_hex_color_scale": "Threshold {threshold}, mean {mean}, peak {peak}",
-  "@lf_sniff_hex_color_scale": {
-    "placeholders": {
-      "threshold": {},
-      "mean": {},
-      "peak": {}
-    }
-  },
   "lf_sniff_hex_color_gap": "Gap",
   "lf_sniff_hex_color_warmup": "Startup low",
   "lf_sniff_hex_color_low": "Below mean",
@@ -519,24 +479,5 @@
   "lf_sniff_hex_glyph_carrier": "carrier",
   "lf_sniff_hex_glyph_high": "high",
   "lf_sniff_hex_glyph_clipped": "clipped",
-  "lf_sniff_level_legend": "_ gap  . ringing  - low  + mid  o carrier  O high  # clipped",
-  "dictionary_download_success": "Dictionary {name} is downloaded. Check it in \"Saved Cards page\"",
-  "t55xx_password_cleaner_warning": "This tool may BREAK your card if it has no password (or in other cases). Use it at your own risk, we are not responsible for the damage.",
-  "select_t55xx_dictionary": "Select dictionary",
-  "no_t55xx_dictionaries": "No T55XX compatible dictionaries available. Please download some first.",
-  "download_dictionaries": "Download dictionaries",
-  "enter_new_password": "Enter new password (will be set if password will be found)",
-  "start_password_reset": "Start password reset",
-  "password_reset_progress": "Progress",
-  "password_found": "Password found",
-  "password_reset_failed": "Password reset failed",
-  "password_reset_success": "Previous password was: {password}",
-  "password_reset_no_match": "Unable to reset password. None of the password in the dictionary worked.",
-  "trying_password": "Trying password",
-  "failed_to_read_block": "Failed to read any blocks. This is password protected card or not Mifare Ultralight card",
-  "android_ble_permissions_missing": "Missing BLE or location permission. To connect via BLE, grant permissions in your device Settings app",
-  "skip_recovery": "Skip recovery",
-  "resume_recovery": "Resume recovery",
-  "language_name": "English",
-  "symmetric": "Symmetric"
+  "lf_sniff_level_legend": "_ gap  . ringing  - low  + mid  o carrier  O high  # clipped"
 }
