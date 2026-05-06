@@ -479,5 +479,8 @@
   "lf_sniff_hex_glyph_carrier": "carrier",
   "lf_sniff_hex_glyph_high": "high",
   "lf_sniff_hex_glyph_clipped": "clipped",
-  "lf_sniff_level_legend": "_ gap  . ringing  - low  + mid  o carrier  O high  # clipped"
+  "lf_sniff_level_legend": "_ gap  . ringing  - low  + mid  o carrier  O high  # clipped",
+  "disable_acl_safety_check": "Disable ACL safety check",
+  "acl_invalid_corrected": "Invalid ACL auto-corrected at blocks: {blocks}",
+  "acl_dangerous_blocked": "Dangerous ACL blocked at blocks: {blocks}. Enable \"Disable ACL safety check\" to override."
 }

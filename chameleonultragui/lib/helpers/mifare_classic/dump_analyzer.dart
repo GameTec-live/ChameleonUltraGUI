@@ -184,4 +184,62 @@ class MifareClassicDumpAnalyzer {
   static bool isValidBlock(String text) {
     return RegExp(r'^[0-9A-Fa-f-]{32}$').hasMatch(text.trim());
   }
+
+  /// Validate MIFARE Classic access condition bytes (positions 6-8 of sector
+  /// trailer). Returns true if the complement bits match the original bits.
+  /// Invalid ACL (e.g. all zeros) will brick the sector permanently.
+  static bool isValidAcl(Uint8List sectorTrailer) {
+    if (sectorTrailer.length < 9) return false;
+    final b6 = sectorTrailer[6]; // bits 7-4: ~C2, bits 3-0: ~C1
+    final b7 = sectorTrailer[7]; // bits 7-4: C1, bits 3-0: ~C3
+    final b8 = sectorTrailer[8]; // bits 7-4: C3, bits 3-0: C2
+
+    // ~C1 must complement C1
+    if ((~b6 & 0x0F) != ((b7 >> 4) & 0x0F)) return false;
+    // ~C2 must complement C2
+    if ((~(b6 >> 4) & 0x0F) != (b8 & 0x0F)) return false;
+    // ~C3 must complement C3
+    if ((~b7 & 0x0F) != ((b8 >> 4) & 0x0F)) return false;
+
+    return true;
+  }
+
+  /// Check whether the sector trailer contains dangerous access conditions
+  /// that would permanently lock blocks. Returns a list of locked block
+  /// numbers (0-3 within the sector), or empty list if safe.
+  ///
+  /// Matches Proxmark3's mfReadOnlyAccessConditions logic.
+  static List<int> getDangerousAclBlocks(Uint8List sectorTrailer) {
+    if (sectorTrailer.length < 9) return [];
+    final b7 = sectorTrailer[7]; // C1[7:4] ~C3[3:0]
+    final b8 = sectorTrailer[8]; // C3[7:4] C2[3:0]
+
+    // Only consider ACL valid for this check
+    if (!isValidAcl(sectorTrailer)) return [];
+
+    final c1 = (b7 >> 4) & 0x0F; // C1_3 C1_2 C1_1 C1_0
+    final c2 = b8 & 0x0F; // C2_3 C2_2 C2_1 C2_0
+    final c3 = (b8 >> 4) & 0x0F; // C3_3 C3_2 C3_1 C3_0
+
+    final dangerous = <int>[];
+    for (int blockn = 0; blockn < 4; blockn++) {
+      final c1b = (c1 >> blockn) & 1;
+      final c2b = (c2 >> blockn) & 1;
+      final c3b = (c3 >> blockn) & 1;
+      final cond = (c1b << 2) | (c2b << 1) | c3b;
+
+      if (blockn == 3) {
+        // Sector trailer: conditions 2, 6, 7 are dangerous (lock keys/ACL)
+        if (cond == 2 || cond == 6 || cond == 7) {
+          dangerous.add(blockn);
+        }
+      } else {
+        // Data blocks: conditions 2, 5 are read-only / permanently locked
+        if (cond == 2 || cond == 5) {
+          dangerous.add(blockn);
+        }
+      }
+    }
+    return dangerous;
+  }
 }

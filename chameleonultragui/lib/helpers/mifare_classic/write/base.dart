@@ -4,6 +4,7 @@ import 'package:chameleonultragui/gui/component/mifare/classic.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/dump_analyzer.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/gen1.dart';
@@ -93,6 +94,8 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
   Future<bool> writeData(
       CardSave card, Function(int writeProgress) update) async {
     List<Uint8List> data = card.data;
+    autoCorrectedBlocks.clear();
+    dangerousBlocks.clear();
 
     if (await communicator.scan14443aTag() == null) {
       return false;
@@ -103,6 +106,21 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
         data = [Uint8List(0)];
       }
       data[0] = createBlock0FromSave(card);
+    }
+
+    // First pass: sanitize all sector trailers, collect all ACL warnings.
+    // Don't write anything if any dangerous ACL is blocked.
+    for (var sector = 0;
+        sector < mfClassicGetSectorCount(type, isEV1: isEV1);
+        sector++) {
+      final blockToWrite = mfClassicGetSectorTrailerBlockBySector(sector);
+      if (data.length > blockToWrite && data[blockToWrite].isNotEmpty) {
+        sanitizeSectorTrailerAcl(data[blockToWrite], sector: sector);
+      }
+    }
+
+    if (dangerousBlocks.isNotEmpty) {
+      return false;
     }
 
     for (var sector = 0;
@@ -119,6 +137,42 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
 
           update((blockToWrite / mfClassicGetBlockCount(type) * 100).round());
         }
+      }
+    }
+
+    return true;
+  }
+
+  /// Check sector trailer ACL safety before writing.
+  /// Returns true if writing should proceed, false if blocked.
+  ///
+  /// - Invalid ACL (complement mismatch): ALWAYS auto-corrected to FF 07 80 69.
+  /// - Dangerous ACL (would permanently lock blocks): blocked unless
+  ///   [forceWrite] is true.
+  bool sanitizeSectorTrailerAcl(Uint8List sectorTrailer, {int sector = -1}) {
+    if (sectorTrailer.length < 10) return false;
+
+    final trailerBlock = mfClassicGetSectorTrailerBlockBySector(sector);
+    final firstBlock = mfClassicGetFirstBlockCountBySector(sector);
+
+    // Check 1: illegal ACL → always auto-correct (even with forceWrite)
+    if (!MifareClassicDumpAnalyzer.isValidAcl(sectorTrailer)) {
+      autoCorrectedBlocks.add(trailerBlock);
+      sectorTrailer[6] = 0xFF;
+      sectorTrailer[7] = 0x07;
+      sectorTrailer[8] = 0x80;
+      sectorTrailer[9] = 0x69;
+      return true;
+    }
+
+    // Check 2: valid but dangerous — blocked unless forceWrite
+    if (!forceWrite) {
+      final dangerous = MifareClassicDumpAnalyzer.getDangerousAclBlocks(sectorTrailer);
+      if (dangerous.isNotEmpty) {
+        for (final blockn in dangerous) {
+          dangerousBlocks.add(firstBlock + blockn);
+        }
+        return false;
       }
     }
 
@@ -177,6 +231,8 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
   Future<void> reset() async {
     hfInfo = null;
     mfcInfo = null;
+    autoCorrectedBlocks.clear();
+    dangerousBlocks.clear();
   }
 
   @override

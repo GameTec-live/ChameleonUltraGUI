@@ -112,6 +112,8 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
     List<Uint8List> data = card.data;
     List<bool> cleanSectors = List.generate(40, (index) => false);
     failedBlocks = [];
+    autoCorrectedBlocks.clear();
+    dangerousBlocks.clear();
 
     try {
       await communicator.scan14443aTag();
@@ -129,6 +131,9 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
     for (var sector = 0; sector < mfClassicGetSectorCount(type); sector++) {
       var block = mfClassicGetSectorTrailerBlockBySector(sector);
       if (data.length > block && data[block].isNotEmpty) {
+        if (!sanitizeSectorTrailerAcl(data[block], sector: sector)) {
+          continue; // dangerous ACL blocked
+        }
         cleanSectors[sector] = await writeBlockModifier(
             card, block, data[block],
             tryBothKeys: true);
