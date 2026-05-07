@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
+import 'package:chameleonultragui/gui/menu/tools/hf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/lf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
 import 'package:chameleonultragui/main.dart';
@@ -13,6 +14,7 @@ class ToolItem {
   final String description;
   final IconData icon;
   final bool isDeviceRequired;
+  final bool showWipBadge;
   final Widget? onPressed;
 
   ToolItem({
@@ -20,6 +22,7 @@ class ToolItem {
     required this.description,
     required this.icon,
     this.isDeviceRequired = false,
+    this.showWipBadge = false,
     this.onPressed,
   });
 }
@@ -56,6 +59,13 @@ class ToolsPageState extends State<ToolsPage> {
           onPressed: const LfSniffingMenu(),
           isDeviceRequired: true),
       ToolItem(
+          name: localizations.hf_sniffing,
+          description: localizations.hf_sniffing_description,
+          icon: Icons.radar,
+          onPressed: const HfSniffingMenu(),
+          showWipBadge: true,
+          isDeviceRequired: true),
+      ToolItem(
           name: localizations.mifare_classic_gen4,
           description: localizations.mifare_classic_gen4_description,
           icon: Icons.settings,
@@ -79,6 +89,8 @@ class ToolsPageState extends State<ToolsPage> {
             shrinkWrap: true,
             itemBuilder: (BuildContext context, int index) {
               final tool = tools[index];
+              final disconnected =
+                  tool.isDeviceRequired && !appState.connector!.connected;
               return Stack(
                 children: [
                   ElementButton(
@@ -100,7 +112,7 @@ class ToolsPageState extends State<ToolsPage> {
                             }
                           : null,
                       children: []),
-                  if (tool.onPressed == null)
+                  if (tool.showWipBadge || tool.onPressed == null)
                     Positioned(
                       top: 8,
                       right: 8,
@@ -121,9 +133,9 @@ class ToolsPageState extends State<ToolsPage> {
                         ),
                       ),
                     ),
-                  if (tool.isDeviceRequired && !appState.connector!.connected)
+                  if (disconnected)
                     Positioned(
-                      top: 8,
+                      top: tool.showWipBadge || tool.onPressed == null ? 32 : 8,
                       right: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(

@@ -76,6 +76,7 @@ enum ChameleonCommand {
   mf1StaticEncryptedNestedAcquire(2014),
   mf1CheckKeysOnBlock(2015),
   hf14ARawCommand(2010),
+  hf14aSniff(2020),
 
   // lf commands
   scanEM410Xtag(3000),
