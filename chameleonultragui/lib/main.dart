@@ -79,11 +79,55 @@ class ChameleonGUIState extends ChangeNotifier {
 
   // Flashing easter egg
   bool easterEgg = false;
+  dynamic _suppressedAutoReconnectPort;
 
   GlobalKey navigationRailKey = GlobalKey();
   Size? navigationRailSize;
 
   void changesMade() {
+    notifyListeners();
+  }
+
+  void onConnectorStateChanged() {
+    if (connector == null || !connector!.connected) {
+      communicator = null;
+      progress = null;
+    }
+    notifyListeners();
+  }
+
+  bool isAutoReconnectSuppressed(dynamic devicePort) {
+    return _suppressedAutoReconnectPort == devicePort;
+  }
+
+  void clearAutoReconnectSuppression([dynamic devicePort]) {
+    if (devicePort == null || _suppressedAutoReconnectPort == devicePort) {
+      _suppressedAutoReconnectPort = null;
+    }
+  }
+
+  void syncAutoReconnectSuppression(Iterable<dynamic> visiblePorts) {
+    if (_suppressedAutoReconnectPort == null) {
+      return;
+    }
+
+    for (final port in visiblePorts) {
+      if (port == _suppressedAutoReconnectPort) {
+        return;
+      }
+    }
+
+    _suppressedAutoReconnectPort = null;
+  }
+
+  Future<void> disconnect({bool manual = false}) async {
+    final suppressedPort = manual ? connector?.activeDevicePort : null;
+    await connector?.performDisconnect();
+    if (manual && suppressedPort != null) {
+      _suppressedAutoReconnectPort = suppressedPort;
+    }
+    communicator = null;
+    progress = null;
     notifyListeners();
   }
 
@@ -116,8 +160,7 @@ class _MainPageState extends State<MainPage> {
   void reassemble() async {
     // Disconnect on reload
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
-    await appState.connector?.performDisconnect();
-    appState.changesMade();
+    await appState.disconnect();
 
     super.reassemble();
   }
@@ -163,6 +206,8 @@ class _MainPageState extends State<MainPage> {
     appState._sharedPreferencesProvider = widget.sharedPreferencesProvider;
     appState.log ??= getLogger(appState);
     appState.connector ??= getConnector(appState);
+    appState.connector!.connectionStateCallback =
+        appState.onConnectorStateChanged;
 
     if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;

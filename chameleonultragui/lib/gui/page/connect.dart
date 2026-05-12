@@ -155,6 +155,10 @@ class _ConnectPageState extends State<ConnectPage> {
         return;
       }
 
+      appState.syncAutoReconnectSuppression(
+        devices.map((device) => device.port),
+      );
+
       final firstConnectablePort = _firstConnectablePort(devices);
       if (firstConnectablePort != _lastAutoConnectAttemptPort) {
         _lastAutoConnectAttemptPort = null;
@@ -198,7 +202,7 @@ class _ConnectPageState extends State<ConnectPage> {
 
     Chameleon? connectableDevice;
     for (final device in devices) {
-      if (!device.dfu) {
+      if (!device.dfu && !appState.isAutoReconnectSuppressed(device.port)) {
         connectableDevice = device;
         break;
       }
@@ -251,6 +255,7 @@ class _ConnectPageState extends State<ConnectPage> {
           await appState.connector!.connectSpecificDevice(chameleonDevice.port);
       if (connected) {
         appState.connector!.pendingConnection = false;
+        appState.clearAutoReconnectSuppression(chameleonDevice.port);
         appState.communicator =
             ChameleonCommunicator(appState.log!, port: appState.connector);
       } else {

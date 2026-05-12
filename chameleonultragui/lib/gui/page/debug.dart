@@ -37,10 +37,9 @@ class DebugPage extends StatelessWidget {
               Align(
                 alignment: Alignment.topRight,
                 child: IconButton(
-                  onPressed: () {
+                  onPressed: () async {
                     // Disconnect
-                    appState.connector!.performDisconnect();
-                    appState.changesMade();
+                    await appState.disconnect(manual: true);
                   },
                   icon: const Icon(Icons.close),
                 ),
@@ -74,7 +73,7 @@ class DebugPage extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () async {
                     appState.sharedPreferencesProvider.setDebugLogging(true);
-                    await appState.connector!.performDisconnect();
+                    await appState.disconnect();
                     appState.log = null;
                     appState.connector = null;
                     appState.changesMade();
@@ -87,7 +86,7 @@ class DebugPage extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () async {
                     appState.sharedPreferencesProvider.setDebugLogging(false);
-                    await appState.connector!.performDisconnect();
+                    await appState.disconnect();
                     appState.log = null;
                     appState.connector = null;
                     appState.changesMade();

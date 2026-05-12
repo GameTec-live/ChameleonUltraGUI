@@ -190,6 +190,7 @@ class BLESerial extends AbstractSerial {
 
           portName = devicePort;
           device = chameleonMap[devicePort]!.device;
+          activeDevicePort = devicePort;
 
           isDFU = true;
           completer.complete(true);
@@ -238,6 +239,7 @@ class BLESerial extends AbstractSerial {
             connected = true;
             portName = devicePort;
             device = chameleonMap[devicePort]!.device;
+            activeDevicePort = devicePort;
 
             connectionType = ConnectionType.ble;
             isDFU = false;
@@ -266,17 +268,25 @@ class BLESerial extends AbstractSerial {
 
   @override
   Future<bool> performDisconnect() async {
-    device = ChameleonDevice.none;
-    connectionType = ConnectionType.none;
-    isOpen = false;
-    messageCallback = null;
-    pendingConnection = false;
+    final hadState = hasConnectionState || connection != null;
+    resetConnectionState();
+    txCharacteristic = null;
+    rxCharacteristic = null;
+    firmwareCharacteristic = null;
+    receivedDataStream = null;
     if (connection != null) {
       await connection!.cancel();
+      connection = null;
       connected = false;
+      if (hadState) {
+        notifyConnectionStateChanged();
+      }
       return true;
     }
     connected = false; // For debug button
+    if (hadState) {
+      notifyConnectionStateChanged();
+    }
     return false;
   }
 
