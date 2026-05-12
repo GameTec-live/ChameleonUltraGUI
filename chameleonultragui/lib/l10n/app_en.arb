@@ -274,6 +274,8 @@
   "back": "Back",
   "reset": "Reset",
   "write_again": "Write again",
+  "auto_scan_devices": "Auto scan devices",
+  "auto_connect_first_device": "Auto connect first found device",
   "confirm_deletions": "Confirm deletions",
   "confirm_deletion": "Confirm deletion",
   "confirm_deletion_text": "Are you sure you want to delete {name}?",
