@@ -90,7 +90,7 @@ enum ChameleonCommand {
   writeIoProxToT5577(3011),
   scanPacTag(3014),
   writePacToT5577(3015),
-  writeIdteckToT5577(3017),
+  writeIdteckToT5577(3018),
   lfSniff(3031),
 
   mf1LoadBlockData(4000),
@@ -153,8 +153,8 @@ enum ChameleonCommand {
   setIoProxEmulatorID(5008),
   getIoProxEmulatorID(5009),
 
-  setIdteckEmulatorID(5010),
-  getIdteckEmulatorID(5011);
+  setIdteckEmulatorID(5012),
+  getIdteckEmulatorID(5013);
 
   const ChameleonCommand(this.value);
   final int value;
