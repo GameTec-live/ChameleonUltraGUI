@@ -182,7 +182,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     ...(settings.wakeTimeSeconds != null)
                         ? [
                             const SizedBox(height: 10),
-                            const Text("Wake time after button press (s):"),
+                            Text(localizations.wake_time_after_button_press),
                             const SizedBox(height: 10),
                             Form(
                                 key: wakeTimeFormKey,
@@ -205,8 +205,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                             FilteringTextInputFormatter
                                                 .digitsOnly
                                           ],
-                                          decoration: const InputDecoration(
-                                            labelText: "Wake time",
+                                          decoration: InputDecoration(
+                                            labelText: localizations.wake_time,
                                             hintText: "5-60",
                                           )),
                                     ),
