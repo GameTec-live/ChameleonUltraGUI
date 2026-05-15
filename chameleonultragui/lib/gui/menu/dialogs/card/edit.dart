@@ -107,18 +107,25 @@ class CardEditMenuState extends State<CardEditMenu> {
         false;
   }
 
-  List<Uint8List> updateCardData(List<Uint8List> originalData) {
-    List<Uint8List> updatedData = List.from(originalData);
+  List<Uint8List> updateSavedCardData({
+    required TagType selectedType,
+    required String uid,
+    required String sak,
+    required String atqa,
+    required List<Uint8List> originalData,
+  }) {
+    if (originalData.isEmpty) {
+      return originalData;
+    }
+
+    List<Uint8List> updatedData = List<Uint8List>.from(originalData);
 
     if (isMifareClassic(selectedType)) {
-      final uid = hexToBytes(uidController.text);
-      final sak = hexToBytes(sakController.text)[0];
-      final atqa = hexToBytes(atqaController.text);
-
-      updatedData[0] = mfClassicGenerateFirstBlock(uid, sak, atqa);
+      updatedData[0] = mfClassicGenerateFirstBlock(
+          hexToBytes(uid), hexToBytes(sak)[0], hexToBytes(atqa));
     } else if (isMifareUltralight(selectedType)) {
-      final uid = hexToBytes(uidController.text);
-      final newBlocks = mfUltralightGenerateFirstBlocks(uid, selectedType);
+      final newBlocks =
+          mfUltralightGenerateFirstBlocks(hexToBytes(uid), selectedType);
 
       for (int i = 0; i < newBlocks.length && i < updatedData.length; i++) {
         updatedData[i] = newBlocks[i];
@@ -126,6 +133,14 @@ class CardEditMenuState extends State<CardEditMenu> {
     }
 
     return updatedData;
+  }
+
+  bool canUpdateSavedCardData(CardSave tagSave, TagType selectedType) {
+    if (!(isMifareClassic(selectedType) || isMifareUltralight(selectedType))) {
+      return false;
+    }
+
+    return tagSave.data.isNotEmpty;
   }
 
   void initCounterControllers() {
@@ -448,11 +463,16 @@ class CardEditMenuState extends State<CardEditMenu> {
             List<Uint8List> cardData = widget.tagSave.data;
 
             if (hasDataChanged() &&
-                (isMifareClassic(selectedType) ||
-                    isMifareUltralight(selectedType))) {
+                canUpdateSavedCardData(widget.tagSave, selectedType)) {
               bool shouldUpdateData = await showUpdateDataDialog(context);
               if (shouldUpdateData) {
-                cardData = updateCardData(widget.tagSave.data);
+                cardData = updateSavedCardData(
+                  selectedType: selectedType,
+                  uid: uidController.text,
+                  sak: sakController.text,
+                  atqa: atqaController.text,
+                  originalData: widget.tagSave.data,
+                );
               }
             }
 
