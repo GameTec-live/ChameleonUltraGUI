@@ -220,7 +220,7 @@ class HomePageState extends State<HomePage> {
               body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
-            appState.connector!.performDisconnect();
+            appState.disconnect();
             return Scaffold(
               appBar: AppBar(
                 title: Text(localizations.home),
@@ -255,10 +255,9 @@ class HomePageState extends State<HomePage> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 IconButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     // Disconnect
-                                    appState.connector!.performDisconnect();
-                                    appState.changesMade();
+                                    await appState.disconnect(manual: true);
                                   },
                                   icon: const Icon(Icons.close),
                                 ),

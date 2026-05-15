@@ -18,7 +18,11 @@ class EmulatorSerial extends AbstractSerial {
 
   @override
   Future<bool> performDisconnect() async {
-    connected = false;
+    final hadState = hasConnectionState;
+    resetConnectionState();
+    if (hadState) {
+      notifyConnectionStateChanged();
+    }
     return true;
   }
 
@@ -53,6 +57,8 @@ class EmulatorSerial extends AbstractSerial {
     portName = "Demo";
     connected = true;
     device = ChameleonDevice.ultra;
+    connectionType = ConnectionType.usb;
+    activeDevicePort = devicePort;
     return true;
   }
 

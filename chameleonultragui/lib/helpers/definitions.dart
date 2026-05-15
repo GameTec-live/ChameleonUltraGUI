@@ -132,6 +132,8 @@ enum ChameleonCommand {
   mf0NtagGetDetectionLog(4035),
   mf0NtagGetDetectionEnable(4036),
   mf0NtagGetEmulatorConfig(4037),
+  mf1GetPrngType(4040),
+  mf1SetPrngType(4041),
 
   // read slot info
   mf1GetBlockData(4008),
@@ -216,6 +218,15 @@ enum MifareWriteMode {
   shadow(3);
 
   const MifareWriteMode(this.value);
+  final int value;
+}
+
+enum Mf1PrngType {
+  static(0),
+  weak(1),
+  hard(2);
+
+  const Mf1PrngType(this.value);
   final int value;
 }
 

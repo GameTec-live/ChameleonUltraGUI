@@ -13,7 +13,10 @@ class AndroidSerial extends AbstractSerial {
   Future<bool>? permissionRequestFuture;
   late bool hasAllPermissions = true;
 
-  AndroidSerial({required super.log});
+  AndroidSerial({required super.log}) {
+    bleSerial.connectionStateCallback = notifyConnectionStateChanged;
+    mobileSerial.connectionStateCallback = notifyConnectionStateChanged;
+  }
 
   @override
   Future<bool> performDisconnect() async {
@@ -90,6 +93,11 @@ class AndroidSerial extends AbstractSerial {
     await bleSerial.registerCallback(callback);
     await mobileSerial.registerCallback(callback);
   }
+
+  @override
+  dynamic get activeDevicePort => (bleSerial.connected)
+      ? bleSerial.activeDevicePort
+      : mobileSerial.activeDevicePort;
 
   @override
   ChameleonDevice get device =>
