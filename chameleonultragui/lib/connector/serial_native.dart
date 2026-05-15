@@ -35,18 +35,20 @@ class NativeSerial extends AbstractSerial {
 
   @override
   Future<bool> performDisconnect() async {
-    device = ChameleonDevice.none;
-    connectionType = ConnectionType.none;
-    isOpen = false;
-    messageCallback = null;
-    connected = false;
-    messageCallback = null;
+    final hadState = hasConnectionState || port != null || reader != null;
+    resetConnectionState();
     if (port != null) {
       reader?.close();
       port?.close();
       reader = null;
       port = null;
+      if (hadState) {
+        notifyConnectionStateChanged();
+      }
       return true;
+    }
+    if (hadState) {
+      notifyConnectionStateChanged();
     }
     return false;
   }
@@ -79,6 +81,7 @@ class NativeSerial extends AbstractSerial {
     if (await connectDevice(devicePort, true)) {
       portName = devicePort;
       connected = true;
+      activeDevicePort = devicePort;
       return true;
     }
     return false;
@@ -146,6 +149,10 @@ class NativeSerial extends AbstractSerial {
       } catch (_) {
         log.w("Received unexpected data: ${bytesToHex(data)}");
       }
+    }, onDone: () async {
+      await performDisconnect();
+    }, onError: (_) async {
+      await performDisconnect();
     });
   }
 

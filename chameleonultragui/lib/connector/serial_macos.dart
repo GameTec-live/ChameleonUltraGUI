@@ -9,7 +9,10 @@ class MacOSSerial extends AbstractSerial {
   late BLESerial bleSerial = BLESerial(log: log);
   late NativeSerial nativeSerial = NativeSerial(log: log);
 
-  MacOSSerial({required super.log});
+  MacOSSerial({required super.log}) {
+    bleSerial.connectionStateCallback = notifyConnectionStateChanged;
+    nativeSerial.connectionStateCallback = notifyConnectionStateChanged;
+  }
 
   @override
   Future<bool> performDisconnect() async {
@@ -56,6 +59,11 @@ class MacOSSerial extends AbstractSerial {
     await bleSerial.registerCallback(callback);
     await nativeSerial.registerCallback(callback);
   }
+
+  @override
+  dynamic get activeDevicePort => (bleSerial.connected)
+      ? bleSerial.activeDevicePort
+      : nativeSerial.activeDevicePort;
 
   @override
   ChameleonDevice get device =>

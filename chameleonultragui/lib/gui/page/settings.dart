@@ -24,7 +24,6 @@ import 'package:flutter/services.dart' show rootBundle;
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
-
 Future<String> loadLicense(String license) async {
   return await rootBundle.loadString('assets/licenses/$license.md');
 }
@@ -207,6 +206,46 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         child: Text(localeLocalizations.language_name));
                   }).toList(),
                 ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    localizations.auto_scan_devices,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 5),
+                  Switch(
+                    value:
+                        appState.sharedPreferencesProvider.getAutoScanEnabled(),
+                    onChanged: (value) async {
+                      appState.sharedPreferencesProvider
+                          .setAutoScanEnabled(value);
+                      appState.changesMade();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    localizations.auto_connect_first_device,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 5),
+                  Switch(
+                    value: appState.sharedPreferencesProvider
+                        .getAutoConnectFirstFoundDevice(),
+                    onChanged: (value) async {
+                      appState.sharedPreferencesProvider
+                          .setAutoConnectFirstFoundDevice(value);
+                      appState.changesMade();
+                    },
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
               Row(
@@ -571,8 +610,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () async {
-                  await launchUrl(
-                      Uri.parse('https://crowdin.com/project/chameleonultragui'));
+                  await launchUrl(Uri.parse(
+                      'https://crowdin.com/project/chameleonultragui'));
                 },
                 child: Text(localizations.help_translate),
               ),
