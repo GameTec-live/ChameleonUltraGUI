@@ -135,11 +135,15 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
       }
 
       final errorText = error.toString();
+      final firmwareUnsupported = _isFirmwareUnsupportedError(errorText);
       setState(() {
-        if (errorText.contains('0x67') || errorText.contains('0x69')) {
+        if (firmwareUnsupported) {
           _capabilitySupported = false;
+          _statusMessage = null;
+          _errorMessage = null;
+        } else {
+          _errorMessage = errorText;
         }
-        _errorMessage = errorText;
       });
     } finally {
       if (mounted) {
@@ -148,6 +152,10 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
         });
       }
     }
+  }
+
+  bool _isFirmwareUnsupportedError(String errorText) {
+    return errorText.contains('0x67') || errorText.contains('0x69');
   }
 
   Future<void> _exportCapture() async {
@@ -489,21 +497,26 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.info_outline, color: Colors.orange),
-          const SizedBox(width: 10),
-          Expanded(child: Text(localizations.hf_sniff_firmware_unsupported)),
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        color: Colors.orange.withValues(alpha: 0.1),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.warning, color: Colors.orange),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  localizations.hf_sniff_firmware_unsupported,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
