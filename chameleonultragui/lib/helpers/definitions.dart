@@ -88,6 +88,9 @@ enum ChameleonCommand {
   writeVikingToT5577(3005),
   scanIoProxTag(3010),
   writeIoProxToT5577(3011),
+  scanPacTag(3014),
+  writePacToT5577(3015),
+  writeIdteckToT5577(3018),
   lfSniff(3031),
 
   mf1LoadBlockData(4000),
@@ -146,8 +149,14 @@ enum ChameleonCommand {
   setVikingEmulatorID(5004),
   getVikingEmulatorID(5005),
 
+  setPacEmulatorID(5006),
+  getPacEmulatorID(5007),
+
   setIoProxEmulatorID(5008),
-  getIoProxEmulatorID(5009);
+  getIoProxEmulatorID(5009),
+
+  setIdteckEmulatorID(5012),
+  getIdteckEmulatorID(5013);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -160,9 +169,11 @@ enum TagType {
   em410X32(102),
   em410X64(103),
   em410XElectra(104),
+  pac(150),
   viking(170),
   hidProx(200),
   ioProx(201),
+  idteck(310),
   mifareMini(1000),
   mifare1K(1001),
   mifare2K(1002),
@@ -600,6 +611,21 @@ class VikingCard extends LFCard {
   });
 }
 
+class PacCard extends LFCard {
+  factory PacCard.fromBytes(Uint8List bytes) {
+    return PacCard(uid: bytes);
+  }
+
+  factory PacCard.fromUID(String uid) {
+    return PacCard.fromBytes(hexToBytes(uid));
+  }
+
+  PacCard({
+    super.type = TagType.pac,
+    required super.uid,
+  });
+}
+
 class IoProxCard extends LFCard {
   factory IoProxCard.fromBytes(Uint8List bytes) {
     return IoProxCard(uid: bytes);
@@ -611,6 +637,21 @@ class IoProxCard extends LFCard {
 
   IoProxCard({
     super.type = TagType.ioProx,
+    required super.uid,
+  });
+}
+
+class IdteckCard extends LFCard {
+  factory IdteckCard.fromBytes(Uint8List bytes) {
+    return IdteckCard(uid: bytes);
+  }
+
+  factory IdteckCard.fromUID(String uid) {
+    return IdteckCard.fromBytes(hexToBytes(uid));
+  }
+
+  IdteckCard({
+    super.type = TagType.idteck,
     required super.uid,
   });
 }
