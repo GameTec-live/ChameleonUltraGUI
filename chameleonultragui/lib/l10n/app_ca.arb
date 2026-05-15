@@ -527,5 +527,7 @@
   "hf_sniff_copy_key": "Copia la clau",
   "hf_sniff_raw_help": "Mostrant els primers {shown} bytes de {total}. Exporta la captura per mantenir tota la trama del paquet del buffer.",
   "hf_sniff_hex_copied": "Captura crua HF copiada al porta-retalls",
-  "hf_sniff_copy_hex": "Copia la clau crua"
+  "hf_sniff_copy_hex": "Copia la clau crua",
+  "auto_scan_devices": "Escaneja autom\u00e0tica de dispositius",
+  "auto_connect_first_device": "Connectat autom\u00e0ticament al primer dispositiu trobat"
 }

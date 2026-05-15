@@ -274,8 +274,6 @@
   "back": "Back",
   "reset": "Reset",
   "write_again": "Write again",
-  "auto_scan_devices": "Auto scan devices",
-  "auto_connect_first_device": "Auto connect first found device",
   "confirm_deletions": "Confirm deletions",
   "confirm_deletion": "Confirm deletion",
   "confirm_deletion_text": "Are you sure you want to delete {name}?",
@@ -529,5 +527,7 @@
   "hf_sniff_copy_key": "Copy key",
   "hf_sniff_raw_help": "Showing the first {shown} bytes out of {total}. Export the capture to keep the full packed frame buffer.",
   "hf_sniff_hex_copied": "Raw HF capture copied to clipboard",
-  "hf_sniff_copy_hex": "Copy raw hex"
+  "hf_sniff_copy_hex": "Copy raw hex",
+  "auto_scan_devices": "Auto scan devices",
+  "auto_connect_first_device": "Auto connect first found device"
 }
