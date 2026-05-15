@@ -55,6 +55,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
   TagType? selectedType;
   TagType previousTagType = TagType.unknown;
   EmulatorSettings? emulatorSettings;
+  Mf1PrngType? mf1PrngType;
   int detectionCount = 0;
 
   @override
@@ -62,6 +63,17 @@ class SlotEditMenuState extends State<SlotEditMenu> {
     super.initState();
     selectedType = widget.slotType;
     nameController.text = widget.name;
+  }
+
+  String getMf1PrngLabel(Mf1PrngType type, AppLocalizations localizations) {
+    switch (type) {
+      case Mf1PrngType.static:
+        return localizations.prng_type_static;
+      case Mf1PrngType.weak:
+        return localizations.prng_type_weak;
+      case Mf1PrngType.hard:
+        return localizations.prng_type_hard;
+    }
   }
 
   Future<void> updateInfo() async {
@@ -115,6 +127,12 @@ class SlotEditMenuState extends State<SlotEditMenu> {
           if (emulatorSettings!.isDetectionEnabled) {
             detectionCount =
                 await appState.communicator!.getMf1DetectionCount();
+          }
+
+          try {
+            mf1PrngType = await appState.communicator!.getMf1PrngType();
+          } catch (_) {
+            mf1PrngType = null;
           }
         } else if (isMifareUltralight(selectedType!)) {
           Uint8List version =
@@ -298,7 +316,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                         .enter_something(localizations.uid)),
                                 inputFormatters: hexFormatter,
                                 validator: (value) => validateUid(
-                                    value, localizations,
+                                    value,
+                                    localizations,
                                     selectedType ?? widget.slotType),
                               ),
                               Visibility(
@@ -360,9 +379,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                   localizations.enter_something(
                                                       localizations.ats)),
                                           inputFormatters: hexFormatter,
-                                          validator: (value) =>
-                                              validateHex(
-                                                  value, localizations)),
+                                          validator: (value) => validateHex(
+                                              value, localizations)),
                                       if (isMifareUltralight(
                                           selectedType!)) ...[
                                         const SizedBox(height: 20),
@@ -375,9 +393,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                 hintText: localizations
                                                     .enter_something(localizations
                                                         .ultralight_version)),
-                                            validator: (value) =>
-                                                validateHex(
-                                                    value, localizations)),
+                                            validator: (value) => validateHex(
+                                                value, localizations)),
                                         const SizedBox(height: 20),
                                         TextFormField(
                                             controller:
@@ -388,9 +405,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                 hintText: localizations
                                                     .enter_something(localizations
                                                         .ultralight_signature)),
-                                            validator: (value) =>
-                                                validateHex(
-                                                    value, localizations)),
+                                            validator: (value) => validateHex(
+                                                value, localizations)),
                                         if (mfUltralightHasCounters(
                                             selectedType!)) ...[
                                           const SizedBox(height: 20),
@@ -417,9 +433,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                         value, localizations,
                                                         min: 0,
                                                         max: 16777215,
-                                                        emptyMessage:
-                                                            localizations
-                                                                .counter_value_empty),
+                                                        emptyMessage: localizations
+                                                            .counter_value_empty),
                                               ),
                                             );
                                           }),
@@ -471,6 +486,28 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                         ? true
                                                         : false);
                                               }),
+                                          if (mf1PrngType != null) ...[
+                                            const SizedBox(height: 8),
+                                            Text(localizations.prng_type),
+                                            const SizedBox(height: 8),
+                                            ToggleButtonsWrapper(
+                                                items: Mf1PrngType.values
+                                                    .map((type) =>
+                                                        getMf1PrngLabel(type,
+                                                            localizations))
+                                                    .toList(),
+                                                selectedValue:
+                                                    mf1PrngType!.value,
+                                                onChange: (int index) async {
+                                                  Mf1PrngType nextType =
+                                                      Mf1PrngType.values[index];
+                                                  setState(() {
+                                                    mf1PrngType = nextType;
+                                                  });
+                                                  await appState.communicator!
+                                                      .setMf1PrngType(nextType);
+                                                }),
+                                          ],
                                           const SizedBox(height: 8),
                                           Text(localizations.use_from_block),
                                           const SizedBox(height: 8),

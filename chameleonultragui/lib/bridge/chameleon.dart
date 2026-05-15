@@ -885,6 +885,19 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([mode.value]));
   }
 
+  Future<Mf1PrngType> getMf1PrngType() async {
+    var resp = await sendCmd(ChameleonCommand.mf1GetPrngType);
+    return Mf1PrngType.values.firstWhere(
+      (type) => type.value == resp!.data[0],
+      orElse: () => throw ("Unknown MF1 PRNG type ${resp!.data[0]}"),
+    );
+  }
+
+  Future<void> setMf1PrngType(Mf1PrngType type) async {
+    await sendCmd(ChameleonCommand.mf1SetPrngType,
+        data: Uint8List.fromList([type.value]));
+  }
+
   Future<List<EnabledSlotInfo>> getEnabledSlots() async {
     var resp = await sendCmd(ChameleonCommand.getEnabledSlots);
     List<EnabledSlotInfo> slots = [];
