@@ -114,8 +114,6 @@
   "flash_via_dfu": "Flash latest FW via DFU",
   "flash_zip_dfu": "Flash .zip FW via DFU",
   "animations": "Animations",
-  "wake_time_after_button_press": "Wake time after button press (s):",
-  "wake_time": "Wake time",
   "button_config": "Button config",
   "button_x": "{x} button",
   "long_press": "Long press",
@@ -531,5 +529,7 @@
   "hf_sniff_hex_copied": "Raw HF capture copied to clipboard",
   "hf_sniff_copy_hex": "Copy raw hex",
   "auto_scan_devices": "Auto scan devices",
-  "auto_connect_first_device": "Auto connect first found device"
+  "auto_connect_first_device": "Auto connect first found device",
+  "wake_time_after_button_press": "Wake time after button press (s):",
+  "wake_time": "Wake time"
 }
