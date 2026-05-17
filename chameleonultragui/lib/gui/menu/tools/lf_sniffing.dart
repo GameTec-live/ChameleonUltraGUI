@@ -1131,9 +1131,9 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
             const SizedBox(height: 4),
             Text(
               localizations.lf_sniff_hex_color_scale(
-                thresholdHex,
                 meanHex,
                 maxHex,
+                thresholdHex,
               ),
               style: Theme.of(context).textTheme.bodySmall,
             ),
