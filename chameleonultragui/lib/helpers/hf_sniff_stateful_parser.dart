@@ -184,7 +184,7 @@ class StatefulHfParser {
     if (sak == 0x18) return 'MIFARE Classic 4K';
     if (sak == 0x09) return 'MIFARE Mini';
 
-    if (sak == 0x00 && (atqa == 0x4400 || atqa == 0x44)) {
+    if (sak == 0x00 && (atqa == 0x4400 || atqa == 0x0044)) {
       return 'MIFARE Ultralight (family)';
     }
 
@@ -698,7 +698,7 @@ class StatefulHfParser {
           '${data[2].toRadixString(16).padLeft(2, '0').toUpperCase()}${data[3].toRadixString(16).padLeft(2, '0').toUpperCase()}';
       return 'HALT (50 00 + CRC=$crc)';
     }
-    if (b0 == 0x50 && data[1] == 0x00) return 'HALT';
+    if (b0 == 0x50 && data.length >= 2 && data[1] == 0x00) return 'HALT';
     if (b0 == 0xC2) return 'S-DESELECT';
     if (b0 == 0xD0) {
       return data.length > 1
