@@ -47,7 +47,7 @@ String inferHfCardFamily(List<HfSniffFrame> frames) {
         atqa = data[0] | (data[1] << 8);
       }
     }
-    if (frame.bitLength == 8 && data.length == 1) {
+    if (frame.isCardToReader && frame.bitLength == 8 && data.length == 1) {
       sak = data[0];
     }
   }
@@ -153,14 +153,14 @@ class StatefulHfParser {
     }
 
     // ATQA
-    if (frame.bitLength == 16 && data.length == 2) {
+    if (frame.isCardToReader && frame.bitLength == 16 && data.length == 2) {
       ctx.atqa = data[0] | (data[1] << 8);
       ctx.state = HfParserState.ready;
       return;
     }
 
     // SAK
-    if (frame.bitLength == 8 && data.length == 1) {
+    if (frame.isCardToReader && frame.bitLength == 8 && data.length == 1) {
       ctx.sak = data[0];
       ctx.family = _inferFamilyFromContext();
       ctx.state = HfParserState.active;
