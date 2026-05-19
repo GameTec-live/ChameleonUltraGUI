@@ -17,6 +17,7 @@ String inferHfCardFamily(List<HfSniffFrame> frames) {
         final prev = frames[i - 1];
         if (prev.isReaderToCard &&
             prev.data.isNotEmpty &&
+            prev.data.length == 3 && // 0x60 + 2 byte CRC
             prev.data[0] == 0x60) {
           final hw = data[2];
           if (hw == 0x03) return 'MIFARE Ultralight EV1/Ultralight';
@@ -60,7 +61,7 @@ String inferHfCardFamily(List<HfSniffFrame> frames) {
       // Ultralight family or NTAG/C: continue searching for subsequent characteristic commands
       for (int i = 0; i < frames.length; i++) {
         final f = frames[i];
-        if (f.isReaderToCard && f.data.isNotEmpty && f.data[0] == 0x60) {
+        if (f.isReaderToCard && f.data.isNotEmpty && f.data[0] == 0x60 && f.data.length == 3) {
           if (i + 1 < frames.length) {
             final resp = frames[i + 1];
             if (resp.isCardToReader && resp.data.length >= 3) {
