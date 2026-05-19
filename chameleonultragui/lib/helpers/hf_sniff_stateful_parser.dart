@@ -83,6 +83,20 @@ String inferHfCardFamily(List<HfSniffFrame> frames) {
 
 enum HfParserState { powerOff, idle, ready, active, halt }
 
+enum PendingUltralightCommand {
+  getVersion,
+  read,
+  fastRead,
+  write,
+  compatWrite,
+  compatWriteData,
+  pwdAuth,
+  readCnt,
+  incrCnt,
+  checkTearing,
+  readSig,
+}
+
 class HfParserContext {
   HfParserState state = HfParserState.powerOff;
   String uid = '';
@@ -91,7 +105,7 @@ class HfParserContext {
   String family = '';
   bool probableUltralight = false;
   bool probableUltralightEv1 = false;
-  String? pendingUlCmd;
+  PendingUltralightCommand? pendingUlCommand;
   int? pendingPage;
   int? pendingEndPage;
   int? pendingCounter;
@@ -207,7 +221,7 @@ class StatefulHfParser {
 
     if (frame.isReaderToCard) {
       // Classic AUTH(1) (0x60 / 0x61) when 4-byte frame
-      if (data.length == 4 && (data[0] == 0x60 || data[0] == 0x61)) {
+      if (frame.bitLength == 32 && data.length == 4 && (data[0] == 0x60 || data[0] == 0x61)) {
         _lastAuthKeyType = data[0] == 0x60 ? 'A' : 'B';
         _lastAuthBlock = data[1];
         _expectNt = true;
@@ -316,13 +330,13 @@ class StatefulHfParser {
     if (b0 == 0x60 && (data.length == 1 || data.length == 3)) {
       ctx.probableUltralight = true;
       ctx.probableUltralightEv1 = true;
-      ctx.pendingUlCmd = 'get_version';
+      ctx.pendingUlCommand = PendingUltralightCommand.getVersion;
       return 'UL EV1 GET_VERSION';
     }
     if (b0 == 0x30 && data.length >= 2) {
       final page = data[1];
       ctx.probableUltralight = true;
-      ctx.pendingUlCmd = 'read';
+      ctx.pendingUlCommand = PendingUltralightCommand.read;
       ctx.pendingPage = page;
       return 'UL READ  page=$page';
     }
@@ -330,7 +344,7 @@ class StatefulHfParser {
       final start = data[1];
       final end = data[2];
       ctx.probableUltralight = true;
-      ctx.pendingUlCmd = 'fast_read';
+      ctx.pendingUlCommand = PendingUltralightCommand.fastRead;
       ctx.pendingPage = start;
       ctx.pendingEndPage = end;
       return 'UL FAST_READ start=$start end=$end';
@@ -340,39 +354,39 @@ class StatefulHfParser {
       final payload =
           _hex(Uint8List.fromList(data.sublist(2, 6))).toUpperCase();
       ctx.probableUltralight = true;
-      ctx.pendingUlCmd = 'write';
+      ctx.pendingUlCommand = PendingUltralightCommand.write;
       ctx.pendingPage = page;
       return 'UL WRITE page=$page data=$payload';
     }
     if (b0 == 0xA0 && data.length >= 2) {
       final page = data[1];
       ctx.probableUltralight = true;
-      ctx.pendingUlCmd = 'compat_write';
+      ctx.pendingUlCommand = PendingUltralightCommand.compatWrite;
       ctx.pendingPage = page;
       return 'UL COMPAT_WRITE page=$page';
     }
-    if (data.length == 16 && ctx.pendingUlCmd == 'compat_write') {
+    if (data.length == 16 && ctx.pendingUlCommand == PendingUltralightCommand.compatWrite) {
       final page = ctx.pendingPage ?? -1;
-      ctx.pendingUlCmd = 'compat_write_data';
+      ctx.pendingUlCommand = PendingUltralightCommand.compatWriteData;
       return 'UL COMPAT_WRITE DATA page=$page data=${_hex(Uint8List.fromList(data)).toUpperCase()}';
     }
     if (b0 == 0x1B && data.length >= 5) {
       ctx.probableUltralight = true;
       ctx.probableUltralightEv1 = true;
-      ctx.pendingUlCmd = 'pwd_auth';
+      ctx.pendingUlCommand = PendingUltralightCommand.pwdAuth;
       return 'UL EV1 PWD_AUTH pwd=${_hex(Uint8List.fromList(data.sublist(1, 5))).toUpperCase()}';
     }
     if (b0 == 0x39 && data.length >= 2) {
       ctx.probableUltralight = true;
       ctx.probableUltralightEv1 = true;
-      ctx.pendingUlCmd = 'read_cnt';
+      ctx.pendingUlCommand = PendingUltralightCommand.readCnt;
       ctx.pendingCounter = data[1];
       return 'UL EV1 READ_CNT counter=${data[1]}';
     }
     if (b0 == 0xA5 && data.length >= 6) {
       ctx.probableUltralight = true;
       ctx.probableUltralightEv1 = true;
-      ctx.pendingUlCmd = 'incr_cnt';
+      ctx.pendingUlCommand = PendingUltralightCommand.incrCnt;
       ctx.pendingCounter = data[1];
       final value = _bytesToInt(Uint8List.fromList(data.sublist(2, 5)));
       return 'UL EV1 INCR_CNT counter=${data[1]} inc=$value';
@@ -380,14 +394,14 @@ class StatefulHfParser {
     if (b0 == 0x3E && data.length >= 2) {
       ctx.probableUltralight = true;
       ctx.probableUltralightEv1 = true;
-      ctx.pendingUlCmd = 'check_tearing';
+      ctx.pendingUlCommand = PendingUltralightCommand.checkTearing;
       ctx.pendingCounter = data[1];
       return 'UL EV1 CHECK_TEARING_EVENT counter=${data[1]}';
     }
     if (b0 == 0x3C) {
       ctx.probableUltralight = true;
       ctx.probableUltralightEv1 = true;
-      ctx.pendingUlCmd = 'read_sig';
+      ctx.pendingUlCommand = PendingUltralightCommand.readSig;
       return 'UL EV1 READ_SIG';
     }
     return null;
@@ -400,19 +414,19 @@ class StatefulHfParser {
     if (frame.bitLength == 4 && data.isNotEmpty) {
       final code = data[0] & 0x0F;
       if (code == 0xA) {
-        final pending = ctx.pendingUlCmd ?? 'unknown';
-        ctx.pendingUlCmd = null;
+        final pending = ctx.pendingUlCommand?.name ?? 'unknown';
+        ctx.pendingUlCommand = null;
         return 'UL ACK (for $pending)';
       }
       return 'UL NAK/4bit response code=0x${code.toRadixString(16).toUpperCase()}';
     }
 
-    final pending = ctx.pendingUlCmd;
-    if (pending == 'read') {
+    final pending = ctx.pendingUlCommand;
+    if (pending == PendingUltralightCommand.read) {
       final page = ctx.pendingPage ?? -1;
-      ctx.pendingUlCmd = null;
+      ctx.pendingUlCommand = null;
       final expected = page >= 0 ? 16 : -1;
-      final hasTrailingCrc = data.length >= 2 && (data.length == expected + 2 || data.length % 4 == 2);
+      final hasTrailingCrc = data.length == expected + 2;
       final decodeData = hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
       final dataHex = _hex(Uint8List.fromList(decodeData)).toUpperCase();
         final crcSuffix = hasTrailingCrc
@@ -429,15 +443,15 @@ class StatefulHfParser {
       return 'UL READ RESP? len=${data.length} data=$dataHex$crcSuffix decoded=$decoded';
     }
 
-    if (pending == 'fast_read') {
+    if (pending == PendingUltralightCommand.fastRead) {
       final start = ctx.pendingPage ?? -1;
       final end = ctx.pendingEndPage ?? -1;
-      ctx.pendingUlCmd = null;
+      ctx.pendingUlCommand = null;
       final expected = (start >= 0 && end >= start) ? (end - start + 1) * 4 : -1;
-      final hasTrailingCrc = data.length >= 2 && (data.length == expected + 2 || data.length % 4 == 2);
+      final hasTrailingCrc = data.length == expected + 2;
       final decodeData = hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
       final dataHex = _hex(Uint8List.fromList(decodeData)).toUpperCase();
-        final crcSuffix = hasTrailingCrc
+      final crcSuffix = hasTrailingCrc
           ? ' crc=${_hex(Uint8List.fromList(data.sublist(data.length - 2)), spaced: false).toUpperCase()}'
           : '';
       final decoded = _decodeUlReadPages(start, Uint8List.fromList(decodeData));
@@ -447,8 +461,8 @@ class StatefulHfParser {
       return 'UL FAST_READ RESP len=${data.length} data=$dataHex$crcSuffix decoded=$decoded';
     }
 
-    if (pending == 'get_version') {
-      ctx.pendingUlCmd = null;
+    if (pending == PendingUltralightCommand.getVersion) {
+      ctx.pendingUlCommand = null;
       if (data.length >= 8) {
         ctx.probableUltralightEv1 = true;
         final versionFamily = data[2] == 0x04
@@ -462,45 +476,51 @@ class StatefulHfParser {
       return 'UL EV1 VERSION RESP? len=${data.length}';
     }
 
-    if (pending == 'pwd_auth') {
-      ctx.pendingUlCmd = null;
+    if (pending == PendingUltralightCommand.pwdAuth) {
+      ctx.pendingUlCommand = null;
       if (data.length >= 2) {
         return 'UL EV1 PWD_AUTH RESP PACK=${_hex(Uint8List.fromList(data.sublist(0, 2))).toUpperCase()}';
       }
       return 'UL EV1 PWD_AUTH RESP? len=${data.length}';
     }
 
-    if (pending == 'read_cnt') {
+    if (pending == PendingUltralightCommand.readCnt) {
       final counter = ctx.pendingCounter ?? -1;
-      ctx.pendingUlCmd = null;
-      if (data.length >= 3) {
-        final value = _bytesToInt(Uint8List.fromList(data.sublist(0, data.length - 2)));
+      ctx.pendingUlCommand = null;
+      if (data.length == 5) {
+        final counterBytes = Uint8List.fromList(data.sublist(0, 3));
+        final value = _bytesToInt(counterBytes);
+        final crcSuffix = ' crc=${_hex(Uint8List.fromList(data.sublist(3, 5)), spaced: false).toUpperCase()}';
+        return 'UL EV1 READ_CNT RESP counter=$counter value=$value$crcSuffix';
+      }
+      if (data.length == 3) {
+        final value = _bytesToInt(Uint8List.fromList(data));
         return 'UL EV1 READ_CNT RESP counter=$counter value=$value';
       }
       return 'UL EV1 READ_CNT RESP? len=${data.length}';
     }
 
-    if (pending == 'check_tearing') {
+    if (pending == PendingUltralightCommand.checkTearing) {
       final counter = ctx.pendingCounter ?? -1;
-      ctx.pendingUlCmd = null;
+      ctx.pendingUlCommand = null;
       if (data.isNotEmpty) {
         return 'UL EV1 CHECK_TEARING_EVENT RESP counter=$counter value=0x${data[0].toRadixString(16).padLeft(2, '0').toUpperCase()}';
       }
       return 'UL EV1 CHECK_TEARING_EVENT RESP? len=${data.length}';
     }
 
-    if (pending == 'read_sig') {
-      ctx.pendingUlCmd = null;
+    if (pending == PendingUltralightCommand.readSig) {
+      ctx.pendingUlCommand = null;
       if (data.length >= 32) {
         return 'UL EV1 SIGNATURE RESP len=${data.length}';
       }
       return 'UL EV1 SIGNATURE RESP? len=${data.length}';
     }
 
-    if (pending == 'write' ||
-        pending == 'incr_cnt' ||
-        pending == 'compat_write_data') {
-      ctx.pendingUlCmd = null;
+    if (pending == PendingUltralightCommand.write ||
+        pending == PendingUltralightCommand.incrCnt ||
+        pending == PendingUltralightCommand.compatWriteData) {
+      ctx.pendingUlCommand = null;
       if (data.length == 1 && data[0] == 0x0A) return 'UL ACK';
     }
 
