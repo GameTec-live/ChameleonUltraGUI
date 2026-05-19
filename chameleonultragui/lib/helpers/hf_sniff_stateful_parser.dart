@@ -7,14 +7,14 @@ import 'package:chameleonultragui/helpers/hf_sniff_models.dart';
 String inferHfCardFamily(List<HfSniffFrame> frames) {
   int? atqa;
   int? sak;
-  for (final frame in frames) {
+  for (int i = 0; i < frames.length; i++) {
+    final frame = frames[i];
     final data = frame.data;
     if (data.isEmpty) continue;
 
     if (frame.isCardToReader && data.length >= 3) {
-      final prevIndex = frames.indexOf(frame) - 1;
-      if (prevIndex >= 0) {
-        final prev = frames[prevIndex];
+      if (i > 0) {
+        final prev = frames[i - 1];
         if (prev.isReaderToCard &&
             prev.data.isNotEmpty &&
             prev.data[0] == 0x60) {
