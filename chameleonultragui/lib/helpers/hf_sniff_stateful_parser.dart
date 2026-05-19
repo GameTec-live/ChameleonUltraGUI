@@ -474,7 +474,7 @@ class StatefulHfParser {
       final counter = ctx.pendingCounter ?? -1;
       ctx.pendingUlCmd = null;
       if (data.length >= 3) {
-        final value = _bytesToInt(Uint8List.fromList(data));
+        final value = _bytesToInt(Uint8List.fromList(data.sublist(0, data.length - 2)));
         return 'UL EV1 READ_CNT RESP counter=$counter value=$value';
       }
       return 'UL EV1 READ_CNT RESP? len=${data.length}';
