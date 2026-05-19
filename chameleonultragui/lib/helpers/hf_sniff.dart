@@ -179,8 +179,6 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
   return annotated;
 }
 
-
-
 HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
   List<int>? uidCl1;
   List<int>? uidCl2;

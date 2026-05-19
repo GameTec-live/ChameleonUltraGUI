@@ -221,7 +221,9 @@ class StatefulHfParser {
 
     if (frame.isReaderToCard) {
       // Classic AUTH(1) (0x60 / 0x61) when 4-byte frame
-      if (frame.bitLength == 32 && data.length == 4 && (data[0] == 0x60 || data[0] == 0x61)) {
+      if (frame.bitLength == 32 &&
+          data.length == 4 &&
+          (data[0] == 0x60 || data[0] == 0x61)) {
         _lastAuthKeyType = data[0] == 0x60 ? 'A' : 'B';
         _lastAuthBlock = data[1];
         _expectNt = true;
@@ -365,7 +367,8 @@ class StatefulHfParser {
       ctx.pendingPage = page;
       return 'UL COMPAT_WRITE page=$page';
     }
-    if (data.length == 16 && ctx.pendingUlCommand == PendingUltralightCommand.compatWrite) {
+    if (data.length == 16 &&
+        ctx.pendingUlCommand == PendingUltralightCommand.compatWrite) {
       final page = ctx.pendingPage ?? -1;
       ctx.pendingUlCommand = PendingUltralightCommand.compatWriteData;
       return 'UL COMPAT_WRITE DATA page=$page data=${_hex(Uint8List.fromList(data)).toUpperCase()}';
@@ -427,7 +430,8 @@ class StatefulHfParser {
       ctx.pendingUlCommand = null;
       final expected = page >= 0 ? 16 : -1;
       final hasTrailingCrc = data.length == expected + 2;
-      final decodeData = hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
+      final decodeData =
+          hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
       final dataHex = _hex(Uint8List.fromList(decodeData)).toUpperCase();
       final crcSuffix = hasTrailingCrc
           ? ' crc=${_hex(Uint8List.fromList(data.sublist(data.length - 2)), spaced: false).toUpperCase()}'
@@ -447,9 +451,11 @@ class StatefulHfParser {
       final start = ctx.pendingPage ?? -1;
       final end = ctx.pendingEndPage ?? -1;
       ctx.pendingUlCommand = null;
-      final expected = (start >= 0 && end >= start) ? (end - start + 1) * 4 : -1;
+      final expected =
+          (start >= 0 && end >= start) ? (end - start + 1) * 4 : -1;
       final hasTrailingCrc = data.length == expected + 2;
-      final decodeData = hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
+      final decodeData =
+          hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
       final dataHex = _hex(Uint8List.fromList(decodeData)).toUpperCase();
       final crcSuffix = hasTrailingCrc
           ? ' crc=${_hex(Uint8List.fromList(data.sublist(data.length - 2)), spaced: false).toUpperCase()}'
@@ -490,7 +496,8 @@ class StatefulHfParser {
       if (data.length == 5) {
         final counterBytes = Uint8List.fromList(data.sublist(0, 3));
         final value = _bytesToInt(counterBytes);
-        final crcSuffix = ' crc=${_hex(Uint8List.fromList(data.sublist(3, 5)), spaced: false).toUpperCase()}';
+        final crcSuffix =
+            ' crc=${_hex(Uint8List.fromList(data.sublist(3, 5)), spaced: false).toUpperCase()}';
         return 'UL EV1 READ_CNT RESP counter=$counter value=$value$crcSuffix';
       }
       if (data.length == 3) {
