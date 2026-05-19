@@ -148,7 +148,7 @@ class StatefulHfParser {
     // SAK
     if (frame.bitLength == 8 && data.length == 1) {
       ctx.sak = data[0];
-      ctx.family = inferHfCardFamily([frame]);
+      ctx.family = _inferFamilyFromContext();
       ctx.state = HfParserState.active;
       return;
     }
@@ -173,6 +173,22 @@ class StatefulHfParser {
       _authenticated = false;
       return;
     }
+  }
+
+  String _inferFamilyFromContext() {
+    final atqa = ctx.atqa;
+    final sak = ctx.sak;
+    if (sak == null) return '';
+
+    if (sak == 0x08) return 'MIFARE Classic 1K';
+    if (sak == 0x18) return 'MIFARE Classic 4K';
+    if (sak == 0x09) return 'MIFARE Mini';
+
+    if (sak == 0x00 && (atqa == 0x4400 || atqa == 0x44)) {
+      return 'MIFARE Ultralight (family)';
+    }
+
+    return '';
   }
 
   String annotateFrame(HfSniffFrame frame) {
@@ -395,35 +411,52 @@ class StatefulHfParser {
     if (pending == 'read') {
       final page = ctx.pendingPage ?? -1;
       ctx.pendingUlCmd = null;
-      final dataHex = _hex(Uint8List.fromList(data)).toUpperCase();
-      final decoded = _decodeUlReadPages(page, Uint8List.fromList(data));
-      if (data.length == 16 || data.length == 18) {
+      final expected = page >= 0 ? 16 : -1;
+      final hasTrailingCrc = data.length >= 2 && (data.length == expected + 2 || data.length % 4 == 2);
+      final decodeData = hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
+      final dataHex = _hex(Uint8List.fromList(decodeData)).toUpperCase();
+        final crcSuffix = hasTrailingCrc
+          ? ' crc=${_hex(Uint8List.fromList(data.sublist(data.length - 2)), spaced: false).toUpperCase()}'
+          : '';
+      final decoded = _decodeUlReadPages(page, Uint8List.fromList(decodeData));
+      if (decodeData.length == 16 || decodeData.length == 18) {
         final lastPage = page >= 0 ? page + 3 : -1;
         if (lastPage >= 0) {
-          return 'UL READ RESP pages=$page-$lastPage len=${data.length} data=$dataHex decoded=$decoded';
+          return 'UL READ RESP pages=$page-$lastPage len=${data.length} data=$dataHex$crcSuffix decoded=$decoded';
         }
-        return 'UL READ RESP len=${data.length} data=$dataHex decoded=$decoded';
+        return 'UL READ RESP len=${data.length} data=$dataHex$crcSuffix decoded=$decoded';
       }
-      return 'UL READ RESP? len=${data.length} data=$dataHex decoded=$decoded';
+      return 'UL READ RESP? len=${data.length} data=$dataHex$crcSuffix decoded=$decoded';
     }
 
     if (pending == 'fast_read') {
       final start = ctx.pendingPage ?? -1;
       final end = ctx.pendingEndPage ?? -1;
       ctx.pendingUlCmd = null;
-      final dataHex = _hex(Uint8List.fromList(data)).toUpperCase();
-      final decoded = _decodeUlReadPages(start, Uint8List.fromList(data));
+      final expected = (start >= 0 && end >= start) ? (end - start + 1) * 4 : -1;
+      final hasTrailingCrc = data.length >= 2 && (data.length == expected + 2 || data.length % 4 == 2);
+      final decodeData = hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
+      final dataHex = _hex(Uint8List.fromList(decodeData)).toUpperCase();
+        final crcSuffix = hasTrailingCrc
+          ? ' crc=${_hex(Uint8List.fromList(data.sublist(data.length - 2)), spaced: false).toUpperCase()}'
+          : '';
+      final decoded = _decodeUlReadPages(start, Uint8List.fromList(decodeData));
       if (start >= 0 && end >= start) {
-        final expected = (end - start + 1) * 4;
-        return 'UL FAST_READ RESP pages=$start-$end len=${data.length} expected=$expected data=$dataHex decoded=$decoded';
+        return 'UL FAST_READ RESP pages=$start-$end len=${data.length} expected=$expected data=$dataHex$crcSuffix decoded=$decoded';
       }
-      return 'UL FAST_READ RESP len=${data.length} data=$dataHex decoded=$decoded';
+      return 'UL FAST_READ RESP len=${data.length} data=$dataHex$crcSuffix decoded=$decoded';
     }
 
     if (pending == 'get_version') {
       ctx.pendingUlCmd = null;
       if (data.length >= 8) {
         ctx.probableUltralightEv1 = true;
+        final versionFamily = data[2] == 0x04
+            ? 'NTAG21x'
+            : (data[2] == 0x03 ? 'MIFARE Ultralight EV1/Ultralight' : '');
+        if (versionFamily.isNotEmpty) {
+          ctx.family = versionFamily;
+        }
         return 'UL EV1 VERSION vendor=0x${data[0].toRadixString(16).padLeft(2, '0').toUpperCase()} type=0x${data[1].toRadixString(16).padLeft(2, '0').toUpperCase()} sub=0x${data[2].toRadixString(16).padLeft(2, '0').toUpperCase()} ver=${data[3]}.${data[4]} size=0x${data[6].toRadixString(16).padLeft(2, '0').toUpperCase()} proto=0x${data[7].toRadixString(16).padLeft(2, '0').toUpperCase()}';
       }
       return 'UL EV1 VERSION RESP? len=${data.length}';
