@@ -429,11 +429,11 @@ class StatefulHfParser {
       final hasTrailingCrc = data.length == expected + 2;
       final decodeData = hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
       final dataHex = _hex(Uint8List.fromList(decodeData)).toUpperCase();
-        final crcSuffix = hasTrailingCrc
+      final crcSuffix = hasTrailingCrc
           ? ' crc=${_hex(Uint8List.fromList(data.sublist(data.length - 2)), spaced: false).toUpperCase()}'
           : '';
       final decoded = _decodeUlReadPages(page, Uint8List.fromList(decodeData));
-      if (decodeData.length == 16 || decodeData.length == 18) {
+      if (decodeData.length == 16) {
         final lastPage = page >= 0 ? page + 3 : -1;
         if (lastPage >= 0) {
           return 'UL READ RESP pages=$page-$lastPage len=${data.length} data=$dataHex$crcSuffix decoded=$decoded';
