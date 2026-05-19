@@ -1,26 +1,7 @@
 import 'dart:typed_data';
 
-enum HfSniffDirection { readerToCard, cardToReader }
-
-class HfSniffFrame {
-  final int rawBitLength;
-  final int bitLength;
-  final Uint8List data;
-  final HfSniffDirection direction;
-
-  const HfSniffFrame({
-    required this.rawBitLength,
-    required this.bitLength,
-    required this.data,
-    required this.direction,
-  });
-
-  bool get isReaderToCard => direction == HfSniffDirection.readerToCard;
-
-  bool get isCardToReader => direction == HfSniffDirection.cardToReader;
-
-  String get hexString => _hex(data);
-}
+import 'package:chameleonultragui/helpers/hf_sniff_models.dart';
+import 'package:chameleonultragui/helpers/hf_sniff_stateful_parser.dart';
 
 class HfSniffAnnotatedFrame {
   final HfSniffFrame frame;
@@ -183,51 +164,22 @@ List<HfSniffFrame> parseHf14aSniffFrames(Uint8List buffer) {
 List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
     List<HfSniffFrame> frames) {
   final annotated = <HfSniffAnnotatedFrame>[];
-  bool expectNt = false;
-  bool expectNrAr = false;
-  String? lastAuthKeyType;
-  int? lastAuthBlock;
+  final parser = StatefulHfParser();
 
   for (final frame in frames) {
-    final data = frame.data;
-    String label;
-
-    if (frame.isReaderToCard &&
-        frame.bitLength == 32 &&
-        data.length == 4 &&
-        data.isNotEmpty &&
-        (data[0] == 0x60 || data[0] == 0x61)) {
-      lastAuthKeyType = data[0] == 0x60 ? 'A' : 'B';
-      lastAuthBlock = data[1];
-      expectNt = true;
-      expectNrAr = false;
-      label =
-          'MIFARE Classic AUTH Key$lastAuthKeyType block=0x${lastAuthBlock.toRadixString(16).padLeft(2, '0').toUpperCase()} ($lastAuthBlock)';
-    } else if (frame.isCardToReader &&
-        expectNt &&
-        frame.bitLength == 32 &&
-        data.length == 4) {
-      label = 'AUTH: NT (card nonce) = ${_hex(data, spaced: false)}';
-      expectNt = false;
-      expectNrAr = true;
-    } else if (frame.isReaderToCard &&
-        expectNrAr &&
-        frame.bitLength == 64 &&
-        data.length == 8) {
-      label =
-          'AUTH continuation: NR||AR (enc)  NR=${_hex(Uint8List.fromList(data.sublist(0, 4)), spaced: false)}  AR=${_hex(Uint8List.fromList(data.sublist(4, 8)), spaced: false)}';
-      expectNrAr = false;
-    } else {
-      expectNt = false;
-      expectNrAr = false;
-      label = _decodeHf14aFrame(frame);
-    }
+    // feed parser first to update context
+    parser.feedFrame(frame);
+    // ask parser to produce a context-aware label; fallback to legacy decoder
+    final candidate = parser.annotateFrame(frame);
+    final label = candidate.isNotEmpty ? candidate : _decodeHf14aFrame(frame);
 
     annotated.add(HfSniffAnnotatedFrame(frame: frame, label: label));
   }
 
   return annotated;
 }
+
+
 
 HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
   List<int>? uidCl1;
