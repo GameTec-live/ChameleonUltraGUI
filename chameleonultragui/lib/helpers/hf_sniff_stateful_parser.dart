@@ -291,8 +291,10 @@ class StatefulHfParser {
     for (final f in frames) {
       feedFrame(f);
     }
-    if (ctx.family.isEmpty) {
-      ctx.family = inferHfCardFamily(frames);
+    final inferred = inferHfCardFamily(frames);
+    if (inferred.isNotEmpty &&
+        (ctx.family.isEmpty || ctx.family.endsWith('(family)'))) {
+      ctx.family = inferred;
     }
     return ctx;
   }
