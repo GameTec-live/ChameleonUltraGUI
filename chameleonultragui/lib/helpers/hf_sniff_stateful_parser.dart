@@ -198,7 +198,7 @@ class StatefulHfParser {
     }
 
     // SELECT with UID
-    if (data.length >= 6 &&
+    if (frame.isReaderToCard && data.length >= 6 &&
       (data[0] == 0x93 || data[0] == 0x95 || data[0] == 0x97) &&
       data[1] == 0x70) {
       final level = data[0] == 0x93 ? 'CL1' : (data[0] == 0x95 ? 'CL2' : 'CL3');
