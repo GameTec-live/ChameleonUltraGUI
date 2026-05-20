@@ -57,7 +57,7 @@ String inferHfCardFamily(List<HfSniffFrame> frames) {
     if (sak == 0x08) return 'MIFARE Classic 1K';
     if (sak == 0x18) return 'MIFARE Classic 4K';
     if (sak == 0x09) return 'MIFARE Mini';
-    if (sak == 0x00 && atqa == 0x4400) {
+    if (sak == 0x00 && (atqa == 0x4400 || atqa == 0x0044)) {
       // Ultralight family or NTAG/C: continue searching for subsequent characteristic commands
       for (int i = 0; i < frames.length; i++) {
         final f = frames[i];
@@ -512,7 +512,8 @@ class StatefulHfParser {
       final page = ctx.pendingPage ?? -1;
       ctx.pendingUlCommand = null;
       final expected = page >= 0 ? 16 : -1;
-      final hasTrailingCrc = data.length == expected + 2;
+      final hasTrailingCrc =
+          expected >= 0 && data.length >= 2 && data.length == expected + 2;
       final decodeData =
           hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
       final dataHex = _hex(Uint8List.fromList(decodeData)).toUpperCase();
@@ -536,7 +537,8 @@ class StatefulHfParser {
       ctx.pendingUlCommand = null;
       final expected =
           (start >= 0 && end >= start) ? (end - start + 1) * 4 : -1;
-      final hasTrailingCrc = data.length == expected + 2;
+      final hasTrailingCrc =
+          expected >= 0 && data.length >= 2 && data.length == expected + 2;
       final decodeData =
           hasTrailingCrc ? data.sublist(0, data.length - 2) : data;
       final dataHex = _hex(Uint8List.fromList(decodeData)).toUpperCase();
