@@ -44,7 +44,7 @@ String inferHfCardFamily(List<HfSniffFrame> frames) {
         0xA2,
         0xE0
       };
-      if (!blocked.contains(data[0])) {
+      if (frame.isCardToReader && !blocked.contains(data[0])) {
         atqa = data[0] | (data[1] << 8);
       }
     }
@@ -61,7 +61,10 @@ String inferHfCardFamily(List<HfSniffFrame> frames) {
       // Ultralight family or NTAG/C: continue searching for subsequent characteristic commands
       for (int i = 0; i < frames.length; i++) {
         final f = frames[i];
-        if (f.isReaderToCard && f.data.isNotEmpty && f.data[0] == 0x60 && f.data.length == 3) {
+        if (f.isReaderToCard &&
+            f.data.isNotEmpty &&
+            f.data[0] == 0x60 &&
+            f.data.length == 3) {
           if (i + 1 < frames.length) {
             final resp = frames[i + 1];
             if (resp.isCardToReader && resp.data.length >= 3) {
@@ -669,7 +672,7 @@ class StatefulHfParser {
         0xA2,
         0xE0
       };
-      if (!blocked.contains(data[0])) {
+      if (frame.isCardToReader && !blocked.contains(data[0])) {
         final atqa = data[0] | (data[1] << 8);
         return 'ATQA (Answer To Request, Type A) = 0x${atqa.toRadixString(16).padLeft(4, '0').toUpperCase()}';
       }

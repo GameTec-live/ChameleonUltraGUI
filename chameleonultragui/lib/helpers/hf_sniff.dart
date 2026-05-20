@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/helpers/hf_sniff_models.dart';
+export 'package:chameleonultragui/helpers/hf_sniff_models.dart';
 import 'package:chameleonultragui/helpers/hf_sniff_stateful_parser.dart';
 
 class HfSniffAnnotatedFrame {
@@ -169,9 +170,8 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
   for (final frame in frames) {
     // feed parser first to update context
     parser.feedFrame(frame);
-    // ask parser to produce a context-aware label; fallback to legacy decoder
-    final candidate = parser.annotateFrame(frame);
-    final label = candidate.isNotEmpty ? candidate : _decodeHf14aFrame(frame);
+    // ask parser to produce a context-aware label
+    final label = parser.annotateFrame(frame);
 
     annotated.add(HfSniffAnnotatedFrame(frame: frame, label: label));
   }
@@ -431,188 +431,6 @@ String buildHfSniffRawHexPreview(Uint8List data, {int maxBytes = 1024}) {
   }
 
   return (byteCount * 8, Uint8List.fromList(stripped));
-}
-
-String _decodeHf14aFrame(HfSniffFrame frame) {
-  final data = frame.data;
-  if (data.isEmpty) {
-    return '';
-  }
-
-  final b0 = data[0];
-  final bitLength = frame.bitLength;
-
-  if (bitLength == 16 && data.length == 2) {
-    const blocked = <int>{
-      0x93,
-      0x95,
-      0x97,
-      0x50,
-      0x60,
-      0x61,
-      0x30,
-      0xA0,
-      0xA2,
-      0xE0
-    };
-    if (!blocked.contains(data[0])) {
-      final atqa = data[0] | (data[1] << 8);
-      return 'ATQA (Answer To Request, Type A) = 0x${atqa.toRadixString(16).padLeft(4, '0').toUpperCase()}';
-    }
-  }
-
-  if (bitLength == 8 && data.length == 1) {
-    final sakType = _sakType(data[0]);
-    if (sakType != null) {
-      return 'SAK (Select Acknowledge) = 0x${data[0].toRadixString(16).padLeft(2, '0').toUpperCase()}  [$sakType]';
-    }
-    return 'SAK (Select Acknowledge) = 0x${data[0].toRadixString(16).padLeft(2, '0').toUpperCase()}';
-  }
-
-  if (bitLength == 40 && data.length == 5) {
-    final calc = data[0] ^ data[1] ^ data[2] ^ data[3];
-    final uid = _hex(Uint8List.fromList(data.sublist(0, 4)), spaced: false);
-    if (calc == data[4]) {
-      return 'ANTICOLL CL1 response: UID=$uid  BCC=0x${data[4].toRadixString(16).padLeft(2, '0').toUpperCase()} (OK)';
-    }
-    return 'ANTICOLL-like: UID=$uid  BCC=0x${data[4].toRadixString(16).padLeft(2, '0').toUpperCase()}';
-  }
-
-  if (frame.rawBitLength == 7) {
-    if (b0 == 0x26) {
-      return 'REQA';
-    }
-    if (b0 == 0x52) {
-      return 'WUPA';
-    }
-    return 'short(0x${b0.toRadixString(16).padLeft(2, '0')})';
-  }
-
-  if (b0 == 0x93 || b0 == 0x95 || b0 == 0x97) {
-    final level = b0 == 0x93 ? 'CL1' : (b0 == 0x95 ? 'CL2' : 'CL3');
-    if (data.length > 1 && data[1] == 0x70) {
-      final uid =
-          data.length >= 6 ? _hex(Uint8List.fromList(data.sublist(2, 6))) : '';
-      return 'SELECT $level  UID=$uid';
-    }
-    final nvb =
-        data.length > 1 ? data[1].toRadixString(16).padLeft(2, '0') : '';
-    return 'ANTICOLL $level  NVB=$nvb';
-  }
-
-  if (b0 == 0x50) {
-    return 'HALT';
-  }
-  if (b0 == 0xC2) {
-    return 'S-DESELECT';
-  }
-  if (b0 == 0xD0) {
-    return data.length > 1
-        ? 'PPS  PPS1=${data[1].toRadixString(16).padLeft(2, '0')}'
-        : 'PPS';
-  }
-  if (b0 == 0xE0) {
-    final fsdi = data.length > 1 ? (data[1] >> 4) : 0;
-    final cid = data.length > 1 ? (data[1] & 0x0F) : 0;
-    return 'RATS  FSDI=$fsdi CID=$cid';
-  }
-
-  if (b0 == 0x60) {
-    return data.length > 1 ? 'AUTH KeyA  block=${data[1]}' : 'AUTH KeyA';
-  }
-  if (b0 == 0x61) {
-    return data.length > 1 ? 'AUTH KeyB  block=${data[1]}' : 'AUTH KeyB';
-  }
-  if (bitLength == 72) {
-    return '(encrypted nonce - auth challenge/response)';
-  }
-  if (b0 == 0x30) {
-    return data.length > 1 ? 'READ  block=${data[1]}' : 'READ';
-  }
-  if (b0 == 0xA0) {
-    return data.length > 1 ? 'WRITE block=${data[1]}' : 'WRITE';
-  }
-  if (b0 == 0x40) {
-    return 'MAGIC WUPC1';
-  }
-  if (b0 == 0x43) {
-    return 'MAGIC WUPC2';
-  }
-  if (b0 == 0x41) {
-    return 'MAGIC WIPE';
-  }
-
-  if (data.length >= 2 &&
-      (b0 == 0x00 || b0 == 0x80 || b0 == 0x90 || b0 == 0xA0)) {
-    final cla = data[0];
-    final ins = data[1];
-    final p1 = data.length > 2 ? data[2] : 0;
-    final p2 = data.length > 3 ? data[3] : 0;
-
-    if (cla == 0x00 && ins == 0xA4) {
-      if (data.length > 5 && data.length >= 5 + data[4]) {
-        final aid = Uint8List.fromList(data.sublist(5, 5 + data[4]));
-        final knownName = _knownAidName(aid);
-        final rawAid = _hex(aid).toUpperCase();
-        return knownName.isEmpty
-            ? 'SELECT AID  $rawAid'
-            : 'SELECT AID  $rawAid  ($knownName)';
-      }
-      return 'SELECT';
-    }
-    if (cla == 0x00 && ins == 0xB0) {
-      final offset = (p1 << 8) | p2;
-      final length = data.length > 4 ? data[4] : 0;
-      return 'READ BINARY  off=$offset len=$length';
-    }
-    if (cla == 0x00 && ins == 0xB2) {
-      return 'READ RECORD  SFI=${p2 >> 3} rec=$p1';
-    }
-    if (cla == 0x80 && ins == 0xCA) {
-      final tag = (p1 << 8) | p2;
-      final name = _knownBerTag(tag);
-      return name == null
-          ? 'GET DATA  ${p1.toRadixString(16).padLeft(2, '0')}${p2.toRadixString(16).padLeft(2, '0')}'
-          : 'GET DATA  ${p1.toRadixString(16).padLeft(2, '0')}${p2.toRadixString(16).padLeft(2, '0')}  ($name)';
-    }
-    if (cla == 0x80 && ins == 0xA8) {
-      return 'GPO  (Get Processing Options)';
-    }
-    if (cla == 0x80 && ins == 0xAE) {
-      final request = switch (p1 & 0xC0) {
-        0x00 => 'AAC',
-        0x40 => 'TC',
-        0x80 => 'ARQC',
-        _ => 'AC/${p1.toRadixString(16).padLeft(2, '0')}',
-      };
-      return 'GENERATE AC  requesting $request';
-    }
-    if (cla == 0x00 && ins == 0x20) {
-      return 'VERIFY PIN';
-    }
-    if (cla == 0x00 && ins == 0x88) {
-      return 'INTERNAL AUTH';
-    }
-    if (cla == 0x00 && ins == 0x82) {
-      return 'EXTERNAL AUTH';
-    }
-    if (cla == 0x00 && ins == 0x70) {
-      return 'MANAGE CHANNEL';
-    }
-    return 'APDU  CLA=${cla.toRadixString(16).padLeft(2, '0')} INS=${ins.toRadixString(16).padLeft(2, '0')} P1=${p1.toRadixString(16).padLeft(2, '0')} P2=${p2.toRadixString(16).padLeft(2, '0')}';
-  }
-
-  for (final swOffset in const <int>[-2, -4]) {
-    if (data.length >= swOffset.abs()) {
-      final label = _decodeSw(
-          data[data.length + swOffset], data[data.length + swOffset + 1]);
-      if (label != null) {
-        return 'SW ${data[data.length + swOffset].toRadixString(16).padLeft(2, '0').toUpperCase()} ${data[data.length + swOffset + 1].toRadixString(16).padLeft(2, '0').toUpperCase()}  $label';
-      }
-    }
-  }
-
-  return 'unknown (0x${b0.toRadixString(16).padLeft(2, '0')})';
 }
 
 String _hex(Uint8List data, {bool spaced = true}) {

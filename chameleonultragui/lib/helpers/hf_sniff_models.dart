@@ -19,5 +19,6 @@ class HfSniffFrame {
 
   bool get isCardToReader => direction == HfSniffDirection.cardToReader;
 
-  String get hexString => data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+  String get hexString =>
+      data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
 }
