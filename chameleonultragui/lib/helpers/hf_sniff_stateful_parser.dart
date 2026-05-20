@@ -104,6 +104,7 @@ enum PendingUltralightCommand {
 class HfParserContext {
   HfParserState state = HfParserState.powerOff;
   String uid = '';
+  final List<int> uidParts = [];
   int? atqa;
   int? sak;
   String family = '';
@@ -132,6 +133,7 @@ class StatefulHfParser {
   void reset() {
     ctx.state = HfParserState.powerOff;
     ctx.uid = '';
+    ctx.uidParts.clear();
     ctx.atqa = null;
     ctx.sak = null;
     ctx.family = '';
@@ -153,11 +155,32 @@ class StatefulHfParser {
         (data[0] == 0x26 || data[0] == 0x52)) {
       ctx.state = HfParserState.idle;
       _authenticated = false;
+      ctx.uid = '';
+      ctx.uidParts.clear();
+      ctx.pendingAnticollLevel = null;
       return;
     }
 
     // ATQA
-    if (frame.isCardToReader && frame.bitLength == 16 && data.length == 2) {
+    if (frame.isCardToReader &&
+        frame.bitLength == 16 &&
+        data.length == 2 &&
+        ctx.state == HfParserState.idle) {
+      const blocked = <int>{
+        0x93,
+        0x95,
+        0x97,
+        0x50,
+        0x60,
+        0x61,
+        0x30,
+        0xA0,
+        0xA2,
+        0xE0
+      };
+      if (blocked.contains(data[0])) {
+        return;
+      }
       ctx.atqa = data[0] | (data[1] << 8);
       ctx.state = HfParserState.ready;
       return;
@@ -166,6 +189,9 @@ class StatefulHfParser {
     // SAK
     if (frame.isCardToReader && frame.bitLength == 8 && data.length == 1) {
       ctx.sak = data[0];
+      if ((data[0] & 0x04) == 0) {
+        ctx.uid = _composeUid();
+      }
       ctx.family = _inferFamilyFromContext();
       ctx.state = HfParserState.active;
       return;
@@ -173,14 +199,15 @@ class StatefulHfParser {
 
     // SELECT with UID
     if (data.length >= 6 &&
-        (data[0] == 0x93 || data[0] == 0x95 || data[0] == 0x97) &&
-        data[1] == 0x70) {
+      (data[0] == 0x93 || data[0] == 0x95 || data[0] == 0x97) &&
+      data[1] == 0x70) {
+      final level = data[0] == 0x93 ? 'CL1' : (data[0] == 0x95 ? 'CL2' : 'CL3');
       final uidPart =
-          (data[2] == 0x88) ? data.sublist(3, 6) : data.sublist(2, 6);
-      ctx.uid = _hex(Uint8List.fromList(uidPart));
+        (data[2] == 0x88) ? data.sublist(3, 6) : data.sublist(2, 6);
+      _storeUidPart(level, uidPart);
+      ctx.uid = '';
       // remember anticollision level for next card response
-      ctx.pendingAnticollLevel =
-          data[0] == 0x93 ? 'CL1' : (data[0] == 0x95 ? 'CL2' : 'CL3');
+      ctx.pendingAnticollLevel = level;
       ctx.state = HfParserState.ready;
       return;
     }
@@ -207,6 +234,56 @@ class StatefulHfParser {
     }
 
     return '';
+  }
+
+  void _storeUidPart(String level, List<int> uidPart) {
+    final bytes = List<int>.from(uidPart);
+    switch (level) {
+      case 'CL1':
+        if (ctx.uidParts.isEmpty) {
+          ctx.uidParts.addAll(bytes);
+        } else {
+          ctx.uidParts
+            ..clear()
+            ..addAll(bytes);
+        }
+        break;
+      case 'CL2':
+        if (ctx.uidParts.length <= 3) {
+          if (ctx.uidParts.length < 3) {
+            ctx.uidParts
+              ..clear()
+              ..addAll(bytes);
+          } else {
+            ctx.uidParts.addAll(bytes);
+          }
+        } else {
+          ctx.uidParts
+            ..removeRange(3, ctx.uidParts.length)
+            ..addAll(bytes);
+        }
+        break;
+      case 'CL3':
+        if (ctx.uidParts.length <= 6) {
+          if (ctx.uidParts.length < 6) {
+            ctx.uidParts
+              ..clear()
+              ..addAll(bytes);
+          } else {
+            ctx.uidParts.addAll(bytes);
+          }
+        } else {
+          ctx.uidParts
+            ..removeRange(6, ctx.uidParts.length)
+            ..addAll(bytes);
+        }
+        break;
+    }
+  }
+
+  String _composeUid() {
+    if (ctx.uidParts.isEmpty) return '';
+    return _hex(Uint8List.fromList(ctx.uidParts));
   }
 
   String annotateFrame(HfSniffFrame frame) {
@@ -236,8 +313,8 @@ class StatefulHfParser {
         label =
             'MIFARE Classic AUTH(1) Key$_lastAuthKeyType block=0x${_lastAuthBlock!.toRadixString(16).padLeft(2, '0').toUpperCase()} ($_lastAuthBlock)';
       }
-      // Classic AUTH(2) Reader Response (NR||AR) when 8-byte frame after AUTH(1)
-      else if (_expectNrAr && data.length == 8) {
+      // Classic AUTH(2) Reader Response (NR||AR) when a valid 64-bit frame follows AUTH(1)
+      else if (_expectNrAr && frame.bitLength == 64 && data.length == 8) {
         label =
             'MIFARE Classic AUTH(2) Reader Response (NR||AR): NR=${_hexBytes(Uint8List.fromList(data.sublist(0, 4)), spaced: false)}  AR=${_hexBytes(Uint8List.fromList(data.sublist(4, 8)), spaced: false)}';
         _expectNrAr = false;
