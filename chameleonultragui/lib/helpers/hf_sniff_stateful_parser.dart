@@ -198,12 +198,13 @@ class StatefulHfParser {
     }
 
     // SELECT with UID
-    if (frame.isReaderToCard && data.length >= 6 &&
-      (data[0] == 0x93 || data[0] == 0x95 || data[0] == 0x97) &&
-      data[1] == 0x70) {
+    if (frame.isReaderToCard &&
+        data.length >= 6 &&
+        (data[0] == 0x93 || data[0] == 0x95 || data[0] == 0x97) &&
+        data[1] == 0x70) {
       final level = data[0] == 0x93 ? 'CL1' : (data[0] == 0x95 ? 'CL2' : 'CL3');
       final uidPart =
-        (data[2] == 0x88) ? data.sublist(3, 6) : data.sublist(2, 6);
+          (data[2] == 0x88) ? data.sublist(3, 6) : data.sublist(2, 6);
       _storeUidPart(level, uidPart);
       ctx.uid = '';
       // remember anticollision level for next card response
