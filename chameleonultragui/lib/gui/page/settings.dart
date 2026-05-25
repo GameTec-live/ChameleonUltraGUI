@@ -331,7 +331,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                     Navigator.pop(context);
                                   }
                                 },
-                                child: const Text("QR Code"),
+                                child: Text(localizations.qr_code),
                               ),
                               TextButton(
                                 onPressed: () async {
@@ -429,7 +429,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               Navigator.pop(context);
                             }
                           },
-                          child: const Text("QR Code"),
+                          child: Text(localizations.qr_code),
                         ),
                         TextButton(
                           onPressed: () async {
