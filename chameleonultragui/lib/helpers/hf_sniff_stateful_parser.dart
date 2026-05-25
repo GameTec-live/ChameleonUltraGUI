@@ -671,6 +671,9 @@ class StatefulHfParser {
             .join(':')
             .toUpperCase();
         String desc;
+        if (pbytes.length < 4) {
+          desc = 'data=$hex';
+        } else
         if (pnum == 0) {
           desc =
               'UID0-2=${_hex(Uint8List.fromList(pbytes.sublist(0, 3)), spaced: false)} BCC0=0x${pbytes[3].toRadixString(16).padLeft(2, '0').toUpperCase()}';
