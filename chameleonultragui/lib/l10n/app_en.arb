@@ -295,6 +295,7 @@
   "gen3": "Gen3",
   "t55xx": "T55XX",
   "connect_manually": "Connect manually",
+  "click_to_connect": "Click to connect",
   "port": "Port",
   "port_hint": "e.g. COM3, /dev/ttyUSB0",
   "hardnested_collecting_nonces": "Collecting required nonces {nonces}/256...",

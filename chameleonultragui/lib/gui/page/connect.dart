@@ -363,7 +363,7 @@ class _ConnectPageState extends State<ConnectPage> {
         }
       },
       icon: const Icon(Icons.usb),
-      label: const Text('Click to connect'),
+      label: Text(AppLocalizations.of(context)!.click_to_connect),
     );
   }
 
