@@ -23,16 +23,21 @@ class SerialAdapter extends AbstractSerial {
 
   @override
   Future<bool> performDisconnect() async {
-    device = ChameleonDevice.none;
-    connectionType = ConnectionType.none;
-    isOpen = false;
-    messageCallback = null;
+    final hadState = hasConnectionState || port != null;
+    resetConnectionState();
     if (port != null) {
       port?.close();
+      port = null;
       connected = false;
+      if (hadState) {
+        notifyConnectionStateChanged();
+      }
       return true;
     }
     connected = false; // For debug button
+    if (hadState) {
+      notifyConnectionStateChanged();
+    }
     return false;
   }
 
@@ -110,6 +115,8 @@ class SerialAdapter extends AbstractSerial {
       port!.setPortParameters(
           115200, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
       connected = true;
+      connectionType = ConnectionType.usb;
+      activeDevicePort = devicePort;
 
       port!.inputStream!.listen((Uint8List data) async {
         if (messageCallback != null) {
@@ -119,14 +126,17 @@ class SerialAdapter extends AbstractSerial {
             log.w("Received unexpected data: ${bytesToHex(data)}");
           }
         }
+      }, onDone: () async {
+        await performDisconnect();
+      }, onError: (_) async {
+        await performDisconnect();
       });
 
-      UsbSerial.usbEventStream!.listen((event) {
+      UsbSerial.usbEventStream!.listen((event) async {
         if (event.event == "android.hardware.usb.action.USB_DEVICE_DETACHED" &&
             event.device!.deviceName == devicePort) {
           log.w("Chameleon disconnected from USB");
-          device = ChameleonDevice.none;
-          connected = false;
+          await performDisconnect();
         }
       });
 

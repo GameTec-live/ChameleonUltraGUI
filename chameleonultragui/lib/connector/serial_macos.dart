@@ -13,7 +13,10 @@ class SerialAdapter extends AbstractSerial {
   // ignore: overridden_fields
   String name = "macOS";
 
-  SerialAdapter({required super.log});
+  SerialAdapter({required super.log}) {
+    bleSerial.connectionStateCallback = notifyConnectionStateChanged;
+    nativeSerial.connectionStateCallback = notifyConnectionStateChanged;
+  }
 
   @override
   Future<bool> performDisconnect() async {
@@ -60,6 +63,11 @@ class SerialAdapter extends AbstractSerial {
     await bleSerial.registerCallback(callback);
     await nativeSerial.registerCallback(callback);
   }
+
+  @override
+  dynamic get activeDevicePort => (bleSerial.connected)
+      ? bleSerial.activeDevicePort
+      : nativeSerial.activeDevicePort;
 
   @override
   ChameleonDevice get device =>

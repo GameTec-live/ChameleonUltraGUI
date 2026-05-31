@@ -1,6 +1,6 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/main.dart';
@@ -38,13 +38,14 @@ class WriteCardPageState extends State<WriteCardPage> {
     );
   }
 
-  Future<void> onTap(CardSave selectedCard, dynamic close) async {
+  Future<void> onTap(CardSave selectedCard, dynamic close,
+      AppLocalizations localizations) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
     setState(() {
       card = selectedCard;
       baseHelper = AbstractWriteHelper.getClassByCardType(
-          selectedCard.tag, appState, updateState);
+          selectedCard.tag, appState, updateState, localizations);
     });
 
     if (baseHelper != null) {
@@ -120,10 +121,15 @@ class WriteCardPageState extends State<WriteCardPage> {
   }
 
   Future<void> writeCard() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     var scaffoldMessenger = ScaffoldMessenger.of(context);
     var localizations = AppLocalizations.of(context)!;
     SnackBar snackBar;
     updateProgress(0);
+
+    if (!await appState.communicator!.isReaderDeviceMode()) {
+      await appState.communicator!.setReaderDeviceMode(true);
+    }
 
     if (await helper!.writeData(card!, updateProgress)) {
       snackBar = SnackBar(
@@ -386,8 +392,15 @@ class WriteCardPageState extends State<WriteCardPage> {
                                 helper!.getFailedBlocks().isNotEmpty)
                             ? Text(
                                 "${localizations.otp_magic_warning(localizations.write_data_to_magic_card)} ${localizations.some_blocks_failed_to_write}: ${helper!.getFailedBlocks().join(", ")}")
-                            : Text(localizations.otp_magic_warning(
-                                localizations.write_data_to_magic_card))
+                            : Column(children: [
+                                Text(localizations.otp_magic_warning(
+                                    localizations.write_data_to_magic_card)),
+                                const SizedBox(height: 8),
+                                Text(localizations.keep_stable_warning,
+                                    style: const TextStyle(
+                                        color: Colors.orange,
+                                        fontWeight: FontWeight.bold))
+                              ])
                         : (helper != null && helper!.writeWidgetSupported())
                             ? helper!.getWriteWidget(context, setState)
                             : Text(localizations.error)

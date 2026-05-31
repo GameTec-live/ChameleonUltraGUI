@@ -114,6 +114,20 @@ class Recovery {
   late final _mfkey32 =
       _mfkey32Ptr.asFunction<int Function(ffi.Pointer<Mfkey32>)>();
 
+  int mfkey64(
+    ffi.Pointer<Mfkey64> data,
+  ) {
+    return _mfkey64(
+      data,
+    );
+  }
+
+  late final _mfkey64Ptr =
+      _lookup<ffi.NativeFunction<ffi.Uint64 Function(ffi.Pointer<Mfkey64>)>>(
+          'mfkey64');
+  late final _mfkey64 =
+      _mfkey64Ptr.asFunction<int Function(ffi.Pointer<Mfkey64>)>();
+
   int hardnested(
     ffi.Pointer<HardNested> data,
   ) {
@@ -244,6 +258,28 @@ final class Mfkey32 extends ffi.Struct {
   /// second encrypted reader response
   @ffi.Uint32()
   external int ar1_enc;
+}
+
+final class Mfkey64 extends ffi.Struct {
+  /// serial number
+  @ffi.Uint32()
+  external int uid;
+
+  /// tag challenge
+  @ffi.Uint32()
+  external int nt;
+
+  /// encrypted reader challenge
+  @ffi.Uint32()
+  external int nr_enc;
+
+  /// encrypted reader response
+  @ffi.Uint32()
+  external int ar_enc;
+
+  /// encrypted tag response / next nonce
+  @ffi.Uint32()
+  external int at_enc;
 }
 
 final class HardNested extends ffi.Struct {

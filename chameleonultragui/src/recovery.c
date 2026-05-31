@@ -555,3 +555,26 @@ FFI_PLUGIN_EXPORT uint64_t mfkey32(Mfkey32 *data)
   free(s);
   return UINT64_MAX;
 }
+
+FFI_PLUGIN_EXPORT uint64_t mfkey64(Mfkey64 *data)
+{
+  struct Crypto1State *revstate;
+  uint64_t key;
+  uint32_t p64 = prng_successor(data->nt, 64);
+  uint32_t ks2 = data->ar_enc ^ p64;
+  uint32_t ks3 = data->at_enc ^ prng_successor(p64, 32);
+
+  revstate = lfsr_recovery64(ks2, ks3);
+  if (revstate == NULL) {
+    return UINT64_MAX;
+  }
+
+  lfsr_rollback_word(revstate, 0, 0);
+  lfsr_rollback_word(revstate, 0, 0);
+  lfsr_rollback_word(revstate, data->nr_enc, 1);
+  lfsr_rollback_word(revstate, data->uid ^ data->nt, 0);
+  crypto1_get_lfsr(revstate, &key);
+  crypto1_destroy(revstate);
+
+  return key;
+}

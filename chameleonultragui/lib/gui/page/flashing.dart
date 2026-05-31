@@ -24,10 +24,10 @@ class FlashingPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Image.asset(
-                appState.connector!.device == ChameleonDevice.ultra
+                appState.connector!.device == ChameleonDevice.lite
                     ? appState.easterEgg
-                        ? 'assets/black-ultra-standing-front-flashing.webp'
-                        : 'assets/black-ultra-standing-front.webp'
+                        ? 'assets/black-lite-standing-front-flashing.webp'
+                        : 'assets/black-lite-standing-front.webp'
                     : appState.easterEgg
                         ? 'assets/black-lite-standing-front-flashing.webp'
                         : 'assets/black-lite-standing-front.webp',

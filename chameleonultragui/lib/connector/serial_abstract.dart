@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
 enum ChameleonDevice { none, ultra, lite }
@@ -27,8 +27,11 @@ abstract class AbstractSerial {
   bool pendingConnection = false;
   String portName = "None";
   String name = "Abstract";
+  bool hasAllPermissions = true;
   ConnectionType connectionType = ConnectionType.none;
   dynamic messageCallback;
+  dynamic activeDevicePort;
+  VoidCallback? connectionStateCallback;
 
   AbstractSerial({required this.log});
 
@@ -52,5 +55,34 @@ abstract class AbstractSerial {
 
   Future<void> registerCallback(dynamic callback) async {
     messageCallback = callback;
+  }
+
+  @protected
+  void resetConnectionState() {
+    device = ChameleonDevice.none;
+    connected = false;
+    isOpen = false;
+    isDFU = false;
+    pendingConnection = false;
+    portName = "None";
+    connectionType = ConnectionType.none;
+    messageCallback = null;
+    activeDevicePort = null;
+  }
+
+  @protected
+  bool get hasConnectionState =>
+      connected ||
+      isOpen ||
+      isDFU ||
+      pendingConnection ||
+      portName != "None" ||
+      connectionType != ConnectionType.none ||
+      device != ChameleonDevice.none ||
+      activeDevicePort != null;
+
+  @protected
+  void notifyConnectionStateChanged() {
+    connectionStateCallback?.call();
   }
 }

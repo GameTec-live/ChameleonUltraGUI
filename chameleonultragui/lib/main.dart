@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
+import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
@@ -80,11 +81,55 @@ class ChameleonGUIState extends ChangeNotifier {
 
   // Flashing easter egg
   bool easterEgg = false;
+  dynamic _suppressedAutoReconnectPort;
 
   GlobalKey navigationRailKey = GlobalKey();
   Size? navigationRailSize;
 
   void changesMade() {
+    notifyListeners();
+  }
+
+  void onConnectorStateChanged() {
+    if (connector == null || !connector!.connected) {
+      communicator = null;
+      progress = null;
+    }
+    notifyListeners();
+  }
+
+  bool isAutoReconnectSuppressed(dynamic devicePort) {
+    return _suppressedAutoReconnectPort == devicePort;
+  }
+
+  void clearAutoReconnectSuppression([dynamic devicePort]) {
+    if (devicePort == null || _suppressedAutoReconnectPort == devicePort) {
+      _suppressedAutoReconnectPort = null;
+    }
+  }
+
+  void syncAutoReconnectSuppression(Iterable<dynamic> visiblePorts) {
+    if (_suppressedAutoReconnectPort == null) {
+      return;
+    }
+
+    for (final port in visiblePorts) {
+      if (port == _suppressedAutoReconnectPort) {
+        return;
+      }
+    }
+
+    _suppressedAutoReconnectPort = null;
+  }
+
+  Future<void> disconnect({bool manual = false}) async {
+    final suppressedPort = manual ? connector?.activeDevicePort : null;
+    await connector?.performDisconnect();
+    if (manual && suppressedPort != null) {
+      _suppressedAutoReconnectPort = suppressedPort;
+    }
+    communicator = null;
+    progress = null;
     notifyListeners();
   }
 
@@ -117,8 +162,7 @@ class _MainPageState extends State<MainPage> {
   void reassemble() async {
     // Disconnect on reload
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
-    await appState.connector?.performDisconnect();
-    appState.changesMade();
+    await appState.disconnect();
 
     super.reassemble();
   }
@@ -152,6 +196,8 @@ class _MainPageState extends State<MainPage> {
     appState._sharedPreferencesProvider = widget.sharedPreferencesProvider;
     appState.log ??= getLogger(appState);
     appState.connector ??= getConnector(appState);
+    appState.connector!.connectionStateCallback =
+        appState.onConnectorStateChanged;
 
     if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
       double width = MediaQuery.of(context).size.width;
@@ -164,15 +210,14 @@ class _MainPageState extends State<MainPage> {
 
     appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
 
-    print(appState.connector!.connected);
-
     Widget page; // Set Page
     if (!appState.connector!.connected &&
         selectedIndex != 0 &&
         selectedIndex != 2 &&
         selectedIndex != 5 &&
-        selectedIndex != 6) {
-      // If not connected, and not on home, settings or dev page, go to home page
+        selectedIndex != 6 &&
+        selectedIndex != 7) {
+      // If not connected, and not on home, tools, settings or dev page, go to home page
       selectedIndex = 0;
     }
 
@@ -206,9 +251,12 @@ class _MainPageState extends State<MainPage> {
         page = const WriteCardPage();
         break;
       case 5:
-        page = const SettingsMainPage();
+        page = const ToolsPage();
         break;
       case 6:
+        page = const SettingsMainPage();
+        break;
+      case 7:
         page = const DebugPage();
         break;
       default:
@@ -302,6 +350,11 @@ class _MainPageState extends State<MainPage> {
                                 icon: const Icon(Icons.system_update_alt),
                                 label: Text(
                                     AppLocalizations.of(context)!.write_card),
+                              ),
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.handyman),
+                                label:
+                                    Text(AppLocalizations.of(context)!.tools),
                               ),
                               NavigationRailDestination(
                                 icon: const Icon(Icons.settings),

@@ -1,13 +1,13 @@
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
-import 'dart:typed_data';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:chameleonultragui/helpers/general.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+import 'package:uuid/uuid.dart';
 
 class DictionaryEditMenu extends StatefulWidget {
   final Dictionary dictionary;
@@ -27,38 +27,11 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  String bytesToHex(Uint8List bytes) {
-    return bytes
-        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
-        .join()
-        .toUpperCase();
-  }
-
-  String dictToString(List<Uint8List> keys) {
-    String output = "";
-    for (var key in keys) {
-      output += "${bytesToHex(key)}\n";
-    }
-    return output.trim();
-  }
-
-  List<Uint8List> stringToDict(String input) {
-    List<Uint8List> keys = [];
-    for (var key in input.split("\n")) {
-      key = key.trim();
-      if (key.length == 12 && isValidHexString(key)) {
-        keys.add(hexToBytes(key));
-      }
-    }
-    return keys;
-  }
-
   @override
   void initState() {
     super.initState();
     nameController = TextEditingController(text: widget.dictionary.name);
-    keysController =
-        TextEditingController(text: dictToString(widget.dictionary.keys));
+    keysController = TextEditingController(text: widget.dictionary.toString());
     pickerColor = widget.dictionary.color;
     currentColor = widget.dictionary.color;
   }
@@ -77,12 +50,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
             children: [
               TextFormField(
                 controller: nameController,
-                validator: (String? value) {
-                  if (value == null || value.isEmpty) {
-                    return localizations.please_enter_name;
-                  }
-                  return null;
-                },
+                validator: (value) => validateName(value, localizations),
                 decoration: InputDecoration(
                     labelText: localizations.name,
                     hintText: localizations.enter_dict_name,
@@ -165,12 +133,13 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
               return;
             }
 
-            Dictionary dict = Dictionary(
-              id: widget.isNew ? null : widget.dictionary.id,
-              name: nameController.text,
-              keys: stringToDict(keysController.text),
-              color: currentColor,
-            );
+            Dictionary dict = Dictionary.fromString(keysController.text,
+                name: nameController.text, color: currentColor);
+            dict.id = widget.isNew ? Uuid().v4() : widget.dictionary.id;
+
+            if (dict.keys.isEmpty) {
+              return;
+            }
 
             var dictionaries =
                 appState.sharedPreferencesProvider.getDictionaries();

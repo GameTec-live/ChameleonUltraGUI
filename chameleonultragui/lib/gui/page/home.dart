@@ -1,11 +1,11 @@
 import 'package:chameleonultragui/gui/component/error_page.dart';
-import 'package:chameleonultragui/gui/menu/chameleon_settings.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/chameleon_settings.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/gui/component/slot_changer.dart';
@@ -53,8 +53,8 @@ class HomePageState extends State<HomePage> {
     // Checks that firmware supports all functions of current app
     // If not, prompt user to update firmware (as outdated firmware might break app)
 
-    int ultraCapability = ChameleonCommand.mf1CheckKeysOnBlock.value;
-    int liteCapability = ChameleonCommand.getAllSlotNicks.value;
+    int ultraCapability = ChameleonCommand.setIdteckEmulatorID.value;
+    int liteCapability = ChameleonCommand.setIdteckEmulatorID.value;
 
     var appState = context.read<ChameleonGUIState>();
     List<int> capabilities;
@@ -220,7 +220,7 @@ class HomePageState extends State<HomePage> {
               body: const Center(child: CircularProgressIndicator()),
             );
           } else if (snapshot.hasError) {
-            appState.connector!.performDisconnect();
+            appState.disconnect();
             return Scaffold(
               appBar: AppBar(
                 title: Text(localizations.home),
@@ -256,9 +256,7 @@ class HomePageState extends State<HomePage> {
                               children: [
                                 IconButton(
                                   onPressed: () async {
-                                    await appState.connector!
-                                        .performDisconnect();
-                                    appState.changesMade();
+                                    await appState.disconnect(manual: true);
                                   },
                                   icon: const Icon(Icons.close),
                                 ),

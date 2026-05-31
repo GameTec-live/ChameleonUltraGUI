@@ -1,10 +1,13 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/gui/menu/pages/logs_viewer.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/main.dart';
-import 'package:chameleonultragui/gui/menu/logs_viewer.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
@@ -35,8 +38,7 @@ class DebugPage extends StatelessWidget {
                 alignment: Alignment.topRight,
                 child: IconButton(
                   onPressed: () async {
-                    await appState.connector!.performDisconnect();
-                    appState.changesMade();
+                    await appState.disconnect(manual: true);
                   },
                   icon: const Icon(Icons.close),
                 ),
@@ -70,7 +72,7 @@ class DebugPage extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () async {
                     appState.sharedPreferencesProvider.setDebugLogging(true);
-                    await appState.connector!.performDisconnect();
+                    await appState.disconnect();
                     appState.log = null;
                     appState.connector = null;
                     appState.changesMade();
@@ -83,7 +85,7 @@ class DebugPage extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () async {
                     appState.sharedPreferencesProvider.setDebugLogging(false);
-                    await appState.connector!.performDisconnect();
+                    await appState.disconnect();
                     appState.log = null;
                     appState.connector = null;
                     appState.changesMade();
@@ -112,6 +114,41 @@ class DebugPage extends StatelessWidget {
                 },
                 child: Column(children: [
                   Text(localizations.copy_logs_to_clipboard),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await FileSaver.instance.saveAs(
+                        name:
+                            "log${DateTime.now().toIso8601String().replaceAll(':', '-')}",
+                        bytes: Uint8List.fromList(appState
+                            .sharedPreferencesProvider
+                            .getLogLines()
+                            .join("\n")
+                            .codeUnits),
+                        ext: 'txt',
+                        mimeType: MimeType.text);
+                  } on UnimplementedError catch (_) {
+                    String? outputFile = await FilePicker.platform.saveFile(
+                      dialogTitle: '${localizations.output_file}:',
+                      fileName:
+                          'log${DateTime.now().toIso8601String().replaceAll(':', '-')}.txt',
+                    );
+
+                    if (outputFile != null) {
+                      var file = File(outputFile);
+                      await file.writeAsBytes(Uint8List.fromList(appState
+                          .sharedPreferencesProvider
+                          .getLogLines()
+                          .join("\n")
+                          .codeUnits));
+                    }
+                  }
+                },
+                child: Column(children: [
+                  Text(localizations.export_logs_to_file),
                 ]),
               ),
               const SizedBox(height: 10),
@@ -279,13 +316,13 @@ class DebugPage extends StatelessWidget {
                   var darkside = DarksideDart(uid: 2374329723, items: []);
                   darkside.items.add(DarksideItemDart(
                       nt1: 913032415,
-                      ks1: 216745674933338888,
+                      ks1: int.parse('216745674933338888'),
                       par: 0,
                       nr: 0,
                       ar: 0));
                   darkside.items.add(DarksideItemDart(
                       nt1: 913032415,
-                      ks1: 1010230244403446283,
+                      ks1: int.parse('1010230244403446283'),
                       par: 0,
                       nr: 1,
                       ar: 0));
@@ -457,11 +494,13 @@ class DebugPage extends StatelessWidget {
                 onPressed: () async {
                   await appState.communicator!.setReaderDeviceMode(true);
                   var card = await appState.communicator!.scan14443aTag();
-                  appState.log!.d('Card UID: ${card.uid}');
-                  appState.log!.d('SAK: ${card.sak}');
-                  appState.log!.d('ATQA: ${card.atqa}');
-                  await appState.communicator!.setReaderDeviceMode(false);
-                  await appState.communicator!.setMf1AntiCollision(card);
+                  if (card != null) {
+                    appState.log!.d('Card UID: ${card.uid}');
+                    appState.log!.d('SAK: ${card.sak}');
+                    appState.log!.d('ATQA: ${card.atqa}');
+                    await appState.communicator!.setReaderDeviceMode(false);
+                    await appState.communicator!.setMf1AntiCollision(card);
+                  }
                 },
                 child: Column(children: [
                   Text(localizations.copy_uid),

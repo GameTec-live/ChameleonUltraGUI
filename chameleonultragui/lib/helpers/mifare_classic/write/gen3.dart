@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
@@ -51,20 +51,25 @@ class MifareClassicGen3WriteHelper extends MifareClassicGen2WriteHelper {
   @override
   Future<bool> writeBlockModifier(CardSave card, int block, Uint8List data,
       {bool tryBothKeys = false, bool useGenericKey = false}) async {
-    try {
-      if (block == 0) {
-        return writeGen3Block(card, data);
-      } else {
-        return writeBlock(block, data,
-            tryBothKeys: tryBothKeys, useGenericKey: useGenericKey);
-      }
-    } catch (_) {
-      return false;
+    for (int retry = 0; retry < 10; retry++) {
+      try {
+        await Future.delayed(const Duration(milliseconds: 50)); // Stability delay
+        if (block == 0) {
+          if (await writeGen3Block(card, data)) return true;
+        } else {
+          if (await writeBlock(block, data,
+              tryBothKeys: tryBothKeys, useGenericKey: useGenericKey)) {
+            return true;
+          }
+        }
+        await Future.delayed(const Duration(milliseconds: 150));
+      } catch (_) {}
     }
+
+    return false;
   }
 
   Future<bool> writeGen3Block(CardSave dump, Uint8List data) async {
-    CardData card = await communicator.scan14443aTag();
     // Try to write whole block
     await communicator.send14ARaw(
         Uint8List.fromList([0x90, 0xFB, 0xCC, 0xCC, 0x10, ...data]),
@@ -77,9 +82,11 @@ class MifareClassicGen3WriteHelper extends MifareClassicGen2WriteHelper {
         checkResponseCrc: false);
 
     // Card doesn't respond with anything, just compare UID
-    card = await communicator.scan14443aTag();
-    return bytesToHex(card.uid) ==
-            bytesToHex(data.sublist(0, card.uid.length)) ||
-        bytesToHexSpace(card.uid) == dump.uid;
+    await Future.delayed(const Duration(milliseconds: 500)); // Wait for card to reboot
+    CardData? card = await communicator.scan14443aTag();
+    return card != null &&
+            bytesToHex(card.uid) ==
+                bytesToHex(data.sublist(0, card.uid.length)) ||
+        card != null && bytesToHexSpace(card.uid) == dump.uid;
   }
 }

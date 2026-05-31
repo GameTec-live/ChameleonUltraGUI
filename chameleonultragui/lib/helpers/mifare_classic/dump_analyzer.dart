@@ -35,7 +35,7 @@ class MifareClassicDumpAnalyzer {
       String accessConditions, BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
 
-    if (accessConditions.length != 8) {
+    if (accessConditions.length != 4) {
       return {
         'error': localizations.invalid_access_conditions_length,
         'readable': false,
@@ -44,25 +44,14 @@ class MifareClassicDumpAnalyzer {
 
     try {
       List<int> bytes = [];
-      for (int i = 0; i < 4; i++) {
+      for (int i = 0; i < 2; i++) {
         bytes.add(
             int.parse(accessConditions.substring(i * 2, i * 2 + 2), radix: 16));
       }
 
-      int c1 = ((bytes[1] & 0x80) >> 7) |
-          ((bytes[2] & 0x08) >> 2) |
-          ((bytes[2] & 0x80) >> 5) |
-          ((bytes[0] & 0x08) << 0);
-
-      int c2 = ((bytes[1] & 0x08) >> 3) |
-          ((bytes[2] & 0x01) << 1) |
-          ((bytes[2] & 0x10) >> 2) |
-          ((bytes[0] & 0x01) << 3);
-
-      int c3 = ((bytes[1] & 0x80) >> 4) |
-          ((bytes[2] & 0x08) >> 1) |
-          ((bytes[2] & 0x80) >> 6) |
-          ((bytes[0] & 0x08) >> 1);
+      int c1 = ((bytes[0] >> 4) & 0x0F);
+      int c2 = (bytes[1] & 0x0F);
+      int c3 = ((bytes[1] >> 4) & 0x0F);
 
       Map<String, String> blockAccess = {};
 
@@ -103,17 +92,17 @@ class MifareClassicDumpAnalyzer {
       case 0:
         return '${localizations.read}: A/B, ${localizations.write}: A/B, ${localizations.inc}: A/B, ${localizations.dec}: A/B';
       case 1:
-        return '${localizations.read}: A/B, ${localizations.write}: -, ${localizations.inc}: -, ${localizations.dec}: A/B';
+        return '${localizations.read}: A/B, ${localizations.write}: B, ${localizations.inc}: -, ${localizations.dec}: -';
       case 2:
         return '${localizations.read}: A/B, ${localizations.write}: -, ${localizations.inc}: -, ${localizations.dec}: -';
       case 3:
-        return '${localizations.read}: B, ${localizations.write}: B, ${localizations.inc}: -, ${localizations.dec}: -';
+        return '${localizations.read}: A/B, ${localizations.write}: B, ${localizations.inc}: B, ${localizations.dec}: A/B';
       case 4:
-        return '${localizations.read}: A/B, ${localizations.write}: B, ${localizations.inc}: -, ${localizations.dec}: -';
+        return '${localizations.read}: A/B, ${localizations.write}: -, ${localizations.inc}: -, ${localizations.dec}: A/B';
       case 5:
         return '${localizations.read}: B, ${localizations.write}: -, ${localizations.inc}: -, ${localizations.dec}: -';
       case 6:
-        return '${localizations.read}: A/B, ${localizations.write}: B, ${localizations.inc}: B, ${localizations.dec}: A/B';
+        return '${localizations.read}: B, ${localizations.write}: B, ${localizations.inc}: -, ${localizations.dec}: -';
       case 7:
         return '${localizations.read}: -, ${localizations.write}: -, ${localizations.inc}: -, ${localizations.dec}: -';
       default:
@@ -128,17 +117,17 @@ class MifareClassicDumpAnalyzer {
       case 0:
         return '${localizations.key} A: ${localizations.read} -, ${localizations.write} A; ${localizations.acl}: ${localizations.read} A, ${localizations.write} -; ${localizations.key} B: ${localizations.read} A, ${localizations.write} A';
       case 1:
-        return '${localizations.key} A: ${localizations.read} -, ${localizations.write} A; ${localizations.acl}: ${localizations.read} A, ${localizations.write} A; ${localizations.key} B: ${localizations.read} A, ${localizations.write} A';
+        return '${localizations.key} A: ${localizations.read} -, ${localizations.write} B; ${localizations.acl}: ${localizations.read} A/B, ${localizations.write} -; ${localizations.key} B: ${localizations.read} -, ${localizations.write} B';
       case 2:
         return '${localizations.key} A: ${localizations.read} -, ${localizations.write} -; ${localizations.acl}: ${localizations.read} A, ${localizations.write} -; ${localizations.key} B: ${localizations.read} A, ${localizations.write} -';
       case 3:
-        return '${localizations.key} A: ${localizations.read} -, ${localizations.write} B; ${localizations.acl}: ${localizations.read} A/B, ${localizations.write} B; ${localizations.key} B: ${localizations.read} -, ${localizations.write} B';
-      case 4:
-        return '${localizations.key} A: ${localizations.read} -, ${localizations.write} B; ${localizations.acl}: ${localizations.read} A/B, ${localizations.write} -; ${localizations.key} B: ${localizations.read} -, ${localizations.write} B';
-      case 5:
-        return '${localizations.key} A: ${localizations.read} -, ${localizations.write} -; ${localizations.acl}: ${localizations.read} A/B, ${localizations.write} B; ${localizations.key} B: ${localizations.read} -, ${localizations.write} -';
-      case 6:
         return '${localizations.key} A: ${localizations.read} -, ${localizations.write} -; ${localizations.acl}: ${localizations.read} A/B, ${localizations.write} -; ${localizations.key} B: ${localizations.read} -, ${localizations.write} -';
+      case 4:
+        return '${localizations.key} A: ${localizations.read} -, ${localizations.write} A; ${localizations.acl}: ${localizations.read} A, ${localizations.write} A; ${localizations.key} B: ${localizations.read} A, ${localizations.write} A';
+      case 5:
+        return '${localizations.key} A: ${localizations.read} -, ${localizations.write} B; ${localizations.acl}: ${localizations.read} A/B, ${localizations.write} B; ${localizations.key} B: ${localizations.read} -, ${localizations.write} B';
+      case 6:
+        return '${localizations.key} A: ${localizations.read} -, ${localizations.write} -; ${localizations.acl}: ${localizations.read} A/B, ${localizations.write} B; ${localizations.key} B: ${localizations.read} -, ${localizations.write} -';
       case 7:
         return '${localizations.key} A: ${localizations.read} -, ${localizations.write} -; ${localizations.acl}: ${localizations.read} A/B, ${localizations.write} -; ${localizations.key} B: ${localizations.read} -, ${localizations.write} -';
       default:

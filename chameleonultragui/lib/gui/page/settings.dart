@@ -1,8 +1,10 @@
 import 'package:chameleonultragui/gui/component/developer_list.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/qr/settings.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/github.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -15,49 +17,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:chameleonultragui/gui/component/qrcode_viewer.dart';
 import 'package:crypto/crypto.dart';
-import 'package:chameleonultragui/gui/menu/qrcode_import.dart';
-import 'package:chameleonultragui/gui/menu/qrcode_settings.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/qr/import.dart';
+import 'package:chameleonultragui/gui/menu/pages/changelog_view.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
-//TODO: remove and use a language provided string
-const localeNameMap = {
-  "en": "English",
-  "zh": "中文",
-  "zh-TW": "臺灣正體",
-  "es": "Español",
-  "fr": "Français",
-  "de": "Deutsch",
-  "de-AT": "Deutsch (Österreich)",
-  "pt": "Português",
-  "pt-BR": "Português (Brasil)",
-  "ru": "Русский",
-  "it": "Italiano",
-  "ja": "日本語",
-  "ko": "한국어",
-  "nl": "Nederlands",
-  "ar": "العربية ",
-  "tr": "Türkçe",
-  "pl": "Polski",
-  "sv": "Svenska",
-  "da": "Dansk",
-  "no": "Norsk",
-  "fi": "Suomi",
-  "cs": "Čeština",
-  "hu": "Magyar",
-  "el": "Ελληνικά",
-  "he": "עברית ",
-  "th": "ไทย ",
-  "id": "Bahasa Indonesia",
-  "uk": "Українська",
-  "ro": "Română",
-  "ms": "Bahasa Melayu",
-  "hi": "हिन्दी",
-  "vi": "Tiếng Việt",
-  "ca": "Català",
-  "bg": "Български"
-};
+Future<String> loadLicense(String license) async {
+  return await rootBundle.loadString('assets/licenses/$license.md');
+}
 
 class SettingsMainPage extends StatefulWidget {
   const SettingsMainPage({super.key});
@@ -103,6 +72,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.settings),
@@ -230,12 +200,52 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     appState.changesMade();
                   },
                   items: AppLocalizations.supportedLocales.map((locale) {
+                    final localeLocalizations = lookupAppLocalizations(locale);
                     return DropdownMenuItem(
                         value: locale.toLanguageTag(),
-                        child: Text(localeNameMap[locale.toLanguageTag()] ??
-                            "Unknown"));
+                        child: Text(localeLocalizations.language_name));
                   }).toList(),
                 ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    localizations.auto_scan_devices,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 5),
+                  Switch(
+                    value:
+                        appState.sharedPreferencesProvider.getAutoScanEnabled(),
+                    onChanged: (value) async {
+                      appState.sharedPreferencesProvider
+                          .setAutoScanEnabled(value);
+                      appState.changesMade();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    localizations.auto_connect_first_device,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 5),
+                  Switch(
+                    value: appState.sharedPreferencesProvider
+                        .getAutoConnectFirstFoundDevice(),
+                    onChanged: (value) async {
+                      appState.sharedPreferencesProvider
+                          .setAutoConnectFirstFoundDevice(value);
+                      appState.changesMade();
+                    },
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
               Row(
@@ -524,6 +534,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                 Text(localizations.trademarks_mifare),
                                 const SizedBox(height: 10),
                                 Text(localizations.trademarks_em),
+                                const SizedBox(height: 10),
+                                Text(localizations.trademarks_hid),
                               ],
                             ));
                           }
@@ -539,6 +551,69 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                 ),
                 child: Text(localizations.about),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () async {
+                  Map<String, String> licenses = {
+                    'BSD-3-Clause': await loadLicense('BSD-3-Clause'),
+                    'GPL3': await loadLicense('GPL3'),
+                    'LGPL3': await loadLicense('LGPL3'),
+                    'MIT': await loadLicense('MIT')
+                  };
+
+                  // font.dart
+                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
+                        LicenseEntryWithLineBreaks(
+                          <String>['chinese_font_library'],
+                          licenses['BSD-3-Clause']!,
+                        ),
+                      ));
+
+                  // ported hardnested to Windows + MSVC, separation from proxmark3 code
+                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
+                        LicenseEntryWithLineBreaks(
+                          <String>['FlipperNestedRecovery'],
+                          licenses['LGPL3']!,
+                        ),
+                      ));
+
+                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
+                        LicenseEntryWithLineBreaks(
+                          <String>['proxmark3'],
+                          licenses['GPL3']!,
+                        ),
+                      ));
+
+                  // hardnested tables uncompressor
+                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
+                        LicenseEntryWithLineBreaks(
+                          <String>['minlzma'],
+                          licenses['MIT']!,
+                        ),
+                      ));
+
+                  if (context.mounted) {
+                    showLicensePage(context: context);
+                  }
+                },
+                child: Text(localizations.licenses),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => const ChangelogView(),
+                ),
+                child: Text(localizations.changelog),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () async {
+                  await launchUrl(Uri.parse(
+                      'https://crowdin.com/project/chameleonultragui'));
+                },
+                child: Text(localizations.help_translate),
               ),
               const SizedBox(height: 10),
               TextButton(

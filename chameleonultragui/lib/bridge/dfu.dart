@@ -149,6 +149,8 @@ class DFUCommunicator {
     _serialInstance = port;
   }
 
+  List<int> _receiveBuffer = [];
+
   Future<Uint8List?> sendCmd(DFUCommand cmd, Uint8List data) async {
     var packet = Uint8List.fromList([cmd.value, ...data]);
     if (!isBLE) {
@@ -160,6 +162,7 @@ class DFUCommunicator {
     }
 
     responseCompleter = Completer<List<int>>();
+    _receiveBuffer = [];
 
     if (!_serialInstance!.isOpen) {
       await _serialInstance!.open();
@@ -167,7 +170,20 @@ class DFUCommunicator {
     }
 
     // we initialize completer each time in DFU, because it being recreated on each message
-    await _serialInstance!.registerCallback(responseCompleter?.complete);
+    await _serialInstance!.registerCallback((Uint8List chunk) {
+      if (responseCompleter == null || responseCompleter!.isCompleted) return;
+
+      if (isBLE) {
+        responseCompleter!.complete(chunk.toList());
+        return;
+      }
+
+      _receiveBuffer.addAll(chunk);
+      if (_receiveBuffer.contains(Slip.slipByteEnd)) {
+        responseCompleter!.complete(List<int>.from(_receiveBuffer));
+        _receiveBuffer = [];
+      }
+    });
 
     log.d("Sending: ${bytesToHex(packet)}");
     await _serialInstance!.write(packet);
@@ -206,7 +222,6 @@ class DFUCommunicator {
   Future<dynamic> selectObject(int objectType) async {
     var response = (await sendCmd(DFUCommand.readObject,
         Uint8List.fromList([objectType, 0x00, 0x00, 0x00])))!;
-    print(response.buffer.lengthInBytes);
     var maxSize = ByteData.view(response.buffer).getUint32(0, Endian.little);
     var offset = ByteData.view(response.buffer).getUint32(4, Endian.little);
     var crc = ByteData.view(response.buffer).getUint32(8, Endian.little);
@@ -245,10 +260,8 @@ class DFUCommunicator {
   }
 
   Future<Map<String, int>> calculateChecksum() async {
-    print('checksum');
     var response = await sendCmd(DFUCommand.calcChecSum, Uint8List(0));
     if (response!.buffer.lengthInBytes < 8) {
-      print('checksum resend due to low bytes');
       response = await sendCmd(DFUCommand.calcChecSum, Uint8List(0));
     }
     var offset = ByteData.view(response!.buffer).getUint32(0, Endian.little);
@@ -332,14 +345,12 @@ class DFUCommunicator {
       offset += toTransmit.length;
       crc = calculateCRC32(toTransmit, crc) & 0xFFFFFFFF;
       currentPrn++;
-      print(currentPrn);
+
       if (currentPrn == prn) {
         await asyncSleep(1);
         response = await calculateChecksum();
         validateCrc();
         currentPrn = 0;
-      } else {
-        print('${currentPrn} is not yet ${prn}');
       }
     }
 

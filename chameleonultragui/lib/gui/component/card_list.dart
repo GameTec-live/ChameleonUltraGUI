@@ -1,4 +1,4 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
@@ -84,9 +84,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
+
     final results = cards.where((card) =>
         (((card.name.toLowerCase().contains(query.toLowerCase())) ||
-                (chameleonTagToString(card.tag)
+                (chameleonTagToString(card.tag, localizations)
                     .toLowerCase()
                     .contains(query.toLowerCase()))) &&
             ((filter == SearchFilter.all) ||
@@ -118,7 +120,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 subtitle: Text(
-                  chameleonTagToString(card.tag),
+                  chameleonTagToString(card.tag, localizations),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -133,9 +135,11 @@ class CardSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
+
     final results = cards.where((card) =>
         (((card.name.toLowerCase().contains(query.toLowerCase())) ||
-                (chameleonTagToString(card.tag)
+                (chameleonTagToString(card.tag, localizations)
                     .toLowerCase()
                     .contains(query.toLowerCase()))) &&
             ((filter == SearchFilter.all) ||
@@ -156,12 +160,12 @@ class CardSearchDelegate extends SearchDelegate<String> {
               color: card.color),
           title: Text(card.name),
           subtitle: Text(
-            chameleonCardToString(card),
+            chameleonCardToString(card, localizations),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           onTap: () async {
-            onTap(card, close);
+            onTap(card, close, localizations);
           },
         );
       },

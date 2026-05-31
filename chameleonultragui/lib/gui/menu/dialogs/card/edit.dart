@@ -1,8 +1,9 @@
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -29,9 +30,16 @@ class CardEditMenuState extends State<CardEditMenu> {
   TextEditingController sakController = TextEditingController();
   TextEditingController atqaController = TextEditingController();
   TextEditingController atsController = TextEditingController();
+
   TextEditingController ultralightVersionController = TextEditingController();
   TextEditingController ultralightSignatureController = TextEditingController();
   List<TextEditingController> ultralightCounterControllers = [];
+
+  TextEditingController hidTypeController = TextEditingController();
+  TextEditingController facilityCodeController = TextEditingController();
+  TextEditingController issueLevelController = TextEditingController();
+  TextEditingController oemController = TextEditingController();
+
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -53,8 +61,11 @@ class CardEditMenuState extends State<CardEditMenu> {
     ultralightSignatureController.text =
         bytesToHexSpace(widget.tagSave.extraData.ultralightSignature);
 
-    // Initialize counter controllers
     initCounterControllers();
+
+    if (selectedType == TagType.hidProx) {
+      initHIDFields();
+    }
 
     nameController.text = widget.tagSave.name;
     pickerColor = widget.tagSave.color;
@@ -96,18 +107,25 @@ class CardEditMenuState extends State<CardEditMenu> {
         false;
   }
 
-  List<Uint8List> updateCardData(List<Uint8List> originalData) {
-    List<Uint8List> updatedData = List.from(originalData);
+  List<Uint8List> updateSavedCardData({
+    required TagType selectedType,
+    required String uid,
+    required String sak,
+    required String atqa,
+    required List<Uint8List> originalData,
+  }) {
+    if (originalData.isEmpty) {
+      return originalData;
+    }
+
+    List<Uint8List> updatedData = List<Uint8List>.from(originalData);
 
     if (isMifareClassic(selectedType)) {
-      final uid = hexToBytes(uidController.text);
-      final sak = hexToBytes(sakController.text)[0];
-      final atqa = hexToBytes(atqaController.text);
-
-      updatedData[0] = mfClassicGenerateFirstBlock(uid, sak, atqa);
+      updatedData[0] = mfClassicGenerateFirstBlock(
+          hexToBytes(uid), hexToBytes(sak)[0], hexToBytes(atqa));
     } else if (isMifareUltralight(selectedType)) {
-      final uid = hexToBytes(uidController.text);
-      final newBlocks = mfUltralightGenerateFirstBlocks(uid, selectedType);
+      final newBlocks =
+          mfUltralightGenerateFirstBlocks(hexToBytes(uid), selectedType);
 
       for (int i = 0; i < newBlocks.length && i < updatedData.length; i++) {
         updatedData[i] = newBlocks[i];
@@ -115,6 +133,14 @@ class CardEditMenuState extends State<CardEditMenu> {
     }
 
     return updatedData;
+  }
+
+  bool canUpdateSavedCardData(CardSave tagSave, TagType selectedType) {
+    if (!(isMifareClassic(selectedType) || isMifareUltralight(selectedType))) {
+      return false;
+    }
+
+    return tagSave.data.isNotEmpty;
   }
 
   void initCounterControllers() {
@@ -133,6 +159,15 @@ class CardEditMenuState extends State<CardEditMenu> {
     }
   }
 
+  void initHIDFields() {
+    HIDCard hidCard = HIDCard.fromUID(widget.tagSave.uid);
+    uidController.text = bytesToHexSpace(hidCard.uid);
+    hidTypeController.text = hidCard.hidType.toString();
+    facilityCodeController.text = hidCard.facilityCode.toString();
+    issueLevelController.text = hidCard.issueLevel.toString();
+    oemController.text = hidCard.oem.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
@@ -148,15 +183,7 @@ class CardEditMenuState extends State<CardEditMenu> {
             children: [
               TextFormField(
                 controller: nameController,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return localizations.please_enter_name;
-                  }
-                  if (value.length > 19) {
-                    return localizations.too_long_name;
-                  }
-                  return null;
-                },
+                validator: (value) => validateName(value, localizations),
                 decoration: InputDecoration(
                     labelText: localizations.name,
                     hintText: localizations.enter_name_of_card,
@@ -224,7 +251,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                   return DropdownMenuItem<TagType>(
                     value: type,
                     child: Text(
-                      chameleonTagToString(type),
+                      chameleonTagToString(type, localizations),
                     ),
                   );
                 }).toList(),
@@ -232,7 +259,6 @@ class CardEditMenuState extends State<CardEditMenu> {
                   if (newValue! != TagType.unknown) {
                     setState(() {
                       selectedType = newValue;
-                      // Reinitialize counter controllers when tag type changes
                       initCounterControllers();
                     });
                   }
@@ -248,30 +274,9 @@ class CardEditMenuState extends State<CardEditMenu> {
                         labelText: localizations.uid,
                         hintText:
                             localizations.enter_something(localizations.uid)),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'[0-9A-Fa-f: ]'))
-                    ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return localizations
-                            .please_enter_something(localizations.uid);
-                      }
-                      if (!(value.replaceAll(" ", "").length == 14 ||
-                              value.replaceAll(" ", "").length == 8 ||
-                              value.replaceAll(" ", "").length == 20) &&
-                          chameleonTagToFrequency(selectedType) !=
-                              TagFrequency.lf) {
-                        return localizations.must_or(
-                            "4, 7", "10", localizations.uid);
-                      }
-                      if (value.replaceAll(" ", "").length != 10 &&
-                          chameleonTagToFrequency(selectedType) ==
-                              TagFrequency.lf) {
-                        return localizations.must_be(5, localizations.uid);
-                      }
-                      return null;
-                    },
+                    inputFormatters: hexFormatter,
+                    validator: (value) =>
+                        validateUid(value, localizations, selectedType),
                   ),
                   Visibility(
                       visible: chameleonTagToFrequency(selectedType) !=
@@ -284,26 +289,15 @@ class CardEditMenuState extends State<CardEditMenu> {
                               labelText: localizations.sak,
                               hintText: localizations
                                   .enter_something(localizations.sak)),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                                RegExp(r'[0-9A-Fa-f: ]'))
-                          ],
-                          validator: (value) {
-                            if (value == null ||
-                                value.isEmpty &&
-                                    chameleonTagToFrequency(selectedType) !=
-                                        TagFrequency.lf) {
-                              return localizations
-                                  .please_enter_something(localizations.sak);
-                            }
-                            if (value.replaceAll(" ", "").length != 2 &&
-                                chameleonTagToFrequency(selectedType) !=
-                                    TagFrequency.lf) {
-                              return localizations.must_be(
-                                  1, localizations.sak);
-                            }
-                            return null;
-                          },
+                          inputFormatters: hexFormatter,
+                          validator: (value) =>
+                              chameleonTagToFrequency(selectedType) ==
+                                      TagFrequency.lf
+                                  ? null
+                                  : validateHex(value, localizations,
+                                      exactBytes: 1,
+                                      fieldName: localizations.sak,
+                                      required: true),
                         ),
                         const SizedBox(height: 20),
                         TextFormField(
@@ -312,26 +306,15 @@ class CardEditMenuState extends State<CardEditMenu> {
                               labelText: localizations.atqa,
                               hintText: localizations
                                   .enter_something(localizations.atqa)),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                                RegExp(r'[0-9A-Fa-f: ]'))
-                          ],
-                          validator: (value) {
-                            if (value == null ||
-                                value.isEmpty &&
-                                    chameleonTagToFrequency(selectedType) !=
-                                        TagFrequency.lf) {
-                              return localizations
-                                  .please_enter_something(localizations.atqa);
-                            }
-                            if (value.replaceAll(" ", "").length != 4 &&
-                                chameleonTagToFrequency(selectedType) !=
-                                    TagFrequency.lf) {
-                              return localizations.must_be(
-                                  2, localizations.atqa);
-                            }
-                            return null;
-                          },
+                          inputFormatters: hexFormatter,
+                          validator: (value) =>
+                              chameleonTagToFrequency(selectedType) ==
+                                      TagFrequency.lf
+                                  ? null
+                                  : validateHex(value, localizations,
+                                      exactBytes: 2,
+                                      fieldName: localizations.atqa,
+                                      required: true),
                         ),
                         const SizedBox(height: 20),
                         TextFormField(
@@ -340,16 +323,9 @@ class CardEditMenuState extends State<CardEditMenu> {
                                 labelText: localizations.ats,
                                 hintText: localizations
                                     .enter_something(localizations.ats)),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9A-Fa-f: ]'))
-                            ],
-                            validator: (value) {
-                              if (value!.replaceAll(" ", "").length % 2 != 0) {
-                                return localizations.must_be_valid_hex;
-                              }
-                              return null;
-                            }),
+                            inputFormatters: hexFormatter,
+                            validator: (value) =>
+                                validateHex(value, localizations)),
                         if (isMifareUltralight(selectedType)) ...[
                           const SizedBox(height: 20),
                           TextFormField(
@@ -358,25 +334,11 @@ class CardEditMenuState extends State<CardEditMenu> {
                                   labelText: localizations.ultralight_version,
                                   hintText: localizations.enter_something(
                                       localizations.ultralight_version)),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9A-Fa-f: ]'))
-                              ],
-                              validator: (value) {
-                                if (value!.replaceAll(" ", "").length % 2 !=
-                                    0) {
-                                  return localizations.must_be_valid_hex;
-                                }
-
-                                if (value.isNotEmpty &&
-                                    value.replaceAll(" ", "").length != 16 &&
-                                    isMifareUltralight(selectedType)) {
-                                  return localizations.must_be(
-                                      8, localizations.ultralight_version);
-                                }
-
-                                return null;
-                              }),
+                              inputFormatters: hexFormatter,
+                              validator: (value) => validateHex(
+                                  value, localizations,
+                                  exactBytes: 8,
+                                  fieldName: localizations.ultralight_version)),
                           const SizedBox(height: 20),
                           TextFormField(
                               controller: ultralightSignatureController,
@@ -384,17 +346,9 @@ class CardEditMenuState extends State<CardEditMenu> {
                                   labelText: localizations.ultralight_signature,
                                   hintText: localizations.enter_something(
                                       localizations.ultralight_signature)),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9A-Fa-f: ]'))
-                              ],
-                              validator: (value) {
-                                if (value!.replaceAll(" ", "").length % 2 !=
-                                    0) {
-                                  return localizations.must_be_valid_hex;
-                                }
-                                return null;
-                              }),
+                              inputFormatters: hexFormatter,
+                              validator: (value) =>
+                                  validateHex(value, localizations)),
                           if (mfUltralightHasCounters(selectedType)) ...[
                             const SizedBox(height: 20),
                             ...ultralightCounterControllers
@@ -412,24 +366,81 @@ class CardEditMenuState extends State<CardEditMenu> {
                                           .ultralight_counter(index),
                                       hintText: localizations
                                           .ultralight_counter_value),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return localizations.counter_value_empty;
-                                    }
-                                    int? counterValue = int.tryParse(value);
-                                    if (counterValue == null ||
-                                        counterValue < 0 ||
-                                        counterValue > 16777215) {
-                                      return localizations.counter_value_range;
-                                    }
-                                    return null;
-                                  },
+                                  validator: (value) => validateIntRange(
+                                      value, localizations,
+                                      min: 0,
+                                      max: 16777215,
+                                      emptyMessage:
+                                          localizations.counter_value_empty),
                                 ),
                               );
                             }),
                           ],
                         ]
-                      ]))
+                      ])),
+                  if (selectedType == TagType.hidProx)
+                    Column(children: [
+                      const SizedBox(height: 20),
+                      DropdownButton<int>(
+                        value: int.tryParse(hidTypeController.text) ?? 1,
+                        items: List.generate(30, (index) => index + 1)
+                            .map<DropdownMenuItem<int>>((int type) {
+                          return DropdownMenuItem<int>(
+                            value: type,
+                            child: Text(getNameForHIDProxType(type)),
+                          );
+                        }).toList(),
+                        onChanged: (int? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              hidTypeController.text = newValue.toString();
+                            });
+                          }
+                        },
+                        isExpanded: true,
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: facilityCodeController,
+                        decoration: InputDecoration(
+                            labelText: localizations.facility_code,
+                            hintText: localizations
+                                .enter_something(localizations.facility_code)),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: (value) => validateIntRange(
+                            value, localizations,
+                            min: 0, max: 4294967295),
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: issueLevelController,
+                        decoration: InputDecoration(
+                            labelText: localizations.issue_level,
+                            hintText: localizations
+                                .enter_something(localizations.issue_level)),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: (value) => validateIntRange(
+                            value, localizations,
+                            min: 0, max: 255),
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: oemController,
+                        decoration: InputDecoration(
+                            labelText: "OEM",
+                            hintText: localizations.enter_something('OEM')),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: (value) => validateIntRange(
+                            value, localizations,
+                            min: 0, max: 65535),
+                      ),
+                    ])
                 ]),
               )
             ],
@@ -452,12 +463,44 @@ class CardEditMenuState extends State<CardEditMenu> {
             List<Uint8List> cardData = widget.tagSave.data;
 
             if (hasDataChanged() &&
-                (isMifareClassic(selectedType) ||
-                    isMifareUltralight(selectedType))) {
+                canUpdateSavedCardData(widget.tagSave, selectedType)) {
               bool shouldUpdateData = await showUpdateDataDialog(context);
               if (shouldUpdateData) {
-                cardData = updateCardData(widget.tagSave.data);
+                cardData = updateSavedCardData(
+                  selectedType: selectedType,
+                  uid: uidController.text,
+                  sak: sakController.text,
+                  atqa: atqaController.text,
+                  originalData: widget.tagSave.data,
+                );
               }
+            }
+
+            String finalUid;
+            if (selectedType == TagType.hidProx) {
+              try {
+                int hidType = int.parse(hidTypeController.text);
+                int facilityCode = int.parse(facilityCodeController.text);
+                int issueLevel = int.parse(issueLevelController.text);
+                int oem = int.parse(oemController.text);
+
+                Uint8List uid =
+                    hexToBytes(uidController.text.replaceAll(' ', ''));
+
+                HIDCard hidCard = HIDCard(
+                  hidType: hidType,
+                  facilityCode: facilityCode,
+                  uid: uid,
+                  issueLevel: issueLevel,
+                  oem: oem,
+                );
+
+                finalUid = hidCard.toString();
+              } catch (e) {
+                finalUid = bytesToHexSpace(hexToBytes(uidController.text));
+              }
+            } else {
+              finalUid = bytesToHexSpace(hexToBytes(uidController.text));
             }
 
             var tag = CardSave(
@@ -467,7 +510,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                     ? widget.tagSave.sak
                     : hexToBytes(sakController.text)[0],
                 atqa: hexToBytes(atqaController.text),
-                uid: bytesToHexSpace(hexToBytes(uidController.text)),
+                uid: finalUid,
                 extraData: CardSaveExtra(
                   ultralightSignature:
                       hexToBytes(ultralightSignatureController.text),

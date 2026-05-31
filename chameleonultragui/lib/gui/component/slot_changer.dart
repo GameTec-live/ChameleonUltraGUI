@@ -1,7 +1,7 @@
 import 'package:chameleonultragui/gui/component/error_page.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/main.dart';
 
 class SlotChanger extends StatefulWidget {

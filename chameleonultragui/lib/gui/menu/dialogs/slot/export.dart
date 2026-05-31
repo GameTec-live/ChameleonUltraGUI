@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:flutter/material.dart';
@@ -36,16 +36,48 @@ class SlotExportMenu extends StatefulWidget {
 class SlotExportMenuState extends State<SlotExportMenu> {
   TagFrequency exportFrequency = TagFrequency.unknown;
 
-  Future<CardSave> rebuildCardSaveFromSlot(TagFrequency frequency) async {
+  Future<CardSave?> rebuildCardSaveFromSlot(TagFrequency frequency) async {
     var appState = context.read<ChameleonGUIState>();
 
     if (frequency == TagFrequency.lf) {
-      return CardSave(
-        uid:
-            bytesToHexSpace(await appState.communicator!.getEM410XEmulatorID()),
-        name: widget.names.lf,
-        tag: widget.slotTypes.lf,
-      );
+      if (isEM410X(widget.slotTypes.lf)) {
+        return CardSave(
+          uid: bytesToHexSpace(
+              await appState.communicator!.getEM410XEmulatorID()),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
+      } else if (widget.slotTypes.lf == TagType.hidProx) {
+        return CardSave(
+          uid: (await appState.communicator!.getHIDProxEmulatorID()).toString(),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
+      } else if (widget.slotTypes.lf == TagType.viking) {
+        return CardSave(
+          uid: (await appState.communicator!.getVikingEmulatorID()).toString(),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
+      } else if (widget.slotTypes.lf == TagType.pac) {
+        return CardSave(
+          uid: (await appState.communicator!.getPacEmulatorID()).toString(),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
+      } else if (widget.slotTypes.lf == TagType.ioProx) {
+        return CardSave(
+          uid: (await appState.communicator!.getIoProxEmulatorID()).toString(),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
+      } else if (widget.slotTypes.lf == TagType.idteck) {
+        return CardSave(
+          uid: (await appState.communicator!.getIdteckEmulatorID()).toString(),
+          name: widget.names.lf,
+          tag: widget.slotTypes.lf,
+        );
+      }
     } else {
       CardData data = await appState.communicator!.mf1GetAntiCollData();
 
@@ -143,15 +175,22 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         );
       }
     }
+
+    return null;
   }
 
-  Future<void> onTap(CardSave card, dynamic close) async {
+  Future<void> onTap(
+      CardSave card, dynamic close, AppLocalizations localizations) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     close(context, card.name);
 
     CardSave modify = card;
-    CardSave newCard =
+    CardSave? newCard =
         await rebuildCardSaveFromSlot(chameleonTagToFrequency(card.tag));
+
+    if (newCard == null) {
+      return;
+    }
 
     // modify only changeable values
     modify.uid = newCard.uid;
@@ -218,7 +257,12 @@ class SlotExportMenuState extends State<SlotExportMenu> {
       actions: [
         ElevatedButton(
           onPressed: () async {
-            CardSave cardSave = await rebuildCardSaveFromSlot(exportFrequency);
+            CardSave? cardSave = await rebuildCardSaveFromSlot(exportFrequency);
+
+            if (cardSave == null) {
+              return;
+            }
+
             Uint8List export = const Utf8Encoder().convert(cardSave.toJson());
             try {
               await FileSaver.instance.saveAs(
@@ -245,8 +289,8 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         ),
         ElevatedButton(
           onPressed: () async {
-            CardSave tag = await rebuildCardSaveFromSlot(exportFrequency);
-            if (context.mounted) {
+            CardSave? tag = await rebuildCardSaveFromSlot(exportFrequency);
+            if (context.mounted && tag != null) {
               await showDialog(
                 context: context,
                 builder: (BuildContext dialogContext) {

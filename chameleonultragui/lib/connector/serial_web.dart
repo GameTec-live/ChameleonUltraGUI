@@ -37,6 +37,9 @@ class SerialAdapter extends AbstractSerial {
           )
           .toDart;
 
+      final info = port!.getInfo();
+      isDFU = info.usbVendorId == 0x1915;
+
       portName = "Web Serial";
       connected = true;
       connectionType = ConnectionType.usb;
@@ -52,7 +55,7 @@ class SerialAdapter extends AbstractSerial {
   }
 
   Future<void> _startReceiving() async {
-    while (port!.readable != null && _keepReading) {
+    while (port?.readable != null && _keepReading) {
       reader = port!.readable!.getReader() as web.ReadableStreamDefaultReader;
 
       while (_keepReading) {
@@ -75,11 +78,11 @@ class SerialAdapter extends AbstractSerial {
         } catch (e) {
           log.e(e);
           await performDisconnect();
-          break;
+          return;
         }
       }
 
-      reader!.releaseLock();
+      reader?.releaseLock();
     }
   }
 
@@ -107,8 +110,6 @@ class SerialAdapter extends AbstractSerial {
     isOpen = false;
     connectionType = ConnectionType.none;
     device = ChameleonDevice.none;
-
-    print('done disconnect');
 
     return true;
   }

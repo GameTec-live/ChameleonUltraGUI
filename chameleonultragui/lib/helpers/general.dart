@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/gui/page/read_card.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
@@ -140,7 +142,7 @@ int calculateCRC32(List<int> toTransmit, int crc) {
   return crc;
 }
 
-String chameleonTagToString(TagType tag) {
+String chameleonTagToString(TagType tag, AppLocalizations localizations) {
   if (tag == TagType.mifareMini) {
     return "Mifare Mini";
   } else if (tag == TagType.mifare1K) {
@@ -151,6 +153,24 @@ String chameleonTagToString(TagType tag) {
     return "Mifare Classic 4K";
   } else if (tag == TagType.em410X) {
     return "EM410X";
+  } else if (tag == TagType.em410X16) {
+    return "EM410X (16)";
+  } else if (tag == TagType.em410X32) {
+    return "EM410X (32)";
+  } else if (tag == TagType.em410X64) {
+    return "EM410X (64)";
+  } else if (tag == TagType.em410XElectra) {
+    return "EM410X Electra";
+  } else if (tag == TagType.hidProx) {
+    return "HID Prox";
+  } else if (tag == TagType.viking) {
+    return "Viking";
+  } else if (tag == TagType.pac) {
+    return "PAC/Stanley";
+  } else if (tag == TagType.ioProx) {
+    return "ioProx";
+  } else if (tag == TagType.idteck) {
+    return "IDTECK";
   } else if (tag == TagType.ntag210) {
     return "NTAG210";
   } else if (tag == TagType.ntag212) {
@@ -170,12 +190,12 @@ String chameleonTagToString(TagType tag) {
   } else if (tag == TagType.ultralight21) {
     return "Ultralight EV1 (41)";
   } else {
-    return "Unknown";
+    return localizations.unknown;
   }
 }
 
-String chameleonCardToString(CardSave card) {
-  String name = chameleonTagToString(card.tag);
+String chameleonCardToString(CardSave card, AppLocalizations localizations) {
+  String name = chameleonTagToString(card.tag, localizations);
 
   if (chameleonTagSaveCheckForMifareClassicEV1(card)) {
     name += " EV1";
@@ -185,57 +205,17 @@ String chameleonCardToString(CardSave card) {
 }
 
 TagType numberToChameleonTag(int type) {
-  if (type == TagType.mifareMini.value) {
-    return TagType.mifareMini;
-  } else if (type == TagType.mifare1K.value) {
-    return TagType.mifare1K;
-  } else if (type == TagType.mifare2K.value) {
-    return TagType.mifare2K;
-  } else if (type == TagType.mifare4K.value) {
-    return TagType.mifare4K;
-  } else if (type == TagType.em410X.value) {
-    return TagType.em410X;
-  } else if (type == TagType.ntag210.value) {
-    return TagType.ntag210;
-  } else if (type == TagType.ntag212.value) {
-    return TagType.ntag212;
-  } else if (type == TagType.ntag213.value) {
-    return TagType.ntag213;
-  } else if (type == TagType.ntag215.value) {
-    return TagType.ntag215;
-  } else if (type == TagType.ntag216.value) {
-    return TagType.ntag216;
-  } else if (type == TagType.ultralight.value) {
-    return TagType.ultralight;
-  } else if (type == TagType.ultralight11.value) {
-    return TagType.ultralight11;
-  } else if (type == TagType.ultralight21.value) {
-    return TagType.ultralight21;
-  } else if (type == TagType.ultralightC.value) {
-    return TagType.ultralightC;
-  } else {
-    return TagType.unknown;
+  for (var value in TagType.values) {
+    if (value.value == type) {
+      return value;
+    }
   }
+
+  return TagType.unknown;
 }
 
 List<TagType> getTagTypes() {
-  return [
-    TagType.mifare1K,
-    TagType.mifare2K,
-    TagType.mifare4K,
-    TagType.mifareMini,
-    TagType.em410X,
-    TagType.ultralight,
-    TagType.ultralightC,
-    TagType.ultralight11,
-    TagType.ultralight21,
-    TagType.ntag210,
-    TagType.ntag212,
-    TagType.ntag213,
-    TagType.ntag215,
-    TagType.ntag216,
-    TagType.unknown
-  ];
+  return TagType.values;
 }
 
 TagType getTagTypeByValue(int value) {
@@ -274,7 +254,7 @@ String numToVerCode(int versionCode) {
 }
 
 TagFrequency chameleonTagToFrequency(TagType tag) {
-  if (tag == TagType.em410X) {
+  if (getTagTypesByFrequency(TagFrequency.lf).contains(tag)) {
     return TagFrequency.lf;
   } else {
     return TagFrequency.hf;
@@ -386,6 +366,10 @@ AnimationSetting getAnimationModeType(int value) {
     return AnimationSetting.full;
   } else if (value == 1) {
     return AnimationSetting.minimal;
+  } else if (value == 2) {
+    return AnimationSetting.none;
+  } else if (value == 3) {
+    return AnimationSetting.symmetric;
   } else {
     return AnimationSetting.none;
   }
@@ -464,7 +448,18 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.ultralight21
     ];
   } else if (frequency == TagFrequency.lf) {
-    return [TagType.em410X];
+    return [
+      TagType.em410X,
+      TagType.em410X16,
+      TagType.em410X32,
+      TagType.em410X64,
+      TagType.em410XElectra,
+      TagType.hidProx,
+      TagType.viking,
+      TagType.pac,
+      TagType.ioProx,
+      TagType.idteck
+    ];
   }
 
   return [TagType.unknown];
@@ -511,4 +506,145 @@ TagType getTagTypeByDumpSize(int size) {
   }
 
   return TagType.unknown;
+}
+
+String getNameForHIDProxType(int type) {
+  return [
+    "HID H10301 26-bit",
+    "Indala 26-bit",
+    "Indala 27-bit",
+    "Indala ASC 27-bit",
+    "Tecom 27-bit",
+    "2804 Wiegand 28-bit",
+    "Indala 29-bit",
+    "ATS Wiegand 30-bit",
+    "HID ADT 31-bit",
+    "HID Check Point 32-bit",
+    "HID Hewlett-Packard 32-bit",
+    "Kastle 32-bit",
+    "Indala/Kantech KFS 32-bit",
+    "Wiegand 32-bit",
+    "HID D10202 33-bit",
+    "HID H10306 34-bit",
+    "Honeywell/Northern N10002 34-bit",
+    "Indala Optus 34-bit",
+    "Cardkey Smartpass 34-bit",
+    "BQT 34-bit",
+    "HID Corporate 1000 35-bit Std",
+    "HID KeyScan 36-bit",
+    "HID Simplex 36-bit",
+    "HID 36-bit Siemens",
+    "HID H10320 37-bit BCD",
+    "HID H10302 37-bit huge ID",
+    "HID H10304 37-bit",
+    "HID P10004 37-bit PCSC",
+    "HID Generic 37-bit",
+    "PointGuard MDI 37-bit",
+  ][type - 1];
+}
+
+LFCard getLFCardFromUID(TagType type, String uid) {
+  if (type == TagType.hidProx) {
+    return HIDCard.fromUID(uid);
+  }
+
+  if (type == TagType.viking) {
+    return VikingCard.fromUID(uid);
+  }
+
+  if (type == TagType.pac) {
+    return PacCard.fromUID(uid);
+  }
+
+  if (type == TagType.ioProx) {
+    return IoProxCard.fromUID(uid);
+  }
+
+  if (type == TagType.idteck) {
+    return IdteckCard.fromUID(uid);
+  }
+
+  return EM410XCard.fromUID(uid, type: type);
+}
+
+int uidSizeForLfTag(TagType type) {
+  if (type == TagType.em410XElectra) {
+    return 13;
+  } else if (isEM410X(type)) {
+    return 5;
+  } else if (type == TagType.hidProx) {
+    return 5;
+  } else if (type == TagType.viking) {
+    return 4;
+  } else if (type == TagType.pac) {
+    return 8;
+  } else if (type == TagType.ioProx) {
+    return 16;
+  } else if (type == TagType.idteck) {
+    return 8;
+  }
+
+  return 0;
+}
+
+bool isEM410X(TagType type) {
+  return [
+    TagType.em410X,
+    TagType.em410X16,
+    TagType.em410X32,
+    TagType.em410X64,
+    TagType.em410XElectra
+  ].contains(type);
+}
+
+Future<(HFCardInfo, MifareClassicInfo, MifareUltralightInfo)> readHFInfo(
+    BuildContext context, dynamic updateMifareClassicRecovery) async {
+  var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+  var localizations = AppLocalizations.of(context)!;
+
+  HFCardInfo hfInfo = HFCardInfo();
+  MifareClassicInfo mfcInfo = MifareClassicInfo();
+  MifareUltralightInfo mfuInfo = MifareUltralightInfo();
+
+  if (!await appState.communicator!.isReaderDeviceMode()) {
+    await appState.communicator!.setReaderDeviceMode(true);
+  }
+
+  CardData? card = await appState.communicator!.scan14443aTag();
+
+  if (card == null) {
+    hfInfo.cardExist = false;
+    return (hfInfo, mfcInfo, mfuInfo);
+  }
+
+  try {
+    TagType type = TagType.unknown;
+
+    if (!await appState.communicator!.detectMf1Support()) {
+      (type, mfuInfo) =
+          await performMifareUltralightScan(appState.communicator!, mfuInfo);
+    } else {
+      if (context.mounted) {
+        (type, mfcInfo) = await performMifareClassicScan(appState.communicator!,
+            mfcInfo, context, updateMifareClassicRecovery);
+      }
+    }
+
+    hfInfo.uid = bytesToHexSpace(card.uid);
+    hfInfo.sak = card.sak.toRadixString(16).padLeft(2, '0').toUpperCase();
+    hfInfo.atqa = bytesToHexSpace(card.atqa);
+    hfInfo.ats =
+        (card.ats.isNotEmpty) ? bytesToHexSpace(card.ats) : localizations.no;
+    hfInfo.type = type;
+    mfcInfo.state = (mfcInfo.type != MifareClassicType.none)
+        ? MifareClassicState.checkKeys
+        : MifareClassicState.none;
+    hfInfo.tech = chameleonTagToString(type, localizations) +
+        (mfcInfo.isEV1 ? " EV1" : "");
+  } catch (e) {
+    appState.log!.e(e.toString());
+    hfInfo.cardExist = false;
+  }
+
+  return (hfInfo, mfcInfo, mfuInfo);
 }

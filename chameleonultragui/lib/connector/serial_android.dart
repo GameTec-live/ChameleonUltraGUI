@@ -12,12 +12,14 @@ class SerialAdapter extends AbstractSerial {
   late ble.SerialAdapter bleSerial = ble.SerialAdapter(log: log);
   late serial.SerialAdapter mobileSerial = serial.SerialAdapter(log: log);
   Future<bool>? permissionRequestFuture;
-
   @override
   // ignore: overridden_fields
   String name = "Android";
 
-  SerialAdapter({required super.log});
+  SerialAdapter({required super.log}) {
+    bleSerial.connectionStateCallback = notifyConnectionStateChanged;
+    mobileSerial.connectionStateCallback = notifyConnectionStateChanged;
+  }
 
   @override
   Future<bool> performDisconnect() async {
@@ -36,7 +38,8 @@ class SerialAdapter extends AbstractSerial {
     List<Chameleon> output = [];
 
     output.addAll(await mobileSerial.availableChameleons(onlyDFU));
-    if (await checkPermissions()) {
+    hasAllPermissions = await checkPermissions();
+    if (hasAllPermissions) {
       output.addAll(await bleSerial.availableChameleons(onlyDFU));
     }
 
@@ -93,6 +96,11 @@ class SerialAdapter extends AbstractSerial {
     await bleSerial.registerCallback(callback);
     await mobileSerial.registerCallback(callback);
   }
+
+  @override
+  dynamic get activeDevicePort => (bleSerial.connected)
+      ? bleSerial.activeDevicePort
+      : mobileSerial.activeDevicePort;
 
   @override
   ChameleonDevice get device =>

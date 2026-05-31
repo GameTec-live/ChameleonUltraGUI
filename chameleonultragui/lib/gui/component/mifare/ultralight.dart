@@ -5,6 +5,7 @@ import 'package:chameleonultragui/gui/component/error_message.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:collection/collection.dart';
@@ -79,6 +80,23 @@ class CardReaderState extends State<MifareUltralightHelper> {
       setState(() {
         progress = page / mfUltralightGetPagesCount(widget.hfInfo.type);
       });
+    }
+
+    bool hasValidData = false;
+    for (var block in cardData) {
+      if (block.isNotEmpty) {
+        hasValidData = true;
+      }
+    }
+
+    if (!hasValidData) {
+      setState(() {
+        progress = 0;
+        cardData = [];
+        error = localizations.failed_to_read_block;
+        state = MifareUltralightState.none;
+      });
+      return;
     }
 
     version =
@@ -173,31 +191,16 @@ class CardReaderState extends State<MifareUltralightHelper> {
           Form(
             key: formKey,
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: keyController,
-                  decoration: InputDecoration(
-                      labelText: localizations.key,
-                      hintMaxLines: 4,
-                      hintText: localizations.enter_something(
-                          localizations.ultralight_key_prompt)),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f: ]'))
-                  ],
-                  validator: (String? value) {
-                    if (value!.isNotEmpty && !isValidHexString(value)) {
-                      return localizations.must_be_valid_hex;
-                    }
-
-                    if (value.length != 8) {
-                      return localizations.must_be(4, localizations.key);
-                    }
-
-                    return null;
-                  },
-                ),
-              ],
+            child: TextFormField(
+              controller: keyController,
+              decoration: InputDecoration(
+                  labelText: localizations.key,
+                  hintMaxLines: 4,
+                  hintText: localizations
+                      .enter_something(localizations.ultralight_key_prompt)),
+              inputFormatters: hexFormatter,
+              validator: (value) => validateHex(value, localizations,
+                  exactBytes: 4, fieldName: localizations.key),
             ),
           ),
           const SizedBox(height: 8),

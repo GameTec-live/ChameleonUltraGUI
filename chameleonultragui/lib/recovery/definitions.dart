@@ -97,3 +97,18 @@ class Mfkey32Dart {
       required this.nr1Enc,
       required this.ar1Enc});
 }
+
+class Mfkey64Dart {
+  int uid;
+  int nt;
+  int nrEnc;
+  int arEnc;
+  int atEnc;
+
+  Mfkey64Dart(
+      {required this.uid,
+      required this.nt,
+      required this.nrEnc,
+      required this.arEnc,
+      required this.atEnc});
+}

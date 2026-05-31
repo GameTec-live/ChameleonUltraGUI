@@ -24,3 +24,7 @@ Future<List<int>> staticEncryptedNested(
 Future<List<int>> mfkey32(Mfkey32Dart mfkey) async {
   return [];
 }
+
+Future<List<int>> mfkey64(Mfkey64Dart mfkey) async {
+  return [];
+}

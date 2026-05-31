@@ -1,9 +1,10 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -20,9 +21,12 @@ class ChameleonSettings extends StatefulWidget {
 }
 
 class ChameleonSettingsState extends State<ChameleonSettings> {
+  late final Future<DeviceSettings> _settingsFuture;
+
   @override
   void initState() {
     super.initState();
+    _settingsFuture = getSettingsData();
   }
 
   Future<DeviceSettings> getSettingsData() async {
@@ -40,8 +44,9 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     var localizations = AppLocalizations.of(context)!;
     var scaffoldMessenger = ScaffoldMessenger.of(context);
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    final GlobalKey<FormState> wakeTimeFormKey = GlobalKey<FormState>();
     return FutureBuilder(
-        future: getSettingsData(),
+        future: _settingsFuture,
         builder: (BuildContext buildContext, AsyncSnapshot snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return AlertDialog(
@@ -56,6 +61,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
             DeviceSettings settings = snapshot.data;
             TextEditingController bleKeyController =
                 TextEditingController(text: settings.key);
+            TextEditingController wakeTimeController = TextEditingController(
+                text: settings.wakeTimeSeconds?.toString() ?? "");
             return AlertDialog(
                 title: Text(localizations.device_settings),
                 content: SingleChildScrollView(
@@ -160,23 +167,74 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         items: [
                           localizations.full,
                           localizations.mini,
-                          localizations.none
+                          localizations.none,
+                          localizations.symmetric
                         ],
                         selectedValue: settings.animation.value,
                         onChange: (int index) async {
-                          var animation = AnimationSetting.full;
-                          if (index == 1) {
-                            animation = AnimationSetting.minimal;
-                          } else if (index == 2) {
-                            animation = AnimationSetting.none;
-                          }
+                          var animation = getAnimationModeType(index);
 
                           await appState.communicator!
                               .setAnimationMode(animation);
                           await appState.communicator!.saveSettings();
+                          settings.animation = animation;
                           setState(() {});
                           appState.changesMade();
                         }),
+                    ...(settings.wakeTimeSeconds != null)
+                        ? [
+                            const SizedBox(height: 10),
+                            Text(localizations.wake_time_after_button_press),
+                            const SizedBox(height: 10),
+                            Form(
+                                key: wakeTimeFormKey,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                          controller: wakeTimeController,
+                                          keyboardType: TextInputType.number,
+                                          validator: (value) =>
+                                              validateIntRange(
+                                                value,
+                                                localizations,
+                                                min: 5,
+                                                max: 60,
+                                              ),
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter
+                                                .digitsOnly
+                                          ],
+                                          decoration: InputDecoration(
+                                            labelText: localizations.wake_time,
+                                            hintText: "5-60",
+                                          )),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        if (!wakeTimeFormKey.currentState!
+                                            .validate()) {
+                                          return;
+                                        }
+
+                                        await appState.communicator!
+                                            .setSleepTimeout(int.parse(
+                                                wakeTimeController.text));
+                                        await appState.communicator!
+                                            .saveSettings();
+                                        settings.wakeTimeSeconds =
+                                            int.parse(wakeTimeController.text);
+                                        setState(() {});
+                                        appState.changesMade();
+                                      },
+                                      child: Text(localizations.save),
+                                    ),
+                                  ],
+                                )),
+                          ]
+                        : [],
                     const SizedBox(height: 10),
                     Text("${localizations.button_config}:"),
                     const SizedBox(height: 7),
@@ -207,6 +265,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setButtonConfig(ButtonType.a, mode);
                           await appState.communicator!.saveSettings();
+                          settings.aPress = mode;
                           setState(() {});
                           appState.changesMade();
                         }),
@@ -238,6 +297,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setButtonConfig(ButtonType.b, mode);
                           await appState.communicator!.saveSettings();
+                          settings.bPress = mode;
                           setState(() {});
                           appState.changesMade();
                         }),
@@ -272,6 +332,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setLongButtonConfig(ButtonType.a, mode);
                           await appState.communicator!.saveSettings();
+                          settings.aLongPress = mode;
                           setState(() {});
                           appState.changesMade();
                         }),
@@ -303,6 +364,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setLongButtonConfig(ButtonType.b, mode);
                           await appState.communicator!.saveSettings();
+                          settings.bLongPress = mode;
                           setState(() {});
                           appState.changesMade();
                         }),
@@ -321,6 +383,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           await appState.communicator!
                               .setBLEPairEnabled(index == 0);
                           await appState.communicator!.saveSettings();
+                          settings.pairingEnabled = index == 0;
                           setState(() {});
                           appState.changesMade();
                         }),
@@ -388,28 +451,11 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                       child: TextFormField(
                                           controller: bleKeyController,
                                           maxLength: 6,
-                                          validator: (value) {
-                                            if (value == null ||
-                                                value.isEmpty ||
-                                                value.length != 6 ||
-                                                double.tryParse(value) ==
-                                                    null) {
-                                              return localizations
-                                                  .pin_must_be_6_digits;
-                                            }
-
-                                            if (0 < double.tryParse(value)! &&
-                                                double.tryParse(value)! >
-                                                    0xFFFFFFFF) {
-                                              return localizations
-                                                  .pin_must_be_6_digits;
-                                            }
-
-                                            return null;
-                                          },
+                                          validator: (value) => validateBlePin(
+                                              value, localizations),
                                           inputFormatters: [
-                                            FilteringTextInputFormatter.allow(
-                                                RegExp(r'[0-9]'))
+                                            FilteringTextInputFormatter
+                                                .digitsOnly
                                           ],
                                           decoration: InputDecoration(
                                             labelText: localizations.ble_pin,

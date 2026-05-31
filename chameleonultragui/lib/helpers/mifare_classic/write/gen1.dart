@@ -41,27 +41,36 @@ class MifareClassicGen1WriteHelper extends BaseMifareClassicWriteHelper {
 
   @override
   Future<bool> writeBlock(int block, Uint8List data) async {
-    await communicator.send14ARaw(Uint8List(1)); // reset
+    for (int retry = 0; retry < 5; retry++) {
+      try {
+        await communicator.send14ARaw(Uint8List(1)); // reset
 
-    await communicator.send14ARaw(Uint8List.fromList([0x40]),
-        bitLen: 7,
-        appendCrc: false,
-        autoSelect: false,
-        checkResponseCrc: false,
-        keepRfField: true);
+        await communicator.send14ARaw(Uint8List.fromList([0x40]),
+            bitLen: 7,
+            appendCrc: false,
+            autoSelect: false,
+            checkResponseCrc: false,
+            keepRfField: true);
 
-    await communicator.send14ARaw(Uint8List.fromList([0x43]),
-        appendCrc: false,
-        autoSelect: false,
-        checkResponseCrc: false,
-        keepRfField: true);
+        await communicator.send14ARaw(Uint8List.fromList([0x43]),
+            appendCrc: false,
+            autoSelect: false,
+            checkResponseCrc: false,
+            keepRfField: true);
 
-    await communicator.send14ARaw(Uint8List.fromList([0xA0, block]),
-        autoSelect: false, keepRfField: true, checkResponseCrc: false);
+        await communicator.send14ARaw(Uint8List.fromList([0xA0, block]),
+            autoSelect: false, keepRfField: true, checkResponseCrc: false);
 
-    Uint8List output = await communicator.send14ARaw(data,
-        autoSelect: false, keepRfField: true, checkResponseCrc: false);
+        Uint8List output = await communicator.send14ARaw(data,
+            autoSelect: false, keepRfField: true, checkResponseCrc: false);
 
-    return output.isNotEmpty && output[0] == 0x0a;
+        if (output.isNotEmpty && output[0] == 0x0a) {
+          return true;
+        }
+        await Future.delayed(const Duration(milliseconds: 100));
+      } catch (_) {}
+    }
+
+    return false;
   }
 }

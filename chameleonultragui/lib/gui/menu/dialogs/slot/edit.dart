@@ -1,9 +1,10 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
-import 'package:chameleonultragui/gui/menu/mfkey32.dart';
+import 'package:chameleonultragui/gui/menu/pages/mfkey32.dart';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/services.dart';
@@ -41,12 +42,20 @@ class SlotEditMenuState extends State<SlotEditMenu> {
   TextEditingController sakController = TextEditingController();
   TextEditingController atqaController = TextEditingController();
   TextEditingController atsController = TextEditingController();
+
   TextEditingController ultralightVersionController = TextEditingController();
   TextEditingController ultralightSignatureController = TextEditingController();
   List<TextEditingController> ultralightCounterControllers = [];
+
+  TextEditingController hidTypeController = TextEditingController();
+  TextEditingController facilityCodeController = TextEditingController();
+  TextEditingController issueLevelController = TextEditingController();
+  TextEditingController oemController = TextEditingController();
+
   TagType? selectedType;
   TagType previousTagType = TagType.unknown;
   EmulatorSettings? emulatorSettings;
+  Mf1PrngType? mf1PrngType;
   int detectionCount = 0;
 
   @override
@@ -54,6 +63,17 @@ class SlotEditMenuState extends State<SlotEditMenu> {
     super.initState();
     selectedType = widget.slotType;
     nameController.text = widget.name;
+  }
+
+  String getMf1PrngLabel(Mf1PrngType type, AppLocalizations localizations) {
+    switch (type) {
+      case Mf1PrngType.static:
+        return localizations.prng_type_static;
+      case Mf1PrngType.weak:
+        return localizations.prng_type_weak;
+      case Mf1PrngType.hard:
+        return localizations.prng_type_hard;
+    }
   }
 
   Future<void> updateInfo() async {
@@ -65,10 +85,42 @@ class SlotEditMenuState extends State<SlotEditMenu> {
 
     await appState.communicator!.activateSlot(widget.slot);
 
-    if (selectedType == TagType.em410X) {
+    if (isEM410X(selectedType!)) {
       try {
         uidController.text =
             bytesToHexSpace(await appState.communicator!.getEM410XEmulatorID());
+      } catch (_) {}
+    } else if (selectedType! == TagType.hidProx) {
+      try {
+        HIDCard hidCard = await appState.communicator!.getHIDProxEmulatorID();
+        uidController.text = bytesToHexSpace(hidCard.uid);
+        hidTypeController.text = hidCard.hidType.toString();
+        facilityCodeController.text = hidCard.facilityCode.toString();
+        issueLevelController.text = hidCard.issueLevel.toString();
+        oemController.text = hidCard.oem.toString();
+      } catch (_) {}
+    } else if (selectedType! == TagType.viking) {
+      try {
+        VikingCard vikingCard =
+            await appState.communicator!.getVikingEmulatorID();
+        uidController.text = bytesToHexSpace(vikingCard.uid);
+      } catch (_) {}
+    } else if (selectedType! == TagType.pac) {
+      try {
+        PacCard pacCard = await appState.communicator!.getPacEmulatorID();
+        uidController.text = bytesToHexSpace(pacCard.uid);
+      } catch (_) {}
+    } else if (selectedType! == TagType.ioProx) {
+      try {
+        IoProxCard ioProxCard =
+            await appState.communicator!.getIoProxEmulatorID();
+        uidController.text = bytesToHexSpace(ioProxCard.uid);
+      } catch (_) {}
+    } else if (selectedType! == TagType.idteck) {
+      try {
+        IdteckCard idteckCard =
+            await appState.communicator!.getIdteckEmulatorID();
+        uidController.text = bytesToHexSpace(idteckCard.uid);
       } catch (_) {}
     } else if (isMifareClassic(selectedType!) ||
         isMifareUltralight(selectedType!)) {
@@ -86,6 +138,12 @@ class SlotEditMenuState extends State<SlotEditMenu> {
           if (emulatorSettings!.isDetectionEnabled) {
             detectionCount =
                 await appState.communicator!.getMf1DetectionCount();
+          }
+
+          try {
+            mf1PrngType = await appState.communicator!.getMf1PrngType();
+          } catch (_) {
+            mf1PrngType = null;
           }
         } else if (isMifareUltralight(selectedType!)) {
           Uint8List version =
@@ -107,6 +165,14 @@ class SlotEditMenuState extends State<SlotEditMenu> {
               controller.text = counterData.$1.toString();
               ultralightCounterControllers.add(controller);
             }
+          }
+
+          emulatorSettings =
+              await appState.communicator!.mf0NtagGetEmulatorConfig();
+
+          if (emulatorSettings!.isDetectionEnabled) {
+            detectionCount =
+                await appState.communicator!.mf0NtagGetDetectionCount();
           }
         }
       } catch (_) {}
@@ -135,9 +201,38 @@ class SlotEditMenuState extends State<SlotEditMenu> {
       }
     }
 
-    if (selectedType == TagType.em410X) {
+    if (isEM410X(selectedType!)) {
       await appState.communicator!
           .setEM410XEmulatorID(hexToBytes(uidController.text));
+    } else if (selectedType! == TagType.hidProx) {
+      try {
+        int hidType = int.parse(hidTypeController.text);
+        int facilityCode = int.parse(facilityCodeController.text);
+        int issueLevel = int.parse(issueLevelController.text);
+        int oem = int.parse(oemController.text);
+
+        Uint8List uid = hexToBytes(uidController.text.replaceAll(' ', ''));
+
+        HIDCard hidCard = HIDCard(
+          hidType: hidType,
+          facilityCode: facilityCode,
+          uid: uid,
+          issueLevel: issueLevel,
+          oem: oem,
+        );
+
+        await appState.communicator!
+            .setHIDProxEmulatorID(hexToBytes(hidCard.toString()));
+      } catch (_) {}
+    } else if (selectedType! == TagType.pac) {
+      await appState.communicator!.setPacEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
+    } else if (selectedType! == TagType.ioProx) {
+      await appState.communicator!.setIoProxEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
+    } else if (selectedType! == TagType.idteck) {
+      await appState.communicator!.setIdteckEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (isMifareClassic(selectedType!) ||
         isMifareUltralight(selectedType!)) {
       var cardData = CardData(
@@ -188,15 +283,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
             children: [
               TextFormField(
                 controller: nameController,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return localizations.please_enter_name;
-                  }
-                  if (value.length > 19) {
-                    return localizations.too_long_name;
-                  }
-                  return null;
-                },
+                validator: (value) => validateName(value, localizations),
               ),
               const SizedBox(height: 8),
               DropdownButton<TagType>(
@@ -208,7 +295,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                   return DropdownMenuItem<TagType>(
                     value: type,
                     child: Text(
-                      chameleonTagToString(type),
+                      chameleonTagToString(type, localizations),
                     ),
                   );
                 }).toList(),
@@ -244,36 +331,11 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                     labelText: localizations.uid,
                                     hintText: localizations
                                         .enter_something(localizations.uid)),
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp(r'[0-9A-Fa-f: ]'))
-                                ],
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return localizations.please_enter_something(
-                                        localizations.uid);
-                                  }
-                                  if (!(value.replaceAll(" ", "").length ==
-                                              14 ||
-                                          value.replaceAll(" ", "").length ==
-                                              8 ||
-                                          value.replaceAll(" ", "").length ==
-                                              20) &&
-                                      chameleonTagToFrequency(selectedType ??
-                                              widget.slotType) !=
-                                          TagFrequency.lf) {
-                                    return localizations.must_or(
-                                        "4, 7", "10", localizations.uid);
-                                  }
-                                  if (value.replaceAll(" ", "").length != 10 &&
-                                      chameleonTagToFrequency(selectedType ??
-                                              widget.slotType) ==
-                                          TagFrequency.lf) {
-                                    return localizations.must_be(
-                                        5, localizations.uid);
-                                  }
-                                  return null;
-                                },
+                                inputFormatters: hexFormatter,
+                                validator: (value) => validateUid(
+                                    value,
+                                    localizations,
+                                    selectedType ?? widget.slotType),
                               ),
                               Visibility(
                                   visible: chameleonTagToFrequency(
@@ -289,35 +351,19 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                             hintText:
                                                 localizations.enter_something(
                                                     localizations.sak)),
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter.allow(
-                                              RegExp(r'[0-9A-Fa-f: ]'))
-                                        ],
-                                        validator: (value) {
-                                          if (value == null ||
-                                              value.isEmpty &&
-                                                  chameleonTagToFrequency(
-                                                          selectedType ??
-                                                              widget
-                                                                  .slotType) !=
-                                                      TagFrequency.lf) {
-                                            return localizations
-                                                .please_enter_something(
-                                                    localizations.sak);
-                                          }
-                                          if (value
-                                                      .replaceAll(" ", "")
-                                                      .length !=
-                                                  2 &&
-                                              chameleonTagToFrequency(
-                                                      selectedType ??
-                                                          widget.slotType) !=
-                                                  TagFrequency.lf) {
-                                            return localizations.must_be(
-                                                1, localizations.sak);
-                                          }
-                                          return null;
-                                        },
+                                        inputFormatters: hexFormatter,
+                                        validator: (value) =>
+                                            chameleonTagToFrequency(
+                                                        selectedType ??
+                                                            widget.slotType) ==
+                                                    TagFrequency.lf
+                                                ? null
+                                                : validateHex(
+                                                    value, localizations,
+                                                    exactBytes: 1,
+                                                    fieldName:
+                                                        localizations.sak,
+                                                    required: true),
                                       ),
                                       const SizedBox(height: 20),
                                       TextFormField(
@@ -327,35 +373,19 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                             hintText:
                                                 localizations.enter_something(
                                                     localizations.atqa)),
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter.allow(
-                                              RegExp(r'[0-9A-Fa-f: ]'))
-                                        ],
-                                        validator: (value) {
-                                          if (value == null ||
-                                              value.isEmpty &&
-                                                  chameleonTagToFrequency(
-                                                          selectedType ??
-                                                              widget
-                                                                  .slotType) !=
-                                                      TagFrequency.lf) {
-                                            return localizations
-                                                .please_enter_something(
-                                                    localizations.atqa);
-                                          }
-                                          if (value
-                                                      .replaceAll(" ", "")
-                                                      .length !=
-                                                  4 &&
-                                              chameleonTagToFrequency(
-                                                      selectedType ??
-                                                          widget.slotType) !=
-                                                  TagFrequency.lf) {
-                                            return localizations.must_be(
-                                                2, localizations.atqa);
-                                          }
-                                          return null;
-                                        },
+                                        inputFormatters: hexFormatter,
+                                        validator: (value) =>
+                                            chameleonTagToFrequency(
+                                                        selectedType ??
+                                                            widget.slotType) ==
+                                                    TagFrequency.lf
+                                                ? null
+                                                : validateHex(
+                                                    value, localizations,
+                                                    exactBytes: 2,
+                                                    fieldName:
+                                                        localizations.atqa,
+                                                    required: true),
                                       ),
                                       const SizedBox(height: 20),
                                       TextFormField(
@@ -365,22 +395,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                               hintText:
                                                   localizations.enter_something(
                                                       localizations.ats)),
-                                          inputFormatters: [
-                                            FilteringTextInputFormatter.allow(
-                                                RegExp(r'[0-9A-Fa-f: ]'))
-                                          ],
-                                          validator: (value) {
-                                            if (value!
-                                                        .replaceAll(" ", "")
-                                                        .length %
-                                                    2 !=
-                                                0) {
-                                              return localizations
-                                                  .must_be_valid_hex;
-                                            }
-                                            return null;
-                                          }),
-                                      // Ultralight-specific fields
+                                          inputFormatters: hexFormatter,
+                                          validator: (value) => validateHex(
+                                              value, localizations)),
                                       if (isMifareUltralight(
                                           selectedType!)) ...[
                                         const SizedBox(height: 20),
@@ -393,17 +410,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                 hintText: localizations
                                                     .enter_something(localizations
                                                         .ultralight_version)),
-                                            validator: (value) {
-                                              if (value!
-                                                          .replaceAll(" ", "")
-                                                          .length %
-                                                      2 !=
-                                                  0) {
-                                                return localizations
-                                                    .must_be_valid_hex;
-                                              }
-                                              return null;
-                                            }),
+                                            validator: (value) => validateHex(
+                                                value, localizations)),
                                         const SizedBox(height: 20),
                                         TextFormField(
                                             controller:
@@ -414,18 +422,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                 hintText: localizations
                                                     .enter_something(localizations
                                                         .ultralight_signature)),
-                                            validator: (value) {
-                                              if (value!
-                                                          .replaceAll(" ", "")
-                                                          .length %
-                                                      2 !=
-                                                  0) {
-                                                return localizations
-                                                    .must_be_valid_hex;
-                                              }
-                                              return null;
-                                            }),
-                                        // Counter fields
+                                            validator: (value) => validateHex(
+                                                value, localizations)),
                                         if (mfUltralightHasCounters(
                                             selectedType!)) ...[
                                           const SizedBox(height: 20),
@@ -447,22 +445,13 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                             index),
                                                     hintText: localizations
                                                         .ultralight_counter_value),
-                                                validator: (value) {
-                                                  if (value == null ||
-                                                      value.isEmpty) {
-                                                    return localizations
-                                                        .counter_value_empty;
-                                                  }
-                                                  int? counterValue =
-                                                      int.tryParse(value);
-                                                  if (counterValue == null ||
-                                                      counterValue < 0 ||
-                                                      counterValue > 16777215) {
-                                                    return localizations
-                                                        .counter_value_range;
-                                                  }
-                                                  return null;
-                                                },
+                                                validator: (value) =>
+                                                    validateIntRange(
+                                                        value, localizations,
+                                                        min: 0,
+                                                        max: 16777215,
+                                                        emptyMessage: localizations
+                                                            .counter_value_empty),
                                               ),
                                             );
                                           }),
@@ -514,6 +503,28 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                         ? true
                                                         : false);
                                               }),
+                                          if (mf1PrngType != null) ...[
+                                            const SizedBox(height: 8),
+                                            Text(localizations.prng_type),
+                                            const SizedBox(height: 8),
+                                            ToggleButtonsWrapper(
+                                                items: Mf1PrngType.values
+                                                    .map((type) =>
+                                                        getMf1PrngLabel(type,
+                                                            localizations))
+                                                    .toList(),
+                                                selectedValue:
+                                                    mf1PrngType!.value,
+                                                onChange: (int index) async {
+                                                  Mf1PrngType nextType =
+                                                      Mf1PrngType.values[index];
+                                                  setState(() {
+                                                    mf1PrngType = nextType;
+                                                  });
+                                                  await appState.communicator!
+                                                      .setMf1PrngType(nextType);
+                                                }),
+                                          ],
                                           const SizedBox(height: 8),
                                           Text(localizations.use_from_block),
                                           const SizedBox(height: 8),
@@ -626,29 +637,282 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                 if (index == 0) {
                                                   await appState.communicator!
                                                       .setMf1WriteMode(
-                                                          MifareClassicWriteMode
+                                                          MifareWriteMode
                                                               .normal);
                                                 } else if (index == 1) {
                                                   await appState.communicator!
                                                       .setMf1WriteMode(
-                                                          MifareClassicWriteMode
+                                                          MifareWriteMode
                                                               .denied);
                                                 } else if (index == 2) {
                                                   await appState.communicator!
                                                       .setMf1WriteMode(
-                                                          MifareClassicWriteMode
+                                                          MifareWriteMode
                                                               .deceive);
                                                 } else if (index == 3) {
                                                   await appState.communicator!
                                                       .setMf1WriteMode(
-                                                          MifareClassicWriteMode
+                                                          MifareWriteMode
+                                                              .shadow);
+                                                }
+                                              }),
+                                        ]),
+                                      if (isMifareUltralight(selectedType!) &&
+                                          emulatorSettings != null)
+                                        Column(children: [
+                                          const SizedBox(height: 20),
+                                          Text(
+                                            localizations
+                                                .mifare_ultralight_emulator_settings,
+                                            textScaler:
+                                                const TextScaler.linear(1.1),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(localizations.mode_gen2),
+                                          const SizedBox(height: 8),
+                                          ToggleButtonsWrapper(
+                                              items: [
+                                                localizations.yes,
+                                                localizations.no
+                                              ],
+                                              selectedValue:
+                                                  emulatorSettings!.isGen2
+                                                      ? 0
+                                                      : 1,
+                                              onChange: (int index) async {
+                                                await appState.communicator!
+                                                    .mf0SetMagicMode(index == 0
+                                                        ? true
+                                                        : false);
+                                              }),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                              localizations.password_detection),
+                                          const SizedBox(height: 8),
+                                          ToggleButtonsWrapper(
+                                              items: [
+                                                localizations.yes,
+                                                localizations.no
+                                              ],
+                                              selectedValue: emulatorSettings!
+                                                      .isDetectionEnabled
+                                                  ? 0
+                                                  : 1,
+                                              onChange: (int index) async {
+                                                await appState.communicator!
+                                                    .mf0NtagSetDetectionEnable(
+                                                        index == 0
+                                                            ? true
+                                                            : false);
+                                              }),
+                                          ...(emulatorSettings!
+                                                  .isDetectionEnabled)
+                                              ? [
+                                                  ...(detectionCount == 0)
+                                                      ? [
+                                                          const SizedBox(
+                                                              height: 8),
+                                                          Text(
+                                                              localizations
+                                                                  .present_cham_reader_keys,
+                                                              textScaler:
+                                                                  const TextScaler
+                                                                      .linear(
+                                                                      0.8))
+                                                        ]
+                                                      : [
+                                                          const SizedBox(
+                                                              height: 8),
+                                                          Text(
+                                                              '${localizations.passwords_detected}: $detectionCount',
+                                                              textScaler:
+                                                                  const TextScaler
+                                                                      .linear(
+                                                                      0.9)),
+                                                          const SizedBox(
+                                                              height: 8),
+                                                          Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                TextButton(
+                                                                    onPressed:
+                                                                        () async {
+                                                                      List<String>
+                                                                          passwords =
+                                                                          await appState
+                                                                              .communicator!
+                                                                              .mf0NtagGetDetectionLog(0);
+
+                                                                      if (!context
+                                                                          .mounted) {
+                                                                        return;
+                                                                      }
+
+                                                                      showDialog(
+                                                                        context:
+                                                                            context,
+                                                                        builder:
+                                                                            (BuildContext
+                                                                                context) {
+                                                                          TextEditingController
+                                                                              passwordController =
+                                                                              TextEditingController();
+                                                                          passwordController.text = passwords
+                                                                              .join('\n')
+                                                                              .toUpperCase();
+
+                                                                          return AlertDialog(
+                                                                            title:
+                                                                                Text(localizations.detected_passwords),
+                                                                            content:
+                                                                                SizedBox(
+                                                                              width: double.maxFinite,
+                                                                              child: TextFormField(
+                                                                                maxLines: null,
+                                                                                controller: passwordController,
+                                                                                readOnly: true,
+                                                                                style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
+                                                                              ),
+                                                                            ),
+                                                                            actions: [
+                                                                              TextButton(
+                                                                                onPressed: () {
+                                                                                  Navigator.of(context).pop();
+                                                                                },
+                                                                                child: Text(localizations.close),
+                                                                              ),
+                                                                            ],
+                                                                          );
+                                                                        },
+                                                                      );
+                                                                    },
+                                                                    child: Row(
+                                                                      children: [
+                                                                        const Icon(
+                                                                            Icons.visibility),
+                                                                        Text(localizations
+                                                                            .view_passwords),
+                                                                      ],
+                                                                    )),
+                                                              ]),
+                                                        ],
+                                                ]
+                                              : [
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                      localizations
+                                                          .enable_password_detection,
+                                                      textScaler:
+                                                          const TextScaler
+                                                              .linear(0.8))
+                                                ],
+                                          const SizedBox(height: 8),
+                                          Text(localizations.write_mode),
+                                          const SizedBox(height: 8),
+                                          ToggleButtonsWrapper(
+                                              items: [
+                                                localizations.normal,
+                                                localizations.decline,
+                                                localizations.deceive,
+                                                localizations.shadow
+                                              ],
+                                              selectedValue: emulatorSettings!
+                                                  .writeMode.value,
+                                              onChange: (int index) async {
+                                                if (index == 0) {
+                                                  await appState.communicator!
+                                                      .mf0NtagSetWriteMode(
+                                                          MifareWriteMode
+                                                              .normal);
+                                                } else if (index == 1) {
+                                                  await appState.communicator!
+                                                      .mf0NtagSetWriteMode(
+                                                          MifareWriteMode
+                                                              .denied);
+                                                } else if (index == 2) {
+                                                  await appState.communicator!
+                                                      .mf0NtagSetWriteMode(
+                                                          MifareWriteMode
+                                                              .deceive);
+                                                } else if (index == 3) {
+                                                  await appState.communicator!
+                                                      .mf0NtagSetWriteMode(
+                                                          MifareWriteMode
                                                               .shadow);
                                                 }
                                               }),
                                         ]),
                                     ],
                                   )),
-                            ])
+                            ]),
+                            if (selectedType == TagType.hidProx)
+                              Column(children: [
+                                const SizedBox(height: 20),
+                                DropdownButton<int>(
+                                  value:
+                                      int.tryParse(hidTypeController.text) ?? 1,
+                                  items: List.generate(30, (index) => index + 1)
+                                      .map<DropdownMenuItem<int>>((int type) {
+                                    return DropdownMenuItem<int>(
+                                      value: type,
+                                      child: Text(getNameForHIDProxType(type)),
+                                    );
+                                  }).toList(),
+                                  onChanged: (int? newValue) {
+                                    if (newValue != null) {
+                                      setState(() {
+                                        hidTypeController.text =
+                                            newValue.toString();
+                                      });
+                                    }
+                                  },
+                                  isExpanded: true,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: facilityCodeController,
+                                  decoration: InputDecoration(
+                                      labelText: localizations.facility_code,
+                                      hintText: localizations.enter_something(
+                                          localizations.facility_code)),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly
+                                  ],
+                                  validator: (value) => validateIntRange(
+                                      value, localizations,
+                                      min: 0, max: 4294967295),
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: issueLevelController,
+                                  decoration: InputDecoration(
+                                      labelText: localizations.issue_level,
+                                      hintText: localizations.enter_something(
+                                          localizations.issue_level)),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly
+                                  ],
+                                  validator: (value) => validateIntRange(
+                                      value, localizations,
+                                      min: 0, max: 255),
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: oemController,
+                                  decoration: InputDecoration(
+                                      labelText: "OEM",
+                                      hintText:
+                                          localizations.enter_something('OEM')),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly
+                                  ],
+                                  validator: (value) => validateIntRange(
+                                      value, localizations,
+                                      min: 0, max: 65535),
+                                ),
+                              ])
                           ]));
                     }
                   })

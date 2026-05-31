@@ -1,424 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
+import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:logger/logger.dart';
-
-enum ChameleonCommand {
-  // basic commands
-  getAppVersion(1000),
-  changeDeviceMode(1001),
-  getDeviceMode(1002),
-  getGitVersion(1017),
-  getBatteryCharge(1025),
-
-  // slot
-  setActiveSlot(1003),
-  setSlotTagType(1004),
-  setSlotDataDefault(1005),
-  setSlotEnable(1006),
-  setSlotTagNick(1007),
-  getSlotTagNick(1008),
-  saveSlotNicks(1009),
-  getActiveSlot(1018),
-  getSlotInfo(1019),
-  getEnabledSlots(1023),
-  deleteSlotInfo(1024),
-  getAllSlotNicks(1038),
-
-  // bootloader
-  enterBootloader(1010),
-
-  // device info
-  getDeviceChipID(1011),
-  getDeviceBLEAddress(1012),
-
-  // settings
-  saveSettings(1013),
-  resetSettings(1014),
-
-  // animation
-  setAnimationMode(1015),
-  getAnimationMode(1016),
-
-  factoryReset(1020), // WARNING: ERASES ALL
-  getDeviceType(1033),
-  getDeviceSettings(1034),
-  getDeviceCapabilities(1035),
-
-  // button config
-  getButtonPressConfig(1026),
-  setButtonPressConfig(1027),
-  getLongButtonPressConfig(1028),
-  setLongButtonPressConfig(1029),
-
-  // BLE
-  bleSetConnectKey(1030),
-  bleGetConnectKey(1031),
-  bleClearBondedDevices(1032),
-  bleGetPairEnable(1036),
-  bleSetPairEnable(1037),
-
-  // hf reader commands
-  scan14ATag(2000),
-  mf1SupportDetect(2001),
-  mf1NTLevelDetect(2002),
-  mf1StaticNestedAcquire(2003),
-  mf1DarksideAcquire(2004),
-  mf1NTDistanceDetect(2005),
-  mf1NestedAcquire(2006),
-  mf1CheckKey(2007),
-  mf1ReadBlock(2008),
-  mf1WriteBlock(2009),
-  mf1ManipulateValueBlock(2011),
-  mf1CheckKeysOfSectors(2012), // not implemented
-  mf1HardNestedAcquire(2013),
-  mf1StaticEncryptedNestedAcquire(2014),
-  mf1CheckKeysOnBlock(2015), // not implemented
-  hf14ARawCommand(2010),
-
-  // lf commands
-  scanEM410Xtag(3000),
-  writeEM410XtoT5577(3001),
-
-  mf1LoadBlockData(4000),
-  mf1SetAntiCollision(4001),
-
-  // mfkey32
-  mf1SetDetectionEnable(4004),
-  mf1GetDetectionCount(4005),
-  mf1GetDetectionResult(4006),
-  mf1GetDetectionStatus(4007),
-
-  // emulator settings
-  mf1GetEmulatorConfig(4009),
-  mf1GetGen1aMode(4010),
-  mf1SetGen1aMode(4011),
-  mf1GetGen2Mode(4012),
-  mf1SetGen2Mode(4013),
-  mf1GetFirstBlockColl(4014),
-  mf1SetFirstBlockColl(4015),
-  mf1GetWriteMode(4016),
-  mf1SetWriteMode(4017),
-
-  mf0NtagGetUidMagicMode(4019),
-  mf0NtagSetUidMagicMode(4020),
-  mf0NtagReadEmuPageData(4021),
-  mf0NtagWriteEmuPageData(4022),
-  mf0NtagGetVersionData(4023),
-  mf0NtagSetVersionData(4024),
-  mf0NtagGetSignatureData(4025),
-  mf0NtagSetSignatureData(4026),
-  mf0NtagGetCounterData(4027),
-  mf0NtagSetCounterData(4028),
-  mf0NtagResetAuthCount(4029),
-  mf0NtagGetPageCount(4030),
-
-  // read slot info
-  mf1GetBlockData(4008),
-  mf1GetAntiCollData(4018),
-
-  // lf emulator
-  setEM410XemulatorID(5000),
-  getEM410XemulatorID(5001);
-
-  const ChameleonCommand(this.value);
-  final int value;
-}
-
-enum TagType {
-  unknown(0),
-  em410X(100),
-  mifareMini(1000),
-  mifare1K(1001),
-  mifare2K(1002),
-  mifare4K(1003),
-  ntag210(1107),
-  ntag212(1108),
-  ntag213(1100),
-  ntag215(1101),
-  ntag216(1102),
-  ultralight(1103),
-  ultralightC(1104),
-  ultralight11(1105),
-  ultralight21(1106);
-
-  const TagType(this.value);
-  final int value;
-}
-
-enum TagFrequency {
-  unknown(0),
-  lf(1),
-  hf(2);
-
-  const TagFrequency(this.value);
-  final int value;
-}
-
-enum AnimationSetting {
-  full(0),
-  minimal(1),
-  none(2);
-
-  const AnimationSetting(this.value);
-  final int value;
-}
-
-enum MifareClassicWriteMode {
-  normal(0),
-  denied(1),
-  deceive(2),
-  shadow(3);
-
-  const MifareClassicWriteMode(this.value);
-  final int value;
-}
-
-enum ButtonType {
-  a(65), // ord('A')
-  b(66); // ord('B')
-
-  const ButtonType(this.value);
-  final int value;
-}
-
-enum ButtonConfig {
-  disable(0),
-  cycleForward(1),
-  cycleBackward(2),
-  cloneUID(3),
-  chargeStatus(4);
-
-  const ButtonConfig(this.value);
-  final int value;
-}
-
-class CardData {
-  Uint8List uid;
-  int sak;
-  Uint8List atqa;
-  Uint8List ats;
-
-  CardData(
-      {required this.uid,
-      required this.sak,
-      required this.atqa,
-      required this.ats});
-}
-
-class ChameleonMessage {
-  int command;
-  int status;
-  Uint8List data;
-
-  ChameleonMessage(
-      {required this.command, required this.status, required this.data});
-}
-
-enum NTLevel { static, weak, hard, backdoor, unknown }
-
-enum DarksideResult {
-  vulnerable,
-  fixed,
-  cantFixNT,
-  luckAuthOK,
-  notSendingNACK,
-  tagChanged,
-}
-
-class NTDistance {
-  int uid;
-  int distance;
-
-  NTDistance({required this.uid, required this.distance});
-}
-
-class NestedNonce {
-  int nt;
-  int ntEnc;
-  int parity;
-
-  NestedNonce({required this.nt, required this.ntEnc, required this.parity});
-}
-
-class SlotNames {
-  String hf;
-  String lf;
-
-  SlotNames({this.hf = '', this.lf = ''});
-}
-
-class NestedNonces {
-  List<NestedNonce> nonces;
-
-  List<int> getNoncesInfo() {
-    Map<int, bool> map = {};
-    int firstByteSum = 0;
-    int firstByteNum = 0;
-
-    void processNonce(int value, int parity) {
-      int key = value >> 24;
-      if (!(map[key] ?? false)) {
-        firstByteSum += evenParity32((value & 0xff000000) | (parity & 0x08));
-        map[key] = true;
-        firstByteNum++;
-      }
-    }
-
-    for (NestedNonce nonce in nonces) {
-      processNonce(nonce.nt, nonce.parity >> 4);
-      processNonce(nonce.ntEnc, nonce.parity & 0x0F);
-    }
-
-    return [firstByteSum, firstByteNum];
-  }
-
-  Uint8List getHardNested(int uid) {
-    // format:
-    // 0-3 bytes - uid
-    // 4 byte - target block (unused)
-    // 5 byte - target key type (unused)
-    // next is loop with all nonces
-    // 0-3 bytes - nt
-    // 4-8 bytes - ntEnc
-    // 9 byte - parity
-    Uint8List list = Uint8List(6 + nonces.length * 9);
-    list.setRange(0, 4, u32ToBytes(uid));
-    int pointer = 6;
-    for (NestedNonce nonce in nonces) {
-      list.setRange(pointer, pointer + 4, u32ToBytes(nonce.nt));
-      list.setRange(pointer + 4, pointer + 8, u32ToBytes(nonce.ntEnc));
-      list[pointer + 8] = nonce.parity;
-      pointer += 9;
-    }
-
-    return list;
-  }
-
-  NestedNonces({required this.nonces});
-}
-
-class Darkside {
-  int uid;
-  int nt1;
-  int par;
-  int ks1;
-  int nr;
-  int ar;
-
-  Darkside(
-      {required this.uid,
-      required this.nt1,
-      required this.par,
-      required this.ks1,
-      required this.nr,
-      required this.ar});
-}
-
-class DetectionResult {
-  int block;
-  int type;
-  bool isNested;
-  int uid;
-  int nt;
-  int nr;
-  int ar;
-
-  DetectionResult(
-      {required this.block,
-      required this.type,
-      required this.isNested,
-      required this.uid,
-      required this.nt,
-      required this.nr,
-      required this.ar});
-}
-
-class FirmwareVersion {
-  bool legacyProtocol;
-  int version;
-
-  FirmwareVersion({required this.legacyProtocol, required this.version});
-}
-
-class SlotTypes {
-  TagType hf;
-  TagType lf;
-
-  bool match({TagType type = TagType.unknown}) {
-    return hf == type || lf == type;
-  }
-
-  bool notMatch({TagType type = TagType.unknown}) {
-    return hf != type || lf != type;
-  }
-
-  SlotTypes({this.hf = TagType.unknown, this.lf = TagType.unknown});
-}
-
-class EnabledSlotInfo {
-  bool hf;
-  bool lf;
-
-  bool any() {
-    return hf || lf;
-  }
-
-  EnabledSlotInfo({this.hf = false, this.lf = false});
-}
-
-class BatteryCharge {
-  int voltage;
-  int percent;
-
-  BatteryCharge({required this.voltage, required this.percent});
-}
-
-class EmulatorSettings {
-  bool isDetectionEnabled;
-  bool isGen1a;
-  bool isGen2;
-  bool isAntiColl;
-  MifareClassicWriteMode writeMode;
-
-  EmulatorSettings(
-      {required this.isDetectionEnabled,
-      required this.isGen1a,
-      required this.isGen2,
-      required this.isAntiColl,
-      required this.writeMode});
-}
-
-class DeviceSettings {
-  AnimationSetting animation;
-  ButtonConfig aPress;
-  ButtonConfig bPress;
-  ButtonConfig aLongPress;
-  ButtonConfig bLongPress;
-  bool pairingEnabled;
-  String key;
-
-  DeviceSettings(
-      {this.animation = AnimationSetting.none,
-      this.aPress = ButtonConfig.disable,
-      this.bPress = ButtonConfig.disable,
-      this.aLongPress = ButtonConfig.disable,
-      this.bLongPress = ButtonConfig.disable,
-      this.pairingEnabled = false,
-      this.key = ""});
-}
-
-enum MifareClassicValueBlockOperator {
-  decrement(0xC0),
-  increment(0xC1),
-  restore(0xC2);
-
-  const MifareClassicValueBlockOperator(this.value);
-  final int value;
-}
 
 // Some ChatGPT magic
 // Nobody knows how it works
@@ -631,7 +218,7 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([readerMode ? 1 : 0]));
   }
 
-  Future<CardData> scan14443aTag() async {
+  Future<CardData?> scan14443aTag() async {
     var resp = await sendCmd(ChameleonCommand.scan14ATag);
 
     if (resp!.data.isNotEmpty) {
@@ -645,7 +232,7 @@ class ChameleonCommunicator {
         ats: resp.data.sublist(uidLength + 5, uidLength + 5 + atsLength),
       );
     } else {
-      throw ("Invalid data length");
+      return null;
     }
   }
 
@@ -782,8 +369,9 @@ class ChameleonCommunicator {
         ar: bytesToU32(resp.data.sublist(28, 32)));
   }
 
-  Future<(int, NestedNonces, NestedNonces)?> getMf1StaticEncryptedNestedAcquire(
-      {int sectorCount = 16, int startingSector = 0}) async {
+  Future<(int, NestedNonces, NestedNonces, Uint8List)?>
+      getMf1StaticEncryptedNestedAcquire(
+          {int sectorCount = 16, int startingSector = 0}) async {
     for (var key in gMifareClassicBackdoorKeys) {
       var resp = await sendCmd(ChameleonCommand.mf1StaticEncryptedNestedAcquire,
           data: Uint8List.fromList([...key, sectorCount, startingSector]));
@@ -805,7 +393,7 @@ class ChameleonCommunicator {
           i += 14;
         }
 
-        return (uid, aNonces, bNonces);
+        return (uid, aNonces, bNonces, key);
       }
     }
 
@@ -953,23 +541,78 @@ class ChameleonCommunicator {
         ]));
   }
 
-  Future<String> readEM410X() async {
+  Future<EM410XCard?> readEM410X() async {
     var resp = await sendCmd(ChameleonCommand.scanEM410Xtag);
 
     if (resp!.data.isEmpty) {
-      return '';
+      return null;
     }
 
-    if (resp.data.length == 5) {
-      // Old firmware
-      return bytesToHexSpace(resp.data);
+    return EM410XCard.fromBytes(resp.data);
+  }
+
+  Future<HIDCard?> readHIDProx() async {
+    var resp = await sendCmd(ChameleonCommand.scanHIDProxTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
     }
 
-    return bytesToHexSpace(resp.data.sublist(2, 7));
+    return HIDCard.fromBytes(resp.data);
+  }
+
+  Future<VikingCard?> readViking() async {
+    var resp = await sendCmd(ChameleonCommand.scanVikingTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
+    }
+
+    return VikingCard.fromBytes(resp.data);
+  }
+
+  Future<PacCard?> readPac() async {
+    var resp = await sendCmd(ChameleonCommand.scanPacTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
+    }
+
+    return PacCard.fromBytes(resp.data);
+  }
+
+  Future<IoProxCard?> readIoProx() async {
+    var resp = await sendCmd(ChameleonCommand.scanIoProxTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
+    }
+
+    return IoProxCard.fromBytes(resp.data);
   }
 
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setEM410XemulatorID, data: uid);
+  }
+
+  Future<void> setHIDProxEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setHIDProxEmulatorID, data: uid);
+  }
+
+  Future<void> setVikingEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setVikingEmulatorID, data: uid);
+  }
+
+  Future<void> setPacEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setPacEmulatorID, data: uid);
+  }
+
+  Future<void> setIoProxEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setIoProxEmulatorID, data: uid);
+  }
+
+  Future<void> setIdteckEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setIdteckEmulatorID, data: uid);
   }
 
   Future<void> writeEM410XtoT55XX(
@@ -979,7 +622,128 @@ class ChameleonCommunicator {
     for (var oldKey in oldKeys) {
       keys.addAll(oldKey);
     }
-    await sendCmd(ChameleonCommand.writeEM410XtoT5577,
+    if (uid.length == 5) {
+      await sendCmd(ChameleonCommand.writeEM410XtoT5577,
+          data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+      return;
+    }
+    if (uid.length == 13) {
+      await sendCmd(ChameleonCommand.writeEM410XElectraToT5577,
+          data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+      return;
+    }
+    throw ("Invalid EM410X UID length");
+  }
+
+  Future<void> writeHIDProxToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeHIDProxToT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+  }
+
+  Future<void> writeVikingToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeVikingToT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+  }
+
+  Future<void> writePacToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writePacToT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+  }
+
+  Future<void> writeIoProxToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeIoProxToT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+  }
+
+  Future<Uint8List> lfSniff({int timeoutMs = 2000}) async {
+    timeoutMs = timeoutMs.clamp(1, 10000);
+    final resp = await sendCmd(ChameleonCommand.lfSniff,
+        data: Uint8List.fromList([(timeoutMs >> 8) & 0xFF, timeoutMs & 0xFF]),
+        timeout: Duration(seconds: timeoutMs ~/ 1000 + 2));
+
+    if (resp == null) {
+      throw ('No response from LF sniff command');
+    }
+
+    if (resp.status == 0x40) {
+      return resp.data;
+    }
+
+    if (resp.status == 0x41) {
+      return Uint8List(0);
+    }
+
+    throw ('LF sniff failed with status 0x${resp.status.toRadixString(16)}');
+  }
+
+  Future<Uint8List> hf14aSniff({int timeoutMs = 5000}) async {
+    timeoutMs = timeoutMs.clamp(1, 30000);
+    final resp = await sendCmd(ChameleonCommand.hf14aSniff,
+        data: Uint8List.fromList([(timeoutMs >> 8) & 0xFF, timeoutMs & 0xFF]),
+        timeout: Duration(seconds: timeoutMs ~/ 1000 + 5));
+
+    if (resp == null) {
+      throw ('No response from HF sniff command');
+    }
+
+    if (resp.status == 0x68 || resp.status == 0x00) {
+      return resp.data;
+    }
+
+    if (resp.status == 0x01) {
+      return Uint8List(0);
+    }
+
+    throw ('HF sniff failed with status 0x${resp.status.toRadixString(16)}');
+  }
+
+  Future<void> writeIdteckToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeIdteckToT5577,
         data: Uint8List.fromList([...uid, ...newKey, ...keys]));
   }
 
@@ -1099,14 +863,14 @@ class ChameleonCommunicator {
 
   Future<EmulatorSettings> getMf1EmulatorSettings() async {
     var resp = await sendCmd(ChameleonCommand.mf1GetEmulatorConfig);
-    MifareClassicWriteMode mode = MifareClassicWriteMode.normal;
+    MifareWriteMode mode = MifareWriteMode.normal;
 
     if (resp!.data[4] == 1) {
-      mode = MifareClassicWriteMode.denied;
+      mode = MifareWriteMode.denied;
     } else if (resp.data[4] == 2) {
-      mode = MifareClassicWriteMode.deceive;
+      mode = MifareWriteMode.deceive;
     } else if (resp.data[4] == 3 || resp.data[4] == 4) {
-      mode = MifareClassicWriteMode.shadow;
+      mode = MifareWriteMode.shadow;
     }
 
     return EmulatorSettings(
@@ -1149,22 +913,35 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([useColl ? 1 : 0]));
   }
 
-  Future<MifareClassicWriteMode> getMf1WriteMode() async {
+  Future<MifareWriteMode> getMf1WriteMode() async {
     var resp = await sendCmd(ChameleonCommand.mf1GetWriteMode);
     if (resp!.data[0] == 1) {
-      return MifareClassicWriteMode.denied;
+      return MifareWriteMode.denied;
     } else if (resp.data[0] == 2) {
-      return MifareClassicWriteMode.deceive;
+      return MifareWriteMode.deceive;
     } else if (resp.data[0] == 3) {
-      return MifareClassicWriteMode.shadow;
+      return MifareWriteMode.shadow;
     } else {
-      return MifareClassicWriteMode.normal;
+      return MifareWriteMode.normal;
     }
   }
 
-  Future<void> setMf1WriteMode(MifareClassicWriteMode mode) async {
+  Future<void> setMf1WriteMode(MifareWriteMode mode) async {
     await sendCmd(ChameleonCommand.mf1SetWriteMode,
         data: Uint8List.fromList([mode.value]));
+  }
+
+  Future<Mf1PrngType> getMf1PrngType() async {
+    var resp = await sendCmd(ChameleonCommand.mf1GetPrngType);
+    return Mf1PrngType.values.firstWhere(
+      (type) => type.value == resp!.data[0],
+      orElse: () => throw ("Unknown MF1 PRNG type ${resp!.data[0]}"),
+    );
+  }
+
+  Future<void> setMf1PrngType(Mf1PrngType type) async {
+    await sendCmd(ChameleonCommand.mf1SetPrngType,
+        data: Uint8List.fromList([type.value]));
   }
 
   Future<List<EnabledSlotInfo>> getEnabledSlots() async {
@@ -1186,15 +963,7 @@ class ChameleonCommunicator {
   Future<ButtonConfig> getButtonConfig(ButtonType type) async {
     var resp = await sendCmd(ChameleonCommand.getButtonPressConfig,
         data: Uint8List.fromList([type.value]));
-    if (resp!.data[0] == 1) {
-      return ButtonConfig.cycleForward;
-    } else if (resp.data[0] == 2) {
-      return ButtonConfig.cycleBackward;
-    } else if (resp.data[0] == 3) {
-      return ButtonConfig.cloneUID;
-    } else {
-      return ButtonConfig.disable;
-    }
+    return getButtonConfigType(resp!.data[0]);
   }
 
   Future<void> setButtonConfig(ButtonType type, ButtonConfig mode) async {
@@ -1205,20 +974,22 @@ class ChameleonCommunicator {
   Future<ButtonConfig> getLongButtonConfig(ButtonType type) async {
     var resp = await sendCmd(ChameleonCommand.getLongButtonPressConfig,
         data: Uint8List.fromList([type.value]));
-    if (resp!.data[0] == 1) {
-      return ButtonConfig.cycleForward;
-    } else if (resp.data[0] == 2) {
-      return ButtonConfig.cycleBackward;
-    } else if (resp.data[0] == 3) {
-      return ButtonConfig.cloneUID;
-    } else {
-      return ButtonConfig.disable;
-    }
+    return getButtonConfigType(resp!.data[0]);
   }
 
   Future<void> setLongButtonConfig(ButtonType type, ButtonConfig mode) async {
     await sendCmd(ChameleonCommand.setLongButtonPressConfig,
         data: Uint8List.fromList([type.value, mode.value]));
+  }
+
+  Future<int> getSleepTimeout() async {
+    var resp = await sendCmd(ChameleonCommand.getSleepTimeout);
+    return resp!.data[0];
+  }
+
+  Future<void> setSleepTimeout(int seconds) async {
+    await sendCmd(ChameleonCommand.setSleepTimeout,
+        data: Uint8List.fromList([seconds]));
   }
 
   Future<void> clearBLEBoundedDevices() async {
@@ -1272,13 +1043,69 @@ class ChameleonCommunicator {
   }
 
   Future<Uint8List> getEM410XEmulatorID() async {
-    return (await sendCmd(ChameleonCommand.getEM410XemulatorID))!.data;
+    Uint8List data =
+        (await sendCmd(ChameleonCommand.getEM410XemulatorID))!.data;
+
+    if (data.length == 5 || data.length == 13) {
+      return data;
+    }
+
+    if (data.length >= 2) {
+      TagType type = numberToChameleonTag(bytesToU16(data.sublist(0, 2)));
+      int uidLength = uidSizeForLfTag(type);
+
+      if (uidLength > 0 && data.length >= uidLength + 2) {
+        return data.sublist(2, 2 + uidLength);
+      }
+    }
+
+    try {
+      int slot = await getActiveSlot();
+      TagType activeLfType = (await getSlotTagTypes())[slot].lf;
+      int uidLength = uidSizeForLfTag(activeLfType);
+
+      if (uidLength > 0) {
+        if (data.length >= uidLength + 2) {
+          return data.sublist(2, 2 + uidLength);
+        }
+        if (data.length >= uidLength) {
+          return data.sublist(0, uidLength);
+        }
+      }
+    } catch (_) {}
+
+    return data;
+  }
+
+  Future<HIDCard> getHIDProxEmulatorID() async {
+    return HIDCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getHIDProxEmulatorID))!.data);
+  }
+
+  Future<VikingCard> getVikingEmulatorID() async {
+    return VikingCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getVikingEmulatorID))!.data);
+  }
+
+  Future<PacCard> getPacEmulatorID() async {
+    return PacCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getPacEmulatorID))!.data);
+  }
+
+  Future<IoProxCard> getIoProxEmulatorID() async {
+    return IoProxCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getIoProxEmulatorID))!.data);
+  }
+
+  Future<IdteckCard> getIdteckEmulatorID() async {
+    return IdteckCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getIdteckEmulatorID))!.data);
   }
 
   Future<DeviceSettings> getDeviceSettings() async {
     var resp = (await sendCmd(ChameleonCommand.getDeviceSettings))!.data;
-    if (resp[0] != 5) {
-      throw ("Invalid settings version");
+    if (resp.length < 13) {
+      throw ("Invalid settings payload");
     }
 
     AnimationSetting animationMode = getAnimationModeType(resp[1]);
@@ -1294,7 +1121,8 @@ class ChameleonCommunicator {
         aLongPress: aLongPress,
         bLongPress: bLongPress,
         pairingEnabled: resp[6] == 1,
-        key: utf8.decode(resp.sublist(7, 13), allowMalformed: true));
+        key: utf8.decode(resp.sublist(7, 13), allowMalformed: true),
+        wakeTimeSeconds: resp.length >= 14 ? resp[13] : null);
   }
 
   Future<List<int>> getDeviceCapabilities() async {
@@ -1437,5 +1265,74 @@ class ChameleonCommunicator {
           (value >> 8) & 0xFF,
           (value >> 16) & 0xFF
         ]));
+  }
+
+  Future<MifareWriteMode> mf0NtagGetWriteMode() async {
+    var resp = await sendCmd(ChameleonCommand.mf0NtagGetWriteMode);
+    if (resp!.data[0] == 1) {
+      return MifareWriteMode.denied;
+    } else if (resp.data[0] == 2) {
+      return MifareWriteMode.deceive;
+    } else if (resp.data[0] == 3) {
+      return MifareWriteMode.shadow;
+    } else {
+      return MifareWriteMode.normal;
+    }
+  }
+
+  Future<void> mf0NtagSetWriteMode(MifareWriteMode mode) async {
+    await sendCmd(ChameleonCommand.mf0NtagSetWriteMode,
+        data: Uint8List.fromList([mode.value]));
+  }
+
+  Future<bool> mf0NtagGetDetectionEnable() async {
+    var resp = await sendCmd(ChameleonCommand.mf0NtagGetDetectionEnable);
+    return resp!.data[0] == 1;
+  }
+
+  Future<void> mf0NtagSetDetectionEnable(bool enabled) async {
+    await sendCmd(ChameleonCommand.mf0NtagSetDetectionEnable,
+        data: Uint8List.fromList([enabled ? 1 : 0]));
+  }
+
+  Future<int> mf0NtagGetDetectionCount() async {
+    var resp = await sendCmd(ChameleonCommand.mf0NtagGetDetectionCount);
+    return bytesToU32(resp!.data);
+  }
+
+  Future<List<String>> mf0NtagGetDetectionLog(int index) async {
+    var resp = await sendCmd(ChameleonCommand.mf0NtagGetDetectionLog,
+        data: u32ToBytes(index));
+
+    List<String> resultList = [];
+    int pos = 0;
+    while (pos < resp!.data.length) {
+      var password = resp.data.sublist(pos, pos + 4);
+      resultList.add(bytesToHex(password));
+      pos += 4;
+    }
+
+    return resultList;
+  }
+
+  Future<EmulatorSettings> mf0NtagGetEmulatorConfig() async {
+    var resp = await sendCmd(ChameleonCommand.mf0NtagGetEmulatorConfig);
+    MifareWriteMode mode = MifareWriteMode.normal;
+
+    if (resp!.data[2] == 1) {
+      mode = MifareWriteMode.denied;
+    } else if (resp.data[2] == 2) {
+      mode = MifareWriteMode.deceive;
+    } else if (resp.data[2] == 3 || resp.data[2] == 4) {
+      mode = MifareWriteMode.shadow;
+    }
+
+    return EmulatorSettings(
+        isDetectionEnabled: resp.data[0] == 1, // is detection enabled
+        isGen1a: false,
+        isGen2: resp.data[1] == 1, // is uid magic mode enabled
+        isAntiColl: false,
+        writeMode: mode // write mode
+        );
   }
 }

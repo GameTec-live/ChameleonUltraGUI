@@ -598,8 +598,8 @@ class DumpEditorState extends State<DumpEditor> {
       List<String> lines = controllers[sector].text.split('\n');
       if (lines.isNotEmpty) {
         String sectorTrailer = lines.last.replaceAll(' ', '').trim();
-        if (sectorTrailer.length >= 20) {
-          String accessConditions = sectorTrailer.substring(12, 20);
+        if (sectorTrailer.length >= 18) {
+          String accessConditions = sectorTrailer.substring(14, 18);
           Map<String, dynamic> decoded =
               MifareClassicDumpAnalyzer.decodeAccessConditions(
                   accessConditions, context);
@@ -1157,37 +1157,39 @@ class DumpEditorState extends State<DumpEditor> {
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey.shade600
-                        : Colors.grey.shade300,
+            SafeArea(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade600
+                          : Colors.grey.shade300,
+                    ),
                   ),
                 ),
-              ),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: _showAsciiView,
-                    child: Text(localizations.ascii),
-                  ),
-                  if (!isUltralight) ...[
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
                     ElevatedButton(
-                      onPressed: _showAccessConditions,
-                      child: Text(localizations.acl),
+                      onPressed: _showAsciiView,
+                      child: Text(localizations.ascii),
                     ),
-                    ElevatedButton(
-                      onPressed: _showValueBlocks,
-                      child: Text(localizations.value),
-                    ),
+                    if (!isUltralight) ...[
+                      ElevatedButton(
+                        onPressed: _showAccessConditions,
+                        child: Text(localizations.acl),
+                      ),
+                      ElevatedButton(
+                        onPressed: _showValueBlocks,
+                        child: Text(localizations.value),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ],
