@@ -469,13 +469,14 @@ class _ConnectPageState extends State<ConnectPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: IconButton(
-                onPressed: () => _scanNow(manual: true),
-                icon: const Icon(Icons.refresh),
+            if (!kIsWeb)
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  onPressed: () => _scanNow(manual: true),
+                  icon: const Icon(Icons.refresh),
+                ),
               ),
-            ),
             Expanded(
               child: kIsWeb
                   ? Center(child: _buildWebConnectButton())

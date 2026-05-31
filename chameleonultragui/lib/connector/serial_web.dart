@@ -121,7 +121,7 @@ class SerialAdapter extends AbstractSerial {
 
   @override
   Future<bool> write(Uint8List command, {bool firmware = false}) async {
-    final writer = port!.writable?.getWriter();
+    final writer = port?.writable?.getWriter();
     if (writer != null) {
       await writer.write(command.toJS).toDart;
       writer.releaseLock();

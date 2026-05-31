@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/menu/pages/logs_viewer.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
