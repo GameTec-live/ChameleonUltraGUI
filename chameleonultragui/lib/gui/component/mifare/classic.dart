@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/gui/component/card_button.dart';
@@ -13,7 +12,6 @@ import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 
 // Localizations
@@ -68,23 +66,11 @@ class CardReaderState extends State<MifareClassicHelper> {
     }
 
     if (bin) {
-      try {
-        await FileSaver.instance.saveAs(
-            name: widget.hfInfo.uid.replaceAll(" ", ""),
-            bytes: Uint8List.fromList(cardDump),
-            ext: 'bin',
-            mimeType: MimeType.other);
-      } on UnimplementedError catch (_) {
-        String? outputFile = await FilePicker.platform.saveFile(
-          dialogTitle: '${localizations.output_file}:',
-          fileName: '${widget.hfInfo.uid.replaceAll(" ", "")}.bin',
-        );
-
-        if (outputFile != null) {
-          var file = File(outputFile);
-          await file.writeAsBytes(Uint8List.fromList(cardDump));
-        }
-      }
+      await FilePicker.saveFile(
+        dialogTitle: '${localizations.output_file}:',
+        fileName: '${widget.hfInfo.uid.replaceAll(" ", "")}.bin',
+        bytes: Uint8List.fromList(cardDump),
+      );
     } else {
       var tags = appState.sharedPreferencesProvider.getCards();
       tags.add(CardSave(

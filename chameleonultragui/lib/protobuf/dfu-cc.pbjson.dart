@@ -1,13 +1,15 @@
+// This is a generated file - do not edit.
 //
-//  Generated code. Do not modify.
-//  source: dfu-cc.proto
-//
-// @dart = 2.12
+// Generated from dfu-cc.proto.
 
-// ignore_for_file: annotate_overrides, camel_case_types
-// ignore_for_file: constant_identifier_names, library_prefixes
-// ignore_for_file: non_constant_identifier_names, prefer_final_fields
-// ignore_for_file: unnecessary_import, unnecessary_this, unused_import
+// @dart = 3.3
+
+// ignore_for_file: annotate_overrides, camel_case_types, comment_references
+// ignore_for_file: constant_identifier_names
+// ignore_for_file: curly_braces_in_flow_control_structures
+// ignore_for_file: deprecated_member_use_from_same_package, library_prefixes
+// ignore_for_file: non_constant_identifier_names, prefer_relative_imports
+// ignore_for_file: unused_import
 
 import 'dart:convert' as $convert;
 import 'dart:core' as $core;
@@ -23,8 +25,8 @@ const OpCode$json = {
 };
 
 /// Descriptor for `OpCode`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List opCodeDescriptor = $convert.base64Decode(
-    'CgZPcENvZGUSCQoFUkVTRVQQABIICgRJTklUEAE=');
+final $typed_data.Uint8List opCodeDescriptor =
+    $convert.base64Decode('CgZPcENvZGUSCQoFUkVTRVQQABIICgRJTklUEAE=');
 
 @$core.Deprecated('Use fwTypeDescriptor instead')
 const FwType$json = {
@@ -94,7 +96,14 @@ final $typed_data.Uint8List signatureTypeDescriptor = $convert.base64Decode(
 const Hash$json = {
   '1': 'Hash',
   '2': [
-    {'1': 'hash_type', '3': 1, '4': 2, '5': 14, '6': '.dfu.HashType', '10': 'hashType'},
+    {
+      '1': 'hash_type',
+      '3': 1,
+      '4': 2,
+      '5': 14,
+      '6': '.dfu.HashType',
+      '10': 'hashType'
+    },
     {'1': 'hash', '3': 2, '4': 2, '5': 12, '10': 'hash'},
   ],
 };
@@ -108,7 +117,14 @@ final $typed_data.Uint8List hashDescriptor = $convert.base64Decode(
 const BootValidation$json = {
   '1': 'BootValidation',
   '2': [
-    {'1': 'type', '3': 1, '4': 2, '5': 14, '6': '.dfu.ValidationType', '10': 'type'},
+    {
+      '1': 'type',
+      '3': 1,
+      '4': 2,
+      '5': 14,
+      '6': '.dfu.ValidationType',
+      '10': 'type'
+    },
     {'1': 'bytes', '3': 2, '4': 2, '5': 12, '10': 'bytes'},
   ],
 };
@@ -138,7 +154,14 @@ const InitCommand$json = {
     {'1': 'app_size', '3': 7, '4': 1, '5': 13, '10': 'appSize'},
     {'1': 'hash', '3': 8, '4': 1, '5': 11, '6': '.dfu.Hash', '10': 'hash'},
     {'1': 'is_debug', '3': 9, '4': 1, '5': 8, '7': 'false', '10': 'isDebug'},
-    {'1': 'boot_validation', '3': 10, '4': 3, '5': 11, '6': '.dfu.BootValidation', '10': 'bootValidation'},
+    {
+      '1': 'boot_validation',
+      '3': 10,
+      '4': 3,
+      '5': 11,
+      '6': '.dfu.BootValidation',
+      '10': 'bootValidation'
+    },
   ],
 };
 
@@ -161,16 +184,37 @@ const ResetCommand$json = {
 };
 
 /// Descriptor for `ResetCommand`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List resetCommandDescriptor = $convert.base64Decode(
-    'CgxSZXNldENvbW1hbmQSGAoHdGltZW91dBgBIAIoDVIHdGltZW91dA==');
+final $typed_data.Uint8List resetCommandDescriptor = $convert
+    .base64Decode('CgxSZXNldENvbW1hbmQSGAoHdGltZW91dBgBIAIoDVIHdGltZW91dA==');
 
 @$core.Deprecated('Use commandDescriptor instead')
 const Command$json = {
   '1': 'Command',
   '2': [
-    {'1': 'op_code', '3': 1, '4': 1, '5': 14, '6': '.dfu.OpCode', '10': 'opCode'},
-    {'1': 'init', '3': 2, '4': 1, '5': 11, '6': '.dfu.InitCommand', '10': 'init'},
-    {'1': 'reset', '3': 3, '4': 1, '5': 11, '6': '.dfu.ResetCommand', '10': 'reset'},
+    {
+      '1': 'op_code',
+      '3': 1,
+      '4': 1,
+      '5': 14,
+      '6': '.dfu.OpCode',
+      '10': 'opCode'
+    },
+    {
+      '1': 'init',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.dfu.InitCommand',
+      '10': 'init'
+    },
+    {
+      '1': 'reset',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.dfu.ResetCommand',
+      '10': 'reset'
+    },
   ],
 };
 
@@ -184,8 +228,22 @@ final $typed_data.Uint8List commandDescriptor = $convert.base64Decode(
 const SignedCommand$json = {
   '1': 'SignedCommand',
   '2': [
-    {'1': 'command', '3': 1, '4': 2, '5': 11, '6': '.dfu.Command', '10': 'command'},
-    {'1': 'signature_type', '3': 2, '4': 2, '5': 14, '6': '.dfu.SignatureType', '10': 'signatureType'},
+    {
+      '1': 'command',
+      '3': 1,
+      '4': 2,
+      '5': 11,
+      '6': '.dfu.Command',
+      '10': 'command'
+    },
+    {
+      '1': 'signature_type',
+      '3': 2,
+      '4': 2,
+      '5': 14,
+      '6': '.dfu.SignatureType',
+      '10': 'signatureType'
+    },
     {'1': 'signature', '3': 3, '4': 2, '5': 12, '10': 'signature'},
   ],
 };
@@ -200,8 +258,22 @@ final $typed_data.Uint8List signedCommandDescriptor = $convert.base64Decode(
 const Packet$json = {
   '1': 'Packet',
   '2': [
-    {'1': 'command', '3': 1, '4': 1, '5': 11, '6': '.dfu.Command', '10': 'command'},
-    {'1': 'signed_command', '3': 2, '4': 1, '5': 11, '6': '.dfu.SignedCommand', '10': 'signedCommand'},
+    {
+      '1': 'command',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.dfu.Command',
+      '10': 'command'
+    },
+    {
+      '1': 'signed_command',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.dfu.SignedCommand',
+      '10': 'signedCommand'
+    },
   ],
 };
 
@@ -209,4 +281,3 @@ const Packet$json = {
 final $typed_data.Uint8List packetDescriptor = $convert.base64Decode(
     'CgZQYWNrZXQSJgoHY29tbWFuZBgBIAEoCzIMLmRmdS5Db21tYW5kUgdjb21tYW5kEjkKDnNpZ2'
     '5lZF9jb21tYW5kGAIgASgLMhIuZGZ1LlNpZ25lZENvbW1hbmRSDXNpZ25lZENvbW1hbmQ=');
-

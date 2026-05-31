@@ -44,16 +44,8 @@ Section "Chameleon Ultra GUI (required)"
   SetOutPath $INSTDIR
   
   ; Put file there
-  File "chameleonultragui\build\windows\x64\runner\Release\chameleonultragui.exe"
-  File "chameleonultragui\build\windows\x64\runner\Release\flutter_libserialport_plugin.dll"
-  File "chameleonultragui\build\windows\x64\runner\Release\flutter_windows.dll"
-  File "chameleonultragui\build\windows\x64\runner\Release\recovery.dll"
-  File "chameleonultragui\build\windows\x64\runner\Release\serialport.dll"
-  File "chameleonultragui\build\windows\x64\runner\Release\file_saver_plugin.dll"
-  File "chameleonultragui\build\windows\x64\runner\Release\permission_handler_windows_plugin.dll"
-  File "chameleonultragui\build\windows\x64\runner\Release\url_launcher_windows_plugin.dll"
+  File /r "chameleonultragui\build\windows\x64\runner\Release\*.*"
   File "LICENSE"
-  File /r "chameleonultragui\build\windows\x64\runner\Release\data"
   
   ; Write the installation path into the registry
   WriteRegStr HKLM SOFTWARE\chameleonultragui "Install_Dir" "$INSTDIR"
@@ -87,24 +79,11 @@ Section "Uninstall"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\chameleonultragui"
   DeleteRegKey HKLM SOFTWARE\chameleonultragui
 
-  ; Remove files and uninstaller
-  Delete $INSTDIR\chameleonultragui.exe
-  Delete $INSTDIR\flutter_libserialport_plugin.dll
-  Delete $INSTDIR\flutter_windows.dll
-  Delete $INSTDIR\recovery.dll
-  Delete $INSTDIR\serialport.dll
-  Delete  $INSTDIR\file_saver_plugin.dll
-  Delete $INSTDIR\permission_handler_windows_plugin.dll
-  Delete $INSTDIR\url_launcher_windows_plugin.dll
-  RMDir /r $INSTDIR\data
-  Delete $INSTDIR\LICENSE
-  Delete $INSTDIR\uninstall.exe
-
   ; Remove shortcuts, if any
   Delete "$SMPROGRAMS\Chameleon Ultra GUI.lnk"
   Delete "$DESKTOP\Chameleon Ultra GUI.lnk"
 
-  ; Remove directories
-  RMDir "$INSTDIR"
+  ; Remove installation directory and all contents
+  RMDir /r "$INSTDIR"
 
 SectionEnd

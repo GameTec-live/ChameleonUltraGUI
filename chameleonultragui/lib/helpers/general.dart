@@ -9,7 +9,6 @@ import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
@@ -382,41 +381,17 @@ Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
     for (var block in tag.data) {
       tagDump.addAll(block);
     }
-    try {
-      await FileSaver.instance.saveAs(
-          name: tag.name,
-          bytes: Uint8List.fromList(tagDump),
-          ext: 'bin',
-          mimeType: MimeType.other);
-    } on UnimplementedError catch (_) {
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: '${localizations.output_file}:',
-        fileName: '${tag.name}.bin',
-      );
-
-      if (outputFile != null) {
-        var file = File(outputFile);
-        await file.writeAsBytes(Uint8List.fromList(tagDump));
-      }
-    }
+    await FilePicker.saveFile(
+      dialogTitle: '${localizations.output_file}:',
+      fileName: '${tag.name}.bin',
+      bytes: Uint8List.fromList(tagDump),
+    );
   } else {
-    try {
-      await FileSaver.instance.saveAs(
-          name: tag.name,
-          bytes: const Utf8Encoder().convert(tag.toJson()),
-          ext: 'json',
-          mimeType: MimeType.other);
-    } on UnimplementedError catch (_) {
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: '${localizations.output_file}:',
-        fileName: '${tag.name}.json',
-      );
-
-      if (outputFile != null) {
-        var file = File(outputFile);
-        await file.writeAsBytes(const Utf8Encoder().convert(tag.toJson()));
-      }
-    }
+    await FilePicker.saveFile(
+      dialogTitle: '${localizations.output_file}:',
+      fileName: '${tag.name}.json',
+      bytes: const Utf8Encoder().convert(tag.toJson()),
+    );
   }
 }
 

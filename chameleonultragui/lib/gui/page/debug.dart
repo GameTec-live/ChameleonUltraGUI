@@ -7,7 +7,6 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
@@ -120,33 +119,15 @@ class DebugPage extends StatelessWidget {
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
-                  try {
-                    await FileSaver.instance.saveAs(
-                        name:
-                            "log${DateTime.now().toIso8601String().replaceAll(':', '-')}",
-                        bytes: Uint8List.fromList(appState
-                            .sharedPreferencesProvider
-                            .getLogLines()
-                            .join("\n")
-                            .codeUnits),
-                        ext: 'txt',
-                        mimeType: MimeType.text);
-                  } on UnimplementedError catch (_) {
-                    String? outputFile = await FilePicker.platform.saveFile(
-                      dialogTitle: '${localizations.output_file}:',
-                      fileName:
-                          'log${DateTime.now().toIso8601String().replaceAll(':', '-')}.txt',
-                    );
-
-                    if (outputFile != null) {
-                      var file = File(outputFile);
-                      await file.writeAsBytes(Uint8List.fromList(appState
-                          .sharedPreferencesProvider
-                          .getLogLines()
-                          .join("\n")
-                          .codeUnits));
-                    }
-                  }
+                  await FilePicker.saveFile(
+                    dialogTitle: '${localizations.output_file}:',
+                    fileName:
+                        'log${DateTime.now().toIso8601String().replaceAll(':', '-')}.txt',
+                    bytes: Uint8List.fromList(appState.sharedPreferencesProvider
+                        .getLogLines()
+                        .join("\n")
+                        .codeUnits),
+                  );
                 },
                 child: Column(children: [
                   Text(localizations.export_logs_to_file),

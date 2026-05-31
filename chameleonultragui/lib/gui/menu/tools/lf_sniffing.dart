@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -8,7 +7,6 @@ import 'package:chameleonultragui/helpers/lf_sniff.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -191,26 +189,14 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
     final filename =
         'lf-sniff-${DateTime.now().toIso8601String().replaceAll(':', '-')}';
 
-    try {
-      await FileSaver.instance.saveAs(
-          name: filename,
-          bytes: capture.samples,
-          ext: 'bin',
-          mimeType: MimeType.other);
-      _showSnack(localizations.save_to_file);
-    } on UnimplementedError catch (_) {
-      final outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: '${localizations.output_file}:',
-        fileName: '$filename.bin',
-      );
+    final outputFile = await FilePicker.saveFile(
+      dialogTitle: '${localizations.output_file}:',
+      fileName: '$filename.bin',
+      bytes: capture.samples,
+    );
 
-      if (outputFile != null) {
-        final file = File(outputFile);
-        await file.writeAsBytes(capture.samples);
-        if (mounted) {
-          _showSnack(localizations.save_to_file);
-        }
-      }
+    if (outputFile != null && mounted) {
+      _showSnack(localizations.save_to_file);
     }
   }
 
@@ -407,8 +393,9 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
   Future<void> _openWaveformViewer(LfSniffCapture capture) async {
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 700;
+    final navigator = Navigator.of(context);
     final zoom = isCompact
-        ? await Navigator.of(context).push<double>(
+        ? await navigator.push<double>(
             MaterialPageRoute(
               fullscreenDialog: true,
               builder: (context) => _LfWaveformFullscreenPage(
