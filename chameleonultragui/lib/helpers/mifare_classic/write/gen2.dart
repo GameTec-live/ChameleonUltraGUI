@@ -47,12 +47,12 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
     return true;
   }
 
-  @override
   Future<bool> writeBlockModifier(CardSave card, int block, Uint8List data,
       {bool tryBothKeys = false, bool useGenericKey = false}) async {
     for (int retry = 0; retry < 10; retry++) {
       try {
-        await Future.delayed(const Duration(milliseconds: 50)); // Stability delay
+        await Future.delayed(
+            const Duration(milliseconds: 50)); // Stability delay
         if (await writeBlock(block, data,
             tryBothKeys: tryBothKeys, useGenericKey: useGenericKey)) {
           return true;

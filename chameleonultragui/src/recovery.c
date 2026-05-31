@@ -144,7 +144,7 @@ FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint32_t *outputKeyCount)
     free(dps);
   }
 
-  return malloc(1);
+  return malloc(8);
 }
 
 int uint64_compare(const void *a, const void *b)
@@ -565,7 +565,8 @@ FFI_PLUGIN_EXPORT uint64_t mfkey64(Mfkey64 *data)
   uint32_t ks3 = data->at_enc ^ prng_successor(p64, 32);
 
   revstate = lfsr_recovery64(ks2, ks3);
-  if (revstate == NULL) {
+  if (revstate == NULL)
+  {
     return UINT64_MAX;
   }
 

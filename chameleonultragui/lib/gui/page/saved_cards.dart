@@ -15,7 +15,6 @@ import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -73,11 +72,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () async {
-                            FilePickerResult? result =
-                                await FilePicker.platform.pickFiles();
+                            PlatformFile? result = await FilePicker.pickFile();
 
                             if (result != null) {
-                              File file = File(result.files.single.path!);
+                              File file = File(result.path!);
                               var contents = await file.readAsBytes();
                               try {
                                 var string =
@@ -618,11 +616,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                   constraints: const BoxConstraints(maxHeight: 100),
                   child: ElevatedButton(
                     onPressed: () async {
-                      FilePickerResult? result =
-                          await FilePicker.platform.pickFiles();
+                      PlatformFile? result = await FilePicker.pickFile();
 
                       if (result != null) {
-                        File file = File(result.files.single.path!);
+                        File file = File(result.path!);
                         String contents;
                         try {
                           contents = const Utf8Decoder()
@@ -635,7 +632,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             .getDictionaries();
 
                         Dictionary dictionary = Dictionary.fromString(contents,
-                            name: result.files.single.name.split(".")[0]);
+                            name: result.name.split(".")[0]);
 
                         if (dictionary.keys.isEmpty) {
                           return;
@@ -697,26 +694,12 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 ),
                                 IconButton(
                                   onPressed: () async {
-                                    try {
-                                      await FileSaver.instance.saveAs(
-                                          name: dictionary.name,
-                                          bytes: dictionary.toFile(),
-                                          ext: 'dic',
-                                          mimeType: MimeType.other);
-                                    } on UnimplementedError catch (_) {
-                                      String? outputFile =
-                                          await FilePicker.platform.saveFile(
-                                        dialogTitle:
-                                            '${localizations.output_file}:',
-                                        fileName: '${dictionary.name}.dic',
-                                      );
-
-                                      if (outputFile != null) {
-                                        var file = File(outputFile);
-                                        await file
-                                            .writeAsBytes(dictionary.toFile());
-                                      }
-                                    }
+                                    await FilePicker.saveFile(
+                                      dialogTitle:
+                                          '${localizations.output_file}:',
+                                      fileName: '${dictionary.name}.dic',
+                                      bytes: dictionary.toFile(),
+                                    );
                                   },
                                   icon: const Icon(Icons.download),
                                 ),

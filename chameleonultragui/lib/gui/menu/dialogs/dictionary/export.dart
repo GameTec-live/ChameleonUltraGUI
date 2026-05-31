@@ -1,8 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/edit.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -113,23 +111,11 @@ class DictionaryExportMenuState extends State<DictionaryExportMenu> {
               return;
             }
 
-            try {
-              await FileSaver.instance.saveAs(
-                  name: name,
-                  bytes: const Utf8Encoder().convert(fileContents),
-                  ext: 'dic',
-                  mimeType: MimeType.other);
-            } on UnimplementedError catch (_) {
-              String? outputFile = await FilePicker.platform.saveFile(
-                dialogTitle: '${localizations.output_file}:',
-                fileName: '$name.dic',
-              );
-              if (outputFile != null) {
-                var file = File(outputFile);
-                await file
-                    .writeAsBytes(const Utf8Encoder().convert(fileContents));
-              }
-            }
+            await FilePicker.saveFile(
+              dialogTitle: '${localizations.output_file}:',
+              fileName: '$name.dic',
+              bytes: const Utf8Encoder().convert(fileContents),
+            );
             if (context.mounted) {
               Navigator.pop(context);
             }

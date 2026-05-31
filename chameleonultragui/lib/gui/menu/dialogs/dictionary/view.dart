@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/edit.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -7,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_saver/file_saver.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/confirm_delete.dart';
 
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -152,24 +149,11 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
         ),
         IconButton(
           onPressed: () async {
-            try {
-              await FileSaver.instance.saveAs(
-                name: currentDictionary.name,
-                bytes: currentDictionary.toFile(),
-                ext: 'dic',
-                mimeType: MimeType.other,
-              );
-            } on UnimplementedError catch (_) {
-              String? outputFile = await FilePicker.platform.saveFile(
-                dialogTitle: '${localizations.output_file}:',
-                fileName: '${currentDictionary.name}.dic',
-              );
-
-              if (outputFile != null) {
-                var file = File(outputFile);
-                await file.writeAsBytes(currentDictionary.toFile());
-              }
-            }
+            await FilePicker.saveFile(
+              dialogTitle: '${localizations.output_file}:',
+              fileName: '${currentDictionary.name}.dic',
+              bytes: currentDictionary.toFile(),
+            );
           },
           icon: const Icon(Icons.download),
         ),

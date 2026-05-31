@@ -8,6 +8,8 @@ import 'package:chameleonultragui/helpers/mifare_classic/dump_analyzer.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/dump_highlighter.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/dump_analyzer.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:chameleonultragui/main.dart';
+import 'package:provider/provider.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -32,6 +34,9 @@ class DumpEditorState extends State<DumpEditor> {
   late List<String> initialTexts;
   bool hasUnsavedChanges = false;
   bool isInsertMode = false;
+  bool isCompareMode = false;
+  List<Uint8List>? compareData;
+  String compareName = '';
   ScrollController scrollController = ScrollController();
   late bool isUltralight;
   late int bytesPerBlock;
@@ -778,11 +783,140 @@ class DumpEditorState extends State<DumpEditor> {
         : MifareClassicDumpHighlighter.getDefaultColor(context);
   }
 
+  Color _getDiffColor() {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.red.shade300
+        : Colors.red.shade700;
+  }
+
+  int _blockIndexFor(int controllerIndex, int lineIndex) {
+    return isUltralight
+        ? lineIndex
+        : mfClassicGetFirstBlockCountBySector(controllerIndex) + lineIndex;
+  }
+
+  Uint8List? _compareBytesFor(int controllerIndex, int lineIndex) {
+    if (compareData == null) return null;
+    int blockIndex = _blockIndexFor(controllerIndex, lineIndex);
+    if (blockIndex < 0 ||
+        blockIndex >= compareData!.length ||
+        compareData![blockIndex].isEmpty) {
+      return null;
+    }
+    return compareData![blockIndex];
+  }
+
+  String _byteAt(String cleanHex, int byteIndex) {
+    int start = byteIndex * 2;
+    if (start + 2 <= cleanHex.length) {
+      return cleanHex.substring(start, start + 2);
+    }
+    if (start < cleanHex.length) {
+      return cleanHex.substring(start);
+    }
+    return '';
+  }
+
+  String _spaceHex(String cleanHex) {
+    StringBuffer buffer = StringBuffer();
+    for (int i = 0; i < cleanHex.length; i += 2) {
+      if (i > 0) buffer.write(' ');
+      buffer.write(_byteAt(cleanHex, i ~/ 2));
+    }
+    return buffer.toString();
+  }
+
+  List<TextSpan> _byteSpans(
+      String cleanHex, List<bool> byteDiff, int byteCount) {
+    Color normalColor = _getDefaultHighlightColor();
+    Color diffColor = _getDiffColor();
+
+    List<TextSpan> spans = [];
+    for (int k = 0; k < byteCount; k++) {
+      if (k > 0) spans.add(const TextSpan(text: ' '));
+      String token = _byteAt(cleanHex, k);
+      if (token.isEmpty) token = '--';
+      bool differs = k < byteDiff.length ? byteDiff[k] : true;
+      spans.add(TextSpan(
+        text: token,
+        style: differs
+            ? TextStyle(color: diffColor, fontWeight: FontWeight.bold)
+            : TextStyle(color: normalColor),
+      ));
+    }
+    return spans;
+  }
+
+  Future<void> _startCompare() async {
+    var localizations = AppLocalizations.of(context)!;
+    var appState = context.read<ChameleonGUIState>();
+    List<CardSave> candidates = appState.sharedPreferencesProvider
+        .getCards()
+        .where((card) =>
+            card.id != widget.cardSave.id && card.tag == widget.cardSave.tag)
+        .toList();
+
+    if (candidates.isEmpty) {
+      _showErrorDialog(localizations.no_dumps_to_compare);
+      return;
+    }
+
+    CardSave? selected = await showDialog<CardSave>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations.select_dump_to_compare),
+        content: SizedBox(
+          width: 400,
+          height: 300,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: candidates.length,
+            itemBuilder: (context, index) {
+              CardSave card = candidates[index];
+              return ListTile(
+                leading: Icon(Icons.credit_card, color: card.color),
+                title: Text(card.name.isEmpty ? "⠀" : card.name),
+                subtitle: Text(card.uid),
+                onTap: () => Navigator.pop(context, card),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localizations.cancel),
+          ),
+        ],
+      ),
+    );
+
+    if (selected != null) {
+      setState(() {
+        compareData =
+            selected.data.map((bytes) => Uint8List.fromList(bytes)).toList();
+        compareName = selected.name;
+        isCompareMode = true;
+      });
+    }
+  }
+
+  void _exitCompare() {
+    setState(() {
+      isCompareMode = false;
+      compareData = null;
+      compareName = '';
+    });
+  }
+
   Widget _buildAdaptiveEditor(int controllerIndex) {
     return LayoutBuilder(
       builder: (context, constraints) {
         double optimalFontSize =
             _guessOptimalFontSize(controllerIndex, constraints);
+        if (isCompareMode) {
+          return _buildCompareView(controllerIndex, fontSize: optimalFontSize);
+        }
         return _buildOriginalEditor(controllerIndex, fontSize: optimalFontSize);
       },
     );
@@ -941,6 +1075,105 @@ class DumpEditorState extends State<DumpEditor> {
     );
   }
 
+  Widget _buildCompareView(int controllerIndex, {double fontSize = 14.0}) {
+    List<String> lines = controllers[controllerIndex].text.split('\n');
+    List<TextSpan> spans = [];
+
+    Color blockNumberColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.grey.shade400
+        : Colors.grey.shade600;
+    Color labelColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.grey.shade300
+        : Colors.grey.shade700;
+    Color defaultColor = _getDefaultHighlightColor();
+
+    String currentName =
+        widget.cardSave.name.isEmpty ? '⠀' : widget.cardSave.name;
+    String otherName = compareName.isEmpty ? '⠀' : compareName;
+
+    for (int i = 0; i < lines.length; i++) {
+      String line = lines[i].trim();
+      if (line.isEmpty) continue;
+
+      int blockNumber = _blockIndexFor(controllerIndex, i);
+      String numStr = blockNumber.toString().padLeft(3, ' ');
+
+      String currentClean = line.replaceAll(' ', '').toUpperCase();
+      Uint8List? otherBytes = _compareBytesFor(controllerIndex, i);
+      String otherClean =
+          otherBytes != null ? bytesToHex(otherBytes).toUpperCase() : '';
+
+      int byteCount = (currentClean.length + 1) ~/ 2;
+      List<bool> byteDiff = [];
+      bool blockDiffers = false;
+      for (int k = 0; k < byteCount; k++) {
+        bool differs = otherClean.isEmpty ||
+            _byteAt(currentClean, k) != _byteAt(otherClean, k);
+        byteDiff.add(differs);
+        if (differs) blockDiffers = true;
+      }
+
+      if (spans.isNotEmpty) {
+        spans.add(const TextSpan(text: '\n'));
+      }
+
+      if (!blockDiffers) {
+        // Identical block: compact single line.
+        spans.add(TextSpan(
+          text: '$numStr: ',
+          style: TextStyle(color: blockNumberColor),
+        ));
+        spans.add(TextSpan(
+          text: _spaceHex(currentClean),
+          style: TextStyle(color: defaultColor),
+        ));
+        continue;
+      }
+
+      // Differing block: each dump's row is preceded by its card name so it is
+      // clear which card the row belongs to. Changed bytes are highlighted.
+      String gutter = ' ' * (numStr.length + 2);
+
+      spans.add(TextSpan(
+        text: '$gutter$currentName',
+        style: TextStyle(color: labelColor, fontWeight: FontWeight.bold),
+      ));
+      spans.add(const TextSpan(text: '\n'));
+      spans.add(TextSpan(
+        text: '$numStr: ',
+        style: TextStyle(color: blockNumberColor),
+      ));
+      spans.addAll(_byteSpans(currentClean, byteDiff, byteCount));
+
+      spans.add(const TextSpan(text: '\n'));
+      spans.add(TextSpan(
+        text: '$gutter$otherName',
+        style: TextStyle(color: labelColor, fontWeight: FontWeight.bold),
+      ));
+      spans.add(const TextSpan(text: '\n'));
+      spans.add(TextSpan(
+        text: '$numStr: ',
+        style: TextStyle(color: blockNumberColor),
+      ));
+      spans.addAll(_byteSpans(otherClean, byteDiff, byteCount));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: SelectableText.rich(
+        TextSpan(
+          style: TextStyle(
+            fontFamily: 'RobotoMono',
+            fontSize: fontSize,
+            height: 1.4,
+            letterSpacing: 0.0,
+          ),
+          children: spans,
+        ),
+      ),
+    );
+  }
+
   Widget _buildEditor(int controllerIndex) {
     var localizations = AppLocalizations.of(context)!;
     String title = isUltralight
@@ -985,6 +1218,10 @@ class DumpEditorState extends State<DumpEditor> {
 
   Widget _buildColorLegend() {
     var localizations = AppLocalizations.of(context)!;
+
+    if (isCompareMode) {
+      return _buildCompareLegend();
+    }
 
     List<Widget> legendItems = [];
 
@@ -1077,6 +1314,54 @@ class DumpEditorState extends State<DumpEditor> {
     );
   }
 
+  Widget _buildCompareLegend() {
+    var localizations = AppLocalizations.of(context)!;
+    Color textColor = _getDefaultHighlightColor();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            localizations.comparison,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 16,
+                height: 16,
+                margin: const EdgeInsets.only(top: 2),
+                decoration: BoxDecoration(
+                  color: _getDiffColor(),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  localizations.difference,
+                  style: TextStyle(color: textColor),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLegendItem(String label, Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1122,11 +1407,12 @@ class DumpEditorState extends State<DumpEditor> {
               onPressed: _cancelEdit,
               tooltip: localizations.cancel,
             ),
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _saveDump,
-              tooltip: localizations.save,
-            ),
+            if (!isCompareMode)
+              IconButton(
+                icon: const Icon(Icons.save),
+                onPressed: _saveDump,
+                tooltip: localizations.save,
+              ),
           ],
         ),
         body: Column(
@@ -1174,18 +1460,29 @@ class DumpEditorState extends State<DumpEditor> {
                   runSpacing: 8,
                   alignment: WrapAlignment.center,
                   children: [
-                    ElevatedButton(
-                      onPressed: _showAsciiView,
-                      child: Text(localizations.ascii),
-                    ),
-                    if (!isUltralight) ...[
+                    if (isCompareMode)
+                      ElevatedButton.icon(
+                        onPressed: _exitCompare,
+                        label: Text(localizations.exit_comparison),
+                      )
+                    else ...[
                       ElevatedButton(
-                        onPressed: _showAccessConditions,
-                        child: Text(localizations.acl),
+                        onPressed: _showAsciiView,
+                        child: Text(localizations.ascii),
                       ),
-                      ElevatedButton(
-                        onPressed: _showValueBlocks,
-                        child: Text(localizations.value),
+                      if (!isUltralight) ...[
+                        ElevatedButton(
+                          onPressed: _showAccessConditions,
+                          child: Text(localizations.acl),
+                        ),
+                        ElevatedButton(
+                          onPressed: _showValueBlocks,
+                          child: Text(localizations.value),
+                        ),
+                      ],
+                      ElevatedButton.icon(
+                        onPressed: _startCompare,
+                        label: Text(localizations.compare),
                       ),
                     ],
                   ],

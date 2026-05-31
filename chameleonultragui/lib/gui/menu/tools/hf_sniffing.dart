@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -11,7 +10,6 @@ import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 import 'package:file_picker/file_picker.dart';
-import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -168,26 +166,14 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
     final filename =
         'hf-sniff-${DateTime.now().toIso8601String().replaceAll(':', '-')}';
 
-    try {
-      await FileSaver.instance.saveAs(
-          name: filename,
-          bytes: capture.rawBytes,
-          ext: 'bin',
-          mimeType: MimeType.other);
-      _showSnack(localizations.save_to_file);
-    } on UnimplementedError catch (_) {
-      final outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: '${localizations.output_file}:',
-        fileName: '$filename.bin',
-      );
+    final outputFile = await FilePicker.saveFile(
+      dialogTitle: '${localizations.output_file}:',
+      fileName: '$filename.bin',
+      bytes: capture.rawBytes,
+    );
 
-      if (outputFile != null) {
-        final file = File(outputFile);
-        await file.writeAsBytes(capture.rawBytes);
-        if (mounted) {
-          _showSnack(localizations.save_to_file);
-        }
-      }
+    if (outputFile != null && mounted) {
+      _showSnack(localizations.save_to_file);
     }
   }
 

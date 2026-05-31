@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/services.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/confirm_delete.dart';
+import 'package:uuid/uuid.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -249,6 +250,20 @@ class CardViewMenuState extends State<CardViewMenu> {
                   _refreshCardData();
                 },
                 icon: const Icon(Icons.edit),
+              ),
+              IconButton(
+                onPressed: () {
+                  var cards = appState.sharedPreferencesProvider.getCards();
+                  var duplicate = CardSave.fromJson(currentSavedCard.toJson());
+                  duplicate.id = const Uuid().v4();
+                  duplicate.name =
+                      "${currentSavedCard.name} (${localizations.copy})";
+                  cards.add(duplicate);
+                  appState.sharedPreferencesProvider.setCards(cards);
+                  appState.changesMade();
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.copy_all),
               ),
               if (isMifareClassic(widget.tagSave.tag) ||
                   isMifareUltralight(widget.tagSave.tag))

@@ -531,5 +531,13 @@
   "auto_scan_devices": "Auto scan devices",
   "auto_connect_first_device": "Auto connect first found device",
   "wake_time_after_button_press": "Wake time after button press (s):",
-  "wake_time": "Wake time"
+  "wake_time": "Wake time",
+  "compare": "Compare",
+  "exit_comparison": "Exit comparison",
+  "select_dump_to_compare": "Select a dump to compare",
+  "comparing_with": "Comparing with {name}",
+  "no_dumps_to_compare": "No compatible dumps to compare",
+  "difference": "Difference",
+  "comparison": "Comparison",
+  "copy": "copy"
 }
