@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
@@ -13,8 +12,6 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_saver/file_saver.dart';
-
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
@@ -264,23 +261,11 @@ class SlotExportMenuState extends State<SlotExportMenu> {
             }
 
             Uint8List export = const Utf8Encoder().convert(cardSave.toJson());
-            try {
-              await FileSaver.instance.saveAs(
-                  name: cardSave.name,
-                  bytes: export,
-                  ext: 'json',
-                  mimeType: MimeType.json);
-            } on UnimplementedError catch (_) {
-              String? outputFile = await FilePicker.platform.saveFile(
-                dialogTitle: '${localizations.output_file}:',
-                fileName: '${cardSave.name}.json',
-              );
-
-              if (outputFile != null) {
-                var file = File(outputFile);
-                await file.writeAsBytes(export);
-              }
-            }
+            await FilePicker.saveFile(
+              dialogTitle: '${localizations.output_file}:',
+              fileName: '${cardSave.name}.json',
+              bytes: export,
+            );
             if (context.mounted) {
               Navigator.pop(context);
             }

@@ -97,10 +97,10 @@ Future<void> flashFirmwareZip(ChameleonGUIState appState,
     {ScaffoldMessengerState? scaffoldMessenger, bool enterDFU = true}) async {
   Uint8List applicationDat, applicationBin;
 
-  FilePickerResult? result = await FilePicker.platform.pickFiles();
+  PlatformFile? result = await FilePicker.pickFile();
 
   if (result != null) {
-    File file = File(result.files.single.path!);
+    File file = File(result.path!);
 
     (applicationDat, applicationBin) =
         await unpackFirmware(await file.readAsBytes());
