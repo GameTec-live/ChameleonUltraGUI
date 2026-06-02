@@ -205,10 +205,10 @@ Future<SendPort> _helperIsolateSendPort = () async {
           for (var item in data.darkside.items) {
             var value = itemPointer[i];
             value.ar = item.ar;
-            value.ks1 = item.ks1;
+            value.ks1 = item.ks1.toInt();
             value.nr = item.nr;
             value.nt1 = item.nt1;
-            value.par = item.par;
+            value.par = item.par.toInt();
             i++;
           }
           pointer.ref.items = itemPointer;

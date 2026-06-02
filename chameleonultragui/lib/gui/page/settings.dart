@@ -417,8 +417,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                           onPressed: () async {
                             PlatformFile? result = await FilePicker.pickFile();
                             if (result != null) {
-                              File file = File(result.path!);
-                              var contents = await file.readAsBytes();
+                              var contents = await platformFileReadBytes(result);
                               var string =
                                   const Utf8Decoder().convert(contents);
                               appState.sharedPreferencesProvider

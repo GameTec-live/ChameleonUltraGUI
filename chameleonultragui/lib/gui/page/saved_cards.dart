@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/element_button.dart';
@@ -18,7 +17,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/edit.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/create.dart';
@@ -75,8 +73,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                             PlatformFile? result = await FilePicker.pickFile();
 
                             if (result != null) {
-                              File file = File(result.path!);
-                              var contents = await file.readAsBytes();
+                              var contents = await platformFileReadBytes(result);
                               try {
                                 var string =
                                     const Utf8Decoder().convert(contents);
@@ -102,9 +99,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   tag = CardSave.fromJson(string);
                                 }
 
-                                tag.name = basename(file.path).contains('.')
-                                    ? basename(file.path).split('.')[0]
-                                    : basename(file.path);
+                                tag.name = result.name.contains('.')
+                                    ? result.name.split('.')[0]
+                                    : result.name;
                                 tags.add(tag);
                                 appState.sharedPreferencesProvider
                                     .setCards(tags);
@@ -619,11 +616,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       PlatformFile? result = await FilePicker.pickFile();
 
                       if (result != null) {
-                        File file = File(result.path!);
                         String contents;
                         try {
                           contents = const Utf8Decoder()
-                              .convert(await file.readAsBytes());
+                              .convert(await platformFileReadBytes(result));
                         } catch (e) {
                           return;
                         }

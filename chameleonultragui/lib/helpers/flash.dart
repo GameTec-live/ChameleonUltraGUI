@@ -100,14 +100,14 @@ Future<void> flashFirmwareZip(ChameleonGUIState appState,
   PlatformFile? result = await FilePicker.pickFile();
 
   if (result != null) {
-    File file = File(result.path!);
+    var fileBytes = await platformFileReadBytes(result);
 
     (applicationDat, applicationBin) =
-        await unpackFirmware(await file.readAsBytes());
+        await unpackFirmware(fileBytes);
 
     await flashFile(appState.communicator, appState, applicationDat,
         applicationBin, (progress) => appState.setProgressBar(progress / 100),
-        firmwareZip: await file.readAsBytes(),
+        firmwareZip: fileBytes,
         scaffoldMessenger: scaffoldMessenger,
         enterDFU: enterDFU);
   }

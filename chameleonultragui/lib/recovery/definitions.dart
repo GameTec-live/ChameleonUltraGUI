@@ -2,8 +2,8 @@ import 'dart:typed_data';
 
 class DarksideItemDart {
   int nt1;
-  int ks1;
-  int par;
+  BigInt ks1;
+  BigInt par;
   int nr;
   int ar;
 

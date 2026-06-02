@@ -296,14 +296,14 @@ class DebugPage extends StatelessWidget {
                   var darkside = DarksideDart(uid: 2374329723, items: []);
                   darkside.items.add(DarksideItemDart(
                       nt1: 913032415,
-                      ks1: int.parse('216745674933338888'),
-                      par: 0,
+                      ks1: BigInt.parse('216745674933338888'),
+                      par: BigInt.zero,
                       nr: 0,
                       ar: 0));
                   darkside.items.add(DarksideItemDart(
                       nt1: 913032415,
-                      ks1: int.parse('1010230244403446283'),
-                      par: 0,
+                      ks1: BigInt.parse('1010230244403446283'),
+                      par: BigInt.zero,
                       nr: 1,
                       ar: 0));
                   var keys = await recovery.darkside(darkside);
