@@ -275,6 +275,7 @@
   "reset": "Reset",
   "write_again": "Write again",
   "confirm_deletions": "Confirm deletions",
+  "cors_proxy_url": "CORS Proxy URL",
   "confirm_deletion": "Confirm deletion",
   "confirm_deletion_text": "Are you sure you want to delete {name}?",
   "delete": "Delete",
@@ -540,5 +541,8 @@
   "no_dumps_to_compare": "No compatible dumps to compare",
   "difference": "Difference",
   "comparison": "Comparison",
-  "copy": "copy"
+  "copy": "copy",
+  "card_uid_already_exists": "That card already exists ({name})",
+  "overwrite": "Overwrite",
+  "create_new": "Create new"
 }

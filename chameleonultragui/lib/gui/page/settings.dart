@@ -1,3 +1,4 @@
+import 'package:http/http.dart' as http;
 import 'package:chameleonultragui/gui/component/developer_list.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
@@ -266,6 +267,15 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                 ],
               ),
+              if (kIsWeb) ...[
+                const SizedBox(height: 10),
+                Text(
+                  localizations.cors_proxy_url,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 5),
+                CorsProxyField(appState: appState),
+              ],
               const SizedBox(height: 10),
               FittedBox(
                 fit: BoxFit.scaleDown,
@@ -353,7 +363,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(AppLocalizations.of(context)!.export_settings),
-                        const Icon(Icons.upload)
                       ],
                     )),
               ),
@@ -437,7 +446,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(AppLocalizations.of(context)!.import_settings),
-                      const Icon(Icons.download),
                     ],
                   ),
                 ),
@@ -662,6 +670,91 @@ class SettingsMainPageState extends State<SettingsMainPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class CorsProxyField extends StatefulWidget {
+  final ChameleonGUIState appState;
+
+  const CorsProxyField({super.key, required this.appState});
+
+  @override
+  State<CorsProxyField> createState() => _CorsProxyFieldState();
+}
+
+class _CorsProxyFieldState extends State<CorsProxyField> {
+  bool? _testResult;
+  bool _testing = false;
+
+  Future<void> _testProxy() async {
+    setState(() {
+      _testing = true;
+      _testResult = null;
+    });
+
+    try {
+      final proxy = widget.appState.sharedPreferencesProvider.getCorsProxy();
+      const testUrl = 'https://httpbin.org/get';
+      final url = proxy.isNotEmpty ? '$proxy$testUrl' : testUrl;
+      final response = await http.get(Uri.parse(url));
+      setState(() {
+        _testResult = response.statusCode == 200;
+      });
+    } catch (_) {
+      setState(() {
+        _testResult = false;
+      });
+    } finally {
+      setState(() {
+        _testing = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 300,
+      child: TextFormField(
+        initialValue:
+            widget.appState.sharedPreferencesProvider.getCorsProxy(),
+        decoration: InputDecoration(
+          border: const OutlineInputBorder(),
+          hintText: 'https://api.codetabs.com/v1/proxy/?quest=',
+          isDense: true,
+          suffixIcon: _testing
+              ? const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : IconButton(
+                  icon: Icon(
+                    _testResult == null
+                        ? Icons.play_arrow
+                        : _testResult!
+                            ? Icons.check_circle
+                            : Icons.error,
+                    color: _testResult == null
+                        ? null
+                        : _testResult!
+                            ? Colors.green
+                            : Colors.red,
+                  ),
+                  onPressed: _testProxy,
+                ),
+        ),
+        onChanged: (value) {
+          widget.appState.sharedPreferencesProvider.setCorsProxy(value);
+          setState(() {
+            _testResult = null;
+          });
+        },
       ),
     );
   }

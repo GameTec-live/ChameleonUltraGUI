@@ -41,6 +41,7 @@ Or, plain [APK](https://github.com/GameTec-live/ChameleonUltraGUI/releases/downl
 #### Pending stores:
 - F-Store: not yet
 - Chocolatey (Windows): not yet
+- Web: not yet
 
 Note: Under some Linux systems, especially ones running KDE desktop environments, you may need to install the `zenity` package for the file picker to work correctly.
 
@@ -55,6 +56,15 @@ Key:
 #### Note for Linux users:
 You might need to add your user to the `dialout` or, on Arch Linux, to the `uucp` group for the app to talk to the device. If your user is not in this group, you may get serial or permission errors.
 It is also highly recommended to either uninstall or disable ModemManager (`sudo systemctl disable --now modemmanager`) as many distros ship ModemManager and it may interfere with communication.
+
+#### Note for Web build:
+For key recovery to work you must set those headers:
+
+```
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
+
 
 ## Buy a Chameleon Ultra
 - [Sneak Tech](https://sneaktechnology.com/product/chameleon-ultra/)

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -99,7 +100,10 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
               "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
             var url = file["browser_download_url"];
             if (kIsWeb) {
-              url = "https://api.codetabs.com/v1/proxy/?quest=$url";
+              var corsProxy = SharedPreferencesProvider().getCorsProxy();
+              if (corsProxy.isNotEmpty) {
+                url = "$corsProxy$url";
+              }
             }
             content = await http.readBytes(Uri.parse(url));
             break;
