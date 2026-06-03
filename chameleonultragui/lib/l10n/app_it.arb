@@ -202,7 +202,10 @@
   "force_flashing": "Forza l'installazione",
   "chameleon_flashing_title_easter_egg": "Il tuo Chameleon {model} sta installando",
   "chameleon_flashing_title": "Installazione del firmware su Chameleon {model}",
+  "ble_pairing": "Abbinamento BLE",
   "ats": "ATS",
+  "outdated_protocol": "Protocollo obsoleto nel firmware",
+  "outdated_protocol_description_1": "Il tuo Chameleon funziona con un protocollo obsoleto, il che significa che il firmware \u00e8 obsoleto.",
   "outdated_protocol_description_2": "L'app non pu\u00f2 funzionare con questa versione del protocollo. Non segnalare alcun bug trovato dopo quel messaggio.",
   "outdated_protocol_description_3": "Desideri aggiornare il firmware?",
   "skip": "Ignora",
@@ -400,5 +403,12 @@
   "android_ble_permissions_missing": "Permessi BLE o di posizione mancanti.\nPer connetterti tramite BLE, concedi i permessi nell\u2019app Impostazioni del dispositivo",
   "skip_recovery": "Salta recovery",
   "resume_recovery": "Riprendi recovery",
-  "language_name": "Italiano"
+  "language_name": "Italiano",
+  "lf_sniff_summary": "Sommario",
+  "lf_sniff_waveform": "Forma d'onda",
+  "lf_sniff_zoom": "Zoom",
+  "lf_sniff_expand_waveform": "Espandi",
+  "lf_sniff_decode": "Decodifica",
+  "lf_sniff_hex": "Esadecimale",
+  "lf_sniff_duration_value": "Durata"
 }
