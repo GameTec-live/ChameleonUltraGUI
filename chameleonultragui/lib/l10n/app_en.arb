@@ -228,7 +228,6 @@
   "export_to_dictionary": "Export found keys",
   "enter_name_of_card": "Enter name of card",
   "enter_name_of_dictionary": "Enter name of dictionary",
-  "qr_code": "QR Code",
   "qrCodeScanner": "QR Code Scanner",
   "qrCodeViewer": "QR Code Viewer",
   "done": "Done",
@@ -540,5 +539,6 @@
   "no_dumps_to_compare": "No compatible dumps to compare",
   "difference": "Difference",
   "comparison": "Comparison",
-  "copy": "copy"
+  "copy": "copy",
+  "qr_code": "QR Code"
 }
