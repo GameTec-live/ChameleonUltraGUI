@@ -28,6 +28,9 @@ void main(List<String> args) {
 
     if (!Directory(rustDir).existsSync()) return;
 
+    final isNativeBuild = input.config.buildAssetTypes.isNotEmpty;
+    if (isNativeBuild) return;
+
     final exe = _findWasmPack();
     if (exe == null) {
       throw Exception(
