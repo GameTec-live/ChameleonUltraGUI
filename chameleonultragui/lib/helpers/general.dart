@@ -377,20 +377,44 @@ AnimationSetting getAnimationModeType(int value) {
 Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
   var localizations = AppLocalizations.of(context)!;
   if (bin) {
-    List<int> tagDump = [];
-    for (var block in tag.data) {
-      tagDump.addAll(block);
+    Uint8List tagDump;
+    if (isMifareClassic(tag.tag)) {
+      tagDump = mfClassicGetExportBytes(
+          chameleonTagTypeGetMfClassicType(tag.tag), tag.data,
+          isEV1: chameleonTagSaveCheckForMifareClassicEV1(tag));
+    } else {
+      List<int> dump = [];
+      for (var block in tag.data) {
+        dump.addAll(block);
+      }
+      tagDump = Uint8List.fromList(dump);
     }
     await FilePicker.saveFile(
       dialogTitle: '${localizations.output_file}:',
       fileName: '${tag.name}.bin',
-      bytes: Uint8List.fromList(tagDump),
+      bytes: tagDump,
     );
   } else {
+    var exportTag = tag;
+    if (isMifareClassic(tag.tag)) {
+      exportTag = CardSave(
+          id: tag.id,
+          uid: tag.uid,
+          sak: tag.sak,
+          atqa: tag.atqa,
+          ats: tag.ats,
+          name: tag.name,
+          tag: tag.tag,
+          data: mfClassicGetExportBlocks(
+              chameleonTagTypeGetMfClassicType(tag.tag), tag.data,
+              isEV1: chameleonTagSaveCheckForMifareClassicEV1(tag)),
+          extraData: tag.extraData,
+          color: tag.color);
+    }
     await FilePicker.saveFile(
       dialogTitle: '${localizations.output_file}:',
       fileName: '${tag.name}.json',
-      bytes: const Utf8Encoder().convert(tag.toJson()),
+      bytes: const Utf8Encoder().convert(exportTag.toJson()),
     );
   }
 }
@@ -458,6 +482,8 @@ TagType getTagTypeByDumpSize(int size) {
     case 1024:
       return TagType.mifare1K;
     case 1088: // EV1
+    case 1152: // EV1
+      return TagType.mifare1K;
     case 2048:
       return TagType.mifare2K;
     case 4096:

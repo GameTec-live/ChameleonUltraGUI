@@ -50,26 +50,19 @@ class CardReaderState extends State<MifareClassicHelper> {
   Future<void> saveCard({bool bin = false, bool skipDump = false}) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
-    List<int> cardDump = [];
     var localizations = AppLocalizations.of(context)!;
+    Uint8List cardDump = Uint8List(0);
     if (!skipDump) {
-      for (var sector = 0;
-          sector < mfClassicGetSectorCount(widget.mfcInfo.type);
-          sector++) {
-        for (var block = 0;
-            block < mfClassicGetBlockCountBySector(sector);
-            block++) {
-          cardDump.addAll(widget.mfcInfo.recovery!
-              .cardData[block + mfClassicGetFirstBlockCountBySector(sector)]);
-        }
-      }
+      cardDump = mfClassicGetExportBytes(
+          widget.mfcInfo.type, widget.mfcInfo.recovery!.cardData,
+          isEV1: widget.mfcInfo.isEV1);
     }
 
     if (bin) {
       await FilePicker.saveFile(
         dialogTitle: '${localizations.output_file}:',
         fileName: '${widget.hfInfo.uid.replaceAll(" ", "")}.bin',
-        bytes: Uint8List.fromList(cardDump),
+        bytes: cardDump,
       );
     } else {
       var tags = appState.sharedPreferencesProvider.getCards();

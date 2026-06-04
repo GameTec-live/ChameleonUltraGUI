@@ -612,7 +612,8 @@ class MifareClassicRecovery {
               blockData;
 
           dumpProgress = (block + mfClassicGetFirstBlockCountBySector(sector)) /
-              (mfClassicGetBlockCount(mifareClassicType));
+              (mfClassicGetBlockCount(mifareClassicType,
+                  isEV1: isMifareClassicEV1));
 
           update();
 
