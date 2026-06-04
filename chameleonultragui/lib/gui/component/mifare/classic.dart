@@ -162,13 +162,7 @@ class CardReaderState extends State<MifareClassicHelper> {
         ],
         if (widget.mfcInfo.state == MifareClassicState.recovery ||
             widget.mfcInfo.state == MifareClassicState.recoveryOngoing)
-          FittedBox(
-              alignment: Alignment.topCenter,
-              fit: BoxFit.scaleDown,
-              child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
+          _ResponsiveButtonGroup(children: [
                     const SizedBox(height: 8),
                     ElevatedButton(
                       onPressed: (widget.mfcInfo.state ==
@@ -238,7 +232,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                       style: customCardButtonStyle(appState),
                       child: Text(localizations.export_to_dictionary),
                     ),
-                  ])),
+          ]),
         if (widget.mfcInfo.state == MifareClassicState.checkKeys ||
             widget.mfcInfo.state == MifareClassicState.checkKeysOngoing)
           Column(children: [
@@ -336,10 +330,7 @@ class CardReaderState extends State<MifareClassicHelper> {
         if ((widget.mfcInfo.state == MifareClassicState.dump ||
                 widget.mfcInfo.state == MifareClassicState.dumpOngoing) &&
             widget.allowSave)
-          FittedBox(
-              alignment: Alignment.topCenter,
-              fit: BoxFit.scaleDown,
-              child: Row(children: [
+          _ResponsiveButtonGroup(children: [
                 ElevatedButton(
                   onPressed: (widget.mfcInfo.state == MifareClassicState.dump)
                       ? () async {
@@ -375,14 +366,12 @@ class CardReaderState extends State<MifareClassicHelper> {
                   style: customCardButtonStyle(appState),
                   child: Text(localizations.export_to_dictionary),
                 ),
-              ])),
+          ]),
       ],
       if (widget.mfcInfo.state == MifareClassicState.save && widget.allowSave)
-        Center(
-            child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+        _ResponsiveButtonGroup(
+            centerOnly: true,
+            children: [
               ElevatedButton(
                 onPressed: () async {
                   await showDialog(
@@ -430,7 +419,49 @@ class CardReaderState extends State<MifareClassicHelper> {
                 style: customCardButtonStyle(appState),
                 child: Text(localizations.save_as(".bin")),
               ),
-            ])),
+            ]),
     ]);
+  }
+}
+
+class _ResponsiveButtonGroup extends StatelessWidget {
+  final List<Widget> children;
+  final bool centerOnly;
+
+  const _ResponsiveButtonGroup({
+    required this.children,
+    this.centerOnly = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.of(context).size.width < 800) {
+      final buttons = children.where((child) => child is! SizedBox).toList();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var index = 0; index < buttons.length; index++) ...[
+            if (index > 0) const SizedBox(height: 8),
+            buttons[index],
+          ],
+        ],
+      );
+    }
+
+    final row = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: children,
+    );
+
+    if (centerOnly) {
+      return Center(child: row);
+    }
+
+    return FittedBox(
+      alignment: Alignment.topCenter,
+      fit: BoxFit.scaleDown,
+      child: row,
+    );
   }
 }
