@@ -15,6 +15,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 class DynamicFont {
@@ -25,6 +26,7 @@ class DynamicFont {
       : uri = filepath;
 
   Future<bool> load() async {
+    if (kIsWeb) return false;
     if (!await File(uri).exists()) return false;
     try {
       await loadFontFromList(
@@ -78,15 +80,18 @@ class SystemChineseFont {
   /// Chinese font family fallback, for most platforms
   static List<String> get fontFamilyFallback {
     if (!systemFontLoaded) {
-      // honorSystemFont.load();
-      () async {
-        final vivoFont = File("/system/fonts/VivoFont.ttf");
-        if ((await vivoFont.exists()) &&
-            (await vivoFont.resolveSymbolicLinks())
-                .contains("DroidSansFallbackBBK")) {
-          await vivoSystemFont.load();
-        }
-      }();
+      if (!kIsWeb) {
+        () async {
+          try {
+            final vivoFont = File("/system/fonts/VivoFont.ttf");
+            if ((await vivoFont.exists()) &&
+                (await vivoFont.resolveSymbolicLinks())
+                    .contains("DroidSansFallbackBBK")) {
+              await vivoSystemFont.load();
+            }
+          } catch (_) {}
+        }();
+      }
       systemFontLoaded = true;
     }
 

@@ -9,6 +9,7 @@ import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
@@ -55,6 +56,20 @@ int bytesToU32(Uint8List byteArray) {
 
 int bytesToU64(Uint8List byteArray) {
   return byteArray.buffer.asByteData().getUint64(0, Endian.big);
+}
+
+BigInt bytesToBigU64(Uint8List byteArray) {
+  var result = BigInt.zero;
+  for (var b in byteArray) {
+    result = (result << 8) | BigInt.from(b);
+  }
+  return result;
+}
+
+Future<Uint8List> platformFileReadBytes(PlatformFile result) async {
+  if (result.bytes != null) return result.bytes!;
+  if (kIsWeb) return await result.readAsBytes();
+  return await File(result.path!).readAsBytes();
 }
 
 int parityToInt(int ntParErr) {
@@ -381,6 +396,7 @@ Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
     for (var block in tag.data) {
       tagDump.addAll(block);
     }
+    if (tagDump.isEmpty) return;
     await FilePicker.saveFile(
       dialogTitle: '${localizations.output_file}:',
       fileName: '${tag.name}.bin',

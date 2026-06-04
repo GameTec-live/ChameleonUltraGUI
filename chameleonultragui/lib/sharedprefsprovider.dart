@@ -39,7 +39,12 @@ class Dictionary {
       keys.add(Uint8List.fromList(List<int>.from(key)));
     }
     return Dictionary(
-        id: id, name: name, keys: keys, color: color, keyLength: keyLength);
+      id: id,
+      name: name,
+      keys: keys,
+      color: color,
+      keyLength: keyLength,
+    );
   }
 
   String toJson() {
@@ -48,7 +53,7 @@ class Dictionary {
       'name': name,
       'color': colorToHex(color),
       'keys': keys.map((key) => key.toList()).toList(),
-      'keyLength': keyLength
+      'keyLength': keyLength,
     });
   }
 
@@ -65,8 +70,11 @@ class Dictionary {
     return const Utf8Encoder().convert(toString());
   }
 
-  factory Dictionary.fromString(String input,
-      {String name = '', Color color = Colors.deepOrange}) {
+  factory Dictionary.fromString(
+    String input, {
+    String name = '',
+    Color color = Colors.deepOrange,
+  }) {
     List<Uint8List> keys = [];
     List<int> allowedKeySizes = [
       12, // 6 - Mifare Classic
@@ -94,20 +102,21 @@ class Dictionary {
     }
 
     return Dictionary(
-        id: const Uuid().v4(),
-        name: name,
-        keys: keys,
-        color: color,
-        keyLength: currentKeySize);
+      id: const Uuid().v4(),
+      name: name,
+      keys: keys,
+      color: color,
+      keyLength: currentKeySize,
+    );
   }
 
-  Dictionary(
-      {String? id,
-      this.name = "",
-      this.keys = const [],
-      this.color = Colors.deepOrange,
-      this.keyLength = 0})
-      : id = id ?? const Uuid().v4();
+  Dictionary({
+    String? id,
+    this.name = "",
+    this.keys = const [],
+    this.color = Colors.deepOrange,
+    this.keyLength = 0,
+  }) : id = id ?? const Uuid().v4();
 }
 
 class CardSave {
@@ -132,23 +141,25 @@ class CardSave {
     final name = data['name'] as String;
     final tag = getTagTypeByValue(data['tag']);
     final extraData = CardSaveExtra.import(data['extra'] ?? {});
-    final color =
-        data['color'] == null ? Colors.deepOrange : hexToColor(data['color']);
+    final color = data['color'] == null
+        ? Colors.deepOrange
+        : hexToColor(data['color']);
     List<Uint8List> tagData = (data['data'] as List<dynamic>)
         .map((e) => Uint8List.fromList(List<int>.from(e)))
         .toList();
 
     return CardSave(
-        id: id,
-        uid: uid,
-        sak: sak,
-        name: name,
-        tag: tag,
-        data: tagData,
-        color: color,
-        extraData: extraData,
-        ats: Uint8List.fromList(ats),
-        atqa: Uint8List.fromList(atqa));
+      id: id,
+      uid: uid,
+      sak: sak,
+      name: name,
+      tag: tag,
+      data: tagData,
+      color: color,
+      extraData: extraData,
+      ats: Uint8List.fromList(ats),
+      atqa: Uint8List.fromList(atqa),
+    );
   }
 
   String toJson() {
@@ -177,11 +188,11 @@ class CardSave {
     CardSaveExtra? extraData,
     this.color = Colors.deepOrange,
     this.data = const [],
-  })  : id = id ?? const Uuid().v4(),
-        sak = sak ?? 0,
-        atqa = atqa ?? Uint8List(0),
-        ats = ats ?? Uint8List(0),
-        extraData = extraData ?? CardSaveExtra();
+  }) : id = id ?? const Uuid().v4(),
+       sak = sak ?? 0,
+       atqa = atqa ?? Uint8List(0),
+       ats = ats ?? Uint8List(0),
+       extraData = extraData ?? CardSaveExtra();
 }
 
 class CardSaveExtra {
@@ -192,7 +203,8 @@ class CardSaveExtra {
   factory CardSaveExtra.import(Map<String, dynamic> data) {
     List<int> readBytes(Map<String, dynamic> data, String key) {
       return List<int>.from(
-          data[key] != null ? data[key] as List<dynamic> : []);
+        data[key] != null ? data[key] as List<dynamic> : [],
+      );
     }
 
     final ultralightSignature = readBytes(data, 'ultralightSignature');
@@ -202,9 +214,10 @@ class CardSaveExtra {
         : <int>[];
 
     return CardSaveExtra(
-        ultralightSignature: Uint8List.fromList(ultralightSignature),
-        ultralightVersion: Uint8List.fromList(ultralightVersion),
-        ultralightCounters: ultralightCounters);
+      ultralightSignature: Uint8List.fromList(ultralightSignature),
+      ultralightVersion: Uint8List.fromList(ultralightVersion),
+      ultralightCounters: ultralightCounters,
+    );
   }
 
   Map<String, dynamic> export() {
@@ -225,13 +238,13 @@ class CardSaveExtra {
     return json;
   }
 
-  CardSaveExtra(
-      {Uint8List? ultralightSignature,
-      Uint8List? ultralightVersion,
-      List<int>? ultralightCounters})
-      : ultralightSignature = ultralightSignature ?? Uint8List(0),
-        ultralightVersion = ultralightVersion ?? Uint8List(0),
-        ultralightCounters = ultralightCounters ?? <int>[];
+  CardSaveExtra({
+    Uint8List? ultralightSignature,
+    Uint8List? ultralightVersion,
+    List<int>? ultralightCounters,
+  }) : ultralightSignature = ultralightSignature ?? Uint8List(0),
+       ultralightVersion = ultralightVersion ?? Uint8List(0),
+       ultralightCounters = ultralightCounters ?? <int>[];
 }
 
 class SharedPreferencesProvider extends ChangeNotifier {
@@ -466,7 +479,9 @@ class SharedPreferencesProvider extends ChangeNotifier {
         case List l:
           // this is the reverse of the hack above :)
           _sharedPreferences.setStringList(
-              key, l.map((e) => jsonEncode(e)).toList());
+            key,
+            l.map((e) => jsonEncode(e)).toList(),
+          );
           break;
         default:
           break;
@@ -496,5 +511,14 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setAutoConnectFirstFoundDevice(bool value) {
     _sharedPreferences.setBool('auto_connect_first_found', value);
+  }
+
+  String getCorsProxy() {
+    return _sharedPreferences.getString('cors_proxy') ??
+        'https://api.codetabs.com/v1/proxy/?quest=';
+  }
+
+  void setCorsProxy(String value) {
+    _sharedPreferences.setString('cors_proxy', value);
   }
 }

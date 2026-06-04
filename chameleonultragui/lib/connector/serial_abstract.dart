@@ -26,6 +26,8 @@ abstract class AbstractSerial {
   bool isDFU = false;
   bool pendingConnection = false;
   String portName = "None";
+  String name = "Abstract";
+  bool hasAllPermissions = true;
   ConnectionType connectionType = ConnectionType.none;
   dynamic messageCallback;
   dynamic activeDevicePort;

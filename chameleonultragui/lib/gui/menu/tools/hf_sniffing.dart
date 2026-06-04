@@ -36,7 +36,7 @@ class _HfSniffRecoveryState {
 }
 
 class _HfSniffingMenuState extends State<HfSniffingMenu> {
-  static const int _kNoKey = 0xFFFFFFFFFFFFFFFF;
+  static final int _kNoKey = BigInt.parse('FFFFFFFFFFFFFFFF', radix: 16).toInt();
 
   final _formKey = GlobalKey<FormState>();
   final _timeoutController = TextEditingController(text: '5000');
