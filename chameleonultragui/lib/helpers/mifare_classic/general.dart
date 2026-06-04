@@ -293,9 +293,40 @@ MifareClassicType chameleonTagTypeGetMfClassicType(TagType type) {
 }
 
 bool chameleonTagSaveCheckForMifareClassicEV1(CardSave tag) {
-  return tag.tag == TagType.mifare1K &&
-      tag.data.length >= 71 &&
-      tag.data[71].isNotEmpty;
+  if (tag.tag != TagType.mifare1K || tag.data.length <= 64) {
+    return false;
+  }
+
+  for (var block = 64; block < 72 && block < tag.data.length; block++) {
+    if (tag.data[block].isNotEmpty) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+List<Uint8List> mfClassicGetExportBlocks(
+    MifareClassicType type, List<Uint8List> data,
+    {bool isEV1 = false}) {
+  final blockCount = mfClassicGetBlockCount(type, isEV1: isEV1);
+  return List.generate(blockCount, (block) {
+    if (data.length > block && data[block].length == 16) {
+      return Uint8List.fromList(data[block]);
+    }
+
+    return Uint8List(16);
+  });
+}
+
+Uint8List mfClassicGetExportBytes(MifareClassicType type, List<Uint8List> data,
+    {bool isEV1 = false}) {
+  final output = <int>[];
+  for (var block in mfClassicGetExportBlocks(type, data, isEV1: isEV1)) {
+    output.addAll(block);
+  }
+
+  return Uint8List.fromList(output);
 }
 
 bool isMifareClassic(TagType type) {
