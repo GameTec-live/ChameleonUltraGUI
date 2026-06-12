@@ -497,30 +497,37 @@ class MifareClassicRecovery {
                   backdoorInfo.$2.nonces[sector].nt,
                   backdoorInfo.$3.nonces[sector].nt);
 
-              if (await checkKeysOnSector(
-                  mfClassicConvertKeys(filtered.$2.reversed.toList()),
-                  1,
-                  sector)) {
+              if (checkMarks[sector + 40] != ChameleonKeyCheckmark.found &&
+                  checkMarks[sector + 40] != ChameleonKeyCheckmark.disabled &&
+                  await checkKeysOnSector(
+                      mfClassicConvertKeys(filtered.$2.reversed.toList()),
+                      1,
+                      sector)) {
                 checkMarks[sector + 40] = ChameleonKeyCheckmark.found;
-                if (await checkKeysOnSector(
-                    mfClassicConvertKeys(
-                        await StaticEncryptedKeysFilterAsync.findMatchingKeys(
-                            backdoorInfo.$3.nonces[sector].nt,
-                            bytesToU64(Uint8List.fromList(
-                                [0, 0, ...validKeys[sector + 40]])),
-                            backdoorInfo.$2.nonces[sector].nt,
-                            possibleAKeys)),
-                    0,
-                    sector)) {
-                  found = true;
-                  break;
-                } else if (await checkKeysOnSector(
-                    mfClassicConvertKeys(filtered.$1.reversed.toList()),
-                    0,
-                    sector)) {
-                  found = true;
-                  break;
-                }
+              }
+
+              if (checkMarks[sector] == ChameleonKeyCheckmark.found ||
+                  checkMarks[sector] == ChameleonKeyCheckmark.disabled) {
+                found = true;
+                break;
+              } else if (await checkKeysOnSector(
+                  mfClassicConvertKeys(
+                      await StaticEncryptedKeysFilterAsync.findMatchingKeys(
+                          backdoorInfo.$3.nonces[sector].nt,
+                          bytesToU64(Uint8List.fromList(
+                              [0, 0, ...validKeys[sector + 40]])),
+                          backdoorInfo.$2.nonces[sector].nt,
+                          possibleAKeys)),
+                  0,
+                  sector)) {
+                found = true;
+                break;
+              } else if (await checkKeysOnSector(
+                  mfClassicConvertKeys(filtered.$1.reversed.toList()),
+                  0,
+                  sector)) {
+                found = true;
+                break;
               }
 
               setMissingSector(sector, 0);
