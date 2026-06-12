@@ -514,8 +514,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   String getCorsProxy() {
-    return _sharedPreferences.getString('cors_proxy') ??
-        'https://api.codetabs.com/v1/proxy/?quest=';
+    return _sharedPreferences.getString('cors_proxy') ?? '/cors?url=';
   }
 
   void setCorsProxy(String value) {

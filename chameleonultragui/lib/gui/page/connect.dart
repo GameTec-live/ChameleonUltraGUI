@@ -338,9 +338,25 @@ class _ConnectPageState extends State<ConnectPage> {
   }
 
   Widget _buildWebConnectButton() {
+    final appState = _appState;
+    final localizations = AppLocalizations.of(context)!;
+
+    if (!appState.connector!.isApiAvailable) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.usb_off, size: 48),
+          const SizedBox(height: 16),
+          Text(
+            localizations.web_serial_not_supported,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      );
+    }
+
     return ElevatedButton.icon(
       onPressed: () async {
-        final appState = _appState;
         await appState.connector!.connectSpecificDevice(null);
         if (appState.connector!.connected) {
           if (appState.connector!.isDFU) {
@@ -363,7 +379,7 @@ class _ConnectPageState extends State<ConnectPage> {
         }
       },
       icon: const Icon(Icons.usb),
-      label: Text(AppLocalizations.of(context)!.click_to_connect),
+      label: Text(localizations.click_to_connect),
     );
   }
 
@@ -461,6 +477,8 @@ class _ConnectPageState extends State<ConnectPage> {
       );
     }
 
+    final isWebSerial = appState.connector!.name == "Web";
+
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.connect),
@@ -469,7 +487,7 @@ class _ConnectPageState extends State<ConnectPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (!kIsWeb)
+            if (!isWebSerial)
               Align(
                 alignment: Alignment.topRight,
                 child: IconButton(
@@ -478,7 +496,7 @@ class _ConnectPageState extends State<ConnectPage> {
                 ),
               ),
             Expanded(
-              child: kIsWeb
+              child: isWebSerial
                   ? Center(child: _buildWebConnectButton())
                   : (_isLoading && !_initialScanCompleted)
                       ? const Center(child: CircularProgressIndicator())

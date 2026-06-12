@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'dart:typed_data';
 import 'package:web/web.dart' as web;
 
@@ -14,6 +15,10 @@ class SerialAdapter extends AbstractSerial {
   SerialPort? port;
   web.ReadableStreamDefaultReader? reader;
   bool _keepReading = true;
+
+  @override
+  bool get isApiAvailable =>
+      (web.window.navigator as JSObject).hasProperty('serial'.toJS).toDart;
 
   SerialAdapter({required super.log});
 

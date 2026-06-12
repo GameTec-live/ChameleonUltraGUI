@@ -297,6 +297,7 @@
   "t55xx": "T55XX",
   "connect_manually": "Connect manually",
   "click_to_connect": "Click to connect",
+  "web_serial_not_supported": "Web Serial API is not supported by your browser. Please use Chrome or Firefox on desktop.",
   "port": "Port",
   "port_hint": "e.g. COM3, /dev/ttyUSB0",
   "hardnested_collecting_nonces": "Collecting required nonces {nonces}/256...",

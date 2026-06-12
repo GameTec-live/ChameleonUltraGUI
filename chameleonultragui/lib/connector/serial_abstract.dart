@@ -33,6 +33,8 @@ abstract class AbstractSerial {
   dynamic activeDevicePort;
   VoidCallback? connectionStateCallback;
 
+  bool get isApiAvailable => true;
+
   AbstractSerial({required this.log});
 
   Future<bool> performConnect() async {
