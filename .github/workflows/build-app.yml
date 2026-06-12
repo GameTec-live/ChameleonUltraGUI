@@ -39,7 +39,7 @@ jobs:
 
   build-windows:
     needs: check
-    runs-on: windows-latest
+    runs-on: windows-2022
     defaults:
       run:
         working-directory: ./chameleonultragui
