@@ -56,15 +56,12 @@ class ToolsPageState extends State<ToolsPage> {
           name: localizations.lf_sniffing,
           description: localizations.lf_sniffing_description,
           icon: Icons.graphic_eq,
-          onPressed: const LfSniffingMenu(),
-          isDeviceRequired: true),
+          onPressed: const LfSniffingMenu()),
       ToolItem(
           name: localizations.hf_sniffing,
           description: localizations.hf_sniffing_description,
           icon: Icons.radar,
-          onPressed: const HfSniffingMenu(),
-          showWipBadge: true,
-          isDeviceRequired: true),
+          onPressed: const HfSniffingMenu()),
       ToolItem(
           name: localizations.mifare_classic_gen4,
           description: localizations.mifare_classic_gen4_description,
