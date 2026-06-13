@@ -225,8 +225,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
             .setHIDProxEmulatorID(hexToBytes(hidCard.toString()));
       } catch (_) {}
     } else if (selectedType! == TagType.pac) {
-      await appState.communicator!.setPacEmulatorID(
-          hexToBytes(uidController.text.replaceAll(' ', '')));
+      await appState.communicator!
+          .setPacEmulatorID(hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (selectedType! == TagType.ioProx) {
       await appState.communicator!.setIoProxEmulatorID(
           hexToBytes(uidController.text.replaceAll(' ', '')));
@@ -685,129 +685,127 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                         ? true
                                                         : false);
                                               }),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                              localizations.password_detection),
-                                          const SizedBox(height: 8),
-                                          ToggleButtonsWrapper(
-                                              items: [
-                                                localizations.yes,
-                                                localizations.no
-                                              ],
-                                              selectedValue: emulatorSettings!
-                                                      .isDetectionEnabled
-                                                  ? 0
-                                                  : 1,
-                                              onChange: (int index) async {
-                                                await appState.communicator!
-                                                    .mf0NtagSetDetectionEnable(
-                                                        index == 0
-                                                            ? true
-                                                            : false);
-                                              }),
-                                          ...(emulatorSettings!
-                                                  .isDetectionEnabled)
-                                              ? [
-                                                  ...(detectionCount == 0)
-                                                      ? [
-                                                          const SizedBox(
-                                                              height: 8),
-                                                          Text(
-                                                              localizations
-                                                                  .present_cham_reader_keys,
-                                                              textScaler:
-                                                                  const TextScaler
-                                                                      .linear(
-                                                                      0.8))
-                                                        ]
-                                                      : [
-                                                          const SizedBox(
-                                                              height: 8),
-                                                          Text(
-                                                              '${localizations.passwords_detected}: $detectionCount',
-                                                              textScaler:
-                                                                  const TextScaler
-                                                                      .linear(
-                                                                      0.9)),
-                                                          const SizedBox(
-                                                              height: 8),
-                                                          Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: [
-                                                                TextButton(
-                                                                    onPressed:
-                                                                        () async {
-                                                                      List<String>
-                                                                          passwords =
-                                                                          await appState
-                                                                              .communicator!
-                                                                              .mf0NtagGetDetectionLog(0);
-
-                                                                      if (!context
-                                                                          .mounted) {
-                                                                        return;
-                                                                      }
-
-                                                                      showDialog(
-                                                                        context:
-                                                                            context,
-                                                                        builder:
-                                                                            (BuildContext
-                                                                                context) {
-                                                                          TextEditingController
-                                                                              passwordController =
-                                                                              TextEditingController();
-                                                                          passwordController.text = passwords
-                                                                              .join('\n')
-                                                                              .toUpperCase();
-
-                                                                          return AlertDialog(
-                                                                            title:
-                                                                                Text(localizations.detected_passwords),
-                                                                            content:
-                                                                                SizedBox(
-                                                                              width: double.maxFinite,
-                                                                              child: TextFormField(
-                                                                                maxLines: null,
-                                                                                controller: passwordController,
-                                                                                readOnly: true,
-                                                                                style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
-                                                                              ),
-                                                                            ),
-                                                                            actions: [
-                                                                              TextButton(
-                                                                                onPressed: () {
-                                                                                  Navigator.of(context).pop();
-                                                                                },
-                                                                                child: Text(localizations.close),
-                                                                              ),
-                                                                            ],
-                                                                          );
-                                                                        },
-                                                                      );
-                                                                    },
-                                                                    child: Row(
-                                                                      children: [
-                                                                        const Icon(
-                                                                            Icons.visibility),
-                                                                        Text(localizations
-                                                                            .view_passwords),
-                                                                      ],
-                                                                    )),
-                                                              ]),
-                                                        ],
-                                                ]
-                                              : [
-                                                  const SizedBox(height: 8),
-                                                  Text(
-                                                      localizations
-                                                          .enable_password_detection,
-                                                      textScaler:
-                                                          const TextScaler
-                                                              .linear(0.8))
+                                          if (selectedType !=
+                                              TagType.ultralightC) ...[
+                                            const SizedBox(height: 8),
+                                            Text(localizations
+                                                .password_detection),
+                                            const SizedBox(height: 8),
+                                            ToggleButtonsWrapper(
+                                                items: [
+                                                  localizations.yes,
+                                                  localizations.no
                                                 ],
+                                                selectedValue: emulatorSettings!
+                                                        .isDetectionEnabled
+                                                    ? 0
+                                                    : 1,
+                                                onChange: (int index) async {
+                                                  await appState.communicator!
+                                                      .mf0NtagSetDetectionEnable(
+                                                          index == 0
+                                                              ? true
+                                                              : false);
+                                                }),
+                                            ...(emulatorSettings!
+                                                    .isDetectionEnabled)
+                                                ? [
+                                                    ...(detectionCount == 0)
+                                                        ? [
+                                                            const SizedBox(
+                                                                height: 8),
+                                                            Text(
+                                                                localizations
+                                                                    .present_cham_reader_keys,
+                                                                textScaler:
+                                                                    const TextScaler
+                                                                        .linear(
+                                                                        0.8))
+                                                          ]
+                                                        : [
+                                                            const SizedBox(
+                                                                height: 8),
+                                                            Text(
+                                                                '${localizations.passwords_detected}: $detectionCount',
+                                                                textScaler:
+                                                                    const TextScaler
+                                                                        .linear(
+                                                                        0.9)),
+                                                            const SizedBox(
+                                                                height: 8),
+                                                            Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  TextButton(
+                                                                      onPressed:
+                                                                          () async {
+                                                                        List<String>
+                                                                            passwords =
+                                                                            await appState.communicator!.mf0NtagGetDetectionLog(0);
+
+                                                                        if (!context
+                                                                            .mounted) {
+                                                                          return;
+                                                                        }
+
+                                                                        showDialog(
+                                                                          context:
+                                                                              context,
+                                                                          builder:
+                                                                              (BuildContext context) {
+                                                                            TextEditingController
+                                                                                passwordController =
+                                                                                TextEditingController();
+                                                                            passwordController.text =
+                                                                                passwords.join('\n').toUpperCase();
+
+                                                                            return AlertDialog(
+                                                                              title: Text(localizations.detected_passwords),
+                                                                              content: SizedBox(
+                                                                                width: double.maxFinite,
+                                                                                child: TextFormField(
+                                                                                  maxLines: null,
+                                                                                  controller: passwordController,
+                                                                                  readOnly: true,
+                                                                                  style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 16.0),
+                                                                                ),
+                                                                              ),
+                                                                              actions: [
+                                                                                TextButton(
+                                                                                  onPressed: () {
+                                                                                    Navigator.of(context).pop();
+                                                                                  },
+                                                                                  child: Text(localizations.close),
+                                                                                ),
+                                                                              ],
+                                                                            );
+                                                                          },
+                                                                        );
+                                                                      },
+                                                                      child:
+                                                                          Row(
+                                                                        children: [
+                                                                          const Icon(
+                                                                              Icons.visibility),
+                                                                          Text(localizations
+                                                                              .view_passwords),
+                                                                        ],
+                                                                      )),
+                                                                ]),
+                                                          ],
+                                                  ]
+                                                : [
+                                                    const SizedBox(height: 8),
+                                                    Text(
+                                                        localizations
+                                                            .enable_password_detection,
+                                                        textScaler:
+                                                            const TextScaler
+                                                                .linear(0.8))
+                                                  ],
+                                          ],
                                           const SizedBox(height: 8),
                                           Text(localizations.write_mode),
                                           const SizedBox(height: 8),
