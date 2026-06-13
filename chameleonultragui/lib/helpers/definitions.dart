@@ -22,6 +22,7 @@ enum ChameleonCommand {
   getSlotInfo(1019),
   getEnabledSlots(1023),
   deleteSlotInfo(1024),
+  deleteSlotTagNick(1021),
   getAllSlotNicks(1038),
 
   // bootloader
@@ -76,7 +77,24 @@ enum ChameleonCommand {
   mf1StaticEncryptedNestedAcquire(2014),
   mf1CheckKeysOnBlock(2015),
   hf14ARawCommand(2010),
+  hf14aScanKeep(2016),
+  hf14aAuthTrace(2017),
+  mf0UlcAuth(2018),
+  mf0UlcRead(2019),
+  mf0UlcWrite(2021),
   hf14aSniff(2020),
+  hf14aSetFieldOn(2100),
+  hf14aSetFieldOff(2101),
+  hf14aGetConfig(2200),
+  hf14aSetConfig(2201),
+
+  // hf 14a-4 (T=CL) commands
+  hf14a4ApduRecv(6000),
+  hf14a4ApduSend(6001),
+  hf14a4SetAntiColl(6002),
+  hf14a4StaticResp(6003),
+  hf14a4ReaderApdu(6004),
+  hf14a4EmvScan(6005),
 
   // lf commands
   scanEM410Xtag(3000),
@@ -91,6 +109,11 @@ enum ChameleonCommand {
   scanPacTag(3014),
   writePacToT5577(3015),
   writeIdteckToT5577(3018),
+  ioProxDecodeRaw(3012),
+  ioProxComposeID(3013),
+  adcGenericRead(3009),
+  writeT55XX(3016),
+  scanEM4X05Tag(3030),
   lfSniff(3031),
 
   mf1LoadBlockData(4000),
@@ -134,6 +157,8 @@ enum ChameleonCommand {
   mf0NtagGetEmulatorConfig(4037),
   mf1GetPrngType(4040),
   mf1SetPrngType(4041),
+  mf1SetFieldOffDoReset(4038),
+  mf1GetFieldOffDoReset(4039),
 
   // read slot info
   mf1GetBlockData(4008),

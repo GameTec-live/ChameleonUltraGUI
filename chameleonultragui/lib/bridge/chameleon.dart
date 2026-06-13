@@ -1202,6 +1202,189 @@ class ChameleonCommunicator {
         .data;
   }
 
+  Future<bool> mf0UlcAuth(Uint8List key) async {
+    return (await sendCmd(ChameleonCommand.mf0UlcAuth,
+                data: Uint8List.fromList([...key])))!
+            .status ==
+        0;
+  }
+
+  Future<Uint8List> mf0UlcReadPages(Uint8List key, int page, int count) async {
+    return (await sendCmd(ChameleonCommand.mf0UlcRead,
+            data: Uint8List.fromList([...key, page, count])))!
+        .data;
+  }
+
+  Future<bool> mf0UlcWritePage(Uint8List key, int page, Uint8List data) async {
+    return (await sendCmd(ChameleonCommand.mf0UlcWrite,
+                data: Uint8List.fromList([...key, page, ...data])))!
+            .status ==
+        0;
+  }
+
+  Future<void> hf14aSetFieldOn() async {
+    await sendCmd(ChameleonCommand.hf14aSetFieldOn);
+  }
+
+  Future<void> hf14aSetFieldOff() async {
+    await sendCmd(ChameleonCommand.hf14aSetFieldOff);
+  }
+
+  Future<bool> mf1GetFieldOffDoReset() async {
+    return (await sendCmd(ChameleonCommand.mf1GetFieldOffDoReset))!.data[0] == 1;
+  }
+
+  Future<void> mf1SetFieldOffDoReset(bool enabled) async {
+    await sendCmd(ChameleonCommand.mf1SetFieldOffDoReset,
+        data: Uint8List.fromList([enabled ? 1 : 0]));
+  }
+
+  Future<void> deleteSlotTagNick(int index, TagFrequency frequency) async {
+    await sendCmd(ChameleonCommand.deleteSlotTagNick,
+        data: Uint8List.fromList([index, frequency.value]));
+  }
+
+  Future<List<CardData>> scan14443aTagKeep() async {
+    var resp = await sendCmd(ChameleonCommand.hf14aScanKeep);
+    List<CardData> cards = [];
+    if (resp != null && resp.data.isNotEmpty) {
+      int offset = 0;
+      while (offset < resp.data.length) {
+        int uidLength = resp.data[offset];
+        int atsLength = resp.data[offset + uidLength + 4];
+        cards.add(CardData(
+          uid: resp.data.sublist(offset + 1, offset + uidLength + 1),
+          atqa: Uint8List.fromList(resp.data
+              .sublist(offset + uidLength + 1, offset + uidLength + 3)
+              .reversed
+              .toList()),
+          sak: resp.data[offset + uidLength + 3],
+          ats: resp.data.sublist(
+              offset + uidLength + 5, offset + uidLength + 5 + atsLength),
+        ));
+        offset += uidLength + 5 + atsLength;
+      }
+    }
+    return cards;
+  }
+
+  Future<Uint8List> hf14aAuthTrace(int block, int keyType, Uint8List key,
+      {int timeoutMs = 5000}) async {
+    return (await sendCmd(ChameleonCommand.hf14aAuthTrace,
+            data: Uint8List.fromList(
+                [keyType, block, ...key, (timeoutMs >> 8) & 0xFF, timeoutMs & 0xFF]),
+            timeout: Duration(milliseconds: timeoutMs + 3000)))!
+        .data;
+  }
+
+  Future<(int, int, int, int)> hf14aGetConfig() async {
+    var data = (await sendCmd(ChameleonCommand.hf14aGetConfig))!.data;
+    int signed(int b) => b > 127 ? b - 256 : b;
+    return (signed(data[0]), signed(data[1]), signed(data[2]), signed(data[3]));
+  }
+
+  Future<void> hf14aSetConfig(int bcc, int cl2, int cl3, int rats) async {
+    await sendCmd(ChameleonCommand.hf14aSetConfig,
+        data: Uint8List.fromList(
+            [bcc & 0xFF, cl2 & 0xFF, cl3 & 0xFF, rats & 0xFF]));
+  }
+
+  Future<Uint8List> ioProxDecodeRaw(Uint8List raw8) async {
+    return (await sendCmd(ChameleonCommand.ioProxDecodeRaw,
+            data: Uint8List.fromList([...raw8])))!
+        .data;
+  }
+
+  Future<Uint8List> ioProxComposeID(int version, int facility, int card) async {
+    return (await sendCmd(ChameleonCommand.ioProxComposeID,
+            data: Uint8List.fromList(
+                [version, facility, (card >> 8) & 0xFF, card & 0xFF])))!
+        .data;
+  }
+
+  Future<Uint8List> adcGenericRead() async {
+    return (await sendCmd(ChameleonCommand.adcGenericRead))!.data;
+  }
+
+  Future<void> writeT55XX(int block, Uint8List word,
+      {Uint8List? password, bool page1 = false}) async {
+    bool usePwd = password != null;
+    Uint8List pwd = password ?? Uint8List(4);
+    await sendCmd(ChameleonCommand.writeT55XX,
+        data: Uint8List.fromList(
+            [block, ...word, usePwd ? 1 : 0, ...pwd, page1 ? 1 : 0]));
+  }
+
+  Future<(int, int, int, bool, int)> scanEM4X05({int password = 0}) async {
+    var data = (await sendCmd(ChameleonCommand.scanEM4X05Tag,
+            data: Uint8List.fromList([
+              (password >> 24) & 0xFF,
+              (password >> 16) & 0xFF,
+              (password >> 8) & 0xFF,
+              password & 0xFF
+            ])))!
+        .data;
+    return (
+      bytesToU32(data.sublist(0, 4)),
+      bytesToU32(data.sublist(4, 8)),
+      bytesToU32(data.sublist(8, 12)),
+      data[12] == 1,
+      data[13]
+    );
+  }
+
+  Future<(int, Uint8List)> hf14a4ApduRecv() async {
+    var resp = (await sendCmd(ChameleonCommand.hf14a4ApduRecv,
+        timeout: const Duration(seconds: 2)))!;
+    return (resp.status, resp.data);
+  }
+
+  Future<void> hf14a4ApduSend(Uint8List response) async {
+    await sendCmd(ChameleonCommand.hf14a4ApduSend,
+        data: Uint8List.fromList([
+          (response.length >> 8) & 0xFF,
+          response.length & 0xFF,
+          ...response
+        ]));
+  }
+
+  Future<void> hf14a4SetAntiColl(
+      Uint8List uid, Uint8List atqa, int sak, Uint8List ats) async {
+    await sendCmd(ChameleonCommand.hf14a4SetAntiColl,
+        data: Uint8List.fromList(
+            [uid.length, ...uid, ...atqa, sak, ats.length, ...ats]));
+  }
+
+  Future<void> hf14a4AddStaticResponse(
+      Uint8List cmd, Uint8List response) async {
+    await sendCmd(ChameleonCommand.hf14a4StaticResp,
+        data: Uint8List.fromList([
+          cmd.length,
+          ...cmd,
+          (response.length >> 8) & 0xFF,
+          response.length & 0xFF,
+          ...response
+        ]));
+  }
+
+  Future<void> hf14a4ClearStaticResponses() async {
+    await sendCmd(ChameleonCommand.hf14a4StaticResp,
+        data: Uint8List.fromList([0]));
+  }
+
+  Future<Uint8List> hf14a4ReaderApdu(Uint8List apdu) async {
+    return (await sendCmd(ChameleonCommand.hf14a4ReaderApdu,
+            data: Uint8List.fromList([...apdu]),
+            timeout: const Duration(seconds: 3)))!
+        .data;
+  }
+
+  Future<Uint8List> hf14a4EmvScan() async {
+    return (await sendCmd(ChameleonCommand.hf14a4EmvScan,
+            timeout: const Duration(seconds: 10)))!
+        .data;
+  }
+
   Future<bool> mf0GetMagicMode() async {
     return (await sendCmd(ChameleonCommand.mf0NtagGetUidMagicMode))!.data[0] ==
         1;
