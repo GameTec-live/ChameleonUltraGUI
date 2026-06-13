@@ -1222,6 +1222,13 @@ class ChameleonCommunicator {
         0;
   }
 
+  Future<bool> mf0UlcSetKey(Uint8List oldKey, Uint8List newKey) async {
+    return (await sendCmd(ChameleonCommand.mf0UlcSetKey,
+                data: Uint8List.fromList([...oldKey, ...newKey])))!
+            .status ==
+        0;
+  }
+
   Future<void> hf14aSetFieldOn() async {
     await sendCmd(ChameleonCommand.hf14aSetFieldOn);
   }

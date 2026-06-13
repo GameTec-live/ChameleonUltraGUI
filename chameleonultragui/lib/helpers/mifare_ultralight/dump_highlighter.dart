@@ -39,6 +39,8 @@ class MifareUltralightDumpHighlighter {
       return highlightUidBlock(blockData, context);
     } else if (blockNumber == 2) {
       return highlightBccBlock(blockData, context);
+    } else if (mfUltralightGetKeyPages(cardSave.tag).contains(blockNumber)) {
+      return highlightPasswordBlock(blockData, context);
     } else if (blockNumber == mfUltralightGetPasswordPage(cardSave.tag)) {
       return highlightPasswordBlock(blockData, context);
     } else {

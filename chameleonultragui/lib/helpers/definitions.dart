@@ -82,6 +82,7 @@ enum ChameleonCommand {
   mf0UlcAuth(2018),
   mf0UlcRead(2019),
   mf0UlcWrite(2021),
+  mf0UlcSetKey(2022),
   hf14aSniff(2020),
   hf14aSetFieldOn(2100),
   hf14aSetFieldOff(2101),
