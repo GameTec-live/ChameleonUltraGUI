@@ -1,7 +1,14 @@
+import 'dart:typed_data';
+
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/slot/edit.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/slot/export.dart';
+import 'package:chameleonultragui/gui/menu/pages/dump_editor.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/slot_dump.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -79,6 +86,91 @@ class SlotSettingsState extends State<SlotSettings> {
     setState(() {});
   }
 
+  Future<void> openHfDumpEditor() async {
+    var appState = context.read<ChameleonGUIState>();
+    var localizations = AppLocalizations.of(context)!;
+    var navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) => AlertDialog(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(width: 16),
+            Expanded(child: Text(localizations.please_wait)),
+          ],
+        ),
+      ),
+    );
+
+    CardSave card;
+    try {
+      await appState.communicator!.activateSlot(widget.slot);
+      card = await readHfDumpFromSlot(
+          appState.communicator!, names.hf, slotTypes.hf);
+    } catch (e) {
+      appState.log!.e("Failed to read slot dump: $e");
+      navigator.pop();
+      return;
+    }
+
+    navigator.pop();
+
+    if (!mounted) {
+      return;
+    }
+
+    List<Uint8List>? editedDump;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (BuildContext context) => DumpEditor(
+          cardSave: card,
+          onSave: (dumpData) {
+            editedDump = dumpData;
+          },
+        ),
+      ),
+    );
+
+    if (editedDump == null || !mounted) {
+      return;
+    }
+
+    ValueNotifier<double> progress = ValueNotifier<double>(0);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) => AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(localizations.uploading_dump),
+            const SizedBox(height: 16),
+            ValueListenableBuilder<double>(
+              valueListenable: progress,
+              builder: (context, value, _) =>
+                  LinearProgressIndicator(value: value),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      await writeHfDumpToSlot(
+          appState.communicator!, widget.slot, slotTypes.hf, editedDump!,
+          onProgress: (p) => progress.value = p / 100);
+    } catch (e) {
+      appState.log!.e("Failed to write slot dump: $e");
+    } finally {
+      navigator.pop();
+      progress.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
@@ -145,6 +237,13 @@ class SlotSettingsState extends State<SlotSettings> {
                                           update: updateSlot));
                             },
                             icon: const Icon(Icons.edit),
+                          ),
+                          IconButton(
+                            onPressed: (isMifareClassic(slotTypes.hf) ||
+                                    isMifareUltralight(slotTypes.hf))
+                                ? openHfDumpEditor
+                                : null,
+                            icon: const Icon(Icons.edit_document),
                           ),
                           IconButton(
                             onPressed: () async {
