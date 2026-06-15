@@ -203,10 +203,11 @@ Uint8List buildProxmarkTrace(List<HfSniffFrame> frames) {
     final isResponse = frame.isCardToReader;
     final dataLen = frame.data.length;
     final dataLenField = (dataLen & 0x7FFF) | (isResponse ? 0x8000 : 0);
+    final duration = _min((frame.rawBitLength + 1) * 128, 0xFFFF);
 
     final header = ByteData(8);
     header.setUint32(0, timestamp, Endian.little);
-    header.setUint16(4, 0, Endian.little);
+    header.setUint16(4, duration, Endian.little);
     header.setUint16(6, dataLenField, Endian.little);
     builder.add(header.buffer.asUint8List());
     builder.add(frame.data);
@@ -227,7 +228,7 @@ Uint8List buildProxmarkTrace(List<HfSniffFrame> frames) {
     }
 
     builder.add(parity);
-    timestamp += 1;
+    timestamp += duration;
   }
 
   return builder.toBytes();
