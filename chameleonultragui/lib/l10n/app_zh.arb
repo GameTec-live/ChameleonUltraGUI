@@ -529,5 +529,16 @@
   "hf_sniff_hex_copied": "\u539f\u59cb HF \u6355\u83b7\u5df2\u590d\u5236\u5230\u526a\u8d34\u677f",
   "hf_sniff_copy_hex": "\u590d\u5236\u539f\u59cb Hex",
   "auto_scan_devices": "\u81ea\u52a8\u626b\u63cf\u8bbe\u5907",
-  "auto_connect_first_device": "\u81ea\u52a8\u8fde\u63a5\u9996\u4e2a\u53d1\u73b0\u7684\u8bbe\u5907"
+  "auto_connect_first_device": "\u81ea\u52a8\u8fde\u63a5\u9996\u4e2a\u53d1\u73b0\u7684\u8bbe\u5907",
+  "wake_time_after_button_press": "\u6309\u4e0b\u6309\u94ae\u540e\u5524\u9192\u65f6\u95f4(\u79d2)\uff1a",
+  "wake_time": "\u5524\u9192\u65f6\u95f4",
+  "compare": "\u5bf9\u6bd4",
+  "exit_comparison": "\u9000\u51fa\u5bf9\u6bd4",
+  "select_dump_to_compare": "\u9009\u62e9\u4e00\u4e2a\u8f6c\u50a8\u8fdb\u884c\u6bd4\u8f83",
+  "comparing_with": "\u548c {name} \u8fdb\u884c\u5bf9\u6bd4",
+  "no_dumps_to_compare": "\u6ca1\u6709\u517c\u5bb9\u7684\u8f6c\u50a8\u53ef\u4ee5\u6bd4\u8f83",
+  "difference": "\u5dee\u5f02",
+  "comparison": "\u5bf9\u6bd4",
+  "copy": "\u590d\u5236",
+  "qr_code": "\u4e8c\u7ef4\u7801"
 }
