@@ -105,6 +105,12 @@ class SlotEditMenuState extends State<SlotEditMenu> {
             await appState.communicator!.getVikingEmulatorID();
         uidController.text = bytesToHexSpace(vikingCard.uid);
       } catch (_) {}
+    } else if (selectedType! == TagType.jablotron) {
+      try {
+        JablotronCard jablotronCard =
+            await appState.communicator!.getJablotronEmulatorID();
+        uidController.text = bytesToHexSpace(jablotronCard.uid);
+      } catch (_) {}
     } else if (selectedType! == TagType.pac) {
       try {
         PacCard pacCard = await appState.communicator!.getPacEmulatorID();
