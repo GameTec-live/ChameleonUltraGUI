@@ -164,6 +164,8 @@ String chameleonTagToString(TagType tag, AppLocalizations localizations) {
     return "HID Prox";
   } else if (tag == TagType.viking) {
     return "Viking";
+  } else if (tag == TagType.jablotron) {
+    return "Jablotron";
   } else if (tag == TagType.pac) {
     return "PAC/Stanley";
   } else if (tag == TagType.ioProx) {
@@ -455,6 +457,7 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.em410XElectra,
       TagType.hidProx,
       TagType.viking,
+      TagType.jablotron,
       TagType.pac,
       TagType.ioProx,
       TagType.idteck
@@ -553,6 +556,10 @@ LFCard getLFCardFromUID(TagType type, String uid) {
     return VikingCard.fromUID(uid);
   }
 
+  if (type == TagType.jablotron) {
+    return JablotronCard.fromUID(uid);
+  }
+
   if (type == TagType.pac) {
     return PacCard.fromUID(uid);
   }
@@ -577,6 +584,8 @@ int uidSizeForLfTag(TagType type) {
     return 5;
   } else if (type == TagType.viking) {
     return 4;
+  } else if (type == TagType.jablotron) {
+    return 5;
   } else if (type == TagType.pac) {
     return 8;
   } else if (type == TagType.ioProx) {
@@ -596,6 +605,15 @@ bool isEM410X(TagType type) {
     TagType.em410X64,
     TagType.em410XElectra
   ].contains(type);
+}
+
+// Converts the 5 raw Jablotron bytes to the decimal card number via BCD.
+int jablotronCardId(Uint8List bytes) {
+  int cardId = 0;
+  for (var b in bytes) {
+    cardId = cardId * 100 + ((b >> 4) * 10) + (b & 0x0F);
+  }
+  return cardId;
 }
 
 Future<(HFCardInfo, MifareClassicInfo, MifareUltralightInfo)> readHFInfo(
