@@ -6,12 +6,14 @@ class HfSniffFrame {
   final int rawBitLength;
   final int bitLength;
   final Uint8List data;
+  final Uint8List parityBits;
   final HfSniffDirection direction;
 
   const HfSniffFrame({
     required this.rawBitLength,
     required this.bitLength,
     required this.data,
+    required this.parityBits,
     required this.direction,
   });
 
@@ -20,6 +22,8 @@ class HfSniffFrame {
   bool get isCardToReader => direction == HfSniffDirection.cardToReader;
 
   String get hexString => _hex(data);
+
+  bool get isShortFrame => data.length == 1 && bitLength > 0 && bitLength < 8;
 }
 
 class HfSniffAnnotatedFrame {
@@ -131,8 +135,18 @@ class HfSniffCapture {
     required this.nonceGroups,
   });
 
-  factory HfSniffCapture.fromRawBytes(Uint8List rawBytes) {
-    final frames = parseHf14aSniffFrames(rawBytes);
+  factory HfSniffCapture.fromChameleonBytes(Uint8List chameleonBytes) {
+    final frames = parseChameleonHfSniffFrames(chameleonBytes);
+    final pm3Bytes = buildProxmarkTrace(frames);
+    return HfSniffCapture._build(pm3Bytes, frames);
+  }
+
+  factory HfSniffCapture.fromProxmarkTrace(Uint8List traceBytes) {
+    final frames = parseProxmarkTrace(traceBytes);
+    return HfSniffCapture._build(traceBytes, frames);
+  }
+
+  factory HfSniffCapture._build(Uint8List rawBytes, List<HfSniffFrame> frames) {
     final nonces = extractHf14aSniffNonces(frames);
     return HfSniffCapture(
       rawBytes: rawBytes,
@@ -145,7 +159,7 @@ class HfSniffCapture {
   }
 }
 
-List<HfSniffFrame> parseHf14aSniffFrames(Uint8List buffer) {
+List<HfSniffFrame> parseChameleonHfSniffFrames(Uint8List buffer) {
   final frames = <HfSniffFrame>[];
   int offset = 0;
 
@@ -170,10 +184,103 @@ List<HfSniffFrame> parseHf14aSniffFrames(Uint8List buffer) {
     final stripped = _stripParityBits(rawBytes, rawBitLength);
     frames.add(HfSniffFrame(
       rawBitLength: rawBitLength,
-      bitLength: stripped.$1,
-      data: stripped.$2,
+      bitLength: stripped.bitLength,
+      data: stripped.data,
+      parityBits: stripped.parityBits,
       direction:
           isTx ? HfSniffDirection.cardToReader : HfSniffDirection.readerToCard,
+    ));
+  }
+
+  return frames;
+}
+
+Uint8List buildProxmarkTrace(List<HfSniffFrame> frames) {
+  final builder = BytesBuilder();
+  int timestamp = 0;
+
+  for (final frame in frames) {
+    final isResponse = frame.isCardToReader;
+    final dataLen = frame.data.length;
+    final dataLenField = (dataLen & 0x7FFF) | (isResponse ? 0x8000 : 0);
+    final duration = _min((frame.rawBitLength + 1) * 128, 0xFFFF);
+
+    final header = ByteData(8);
+    header.setUint32(0, timestamp, Endian.little);
+    header.setUint16(4, duration, Endian.little);
+    header.setUint16(6, dataLenField, Endian.little);
+    builder.add(header.buffer.asUint8List());
+    builder.add(frame.data);
+
+    final parityLen = dataLen == 0 ? 1 : ((dataLen - 1) ~/ 8 + 1);
+    final parity = Uint8List(parityLen);
+
+    if (frame.isShortFrame) {
+      parity[0] = frame.bitLength & 0xFF;
+    } else if (frame.parityBits.length == parityLen) {
+      parity.setRange(0, parityLen, frame.parityBits);
+    } else {
+      for (int j = 0; j < dataLen; j++) {
+        if (_oddParity8(frame.data[j]) != 0) {
+          parity[j >> 3] |= 1 << (7 - (j & 7));
+        }
+      }
+    }
+
+    builder.add(parity);
+    timestamp += duration;
+  }
+
+  return builder.toBytes();
+}
+
+List<HfSniffFrame> parseProxmarkTrace(Uint8List trace) {
+  final frames = <HfSniffFrame>[];
+  int offset = 0;
+
+  while (offset + 8 <= trace.length) {
+    final header = ByteData.sublistView(trace, offset, offset + 8);
+    final dataLenField = header.getUint16(6, Endian.little);
+    final isResponse = (dataLenField & 0x8000) != 0;
+    final dataLen = dataLenField & 0x7FFF;
+    final parityLen = dataLen == 0 ? 1 : ((dataLen - 1) ~/ 8 + 1);
+
+    if (offset + 8 + dataLen + parityLen > trace.length) {
+      break;
+    }
+
+    final data = Uint8List.fromList(
+      trace.sublist(offset + 8, offset + 8 + dataLen),
+    );
+    final parity = Uint8List.fromList(
+      trace.sublist(
+        offset + 8 + dataLen,
+        offset + 8 + dataLen + parityLen,
+      ),
+    );
+    offset += 8 + dataLen + parityLen;
+
+    int bitLength;
+    int rawBitLength;
+    Uint8List parityBits;
+
+    if (dataLen == 1 && parity.isNotEmpty && parity[0] >= 1 && parity[0] <= 7) {
+      bitLength = parity[0];
+      rawBitLength = bitLength;
+      parityBits = Uint8List(0);
+    } else {
+      bitLength = dataLen * 8;
+      rawBitLength = dataLen * 9;
+      parityBits = parity;
+    }
+
+    frames.add(HfSniffFrame(
+      rawBitLength: rawBitLength,
+      bitLength: bitLength,
+      data: data,
+      parityBits: parityBits,
+      direction:
+          isResponse ? HfSniffDirection.cardToReader : HfSniffDirection.readerToCard,
     ));
   }
 
@@ -458,9 +565,17 @@ String buildHfSniffRawHexPreview(Uint8List data, {int maxBytes = 1024}) {
   return rows.join('\n');
 }
 
-(int, Uint8List) _stripParityBits(Uint8List rawBytes, int rawBitLength) {
+class _StripResult {
+  final int bitLength;
+  final Uint8List data;
+  final Uint8List parityBits;
+
+  const _StripResult(this.bitLength, this.data, this.parityBits);
+}
+
+_StripResult _stripParityBits(Uint8List rawBytes, int rawBitLength) {
   if (rawBitLength < 8 || rawBitLength % 9 != 0) {
-    return (rawBitLength, rawBytes);
+    return _StripResult(rawBitLength, rawBytes, Uint8List(0));
   }
 
   final byteCount = rawBitLength ~/ 9;
@@ -471,16 +586,30 @@ String buildHfSniffRawHexPreview(Uint8List data, {int maxBytes = 1024}) {
     }
   }
 
-  final stripped = <int>[];
+  final stripped = Uint8List(byteCount);
+  final parityPacked = Uint8List((byteCount + 7) >> 3);
+
   for (int byteIndex = 0; byteIndex < byteCount; byteIndex++) {
     int value = 0;
     for (int bit = 0; bit < 8; bit++) {
       value |= bits[byteIndex * 9 + bit] << bit;
     }
-    stripped.add(value);
+    stripped[byteIndex] = value;
+
+    if (bits[byteIndex * 9 + 8] != 0) {
+      parityPacked[byteIndex >> 3] |= 1 << (7 - (byteIndex & 7));
+    }
   }
 
-  return (byteCount * 8, Uint8List.fromList(stripped));
+  return _StripResult(byteCount * 8, stripped, parityPacked);
+}
+
+int _oddParity8(int byte) {
+  int x = byte & 0xFF;
+  x ^= x >> 4;
+  x ^= x >> 2;
+  x ^= x >> 1;
+  return (x & 1) ^ 1;
 }
 
 String _decodeHf14aFrame(HfSniffFrame frame) {
