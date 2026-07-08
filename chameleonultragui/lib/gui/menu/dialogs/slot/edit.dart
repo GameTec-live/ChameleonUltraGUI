@@ -230,6 +230,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
         await appState.communicator!
             .setHIDProxEmulatorID(hexToBytes(hidCard.toString()));
       } catch (_) {}
+    } else if (selectedType! == TagType.jablotron) {
+      await appState.communicator!.setJablotronEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (selectedType! == TagType.pac) {
       await appState.communicator!.setPacEmulatorID(
           hexToBytes(uidController.text.replaceAll(' ', '')));
