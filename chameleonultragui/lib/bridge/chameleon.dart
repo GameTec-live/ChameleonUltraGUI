@@ -616,20 +616,25 @@ class ChameleonCommunicator {
   }
 
   Future<void> writeEM410XtoT55XX(
-      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys,
+      {bool noPassword = false}) async {
     List<int> keys = [];
     keys.addAll(newKey);
     for (var oldKey in oldKeys) {
       keys.addAll(oldKey);
     }
+    // A trailing flag byte tells the firmware to leave the tag password-free
+    // (clears the T5577 PWD bit); it is only appended when requested.
     if (uid.length == 5) {
       await sendCmd(ChameleonCommand.writeEM410XtoT5577,
-          data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+          data: Uint8List.fromList(
+              [...uid, ...newKey, ...keys, if (noPassword) 1]));
       return;
     }
     if (uid.length == 13) {
       await sendCmd(ChameleonCommand.writeEM410XElectraToT5577,
-          data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+          data: Uint8List.fromList(
+              [...uid, ...newKey, ...keys, if (noPassword) 1]));
       return;
     }
     throw ("Invalid EM410X UID length");
