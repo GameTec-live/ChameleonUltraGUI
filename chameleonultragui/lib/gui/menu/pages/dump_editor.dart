@@ -723,7 +723,7 @@ class DumpEditorState extends State<DumpEditor> {
                     setDialogState(() {
                       error = '${localizations.invalid_data_in_block} '
                           '${absoluteBlockIndexes[i]}; '
-                          '$bytesPerBlock ASCII characters required.';
+                          '${localizations.ascii_characters_required(bytesPerBlock)}';
                     });
                     return;
                   }
@@ -1118,8 +1118,8 @@ class DumpEditorState extends State<DumpEditor> {
                                 child: TextField(
                                   controller: addressControllers[index],
                                   keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                      labelText: 'Address'),
+                                  decoration: InputDecoration(
+                                      labelText: localizations.address),
                                 ),
                               ),
                             ],
@@ -1953,7 +1953,7 @@ class DumpEditorState extends State<DumpEditor> {
                         ElevatedButton.icon(
                           onPressed: _showNdefEditor,
                           icon: const Icon(Icons.nfc),
-                          label: const Text('NDEF'),
+                          label: Text(localizations.ndef),
                         ),
                       ElevatedButton(
                         onPressed: _showAsciiView,

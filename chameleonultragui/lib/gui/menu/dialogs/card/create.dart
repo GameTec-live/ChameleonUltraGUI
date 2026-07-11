@@ -14,7 +14,9 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class CardCreateMenu extends StatefulWidget {
-  const CardCreateMenu({super.key});
+  final String? folderId;
+
+  const CardCreateMenu({super.key, this.folderId});
 
   @override
   CardCreateMenuState createState() => CardCreateMenuState();
@@ -425,6 +427,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                 ),
                 tag: selectedType,
                 data: blocks,
+                folderId: widget.folderId,
                 color: currentColor,
                 ats: ats);
 

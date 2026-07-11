@@ -11,8 +11,13 @@ import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class DictionaryViewMenu extends StatefulWidget {
   final Dictionary dictionary;
+  final Future<void> Function(Dictionary dictionary) onMove;
 
-  const DictionaryViewMenu({super.key, required this.dictionary});
+  const DictionaryViewMenu({
+    super.key,
+    required this.dictionary,
+    required this.onMove,
+  });
 
   @override
   DictionaryViewMenuState createState() => DictionaryViewMenuState();
@@ -135,6 +140,14 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
         ),
       ),
       actions: [
+        IconButton(
+          tooltip: localizations.move_dictionary,
+          onPressed: () async {
+            await widget.onMove(currentDictionary);
+            _refreshDictionaryData();
+          },
+          icon: const Icon(Icons.drive_file_move_outline),
+        ),
         IconButton(
           onPressed: () async {
             await showDialog(

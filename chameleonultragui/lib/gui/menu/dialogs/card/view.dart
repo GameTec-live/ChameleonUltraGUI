@@ -18,8 +18,13 @@ import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class CardViewMenu extends StatefulWidget {
   final CardSave tagSave;
+  final Future<void> Function(CardSave card) onMove;
 
-  const CardViewMenu({super.key, required this.tagSave});
+  const CardViewMenu({
+    super.key,
+    required this.tagSave,
+    required this.onMove,
+  });
 
   @override
   CardViewMenuState createState() => CardViewMenuState();
@@ -240,6 +245,14 @@ class CardViewMenuState extends State<CardViewMenu> {
             alignment: WrapAlignment.end,
             children: [
               IconButton(
+                tooltip: localizations.move_card,
+                onPressed: () async {
+                  await widget.onMove(currentSavedCard);
+                  _refreshCardData();
+                },
+                icon: const Icon(Icons.drive_file_move_outline),
+              ),
+              IconButton(
                 onPressed: () async {
                   await showDialog(
                     context: context,
@@ -286,6 +299,8 @@ class CardViewMenuState extends State<CardViewMenu> {
                               data: dumpData,
                               ats: widget.tagSave.ats,
                               extraData: widget.tagSave.extraData,
+                              folderId: widget.tagSave.folderId,
+                              color: widget.tagSave.color,
                             );
 
                             // Update the card in storage
