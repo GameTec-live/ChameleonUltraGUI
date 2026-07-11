@@ -4,6 +4,30 @@ import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:http/http.dart' as http;
 
+const _networkTimeout = Duration(seconds: 15);
+
+Future<dynamic> _getJson(Uri uri) async {
+  final response = await http.get(uri).timeout(_networkTimeout);
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw HttpException(
+      'Request failed with HTTP ${response.statusCode}',
+      uri: uri,
+    );
+  }
+  return json.decode(response.body);
+}
+
+Future<Uint8List> _getBytes(Uri uri) async {
+  final response = await http.get(uri).timeout(_networkTimeout);
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw HttpException(
+      'Download failed with HTTP ${response.statusCode}',
+      uri: uri,
+    );
+  }
+  return response.bodyBytes;
+}
+
 List<Map<String, String>> developers = [
   {
     'name': 'GameTec-live',
@@ -84,35 +108,25 @@ Future<List<Map<String, String>>> fetchGitHubContributors() async {
 
 Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
   Uint8List content = Uint8List(0);
-  String error = "";
 
-  try {
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
-        .body
-        .toString());
+  final releases = await _getJson(Uri.parse(
+      "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases"));
 
-    if (releases is! List && releases.containsKey("message")) {
-      error = releases["message"];
-      throw error;
-    }
+  if (releases is! List) {
+    throw FormatException('GitHub releases response is not a list');
+  }
 
-    for (var release in releases) {
-      if (release["prerelease"]) {
-        for (var file in release["assets"]) {
-          if (file["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
-            content =
-                await http.readBytes(Uri.parse(file["browser_download_url"]));
-            break;
-          }
+  for (var release in releases) {
+    if (release["prerelease"] == true) {
+      for (var file in release["assets"] ?? const []) {
+        if (file["name"] ==
+            "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
+          content = await _getBytes(Uri.parse(file["browser_download_url"]));
+          break;
         }
       }
     }
-  } catch (_) {}
-
-  if (error.isNotEmpty) {
-    throw error;
+    if (content.isNotEmpty) break;
   }
 
   return content;
@@ -120,33 +134,23 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
 
 Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
   Uint8List content = Uint8List(0);
-  String error = "";
 
-  try {
-    final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100")))
-        .body
-        .toString());
+  final artifacts = await _getJson(Uri.parse(
+      "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100"));
 
-    if (artifacts.containsKey("message")) {
-      error = artifacts["message"];
-      throw error;
+  if (artifacts is! Map || artifacts["artifacts"] is! List) {
+    throw FormatException('GitHub artifacts response is malformed');
+  }
+
+  for (var artifact in artifacts["artifacts"]) {
+    if (artifact["name"] ==
+            "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
+        artifact["workflow_run"]["head_branch"] == "main" &&
+        artifact["workflow_run"]["head_repository_id"] == 581338100) {
+      content = await _getBytes(Uri.parse(
+          "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
+      break;
     }
-
-    for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
-          artifact["workflow_run"]["head_branch"] == "main" &&
-          artifact["workflow_run"]["head_repository_id"] == 581338100) {
-        content = await http.readBytes(Uri.parse(
-            "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
-        break;
-      }
-    }
-  } catch (_) {}
-
-  if (error.isNotEmpty) {
-    throw error;
   }
 
   return content;

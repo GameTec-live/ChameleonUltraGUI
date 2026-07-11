@@ -38,6 +38,7 @@ dependencies:
       url: https://github.com/ChameleonUltraGUI/flutter_libserialport.git
       ref: main
   provider: ^6.0.5
+  go_router: ^17.3.0
   logger: ^2.0.1
   convert: ^3.1.1
   shared_preferences: ^2.2.1

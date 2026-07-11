@@ -9,6 +9,8 @@ import 'package:usb_serial/usb_serial.dart';
 class MobileSerial extends AbstractSerial {
   Map<String, UsbDevice> deviceMap = {};
   UsbPort? port;
+  StreamSubscription<Uint8List>? inputSubscription;
+  StreamSubscription<UsbEvent>? usbEventSubscription;
 
   MobileSerial({required super.log});
 
@@ -21,6 +23,10 @@ class MobileSerial extends AbstractSerial {
   Future<bool> performDisconnect() async {
     final hadState = hasConnectionState || port != null;
     resetConnectionState();
+    await inputSubscription?.cancel();
+    inputSubscription = null;
+    await usbEventSubscription?.cancel();
+    usbEventSubscription = null;
     if (port != null) {
       port?.close();
       port = null;
@@ -114,7 +120,7 @@ class MobileSerial extends AbstractSerial {
       connectionType = ConnectionType.usb;
       activeDevicePort = devicePort;
 
-      port!.inputStream!.listen((Uint8List data) async {
+      inputSubscription = port!.inputStream!.listen((Uint8List data) async {
         if (messageCallback != null) {
           try {
             await messageCallback(data);
@@ -128,7 +134,7 @@ class MobileSerial extends AbstractSerial {
         await performDisconnect();
       });
 
-      UsbSerial.usbEventStream!.listen((event) async {
+      usbEventSubscription = UsbSerial.usbEventStream!.listen((event) async {
         if (event.event == "android.hardware.usb.action.USB_DEVICE_DETACHED" &&
             event.device!.deviceName == devicePort) {
           log.w("Chameleon disconnected from USB");

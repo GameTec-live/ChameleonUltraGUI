@@ -125,6 +125,17 @@ class Mfkey64Dart {
       required this.atEnc});
 }
 
+Future<List<int>> _waitForRecoveryResponse(
+  int requestId,
+  Completer<List<int>> completer,
+) async {
+  try {
+    return await completer.future.timeout(const Duration(minutes: 5));
+  } finally {
+    requests.remove(requestId);
+  }
+}
+
 Future<List<int>> darkside(DarksideDart darkside) async {
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
@@ -132,7 +143,7 @@ Future<List<int>> darkside(DarksideDart darkside) async {
   final Completer<List<int>> completer = Completer<List<int>>();
   requests[requestId] = completer;
   helperIsolateSendPort.send(request);
-  return completer.future;
+  return _waitForRecoveryResponse(requestId, completer);
 }
 
 Future<List<int>> nested(NestedDart nested) async {
@@ -142,7 +153,7 @@ Future<List<int>> nested(NestedDart nested) async {
   final Completer<List<int>> completer = Completer<List<int>>();
   requests[requestId] = completer;
   helperIsolateSendPort.send(request);
-  return completer.future;
+  return _waitForRecoveryResponse(requestId, completer);
 }
 
 Future<List<int>> hardNested(HardNestedDart nested) async {
@@ -152,7 +163,7 @@ Future<List<int>> hardNested(HardNestedDart nested) async {
   final Completer<List<int>> completer = Completer<List<int>>();
   requests[requestId] = completer;
   helperIsolateSendPort.send(request);
-  return completer.future;
+  return _waitForRecoveryResponse(requestId, completer);
 }
 
 Future<List<int>> staticNested(StaticNestedDart nested) async {
@@ -162,7 +173,7 @@ Future<List<int>> staticNested(StaticNestedDart nested) async {
   final Completer<List<int>> completer = Completer<List<int>>();
   requests[requestId] = completer;
   helperIsolateSendPort.send(request);
-  return completer.future;
+  return _waitForRecoveryResponse(requestId, completer);
 }
 
 Future<List<int>> staticEncryptedNested(
@@ -174,7 +185,7 @@ Future<List<int>> staticEncryptedNested(
   final Completer<List<int>> completer = Completer<List<int>>();
   requests[requestId] = completer;
   helperIsolateSendPort.send(request);
-  return completer.future;
+  return _waitForRecoveryResponse(requestId, completer);
 }
 
 Future<List<int>> mfkey32(Mfkey32Dart mfkey) async {
@@ -184,7 +195,7 @@ Future<List<int>> mfkey32(Mfkey32Dart mfkey) async {
   final Completer<List<int>> completer = Completer<List<int>>();
   requests[requestId] = completer;
   helperIsolateSendPort.send(request);
-  return completer.future;
+  return _waitForRecoveryResponse(requestId, completer);
 }
 
 Future<List<int>> mfkey64(Mfkey64Dart mfkey) async {
@@ -194,7 +205,7 @@ Future<List<int>> mfkey64(Mfkey64Dart mfkey) async {
   final Completer<List<int>> completer = Completer<List<int>>();
   requests[requestId] = completer;
   helperIsolateSendPort.send(request);
-  return completer.future;
+  return _waitForRecoveryResponse(requestId, completer);
 }
 
 String resolvePath() {
@@ -312,12 +323,24 @@ Future<SendPort> _helperIsolateSendPort = () async {
       }
       if (data is KeyResponse) {
         // The helper isolate sent us a response to a request we sent.
-        final Completer<List<int>> completer = requests[data.id]!;
-        requests.remove(data.id);
-        completer.complete(data.result);
+        final completer = requests[data.id];
+        if (completer != null && !completer.isCompleted) {
+          completer.complete(data.result);
+        }
         return;
       }
       throw UnsupportedError('Unsupported message type: ${data.runtimeType}');
+    });
+
+  final ReceivePort errorPort = ReceivePort()
+    ..listen((dynamic error) {
+      final pending = requests.values.toList(growable: false);
+      requests.clear();
+      for (final request in pending) {
+        if (!request.isCompleted) {
+          request.completeError(StateError('Recovery isolate failed: $error'));
+        }
+      }
     });
 
   // Start the helper isolate.
@@ -459,7 +482,7 @@ Future<SendPort> _helperIsolateSendPort = () async {
 
     // Send the port to the main isolate on which we can receive requests.
     sendPort.send(helperReceivePort.sendPort);
-  }, receivePort.sendPort);
+  }, receivePort.sendPort, onError: errorPort.sendPort, errorsAreFatal: true);
 
   // Wait until the helper isolate has sent us back the SendPort on which we
   // can start sending requests.

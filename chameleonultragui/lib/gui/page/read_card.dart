@@ -2,10 +2,10 @@ import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/mifare/classic.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
 import 'package:chameleonultragui/gui/component/mifare/ultralight.dart';
+import 'package:chameleonultragui/gui/page/read_card_models.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -15,71 +15,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 
+export 'package:chameleonultragui/gui/page/read_card_models.dart';
+
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
-
-enum MifareClassicState {
-  none,
-  checkKeys,
-  checkKeysOngoing,
-  recovery,
-  recoveryOngoing,
-  dump,
-  dumpOngoing,
-  save
-}
-
-// cardExist true because we don't show error to user if nothing is done
-class HFCardInfo {
-  String uid;
-  String sak;
-  String atqa;
-  String tech;
-  String ats;
-  TagType type;
-  bool cardExist;
-
-  HFCardInfo(
-      {this.uid = '',
-      this.sak = '',
-      this.atqa = '',
-      this.tech = '',
-      this.ats = '',
-      this.type = TagType.unknown,
-      this.cardExist = true});
-}
-
-class LFCardInfo {
-  LFCard? card;
-  bool cardExist;
-
-  LFCardInfo({this.cardExist = true});
-}
-
-class MifareClassicInfo {
-  bool isEV1;
-  MifareClassicRecovery? recovery;
-  MifareClassicType type;
-  MifareClassicState state;
-  NTLevel? ntLevel;
-  bool? hasBackdoor;
-
-  MifareClassicInfo({
-    MifareClassicRecovery? recovery,
-    this.isEV1 = false,
-    this.type = MifareClassicType.none,
-    this.state = MifareClassicState.none,
-    NTLevel? ntLevel,
-    bool? hasBackdoor,
-  });
-}
-
-class MifareUltralightInfo {
-  Uint8List? version;
-  Uint8List? signature;
-
-  MifareUltralightInfo();
-}
 
 class ReadCardPage extends StatefulWidget {
   const ReadCardPage({super.key});
@@ -100,14 +39,18 @@ class ReadCardPageState extends State<ReadCardPage> {
   bool scanInProgress = false;
   Timer? hfScanTimer;
   Timer? lfScanTimer;
+  bool _hfScanTickInProgress = false;
+  bool _lfScanTickInProgress = false;
 
   void updateMifareClassicRecovery() {
+    if (!mounted) return;
     setState(() {
       mfcInfo.recovery = mfcInfo.recovery;
     });
   }
 
   void updateMifareClassicInfo() {
+    if (!mounted) return;
     setState(() {
       mfcInfo = mfcInfo;
     });
@@ -116,6 +59,7 @@ class ReadCardPageState extends State<ReadCardPage> {
   Future<void> readLFInfo() async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
+    if (!mounted) return;
     setState(() {
       lfInfo = LFCardInfo();
     });
@@ -130,7 +74,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     card ??= await appState.communicator!.readPac();
     card ??= await appState.communicator!.readIoProx();
 
-
+    if (!mounted) return;
     if (card != null) {
       setState(() {
         lfInfo.card = card;
@@ -161,20 +105,28 @@ class ReadCardPageState extends State<ReadCardPage> {
         stopContinuousHFScan();
         return;
       }
+      if (_hfScanTickInProgress) return;
 
-      var info = await readHFInfo(context, updateMifareClassicRecovery);
-      setState(() {
-        hfInfo = info.$1;
-        mfcInfo = info.$2;
-        mfuInfo = info.$3;
-      });
+      _hfScanTickInProgress = true;
+      try {
+        var info = await readHFInfo(context, updateMifareClassicRecovery);
+        if (!mounted) return;
+        setState(() {
+          hfInfo = info.$1;
+          mfcInfo = info.$2;
+          mfuInfo = info.$3;
+        });
 
-      if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
-        stopContinuousHFScan();
+        if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
+          stopContinuousHFScan();
+        }
+      } finally {
+        _hfScanTickInProgress = false;
       }
     });
 
     var info = await readHFInfo(context, updateMifareClassicRecovery);
+    if (!mounted) return;
     setState(() {
       hfInfo = info.$1;
       mfcInfo = info.$2;
@@ -216,15 +168,22 @@ class ReadCardPageState extends State<ReadCardPage> {
         stopContinuousLFScan();
         return;
       }
+      if (_lfScanTickInProgress) return;
 
-      await readLFInfo();
+      _lfScanTickInProgress = true;
+      try {
+        await readLFInfo();
 
-      if (lfInfo.cardExist && lfInfo.card != null) {
-        stopContinuousLFScan();
+        if (mounted && lfInfo.cardExist && lfInfo.card != null) {
+          stopContinuousLFScan();
+        }
+      } finally {
+        _lfScanTickInProgress = false;
       }
     });
 
     await readLFInfo();
+    if (!mounted) return;
     if (lfInfo.cardExist && lfInfo.card != null) {
       stopContinuousLFScan();
     }

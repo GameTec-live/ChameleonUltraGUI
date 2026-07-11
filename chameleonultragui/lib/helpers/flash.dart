@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
@@ -15,10 +16,25 @@ import 'package:chameleonultragui/protobuf/dfu-cc.pb.dart';
 import 'dart:math';
 
 Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
-  var content = await fetchFirmwareFromActions(device);
+  Object? nightlyError;
+  Uint8List content = Uint8List(0);
+  try {
+    content = await fetchFirmwareFromActions(device);
+  } catch (error) {
+    nightlyError = error;
+  }
 
   if (content.isEmpty) {
-    content = await fetchFirmwareFromReleases(device);
+    try {
+      content = await fetchFirmwareFromReleases(device);
+    } catch (releaseError) {
+      throw StateError(
+        'Unable to download firmware (nightly: $nightlyError; release: $releaseError)',
+      );
+    }
+  }
+  if (content.isEmpty) {
+    throw StateError('No compatible firmware artifact was found');
   }
 
   return content;
@@ -153,7 +169,11 @@ Future<void> flashFile(
 
   List<Chameleon> chameleons = [];
 
+  final discoveryDeadline = DateTime.now().add(const Duration(seconds: 30));
   while (chameleons.isEmpty) {
+    if (DateTime.now().isAfter(discoveryDeadline)) {
+      throw TimeoutException('Timed out waiting for a Chameleon in DFU mode');
+    }
     await asyncSleep(250);
     chameleons = await appState.connector!.availableChameleons(true);
   }
@@ -181,7 +201,12 @@ Future<void> flashFile(
     }
   }
 
-  await appState.connector!.connectSpecificDevice(chameleons[0].port);
+  final connected = await appState.connector!
+      .connectSpecificDevice(toFlash.port)
+      .timeout(const Duration(seconds: 20));
+  if (!connected) {
+    throw StateError('Could not connect to the selected DFU device');
+  }
 
   if (scaffoldMessenger != null) {
     scaffoldMessenger.removeCurrentSnackBar();
@@ -195,7 +220,7 @@ Future<void> flashFile(
   await dfu.flashFirmware(0x01, applicationDat, callback);
   await dfu.flashFirmware(0x02, applicationBin, callback);
   appState.log!.i("Firmware flashed!");
-  appState.connector!.performDisconnect();
+  await appState.connector!.performDisconnect();
   await asyncSleep(500); // allow exit DFU mode
   appState.changesMade();
 }

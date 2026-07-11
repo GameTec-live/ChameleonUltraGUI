@@ -148,7 +148,9 @@ class ChameleonCommunicator {
     if (skipReceive) {
       try {
         await _serialInstance!.write(Uint8List.fromList(dataFrame));
-      } catch (_) {}
+      } finally {
+        commandQueue.remove(cmd.value);
+      }
       return null;
     }
 
@@ -167,7 +169,7 @@ class ChameleonCommunicator {
           DateTime.now().millisecondsSinceEpoch) {
         commandQueue.remove(cmd.value);
         if (firstRun) {
-          sendCmd(cmd, data: data, timeout: timeout, firstRun: false);
+          return sendCmd(cmd, data: data, timeout: timeout, firstRun: false);
         } else {
           // no luck
           throw ("Timeout waiting for response for command ${cmd.value}");

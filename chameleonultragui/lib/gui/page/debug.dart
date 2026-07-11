@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/gui/menu/pages/logs_viewer.dart';
+import 'package:chameleonultragui/navigation/app_router.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -10,6 +10,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 
@@ -136,12 +137,7 @@ class DebugPage extends StatelessWidget {
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LogsViewerPage(),
-                    ),
-                  );
+                  context.pushNamed(AppRouter.logsRouteName);
                 },
                 child: Column(children: [
                   Text(localizations.logs),

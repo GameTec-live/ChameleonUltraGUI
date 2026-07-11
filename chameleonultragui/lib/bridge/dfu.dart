@@ -126,6 +126,7 @@ class DFUTransferError implements Exception {
 }
 
 class DFUCommunicator {
+  static const responseTimeout = Duration(seconds: 10);
   int baudrate = 115200;
   int dataFrameSof = 0x11;
   int dataMaxLength = 512;
@@ -166,12 +167,23 @@ class DFUCommunicator {
     }
 
     // we initialize completer each time in DFU, because it being recreated on each message
-    await _serialInstance!.registerCallback(responseCompleter?.complete);
+    await _serialInstance!.registerCallback((List<int> data) {
+      final completer = responseCompleter;
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(data);
+      }
+    });
 
     log.d("Sending: ${bytesToHex(packet)}");
     await _serialInstance!.write(packet);
 
-    List<int>? readBuffer = await responseCompleter?.future;
+    List<int>? readBuffer;
+    try {
+      readBuffer = await responseCompleter?.future.timeout(responseTimeout);
+    } on TimeoutException {
+      responseCompleter = null;
+      throw DFUTransferError('Timed out waiting for a DFU response');
+    }
 
     if (readBuffer == null || readBuffer.isEmpty) {
       return null;
@@ -184,6 +196,9 @@ class DFUCommunicator {
       log.d("Slip decoded: ${bytesToHex(Uint8List.fromList(readBuffer))}");
     }
 
+    if (readBuffer.length < 3) {
+      throw DFUTransferError('Received a truncated DFU response');
+    }
     if (readBuffer[0] != DFUCommand.response.value) {
       throw ("DFU sent not response");
     }
@@ -195,7 +210,8 @@ class DFUCommunicator {
     if (readBuffer[2] == DFUResponseCode.success.value) {
       return Uint8List.fromList(readBuffer).sublist(3);
     } else {
-      if (readBuffer[2] == DFUResponseCode.extendedError.value) {
+      if (readBuffer[2] == DFUResponseCode.extendedError.value &&
+          readBuffer.length > 3) {
         throw ("DFU error: ${DFUResponseCode.fromValue(readBuffer[3])}");
       }
       throw ("DFU error: ${DFUResponseCode.fromValue(readBuffer[2])}");

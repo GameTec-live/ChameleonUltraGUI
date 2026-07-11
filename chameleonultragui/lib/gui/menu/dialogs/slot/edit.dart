@@ -1,6 +1,6 @@
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
-import 'package:chameleonultragui/gui/menu/pages/mfkey32.dart';
+import 'package:chameleonultragui/navigation/app_router.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
@@ -8,6 +8,7 @@ import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 
@@ -225,8 +226,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
             .setHIDProxEmulatorID(hexToBytes(hidCard.toString()));
       } catch (_) {}
     } else if (selectedType! == TagType.pac) {
-      await appState.communicator!.setPacEmulatorID(
-          hexToBytes(uidController.text.replaceAll(' ', '')));
+      await appState.communicator!
+          .setPacEmulatorID(hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (selectedType! == TagType.ioProx) {
       await appState.communicator!.setIoProxEmulatorID(
           hexToBytes(uidController.text.replaceAll(' ', '')));
@@ -592,14 +593,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                                                         () {
                                                                       Navigator.pop(
                                                                           context);
-                                                                      Navigator
-                                                                          .push(
-                                                                        context,
-                                                                        MaterialPageRoute(
-                                                                          builder: (context) =>
-                                                                              const Mfkey32Menu(),
-                                                                        ),
-                                                                      );
+                                                                      context.pushNamed(
+                                                                          AppRouter
+                                                                              .mfkey32RouteName);
                                                                     },
                                                                     child: Row(
                                                                       children: [

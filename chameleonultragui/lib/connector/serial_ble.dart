@@ -23,6 +23,7 @@ class BLESerial extends AbstractSerial {
   QualifiedCharacteristic? firmwareCharacteristic;
   Stream<List<int>>? receivedDataStream;
   StreamSubscription<ConnectionStateUpdate>? connection;
+  StreamSubscription<List<int>>? receivedDataSubscription;
   Map<String, Chameleon> chameleonMap = {};
   bool inSearch = false;
 
@@ -58,9 +59,9 @@ class BLESerial extends AbstractSerial {
       log.e("Got BLE search error: $e");
       inSearch = false;
       if (Platform.isIOS) {
-        throw (e); // BLE is primary there, throw exception
+        if (!completer.isCompleted) completer.completeError(e);
       } else {
-        completer.complete([]); // Other platforms: we don't care
+        if (!completer.isCompleted) completer.complete([]);
       }
     });
 
@@ -68,7 +69,7 @@ class BLESerial extends AbstractSerial {
       subscription.cancel();
       inSearch = false;
       try {
-        completer.complete(foundDevices);
+        if (!completer.isCompleted) completer.complete(foundDevices);
         log.d('Found BLE devices: ${foundDevices.length}');
       } catch (_) {}
     });
@@ -139,8 +140,10 @@ class BLESerial extends AbstractSerial {
 
   Future<bool> connectSpecificInternal(dynamic devicePort) async {
     Completer<bool> completer = Completer<bool>();
+    final mappedDevice = chameleonMap[devicePort];
+    if (mappedDevice == null) return false;
     List<Uuid> services = [nrfUUID, uartRX, uartTX];
-    if (chameleonMap[devicePort]!.dfu) {
+    if (mappedDevice.dfu) {
       services = [dfuUUID, dfuControl, dfuFirmware];
     }
 
@@ -155,7 +158,7 @@ class BLESerial extends AbstractSerial {
         .listen((connectionState) async {
       log.w(connectionState);
       if (connectionState.connectionState == DeviceConnectionState.connected) {
-        if (chameleonMap[devicePort]!.dfu) {
+        if (mappedDevice.dfu) {
           connected = true;
           pendingConnection = false;
           txCharacteristic = QualifiedCharacteristic(
@@ -164,7 +167,7 @@ class BLESerial extends AbstractSerial {
               deviceId: connectionState.deviceId);
           receivedDataStream =
               flutterReactiveBle.subscribeToCharacteristic(txCharacteristic!);
-          receivedDataStream!.listen((data) async {
+          receivedDataSubscription = receivedDataStream!.listen((data) async {
             if (messageCallback != null) {
               try {
                 await messageCallback(Uint8List.fromList(data));
@@ -189,11 +192,11 @@ class BLESerial extends AbstractSerial {
               deviceId: connectionState.deviceId);
 
           portName = devicePort;
-          device = chameleonMap[devicePort]!.device;
+          device = mappedDevice.device;
           activeDevicePort = devicePort;
 
           isDFU = true;
-          completer.complete(true);
+          if (!completer.isCompleted) completer.complete(true);
         } else {
           txCharacteristic = QualifiedCharacteristic(
               serviceId: nrfUUID,
@@ -201,7 +204,7 @@ class BLESerial extends AbstractSerial {
               deviceId: connectionState.deviceId);
           receivedDataStream =
               flutterReactiveBle.subscribeToCharacteristic(txCharacteristic!);
-          receivedDataStream!.listen((data) async {
+          receivedDataSubscription = receivedDataStream!.listen((data) async {
             if (messageCallback != null) {
               try {
                 await messageCallback(Uint8List.fromList(data));
@@ -238,16 +241,16 @@ class BLESerial extends AbstractSerial {
 
             connected = true;
             portName = devicePort;
-            device = chameleonMap[devicePort]!.device;
+            device = mappedDevice.device;
             activeDevicePort = devicePort;
 
             connectionType = ConnectionType.ble;
             isDFU = false;
 
-            completer.complete(true);
+            if (!completer.isCompleted) completer.complete(true);
           } catch (_) {
             try {
-              completer.complete(false);
+              if (!completer.isCompleted) completer.complete(false);
             } catch (_) {}
           }
         }
@@ -255,15 +258,21 @@ class BLESerial extends AbstractSerial {
           DeviceConnectionState.disconnected) {
         await performDisconnect();
         try {
-          completer.complete(false);
+          if (!completer.isCompleted) completer.complete(false);
         } catch (_) {}
       }
     }, onError: (Object error) {
       log.e(error);
-      completer.complete(false);
+      if (!completer.isCompleted) completer.complete(false);
     });
 
-    return completer.future;
+    return completer.future.timeout(
+      const Duration(seconds: 15),
+      onTimeout: () async {
+        await performDisconnect();
+        return false;
+      },
+    );
   }
 
   @override
@@ -274,6 +283,8 @@ class BLESerial extends AbstractSerial {
     rxCharacteristic = null;
     firmwareCharacteristic = null;
     receivedDataStream = null;
+    await receivedDataSubscription?.cancel();
+    receivedDataSubscription = null;
     if (connection != null) {
       await connection!.cancel();
       connection = null;
