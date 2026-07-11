@@ -4,7 +4,7 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
-import 'package:chameleonultragui/connector/serial_macos.dart';
+import 'package:chameleonultragui/connector/serial_desktop.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -170,8 +170,8 @@ class _MainPageState extends State<MainPage> {
       return EmulatorSerial(log: appState.log!);
     }
 
-    if (Platform.isMacOS) {
-      return MacOSSerial(log: appState.log!);
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      return DesktopSerial(log: appState.log!);
     }
 
     if (Platform.isAndroid) {

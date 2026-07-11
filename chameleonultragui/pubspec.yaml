@@ -53,7 +53,6 @@ dependencies:
   uuid: ^4.0.0
   http: ^1.1.0
   archive: ^4.0.1
-  flutter_reactive_ble: ^5.4.0
   permission_handler: ^12.0.0+1
   protobuf: ^6.0.0
   collection: ^1.17.1
@@ -67,6 +66,7 @@ dependencies:
   wakelock_plus: ^1.2.4
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.0.1
+  universal_ble: 2.0.1
 
 dev_dependencies:
   flutter_test:
