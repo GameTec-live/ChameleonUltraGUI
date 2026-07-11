@@ -504,6 +504,7 @@ class CardEditMenuState extends State<CardEditMenu> {
             }
 
             var tag = CardSave(
+                folderId: widget.tagSave.folderId,
                 id: widget.tagSave.id,
                 name: nameController.text,
                 sak: chameleonTagToFrequency(selectedType) == TagFrequency.lf
