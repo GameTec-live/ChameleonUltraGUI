@@ -706,20 +706,19 @@ class SavedCardsPageState extends State<SavedCardsPage> {
       return Padding(
         padding: const EdgeInsets.all(8.0),
         child: isCompact
-            ? Column(
+            ? Row(
                 children: [
-                  Text(
+                  SizedBox(width: actions.length * 48),
+                  Expanded(
+                      child: Text(
                     title,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    children: actions,
-                  ),
+                  )),
+                  Row(mainAxisSize: MainAxisSize.min, children: actions),
                 ],
               )
             : Text(
