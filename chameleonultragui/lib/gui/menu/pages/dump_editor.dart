@@ -7,6 +7,8 @@ import 'package:chameleonultragui/helpers/mifare_classic/dump_highlighter.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/dump_analyzer.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/dump_highlighter.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/dump_analyzer.dart';
+import 'package:chameleonultragui/helpers/ndef.dart';
+import 'package:chameleonultragui/gui/menu/pages/ndef_editor.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:provider/provider.dart';
@@ -547,6 +549,96 @@ class DumpEditorState extends State<DumpEditor> {
     if (lineIndex < 0 || lineIndex >= lines.length) return;
     lines[lineIndex] = _spaceHex(cleanHex.toUpperCase());
     controllers[controllerIndex].text = lines.join('\n');
+  }
+
+  List<Uint8List>? _currentEditorDump() {
+    final current = dumpData.map((block) => Uint8List.fromList(block)).toList();
+    if (isUltralight) {
+      final lines = controllers[0].text.split('\n');
+      if (lines.length > current.length) return null;
+      for (int block = 0; block < lines.length; block++) {
+        final hex = lines[block].replaceAll(' ', '').trim();
+        if (hex.length != hexCharsPerBlock || hex.contains('-')) return null;
+        try {
+          current[block] = hexToBytes(hex);
+        } catch (_) {
+          return null;
+        }
+      }
+      return current;
+    }
+
+    for (int sector = 0; sector < controllers.length; sector++) {
+      final lines = controllers[sector].text.split('\n');
+      if (lines.length != mfClassicGetBlockCountBySector(sector)) return null;
+      final firstBlock = mfClassicGetFirstBlockCountBySector(sector);
+      for (int relativeBlock = 0;
+          relativeBlock < lines.length;
+          relativeBlock++) {
+        final hex = lines[relativeBlock].replaceAll(' ', '').trim();
+        if (hex.length != hexCharsPerBlock || hex.contains('-')) return null;
+        try {
+          current[firstBlock + relativeBlock] = hexToBytes(hex);
+        } catch (_) {
+          return null;
+        }
+      }
+    }
+    return current;
+  }
+
+  NdefContainer? _currentNdefContainer() {
+    final current = _currentEditorDump();
+    return current == null
+        ? null
+        : NdefContainer.detect(widget.cardSave.tag, current);
+  }
+
+  void _applyDumpToControllers(List<Uint8List> blocks) {
+    if (isUltralight) {
+      controllers[0].text = blocks.map(_formatHexData).join('\n');
+      return;
+    }
+    for (int sector = 0; sector < controllers.length; sector++) {
+      final firstBlock = mfClassicGetFirstBlockCountBySector(sector);
+      final blockCount = mfClassicGetBlockCountBySector(sector);
+      controllers[sector].text = List<String>.generate(
+        blockCount,
+        (relativeBlock) => _formatHexData(blocks[firstBlock + relativeBlock]),
+      ).join('\n');
+    }
+  }
+
+  Future<void> _showNdefEditor() async {
+    final current = _currentEditorDump();
+    if (current == null) return;
+    final container = NdefContainer.detect(widget.cardSave.tag, current);
+    if (container == null) return;
+
+    List<NdefRecord> records = [];
+    String? parseWarning;
+    try {
+      records = NdefCodec.decodeMessage(container.message);
+    } catch (exception) {
+      parseWarning = exception.toString();
+    }
+
+    if (!mounted) return;
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NdefEditorPage(
+          records: records,
+          capacity: container.capacity,
+          mappingName: container.mappingName,
+          parseWarning: parseWarning,
+          onSave: (message) {
+            container.writeMessage(current, message);
+            _applyDumpToControllers(current);
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _showAsciiView() async {
@@ -1657,8 +1749,11 @@ class DumpEditorState extends State<DumpEditor> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 16,
+            runSpacing: 8,
             children: [
               Text(
                 localizations.color_legend,
@@ -1773,6 +1868,7 @@ class DumpEditorState extends State<DumpEditor> {
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
+    final hasNdef = !isCompareMode && _currentNdefContainer() != null;
 
     return PopScope(
       canPop: !hasUnsavedChanges,
@@ -1853,6 +1949,12 @@ class DumpEditorState extends State<DumpEditor> {
                         label: Text(localizations.exit_comparison),
                       )
                     else ...[
+                      if (hasNdef)
+                        ElevatedButton.icon(
+                          onPressed: _showNdefEditor,
+                          icon: const Icon(Icons.nfc),
+                          label: const Text('NDEF'),
+                        ),
                       ElevatedButton(
                         onPressed: _showAsciiView,
                         child: Text(localizations.ascii),
