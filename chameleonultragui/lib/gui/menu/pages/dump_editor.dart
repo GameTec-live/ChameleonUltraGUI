@@ -542,159 +542,546 @@ class DumpEditorState extends State<DumpEditor> {
     }
   }
 
-  void _showAsciiView() {
-    var localizations = AppLocalizations.of(context)!;
-    List<String> asciiData = [];
-
-    if (isUltralight) {
-      List<String> lines = controllers[0].text.split('\n');
-      for (int i = 0; i < lines.length; i++) {
-        String hexData = lines[i].replaceAll(' ', '').trim();
-        if (hexData.isNotEmpty) {
-          String ascii = MifareUltralightDumpAnalyzer.hexToAscii(hexData);
-          asciiData.add('${localizations.block} $i: $ascii');
-        }
-      }
-    } else {
-      for (int sector = 0; sector < controllers.length; sector++) {
-        List<String> lines = controllers[sector].text.split('\n');
-        asciiData.add('${localizations.sector}: $sector');
-        for (int block = 0; block < lines.length; block++) {
-          String hexData = lines[block].replaceAll(' ', '').trim();
-          if (hexData.isNotEmpty) {
-            String ascii = MifareClassicDumpAnalyzer.hexToAscii(hexData);
-            asciiData.add('${localizations.block} $block: $ascii');
-          }
-        }
-        asciiData.add('');
-      }
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.ascii_view),
-        content: SizedBox(
-          width: 400,
-          height: 300,
-          child: SingleChildScrollView(
-            child: Text(
-              asciiData.join('\n'),
-              style: const TextStyle(fontFamily: 'RobotoMono'),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(localizations.close),
-          ),
-        ],
-      ),
-    );
+  void _replaceBlockHex(int controllerIndex, int lineIndex, String cleanHex) {
+    List<String> lines = controllers[controllerIndex].text.split('\n');
+    if (lineIndex < 0 || lineIndex >= lines.length) return;
+    lines[lineIndex] = _spaceHex(cleanHex.toUpperCase());
+    controllers[controllerIndex].text = lines.join('\n');
   }
 
-  void _showAccessConditions() {
-    if (isUltralight) return;
+  Future<void> _showAsciiView() async {
     var localizations = AppLocalizations.of(context)!;
+    List<int> sectorIndexes = [];
+    List<int> lineIndexes = [];
+    List<int> absoluteBlockIndexes = [];
+    List<TextEditingController> asciiControllers = [];
+    List<String> asciiInitialTexts = [];
 
-    List<String> acData = [];
     for (int sector = 0; sector < controllers.length; sector++) {
       List<String> lines = controllers[sector].text.split('\n');
-      if (lines.isNotEmpty) {
-        String sectorTrailer = lines.last.replaceAll(' ', '').trim();
-        if (sectorTrailer.length >= 18) {
-          String accessConditions = sectorTrailer.substring(14, 18);
-          Map<String, dynamic> decoded =
-              MifareClassicDumpAnalyzer.decodeAccessConditions(
-                  accessConditions, context);
-
-          acData.add('${localizations.sector} $sector:');
-          if (decoded['readable']) {
-            Map<String, String> access = decoded['access'];
-            access.forEach((key, value) {
-              acData.add('  $key: $value');
-            });
-          } else {
-            acData.add('  ${localizations.error}: ${decoded['error']}');
-          }
-          acData.add('');
-        }
+      for (int line = 0; line < lines.length; line++) {
+        String hex = lines[line].replaceAll(' ', '').trim();
+        if (hex.length != hexCharsPerBlock || hex.contains('-')) continue;
+        sectorIndexes.add(sector);
+        lineIndexes.add(line);
+        absoluteBlockIndexes.add(isUltralight
+            ? line
+            : mfClassicGetFirstBlockCountBySector(sector) + line);
+        String ascii = isUltralight
+            ? MifareUltralightDumpAnalyzer.hexToAscii(hex)
+            : MifareClassicDumpAnalyzer.hexToAscii(hex);
+        asciiControllers.add(TextEditingController(text: ascii));
+        asciiInitialTexts.add(ascii);
       }
     }
 
-    showDialog(
+    String? error;
+    await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.access_conditions),
-        content: SizedBox(
-          width: 500,
-          height: 400,
-          child: SingleChildScrollView(
-            child: Text(
-              acData.join('\n'),
-              style: const TextStyle(fontFamily: 'RobotoMono', fontSize: 12),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(localizations.ascii_view),
+          content: SizedBox(
+            width: 420,
+            height: 400,
+            child: Column(
+              children: [
+                if (error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(error!,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
+                  ),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: asciiControllers.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) => TextField(
+                      controller: asciiControllers[index],
+                      style: const TextStyle(fontFamily: 'RobotoMono'),
+                      maxLength: bytesPerBlock,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[\x20-\x7E]')),
+                        LengthLimitingTextInputFormatter(bytesPerBlock),
+                      ],
+                      decoration: InputDecoration(
+                        labelText:
+                            '${localizations.block} ${absoluteBlockIndexes[index]}',
+                        counterText: '',
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(localizations.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                for (int i = 0; i < asciiControllers.length; i++) {
+                  if (asciiControllers[i].text != asciiInitialTexts[i] &&
+                      asciiControllers[i].text.length != bytesPerBlock) {
+                    setDialogState(() {
+                      error = '${localizations.invalid_data_in_block} '
+                          '${absoluteBlockIndexes[i]}; '
+                          '$bytesPerBlock ASCII characters required.';
+                    });
+                    return;
+                  }
+                }
+                for (int i = 0; i < asciiControllers.length; i++) {
+                  if (asciiControllers[i].text == asciiInitialTexts[i]) {
+                    continue;
+                  }
+                  String hex = asciiControllers[i]
+                      .text
+                      .codeUnits
+                      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+                      .join();
+                  _replaceBlockHex(sectorIndexes[i], lineIndexes[i], hex);
+                }
+                Navigator.pop(dialogContext);
+              },
+              child: Text(localizations.save),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(localizations.close),
+      ),
+    );
+    for (final controller in asciiControllers) {
+      controller.dispose();
+    }
+  }
+
+  Future<void> _showAccessConditions() async {
+    if (isUltralight) return;
+    var localizations = AppLocalizations.of(context)!;
+    List<List<int>?> selections = [];
+    List<List<List<int>>?> dataPermissions = [];
+    List<List<List<int>>?> trailerPermissions = [];
+    for (int sector = 0; sector < controllers.length; sector++) {
+      List<String> lines = controllers[sector].text.split('\n');
+      String trailer =
+          lines.isEmpty ? '' : lines.last.replaceAll(' ', '').trim();
+      List<int>? values;
+      if (trailer.length == 32) {
+        values = MifareClassicDumpAnalyzer.accessConditionValues(
+                trailer.substring(12, 18)) ??
+            // Keep the meaningful C1/C2/C3 bits editable when only their
+            // inverted redundancy is damaged. Saving repairs all three bytes.
+            MifareClassicDumpAnalyzer.accessConditionValues(
+                trailer.substring(14, 18));
+      }
+      selections.add(values);
+      dataPermissions.add(values == null
+          ? null
+          : List<List<int>>.generate(
+              3,
+              (block) => MifareClassicDumpAnalyzer.dataAccessPermissions(
+                  values![block]),
+            ));
+      trailerPermissions.add(values == null
+          ? null
+          : MifareClassicDumpAnalyzer.trailerAccessPermissions(values[3]));
+    }
+
+    String permissionLabel(int permission) => switch (permission) {
+          1 => 'A',
+          2 => 'B',
+          3 => 'A/B',
+          _ => '-',
+        };
+    String? error;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(localizations.access_conditions),
+          content: SizedBox(
+            width: 600,
+            height: 520,
+            child: Column(
+              children: [
+                if (error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      error!,
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: selections.length,
+                    itemBuilder: (context, sector) {
+                      List<int>? values = selections[sector];
+                      List<List<int>>? blocks = dataPermissions[sector];
+                      List<List<int>>? trailer = trailerPermissions[sector];
+                      if (values == null || blocks == null || trailer == null) {
+                        return ListTile(
+                          title: Text('${localizations.sector} $sector'),
+                          subtitle: Text(
+                              localizations.failed_to_decode_access_conditions),
+                        );
+                      }
+
+                      Widget permissionDropdown(
+                        String label,
+                        int permission,
+                        ValueChanged<int?> onChanged,
+                      ) {
+                        return SizedBox(
+                          width: 112,
+                          child: DropdownButtonFormField<int>(
+                            initialValue: permission,
+                            decoration: InputDecoration(
+                              labelText: label,
+                              isDense: true,
+                            ),
+                            items: [1, 2, 3, 0]
+                                .map((value) => DropdownMenuItem<int>(
+                                      value: value,
+                                      child: Text(permissionLabel(value)),
+                                    ))
+                                .toList(),
+                            onChanged: onChanged,
+                          ),
+                        );
+                      }
+
+                      List<Widget> blockEditors = List.generate(3, (block) {
+                        String label = sector >= 32
+                            ? '${localizations.block} '
+                                '${block * 5}-${block * 5 + 4}'
+                            : '${localizations.block} $block';
+                        List<String> actions = [
+                          localizations.read,
+                          localizations.write,
+                          localizations.inc,
+                          localizations.dec,
+                        ];
+                        return SizedBox(
+                          width: double.infinity,
+                          child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(label,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 12,
+                                    children: List.generate(4, (action) {
+                                      return permissionDropdown(
+                                        actions[action],
+                                        blocks[block][action],
+                                        (permission) {
+                                          if (permission == null) return;
+                                          setDialogState(() {
+                                            blocks[block][action] = permission;
+                                            error = null;
+                                          });
+                                        },
+                                      );
+                                    }),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      });
+
+                      List<String> trailerParts = [
+                        '${localizations.key} A',
+                        localizations.acl,
+                        '${localizations.key} B',
+                      ];
+                      blockEditors.add(SizedBox(
+                        width: double.infinity,
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(localizations.sector_trailer,
+                                    style:
+                                        Theme.of(context).textTheme.titleSmall),
+                                const SizedBox(height: 8),
+                                ...List.generate(
+                                    3,
+                                    (part) => Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 6),
+                                          child: Row(
+                                            children: [
+                                              SizedBox(
+                                                  width: 80,
+                                                  child:
+                                                      Text(trailerParts[part])),
+                                              Expanded(
+                                                child: permissionDropdown(
+                                                  localizations.read,
+                                                  trailer[part][0],
+                                                  (permission) {
+                                                    if (permission == null) {
+                                                      return;
+                                                    }
+                                                    setDialogState(() {
+                                                      trailer[part][0] =
+                                                          permission;
+                                                      error = null;
+                                                    });
+                                                  },
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: permissionDropdown(
+                                                  localizations.write,
+                                                  trailer[part][1],
+                                                  (permission) {
+                                                    if (permission == null) {
+                                                      return;
+                                                    }
+                                                    setDialogState(() {
+                                                      trailer[part][1] =
+                                                          permission;
+                                                      error = null;
+                                                    });
+                                                  },
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ));
+
+                      return ExpansionTile(
+                        title: Text('${localizations.sector} $sector'),
+                        children: blockEditors,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(localizations.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                List<List<int>?> validatedSelections = [];
+                for (int sector = 0; sector < selections.length; sector++) {
+                  List<int>? values = selections[sector];
+                  List<List<int>>? blocks = dataPermissions[sector];
+                  List<List<int>>? trailer = trailerPermissions[sector];
+                  if (values == null || blocks == null || trailer == null) {
+                    validatedSelections.add(null);
+                    continue;
+                  }
+
+                  List<int> validated = List<int>.from(values);
+                  for (int block = 0; block < 3; block++) {
+                    int? condition = MifareClassicDumpAnalyzer
+                        .dataAccessConditionForPermissions(blocks[block]);
+                    if (condition == null) {
+                      setDialogState(() => error =
+                          '${localizations.invalid_data_in_sector} $sector, '
+                              '${localizations.block} $block');
+                      return;
+                    }
+                    validated[block] = condition;
+                  }
+
+                  int? trailerCondition = MifareClassicDumpAnalyzer
+                      .trailerAccessConditionForPermissions(
+                    trailer,
+                    preferredCondition: values[3],
+                  );
+                  if (trailerCondition == null) {
+                    setDialogState(() => error =
+                        '${localizations.invalid_data_in_sector} $sector, '
+                            '${localizations.sector_trailer}');
+                    return;
+                  }
+                  validated[3] = trailerCondition;
+                  validatedSelections.add(validated);
+                }
+
+                for (int sector = 0;
+                    sector < validatedSelections.length;
+                    sector++) {
+                  List<int>? values = validatedSelections[sector];
+                  if (values == null) continue;
+                  List<String> lines = controllers[sector].text.split('\n');
+                  String trailer = lines.last.replaceAll(' ', '').trim();
+                  String access =
+                      MifareClassicDumpAnalyzer.encodeAccessConditions(values);
+                  _replaceBlockHex(
+                      sector,
+                      lines.length - 1,
+                      trailer.substring(0, 12) +
+                          access +
+                          trailer.substring(18));
+                }
+                Navigator.pop(dialogContext);
+              },
+              child: Text(localizations.save),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void _showValueBlocks() {
+  Future<void> _showValueBlocks() async {
     if (isUltralight) return;
     var localizations = AppLocalizations.of(context)!;
-
-    List<String> valueData = [];
-    bool foundValueBlocks = false;
+    List<int> sectorIndexes = [];
+    List<int> lineIndexes = [];
+    List<int> absoluteBlockIndexes = [];
+    List<TextEditingController> valueControllers = [];
+    List<TextEditingController> addressControllers = [];
 
     for (int sector = 0; sector < controllers.length; sector++) {
       List<String> lines = controllers[sector].text.split('\n');
       for (int block = 0; block < lines.length; block++) {
         String hexData = lines[block].replaceAll(' ', '').trim();
-        if (hexData.isNotEmpty) {
-          int? value = MifareClassicDumpAnalyzer.valueBlockToInt(hexData);
-          if (value != null) {
-            foundValueBlocks = true;
-            valueData.add(
-                '${localizations.sector} $sector, ${localizations.block} $block: $value');
-          }
-        }
+        int? value = MifareClassicDumpAnalyzer.valueBlockToInt(hexData);
+        int? address = MifareClassicDumpAnalyzer.valueBlockAddress(hexData);
+        if (value == null || address == null) continue;
+        sectorIndexes.add(sector);
+        lineIndexes.add(block);
+        absoluteBlockIndexes
+            .add(mfClassicGetFirstBlockCountBySector(sector) + block);
+        valueControllers.add(TextEditingController(text: value.toString()));
+        addressControllers.add(TextEditingController(text: address.toString()));
       }
     }
 
-    if (!foundValueBlocks) {
-      valueData.add(localizations.no_value_blocks_found);
-    }
-
-    showDialog(
+    String? error;
+    await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.value_blocks),
-        content: SizedBox(
-          width: 300,
-          height: 200,
-          child: SingleChildScrollView(
-            child: Text(
-              valueData.join('\n'),
-              style: const TextStyle(fontFamily: 'RobotoMono'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(localizations.value_blocks),
+          content: SizedBox(
+            width: 420,
+            height: 360,
+            child: valueControllers.isEmpty
+                ? Center(child: Text(localizations.no_value_blocks_found))
+                : Column(
+                    children: [
+                      if (error != null)
+                        Text(error!,
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.error)),
+                      Expanded(
+                        child: ListView.separated(
+                          itemCount: valueControllers.length,
+                          separatorBuilder: (_, __) => const Divider(),
+                          itemBuilder: (context, index) => Row(
+                            children: [
+                              SizedBox(
+                                width: 72,
+                                child: Text(
+                                    '${localizations.block} ${absoluteBlockIndexes[index]}'),
+                              ),
+                              Expanded(
+                                child: TextField(
+                                  controller: valueControllers[index],
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          signed: true),
+                                  decoration: InputDecoration(
+                                      labelText: localizations.value),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 90,
+                                child: TextField(
+                                  controller: addressControllers[index],
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                      labelText: 'Address'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(localizations.cancel),
             ),
-          ),
+            if (valueControllers.isNotEmpty)
+              TextButton(
+                onPressed: () {
+                  List<int> values = [];
+                  List<int> addresses = [];
+                  for (int i = 0; i < valueControllers.length; i++) {
+                    int? value = int.tryParse(valueControllers[i].text);
+                    int? address = int.tryParse(addressControllers[i].text);
+                    if (value == null ||
+                        value < -0x80000000 ||
+                        value > 0x7FFFFFFF ||
+                        address == null ||
+                        address < 0 ||
+                        address > 255) {
+                      setDialogState(() => error =
+                          '${localizations.invalid_data_in_block} ${absoluteBlockIndexes[i]}');
+                      return;
+                    }
+                    values.add(value);
+                    addresses.add(address);
+                  }
+                  for (int i = 0; i < values.length; i++) {
+                    _replaceBlockHex(
+                      sectorIndexes[i],
+                      lineIndexes[i],
+                      MifareClassicDumpAnalyzer.intToValueBlock(
+                          values[i], addresses[i]),
+                    );
+                  }
+                  Navigator.pop(dialogContext);
+                },
+                child: Text(localizations.save),
+              ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(localizations.close),
-          ),
-        ],
       ),
     );
+    for (final controller in [...valueControllers, ...addressControllers]) {
+      controller.dispose();
+    }
   }
 
   List<TextSpan> _buildHighlightedTextOnly(int controllerIndex) {
