@@ -529,5 +529,6 @@
   "hf_sniff_hex_copied": "Captura crua HF copiada al porta-retalls",
   "hf_sniff_copy_hex": "Copia la clau crua",
   "auto_scan_devices": "Escaneja autom\u00e0tica de dispositius",
-  "auto_connect_first_device": "Connectat autom\u00e0ticament al primer dispositiu trobat"
+  "auto_connect_first_device": "Connectat autom\u00e0ticament al primer dispositiu trobat",
+  "delete_folder": "Eliminar carpeta"
 }
