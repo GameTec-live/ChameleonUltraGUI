@@ -15,14 +15,32 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 /// This helper:
 /// - holds a wakelock while connected + app is in foreground
 /// - sends a lightweight command periodically so Android does not kill idle BLE
+/// - soft-fails transient BLE glitches (retries before disconnecting)
 class ConnectionKeepAlive {
-  ConnectionKeepAlive({this.interval = const Duration(seconds: 12)});
+  ConnectionKeepAlive({
+    this.interval = const Duration(seconds: 12),
+    this.attemptsPerPing = 3,
+    this.retryDelay = const Duration(milliseconds: 800),
+    this.maxConsecutiveFailures = 3,
+  });
 
+  /// How often to send a keep-alive when connected.
   final Duration interval;
+
+  /// Retries inside a single keep-alive tick before counting a failure.
+  final int attemptsPerPing;
+
+  /// Delay between retries within one tick.
+  final Duration retryDelay;
+
+  /// Disconnect only after this many consecutive failed ticks
+  /// (each tick already retried [attemptsPerPing] times).
+  final int maxConsecutiveFailures;
 
   Timer? _timer;
   bool _wakelockHeld = false;
   bool _pingInFlight = false;
+  int _consecutiveFailures = 0;
 
   ChameleonCommunicator? _communicator;
   AbstractSerial? _connector;
@@ -75,7 +93,10 @@ class ConnectionKeepAlive {
       return;
     }
 
-    _log?.d('Connection keep-alive started (interval=${interval.inSeconds}s)');
+    _consecutiveFailures = 0;
+    _log?.d(
+        'Connection keep-alive started (interval=${interval.inSeconds}s, '
+        'retries=$attemptsPerPing, maxFails=$maxConsecutiveFailures)');
     // Immediate ping after connect stabilizes the link, then periodic.
     unawaited(_ping());
     _timer = Timer.periodic(interval, (_) {
@@ -87,6 +108,7 @@ class ConnectionKeepAlive {
     if (_timer != null) {
       _timer!.cancel();
       _timer = null;
+      _consecutiveFailures = 0;
       _log?.d('Connection keep-alive stopped');
     }
   }
@@ -105,16 +127,45 @@ class ConnectionKeepAlive {
 
     _pingInFlight = true;
     try {
-      // Lightweight firmware command — any successful round-trip keeps BLE busy.
-      await communicator.getFirmwareVersion();
-    } catch (e) {
-      log?.w('Connection keep-alive ping failed: $e');
-      // Drop local session so UI returns to Connect and auto-scan can recover.
+      for (var attempt = 1; attempt <= attemptsPerPing; attempt++) {
+        if (!connector.connected) {
+          return;
+        }
+        try {
+          // Lightweight firmware command — any successful round-trip keeps BLE busy.
+          await communicator.getFirmwareVersion();
+          if (_consecutiveFailures > 0) {
+            log?.d(
+                'Connection keep-alive recovered after $_consecutiveFailures failed tick(s)');
+          }
+          _consecutiveFailures = 0;
+          return;
+        } catch (e) {
+          log?.w(
+              'Connection keep-alive ping attempt $attempt/$attemptsPerPing failed: $e');
+          if (attempt < attemptsPerPing) {
+            await Future.delayed(retryDelay);
+          }
+        }
+      }
+
+      // All retries in this tick failed — soft-fail unless threshold reached.
+      _consecutiveFailures++;
+      if (_consecutiveFailures < maxConsecutiveFailures) {
+        log?.w(
+            'Connection keep-alive soft-fail '
+            '$_consecutiveFailures/$maxConsecutiveFailures (not disconnecting yet)');
+        return;
+      }
+
+      log?.w(
+          'Connection keep-alive failed $maxConsecutiveFailures ticks in a row; disconnecting');
       try {
         if (connector.connected) {
           await connector.performDisconnect();
         }
       } catch (_) {}
+      _consecutiveFailures = 0;
     } finally {
       _pingInFlight = false;
     }
