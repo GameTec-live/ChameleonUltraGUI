@@ -90,6 +90,7 @@ enum ChameleonCommand {
   writeIoProxToT5577(3011),
   scanPacTag(3014),
   writePacToT5577(3015),
+  lfT55xxWrite(3016),
   writeIdteckToT5577(3018),
   lfSniff(3031),
 

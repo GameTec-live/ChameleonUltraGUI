@@ -635,6 +635,108 @@ class ChameleonCommunicator {
     throw ("Invalid EM410X UID length");
   }
 
+  /// Low-level T55xx block write (firmware cmd 3016).
+  /// [word] is a 32-bit page-0/1 data word; [password] is used when [usePassword] is true.
+  Future<void> writeT55xxBlock(
+    int block,
+    int word, {
+    Uint8List? password,
+    bool usePassword = false,
+    bool page1 = false,
+  }) async {
+    if (block < 0 || block > 7) {
+      throw ArgumentError('T55xx block must be 0-7');
+    }
+    final pwd = password ?? Uint8List(4);
+    if (pwd.length != 4) {
+      throw ArgumentError('T55xx password must be 4 bytes');
+    }
+
+    final payload = Uint8List(11);
+    payload[0] = block & 0xFF;
+    payload[1] = (word >> 24) & 0xFF;
+    payload[2] = (word >> 16) & 0xFF;
+    payload[3] = (word >> 8) & 0xFF;
+    payload[4] = word & 0xFF;
+    payload[5] = usePassword ? 1 : 0;
+    payload.setRange(6, 10, pwd);
+    payload[10] = page1 ? 1 : 0;
+
+    final resp = await sendCmd(ChameleonCommand.lfT55xxWrite, data: payload);
+    // 0x40 = LF_TAG_OK
+    if (resp != null && resp.status != 0x40 && resp.status != 0x68) {
+      throw Exception(
+          'T55xx write block $block failed (status=0x${resp.status.toRadixString(16)})');
+    }
+  }
+
+  /// Reset a T55xx to open (no-password) state and wipe data blocks.
+  ///
+  /// Chameleon EM410x clones always set the PWD bit with default key
+  /// 0x20206666, which blocks cheap cloners that only do open writes.
+  /// Firmware does not verify T55xx writes over the air, so we blast the
+  /// open-config + wipe sequence using each candidate password (and open).
+  ///
+  /// Returns the primary password tried first (user/default), for UI status.
+  Future<String?> resetT55xxToOpen({
+    List<Uint8List>? passwords,
+    bool wipeDataBlocks = true,
+  }) async {
+    // Proxmark-compatible open wipe config: no PWD bit.
+    // Other tools recognize this as a blank/open T5557.
+    const int openConfig = 0x000880E0;
+
+    final candidates = <Uint8List>[
+      ...?passwords,
+      Uint8List.fromList([0x20, 0x20, 0x66, 0x66]), // Chameleon default
+      Uint8List.fromList([0x00, 0x00, 0x00, 0x00]),
+      Uint8List.fromList([0x51, 0x24, 0x36, 0x48]),
+      Uint8List.fromList([0x19, 0x92, 0x04, 0x27]),
+      Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF]),
+    ];
+
+    // De-dupe by hex
+    final seen = <String>{};
+    final unique = <Uint8List>[];
+    for (final p in candidates) {
+      if (p.length != 4) continue;
+      final key = bytesToHex(p);
+      if (seen.add(key)) unique.add(p);
+    }
+
+    final primary =
+        unique.isNotEmpty ? bytesToHex(unique.first).toUpperCase() : null;
+
+    // 1) Open write of config (works if PWD already off).
+    await writeT55xxBlock(0, openConfig, usePassword: false);
+
+    // 2) Password-authenticated open config + clear block 7 for every candidate.
+    //    Only the correct password will stick; wrong ones are ignored by the chip.
+    for (final pwd in unique) {
+      await writeT55xxBlock(0, openConfig, password: pwd, usePassword: true);
+      await writeT55xxBlock(7, 0x00000000, password: pwd, usePassword: true);
+    }
+
+    if (wipeDataBlocks) {
+      // 3) Zero data blocks open + with each password.
+      for (int block = 1; block <= 7; block++) {
+        await writeT55xxBlock(block, 0x00000000, usePassword: false);
+        for (final pwd in unique) {
+          await writeT55xxBlock(block, 0x00000000,
+              password: pwd, usePassword: true);
+        }
+      }
+      // 4) Final open config again (open + each password).
+      await writeT55xxBlock(0, openConfig, usePassword: false);
+      for (final pwd in unique) {
+        await writeT55xxBlock(0, openConfig, password: pwd, usePassword: true);
+      }
+      await writeT55xxBlock(0, openConfig, usePassword: false);
+    }
+
+    return primary;
+  }
+
   Future<void> writeHIDProxToT55XX(
       Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
     List<int> keys = [];
