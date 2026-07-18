@@ -392,6 +392,10 @@ class CardCreateMenuState extends State<CardCreateMenu> {
               );
 
               finalUid = hidCard.toString();
+            } else if (isEM410X(selectedType)) {
+              finalUid = bytesToHexSpace(normalizeEm410xUid(
+                  hexToBytes(uidController.text),
+                  type: selectedType));
             } else {
               finalUid = bytesToHexSpace(hexToBytes(uidController.text));
             }

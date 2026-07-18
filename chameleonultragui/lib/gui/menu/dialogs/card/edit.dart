@@ -499,6 +499,11 @@ class CardEditMenuState extends State<CardEditMenu> {
               } catch (e) {
                 finalUid = bytesToHexSpace(hexToBytes(uidController.text));
               }
+            } else if (isEM410X(selectedType)) {
+              // Persist clean 5/13-byte UID only (strip legacy type prefix).
+              finalUid = bytesToHexSpace(normalizeEm410xUid(
+                  hexToBytes(uidController.text),
+                  type: selectedType));
             } else {
               finalUid = bytesToHexSpace(hexToBytes(uidController.text));
             }
