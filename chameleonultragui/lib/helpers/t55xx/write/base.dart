@@ -24,19 +24,21 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
   TextEditingController currentKeyController = TextEditingController();
   String currentKey = "";
   String newKey = "";
+  bool noPassword = false;
+  final TagType? cardType;
 
-  BaseT55XXCardHelper(super.communicator);
+  BaseT55XXCardHelper(super.communicator, {this.cardType});
 
   @override
   List<AbstractWriteHelper> getAvailableMethods() {
     return [
-      BaseT55XXCardHelper(communicator),
+      BaseT55XXCardHelper(communicator, cardType: cardType),
     ];
   }
 
   @override
   List<AbstractWriteHelper> getAvailableMethodsByPriority() {
-    return [BaseT55XXCardHelper(communicator)];
+    return [BaseT55XXCardHelper(communicator, cardType: cardType)];
   }
 
   @override
@@ -64,20 +66,46 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
                   ),
                   TextFormField(
                     controller: newKeyController,
+                    enabled: !noPassword,
                     decoration: InputDecoration(
                         labelText: localizations.new_key,
                         hintMaxLines: 4,
                         hintText: localizations.enter_something(
                             localizations.t55xx_new_key_prompt)),
                     inputFormatters: hexFormatter,
-                    validator: (value) => validateHex(value, localizations,
-                        exactBytes: 4, fieldName: localizations.key),
-                  )
+                    validator: noPassword
+                        ? null
+                        : (value) => validateHex(value, localizations,
+                            exactBytes: 4, fieldName: localizations.key),
+                  ),
+                  if (cardType != null && isEM410X(cardType!))
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(localizations.no_password),
+                      value: noPassword,
+                      onChanged: (value) {
+                        setState(() {
+                          noPassword = value ?? false;
+                          if (noPassword) {
+                            newKeyController.clear();
+                          }
+                        });
+                      },
+                    ),
                 ],
               ))),
       TextButton(
         onPressed: () => {
-          if (newKeyController.text.isNotEmpty)
+          if (noPassword)
+            {
+              setState(() {
+                currentKey = currentKeyController.text.isNotEmpty
+                    ? currentKeyController.text
+                    : "20206666";
+                newKey = "00000000";
+              })
+            }
+          else if (newKeyController.text.isNotEmpty)
             {
               if (currentKeyController.text.isNotEmpty)
                 {
@@ -141,6 +169,7 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
   Future<void> reset() async {
     currentKey = "";
     newKey = "";
+    noPassword = false;
   }
 
   @override
@@ -148,7 +177,8 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
       CardSave card, Function(int writeProgress) update) async {
     if (isEM410X(card.tag)) {
       await communicator.writeEM410XtoT55XX(hexToBytes(card.uid),
-          hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+          hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)],
+          noPassword: noPassword);
       await Future.delayed(const Duration(milliseconds: 500));
       var newCard = await communicator.readEM410X();
       return newCard.toString() == card.uid;
