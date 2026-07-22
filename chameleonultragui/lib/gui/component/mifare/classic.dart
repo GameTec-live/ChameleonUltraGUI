@@ -66,6 +66,35 @@ class CardReaderState extends State<MifareClassicHelper> {
       );
     } else {
       var tags = appState.sharedPreferencesProvider.getCards();
+      var dumpData = widget.mfcInfo.recovery!.cardData;
+      // Block 0 (the UID block) can't always be read. If it wasn't, ask before
+      // rebuilding it from the scanned UID so data is never changed silently.
+      if (!skipDump && !widget.mfcInfo.recovery!.block0Read) {
+        final rebuild = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(localizations.block0_read_failed_title),
+            content: Text(localizations.block0_read_failed_text),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(localizations.cancel),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(localizations.rebuild_uid),
+              ),
+            ],
+          ),
+        );
+        if (rebuild == true) {
+          dumpData = List<Uint8List>.of(dumpData);
+          dumpData[0] = mfClassicGenerateFirstBlock(
+              hexToBytes(widget.hfInfo.uid),
+              hexToBytes(widget.hfInfo.sak)[0],
+              hexToBytes(widget.hfInfo.atqa));
+        }
+      }
       tags.add(CardSave(
           uid: widget.hfInfo.uid,
           sak: hexToBytes(widget.hfInfo.sak)[0],
@@ -74,7 +103,7 @@ class CardReaderState extends State<MifareClassicHelper> {
           tag: (skipDump)
               ? TagType.mifare1K
               : mfClassicGetChameleonTagType(widget.mfcInfo.type),
-          data: widget.mfcInfo.recovery!.cardData,
+          data: dumpData,
           ats: (widget.hfInfo.ats != localizations.no)
               ? hexToBytes(widget.hfInfo.ats)
               : Uint8List(0)));
