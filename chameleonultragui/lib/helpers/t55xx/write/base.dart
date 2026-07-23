@@ -147,7 +147,8 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
   Future<bool> writeData(
       CardSave card, Function(int writeProgress) update) async {
     if (isEM410X(card.tag)) {
-      await communicator.writeEM410XtoT55XX(hexToBytes(card.uid),
+      await communicator.writeEM410XtoT55XX(
+          normalizeEm410xUid(hexToBytes(card.uid), type: card.tag),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
       await Future.delayed(const Duration(milliseconds: 500));
       var newCard = await communicator.readEM410X();
