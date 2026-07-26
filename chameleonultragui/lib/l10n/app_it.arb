@@ -106,7 +106,7 @@
   "sak": "SAK",
   "atqa": "ATQA",
   "enter_something": "Inserisci {name}",
-  "must_or": "{name} deve essere lungo {a} o {b} bytes.",
+  "must_or": "La {name} deve essere lunga {a} o {b} bytes.",
   "must_be": "{name} deve essere lungo {a} bytes.",
   "device_settings": "Impostazioni Dispositivo",
   "firmware_management": "Gestione firmware",
