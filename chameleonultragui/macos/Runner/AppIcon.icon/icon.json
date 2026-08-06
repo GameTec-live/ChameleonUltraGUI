@@ -1,0 +1,37 @@
+{
+  "fill" : {
+    "automatic-gradient" : "display-p3:0.96078,0.95294,0.94510,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "fill" : {
+            "solid" : "display-p3:0.25490,0.34510,0.25882,1.00000"
+          },
+          "glass" : true,
+          "image-name" : "logo-color-desktop.png",
+          "name" : "logo-color-desktop",
+          "position" : {
+            "scale" : 0.8,
+            "translation-in-points" : [
+              -4.5,
+              1.5
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
