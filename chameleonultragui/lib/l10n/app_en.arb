@@ -570,5 +570,8 @@
   "lf_sniff_load_file": "Load .bin file",
   "lf_sniff_load_failed": "Failed to load file: {error}",
   "lf_sniff_loaded": "Loaded {count} sample(s) from file.",
-  "sniff_device_required_hint": "No device connected. Connect a Chameleon to capture, or load a saved file."
+  "sniff_device_required_hint": "No device connected. Connect a Chameleon to capture, or load a saved file.",
+  "block0_read_failed_title": "Couldn't read block 0",
+  "block0_read_failed_text": "The UID block couldn't be read. Rebuild it from the scan so the clone keeps its UID? Cancel keeps the dump unchanged.",
+  "rebuild_uid": "Rebuild UID"
 }

@@ -43,6 +43,7 @@ class MifareClassicRecovery {
   void Function() update;
   MifareClassicType mifareClassicType;
   bool isMifareClassicEV1;
+  bool block0Read = false;
 
   MifareClassicRecovery(
       {required this.appState,
@@ -570,6 +571,7 @@ class MifareClassicRecovery {
 
   Future<void> dumpData() async {
     cardData = List.generate(256, (_) => Uint8List(0));
+    block0Read = false;
 
     for (var sector = 0;
         sector <
@@ -601,6 +603,8 @@ class MifareClassicRecovery {
             } else {
               continue;
             }
+          } else if (sector == 0 && block == 0) {
+            block0Read = true;
           }
 
           if (mfClassicGetSectorTrailerBlockBySector(sector) ==
