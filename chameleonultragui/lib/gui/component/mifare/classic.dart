@@ -373,37 +373,6 @@ class CardReaderState extends State<MifareClassicHelper> {
         _ResponsiveButtonGroup(
             centerOnly: true,
             children: [
-              ElevatedButton(
-                onPressed: () async {
-                  final viewCard = CardSave(
-                    uid: widget.hfInfo.uid,
-                    sak: hexToBytes(widget.hfInfo.sak)[0],
-                    atqa: hexToBytes(widget.hfInfo.atqa),
-                    name: dumpName,
-                    tag: mfClassicGetChameleonTagType(widget.mfcInfo.type),
-                    data: widget.mfcInfo.recovery!.cardData,
-                    ats: (widget.hfInfo.ats != localizations.no)
-                        ? hexToBytes(widget.hfInfo.ats)
-                        : Uint8List(0),
-                  );
-                  await showDialog(
-                    context: context,
-                    builder: (context) => DumpEditor(
-                      cardSave: viewCard,
-                      onSave: (data) {
-                        // Apply edits back so a later save uses the
-                        // modified dump without re-reading the card.
-                        widget.mfcInfo.recovery!.cardData = data;
-                      },
-                    ),
-                  );
-                  if (context.mounted) {
-                    setState(() {});
-                  }
-                },
-                style: customCardButtonStyle(appState),
-                child: Text(localizations.view_dump),
-              ),
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: () async {
@@ -451,6 +420,43 @@ class CardReaderState extends State<MifareClassicHelper> {
                 },
                 style: customCardButtonStyle(appState),
                 child: Text(localizations.save_as(".bin")),
+              ),
+            ]),
+      const SizedBox(height: 8),
+      if (widget.mfcInfo.state == MifareClassicState.save && widget.allowSave)
+        _ResponsiveButtonGroup(
+            centerOnly: true,
+            children: [
+              ElevatedButton(
+                onPressed: () async {
+                  final viewCard = CardSave(
+                    uid: widget.hfInfo.uid,
+                    sak: hexToBytes(widget.hfInfo.sak)[0],
+                    atqa: hexToBytes(widget.hfInfo.atqa),
+                    name: dumpName,
+                    tag: mfClassicGetChameleonTagType(widget.mfcInfo.type),
+                    data: widget.mfcInfo.recovery!.cardData,
+                    ats: (widget.hfInfo.ats != localizations.no)
+                        ? hexToBytes(widget.hfInfo.ats)
+                        : Uint8List(0),
+                  );
+                  await showDialog(
+                    context: context,
+                    builder: (context) => DumpEditor(
+                      cardSave: viewCard,
+                      onSave: (data) {
+                        // Apply edits back so a later save uses the
+                        // modified dump without re-reading the card.
+                        widget.mfcInfo.recovery!.cardData = data;
+                      },
+                    ),
+                  );
+                  if (context.mounted) {
+                    setState(() {});
+                  }
+                },
+                style: customCardButtonStyle(appState),
+                child: Text(localizations.view_dump),
               ),
             ]),
     ]);
