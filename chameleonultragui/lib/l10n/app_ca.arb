@@ -570,6 +570,5 @@
   "lf_sniff_load_file": "Carrega fitxer .bin",
   "lf_sniff_load_failed": "Error carregant el fitxer: {error}",
   "lf_sniff_loaded": "Carregades {count} mostra(es) del fitxer.",
-  "sniff_device_required_hint": "No hi ha cap dispositiu connectat. Connecteu un Chameleon per capturar, o carregueu un fitxer desat.",
-  "view_dump": "View dump"
+  "sniff_device_required_hint": "No hi ha cap dispositiu connectat. Connecteu un Chameleon per capturar, o carregueu un fitxer desat."
 }

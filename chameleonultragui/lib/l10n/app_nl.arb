@@ -398,6 +398,5 @@
   "android_ble_permissions_missing": "Ontbrekende Bluetooth of locatie toestemming, om toe te late via Bluetooth, geef toestemming in instellingen van je apparaat",
   "skip_recovery": "Herstel overslaan",
   "resume_recovery": "Herstel voortzetten",
-  "language_name": "Nederlands",
-  "view_dump": "View dump"
+  "language_name": "Nederlands"
 }

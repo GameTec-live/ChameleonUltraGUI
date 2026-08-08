@@ -409,6 +409,5 @@
   "skip_recovery": "Recovery \u00fcberspringen",
   "resume_recovery": "Recovery fortsetzen",
   "language_name": "Deutsch",
-  "symmetric": "Symmetrisch",
-  "view_dump": "View dump"
+  "symmetric": "Symmetrisch"
 }

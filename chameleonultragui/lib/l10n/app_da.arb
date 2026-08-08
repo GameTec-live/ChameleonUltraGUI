@@ -153,6 +153,5 @@
   "no_name": "Intet navn",
   "connecting_to_ble": "Tilslutter til BLE-enhed...",
   "default_ble_password": "Standard BLE forbindelse adgangskode er 123456",
-  "connection_might_take_some_time": "F\u00f8rste forbindelse kan tage noget tid",
-  "view_dump": "View dump"
+  "connection_might_take_some_time": "F\u00f8rste forbindelse kan tage noget tid"
 }

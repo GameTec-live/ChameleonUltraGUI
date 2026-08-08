@@ -373,7 +373,6 @@ class CardReaderState extends State<MifareClassicHelper> {
         _ResponsiveButtonGroup(
             centerOnly: true,
             children: [
-              const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: () async {
                   await showDialog(
@@ -422,8 +421,8 @@ class CardReaderState extends State<MifareClassicHelper> {
                 child: Text(localizations.save_as(".bin")),
               ),
             ]),
-      const SizedBox(height: 8),
-      if (widget.mfcInfo.state == MifareClassicState.save && widget.allowSave)
+      if (widget.mfcInfo.state == MifareClassicState.save && widget.allowSave) ...[
+        const SizedBox(height: 8),
         _ResponsiveButtonGroup(
             centerOnly: true,
             children: [
@@ -459,7 +458,7 @@ class CardReaderState extends State<MifareClassicHelper> {
                 child: Text(localizations.view_dump),
               ),
             ]),
-    ]);
+      ]    ]);
   }
 }
 

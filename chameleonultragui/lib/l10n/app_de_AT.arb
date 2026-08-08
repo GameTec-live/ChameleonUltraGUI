@@ -227,6 +227,5 @@
   "must_be_valid_hex": "HEX Wert erforderlich",
   "export_to_dictionary": "Export in W\u00f6rterbuch",
   "enter_name_of_card": "Kartenname eingeben",
-  "enter_name_of_dictionary": "W\u00f6rterbuchname eingeben",
-  "view_dump": "View dump"
+  "enter_name_of_dictionary": "W\u00f6rterbuchname eingeben"
 }

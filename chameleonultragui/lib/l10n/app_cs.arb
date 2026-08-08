@@ -400,6 +400,5 @@
   "android_ble_permissions_missing": "Chyb\u00ed BLE nebo opr\u00e1vn\u011bn\u00ed pro informace o poloze. Chcete-li se p\u0159ipojit prost\u0159ednictv\u00edm BLE, ud\u011blte opr\u00e1vn\u011bn\u00ed v aplikaci Nastaven\u00ed za\u0159\u00edzen\u00ed",
   "skip_recovery": "P\u0159esko\u010dit obnovu",
   "resume_recovery": "Dokon\u010dit obnovu",
-  "language_name": "\u010ce\u0161tina",
-  "view_dump": "View dump"
+  "language_name": "\u010ce\u0161tina"
 }

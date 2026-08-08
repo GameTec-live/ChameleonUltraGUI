@@ -155,6 +155,5 @@
   "connecting_to_ble": "Conectare la dispozitiv...",
   "default_ble_password": "Parola de conexiune BLE implicit\u0103 este 123456",
   "connection_might_take_some_time": "Prima conexiune ar putea dura ceva timp",
-  "too_long_name": "Numele este prea lung",
-  "view_dump": "View dump"
+  "too_long_name": "Numele este prea lung"
 }

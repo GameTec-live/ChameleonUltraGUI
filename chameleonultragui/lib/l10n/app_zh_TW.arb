@@ -529,6 +529,5 @@
   "hf_sniff_hex_copied": "\u539f\u59cb HF \u64f7\u53d6\u5df2\u8907\u88fd\u5230\u526a\u8cbc\u7c3f",
   "hf_sniff_copy_hex": "\u8907\u88fd\u539f\u59cb Hex",
   "auto_scan_devices": "\u81ea\u52d5\u6383\u63cf\u88dd\u7f6e",
-  "auto_connect_first_device": "\u81ea\u52d5\u9023\u63a5\u9996\u500b\u767c\u73fe\u7684\u88dd\u7f6e",
-  "view_dump": "查看資料"
+  "auto_connect_first_device": "\u81ea\u52d5\u9023\u63a5\u9996\u500b\u767c\u73fe\u7684\u88dd\u7f6e"
 }

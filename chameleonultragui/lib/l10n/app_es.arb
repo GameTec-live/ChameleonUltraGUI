@@ -388,6 +388,5 @@
   "no_t55xx_dictionaries": "No hay diccionarios compatibles con T55XX. Por favor, descargue algunos en primer lugar.",
   "download_dictionaries": "Descargar diccionarios",
   "enter_new_password": "Introduzca la nueva contrase\u00f1a (se establecer\u00e1 si se encuentra la contrase\u00f1a)",
-  "language_name": "Espa\u00f1ol",
-  "view_dump": "View dump"
+  "language_name": "Espa\u00f1ol"
 }
