@@ -571,5 +571,5 @@
   "lf_sniff_load_failed": "Impossibile caricare il file: {error}",
   "lf_sniff_loaded": "Caricati {count} campioni dal file.",
   "sniff_device_required_hint": "Nessun dispositivo connesso. Connetti un Chameleon per catturare, o carica un file salvato.",
-  "view_dump": "Visualizza dump"
+  "view_dump": "Visualizza il dump"
 }
