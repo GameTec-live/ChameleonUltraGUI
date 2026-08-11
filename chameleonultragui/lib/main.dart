@@ -36,6 +36,20 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 // Logger
 import 'package:logger/logger.dart';
 
+enum NavigationPage {
+  home(0),
+  slotManager(1),
+  savedCards(2),
+  readCard(3),
+  writeCard(4),
+  tools(5),
+  settings(6),
+  debug(7);
+
+  const NavigationPage(this.value);
+  final int value;
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferencesProvider = SharedPreferencesProvider();
@@ -147,6 +161,21 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  static const double _compactWidthBreakpoint = 600;
+
+  static const List<NavigationPage> _primaryTabPages = [
+    NavigationPage.home,
+    NavigationPage.savedCards,
+    NavigationPage.readCard,
+    NavigationPage.tools,
+  ];
+
+  static const List<NavigationPage> _deviceOnlyPages = [
+    NavigationPage.slotManager,
+    NavigationPage.readCard,
+    NavigationPage.writeCard,
+  ];
+
   var selectedIndex = 0;
 
   @override
@@ -200,6 +229,128 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  int get _moreTabIndex => _primaryTabPages.length;
+
+  int _bottomNavSelectedIndex(int pageIndex) {
+    var tab = _primaryTabPages.indexWhere((page) => page.value == pageIndex);
+    return tab == -1 ? _moreTabIndex : tab;
+  }
+
+  void _showDeviceRequired(BuildContext context) {
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
+    var localizations = AppLocalizations.of(context)!;
+
+    scaffoldMessenger.hideCurrentSnackBar();
+    var snackBar = SnackBar(
+      content: Text(localizations.device_required),
+      action: SnackBarAction(
+        label: localizations.close,
+        onPressed: () {},
+      ),
+    );
+
+    scaffoldMessenger.showSnackBar(snackBar);
+  }
+
+  void _onBottomNavSelected(
+      BuildContext context, ChameleonGUIState appState, int value) {
+    if (value == _moreTabIndex) {
+      _showMoreMenu(context, appState);
+      return;
+    }
+
+    var targetPage = _primaryTabPages[value];
+    if (_deviceOnlyPages.contains(targetPage) &&
+        !appState.connector!.connected) {
+      _showDeviceRequired(context);
+      return;
+    }
+
+    setState(() {
+      selectedIndex = targetPage.value;
+    });
+  }
+
+  void _showMoreMenu(BuildContext context, ChameleonGUIState appState) {
+    var localizations = AppLocalizations.of(context)!;
+    var connected = appState.connector!.connected;
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _moreMenuItem(context, Icons.widgets, localizations.slot_manager,
+                NavigationPage.slotManager,
+                enabled: connected),
+            _moreMenuItem(context, Icons.system_update_alt,
+                localizations.write_card, NavigationPage.writeCard,
+                enabled: connected),
+            _moreMenuItem(context, Icons.settings, localizations.settings,
+                NavigationPage.settings),
+            if (appState.devMode)
+              _moreMenuItem(context, Icons.bug_report,
+                  '🐞 ${localizations.debug} 🐞', NavigationPage.debug),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _moreMenuItem(
+      BuildContext context, IconData icon, String label, NavigationPage page,
+      {bool enabled = true}) {
+    return ListTile(
+      enabled: enabled,
+      leading: Icon(icon),
+      title: Text(label),
+      selected: selectedIndex == page.value,
+      onTap: enabled
+          ? () {
+              setState(() {
+                selectedIndex = page.value;
+              });
+              Navigator.of(context).pop();
+            }
+          : null,
+    );
+  }
+
+  NavigationBar _buildBottomNavigationBar(
+      BuildContext context, ChameleonGUIState appState) {
+    var localizations = AppLocalizations.of(context)!;
+    var connected = appState.connector!.connected;
+    return NavigationBar(
+      selectedIndex: _bottomNavSelectedIndex(selectedIndex),
+      onDestinationSelected: (value) =>
+          _onBottomNavSelected(context, appState, value),
+      destinations: [
+        NavigationDestination(
+          icon: const Icon(Icons.home),
+          label: localizations.home,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.auto_awesome_motion),
+          label: localizations.saved_cards,
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.sensors,
+              color: connected ? null : Theme.of(context).disabledColor),
+          label: localizations.read_card,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.handyman),
+          label: localizations.tools,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.more_horiz),
+          label: localizations.more,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
@@ -222,13 +373,8 @@ class _MainPageState extends State<MainPage> {
 
     Widget page; // Set Page
     if (!appState.connector!.connected &&
-        selectedIndex != 0 &&
-        selectedIndex != 2 &&
-        selectedIndex != 5 &&
-        selectedIndex != 6 &&
-        selectedIndex != 7) {
-      // If not connected, and not on home, tools, settings or dev page, go to home page
-      selectedIndex = 0;
+        _deviceOnlyPages.any((page) => page.value == selectedIndex)) {
+      selectedIndex = NavigationPage.home.value;
     }
 
     switch (selectedIndex) {
@@ -316,15 +462,18 @@ class _MainPageState extends State<MainPage> {
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
       home: LayoutBuilder(// Build Page
           builder: (context, constraints) {
+        final showNavigation =
+            !(appState.connector!.isDFU && appState.connector!.connected);
+        final useRail = constraints.maxWidth >= _compactWidthBreakpoint;
         return SafeArea(
           left: false,
           right: false,
           top: false,
-          bottom: true,
+          bottom: useRail, // NavigationBar insets itself
           child: Scaffold(
               body: Row(
                 children: [
-                  (!appState.connector!.isDFU || !appState.connector!.connected)
+                  (useRail && showNavigation)
                       ? SafeArea(
                           child: NavigationRail(
                             key: appState.navigationRailKey,
@@ -395,7 +544,16 @@ class _MainPageState extends State<MainPage> {
                   ),
                 ],
               ),
-              bottomNavigationBar: const BottomProgressBar()),
+              bottomNavigationBar: useRail
+                  ? const BottomProgressBar()
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const BottomProgressBar(),
+                        if (showNavigation)
+                          _buildBottomNavigationBar(context, appState),
+                      ],
+                    )),
         );
       }),
     );
