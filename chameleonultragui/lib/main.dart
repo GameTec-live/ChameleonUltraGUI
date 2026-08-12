@@ -468,7 +468,7 @@ class _MainPageState extends State<MainPage> {
           left: false,
           right: false,
           top: false,
-          bottom: useRail, // NavigationBar insets itself
+          bottom: useRail || !showNavigation, // NavigationBar insets when shown
           child: Scaffold(
               body: Row(
                 children: [
