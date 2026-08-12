@@ -255,65 +255,64 @@ class _MainPageState extends State<MainPage> {
   void _onBottomNavSelected(
       BuildContext context, ChameleonGUIState appState, int value) {
     if (value == _moreTabIndex) {
-      _showMoreMenu(context, appState);
+      _showMoreMenu(context);
       return;
     }
 
-    var targetPage = _primaryTabPages[value];
-    if (_deviceOnlyPages.contains(targetPage) &&
-        !appState.connector!.connected) {
+    _goToPage(context, appState, _primaryTabPages[value]);
+  }
+
+  void _goToPage(
+      BuildContext context, ChameleonGUIState appState, NavigationPage page) {
+    if (_deviceOnlyPages.contains(page) && !appState.connector!.connected) {
       _showDeviceRequired(context);
       return;
     }
 
     setState(() {
-      selectedIndex = targetPage.value;
+      selectedIndex = page.value;
     });
   }
 
-  void _showMoreMenu(BuildContext context, ChameleonGUIState appState) {
+  void _showMoreMenu(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
-    var connected = appState.connector!.connected;
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _moreMenuItem(context, Icons.widgets, localizations.slot_manager,
-                NavigationPage.slotManager,
-                enabled: connected),
-            _moreMenuItem(context, Icons.system_update_alt,
-                localizations.write_card, NavigationPage.writeCard,
-                enabled: connected),
-            _moreMenuItem(context, Icons.settings, localizations.settings,
-                NavigationPage.settings),
-            if (appState.devMode)
-              _moreMenuItem(context, Icons.bug_report,
-                  '🐞 ${localizations.debug} 🐞', NavigationPage.debug),
-          ],
+      builder: (_) => Consumer<ChameleonGUIState>(
+        builder: (_, appState, __) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _moreMenuItem(context, appState, Icons.widgets,
+                  localizations.slot_manager, NavigationPage.slotManager),
+              _moreMenuItem(context, appState, Icons.system_update_alt,
+                  localizations.write_card, NavigationPage.writeCard),
+              _moreMenuItem(context, appState, Icons.settings,
+                  localizations.settings, NavigationPage.settings),
+              if (appState.devMode)
+                _moreMenuItem(context, appState, Icons.bug_report,
+                    '🐞 ${localizations.debug} 🐞', NavigationPage.debug),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _moreMenuItem(
-      BuildContext context, IconData icon, String label, NavigationPage page,
-      {bool enabled = true}) {
+  Widget _moreMenuItem(BuildContext context, ChameleonGUIState appState,
+      IconData icon, String label, NavigationPage page) {
+    var needsDevice =
+        _deviceOnlyPages.contains(page) && !appState.connector!.connected;
     return ListTile(
-      enabled: enabled,
-      leading: Icon(icon),
+      leading: Icon(icon,
+          color: needsDevice ? Theme.of(context).disabledColor : null),
       title: Text(label),
       selected: selectedIndex == page.value,
-      onTap: enabled
-          ? () {
-              setState(() {
-                selectedIndex = page.value;
-              });
-              Navigator.of(context).pop();
-            }
-          : null,
+      onTap: () {
+        Navigator.of(context).pop();
+        _goToPage(context, appState, page);
+      },
     );
   }
 
