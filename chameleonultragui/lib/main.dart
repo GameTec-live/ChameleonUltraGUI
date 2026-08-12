@@ -37,17 +37,14 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:logger/logger.dart';
 
 enum NavigationPage {
-  home(0),
-  slotManager(1),
-  savedCards(2),
-  readCard(3),
-  writeCard(4),
-  tools(5),
-  settings(6),
-  debug(7);
-
-  const NavigationPage(this.value);
-  final int value;
+  home,
+  slotManager,
+  savedCards,
+  readCard,
+  writeCard,
+  tools,
+  settings,
+  debug,
 }
 
 Future<void> main() async {
@@ -176,7 +173,7 @@ class _MainPageState extends State<MainPage> {
     NavigationPage.writeCard,
   ];
 
-  var selectedIndex = 0;
+  NavigationPage selectedPage = NavigationPage.home;
 
   @override
   void initState() {
@@ -231,8 +228,8 @@ class _MainPageState extends State<MainPage> {
 
   int get _moreTabIndex => _primaryTabPages.length;
 
-  int _bottomNavSelectedIndex(int pageIndex) {
-    var tab = _primaryTabPages.indexWhere((page) => page.value == pageIndex);
+  int _bottomNavSelectedIndex(NavigationPage page) {
+    var tab = _primaryTabPages.indexOf(page);
     return tab == -1 ? _moreTabIndex : tab;
   }
 
@@ -270,7 +267,7 @@ class _MainPageState extends State<MainPage> {
     }
 
     setState(() {
-      selectedIndex = page.value;
+      selectedPage = page;
     });
   }
 
@@ -308,7 +305,7 @@ class _MainPageState extends State<MainPage> {
       leading: Icon(icon,
           color: needsDevice ? Theme.of(context).disabledColor : null),
       title: Text(label),
-      selected: selectedIndex == page.value,
+      selected: selectedPage == page,
       onTap: () {
         Navigator.of(context).pop();
         _goToPage(context, appState, page);
@@ -321,7 +318,7 @@ class _MainPageState extends State<MainPage> {
     var localizations = AppLocalizations.of(context)!;
     var connected = appState.connector!.connected;
     return NavigationBar(
-      selectedIndex: _bottomNavSelectedIndex(selectedIndex),
+      selectedIndex: _bottomNavSelectedIndex(selectedPage),
       onDestinationSelected: (value) =>
           _onBottomNavSelected(context, appState, value),
       destinations: [
@@ -372,13 +369,13 @@ class _MainPageState extends State<MainPage> {
 
     Widget page; // Set Page
     if (!appState.connector!.connected &&
-        _deviceOnlyPages.any((page) => page.value == selectedIndex)) {
-      selectedIndex = NavigationPage.home.value;
+        _deviceOnlyPages.contains(selectedPage)) {
+      selectedPage = NavigationPage.home;
     }
 
-    switch (selectedIndex) {
+    switch (selectedPage) {
       // Sidebar Navigation
-      case 0:
+      case NavigationPage.home:
         if (appState.connector!.pendingConnection) {
           page = const PendingConnectionPage();
         } else {
@@ -393,29 +390,27 @@ class _MainPageState extends State<MainPage> {
           }
         }
         break;
-      case 1:
+      case NavigationPage.slotManager:
         page = const SlotManagerPage();
         break;
-      case 2:
+      case NavigationPage.savedCards:
         page = const SavedCardsPage();
         break;
-      case 3:
+      case NavigationPage.readCard:
         page = const ReadCardPage();
         break;
-      case 4:
+      case NavigationPage.writeCard:
         page = const WriteCardPage();
         break;
-      case 5:
+      case NavigationPage.tools:
         page = const ToolsPage();
         break;
-      case 6:
+      case NavigationPage.settings:
         page = const SettingsMainPage();
         break;
-      case 7:
+      case NavigationPage.debug:
         page = const DebugPage();
         break;
-      default:
-        throw UnimplementedError('no widget for $selectedIndex');
     }
 
     try {
@@ -526,10 +521,10 @@ class _MainPageState extends State<MainPage> {
                                       '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
                                 ),
                             ],
-                            selectedIndex: selectedIndex,
+                            selectedIndex: selectedPage.index,
                             onDestinationSelected: (value) {
                               setState(() {
-                                selectedIndex = value;
+                                selectedPage = NavigationPage.values[value];
                               });
                             },
                           ),
