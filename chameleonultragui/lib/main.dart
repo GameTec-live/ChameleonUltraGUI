@@ -36,7 +36,7 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 // Logger
 import 'package:logger/logger.dart';
 
-enum NavigationPage {
+enum _NavigationPage {
   home,
   slotManager,
   savedCards,
@@ -160,20 +160,20 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   static const double _compactWidthBreakpoint = 700;
 
-  static const List<NavigationPage> _primaryTabPages = [
-    NavigationPage.home,
-    NavigationPage.savedCards,
-    NavigationPage.readCard,
-    NavigationPage.tools,
+  static const List<_NavigationPage> _primaryTabPages = [
+    _NavigationPage.home,
+    _NavigationPage.savedCards,
+    _NavigationPage.readCard,
+    _NavigationPage.tools,
   ];
 
-  static const List<NavigationPage> _deviceOnlyPages = [
-    NavigationPage.slotManager,
-    NavigationPage.readCard,
-    NavigationPage.writeCard,
+  static const List<_NavigationPage> _deviceOnlyPages = [
+    _NavigationPage.slotManager,
+    _NavigationPage.readCard,
+    _NavigationPage.writeCard,
   ];
 
-  NavigationPage selectedPage = NavigationPage.home;
+  _NavigationPage selectedPage = _NavigationPage.home;
 
   @override
   void initState() {
@@ -228,7 +228,7 @@ class _MainPageState extends State<MainPage> {
 
   int get _moreTabIndex => _primaryTabPages.length;
 
-  int _bottomNavSelectedIndex(NavigationPage page) {
+  int _bottomNavSelectedIndex(_NavigationPage page) {
     var tab = _primaryTabPages.indexOf(page);
     return tab == -1 ? _moreTabIndex : tab;
   }
@@ -260,7 +260,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _goToPage(
-      BuildContext context, ChameleonGUIState appState, NavigationPage page) {
+      BuildContext context, ChameleonGUIState appState, _NavigationPage page) {
     if (_deviceOnlyPages.contains(page) && !appState.connector!.connected) {
       _showDeviceRequired(context);
       return;
@@ -282,14 +282,14 @@ class _MainPageState extends State<MainPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _moreMenuItem(context, appState, Icons.widgets,
-                  localizations.slot_manager, NavigationPage.slotManager),
+                  localizations.slot_manager, _NavigationPage.slotManager),
               _moreMenuItem(context, appState, Icons.system_update_alt,
-                  localizations.write_card, NavigationPage.writeCard),
+                  localizations.write_card, _NavigationPage.writeCard),
               _moreMenuItem(context, appState, Icons.settings,
-                  localizations.settings, NavigationPage.settings),
+                  localizations.settings, _NavigationPage.settings),
               if (appState.devMode)
                 _moreMenuItem(context, appState, Icons.bug_report,
-                    '🐞 ${localizations.debug} 🐞', NavigationPage.debug),
+                    '🐞 ${localizations.debug} 🐞', _NavigationPage.debug),
             ],
           ),
         ),
@@ -298,7 +298,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   Widget _moreMenuItem(BuildContext context, ChameleonGUIState appState,
-      IconData icon, String label, NavigationPage page) {
+      IconData icon, String label, _NavigationPage page) {
     var needsDevice =
         _deviceOnlyPages.contains(page) && !appState.connector!.connected;
     return ListTile(
@@ -370,12 +370,12 @@ class _MainPageState extends State<MainPage> {
     Widget page; // Set Page
     if (!appState.connector!.connected &&
         _deviceOnlyPages.contains(selectedPage)) {
-      selectedPage = NavigationPage.home;
+      selectedPage = _NavigationPage.home;
     }
 
     switch (selectedPage) {
       // Sidebar Navigation
-      case NavigationPage.home:
+      case _NavigationPage.home:
         if (appState.connector!.pendingConnection) {
           page = const PendingConnectionPage();
         } else {
@@ -390,25 +390,25 @@ class _MainPageState extends State<MainPage> {
           }
         }
         break;
-      case NavigationPage.slotManager:
+      case _NavigationPage.slotManager:
         page = const SlotManagerPage();
         break;
-      case NavigationPage.savedCards:
+      case _NavigationPage.savedCards:
         page = const SavedCardsPage();
         break;
-      case NavigationPage.readCard:
+      case _NavigationPage.readCard:
         page = const ReadCardPage();
         break;
-      case NavigationPage.writeCard:
+      case _NavigationPage.writeCard:
         page = const WriteCardPage();
         break;
-      case NavigationPage.tools:
+      case _NavigationPage.tools:
         page = const ToolsPage();
         break;
-      case NavigationPage.settings:
+      case _NavigationPage.settings:
         page = const SettingsMainPage();
         break;
-      case NavigationPage.debug:
+      case _NavigationPage.debug:
         page = const DebugPage();
         break;
     }
@@ -463,7 +463,8 @@ class _MainPageState extends State<MainPage> {
           left: false,
           right: false,
           top: false,
-          bottom: useRail || !showNavigation, // NavigationBar insets when shown
+          bottom: useRail ||
+              !showNavigation, // Reserve inset when the NavigationBar bar is absent (side rail, or hidden during DFU).
           child: Scaffold(
               body: Row(
                 children: [
@@ -524,7 +525,7 @@ class _MainPageState extends State<MainPage> {
                             selectedIndex: selectedPage.index,
                             onDestinationSelected: (value) {
                               setState(() {
-                                selectedPage = NavigationPage.values[value];
+                                selectedPage = _NavigationPage.values[value];
                               });
                             },
                           ),
