@@ -711,7 +711,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                   Expanded(
                       child: Text(
                     title,
-                    textAlign: TextAlign.start,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
