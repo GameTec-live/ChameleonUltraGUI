@@ -161,7 +161,7 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  static const double _compactWidthBreakpoint = 600;
+  static const double _compactWidthBreakpoint = 700;
 
   static const List<NavigationPage> _primaryTabPages = [
     NavigationPage.home,
