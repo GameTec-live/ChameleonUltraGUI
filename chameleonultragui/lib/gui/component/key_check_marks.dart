@@ -48,6 +48,7 @@ class _KeyCheckMarksState extends State<KeyCheckMarks> {
         _dragValue = ChameleonKeyCheckmark.none;
         break;
       case ChameleonKeyCheckmark.found:
+      case ChameleonKeyCheckmark.readable:
       case ChameleonKeyCheckmark.checking:
         _dragValue = null;
         break;
@@ -120,6 +121,15 @@ class _KeyCheckMarksState extends State<KeyCheckMarks> {
           child: const Icon(
             Icons.check,
             color: Colors.green,
+          ),
+        );
+      case ChameleonKeyCheckmark.readable:
+        return Tooltip(
+          message: "${localizations.key} B: ${localizations.read}",
+          preferBelow: tooltipBelow,
+          child: const Icon(
+            Icons.visibility,
+            color: Colors.blue,
           ),
         );
       case ChameleonKeyCheckmark.none:
