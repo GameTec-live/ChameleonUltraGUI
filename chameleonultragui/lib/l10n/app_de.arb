@@ -409,5 +409,6 @@
   "skip_recovery": "Recovery \u00fcberspringen",
   "resume_recovery": "Recovery fortsetzen",
   "language_name": "Deutsch",
-  "symmetric": "Symmetrisch"
+  "symmetric": "Symmetrisch",
+  "lf_sniff_firmware_unsupported": "."
 }
