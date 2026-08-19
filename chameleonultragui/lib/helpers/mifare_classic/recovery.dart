@@ -74,8 +74,12 @@ class MifareClassicRecovery {
         checkMark == ChameleonKeyCheckmark.disabled;
   }
 
-  bool _permissionAllowsKeyB(int permission) {
-    return permission == 2 || permission == 3;
+  Future<bool> _canUseKeyBForMemoryAccess(
+      int sector, Uint8List keyB) async {
+    final trailerBlock = mfClassicGetSectorTrailerBlockBySector(sector);
+    final block =
+        await appState.communicator!.mf1ReadBlock(trailerBlock, 0x61, keyB);
+    return block.length == 16;
   }
 
   Future<void> _resolveReadableKeyB(int sector, Uint8List keyA) async {
@@ -110,39 +114,11 @@ class MifareClassicRecovery {
     }
 
     final keyB = Uint8List.fromList(block.sublist(10, 16));
-    bool keyBReadSucceeded = false;
 
     // A readable Key B is normally data rather than an authentication key.
     // Some compatible cards nevertheless accept those same bytes as Key B.
-    // Verify that behavior with a non-destructive memory read before deciding
-    // whether to store the bytes as an authentication key.
-    for (var dataBlock = 0; dataBlock < 3; dataBlock++) {
-      final dataPermissions = MifareClassicDumpAnalyzer.dataAccessPermissions(
-          accessConditions[dataBlock]);
-      if (!_permissionAllowsKeyB(dataPermissions[0])) {
-        continue;
-      }
-
-      final testBlock =
-          mfClassicGetFirstBlockCountBySector(sector) + dataBlock;
-      final testData =
-          await appState.communicator!.mf1ReadBlock(testBlock, 0x61, keyB);
-      if (testData.length == 16) {
-        keyBReadSucceeded = true;
-        break;
-      }
-    }
-
-    // If no data block offers a safe Key-B read, the trailer itself can be
-    // used when its access bits are readable with Key B.
-    if (!keyBReadSucceeded &&
-        _permissionAllowsKeyB(trailerPermissions[1][0])) {
-      final testData =
-          await appState.communicator!.mf1ReadBlock(trailerBlock, 0x61, keyB);
-      keyBReadSucceeded = testData.length == 16;
-    }
-
-    if (keyBReadSucceeded) {
+    // Verify an actual memory operation before storing it as a valid key.
+    if (await _canUseKeyBForMemoryAccess(sector, keyB)) {
       setKeyAsFound(sector, 1, keyB);
     } else {
       checkMarks[sector + 40] = ChameleonKeyCheckmark.readable;
@@ -153,7 +129,6 @@ class MifareClassicRecovery {
   Future<bool> checkKeysOnSector(
       List<Uint8List> keys, int keyType, int sector) async {
     state = localizations.checking_keys(keys.length);
-    Uint8List? key;
     keyCheckProgress = null;
     int chunkSize =
         appState.connector!.connectionType == ConnectionType.ble ? 32 : 64;
@@ -166,12 +141,26 @@ class MifareClassicRecovery {
     int totalChunks = keys.partition(chunkSize).length;
 
     for (var chunk in keys.partition(chunkSize)) {
-      key = await appState.communicator!.mf1AuthMultipleKeys(
-          mfClassicGetSectorTrailerBlockBySector(sector),
-          0x60 + keyType,
-          chunk);
+      final remainingKeys = List<Uint8List>.from(chunk);
 
-      if (key != null) {
+      while (remainingKeys.isNotEmpty) {
+        final key = await appState.communicator!.mf1AuthMultipleKeys(
+            mfClassicGetSectorTrailerBlockBySector(sector),
+            0x60 + keyType,
+            remainingKeys);
+
+        if (key == null) {
+          break;
+        }
+
+        if (keyType == 1 &&
+            !await _canUseKeyBForMemoryAccess(sector, key)) {
+          final rejectedKey = bytesToHex(key);
+          remainingKeys
+              .removeWhere((candidate) => bytesToHex(candidate) == rejectedKey);
+          continue;
+        }
+
         setKeyAsFound(sector, keyType, key);
 
         if (keyType == 0) {
@@ -181,7 +170,9 @@ class MifareClassicRecovery {
         keyCheckProgress = null;
         await recheckKey(key, sector);
         return true;
-      } else if (totalChunks > 10) {
+      }
+
+      if (totalChunks > 10) {
         keyCheckProgress = (keyCheckProgress ?? 0) + 1 / totalChunks;
         update();
       }
@@ -223,11 +214,14 @@ class MifareClassicRecovery {
               "Checking found key ${bytesToHex(key)} on sector $sector, key type $keyType");
           setCheckingSector(sector, keyType);
 
-          if (await appState.communicator!.mf1Auth(
+          final authenticated = await appState.communicator!.mf1Auth(
               mfClassicGetSectorTrailerBlockBySector(sector),
               0x60 + keyType,
-              key)) {
-            // Found valid key
+              key);
+
+          if (authenticated &&
+              (keyType == 0 ||
+                  await _canUseKeyBForMemoryAccess(sector, key))) {
             setKeyAsFound(sector, keyType, key);
             if (keyType == 0) {
               await _resolveReadableKeyB(sector, key);
