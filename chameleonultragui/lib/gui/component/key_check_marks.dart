@@ -10,6 +10,7 @@ class KeyCheckMarks extends StatefulWidget {
   final int checkmarkCount;
   final List<ChameleonKeyCheckmark> checkMarks;
   final List<Uint8List> validKeys;
+  final List<Uint8List> readableData;
   final int checkmarkPerRow;
   final double checkmarkSize;
   final double fontSize;
@@ -20,6 +21,7 @@ class KeyCheckMarks extends StatefulWidget {
       {super.key,
       required this.checkMarks,
       required this.validKeys,
+      required this.readableData,
       this.checkmarkCount = 16,
       this.checkmarkPerRow = 16,
       this.checkmarkSize = 20,
@@ -125,7 +127,8 @@ class _KeyCheckMarksState extends State<KeyCheckMarks> {
         );
       case ChameleonKeyCheckmark.readable:
         return Tooltip(
-          message: "${localizations.key} B: ${localizations.read}",
+          message:
+              "Data: ${bytesToHex(widget.readableData[index]).toUpperCase()}",
           preferBelow: tooltipBelow,
           child: const Icon(
             Icons.visibility,

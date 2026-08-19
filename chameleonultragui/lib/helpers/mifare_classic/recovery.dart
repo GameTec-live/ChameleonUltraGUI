@@ -37,6 +37,7 @@ class MifareClassicRecovery {
   Dictionary? selectedDictionary;
   List<ChameleonKeyCheckmark> checkMarks;
   List<Uint8List> validKeys;
+  List<Uint8List> readableData;
   List<Uint8List> cardData;
   double dumpProgress;
   double? hardnestedProgress;
@@ -59,10 +60,13 @@ class MifareClassicRecovery {
       this.isMifareClassicEV1 = false,
       List<ChameleonKeyCheckmark>? checkMarks,
       List<Uint8List>? validKeys,
+      List<Uint8List>? readableData,
       List<Uint8List>? cardData})
       : checkMarks =
             checkMarks ?? List.generate(80, (_) => ChameleonKeyCheckmark.none),
         validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
+        readableData =
+            readableData ?? List.generate(80, (_) => Uint8List(0)),
         cardData = cardData ?? List.generate(256, (_) => Uint8List(0)) {
     initializeEV1();
   }
@@ -121,6 +125,7 @@ class MifareClassicRecovery {
     if (await _canUseKeyBForMemoryAccess(sector, keyB)) {
       setKeyAsFound(sector, 1, keyB);
     } else {
+      readableData[sector + 40] = keyB;
       checkMarks[sector + 40] = ChameleonKeyCheckmark.readable;
       update();
     }
@@ -751,6 +756,7 @@ class MifareClassicRecovery {
   void setKeyAsFound(int sector, int keyType, Uint8List key) {
     checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.found;
     validKeys[sector + (keyType * 40)] = key;
+    readableData[sector + (keyType * 40)] = Uint8List(0);
     update();
   }
 
