@@ -74,13 +74,18 @@ class MifareClassicRecovery {
         checkMark == ChameleonKeyCheckmark.disabled;
   }
 
-  Future<void> _markReadableKeyB(int sector, Uint8List keyA) async {
+  bool _permissionAllowsKeyB(int permission) {
+    return permission == 2 || permission == 3;
+  }
+
+  Future<void> _resolveReadableKeyB(int sector, Uint8List keyA) async {
     if (_isResolvedKeyState(sector, 1)) {
       return;
     }
 
-    final block = await appState.communicator!.mf1ReadBlock(
-        mfClassicGetSectorTrailerBlockBySector(sector), 0x60, keyA);
+    final trailerBlock = mfClassicGetSectorTrailerBlockBySector(sector);
+    final block =
+        await appState.communicator!.mf1ReadBlock(trailerBlock, 0x60, keyA);
 
     if (block.length != 16) {
       return;
@@ -93,10 +98,53 @@ class MifareClassicRecovery {
       return;
     }
 
-    final keyBPermissions = MifareClassicDumpAnalyzer.trailerAccessPermissions(
-        accessConditions[3])[2];
+    final trailerPermissions =
+        MifareClassicDumpAnalyzer.trailerAccessPermissions(
+            accessConditions[3]);
+    final keyBReadPermission = trailerPermissions[2][0];
 
-    if (keyBPermissions[0] == 1 || keyBPermissions[0] == 3) {
+    // Key B is only available in the card-returned trailer bytes when Key A
+    // is permitted to read that field.
+    if (keyBReadPermission != 1 && keyBReadPermission != 3) {
+      return;
+    }
+
+    final keyB = Uint8List.fromList(block.sublist(10, 16));
+    bool keyBReadSucceeded = false;
+
+    // A readable Key B is normally data rather than an authentication key.
+    // Some compatible cards nevertheless accept those same bytes as Key B.
+    // Verify that behavior with a non-destructive memory read before deciding
+    // whether to store the bytes as an authentication key.
+    for (var dataBlock = 0; dataBlock < 3; dataBlock++) {
+      final dataPermissions = MifareClassicDumpAnalyzer.dataAccessPermissions(
+          accessConditions[dataBlock]);
+      if (!_permissionAllowsKeyB(dataPermissions[0])) {
+        continue;
+      }
+
+      final testBlock =
+          mfClassicGetFirstBlockCountBySector(sector) + dataBlock;
+      final testData =
+          await appState.communicator!.mf1ReadBlock(testBlock, 0x61, keyB);
+      if (testData.length == 16) {
+        keyBReadSucceeded = true;
+        break;
+      }
+    }
+
+    // If no data block offers a safe Key-B read, the trailer itself can be
+    // used when its access bits are readable with Key B.
+    if (!keyBReadSucceeded &&
+        _permissionAllowsKeyB(trailerPermissions[1][0])) {
+      final testData =
+          await appState.communicator!.mf1ReadBlock(trailerBlock, 0x61, keyB);
+      keyBReadSucceeded = testData.length == 16;
+    }
+
+    if (keyBReadSucceeded) {
+      setKeyAsFound(sector, 1, keyB);
+    } else {
       checkMarks[sector + 40] = ChameleonKeyCheckmark.readable;
       update();
     }
@@ -127,7 +175,7 @@ class MifareClassicRecovery {
         setKeyAsFound(sector, keyType, key);
 
         if (keyType == 0) {
-          await _markReadableKeyB(sector, key);
+          await _resolveReadableKeyB(sector, key);
         }
 
         keyCheckProgress = null;
@@ -182,7 +230,7 @@ class MifareClassicRecovery {
             // Found valid key
             setKeyAsFound(sector, keyType, key);
             if (keyType == 0) {
-              await _markReadableKeyB(sector, key);
+              await _resolveReadableKeyB(sector, key);
             }
           } else {
             setMissingSector(sector, keyType);
