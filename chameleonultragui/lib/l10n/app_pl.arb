@@ -204,6 +204,7 @@
   "chameleon_flashing_title": "Instalacja firmware na Chameleon {model}",
   "ble_pairing": "Parowanie BLE",
   "ats": "ATS",
+  "outdated_protocol_description_1": "Your Chameleon is running on outdated protocol, which means firmware is outdated.",
   "outdated_protocol_description_2": "Aplikacja nie mo\u017ce dzia\u0142a\u0107 z t\u0105 wersj\u0105 protoko\u0142u. Nie zg\u0142aszaj \u017cadnych b\u0142\u0119d\u00f3w po tej wiadomo\u015bci.",
   "outdated_protocol_description_3": "Czy chcesz zaktualizowa\u0107 firmware?",
   "skip": "Pomi\u0144",
