@@ -125,7 +125,6 @@ class CardReaderState extends State<MifareClassicHelper> {
             KeyCheckMarks(
                 checkMarks: widget.mfcInfo.recovery!.checkMarks,
                 validKeys: widget.mfcInfo.recovery!.validKeys,
-                readableData: widget.mfcInfo.recovery!.readableData,
                 fontSize: checkmarkFontSize,
                 checkmarkSize: checkmarkSize,
                 checkmarkCount: mfClassicGetSectorCount(widget.mfcInfo.type,

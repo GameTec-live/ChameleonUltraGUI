@@ -13,8 +13,6 @@ void main() {
     final checkMarks =
         List.filled(80, ChameleonKeyCheckmark.none, growable: false);
     final validKeys = List.generate(80, (_) => Uint8List(0), growable: false);
-    final readableData =
-        List.generate(80, (_) => Uint8List(0), growable: false);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -26,7 +24,6 @@ void main() {
               return KeyCheckMarks(
                 checkMarks: checkMarks,
                 validKeys: validKeys,
-                readableData: readableData,
                 checkmarkCount: 3,
                 checkmarkPerRow: 3,
                 onCheckmarkChanged: (index, newValue) {

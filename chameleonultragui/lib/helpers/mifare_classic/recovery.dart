@@ -4,7 +4,6 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/dump_analyzer.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
@@ -25,7 +24,7 @@ extension PartitionList<E> on List<E> {
   }
 }
 
-enum ChameleonKeyCheckmark { none, found, readable, checking, disabled }
+enum ChameleonKeyCheckmark { none, found, checking, disabled }
 
 class MifareClassicRecovery {
   late ChameleonGUIState appState;
@@ -37,7 +36,6 @@ class MifareClassicRecovery {
   Dictionary? selectedDictionary;
   List<ChameleonKeyCheckmark> checkMarks;
   List<Uint8List> validKeys;
-  List<Uint8List> readableData;
   List<Uint8List> cardData;
   double dumpProgress;
   double? hardnestedProgress;
@@ -60,126 +58,62 @@ class MifareClassicRecovery {
       this.isMifareClassicEV1 = false,
       List<ChameleonKeyCheckmark>? checkMarks,
       List<Uint8List>? validKeys,
-      List<Uint8List>? readableData,
       List<Uint8List>? cardData})
       : checkMarks =
             checkMarks ?? List.generate(80, (_) => ChameleonKeyCheckmark.none),
         validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
-        readableData =
-            readableData ?? List.generate(80, (_) => Uint8List(0)),
         cardData = cardData ?? List.generate(256, (_) => Uint8List(0)) {
     initializeEV1();
-  }
-
-  bool _isResolvedKeyState(int sector, int keyType) {
-    final checkMark = getSectorState(sector, keyType);
-    return checkMark == ChameleonKeyCheckmark.found ||
-        checkMark == ChameleonKeyCheckmark.readable ||
-        checkMark == ChameleonKeyCheckmark.disabled;
-  }
-
-  Future<bool> _canUseKeyBForMemoryAccess(
-      int sector, Uint8List keyB) async {
-    final trailerBlock = mfClassicGetSectorTrailerBlockBySector(sector);
-    final block =
-        await appState.communicator!.mf1ReadBlock(trailerBlock, 0x61, keyB);
-    return block.length == 16;
-  }
-
-  Future<void> _resolveReadableKeyB(int sector, Uint8List keyA) async {
-    if (_isResolvedKeyState(sector, 1)) {
-      return;
-    }
-
-    final trailerBlock = mfClassicGetSectorTrailerBlockBySector(sector);
-    final block =
-        await appState.communicator!.mf1ReadBlock(trailerBlock, 0x60, keyA);
-
-    if (block.length != 16) {
-      return;
-    }
-
-    final accessConditions = MifareClassicDumpAnalyzer.accessConditionValues(
-        bytesToHex(block.sublist(6, 9)));
-
-    if (accessConditions == null) {
-      return;
-    }
-
-    final trailerPermissions =
-        MifareClassicDumpAnalyzer.trailerAccessPermissions(
-            accessConditions[3]);
-    final keyBReadPermission = trailerPermissions[2][0];
-
-    // Key B is only available in the card-returned trailer bytes when Key A
-    // is permitted to read that field.
-    if (keyBReadPermission != 1 && keyBReadPermission != 3) {
-      return;
-    }
-
-    final keyB = Uint8List.fromList(block.sublist(10, 16));
-
-    // A readable Key B is normally data rather than an authentication key.
-    // Some compatible cards nevertheless accept those same bytes as Key B.
-    // Verify an actual memory operation before storing it as a valid key.
-    if (await _canUseKeyBForMemoryAccess(sector, keyB)) {
-      setKeyAsFound(sector, 1, keyB);
-    } else {
-      readableData[sector + 40] = keyB;
-      checkMarks[sector + 40] = ChameleonKeyCheckmark.readable;
-      update();
-    }
   }
 
   Future<bool> checkKeysOnSector(
       List<Uint8List> keys, int keyType, int sector) async {
     state = localizations.checking_keys(keys.length);
+    Uint8List? key;
     keyCheckProgress = null;
     int chunkSize =
         appState.connector!.connectionType == ConnectionType.ble ? 32 : 64;
 
-    if (_isResolvedKeyState(sector, keyType)) {
-      return getSectorState(sector, keyType) != ChameleonKeyCheckmark.disabled;
-    }
+    if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found &&
+        getSectorState(sector, keyType) != ChameleonKeyCheckmark.disabled) {
+      setCheckingSector(sector, keyType);
+      int totalChunks = keys.partition(chunkSize).length;
 
-    setCheckingSector(sector, keyType);
-    int totalChunks = keys.partition(chunkSize).length;
-
-    for (var chunk in keys.partition(chunkSize)) {
-      final remainingKeys = List<Uint8List>.from(chunk);
-
-      while (remainingKeys.isNotEmpty) {
-        final key = await appState.communicator!.mf1AuthMultipleKeys(
+      for (var chunk in keys.partition(chunkSize)) {
+        key = await appState.communicator!.mf1AuthMultipleKeys(
             mfClassicGetSectorTrailerBlockBySector(sector),
             0x60 + keyType,
-            remainingKeys);
-
-        if (key == null) {
-          break;
+            chunk);
+        if (key != null) {
+          setKeyAsFound(sector, keyType, key);
+          keyCheckProgress = null;
+          await recheckKey(key, sector);
+          return true;
+        } else if (totalChunks > 10) {
+          keyCheckProgress = (keyCheckProgress ?? 0) + 1 / totalChunks;
+          update();
         }
-
-        if (keyType == 1 &&
-            !await _canUseKeyBForMemoryAccess(sector, key)) {
-          final rejectedKey = bytesToHex(key);
-          remainingKeys
-              .removeWhere((candidate) => bytesToHex(candidate) == rejectedKey);
-          continue;
-        }
-
-        setKeyAsFound(sector, keyType, key);
-
-        if (keyType == 0) {
-          await _resolveReadableKeyB(sector, key);
-        }
-
-        keyCheckProgress = null;
-        await recheckKey(key, sector);
-        return true;
       }
 
-      if (totalChunks > 10) {
-        keyCheckProgress = (keyCheckProgress ?? 0) + 1 / totalChunks;
-        update();
+      if (key == null) {
+        setMissingSector(sector, keyType);
+      }
+    }
+
+    if (keyType == 0 &&
+        getSectorState(sector, 0) == ChameleonKeyCheckmark.found &&
+        getSectorState(sector, 1) != ChameleonKeyCheckmark.found &&
+        getSectorState(sector, 1) != ChameleonKeyCheckmark.disabled &&
+        key != null) {
+      Uint8List block = await appState.communicator!.mf1ReadBlock(
+          mfClassicGetSectorTrailerBlockBySector(sector), 0x60 + keyType, key);
+      if (block.length == 16) {
+        Uint8List bKey = block.sublist(10);
+        if (bytesToHex(bKey) != bytesToHex(Uint8List(6))) {
+          keyCheckProgress = null;
+          await recheckKey(key, sector);
+          return true;
+        }
       }
     }
 
@@ -219,18 +153,12 @@ class MifareClassicRecovery {
               "Checking found key ${bytesToHex(key)} on sector $sector, key type $keyType");
           setCheckingSector(sector, keyType);
 
-          final authenticated = await appState.communicator!.mf1Auth(
+          if (await appState.communicator!.mf1Auth(
               mfClassicGetSectorTrailerBlockBySector(sector),
               0x60 + keyType,
-              key);
-
-          if (authenticated &&
-              (keyType == 0 ||
-                  await _canUseKeyBForMemoryAccess(sector, key))) {
+              key)) {
+            // Found valid key
             setKeyAsFound(sector, keyType, key);
-            if (keyType == 0) {
-              await _resolveReadableKeyB(sector, key);
-            }
           } else {
             setMissingSector(sector, keyType);
           }
@@ -278,7 +206,8 @@ class MifareClassicRecovery {
                 isEV1: isMifareClassicEV1);
         sector++) {
       for (var keyType = 0; keyType < 2; keyType++) {
-        if (!_isResolvedKeyState(sector, keyType)) {
+        if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found &&
+            getSectorState(sector, keyType) != ChameleonKeyCheckmark.disabled) {
           allKeysExists = false;
         }
       }
@@ -568,7 +497,8 @@ class MifareClassicRecovery {
                   backdoorInfo.$2.nonces[sector].nt,
                   backdoorInfo.$3.nonces[sector].nt);
 
-              if (!_isResolvedKeyState(sector, 1) &&
+              if (checkMarks[sector + 40] != ChameleonKeyCheckmark.found &&
+                  checkMarks[sector + 40] != ChameleonKeyCheckmark.disabled &&
                   await checkKeysOnSector(
                       mfClassicConvertKeys(filtered.$2.reversed.toList()),
                       1,
@@ -629,7 +559,8 @@ class MifareClassicRecovery {
                 isEV1: isMifareClassicEV1);
         sector++) {
       for (var keyType = 0; keyType < 2; keyType++) {
-        if (!_isResolvedKeyState(sector, keyType)) {
+        if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found &&
+            getSectorState(sector, keyType) != ChameleonKeyCheckmark.disabled) {
           allKeysExists = false;
         }
       }
@@ -756,7 +687,6 @@ class MifareClassicRecovery {
   void setKeyAsFound(int sector, int keyType, Uint8List key) {
     checkMarks[sector + (keyType * 40)] = ChameleonKeyCheckmark.found;
     validKeys[sector + (keyType * 40)] = key;
-    readableData[sector + (keyType * 40)] = Uint8List(0);
     update();
   }
 
