@@ -37,11 +37,14 @@ class MifareClassicGen3WriteHelper extends MifareClassicGen2WriteHelper {
     for (var sector = 0;
         sector < mfClassicGetSectorCount(type, isEV1: isEV1);
         sector++) {
-      for (var keyType = 0; keyType < 2; keyType++) {
-        if (recovery.checkMarks[sector + (keyType * 40)] !=
-            ChameleonKeyCheckmark.found) {
-          return false;
-        }
+      if (recovery.checkMarks[sector] != ChameleonKeyCheckmark.found) {
+        return false;
+      }
+
+      final keyBState = recovery.checkMarks[sector + 40];
+      if (keyBState != ChameleonKeyCheckmark.found &&
+          keyBState != ChameleonKeyCheckmark.readable) {
+        return false;
       }
     }
 
