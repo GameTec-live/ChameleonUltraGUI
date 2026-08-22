@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/dump_analyzer.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
@@ -65,6 +66,53 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
     }
 
     return false;
+  }
+
+  Future<bool> _verifyTrailerWrite(
+      int block, Uint8List expectedTrailer) async {
+    if (expectedTrailer.length != 16) {
+      return false;
+    }
+
+    try {
+      final trailer = await communicator.mf1ReadBlock(
+          block, 0x60, expectedTrailer.sublist(0, 6));
+
+      if (trailer.length != 16) {
+        return false;
+      }
+
+      for (var index = 6; index < 10; index++) {
+        if (trailer[index] != expectedTrailer[index]) {
+          return false;
+        }
+      }
+
+      final accessConditions =
+          MifareClassicDumpAnalyzer.accessConditionValues(
+              bytesToHex(expectedTrailer.sublist(6, 9)));
+      if (accessConditions == null) {
+        return false;
+      }
+
+      final keyB = expectedTrailer.sublist(10, 16);
+      final keyBIsReadable =
+          const <int>{0, 2, 4}.contains(accessConditions[3]);
+
+      if (keyBIsReadable) {
+        for (var index = 10; index < 16; index++) {
+          if (trailer[index] != expectedTrailer[index]) {
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      return await communicator.mf1Auth(block, 0x61, keyB);
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
@@ -131,9 +179,11 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
     for (var sector = 0; sector < mfClassicGetSectorCount(type); sector++) {
       var block = mfClassicGetSectorTrailerBlockBySector(sector);
       if (data.length > block && data[block].isNotEmpty) {
-        cleanSectors[sector] = await writeBlockModifier(
-            card, block, data[block],
-            tryBothKeys: true);
+        if (await writeBlockModifier(card, block, data[block],
+            tryBothKeys: true)) {
+          cleanSectors[sector] =
+              await _verifyTrailerWrite(block, data[block]);
+        }
         if (cleanSectors[sector]) {
           // Update keys to match the newly written trailer,
           // so subsequent data block writes use the correct keys.
