@@ -142,9 +142,12 @@ class CardReaderState extends State<MifareClassicHelper> {
           const SizedBox(height: 16),
           ErrorMessage(errorMessage: widget.mfcInfo.recovery!.error),
         ],
-        if (widget.mfcInfo.recovery?.state != "") ...[
+        if (widget.mfcInfo.recovery?.state != "" ||
+            (!widget.allowSave && widget.mfcInfo.recovery!.allKeysExists)) ...[
           const SizedBox(height: 8),
-          Text(widget.mfcInfo.recovery!.state),
+          Text(widget.mfcInfo.recovery!.state.isNotEmpty
+              ? widget.mfcInfo.recovery!.state
+              : "Success"),
         ],
         const SizedBox(height: 12),
         if (widget.mfcInfo.recovery?.dumpProgress != 0) ...[

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
@@ -25,6 +27,8 @@ class WriteCardPageState extends State<WriteCardPage> {
   CardSave? card;
   AbstractWriteHelper? baseHelper;
   AbstractWriteHelper? helper;
+  Timer? _writeReadyTimer;
+  bool _writeReadyDelayComplete = false;
 
   Future<String?> cardSelectDialog(BuildContext context) {
     var appState = context.read<ChameleonGUIState>();
@@ -41,6 +45,8 @@ class WriteCardPageState extends State<WriteCardPage> {
   Future<void> onTap(CardSave selectedCard, dynamic close,
       AppLocalizations localizations) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+
+    _resetWriteReadyDelay();
 
     setState(() {
       card = selectedCard;
@@ -71,6 +77,8 @@ class WriteCardPageState extends State<WriteCardPage> {
 
     for (final magicHelper in baseHelper!.getAvailableMethods()) {
       if (await magicHelper.isMagic(card)) {
+        _resetWriteReadyDelay();
+
         setState(() {
           helper = magicHelper;
         });
@@ -112,12 +120,59 @@ class WriteCardPageState extends State<WriteCardPage> {
     setState(() {
       helper = helper;
     });
+    _syncWriteReadyDelay();
   }
 
   void updateProgress(int writeProgress) {
     setState(() {
       progress = writeProgress;
     });
+  }
+
+  bool _usesWriteReadyDelay() =>
+      helper?.name == 'gen2' || helper?.name == 'gen3';
+
+  bool _isReadyForWriteUi() {
+    final ready = helper?.isReady() ?? false;
+
+    if (!_usesWriteReadyDelay()) {
+      return ready;
+    }
+
+    return ready && _writeReadyDelayComplete;
+  }
+
+  void _resetWriteReadyDelay() {
+    _writeReadyTimer?.cancel();
+    _writeReadyTimer = null;
+    _writeReadyDelayComplete = false;
+  }
+
+  void _syncWriteReadyDelay() {
+    if (!_usesWriteReadyDelay() || !(helper?.isReady() ?? false)) {
+      _resetWriteReadyDelay();
+      return;
+    }
+
+    if (_writeReadyDelayComplete || _writeReadyTimer != null) {
+      return;
+    }
+
+    _writeReadyTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _writeReadyDelayComplete = true;
+        _writeReadyTimer = null;
+      });
+    });
+  }
+
+  void _writeWidgetSetState(VoidCallback callback) {
+    setState(callback);
+    _syncWriteReadyDelay();
   }
 
   Future<void> writeCard() async {
@@ -190,7 +245,7 @@ class WriteCardPageState extends State<WriteCardPage> {
       setState(() {
         step++;
       });
-    } else if (helper != null && helper!.isReady() && progress == -1) {
+    } else if (_isReadyForWriteUi() && progress == -1) {
       SnackBar snackBar;
       updateProgress(0);
 
@@ -216,6 +271,8 @@ class WriteCardPageState extends State<WriteCardPage> {
   }
 
   void onStepBack() async {
+    _resetWriteReadyDelay();
+
     setState(() {
       written = false;
       step--;
@@ -227,6 +284,8 @@ class WriteCardPageState extends State<WriteCardPage> {
   }
 
   void onStepReset() async {
+    _resetWriteReadyDelay();
+
     setState(() {
       written = false;
       step = 0;
@@ -260,9 +319,8 @@ class WriteCardPageState extends State<WriteCardPage> {
 
       if (step == 2) {
         widgets.add(TextButton(
-          onPressed: (helper != null && helper!.isReady() && progress == -1)
-              ? onStepContinue
-              : null,
+          onPressed:
+              (_isReadyForWriteUi() && progress == -1) ? onStepContinue : null,
           child: Text(localizations.write_data_to_magic_card),
         ));
       }
@@ -281,6 +339,12 @@ class WriteCardPageState extends State<WriteCardPage> {
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _writeReadyTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -362,6 +426,8 @@ class WriteCardPageState extends State<WriteCardPage> {
                                 );
                               }).toList(),
                               onChanged: (AbstractWriteHelper? helperClass) {
+                                _resetWriteReadyDelay();
+
                                 setState(() {
                                   helper = helperClass;
                                 });
@@ -387,7 +453,7 @@ class WriteCardPageState extends State<WriteCardPage> {
             content: Card(
               child: ListTile(
                 title: (progress == -1)
-                    ? (helper != null && helper!.isReady())
+                    ? _isReadyForWriteUi()
                         ? (helper != null &&
                                 helper!.getFailedBlocks().isNotEmpty)
                             ? Text(
@@ -402,7 +468,8 @@ class WriteCardPageState extends State<WriteCardPage> {
                                         fontWeight: FontWeight.bold))
                               ])
                         : (helper != null && helper!.writeWidgetSupported())
-                            ? helper!.getWriteWidget(context, setState)
+                            ? helper!
+                                .getWriteWidget(context, _writeWidgetSetState)
                             : Text(localizations.error)
                     : LinearProgressIndicator(value: progress.toDouble() / 100),
               ),
