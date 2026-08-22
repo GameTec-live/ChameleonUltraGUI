@@ -127,8 +127,7 @@ class _KeyCheckMarksState extends State<KeyCheckMarks> {
         );
       case ChameleonKeyCheckmark.readable:
         return Tooltip(
-          message:
-              "Data: ${bytesToHex(widget.readableData[index]).toUpperCase()}",
+          message: bytesToHex(widget.readableData[index]).toUpperCase(),
           preferBelow: tooltipBelow,
           child: const Icon(
             Icons.visibility,

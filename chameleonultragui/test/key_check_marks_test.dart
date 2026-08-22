@@ -65,4 +65,35 @@ void main() {
     expect(checkMarks[1], ChameleonKeyCheckmark.none);
     expect(checkMarks[2], ChameleonKeyCheckmark.none);
   });
+
+  testWidgets('readable key B displays visibility icon and readable data',
+      (tester) async {
+    final checkMarks =
+        List.filled(80, ChameleonKeyCheckmark.none, growable: false);
+    final validKeys = List.generate(80, (_) => Uint8List(0), growable: false);
+    final readableData =
+        List.generate(80, (_) => Uint8List(0), growable: false);
+
+    checkMarks[0] = ChameleonKeyCheckmark.readable;
+    readableData[0] = Uint8List.fromList([0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0x00]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: KeyCheckMarks(
+            checkMarks: checkMarks,
+            validKeys: validKeys,
+            readableData: readableData,
+            checkmarkCount: 1,
+            checkmarkPerRow: 1,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byIcon(Icons.visibility), findsOneWidget);
+    expect(find.byTooltip('E0E1E2E3E400'), findsOneWidget);
+  });
 }
