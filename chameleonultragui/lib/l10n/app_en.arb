@@ -571,5 +571,6 @@
   "lf_sniff_load_file": "Load .bin file",
   "lf_sniff_load_failed": "Failed to load file: {error}",
   "lf_sniff_loaded": "Loaded {count} sample(s) from file.",
-  "sniff_device_required_hint": "No device connected. Connect a Chameleon to capture, or load a saved file."
+  "sniff_device_required_hint": "No device connected. Connect a Chameleon to capture, or load a saved file.",
+  "view_dump": "View dump"
 }

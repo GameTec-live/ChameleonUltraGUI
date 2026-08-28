@@ -9,7 +9,7 @@ on:
 
 jobs:
   check_changes:
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
       CROWDIN_API: ${{ secrets.CROWDIN_API }}
@@ -24,6 +24,11 @@ jobs:
           python-version: 3.11
       - name: Update translation
         run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            python chameleonultragui/lib/l10n/updateCrowdin.py
+            exit 0
+          fi
+
           CHANGED_FILES=$(git diff --name-only -r HEAD^1 HEAD)
           # Check if the specific file is in the changed files list
           if echo "$CHANGED_FILES" | grep -q 'app_en.arb'; then

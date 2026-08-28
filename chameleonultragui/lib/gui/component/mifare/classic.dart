@@ -5,6 +5,7 @@ import 'package:chameleonultragui/gui/component/error_message.dart';
 import 'package:chameleonultragui/gui/component/key_check_marks.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/export.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
+import 'package:chameleonultragui/gui/menu/pages/dump_editor.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
@@ -372,6 +373,38 @@ class CardReaderState extends State<MifareClassicHelper> {
         _ResponsiveButtonGroup(
             centerOnly: true,
             children: [
+              ElevatedButton(
+                onPressed: () async {
+                  final viewCard = CardSave(
+                    uid: widget.hfInfo.uid,
+                    sak: hexToBytes(widget.hfInfo.sak)[0],
+                    atqa: hexToBytes(widget.hfInfo.atqa),
+                    name: dumpName,
+                    tag: mfClassicGetChameleonTagType(widget.mfcInfo.type),
+                    data: widget.mfcInfo.recovery!.cardData,
+                    ats: (widget.hfInfo.ats != localizations.no)
+                        ? hexToBytes(widget.hfInfo.ats)
+                        : Uint8List(0),
+                  );
+                  await showDialog(
+                    context: context,
+                    builder: (context) => DumpEditor(
+                      cardSave: viewCard,
+                      onSave: (data) {
+                        // Apply edits back so a later save uses the
+                        // modified dump without re-reading the card.
+                        widget.mfcInfo.recovery!.cardData = data;
+                      },
+                    ),
+                  );
+                  if (context.mounted) {
+                    setState(() {});
+                  }
+                },
+                style: customCardButtonStyle(appState),
+                child: Text(localizations.view_dump),
+              ),
+              const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: () async {
                   await showDialog(
