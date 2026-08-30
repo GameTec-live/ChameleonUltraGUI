@@ -224,6 +224,8 @@
   "save_to_file": "Save to file",
   "export_to_new_card": "Export to new card",
   "update_saved_card": "Update saved card",
+  "failed_to_export_slot": "Failed to export slot data.",
+  "exporting": "Exporting...",
   "must_be_valid_hex": "Must be valid HEX",
   "export_to_dictionary": "Export found keys",
   "enter_name_of_card": "Enter name of card",
