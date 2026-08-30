@@ -591,6 +591,16 @@ class ChameleonCommunicator {
     return IoProxCard.fromBytes(resp.data);
   }
 
+  Future<JablotronCard?> readJablotron() async {
+    var resp = await sendCmd(ChameleonCommand.scanJablotronTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
+    }
+
+    return JablotronCard.fromBytes(resp.data);
+  }
+
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setEM410XemulatorID, data: uid);
   }
@@ -609,6 +619,10 @@ class ChameleonCommunicator {
 
   Future<void> setIoProxEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setIoProxEmulatorID, data: uid);
+  }
+
+  Future<void> setJablotronEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setJablotronEmulatorID, data: uid);
   }
 
   Future<void> setIdteckEmulatorID(Uint8List uid) async {
@@ -660,6 +674,20 @@ class ChameleonCommunicator {
     }
 
     await sendCmd(ChameleonCommand.writeVikingToT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+  }
+
+  Future<void> writeJablotronToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeJablotronToT5577,
         data: Uint8List.fromList([...uid, ...newKey, ...keys]));
   }
 
@@ -1095,6 +1123,11 @@ class ChameleonCommunicator {
   Future<IoProxCard> getIoProxEmulatorID() async {
     return IoProxCard.fromBytes(
         (await sendCmd(ChameleonCommand.getIoProxEmulatorID))!.data);
+  }
+
+  Future<JablotronCard> getJablotronEmulatorID() async {
+    return JablotronCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getJablotronEmulatorID))!.data);
   }
 
   Future<IdteckCard> getIdteckEmulatorID() async {
