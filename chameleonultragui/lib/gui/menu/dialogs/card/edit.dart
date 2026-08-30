@@ -121,8 +121,8 @@ class CardEditMenuState extends State<CardEditMenu> {
     List<Uint8List> updatedData = List<Uint8List>.from(originalData);
 
     if (isMifareClassic(selectedType)) {
-      updatedData[0] = mfClassicGenerateFirstBlock(
-          hexToBytes(uid), hexToBytes(sak)[0], hexToBytes(atqa));
+      updatedData[0] = mfClassicPatchFirstBlock(
+          updatedData[0], hexToBytes(uid), hexToBytes(sak)[0], hexToBytes(atqa));
     } else if (isMifareUltralight(selectedType)) {
       final newBlocks =
           mfUltralightGenerateFirstBlocks(hexToBytes(uid), selectedType);
