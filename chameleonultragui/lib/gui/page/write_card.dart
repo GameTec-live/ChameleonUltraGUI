@@ -313,6 +313,7 @@ class WriteCardPageState extends State<WriteCardPage> {
         steps: [
           Step(
             title: Text(localizations.select_saved_card_to_write),
+            subtitle: step > 0 && card != null ? Text(card!.name) : null,
             content: Card(
               child: ListTile(
                 title: Row(children: [
@@ -342,6 +343,9 @@ class WriteCardPageState extends State<WriteCardPage> {
           ),
           Step(
             title: Text(localizations.select_magic_card),
+            subtitle: step > 1 && helper != null
+                ? Text(typeLocalization[helper!.name]!)
+                : null,
             content: Card(
               child: ListTile(
                 title: (baseHelper != null)
