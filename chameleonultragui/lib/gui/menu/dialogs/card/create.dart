@@ -1,14 +1,14 @@
 import 'package:chameleonultragui/helpers/definitions.dart';
+import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
-import 'package:flutter/material.dart';
-import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/sharedprefsprovider.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:provider/provider.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
