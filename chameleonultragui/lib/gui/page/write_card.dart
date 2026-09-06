@@ -1,7 +1,10 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
+import 'package:chameleonultragui/gui/component/mifare/sak_block0_checkbox.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/sak_offset.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -22,6 +25,8 @@ class WriteCardPageState extends State<WriteCardPage> {
   int step = 0;
   int progress = -1;
   bool written = false;
+  bool sakPlus80 = false;
+  bool showSakPlus80 = false;
   CardSave? card;
   AbstractWriteHelper? baseHelper;
   AbstractWriteHelper? helper;
@@ -44,6 +49,9 @@ class WriteCardPageState extends State<WriteCardPage> {
 
     setState(() {
       card = selectedCard;
+      showSakPlus80 =
+          mfClassicSakOffsetVisibleInWrite(selectedCard.tag, selectedCard.data);
+      sakPlus80 = mfClassicSakOffsetFromUidHex(selectedCard.uid) ?? false;
       baseHelper = AbstractWriteHelper.getClassByCardType(
           selectedCard.tag, appState, updateState, localizations);
     });
@@ -131,6 +139,9 @@ class WriteCardPageState extends State<WriteCardPage> {
       await appState.communicator!.setReaderDeviceMode(true);
     }
 
+    if (helper is BaseMifareClassicWriteHelper) {
+      (helper as BaseMifareClassicWriteHelper).sakPlus80 = sakPlus80;
+    }
     if (await helper!.writeData(card!, updateProgress)) {
       snackBar = SnackBar(
         content: Text(localizations.magic_success_write),
@@ -315,28 +326,39 @@ class WriteCardPageState extends State<WriteCardPage> {
             title: Text(localizations.select_saved_card_to_write),
             subtitle: step > 0 && card != null ? Text(card!.name) : null,
             content: Card(
-              child: ListTile(
-                title: Row(children: [
-                  FilterChip(
-                    onSelected: (bool selected) {
-                      cardSelectDialog(context);
-                    },
-                    avatar: (card != null)
-                        ? CircleAvatar(
-                            backgroundColor: Colors.transparent,
-                            child: Icon(
-                                (chameleonTagToFrequency(card!.tag) ==
-                                        TagFrequency.hf)
-                                    ? Icons.credit_card
-                                    : Icons.wifi,
-                                color: card!.color),
-                          )
-                        : null,
-                    label: Text((card != null)
-                        ? card!.name
-                        : localizations.select_saved_card),
-                  )
-                ]),
+              child: Column(
+                children: [
+                  ListTile(
+                    title: Row(children: [
+                      FilterChip(
+                        onSelected: (bool selected) {
+                          cardSelectDialog(context);
+                        },
+                        avatar: (card != null)
+                            ? CircleAvatar(
+                                backgroundColor: Colors.transparent,
+                                child: Icon(
+                                    (chameleonTagToFrequency(card!.tag) ==
+                                            TagFrequency.hf)
+                                        ? Icons.credit_card
+                                        : Icons.wifi,
+                                    color: card!.color),
+                              )
+                            : null,
+                        label: Text((card != null)
+                            ? card!.name
+                            : localizations.select_saved_card),
+                      )
+                    ]),
+                  ),
+                  if (showSakPlus80)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: SakBlock0Checkbox(
+                          value: sakPlus80,
+                          onChanged: (v) => setState(() => sakPlus80 = v!)),
+                    ),
+                ],
               ),
             ),
             isActive: step >= 1,

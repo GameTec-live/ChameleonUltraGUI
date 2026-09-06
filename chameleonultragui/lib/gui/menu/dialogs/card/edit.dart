@@ -9,6 +9,8 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/sak_offset.dart';
+import 'package:chameleonultragui/gui/component/mifare/sak_block0_checkbox.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -48,6 +50,26 @@ class CardEditMenuState extends State<CardEditMenu> {
   String originalSak = '';
   String originalAtqa = '';
 
+  bool sakPlus80 = false;
+  bool? originalSakPlus80;
+  int originalUidBytes = 0;
+
+  bool get showSakPlus80 =>
+      mfClassicSakOffsetVisibleInEdit(selectedType, widget.tagSave.data);
+
+  void refreshSakPlus80() {
+    final vFromUid = mfClassicSakOffsetFromUidHex(uidController.text);
+    if (vFromUid == null) {
+      return;
+    }
+    final bytes = uidController.text.replaceAll(' ', '').length ~/ 2;
+    setState(() {
+      sakPlus80 = bytes == originalUidBytes
+          ? (originalSakPlus80 ?? vFromUid)
+          : vFromUid;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -74,12 +96,24 @@ class CardEditMenuState extends State<CardEditMenu> {
     originalUid = widget.tagSave.uid;
     originalSak = bytesToHexSpace(u8ToBytes(widget.tagSave.sak));
     originalAtqa = bytesToHexSpace(widget.tagSave.atqa);
+    originalUidBytes = hexToBytes(widget.tagSave.uid).length;
+
+    if (showSakPlus80) {
+      sakPlus80 = mfClassicSakOffsetFromData(
+              uid: hexToBytes(widget.tagSave.uid),
+              sak: widget.tagSave.sak,
+              block0: widget.tagSave.data[0]) ??
+          mfClassicSakOffsetFromUidHex(widget.tagSave.uid) ??
+          false;
+      originalSakPlus80 = sakPlus80;
+    }
   }
 
   bool hasDataChanged() {
     return uidController.text != originalUid ||
         sakController.text != originalSak ||
-        atqaController.text != originalAtqa;
+        atqaController.text != originalAtqa ||
+        (originalSakPlus80 != null && sakPlus80 != originalSakPlus80);
   }
 
   Future<bool> showUpdateDataDialog(BuildContext context) async {
@@ -113,6 +147,7 @@ class CardEditMenuState extends State<CardEditMenu> {
     required String sak,
     required String atqa,
     required List<Uint8List> originalData,
+    required bool sakPlus80,
   }) {
     if (originalData.isEmpty) {
       return originalData;
@@ -121,8 +156,8 @@ class CardEditMenuState extends State<CardEditMenu> {
     List<Uint8List> updatedData = List<Uint8List>.from(originalData);
 
     if (isMifareClassic(selectedType)) {
-      updatedData[0] = mfClassicPatchFirstBlock(
-          updatedData[0], hexToBytes(uid), hexToBytes(sak)[0], hexToBytes(atqa));
+      updatedData[0] = mfClassicPatchFirstBlock(updatedData[0], hexToBytes(uid),
+          hexToBytes(sak)[0], hexToBytes(atqa), sakPlus80);
     } else if (isMifareUltralight(selectedType)) {
       final newBlocks =
           mfUltralightGenerateFirstBlocks(hexToBytes(uid), selectedType);
@@ -261,6 +296,10 @@ class CardEditMenuState extends State<CardEditMenu> {
                       selectedType = newValue;
                       initCounterControllers();
                     });
+                    if (originalSakPlus80 == null) {
+                      refreshSakPlus80();
+                      originalSakPlus80 = sakPlus80;
+                    }
                   }
                   appState.changesMade();
                 },
@@ -270,6 +309,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                 child: Column(children: [
                   TextFormField(
                     controller: uidController,
+                    onChanged: (_) => refreshSakPlus80(),
                     decoration: InputDecoration(
                         labelText: localizations.uid,
                         hintText:
@@ -299,6 +339,13 @@ class CardEditMenuState extends State<CardEditMenu> {
                                       fieldName: localizations.sak,
                                       required: true),
                         ),
+                        if (showSakPlus80) ...[
+                          const SizedBox(height: 8),
+                          SakBlock0Checkbox(
+                            value: sakPlus80,
+                            onChanged: (v) => setState(() => sakPlus80 = v!),
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         TextFormField(
                           controller: atqaController,
@@ -472,6 +519,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                   sak: sakController.text,
                   atqa: atqaController.text,
                   originalData: widget.tagSave.data,
+                  sakPlus80: sakPlus80,
                 );
               }
             }

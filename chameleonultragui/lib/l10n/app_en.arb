@@ -571,5 +571,7 @@
   "lf_sniff_load_failed": "Failed to load file: {error}",
   "lf_sniff_loaded": "Loaded {count} sample(s) from file.",
   "sniff_device_required_hint": "No device connected. Connect a Chameleon to capture, or load a saved file.",
-  "view_dump": "View dump"
+  "view_dump": "View dump",
+  "sak_store_plus_80": "Store SAK +0x80",
+  "sak_block0_offset_tooltip": "Store SAK with +0x80 in block 0 (e.g. 08 -> 88).\nDefault on for 7-byte UID, off for 4, since some 4-byte UID magic cards undesirably replay this byte as-is."
 }

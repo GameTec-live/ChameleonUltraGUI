@@ -1,6 +1,8 @@
+import 'package:chameleonultragui/gui/component/mifare/sak_block0_checkbox.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/sak_offset.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/main.dart';
@@ -41,6 +43,15 @@ class CardCreateMenuState extends State<CardCreateMenu> {
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool sakPlus80 = false;
+
+  void refreshSakPlus80() {
+    final vFromUid = mfClassicSakOffsetFromUidHex(uidController.text);
+    if (vFromUid == null) {
+      return;
+    }
+    setState(() => sakPlus80 = vFromUid);
+  }
 
   List<Uint8List> generateMifareClassicBlocks() {
     final uid = hexToBytes(uidController.text);
@@ -80,7 +91,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
       ]));
     }
 
-    blocks[0] = mfClassicGenerateFirstBlock(uid, sak, atqa);
+    blocks[0] = mfClassicGenerateFirstBlock(uid, sak, atqa, sakPlus80);
 
     return blocks;
   }
@@ -209,6 +220,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                 child: Column(children: [
                   TextFormField(
                     controller: uidController,
+                    onChanged: (_) => refreshSakPlus80(),
                     decoration: InputDecoration(
                         labelText: localizations.uid,
                         hintText:
@@ -239,6 +251,12 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                                       fieldName: localizations.sak,
                                       required: true),
                         ),
+                        if (isMifareClassic(selectedType)) ...[
+                          const SizedBox(height: 8),
+                          SakBlock0Checkbox(
+                              value: sakPlus80,
+                              onChanged: (v) => setState(() => sakPlus80 = v!)),
+                        ],
                         const SizedBox(height: 20),
                         TextFormField(
                           controller: atqaController,
