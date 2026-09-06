@@ -574,23 +574,23 @@ extension StaticEncryptedKeysFilterAsync on StaticEncryptedKeysFilter {
 }
 
 Uint8List mfClassicGenerateFirstBlock(
-    Uint8List uid, int sak, Uint8List atqa, bool sakPlus80) {
+    Uint8List uid, int sak, Uint8List atqa, bool vanitySak) {
   final block0 = Uint8List(16);
   if (uid.length == 4) {
     block0.setAll(8, [0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69]);
   } else if (uid.length == 7) {
     block0.setAll(10, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
   }
-  return mfClassicPatchFirstBlock(block0, uid, sak, atqa, sakPlus80);
+  return mfClassicPatchFirstBlock(block0, uid, sak, atqa, vanitySak);
 }
 
 // reference: https://github.com/RfidResearchGroup/proxmark3/blob/master/doc/magic_cards_notes.md#mifare-classic-block0
 // normalizes input block to 16 bytes long
 Uint8List mfClassicPatchFirstBlock(Uint8List originalBlock0, Uint8List uid,
-    int sak, Uint8List atqa, bool sakPlus80) {
+    int sak, Uint8List atqa, bool vanitySak) {
   final block0 = Uint8List(16);
   block0.setRange(0, min(originalBlock0.length, block0.length), originalBlock0);
-  final sakToStore = sakPlus80 ? sak | 0x80 : sak;
+  final sakToStore = vanitySak ? sak | 0x80 : sak;
   if (uid.length == 4) {
     block0.setAll(0, uid);
     block0[4] = calculateBcc(uid);

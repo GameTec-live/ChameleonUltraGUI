@@ -1,11 +1,11 @@
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
-class SakBlock0Checkbox extends StatelessWidget {
+class VanitySakCheckbox extends StatelessWidget {
   final bool value;
   final ValueChanged<bool?> onChanged;
 
-  const SakBlock0Checkbox(
+  const VanitySakCheckbox(
       {super.key, required this.value, required this.onChanged});
 
   @override
@@ -18,12 +18,12 @@ class SakBlock0Checkbox extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       dense: true,
       visualDensity: VisualDensity.compact,
-      title: Text(localizations.sak_store_plus_80),
+      title: Text(localizations.enable_vanity_sak),
       secondary: Tooltip(
         triggerMode: TooltipTriggerMode.tap,
         // Keep the tooltip open until the user taps elsewhere.
         showDuration: const Duration(days: 1),
-        message: localizations.sak_block0_offset_tooltip,
+        message: localizations.enable_vanity_sak_tooltip,
         child: const Padding(
           padding: EdgeInsets.all(4),
           child: Icon(Icons.info_outline),

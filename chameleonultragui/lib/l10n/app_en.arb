@@ -572,6 +572,6 @@
   "lf_sniff_loaded": "Loaded {count} sample(s) from file.",
   "sniff_device_required_hint": "No device connected. Connect a Chameleon to capture, or load a saved file.",
   "view_dump": "View dump",
-  "sak_store_plus_80": "Store SAK +0x80",
-  "sak_block0_offset_tooltip": "Store SAK with +0x80 in block 0 (e.g. 08 -> 88).\nDefault on for 7-byte UID, off for 4, since some 4-byte UID magic cards undesirably replay this byte as-is."
+  "enable_vanity_sak": "Enable Vanity SAK",
+  "enable_vanity_sak_tooltip": "When enabled, the SAK stored in block 0 is offset by 0x80 (e.g. 08 → 88), mimicking genuine cards, primarily 7-byte UID ones.\nDefault on for 7-byte UID cards, off for 4, since some of them replay this byte as-is."
 }

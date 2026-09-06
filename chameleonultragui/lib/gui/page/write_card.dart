@@ -1,9 +1,9 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
-import 'package:chameleonultragui/gui/component/mifare/sak_block0_checkbox.dart';
+import 'package:chameleonultragui/gui/component/mifare/vanity_sak_checkbox.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/sak_offset.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/vanity_sak.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/main.dart';
@@ -25,8 +25,8 @@ class WriteCardPageState extends State<WriteCardPage> {
   int step = 0;
   int progress = -1;
   bool written = false;
-  bool sakPlus80 = false;
-  bool showSakPlus80 = false;
+  bool vanitySak = false;
+  bool showVanitySak = false;
   CardSave? card;
   AbstractWriteHelper? baseHelper;
   AbstractWriteHelper? helper;
@@ -49,9 +49,9 @@ class WriteCardPageState extends State<WriteCardPage> {
 
     setState(() {
       card = selectedCard;
-      showSakPlus80 =
-          mfClassicSakOffsetVisibleInWrite(selectedCard.tag, selectedCard.data);
-      sakPlus80 = mfClassicSakOffsetFromUidHex(selectedCard.uid) ?? false;
+      showVanitySak =
+          mfClassicVanitySakVisibleInWrite(selectedCard.tag, selectedCard.data);
+      vanitySak = mfClassicVanitySakFromUidHex(selectedCard.uid) ?? false;
       baseHelper = AbstractWriteHelper.getClassByCardType(
           selectedCard.tag, appState, updateState, localizations);
     });
@@ -140,7 +140,7 @@ class WriteCardPageState extends State<WriteCardPage> {
     }
 
     if (helper is BaseMifareClassicWriteHelper) {
-      (helper as BaseMifareClassicWriteHelper).sakPlus80 = sakPlus80;
+      (helper as BaseMifareClassicWriteHelper).vanitySak = vanitySak;
     }
     if (await helper!.writeData(card!, updateProgress)) {
       snackBar = SnackBar(
@@ -351,12 +351,12 @@ class WriteCardPageState extends State<WriteCardPage> {
                       )
                     ]),
                   ),
-                  if (showSakPlus80)
+                  if (showVanitySak)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: SakBlock0Checkbox(
-                          value: sakPlus80,
-                          onChanged: (v) => setState(() => sakPlus80 = v!)),
+                      child: VanitySakCheckbox(
+                          value: vanitySak,
+                          onChanged: (v) => setState(() => vanitySak = v!)),
                     ),
                 ],
               ),
