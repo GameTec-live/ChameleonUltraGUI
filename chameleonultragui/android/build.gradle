@@ -13,11 +13,11 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-// Older plugins still declare compile SDKs below their AndroidX dependencies.
-subprojects {
+// Align these older plugins' compile SDK with the app for AndroidX compatibility.
+configure([project(":reactive_ble_mobile"), project(":usb_serial")]) {
     plugins.withId("com.android.library") {
         androidComponents.finalizeDsl { android ->
-            android.compileSdk = 37
+            android.compileSdk = project(":app").android.compileSdk
         }
     }
 }

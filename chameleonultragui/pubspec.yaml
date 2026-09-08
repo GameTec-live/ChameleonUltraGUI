@@ -55,7 +55,8 @@ dependencies:
   http: ^1.6.0
   archive: ^4.2.0
   flutter_reactive_ble: ^5.5.0
-  permission_handler: ^13.0.2
+  # 13.x requires SDK 37; keep SDK 36 until usb_serial supports Gradle 9.
+  permission_handler: ^12.0.3
   protobuf: ^6.0.0
   collection: ^1.19.1
   crypto: ^3.0.7
