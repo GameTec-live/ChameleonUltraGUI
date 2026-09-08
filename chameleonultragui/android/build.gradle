@@ -13,6 +13,15 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// Older plugins still declare compile SDKs below their AndroidX dependencies.
+subprojects {
+    plugins.withId("com.android.library") {
+        androidComponents.finalizeDsl { android ->
+            android.compileSdk = 37
+        }
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
