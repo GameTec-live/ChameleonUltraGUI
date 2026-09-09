@@ -6,12 +6,12 @@ import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
 import 'package:chameleonultragui/connector/serial_macos.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
+import 'package:chameleonultragui/helpers/connection_keepalive.dart';
 import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'connector/serial_native.dart';
 
@@ -146,14 +146,42 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   var selectedIndex = 0;
+  final ConnectionKeepAlive _keepAlive = ConnectionKeepAlive();
+  bool _appInForeground = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance
         .addPostFrameCallback((_) => updateNavigationRailWidth(context));
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _keepAlive.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appInForeground = state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive;
+    _syncKeepAlive(Provider.of<ChameleonGUIState>(context, listen: false));
+  }
+
+  void _syncKeepAlive(ChameleonGUIState appState, {bool forceWakelock = false}) {
+    _keepAlive.sync(
+      connected: appState.connector?.connected == true,
+      appInForeground: _appInForeground,
+      communicator: appState.communicator,
+      connector: appState.connector,
+      log: appState.log,
+      forceWakelock: forceWakelock,
+    );
   }
 
   @override
@@ -161,6 +189,7 @@ class _MainPageState extends State<MainPage> {
     // Disconnect on reload
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     await appState.disconnect();
+    _syncKeepAlive(appState);
 
     super.reassemble();
   }
@@ -273,9 +302,14 @@ class _MainPageState extends State<MainPage> {
         throw UnimplementedError('no widget for $selectedIndex');
     }
 
-    try {
-      WakelockPlus.toggle(enable: page is FlashingPage);
-    } catch (_) {}
+    // Keep phone awake + BLE link busy while connected and app is open.
+    // DFU flashing always forces wakelock even if communicator is not ready.
+    // Schedule after frame to avoid side-effects during build.
+    final forceWakelock = page is FlashingPage;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _syncKeepAlive(appState, forceWakelock: forceWakelock);
+    });
 
     return MaterialApp(
       title: 'Chameleon Ultra GUI', // App Name
