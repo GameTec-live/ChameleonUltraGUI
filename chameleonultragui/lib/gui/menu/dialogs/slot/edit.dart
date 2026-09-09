@@ -187,23 +187,30 @@ class SlotEditMenuState extends State<SlotEditMenu> {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
     await appState.communicator!.activateSlot(widget.slot);
-    if (widget.slotType != selectedType) {
-      await appState.communicator!.setSlotType(widget.slot, selectedType!);
+
+    // EM410x 16/32/64 are reader clock modes only; firmware emulates base type.
+    TagType effectiveType = isEM410X(selectedType!)
+        ? em410xSlotTagType(selectedType!)
+        : selectedType!;
+
+    if (widget.slotType != effectiveType) {
+      await appState.communicator!.setSlotType(widget.slot, effectiveType);
       bool oldIsClassic = isMifareClassic(widget.slotType);
-      bool newIsClassic = isMifareClassic(selectedType!);
+      bool newIsClassic = isMifareClassic(effectiveType);
       bool oldIsUltralight = isMifareUltralight(widget.slotType);
-      bool newIsUltralight = isMifareUltralight(selectedType!);
+      bool newIsUltralight = isMifareUltralight(effectiveType);
 
       if (!((oldIsClassic && newIsClassic) ||
           (oldIsUltralight && newIsUltralight))) {
         await appState.communicator!
-            .setDefaultDataToSlot(widget.slot, selectedType!);
+            .setDefaultDataToSlot(widget.slot, effectiveType);
       }
     }
 
     if (isEM410X(selectedType!)) {
-      await appState.communicator!
-          .setEM410XEmulatorID(hexToBytes(uidController.text));
+      await appState.communicator!.setEM410XEmulatorID(normalizeEm410xUid(
+          hexToBytes(uidController.text),
+          type: selectedType));
     } else if (selectedType! == TagType.hidProx) {
       try {
         int hidType = int.parse(hidTypeController.text);

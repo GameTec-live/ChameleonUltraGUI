@@ -279,8 +279,12 @@ class ReadCardPageState extends State<ReadCardPage> {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
     var tags = appState.sharedPreferencesProvider.getCards();
-    tags.add(CardSave(
-        uid: lfInfo.card.toString(), name: dumpName, tag: lfInfo.card!.type));
+    final card = lfInfo.card!;
+    // Always store a clean UID (no type-prefix) so load-to-slot works.
+    final String uid = isEM410X(card.type)
+        ? bytesToHexSpace(normalizeEm410xUid(card.uid, type: card.type))
+        : card.toString();
+    tags.add(CardSave(uid: uid, name: dumpName, tag: card.type));
     appState.sharedPreferencesProvider.setCards(tags);
   }
 
