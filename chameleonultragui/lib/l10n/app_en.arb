@@ -404,6 +404,25 @@
   "password_reset_success": "Previous password was: {password}",
   "password_reset_no_match": "Unable to reset password. None of the password in the dictionary worked.",
   "trying_password": "Trying password",
+  "t55xx_reset_title": "T55XX reset (open / no password)",
+  "t55xx_reset_description": "Resets a T55xx (T5557) so other tools can rewrite it. Chameleon EM410x clones enable the password bit (default 20206666); this clears password protection, writes an open config, and optionally wipes data blocks. Hold the tag on the Ultra LF antenna. Risk of bricking if wrong password / wrong chip.",
+  "t55xx_reset_password_label": "Known password",
+  "t55xx_reset_password_hint": "Default after Chameleon clone: 20206666",
+  "t55xx_reset_try_common": "Also try common passwords (00000000, 51243648, ...)",
+  "t55xx_reset_wipe_data": "Wipe data blocks 1–7 (blank tag)",
+  "t55xx_reset_start": "Reset to open T5557",
+  "t55xx_reset_in_progress": "Resetting tag… keep it still on the antenna",
+  "t55xx_reset_invalid_password": "Password must be 4 hex bytes (8 characters), e.g. 20206666",
+  "t55xx_reset_success_with_password": "Commands sent (tried password {password} and common keys). Tag should be open T5557 with password disabled. Verify with your other tool; if it still fails, try again with the correct password.",
+  "@t55xx_reset_success_with_password": {
+    "placeholders": {
+      "password": {
+        "type": "String"
+      }
+    }
+  },
+  "t55xx_reset_success_open": "Commands sent. Tag should be open T5557 with password disabled. Verify with your other tool.",
+  "t55xx_reset_failed": "Reset failed",
   "failed_to_read_block": "Failed to read any blocks. This is password protected card or not Mifare Ultralight card",
   "android_ble_permissions_missing": "Missing BLE or location permission. To connect via BLE, grant permissions in your device Settings app",
   "skip_recovery": "Skip recovery",
