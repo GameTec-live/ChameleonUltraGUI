@@ -501,54 +501,66 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
             final isWide = constraints.maxWidth >= 760;
             return DefaultTabController(
               length: 4,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCapabilityBanner(localizations),
-                  Form(
-                    key: _formKey,
-                    child: _buildHeaderControls(localizations, isWide),
-                  ),
-                  if (_statusMessage != null || _errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: _buildStatusBlock(),
-                    ),
-                  const Padding(padding: EdgeInsets.only(top: 12)),
-                  TabBar(
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    tabs: [
-                      Tab(text: localizations.lf_sniff_summary),
-                      Tab(text: localizations.lf_sniff_waveform),
-                      Tab(text: localizations.lf_sniff_decode),
-                      Tab(text: localizations.lf_sniff_hex),
-                    ],
-                  ),
-                  const Padding(padding: EdgeInsets.only(top: 12)),
-                  Expanded(
-                    child: TabBarView(
+              child: NestedScrollView(
+                // Let the capture controls scroll away so tabs retain a full viewport.
+                headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: _buildSummaryTab(localizations),
+                        _buildCapabilityBanner(localizations),
+                        Form(
+                          key: _formKey,
+                          child: _buildHeaderControls(localizations, isWide),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: _buildWaveformTab(localizations),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: _buildDecodeTab(localizations),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: _buildHexTab(localizations),
-                        ),
+                        if (_statusMessage != null || _errorMessage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: _buildStatusBlock(),
+                          ),
+                        const Padding(padding: EdgeInsets.only(top: 12)),
                       ],
                     ),
                   ),
                 ],
+                body: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TabBar(
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      tabs: [
+                        Tab(text: localizations.lf_sniff_summary),
+                        Tab(text: localizations.lf_sniff_waveform),
+                        Tab(text: localizations.lf_sniff_decode),
+                        Tab(text: localizations.lf_sniff_hex),
+                      ],
+                    ),
+                    const Padding(padding: EdgeInsets.only(top: 12)),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: _buildSummaryTab(localizations),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: _buildWaveformTab(localizations),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: _buildDecodeTab(localizations),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: _buildHexTab(localizations),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
