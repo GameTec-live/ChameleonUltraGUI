@@ -403,44 +403,56 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
         height: dialogHeight,
         child: DefaultTabController(
           length: 5,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildCapabilityBanner(localizations),
-              Form(
-                key: _formKey,
-                child: _buildHeaderControls(localizations),
-              ),
-              if (_statusMessage != null || _errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: _buildStatusBlock(),
-                ),
-              const SizedBox(height: 12),
-              TabBar(
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                tabs: [
-                  Tab(text: localizations.hf_sniff_summary),
-                  Tab(text: localizations.hf_sniff_frames),
-                  Tab(text: localizations.hf_sniff_nonces),
-                  Tab(text: localizations.hf_sniff_recovery),
-                  Tab(text: localizations.hf_sniff_raw),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: TabBarView(
+          child: NestedScrollView(
+            // Let the capture controls scroll away so tabs retain a full viewport.
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSummaryTab(localizations),
-                    _buildFramesTab(localizations),
-                    _buildNoncesTab(localizations),
-                    _buildRecoveryTab(localizations),
-                    _buildRawTab(localizations),
+                    _buildCapabilityBanner(localizations),
+                    Form(
+                      key: _formKey,
+                      child: _buildHeaderControls(localizations),
+                    ),
+                    if (_statusMessage != null || _errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: _buildStatusBlock(),
+                      ),
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),
             ],
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TabBar(
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  tabs: [
+                    Tab(text: localizations.hf_sniff_summary),
+                    Tab(text: localizations.hf_sniff_frames),
+                    Tab(text: localizations.hf_sniff_nonces),
+                    Tab(text: localizations.hf_sniff_recovery),
+                    Tab(text: localizations.hf_sniff_raw),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _buildSummaryTab(localizations),
+                      _buildFramesTab(localizations),
+                      _buildNoncesTab(localizations),
+                      _buildRecoveryTab(localizations),
+                      _buildRawTab(localizations),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
