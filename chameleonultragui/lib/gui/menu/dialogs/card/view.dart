@@ -278,36 +278,36 @@ class CardViewMenuState extends State<CardViewMenu> {
                 },
                 icon: const Icon(Icons.copy_all),
               ),
-              if (isMifareClassic(widget.tagSave.tag) ||
-                  isMifareUltralight(widget.tagSave.tag))
+              if (isMifareClassic(currentSavedCard.tag) ||
+                  isMifareUltralight(currentSavedCard.tag))
                 IconButton(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => DumpEditor(
-                          cardSave: widget.tagSave,
+                          cardSave: currentSavedCard,
                           onSave: (dumpData) {
                             // Update card data
                             var updatedCard = CardSave(
-                              id: widget.tagSave.id,
-                              uid: widget.tagSave.uid,
-                              sak: widget.tagSave.sak,
-                              atqa: widget.tagSave.atqa,
-                              name: widget.tagSave.name,
-                              tag: widget.tagSave.tag,
+                              id: currentSavedCard.id,
+                              uid: currentSavedCard.uid,
+                              sak: currentSavedCard.sak,
+                              atqa: currentSavedCard.atqa,
+                              name: currentSavedCard.name,
+                              tag: currentSavedCard.tag,
                               data: dumpData,
-                              ats: widget.tagSave.ats,
-                              extraData: widget.tagSave.extraData,
-                              folderId: widget.tagSave.folderId,
-                              color: widget.tagSave.color,
+                              ats: currentSavedCard.ats,
+                              extraData: currentSavedCard.extraData,
+                              folderId: currentSavedCard.folderId,
+                              color: currentSavedCard.color,
                             );
 
                             // Update the card in storage
                             var cards =
                                 appState.sharedPreferencesProvider.getCards();
                             for (int i = 0; i < cards.length; i++) {
-                              if (cards[i].id == widget.tagSave.id) {
+                              if (cards[i].id == currentSavedCard.id) {
                                 cards[i] = updatedCard;
                                 break;
                               }

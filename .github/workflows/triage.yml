@@ -11,14 +11,14 @@ jobs:
     steps:
     - name: Pull Request Labeler
       if: github.event.pull_request
-      uses: actions/labeler@v4
+      uses: actions/labeler@v7
   remove-unnecesary-files:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the repo 
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
     - name: Detect changed languages files
-      uses: dorny/paths-filter@v2
+      uses: dorny/paths-filter@v4
       id: files_changed
       with:
         filters: |
@@ -39,7 +39,7 @@ jobs:
           fi
         done
     - name: Create commit
-      uses: stefanzweifel/git-auto-commit-action@v4
+      uses: stefanzweifel/git-auto-commit-action@v7
       with:
         commit_message: Uncommitted translation files
         commit_options: '--no-verify'

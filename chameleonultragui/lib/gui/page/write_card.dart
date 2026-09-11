@@ -1,7 +1,10 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/card_list.dart';
+import 'package:chameleonultragui/gui/component/mifare/vanity_sak_checkbox.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/vanity_sak.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -22,6 +25,8 @@ class WriteCardPageState extends State<WriteCardPage> {
   int step = 0;
   int progress = -1;
   bool written = false;
+  bool vanitySak = false;
+  bool showVanitySak = false;
   CardSave? card;
   AbstractWriteHelper? baseHelper;
   AbstractWriteHelper? helper;
@@ -44,6 +49,9 @@ class WriteCardPageState extends State<WriteCardPage> {
 
     setState(() {
       card = selectedCard;
+      showVanitySak =
+          mfClassicVanitySakVisibleInWrite(selectedCard.tag, selectedCard.data);
+      vanitySak = mfClassicVanitySakFromUidHex(selectedCard.uid) ?? false;
       baseHelper = AbstractWriteHelper.getClassByCardType(
           selectedCard.tag, appState, updateState, localizations);
     });
@@ -131,6 +139,9 @@ class WriteCardPageState extends State<WriteCardPage> {
       await appState.communicator!.setReaderDeviceMode(true);
     }
 
+    if (helper is BaseMifareClassicWriteHelper) {
+      (helper as BaseMifareClassicWriteHelper).vanitySak = vanitySak;
+    }
     if (await helper!.writeData(card!, updateProgress)) {
       snackBar = SnackBar(
         content: Text(localizations.magic_success_write),
@@ -313,35 +324,50 @@ class WriteCardPageState extends State<WriteCardPage> {
         steps: [
           Step(
             title: Text(localizations.select_saved_card_to_write),
+            subtitle: step > 0 && card != null ? Text(card!.name) : null,
             content: Card(
-              child: ListTile(
-                title: Row(children: [
-                  FilterChip(
-                    onSelected: (bool selected) {
-                      cardSelectDialog(context);
-                    },
-                    avatar: (card != null)
-                        ? CircleAvatar(
-                            backgroundColor: Colors.transparent,
-                            child: Icon(
-                                (chameleonTagToFrequency(card!.tag) ==
-                                        TagFrequency.hf)
-                                    ? Icons.credit_card
-                                    : Icons.wifi,
-                                color: card!.color),
-                          )
-                        : null,
-                    label: Text((card != null)
-                        ? card!.name
-                        : localizations.select_saved_card),
-                  )
-                ]),
+              child: Column(
+                children: [
+                  ListTile(
+                    title: Row(children: [
+                      FilterChip(
+                        onSelected: (bool selected) {
+                          cardSelectDialog(context);
+                        },
+                        avatar: (card != null)
+                            ? CircleAvatar(
+                                backgroundColor: Colors.transparent,
+                                child: Icon(
+                                    (chameleonTagToFrequency(card!.tag) ==
+                                            TagFrequency.hf)
+                                        ? Icons.credit_card
+                                        : Icons.wifi,
+                                    color: card!.color),
+                              )
+                            : null,
+                        label: Text((card != null)
+                            ? card!.name
+                            : localizations.select_saved_card),
+                      )
+                    ]),
+                  ),
+                  if (showVanitySak)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: VanitySakCheckbox(
+                          value: vanitySak,
+                          onChanged: (v) => setState(() => vanitySak = v!)),
+                    ),
+                ],
               ),
             ),
             isActive: step >= 1,
           ),
           Step(
             title: Text(localizations.select_magic_card),
+            subtitle: step > 1 && helper != null
+                ? Text(typeLocalization[helper!.name]!)
+                : null,
             content: Card(
               child: ListTile(
                 title: (baseHelper != null)

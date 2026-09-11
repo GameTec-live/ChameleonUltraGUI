@@ -1,14 +1,16 @@
+import 'package:chameleonultragui/gui/component/mifare/vanity_sak_checkbox.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
+import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/vanity_sak.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
-import 'package:flutter/material.dart';
-import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/sharedprefsprovider.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:provider/provider.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -41,6 +43,15 @@ class CardCreateMenuState extends State<CardCreateMenu> {
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool vanitySak = false;
+
+  void refreshVanitySak() {
+    final vFromUid = mfClassicVanitySakFromUidHex(uidController.text);
+    if (vFromUid == null) {
+      return;
+    }
+    setState(() => vanitySak = vFromUid);
+  }
 
   List<Uint8List> generateMifareClassicBlocks() {
     final uid = hexToBytes(uidController.text);
@@ -80,7 +91,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
       ]));
     }
 
-    blocks[0] = mfClassicGenerateFirstBlock(uid, sak, atqa);
+    blocks[0] = mfClassicGenerateFirstBlock(uid, sak, atqa, vanitySak);
 
     return blocks;
   }
@@ -209,6 +220,7 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                 child: Column(children: [
                   TextFormField(
                     controller: uidController,
+                    onChanged: (_) => refreshVanitySak(),
                     decoration: InputDecoration(
                         labelText: localizations.uid,
                         hintText:
@@ -239,6 +251,12 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                                       fieldName: localizations.sak,
                                       required: true),
                         ),
+                        if (isMifareClassic(selectedType)) ...[
+                          const SizedBox(height: 8),
+                          VanitySakCheckbox(
+                              value: vanitySak,
+                              onChanged: (v) => setState(() => vanitySak = v!)),
+                        ],
                         const SizedBox(height: 20),
                         TextFormField(
                           controller: atqaController,

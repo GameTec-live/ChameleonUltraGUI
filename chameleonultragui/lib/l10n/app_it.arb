@@ -571,5 +571,7 @@
   "lf_sniff_load_failed": "Impossibile caricare il file: {error}",
   "lf_sniff_loaded": "Caricati {count} campioni dal file.",
   "sniff_device_required_hint": "Nessun dispositivo connesso. Connetti un Chameleon per catturare, o carica un file salvato.",
-  "view_dump": "Visualizza il dump"
+  "view_dump": "Visualizza il dump",
+  "enable_vanity_sak": "Abilita il Vanity SAK",
+  "enable_vanity_sak_tooltip": "Se abilitata, il SAK memorizzato nel blocco 0 viene aumentato di 0x80, imitando le schede originali, in particolare quelle con UID da 7 byte.\nAttiva in maniera predefinita per le carte con UID da 7 byte, disattivata per quelle da 4, dato che alcune di queste ritrasmettono questo byte cos\u00ec com'\u00e8."
 }

@@ -13,6 +13,15 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// Align these older plugins' compile SDK with the app for AndroidX compatibility.
+configure([project(":reactive_ble_mobile"), project(":usb_serial")]) {
+    plugins.withId("com.android.library") {
+        androidComponents.finalizeDsl { android ->
+            android.compileSdk = project(":app").android.compileSdk
+        }
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
