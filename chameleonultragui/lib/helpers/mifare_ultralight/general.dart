@@ -101,6 +101,25 @@ int mfUltralightGetPasswordPage(TagType type) {
   return 0;
 }
 
+List<int> mfUltralightGetKeyPages(TagType type) {
+  if (type == TagType.ultralightC) {
+    return [44, 45, 46, 47];
+  }
+  return [];
+}
+
+Uint8List mfUltralightSwapUlcKeyOrder(Uint8List key) {
+  if (key.length != 16) {
+    return Uint8List.fromList(key);
+  }
+  Uint8List out = Uint8List(16);
+  for (int i = 0; i < 8; i++) {
+    out[i] = key[7 - i];
+    out[8 + i] = key[15 - i];
+  }
+  return out;
+}
+
 bool mfUltralightHasCounters(TagType type) {
   return [
     TagType.ultralight11,
@@ -232,14 +251,28 @@ List<Uint8List> mfUltralightGenerateFirstBlocks(Uint8List uid, TagType type) {
   return blocks;
 }
 
+Future<bool> mfUltralightIsUlc(ChameleonCommunicator communicator) async {
+  try {
+    Uint8List resp =
+        await communicator.send14ARaw(Uint8List.fromList([0x1A, 0x00]));
+    return resp.length >= 9 && resp[0] == 0xAF;
+  } catch (_) {
+    return false;
+  }
+}
+
 Future<(TagType, MifareUltralightInfo)> performMifareUltralightScan(
     ChameleonCommunicator communicator, MifareUltralightInfo mfuInfo,
     {TagType? override}) async {
-  TagType type = TagType.unknown;
+  TagType type = override ?? TagType.unknown;
   Uint8List version = await mfUltralightGetVersion(communicator);
 
-  if (version.isNotEmpty) {
-    type = override ?? mfUltralightGetType(version);
+  if (type == TagType.unknown && version.isNotEmpty) {
+    type = mfUltralightGetType(version);
+  }
+
+  if (type == TagType.unknown && await mfUltralightIsUlc(communicator)) {
+    type = TagType.ultralightC;
   }
 
   if (type == TagType.unknown) {
