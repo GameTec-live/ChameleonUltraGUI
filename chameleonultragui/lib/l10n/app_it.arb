@@ -289,7 +289,7 @@
   "invalid_password": "Password invalida",
   "ultralight_version": "Versione Ultralight",
   "ultralight_signature": "Firma Ultralight",
-  "no_key": "Nessuna chiave",
+  "no_key": "Senza chiave",
   "gen1": "Gen1",
   "gen2": "Gen2 / Generic",
   "gen3": "Gen3",
