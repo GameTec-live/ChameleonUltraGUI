@@ -164,6 +164,12 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
       await Future.delayed(const Duration(milliseconds: 500));
       var newCard = await communicator.readViking();
       return newCard.toString() == card.uid;
+    } else if (card.tag == TagType.jablotron) {
+      await communicator.writeJablotronToT55XX(hexToBytes(card.uid),
+          hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+      await Future.delayed(const Duration(milliseconds: 500));
+      var newCard = await communicator.readJablotron();
+      return newCard.toString() == card.uid;
     } else if (card.tag == TagType.pac) {
       await communicator.writePacToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
