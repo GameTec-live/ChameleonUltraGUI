@@ -67,7 +67,7 @@ abstract class AbstractWriteHelper {
         type == TagType.pac ||
         type == TagType.ioProx ||
         type == TagType.idteck) {
-      return BaseT55XXCardHelper(appState.communicator!);
+      return BaseT55XXCardHelper(appState.communicator!, cardType: type);
     }
 
     return null; // writing is not supported
