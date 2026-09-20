@@ -155,13 +155,14 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!
           .enableSlot(gridPosition, TagFrequency.lf, true);
       await appState.communicator!.activateSlot(gridPosition);
-      TagType slotTagType = card.tag == TagType.em410XElectra
-          ? TagType.em410XElectra
-          : TagType.em410X;
+      // 16/32/64 are reader clock modes only; firmware emulates base EM410X.
+      TagType slotTagType = em410xSlotTagType(card.tag);
       await appState.communicator!.setSlotType(gridPosition, slotTagType);
       await appState.communicator!
           .setDefaultDataToSlot(gridPosition, slotTagType);
-      await appState.communicator!.setEM410XEmulatorID(hexToBytes(card.uid));
+      // Normalize UID: strip type prefix from legacy saves, enforce 5/13 bytes.
+      await appState.communicator!.setEM410XEmulatorID(
+          normalizeEm410xUid(hexToBytes(card.uid), type: card.tag));
       await appState.communicator!.setSlotTagName(
           gridPosition,
           (card.name.isEmpty) ? localizations.no_name : card.name,
