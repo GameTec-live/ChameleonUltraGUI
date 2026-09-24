@@ -3,6 +3,7 @@ import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
 import 'package:chameleonultragui/gui/menu/tools/hf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/lf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
+import 'package:chameleonultragui/gui/menu/tools/t55xx_reset.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -46,6 +47,12 @@ class ToolsPageState extends State<ToolsPage> {
           description: localizations.dictionary_download_description,
           icon: Icons.key,
           onPressed: const DictionaryDownloadMenu()),
+      ToolItem(
+          name: localizations.t55xx_reset_title,
+          description: localizations.t55xx_reset_description,
+          icon: Icons.lock_open,
+          onPressed: const T55XXResetMenu(),
+          isDeviceRequired: true),
       ToolItem(
           name: localizations.t55xx_password_cleaner,
           description: localizations.t55xx_password_cleaner_description,
