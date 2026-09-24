@@ -708,11 +708,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
         child: isCompact
             ? Row(
                 children: [
-                  SizedBox(width: actions.length * 48),
                   Expanded(
                       child: Text(
                     title,
-                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
