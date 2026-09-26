@@ -14,6 +14,7 @@
       - [Saved cards](#saved-cards)
       - [Read cards](#read-cards)
       - [Write cards](#write-cards)
+      - [Tools](#tools)
       - [Settings](#settings)
   - [Contributing](#contributing)
   - [Translations](#translations)
@@ -35,20 +36,20 @@ Please refer to the following sections for in-depth information on how to get st
 Thank you for choosing Chameleon Ultra GUI. Let's explore together the world of seamless control and enhanced performance.
 
 ## Installation
-This section of the documentation will guide you through the process of installing the Chameleon Ultra GUI software on your system. Whether you are a new user excited to explore the capabilities of Chameleon Ultra or an existing user upgrading to the latest version, the installation process is the first step toward enhancing your experience.
 
-The installation process is designed to be intuitive and straightforward. We'll provide you with clear instructions and visual aids to help you complete each step efficiently. If you encounter any issues during installation, we've included troubleshooting tips to assist you in resolving common challenges.
+Whether you are a new user excited to explore the capabilities of Chameleon Ultra or an existing user upgrading to the latest version.
+These are the latest dev versions, however app stores take time to review updates.
 
 #### Windows
 
-Download the installer [here](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/windows-installer.zip)
+Download [the installer](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/windows-installer.zip)
 
 Or, [portable version](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/windows.zip)
 
 
 #### Linux
 
-Download the Linux build
+Download for:
 
 - [Debian-based (.deb)](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-debian.zip)
 - [Arch-based](https://aur.archlinux.org/packages/chameleonultragui-git)
@@ -65,13 +66,13 @@ Or, you can join TestFlight to get builds earlier: [Chameleon Ultra GUI - TestFl
 
 Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra)
 
-Or, plain [APK](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/apk.zip) (not signed, incompatible with Google Play version)
+Or, [plain APK](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/apk.zip) (not signed — incompatible with Google Play version)
 
 ## Usage
 
 While our application is designed to be highly intuitive and user-friendly, we understand the importance of comprehensive guidance. In the following this section, we'll walk you through the application's functionalities to ensure you get the most out of it.
 
-When you open the application, you will be greeted by the main screen. This screen is divided into three sections: the sidebar, the main content area, and the footer. The sidebar contains the navigation menu, which allows you to access the various sections of the application. The main content area displays the content of the selected section. The footer contains the application's version number and the current date and time.
+When you open the application, you will be greeted by the main screen. This screen is divided into two sections: the sidebar, and the main content area. The sidebar contains the navigation menu, which allows you to access the various sections of the application. The main content area displays the content of the selected section.
 
 #### Home
 
@@ -102,6 +103,9 @@ And clicking on the settings button will open the slot settings. Where you can e
 ![Chameleon Ultra GUI - Slot Settings](assets/slots_settings.png)
 
 #### Saved cards
+
+Not yet documented
+
 #### Read cards
 
 On this screen you can read the cards by bringing them close to the Chameleon.
@@ -110,11 +114,17 @@ On this screen you can read the cards by bringing them close to the Chameleon.
 
 ![Chameleon Ultra GUI - Read Cards](assets/read_card_result.png)
 
-You can save it to use it in a slot. You can read HF and LF cards. When you read en HF card, you can use a dictionary to try to crack the keys.
+You can read HF and LF cards.
+You can save it to use it in a slot.
+When you read a HF card, you can use a dictionary to try to crack the keys.
 
 #### Write cards
 
-**Unimplemented yet**
+Not yet documented
+
+#### Tools
+
+Not yet documented
 
 #### Settings
 
@@ -122,7 +132,7 @@ On this screen you can change the settings of the application.
 
 ![Chameleon Ultra GUI - Settings](assets/settings_screen.png)
 
-Here you can change the theme, color and language of the application.
+Here you can change the theme, color, language, and more of the application.
 
 ## Contributing
 
