@@ -37,8 +37,8 @@ Thank you for choosing Chameleon Ultra GUI. Let's explore together the world of 
 
 ## Installation
 
-Whether you are a new user excited to explore the capabilities of Chameleon Ultra or an existing user upgrading to the latest version.
-These are the latest dev versions, however app stores take time to review updates.
+These are the latest builds, built from the main branch, which is stable-ish;
+great for new users excited to explore the capabilities of Chameleon Ultra and existing users who are upgrading.
 
 #### Windows
 
