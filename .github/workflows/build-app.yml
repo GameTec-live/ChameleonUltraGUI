@@ -152,10 +152,10 @@ jobs:
           flutter build ios --release 2>&1 | tee /dev/tty | grep -q "Xcode build
           done" && exit 0 || exit 1
 
-  create_dev_release:
+  create_main_release:
     permissions:
       contents: write
-    name: Create dev pre-release with artifacts
+    name: Create main release with artifacts
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs:
@@ -182,12 +182,12 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           body: |
-            Auto-generated packages from latest commit on `main` branch.
+            Stable-ish auto-generated packages from latest commit on `main` branch.
             Built from commit ${{ github.sha }}
           tag_name: dev
-          name: Development release
+          name: Latest
           draft: false
-          prerelease: true
+          prerelease: false
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           files: release-artifacts/*.zip
