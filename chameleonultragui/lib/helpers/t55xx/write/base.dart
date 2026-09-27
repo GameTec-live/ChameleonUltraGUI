@@ -46,103 +46,124 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
     var localizations = AppLocalizations.of(context)!;
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-    return Row(children: [
-      Expanded(
-          child: Form(
-              key: formKey,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: currentKeyController,
-                    decoration: InputDecoration(
-                        labelText: localizations.key,
-                        hintMaxLines: 4,
-                        hintText: localizations
-                            .enter_something(localizations.t55xx_key_prompt)),
-                    inputFormatters: hexFormatter,
-                    validator: (value) => validateHex(value, localizations,
-                        exactBytes: 4, fieldName: localizations.key),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Form(
+          key: formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: currentKeyController,
+                decoration: InputDecoration(
+                  labelText: localizations.key,
+                  hintMaxLines: 4,
+                  hintText: localizations.enter_something(
+                    localizations.t55xx_key_prompt,
                   ),
-                  TextFormField(
-                    controller: newKeyController,
-                    enabled: !noPassword,
-                    decoration: InputDecoration(
-                        labelText: localizations.new_key,
-                        hintMaxLines: 4,
-                        hintText: localizations.enter_something(
-                            localizations.t55xx_new_key_prompt)),
-                    inputFormatters: hexFormatter,
-                    validator: noPassword
-                        ? null
-                        : (value) => validateHex(value, localizations,
-                            exactBytes: 4, fieldName: localizations.key),
+                ),
+                inputFormatters: hexFormatter,
+                validator: (value) => validateHex(
+                  value,
+                  localizations,
+                  exactBytes: 4,
+                  fieldName: localizations.key,
+                ),
+              ),
+              TextFormField(
+                controller: newKeyController,
+                enabled: !noPassword,
+                decoration: InputDecoration(
+                  labelText: localizations.new_key,
+                  hintMaxLines: 4,
+                  hintText: localizations.enter_something(
+                    localizations.t55xx_new_key_prompt,
                   ),
-                  if (cardType != null && isEM410X(cardType!))
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(localizations.no_password),
-                      value: noPassword,
-                      onChanged: (value) {
+                ),
+                inputFormatters: hexFormatter,
+                validator: noPassword
+                    ? null
+                    : (value) => validateHex(
+                          value,
+                          localizations,
+                          exactBytes: 4,
+                          fieldName: localizations.key,
+                        ),
+              ),
+              if (cardType != null && isEM410X(cardType!))
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(localizations.no_password),
+                  value: noPassword,
+                  onChanged: (value) {
+                    setState(() {
+                      noPassword = value ?? false;
+                      if (noPassword) {
+                        newKeyController.clear();
+                      }
+                    });
+                  },
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          alignment: WrapAlignment.end,
+          children: [
+            TextButton(
+              onPressed: () => {
+                if (noPassword)
+                  {
+                    setState(() {
+                      currentKey = currentKeyController.text.isNotEmpty
+                          ? currentKeyController.text
+                          : "20206666";
+                      newKey = "00000000";
+                    }),
+                  }
+                else if (newKeyController.text.isNotEmpty)
+                  {
+                    if (currentKeyController.text.isNotEmpty)
+                      {
                         setState(() {
-                          noPassword = value ?? false;
-                          if (noPassword) {
-                            newKeyController.clear();
-                          }
-                        });
+                          currentKey = currentKeyController.text;
+                          newKey = newKeyController.text;
+                        }),
+                      }
+                    else
+                      {
+                        setState(() {
+                          currentKey = "20206666";
+                          newKey = "20206666";
+                        }),
                       },
-                    ),
-                ],
-              ))),
-      TextButton(
-        onPressed: () => {
-          if (noPassword)
-            {
-              setState(() {
-                currentKey = currentKeyController.text.isNotEmpty
-                    ? currentKeyController.text
-                    : "20206666";
-                newKey = "00000000";
-              })
-            }
-          else if (newKeyController.text.isNotEmpty)
-            {
-              if (currentKeyController.text.isNotEmpty)
-                {
-                  setState(() {
-                    currentKey = currentKeyController.text;
-                    newKey = newKeyController.text;
-                  })
-                }
-              else
-                {
-                  setState(() {
-                    currentKey = "20206666";
-                    newKey = "20206666";
-                  })
-                }
-            }
-          else
-            {
-              if (currentKeyController.text.isNotEmpty)
-                {
-                  setState(() {
-                    currentKey = currentKeyController.text;
-                    newKey = currentKeyController.text;
-                  })
-                }
-              else
-                {
-                  setState(() {
-                    currentKey = "20206666";
-                    newKey = "20206666";
-                  })
-                }
-            }
-        },
-        child: Text(localizations.next),
-      )
-    ]);
+                  }
+                else
+                  {
+                    if (currentKeyController.text.isNotEmpty)
+                      {
+                        setState(() {
+                          currentKey = currentKeyController.text;
+                          newKey = currentKeyController.text;
+                        }),
+                      }
+                    else
+                      {
+                        setState(() {
+                          currentKey = "20206666";
+                          newKey = "20206666";
+                        }),
+                      },
+                  },
+              },
+              child: Text(localizations.next),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
