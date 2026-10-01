@@ -133,14 +133,25 @@ jobs:
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect publish --path "$PACKAGE_NAME"
+      - name: Wait for processed macOS build
+        timeout-minutes: 30
+        working-directory: "./chameleonultragui"
+        shell: bash
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY="$(cat AuthKey.p8)"
+          APP_ID=$(app-store-connect apps list --bundle-id-identifier run.chameleon.gui --strict-match-identifier --json \
+            | jq -er 'if length == 1 then .[0].id else error("Expected exactly one matching app") end')
+          BUILD_ID=""
           while [[ -z "$BUILD_ID" ]]; do
-              export BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 11.0" | awk '/^Id:/ {print $2}')
+              BUILD_ID=$(app-store-connect builds list --app-id "$APP_ID" --platform MAC_OS \
+                --build-version-number ${{ github.run_number }} --processing-state VALID --json \
+                | jq -r 'if length > 1 then error("Expected at most one matching build") else .[0].id // empty end')
               if [[ -z "$BUILD_ID" ]]; then
-                  echo "Build is not ready, retrying in 5 seconds..."
-                  sleep 5
+                  echo "macOS build is not ready, retrying in 30 seconds..."
+                  sleep 30
               fi
           done
-          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
+          echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
       - name: Submit to App Store
         working-directory: "./chameleonultragui"
         run: |
@@ -201,14 +212,25 @@ jobs:
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect publish --path $(find $(pwd) -name "*.ipa")
+      - name: Wait for processed iOS build
+        timeout-minutes: 30
+        working-directory: "./chameleonultragui"
+        shell: bash
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY="$(cat AuthKey.p8)"
+          APP_ID=$(app-store-connect apps list --bundle-id-identifier run.chameleon.gui --strict-match-identifier --json \
+            | jq -er 'if length == 1 then .[0].id else error("Expected exactly one matching app") end')
+          BUILD_ID=""
           while [[ -z "$BUILD_ID" ]]; do
-              export BUILD_ID=$(app-store-connect list-builds --build-version-number ${{ github.run_number }} --processing-state VALID | grep -B 7 "Min os version: 14.0" | awk '/^Id:/ {print $2}')
+              BUILD_ID=$(app-store-connect builds list --app-id "$APP_ID" --platform IOS \
+                --build-version-number ${{ github.run_number }} --processing-state VALID --json \
+                | jq -r 'if length > 1 then error("Expected at most one matching build") else .[0].id // empty end')
               if [[ -z "$BUILD_ID" ]]; then
-                  echo "Build is not ready, retrying in 30 seconds..."
+                  echo "iOS build is not ready, retrying in 30 seconds..."
                   sleep 30
               fi
           done
-          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
+          echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
       - name: Submit to App Store
         working-directory: "./chameleonultragui"
         run: |
