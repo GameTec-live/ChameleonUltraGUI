@@ -4,6 +4,7 @@ import 'package:chameleonultragui/gui/menu/pages/dump_editor.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/card_data.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -288,7 +289,23 @@ class CardViewMenuState extends State<CardViewMenu> {
                         builder: (context) => DumpEditor(
                           cardSave: currentSavedCard,
                           onSave: (dumpData) {
-                            // Update card data
+                            final currentExtra = currentSavedCard.extraData;
+                            final updatedExtra = CardSaveExtra(
+                              ultralightSignature: Uint8List.fromList(
+                                  currentExtra.ultralightSignature),
+                              ultralightVersion: Uint8List.fromList(
+                                  currentExtra.ultralightVersion),
+                              ultralightPassword: isMifareUltralight(
+                                      currentSavedCard.tag)
+                                  ? mfUltralightPasswordAfterDumpEdit(
+                                      currentSavedCard, dumpData)
+                                  : Uint8List.fromList(
+                                      currentExtra.ultralightPassword),
+                              ultralightCounters:
+                                  List<int>.from(currentExtra.ultralightCounters),
+                            );
+
+                            // Update card data and keep restore metadata in sync.
                             var updatedCard = CardSave(
                               id: currentSavedCard.id,
                               uid: currentSavedCard.uid,
@@ -298,7 +315,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                               tag: currentSavedCard.tag,
                               data: dumpData,
                               ats: currentSavedCard.ats,
-                              extraData: currentSavedCard.extraData,
+                              extraData: updatedExtra,
                               folderId: currentSavedCard.folderId,
                               color: currentSavedCard.color,
                             );
