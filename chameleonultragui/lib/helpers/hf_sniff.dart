@@ -295,6 +295,7 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
   String? lastAuthKeyType;
   int? lastAuthBlock;
   bool isoDepActive = false;
+  int? lastReaderBlockNumber;
   final chainedReaderInf = <int>[];
 
   for (final frame in frames) {
@@ -330,15 +331,27 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
       expectNt = false;
       expectNrAr = false;
 
+      if (_isTypeAPollingStart(frame)) {
+        isoDepActive = false;
+        lastReaderBlockNumber = null;
+        chainedReaderInf.clear();
+      }
+
       final isoBlock = _parseIsoDepReaderIBlock(frame, isoDepActive);
       if (isoBlock != null) {
-        chainedReaderInf.addAll(isoBlock.inf);
-        if (isoBlock.chaining) {
-          label = 'ISO-DEP I-block (chained)';
+        final isRetry = lastReaderBlockNumber == isoBlock.blockNumber;
+        if (isRetry) {
+          label = 'ISO-DEP I-block (retry)';
         } else {
-          final apdu = Uint8List.fromList(chainedReaderInf);
-          chainedReaderInf.clear();
-          label = _decodeApduData(apdu) ?? 'ISO-DEP I-block';
+          lastReaderBlockNumber = isoBlock.blockNumber;
+          chainedReaderInf.addAll(isoBlock.inf);
+          if (isoBlock.chaining) {
+            label = 'ISO-DEP I-block (chained)';
+          } else {
+            final apdu = Uint8List.fromList(chainedReaderInf);
+            chainedReaderInf.clear();
+            label = _decodeApduData(apdu) ?? 'ISO-DEP I-block';
+          }
         }
       } else {
         label = _decodeHf14aFrame(frame);
@@ -349,11 +362,13 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
 
     if (frame.isReaderToCard && data.isNotEmpty && data[0] == 0xE0) {
       isoDepActive = true;
+      lastReaderBlockNumber = null;
       chainedReaderInf.clear();
     } else if (frame.isReaderToCard &&
         data.isNotEmpty &&
         (data[0] == 0x50 || data[0] == 0xC2)) {
       isoDepActive = false;
+      lastReaderBlockNumber = null;
       chainedReaderInf.clear();
     }
   }
@@ -373,6 +388,7 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
   bool halted = false;
   bool ratsSeen = false;
   bool isoDepActive = false;
+  int? lastReaderBlockNumber;
   final chainedReaderInf = <int>[];
   String? atcTag;
   int? amountMinorUnits;
@@ -402,16 +418,27 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
     if (b0 == 0xE0) {
       ratsSeen = true;
       isoDepActive = true;
+      lastReaderBlockNumber = null;
+      chainedReaderInf.clear();
+    }
+
+    if (_isTypeAPollingStart(frame)) {
+      isoDepActive = false;
+      lastReaderBlockNumber = null;
       chainedReaderInf.clear();
     }
 
     Uint8List? apdu;
     final isoBlock = _parseIsoDepReaderIBlock(frame, isoDepActive);
     if (isoBlock != null) {
-      chainedReaderInf.addAll(isoBlock.inf);
-      if (!isoBlock.chaining) {
-        apdu = Uint8List.fromList(chainedReaderInf);
-        chainedReaderInf.clear();
+      final isRetry = lastReaderBlockNumber == isoBlock.blockNumber;
+      if (!isRetry) {
+        lastReaderBlockNumber = isoBlock.blockNumber;
+        chainedReaderInf.addAll(isoBlock.inf);
+        if (!isoBlock.chaining) {
+          apdu = Uint8List.fromList(chainedReaderInf);
+          chainedReaderInf.clear();
+        }
       }
     } else {
       apdu = data;
@@ -478,6 +505,7 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
     if (b0 == 0x50 || b0 == 0xC2) {
       halted = true;
       isoDepActive = false;
+      lastReaderBlockNumber = null;
       chainedReaderInf.clear();
     }
   }
@@ -668,10 +696,12 @@ int _oddParity8(int byte) {
 class _IsoDepReaderIBlock {
   final Uint8List inf;
   final bool chaining;
+  final int blockNumber;
 
   const _IsoDepReaderIBlock({
     required this.inf,
     required this.chaining,
+    required this.blockNumber,
   });
 }
 
@@ -703,7 +733,17 @@ _IsoDepReaderIBlock? _parseIsoDepReaderIBlock(
   return _IsoDepReaderIBlock(
     inf: Uint8List.fromList(data.sublist(offset)),
     chaining: (pcb & 0x10) != 0,
+    blockNumber: pcb & 0x01,
   );
+}
+
+bool _isTypeAPollingStart(HfSniffFrame frame) {
+  if (!frame.isReaderToCard ||
+      !frame.isShortFrame ||
+      frame.data.length != 1) {
+    return false;
+  }
+  return frame.data[0] == 0x26 || frame.data[0] == 0x52;
 }
 
 String? _decodeApduData(Uint8List data) {
