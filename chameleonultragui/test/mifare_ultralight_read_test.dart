@@ -64,7 +64,9 @@ class _FakeCommunicator extends ChameleonCommunicator {
           ? <int>[0xDE, 0xAD, 0xBE, 0xEF]
           : page == 43
               ? <int>[0x00, 0x00, 0x00, 0x00]
-              : <int>[page, page, page, page];
+              : page == 44
+                  ? <int>[0x56, 0x78, 0x00, 0x00]
+                  : <int>[page, page, page, page];
 
       if (!keepRfField) {
         _authenticated = false;
@@ -123,6 +125,8 @@ void main() {
     expect(result.status, MifareUltralightDumpReadStatus.success);
     expect(result.pages[43], orderedEquals([0x00, 0x00, 0x00, 0x00]));
     expect(result.pages[43], isNot(orderedEquals(password)));
+    expect(result.pages[44], orderedEquals([0x56, 0x78, 0x00, 0x00]));
+    expect(result.pages[44], isNot(orderedEquals([0x12, 0x34, 0x00, 0x00])));
   });
 
   test('invalid password stops before reading pages', () async {
