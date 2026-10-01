@@ -36,6 +36,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
   String version = "";
   String signature = "";
   List<int> counters = [];
+  Uint8List restorePassword = Uint8List(0);
   String dumpName = "";
   String error = "";
   double progress = -1;
@@ -49,6 +50,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
       error = "";
       state = MifareUltralightState.read;
       progress = 0;
+      restorePassword = Uint8List(0);
     });
 
     final result = await mfUltralightReadDump(
@@ -83,6 +85,9 @@ class CardReaderState extends State<MifareUltralightHelper> {
     }
 
     cardData = result.pages;
+    if (withPassword) {
+      restorePassword = Uint8List.fromList(hexToBytes(keyController.text));
+    }
 
     version =
         bytesToHexSpace(await mfUltralightGetVersion(appState.communicator!));
@@ -133,6 +138,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
           extraData: CardSaveExtra(
             ultralightSignature: hexToBytes(signature),
             ultralightVersion: hexToBytes(version),
+            ultralightPassword: restorePassword,
             ultralightCounters: counters,
           ),
           ats: (widget.hfInfo.ats != localizations.no)
@@ -154,6 +160,7 @@ class CardReaderState extends State<MifareUltralightHelper> {
       extraData: CardSaveExtra(
         ultralightSignature: hexToBytes(signature),
         ultralightVersion: hexToBytes(version),
+        ultralightPassword: restorePassword,
         ultralightCounters: counters,
       ),
       ats: (widget.hfInfo.ats != localizations.no)
