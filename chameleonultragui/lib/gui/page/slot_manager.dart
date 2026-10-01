@@ -5,6 +5,7 @@ import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/slot/settings.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/hf14a4_slot.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/main.dart';
@@ -158,12 +159,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!.activateSlot(gridPosition);
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      await appState.communicator!.setMf1AntiCollision(CardData(
-        uid: hexToBytes(card.uid),
-        atqa: card.atqa,
-        sak: card.sak,
-        ats: card.ats,
-      ));
+      await writeHf14a4SlotIdentity(appState.communicator!, card);
       await appState.communicator!.setSlotTagName(
           gridPosition,
           (card.name.isEmpty) ? localizations.no_name : card.name,
