@@ -430,7 +430,9 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                     ? []
                     : isMifareUltralight(selectedType)
                         ? generateMifareUltralightBlocks()
-                        : generateMifareClassicBlocks();
+                        : isMifareClassic(selectedType)
+                            ? generateMifareClassicBlocks()
+                            : [];
 
             var tag = CardSave(
                 name: nameController.text,

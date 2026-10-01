@@ -7,6 +7,7 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/hf14a4_slot.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -76,6 +77,11 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         );
       }
     } else {
+      if (widget.slotTypes.hf == TagType.hf14a4) {
+        return readHf14a4SlotIdentity(
+            appState.communicator!, widget.names.hf);
+      }
+
       CardData data = await appState.communicator!.mf1GetAntiCollData();
 
       if (isMifareUltralight(widget.slotTypes.hf)) {
