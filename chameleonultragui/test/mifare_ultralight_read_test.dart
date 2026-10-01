@@ -253,6 +253,45 @@ void main() {
     );
   });
 
+  test('compatible Ultralight type changes keep restore password', () {
+    final password = Uint8List.fromList([0xAA, 0xBB, 0xCC, 0xDD]);
+
+    CardSave makeCard(TagType type, int pages) => CardSave(
+          uid: '04 01 02 03 04 05 06',
+          name: 'Protected tag',
+          tag: type,
+          data: List<Uint8List>.generate(
+            pages,
+            (_) => Uint8List.fromList([0x00, 0x00, 0x00, 0x00]),
+          ),
+          extraData: CardSaveExtra(ultralightPassword: password),
+        );
+
+    final ntag210 = makeCard(TagType.ntag210, 20);
+    expect(
+      mfUltralightPasswordAfterTypeChange(ntag210, TagType.ultralight11),
+      orderedEquals(password),
+    );
+
+    final ultralight11 = makeCard(TagType.ultralight11, 20);
+    expect(
+      mfUltralightPasswordAfterTypeChange(ultralight11, TagType.ntag210),
+      orderedEquals(password),
+    );
+
+    final ntag212 = makeCard(TagType.ntag212, 41);
+    expect(
+      mfUltralightPasswordAfterTypeChange(ntag212, TagType.ultralight21),
+      orderedEquals(password),
+    );
+
+    final ultralight21 = makeCard(TagType.ultralight21, 41);
+    expect(
+      mfUltralightPasswordAfterTypeChange(ultralight21, TagType.ntag212),
+      orderedEquals(password),
+    );
+  });
+
   test('invalid password stops before reading pages', () async {
     final communicator = _FakeCommunicator(acceptPassword: false);
 
