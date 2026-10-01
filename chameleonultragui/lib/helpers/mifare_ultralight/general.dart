@@ -2,7 +2,6 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/services.dart';
 
 bool isMifareUltralight(TagType type) {
@@ -179,17 +178,6 @@ int mfUltralightGetPasswordPage(TagType type) {
     return 229;
   }
   return 0;
-}
-
-Uint8List mfUltralightGetRestorePageData(CardSave card, int page) {
-  final passwordPage = mfUltralightGetPasswordPage(card.tag);
-  if (passwordPage != 0 &&
-      page == passwordPage &&
-      card.extraData.ultralightPassword.length == 4) {
-    return Uint8List.fromList(card.extraData.ultralightPassword);
-  }
-
-  return Uint8List.fromList(card.data[page]);
 }
 
 bool mfUltralightHasCounters(TagType type) {
