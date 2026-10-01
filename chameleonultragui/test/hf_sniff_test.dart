@@ -59,8 +59,8 @@ void main() {
 
   test('ISO-DEP I-blocks expose APDUs to annotations and summary', () {
     final raw = Uint8List.fromList([
-      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
-      ..._packFrame(
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(
           Uint8List.fromList([
             0x02,
             0x00,
@@ -77,7 +77,7 @@ void main() {
             0x10,
           ]),
           isTx: false),
-      ..._packFrame(
+      ..._packCrcFrame(
           Uint8List.fromList([
             0x0F,
             0x01,
@@ -101,8 +101,8 @@ void main() {
 
   test('ISO-DEP chained I-blocks reassemble a split SELECT AID', () {
     final raw = Uint8List.fromList([
-      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
-      ..._packFrame(
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(
           Uint8List.fromList([
             0x12,
             0x00,
@@ -114,7 +114,7 @@ void main() {
             0x00,
           ]),
           isTx: false),
-      ..._packFrame(
+      ..._packCrcFrame(
           Uint8List.fromList([
             0x03,
             0x00,
@@ -173,8 +173,8 @@ void main() {
 
   test('ISO-DEP eight-byte GPO is not mislabeled as an encrypted nonce', () {
     final raw = Uint8List.fromList([
-      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
-      ..._packFrame(
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(
           Uint8List.fromList([
             0x02,
             0x80,
@@ -221,11 +221,11 @@ void main() {
     ]);
 
     final raw = Uint8List.fromList([
-      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
-      ..._packFrame(firstChunk, isTx: false),
-      ..._packFrame(Uint8List.fromList([0xB2]), isTx: true),
-      ..._packFrame(firstChunk, isTx: false),
-      ..._packFrame(
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(firstChunk, isTx: false),
+      ..._packCrcFrame(Uint8List.fromList([0xB2]), isTx: true),
+      ..._packCrcFrame(firstChunk, isTx: false),
+      ..._packCrcFrame(
           Uint8List.fromList([
             0x03,
             0x00,
@@ -246,8 +246,8 @@ void main() {
 
   test('new Type A polling resets ISO-DEP parsing state', () {
     final raw = Uint8List.fromList([
-      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
-      ..._packFrame(
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(
           Uint8List.fromList([0x02, 0x80, 0xA8, 0x00, 0x00]),
           isTx: false),
       ..._packFrame(Uint8List.fromList([0x26]),
@@ -266,8 +266,8 @@ void main() {
 
   test('same block number with different contents is not treated as retry', () {
     final raw = Uint8List.fromList([
-      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
-      ..._packFrame(
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(
           Uint8List.fromList([
             0x02,
             0x00,
@@ -286,7 +286,7 @@ void main() {
           isTx: false),
       // Simulate a missed intervening reader block. The next captured I-block
       // reuses block number 0 but carries a different APDU.
-      ..._packFrame(
+      ..._packCrcFrame(
           Uint8List.fromList([
             0x02,
             0x80,
@@ -315,12 +315,12 @@ void main() {
     ]);
 
     final raw = Uint8List.fromList([
-      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
-      ..._packFrame(command, isTx: false),
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(command, isTx: false),
       // This can represent the same block number/content appearing again after
       // an intervening frame was missed by the capture. Without an observed
       // card R-NAK it must remain visible rather than being assumed a retry.
-      ..._packFrame(command, isTx: false),
+      ..._packCrcFrame(command, isTx: false),
     ]);
 
     final capture = HfSniffCapture.fromChameleonBytes(raw);
@@ -407,6 +407,10 @@ Uint8List _withCrcA(Uint8List data) {
     crc & 0xFF,
     (crc >> 8) & 0xFF,
   ]);
+}
+
+List<int> _packCrcFrame(Uint8List data, {required bool isTx}) {
+  return _packFrame(_withCrcA(data), isTx: isTx);
 }
 
 List<int> _packFrame(Uint8List data, {required bool isTx, int? rawBitLength}) {
