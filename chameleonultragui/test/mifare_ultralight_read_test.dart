@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
-import 'package:chameleonultragui/helpers/mifare_ultralight/write/base.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
@@ -170,13 +169,13 @@ void main() {
     );
 
     expect(card.data[43], orderedEquals([0x00, 0x00, 0x00, 0x00]));
-    expect(mifareUltralightPageDataForWrite(card, 43), orderedEquals(password));
+    expect(mfUltralightGetRestorePageData(card, 43), orderedEquals(password));
 
     final restored = CardSave.fromJson(card.toJson());
     expect(restored.data[43], orderedEquals([0x00, 0x00, 0x00, 0x00]));
     expect(restored.extraData.ultralightPassword, orderedEquals(password));
     expect(
-      mifareUltralightPageDataForWrite(restored, 43),
+      mfUltralightGetRestorePageData(restored, 43),
       orderedEquals(password),
     );
   });
