@@ -149,6 +149,29 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
+    } else if (card.tag == TagType.hf14a4) {
+      close(context, card.name);
+      setUploadState(0);
+      await appState.communicator!.setReaderDeviceMode(false);
+      await appState.communicator!
+          .enableSlot(gridPosition, TagFrequency.hf, true);
+      await appState.communicator!.activateSlot(gridPosition);
+      await appState.communicator!.setSlotType(gridPosition, card.tag);
+      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
+      await appState.communicator!.setMf1AntiCollision(CardData(
+        uid: hexToBytes(card.uid),
+        atqa: card.atqa,
+        sak: card.sak,
+        ats: card.ats,
+      ));
+      await appState.communicator!.setSlotTagName(
+          gridPosition,
+          (card.name.isEmpty) ? localizations.no_name : card.name,
+          TagFrequency.hf);
+      await appState.communicator!.saveSlotData();
+      setUploadState(100);
+      appState.changesMade();
+      refreshSlot();
     } else if (isEM410X(card.tag)) {
       close(context, card.name);
       await appState.communicator!.setReaderDeviceMode(false);
