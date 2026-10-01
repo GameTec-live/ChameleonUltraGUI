@@ -181,6 +181,78 @@ void main() {
     );
   });
 
+  test('editing the PWD page updates the saved restore password', () {
+    final oldPassword = Uint8List.fromList([0xAA, 0xBB, 0xCC, 0xDD]);
+    final newPassword = Uint8List.fromList([0x11, 0x22, 0x33, 0x44]);
+    final pages = List<Uint8List>.generate(
+      45,
+      (_) => Uint8List.fromList([0x00, 0x00, 0x00, 0x00]),
+    );
+    final card = CardSave(
+      uid: '04 01 02 03 04 05 06',
+      name: 'Protected NTAG213',
+      tag: TagType.ntag213,
+      data: pages,
+      extraData: CardSaveExtra(ultralightPassword: oldPassword),
+    );
+    final edited = card.data
+        .map((page) => Uint8List.fromList(page))
+        .toList();
+    edited[43] = Uint8List.fromList(newPassword);
+
+    expect(
+      mfUltralightPasswordAfterDumpEdit(card, edited),
+      orderedEquals(newPassword),
+    );
+  });
+
+  test('editing another page keeps the saved restore password', () {
+    final password = Uint8List.fromList([0xAA, 0xBB, 0xCC, 0xDD]);
+    final pages = List<Uint8List>.generate(
+      45,
+      (_) => Uint8List.fromList([0x00, 0x00, 0x00, 0x00]),
+    );
+    final card = CardSave(
+      uid: '04 01 02 03 04 05 06',
+      name: 'Protected NTAG213',
+      tag: TagType.ntag213,
+      data: pages,
+      extraData: CardSaveExtra(ultralightPassword: password),
+    );
+    final edited = card.data
+        .map((page) => Uint8List.fromList(page))
+        .toList();
+    edited[4] = Uint8List.fromList([0xDE, 0xAD, 0xBE, 0xEF]);
+
+    expect(
+      mfUltralightPasswordAfterDumpEdit(card, edited),
+      orderedEquals(password),
+    );
+  });
+
+  test('changing Ultralight type clears stale restore password', () {
+    final password = Uint8List.fromList([0xAA, 0xBB, 0xCC, 0xDD]);
+    final card = CardSave(
+      uid: '04 01 02 03 04 05 06',
+      name: 'Protected NTAG213',
+      tag: TagType.ntag213,
+      data: List<Uint8List>.generate(
+        45,
+        (_) => Uint8List.fromList([0x00, 0x00, 0x00, 0x00]),
+      ),
+      extraData: CardSaveExtra(ultralightPassword: password),
+    );
+
+    expect(
+      mfUltralightPasswordAfterTypeChange(card, TagType.ntag215),
+      isEmpty,
+    );
+    expect(
+      mfUltralightPasswordAfterTypeChange(card, TagType.ntag213),
+      orderedEquals(password),
+    );
+  });
+
   test('invalid password stops before reading pages', () async {
     final communicator = _FakeCommunicator(acceptPassword: false);
 
