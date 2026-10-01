@@ -98,6 +98,77 @@ void main() {
     expect(capture.annotatedFrames[1].label, contains('GENERATE AC'));
   });
 
+  test('ISO-DEP chained I-blocks reassemble a split SELECT AID', () {
+    final raw = Uint8List.fromList([
+      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packFrame(
+          Uint8List.fromList([
+            0x12,
+            0x00,
+            0xA4,
+            0x04,
+            0x00,
+            0x07,
+            0xA0,
+            0x00,
+          ]),
+          isTx: false),
+      ..._packFrame(
+          Uint8List.fromList([
+            0x03,
+            0x00,
+            0x00,
+            0x04,
+            0x10,
+            0x10,
+          ]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.aids.single, contains('Mastercard'));
+    expect(capture.annotatedFrames[1].label, contains('chained'));
+    expect(capture.annotatedFrames[2].label, contains('SELECT AID'));
+  });
+
+  test('ISO-DEP eight-byte GPO is not mislabeled as an encrypted nonce', () {
+    final raw = Uint8List.fromList([
+      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packFrame(
+          Uint8List.fromList([
+            0x02,
+            0x80,
+            0xA8,
+            0x00,
+            0x00,
+            0x03,
+            0x83,
+            0x01,
+            0x00,
+          ]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.annotatedFrames[1].label, contains('GPO'));
+    expect(capture.annotatedFrames[1].label, isNot(contains('nonce')));
+  });
+
+  test('PCB-looking Type A traffic is not treated as ISO-DEP before RATS', () {
+    final raw = Uint8List.fromList([
+      ..._packFrame(
+          Uint8List.fromList([0x02, 0x80, 0xAE, 0x80]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.arqcSeen, isFalse);
+    expect(capture.annotatedFrames.single.label, isNot(contains('GENERATE AC')));
+  });
+
   test('extractHf14aSniffNonces groups paired exchanges for recovery', () {
     final raw = Uint8List.fromList([
       ..._packFrame(Uint8List.fromList([0x93, 0x70, 0x11, 0x22, 0x33, 0x44]),
