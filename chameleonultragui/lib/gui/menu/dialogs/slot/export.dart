@@ -77,12 +77,12 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         );
       }
     } else {
-      CardData data = await appState.communicator!.mf1GetAntiCollData();
-
       if (widget.slotTypes.hf == TagType.hf14a4) {
         return readHf14a4SlotIdentity(
             appState.communicator!, widget.names.hf);
       }
+
+      CardData data = await appState.communicator!.mf1GetAntiCollData();
 
       if (isMifareUltralight(widget.slotTypes.hf)) {
         int pageCount = mfUltralightGetPagesCount(widget.slotTypes.hf);
