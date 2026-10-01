@@ -738,13 +738,14 @@ _IsoDepReaderIBlock? _parseIsoDepReaderIBlock(
     return null;
   }
 
-  // The sniff parser removes parity bits but intentionally preserves CRC-A.
-  // Strip a trailing CRC only when it validates, so synthetic/proxmark frames
-  // without CRC keep their existing behavior.
-  final data = _withoutValidTypeACrc(frame.data);
-  if (data.isEmpty) {
+  // ISO-DEP frames on the RF interface always carry CRC-A. The sniff
+  // parser removes parity but intentionally leaves those two CRC bytes in
+  // frame.data, so remove them before interpreting PCB/CID/NAD/INF.
+  if (frame.data.length < 3) {
     return null;
   }
+  final data =
+      Uint8List.fromList(frame.data.sublist(0, frame.data.length - 2));
 
   final pcb = data[0];
 
@@ -768,34 +769,6 @@ _IsoDepReaderIBlock? _parseIsoDepReaderIBlock(
     inf: Uint8List.fromList(data.sublist(offset)),
     chaining: (pcb & 0x10) != 0,
   );
-}
-
-Uint8List _withoutValidTypeACrc(Uint8List data) {
-  if (data.length < 3) {
-    return data;
-  }
-
-  final payloadLength = data.length - 2;
-  int crc = 0x6363;
-
-  for (int i = 0; i < payloadLength; i++) {
-    int value = (data[i] ^ (crc & 0xFF)) & 0xFF;
-    value ^= (value << 4) & 0xFF;
-    crc = ((crc >> 8) ^
-            (value << 8) ^
-            (value << 3) ^
-            (value >> 4)) &
-        0xFFFF;
-  }
-
-  final crcLow = crc & 0xFF;
-  final crcHigh = (crc >> 8) & 0xFF;
-  if (data[payloadLength] == crcLow &&
-      data[payloadLength + 1] == crcHigh) {
-    return Uint8List.fromList(data.sublist(0, payloadLength));
-  }
-
-  return data;
 }
 
 bool _isIsoDepRBlockNak(HfSniffFrame frame) {
