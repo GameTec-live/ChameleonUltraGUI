@@ -225,6 +225,47 @@ void main() {
     expect(capture.annotatedFrames[3].label, isNot(contains('GENERATE AC')));
   });
 
+  test('same block number with different contents is not treated as retry', () {
+    final raw = Uint8List.fromList([
+      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packFrame(
+          Uint8List.fromList([
+            0x02,
+            0x00,
+            0xA4,
+            0x04,
+            0x00,
+            0x07,
+            0xA0,
+            0x00,
+            0x00,
+            0x00,
+            0x04,
+            0x10,
+            0x10,
+          ]),
+          isTx: false),
+      // Simulate a missed intervening reader block. The next captured I-block
+      // reuses block number 0 but carries a different APDU.
+      ..._packFrame(
+          Uint8List.fromList([
+            0x02,
+            0x80,
+            0xAE,
+            0x80,
+            0x00,
+          ]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.aids.single, contains('Mastercard'));
+    expect(capture.summary.arqcSeen, isTrue);
+    expect(capture.annotatedFrames[2].label, contains('GENERATE AC'));
+    expect(capture.annotatedFrames[2].label, isNot(contains('retry')));
+  });
+
   test('extractHf14aSniffNonces groups paired exchanges for recovery', () {
     final raw = Uint8List.fromList([
       ..._packFrame(Uint8List.fromList([0x93, 0x70, 0x11, 0x22, 0x33, 0x44]),
