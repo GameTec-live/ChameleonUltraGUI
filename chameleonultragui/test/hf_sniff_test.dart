@@ -185,6 +185,7 @@ void main() {
     final raw = Uint8List.fromList([
       ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
       ..._packFrame(firstChunk, isTx: false),
+      ..._packFrame(Uint8List.fromList([0xB2]), isTx: true),
       ..._packFrame(firstChunk, isTx: false),
       ..._packFrame(
           Uint8List.fromList([
@@ -201,8 +202,8 @@ void main() {
     final capture = HfSniffCapture.fromChameleonBytes(raw);
 
     expect(capture.summary.aids.single, contains('Mastercard'));
-    expect(capture.annotatedFrames[2].label, contains('retry'));
-    expect(capture.annotatedFrames[3].label, contains('SELECT AID'));
+    expect(capture.annotatedFrames[3].label, contains('retry'));
+    expect(capture.annotatedFrames[4].label, contains('SELECT AID'));
   });
 
   test('new Type A polling resets ISO-DEP parsing state', () {
@@ -262,6 +263,32 @@ void main() {
 
     expect(capture.summary.aids.single, contains('Mastercard'));
     expect(capture.summary.arqcSeen, isTrue);
+    expect(capture.annotatedFrames[2].label, contains('GENERATE AC'));
+    expect(capture.annotatedFrames[2].label, isNot(contains('retry')));
+  });
+
+  test('identical captured I-block without R-NAK is not discarded', () {
+    final command = Uint8List.fromList([
+      0x02,
+      0x80,
+      0xAE,
+      0x80,
+      0x00,
+    ]);
+
+    final raw = Uint8List.fromList([
+      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packFrame(command, isTx: false),
+      // This can represent the same block number/content appearing again after
+      // an intervening frame was missed by the capture. Without an observed
+      // card R-NAK it must remain visible rather than being assumed a retry.
+      ..._packFrame(command, isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.arqcSeen, isTrue);
+    expect(capture.annotatedFrames[1].label, contains('GENERATE AC'));
     expect(capture.annotatedFrames[2].label, contains('GENERATE AC'));
     expect(capture.annotatedFrames[2].label, isNot(contains('retry')));
   });
