@@ -295,7 +295,7 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
   String? lastAuthKeyType;
   int? lastAuthBlock;
   bool isoDepActive = false;
-  int? lastReaderBlockNumber;
+  Uint8List? lastReaderIBlock;
   final chainedReaderInf = <int>[];
 
   for (final frame in frames) {
@@ -333,17 +333,18 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
 
       if (_isTypeAPollingStart(frame)) {
         isoDepActive = false;
-        lastReaderBlockNumber = null;
+        lastReaderIBlock = null;
         chainedReaderInf.clear();
       }
 
       final isoBlock = _parseIsoDepReaderIBlock(frame, isoDepActive);
       if (isoBlock != null) {
-        final isRetry = lastReaderBlockNumber == isoBlock.blockNumber;
+        final isRetry =
+            lastReaderIBlock != null && _bytesEqual(lastReaderIBlock!, data);
         if (isRetry) {
           label = 'ISO-DEP I-block (retry)';
         } else {
-          lastReaderBlockNumber = isoBlock.blockNumber;
+          lastReaderIBlock = Uint8List.fromList(data);
           chainedReaderInf.addAll(isoBlock.inf);
           if (isoBlock.chaining) {
             label = 'ISO-DEP I-block (chained)';
@@ -362,13 +363,13 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
 
     if (frame.isReaderToCard && data.isNotEmpty && data[0] == 0xE0) {
       isoDepActive = true;
-      lastReaderBlockNumber = null;
+      lastReaderIBlock = null;
       chainedReaderInf.clear();
     } else if (frame.isReaderToCard &&
         data.isNotEmpty &&
         (data[0] == 0x50 || data[0] == 0xC2)) {
       isoDepActive = false;
-      lastReaderBlockNumber = null;
+      lastReaderIBlock = null;
       chainedReaderInf.clear();
     }
   }
@@ -388,7 +389,7 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
   bool halted = false;
   bool ratsSeen = false;
   bool isoDepActive = false;
-  int? lastReaderBlockNumber;
+  Uint8List? lastReaderIBlock;
   final chainedReaderInf = <int>[];
   String? atcTag;
   int? amountMinorUnits;
@@ -418,22 +419,23 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
     if (b0 == 0xE0) {
       ratsSeen = true;
       isoDepActive = true;
-      lastReaderBlockNumber = null;
+      lastReaderIBlock = null;
       chainedReaderInf.clear();
     }
 
     if (_isTypeAPollingStart(frame)) {
       isoDepActive = false;
-      lastReaderBlockNumber = null;
+      lastReaderIBlock = null;
       chainedReaderInf.clear();
     }
 
     Uint8List? apdu;
     final isoBlock = _parseIsoDepReaderIBlock(frame, isoDepActive);
     if (isoBlock != null) {
-      final isRetry = lastReaderBlockNumber == isoBlock.blockNumber;
+      final isRetry =
+          lastReaderIBlock != null && _bytesEqual(lastReaderIBlock!, data);
       if (!isRetry) {
-        lastReaderBlockNumber = isoBlock.blockNumber;
+        lastReaderIBlock = Uint8List.fromList(data);
         chainedReaderInf.addAll(isoBlock.inf);
         if (!isoBlock.chaining) {
           apdu = Uint8List.fromList(chainedReaderInf);
@@ -505,7 +507,7 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
     if (b0 == 0x50 || b0 == 0xC2) {
       halted = true;
       isoDepActive = false;
-      lastReaderBlockNumber = null;
+      lastReaderIBlock = null;
       chainedReaderInf.clear();
     }
   }
@@ -696,12 +698,10 @@ int _oddParity8(int byte) {
 class _IsoDepReaderIBlock {
   final Uint8List inf;
   final bool chaining;
-  final int blockNumber;
 
   const _IsoDepReaderIBlock({
     required this.inf,
     required this.chaining,
-    required this.blockNumber,
   });
 }
 
@@ -733,8 +733,19 @@ _IsoDepReaderIBlock? _parseIsoDepReaderIBlock(
   return _IsoDepReaderIBlock(
     inf: Uint8List.fromList(data.sublist(offset)),
     chaining: (pcb & 0x10) != 0,
-    blockNumber: pcb & 0x01,
   );
+}
+
+bool _bytesEqual(Uint8List a, Uint8List b) {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (int i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool _isTypeAPollingStart(HfSniffFrame frame) {
