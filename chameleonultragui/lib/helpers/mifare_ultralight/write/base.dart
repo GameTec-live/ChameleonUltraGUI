@@ -1,6 +1,7 @@
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/card_data.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
