@@ -78,6 +78,18 @@ class SlotExportMenuState extends State<SlotExportMenu> {
     } else {
       CardData data = await appState.communicator!.mf1GetAntiCollData();
 
+      if (widget.slotTypes.hf == TagType.hf14a4) {
+        return CardSave(
+          uid: bytesToHexSpace(data.uid),
+          name: widget.names.hf,
+          sak: data.sak,
+          atqa: data.atqa,
+          ats: data.ats,
+          tag: widget.slotTypes.hf,
+          data: [],
+        );
+      }
+
       if (isMifareUltralight(widget.slotTypes.hf)) {
         int pageCount = mfUltralightGetPagesCount(widget.slotTypes.hf);
         List<Uint8List> pages = [];
