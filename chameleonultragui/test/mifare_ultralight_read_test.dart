@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/write/base.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 
@@ -20,10 +22,11 @@ class _RawCall {
 
 class _FakeCommunicator extends ChameleonCommunicator {
   final bool acceptPassword;
+  final int? shortReadPage;
   final List<_RawCall> calls = [];
   bool _authenticated = false;
 
-  _FakeCommunicator({this.acceptPassword = true})
+  _FakeCommunicator({this.acceptPassword = true, this.shortReadPage})
       : super(Logger(level: Level.off));
 
   @override
@@ -53,6 +56,10 @@ class _FakeCommunicator extends ChameleonCommunicator {
     }
 
     if (data.length == 2 && data[0] == 0x30) {
+      if (shortReadPage == data[1]) {
+        return Uint8List.fromList([0x01, 0x02]);
+      }
+
       if (_authenticated && autoSelect) {
         // Selecting the tag again loses the password-authenticated session.
         _authenticated = false;
@@ -132,6 +139,46 @@ void main() {
     expect(result.pages[43], isNot(orderedEquals(password)));
     expect(result.pages[44], orderedEquals([0x56, 0x78, 0x00, 0x00]));
     expect(result.pages[44], isNot(orderedEquals([0x12, 0x34, 0x00, 0x00])));
+  });
+
+  test('failed protected read reports status and failed page', () async {
+    final communicator = _FakeCommunicator(shortReadPage: 12);
+
+    final result = await mfUltralightReadDump(
+      communicator,
+      TagType.ntag213,
+      password: Uint8List.fromList([0xAA, 0xBB, 0xCC, 0xDD]),
+    );
+
+    expect(result.status, MifareUltralightDumpReadStatus.readFailed);
+    expect(result.failedPage, 12);
+    expect(result.pages, hasLength(12));
+  });
+
+  test('restore password is stored separately from the raw PWD page', () {
+    final password = Uint8List.fromList([0xAA, 0xBB, 0xCC, 0xDD]);
+    final pages = List<Uint8List>.generate(
+      45,
+      (_) => Uint8List.fromList([0x00, 0x00, 0x00, 0x00]),
+    );
+    final card = CardSave(
+      uid: '04 01 02 03 04 05 06',
+      name: 'Protected NTAG213',
+      tag: TagType.ntag213,
+      data: pages,
+      extraData: CardSaveExtra(ultralightPassword: password),
+    );
+
+    expect(card.data[43], orderedEquals([0x00, 0x00, 0x00, 0x00]));
+    expect(mifareUltralightPageDataForWrite(card, 43), orderedEquals(password));
+
+    final restored = CardSave.fromJson(card.toJson());
+    expect(restored.data[43], orderedEquals([0x00, 0x00, 0x00, 0x00]));
+    expect(restored.extraData.ultralightPassword, orderedEquals(password));
+    expect(
+      mifareUltralightPageDataForWrite(restored, 43),
+      orderedEquals(password),
+    );
   });
 
   test('invalid password stops before reading pages', () async {
