@@ -295,12 +295,17 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
   String? lastAuthKeyType;
   int? lastAuthBlock;
   bool isoDepActive = false;
+  bool retryRequestedByCard = false;
   Uint8List? lastReaderIBlock;
   final chainedReaderInf = <int>[];
 
   for (final frame in frames) {
     final data = frame.data;
     String label;
+
+    if (frame.isCardToReader && isoDepActive) {
+      retryRequestedByCard = _isIsoDepRBlockNak(frame);
+    }
 
     if (frame.isReaderToCard &&
         frame.bitLength == 32 &&
@@ -339,8 +344,11 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
 
       final isoBlock = _parseIsoDepReaderIBlock(frame, isoDepActive);
       if (isoBlock != null) {
-        final isRetry =
-            lastReaderIBlock != null && _bytesEqual(lastReaderIBlock!, data);
+        final isRetry = retryRequestedByCard &&
+            lastReaderIBlock != null &&
+            _bytesEqual(lastReaderIBlock!, data);
+        retryRequestedByCard = false;
+
         if (isRetry) {
           label = 'ISO-DEP I-block (retry)';
         } else {
@@ -355,6 +363,9 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
           }
         }
       } else {
+        if (frame.isReaderToCard) {
+          retryRequestedByCard = false;
+        }
         label = _decodeHf14aFrame(frame);
       }
     }
@@ -363,12 +374,14 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
 
     if (frame.isReaderToCard && data.isNotEmpty && data[0] == 0xE0) {
       isoDepActive = true;
+      retryRequestedByCard = false;
       lastReaderIBlock = null;
       chainedReaderInf.clear();
     } else if (frame.isReaderToCard &&
         data.isNotEmpty &&
         (data[0] == 0x50 || data[0] == 0xC2)) {
       isoDepActive = false;
+      retryRequestedByCard = false;
       lastReaderIBlock = null;
       chainedReaderInf.clear();
     }
@@ -396,7 +409,13 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
 
   for (final frame in frames) {
     final data = frame.data;
-    if (data.isEmpty || frame.isCardToReader) {
+    if (data.isEmpty) {
+      continue;
+    }
+
+    if (frame.isCardToReader) {
+      retryRequestedByCard =
+          isoDepActive && _isIsoDepRBlockNak(frame);
       continue;
     }
 
@@ -419,12 +438,14 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
     if (b0 == 0xE0) {
       ratsSeen = true;
       isoDepActive = true;
+      retryRequestedByCard = false;
       lastReaderIBlock = null;
       chainedReaderInf.clear();
     }
 
     if (_isTypeAPollingStart(frame)) {
       isoDepActive = false;
+      retryRequestedByCard = false;
       lastReaderIBlock = null;
       chainedReaderInf.clear();
     }
@@ -432,8 +453,11 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
     Uint8List? apdu;
     final isoBlock = _parseIsoDepReaderIBlock(frame, isoDepActive);
     if (isoBlock != null) {
-      final isRetry =
-          lastReaderIBlock != null && _bytesEqual(lastReaderIBlock!, data);
+      final isRetry = retryRequestedByCard &&
+          lastReaderIBlock != null &&
+          _bytesEqual(lastReaderIBlock!, data);
+      retryRequestedByCard = false;
+
       if (!isRetry) {
         lastReaderIBlock = Uint8List.fromList(data);
         chainedReaderInf.addAll(isoBlock.inf);
@@ -443,6 +467,7 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
         }
       }
     } else {
+      retryRequestedByCard = false;
       apdu = data;
     }
 
@@ -507,6 +532,7 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
     if (b0 == 0x50 || b0 == 0xC2) {
       halted = true;
       isoDepActive = false;
+      retryRequestedByCard = false;
       lastReaderIBlock = null;
       chainedReaderInf.clear();
     }
@@ -734,6 +760,19 @@ _IsoDepReaderIBlock? _parseIsoDepReaderIBlock(
     inf: Uint8List.fromList(data.sublist(offset)),
     chaining: (pcb & 0x10) != 0,
   );
+}
+
+bool _isIsoDepRBlockNak(HfSniffFrame frame) {
+  if (!frame.isCardToReader || frame.data.isEmpty) {
+    return false;
+  }
+
+  final pcb = frame.data[0];
+
+  // R-block fixed bits are 101xx010. Ignore ACK/NAK, CID and block number
+  // while validating the block type, then require the NAK bit.
+  final isRBlock = (pcb & 0xE6) == 0xA2;
+  return isRBlock && (pcb & 0x10) != 0;
 }
 
 bool _bytesEqual(Uint8List a, Uint8List b) {
