@@ -103,12 +103,17 @@ void main() {
     final readCalls =
         communicator.calls.where((call) => call.data[0] == 0x30).toList();
 
-    expect(authCalls, hasLength(1));
-    expect(authCalls.single.keepRfField, isTrue);
+    expect(authCalls, hasLength(45));
+    expect(authCalls.every((call) => call.keepRfField), isTrue);
     expect(readCalls, hasLength(45));
     expect(readCalls.every((call) => !call.autoSelect), isTrue);
-    expect(readCalls.take(44).every((call) => call.keepRfField), isTrue);
-    expect(readCalls.last.keepRfField, isFalse);
+    expect(readCalls.every((call) => !call.keepRfField), isTrue);
+
+    for (int page = 0; page < 45; page++) {
+      expect(communicator.calls[page * 2].data[0], 0x1B);
+      expect(communicator.calls[page * 2 + 1].data,
+          orderedEquals([0x30, page]));
+    }
   });
 
   test('password page preserves the card response instead of entered key',
