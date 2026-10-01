@@ -376,11 +376,14 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
       ratsSeen = true;
     }
 
-    if (b0 == 0x00 &&
-        data.length > 5 &&
-        data[1] == 0xA4 &&
-        data.length >= 5 + data[4]) {
-      final aid = Uint8List.fromList(data.sublist(5, 5 + data[4]));
+    final apdu = _isoDepApdu(frame);
+    final apduB0 = apdu.isEmpty ? -1 : apdu[0];
+
+    if (apduB0 == 0x00 &&
+        apdu.length > 5 &&
+        apdu[1] == 0xA4 &&
+        apdu.length >= 5 + apdu[4]) {
+      final aid = Uint8List.fromList(apdu.sublist(5, 5 + apdu[4]));
       final rawAid = _hex(aid, spaced: false).toUpperCase();
       final knownName = _knownAidName(aid);
       final entry = knownName.isEmpty ? rawAid : '$rawAid  ($knownName)';
@@ -401,8 +404,8 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
       }
     }
 
-    if (b0 == 0x80 && data.length > 2 && data[1] == 0xAE) {
-      final mode = data[2] & 0xC0;
+    if (apduB0 == 0x80 && apdu.length > 2 && apdu[1] == 0xAE) {
+      final mode = apdu[2] & 0xC0;
       if (mode == 0x80) {
         arqcSeen = true;
       }
@@ -411,13 +414,13 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
       }
     }
 
-    if (b0 == 0x80 && data.length > 3 && data[1] == 0xCA) {
-      final tag = (data[2] << 8) | data[3];
+    if (apduB0 == 0x80 && apdu.length > 3 && apdu[1] == 0xCA) {
+      final tag = (apdu[2] << 8) | apdu[3];
       atcTag = _knownBerTag(tag) ?? tag.toRadixString(16).padLeft(4, '0');
     }
 
-    if (b0 == 0x80 && data.length >= 11 && data[1] == 0xA8) {
-      final amountBytes = data.sublist(5, 11);
+    if (apduB0 == 0x80 && apdu.length >= 11 && apdu[1] == 0xA8) {
+      final amountBytes = apdu.sublist(5, 11);
       final amount = _bytesToInt(Uint8List.fromList(amountBytes));
       if (amount > 0) {
         amountMinorUnits = amount;
@@ -612,6 +615,34 @@ int _oddParity8(int byte) {
   return (x & 1) ^ 1;
 }
 
+Uint8List _isoDepApdu(HfSniffFrame frame) {
+  final data = frame.data;
+  if (!frame.isReaderToCard || data.length < 2) {
+    return data;
+  }
+
+  final pcb = data[0];
+
+  // ISO/IEC 14443-4 I-blocks have b8-b7 = 00 and the fixed b2 bit set.
+  // The INF field starts after PCB and any optional CID/NAD bytes.
+  if ((pcb & 0xC2) != 0x02) {
+    return data;
+  }
+
+  var offset = 1;
+  if ((pcb & 0x08) != 0) {
+    offset++; // CID
+  }
+  if ((pcb & 0x04) != 0) {
+    offset++; // NAD
+  }
+
+  if (offset >= data.length) {
+    return Uint8List(0);
+  }
+  return Uint8List.fromList(data.sublist(offset));
+}
+
 String _decodeHf14aFrame(HfSniffFrame frame) {
   final data = frame.data;
   if (data.isEmpty) {
@@ -721,16 +752,19 @@ String _decodeHf14aFrame(HfSniffFrame frame) {
     return 'MAGIC WIPE';
   }
 
-  if (data.length >= 2 &&
-      (b0 == 0x00 || b0 == 0x80 || b0 == 0x90 || b0 == 0xA0)) {
-    final cla = data[0];
-    final ins = data[1];
-    final p1 = data.length > 2 ? data[2] : 0;
-    final p2 = data.length > 3 ? data[3] : 0;
+  final apdu = _isoDepApdu(frame);
+  final apduB0 = apdu.isEmpty ? -1 : apdu[0];
+
+  if (apdu.length >= 2 &&
+      (apduB0 == 0x00 || apduB0 == 0x80 || apduB0 == 0x90 || apduB0 == 0xA0)) {
+    final cla = apdu[0];
+    final ins = apdu[1];
+    final p1 = apdu.length > 2 ? apdu[2] : 0;
+    final p2 = apdu.length > 3 ? apdu[3] : 0;
 
     if (cla == 0x00 && ins == 0xA4) {
-      if (data.length > 5 && data.length >= 5 + data[4]) {
-        final aid = Uint8List.fromList(data.sublist(5, 5 + data[4]));
+      if (apdu.length > 5 && apdu.length >= 5 + apdu[4]) {
+        final aid = Uint8List.fromList(apdu.sublist(5, 5 + apdu[4]));
         final knownName = _knownAidName(aid);
         final rawAid = _hex(aid).toUpperCase();
         return knownName.isEmpty
@@ -741,7 +775,7 @@ String _decodeHf14aFrame(HfSniffFrame frame) {
     }
     if (cla == 0x00 && ins == 0xB0) {
       final offset = (p1 << 8) | p2;
-      final length = data.length > 4 ? data[4] : 0;
+      final length = apdu.length > 4 ? apdu[4] : 0;
       return 'READ BINARY  off=$offset len=$length';
     }
     if (cla == 0x00 && ins == 0xB2) {
