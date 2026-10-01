@@ -79,7 +79,7 @@ void main() {
           isTx: false),
       ..._packFrame(
           Uint8List.fromList([
-            0x0E,
+            0x0F,
             0x01,
             0x02,
             0x80,
@@ -168,6 +168,61 @@ void main() {
 
     expect(capture.summary.arqcSeen, isFalse);
     expect(capture.annotatedFrames.single.label, isNot(contains('GENERATE AC')));
+  });
+
+  test('ISO-DEP retries do not duplicate chained INF bytes', () {
+    final firstChunk = Uint8List.fromList([
+      0x12,
+      0x00,
+      0xA4,
+      0x04,
+      0x00,
+      0x07,
+      0xA0,
+      0x00,
+    ]);
+
+    final raw = Uint8List.fromList([
+      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packFrame(firstChunk, isTx: false),
+      ..._packFrame(firstChunk, isTx: false),
+      ..._packFrame(
+          Uint8List.fromList([
+            0x03,
+            0x00,
+            0x00,
+            0x04,
+            0x10,
+            0x10,
+          ]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.aids.single, contains('Mastercard'));
+    expect(capture.annotatedFrames[2].label, contains('retry'));
+    expect(capture.annotatedFrames[3].label, contains('SELECT AID'));
+  });
+
+  test('new Type A polling resets ISO-DEP parsing state', () {
+    final raw = Uint8List.fromList([
+      ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packFrame(
+          Uint8List.fromList([0x02, 0x80, 0xA8, 0x00, 0x00]),
+          isTx: false),
+      ..._packFrame(Uint8List.fromList([0x26]),
+          isTx: false, rawBitLength: 7),
+      ..._packFrame(
+          Uint8List.fromList([0x02, 0x80, 0xAE, 0x80]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.arqcSeen, isFalse);
+    expect(capture.annotatedFrames[2].label, 'REQA');
+    expect(capture.annotatedFrames[3].label, isNot(contains('GENERATE AC')));
   });
 
   test('extractHf14aSniffNonces groups paired exchanges for recovery', () {
