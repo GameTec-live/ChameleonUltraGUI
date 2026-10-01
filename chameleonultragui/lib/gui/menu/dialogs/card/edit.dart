@@ -565,6 +565,9 @@ class CardEditMenuState extends State<CardEditMenu> {
                       hexToBytes(ultralightSignatureController.text),
                   ultralightVersion:
                       hexToBytes(ultralightVersionController.text),
+                  ultralightPassword: isMifareUltralight(selectedType)
+                      ? widget.tagSave.extraData.ultralightPassword
+                      : Uint8List(0),
                   ultralightCounters: ultralightCounterControllers
                       .map((controller) => int.tryParse(controller.text) ?? 0)
                       .toList(),
