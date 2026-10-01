@@ -125,6 +125,7 @@ class CardReaderState extends State<MifareClassicHelper> {
             KeyCheckMarks(
                 checkMarks: widget.mfcInfo.recovery!.checkMarks,
                 validKeys: widget.mfcInfo.recovery!.validKeys,
+                readableData: widget.mfcInfo.recovery!.readableData,
                 fontSize: checkmarkFontSize,
                 checkmarkSize: checkmarkSize,
                 checkmarkCount: mfClassicGetSectorCount(widget.mfcInfo.type,
@@ -141,9 +142,12 @@ class CardReaderState extends State<MifareClassicHelper> {
           const SizedBox(height: 16),
           ErrorMessage(errorMessage: widget.mfcInfo.recovery!.error),
         ],
-        if (widget.mfcInfo.recovery?.state != "") ...[
+        if (widget.mfcInfo.recovery?.state != "" ||
+            (!widget.allowSave && widget.mfcInfo.recovery!.allKeysExists)) ...[
           const SizedBox(height: 8),
-          Text(widget.mfcInfo.recovery!.state),
+          Text(widget.mfcInfo.recovery!.state.isNotEmpty
+              ? widget.mfcInfo.recovery!.state
+              : "Recovery Completed Successfully"),
         ],
         const SizedBox(height: 12),
         if (widget.mfcInfo.recovery?.dumpProgress != 0) ...[
