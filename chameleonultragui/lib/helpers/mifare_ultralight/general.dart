@@ -59,6 +59,8 @@ Future<MifareUltralightDumpReadResult> mfUltralightReadDump(
     }
   }
 
+  bool hasValidData = false;
+
   for (int page = 0; page < pageCount; page++) {
     final response = await communicator.send14ARaw(
       Uint8List.fromList([0x30, page]),
@@ -67,15 +69,27 @@ Future<MifareUltralightDumpReadResult> mfUltralightReadDump(
     );
 
     if (response.length < 4) {
-      return MifareUltralightDumpReadResult(
-        status: MifareUltralightDumpReadStatus.readFailed,
-        pages: pages,
-        failedPage: page,
-      );
+      if (authenticated) {
+        return MifareUltralightDumpReadResult(
+          status: MifareUltralightDumpReadStatus.readFailed,
+          pages: pages,
+          failedPage: page,
+        );
+      }
+      pages.add(Uint8List(0));
+    } else {
+      pages.add(Uint8List.fromList(response.sublist(0, 4)));
+      hasValidData = true;
     }
 
-    pages.add(Uint8List.fromList(response.sublist(0, 4)));
     onProgress?.call(page + 1, pageCount);
+  }
+
+  if (!hasValidData) {
+    return MifareUltralightDumpReadResult(
+      status: MifareUltralightDumpReadStatus.readFailed,
+      pages: pages,
+    );
   }
 
   return MifareUltralightDumpReadResult(
