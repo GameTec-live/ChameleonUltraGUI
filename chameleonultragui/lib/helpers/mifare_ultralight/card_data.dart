@@ -50,9 +50,17 @@ Uint8List mfUltralightPasswordAfterDumpEdit(
 
 Uint8List mfUltralightPasswordAfterTypeChange(
     CardSave card, TagType selectedType) {
-  if (selectedType != card.tag) {
-    return Uint8List(0);
+  if (selectedType == card.tag) {
+    return Uint8List.fromList(card.extraData.ultralightPassword);
   }
 
-  return Uint8List.fromList(card.extraData.ultralightPassword);
+  final oldPasswordPage = mfUltralightGetPasswordPage(card.tag);
+  final newPasswordPage = mfUltralightGetPasswordPage(selectedType);
+
+  if (oldPasswordPage != 0 &&
+      oldPasswordPage == newPasswordPage) {
+    return Uint8List.fromList(card.extraData.ultralightPassword);
+  }
+
+  return Uint8List(0);
 }
