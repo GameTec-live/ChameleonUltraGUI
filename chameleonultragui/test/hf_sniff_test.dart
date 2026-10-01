@@ -133,6 +133,44 @@ void main() {
     expect(capture.annotatedFrames[2].label, contains('SELECT AID'));
   });
 
+  test('ISO-DEP chained I-blocks strip CRC-A from each fragment', () {
+    final rats = _withCrcA(Uint8List.fromList([0xE0, 0x80]));
+    final firstChunk = _withCrcA(Uint8List.fromList([
+      0x12,
+      0x00,
+      0xA4,
+      0x04,
+      0x00,
+      0x07,
+      0xA0,
+      0x00,
+    ]));
+    final finalChunk = _withCrcA(Uint8List.fromList([
+      0x03,
+      0x00,
+      0x00,
+      0x04,
+      0x10,
+      0x10,
+    ]));
+
+    final raw = Uint8List.fromList([
+      ..._packFrame(rats, isTx: false),
+      ..._packFrame(firstChunk, isTx: false),
+      ..._packFrame(finalChunk, isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.aids, hasLength(1));
+    expect(capture.summary.aids.single, contains('A0000000041010'));
+    expect(capture.summary.aids.single, contains('Mastercard'));
+    expect(capture.summary.aids.single, isNot(contains('A000A99B000004')));
+    expect(capture.annotatedFrames[1].label, contains('chained'));
+    expect(capture.annotatedFrames[2].label, contains('SELECT AID'));
+    expect(capture.annotatedFrames[2].label, contains('Mastercard'));
+  });
+
   test('ISO-DEP eight-byte GPO is not mislabeled as an encrypted nonce', () {
     final raw = Uint8List.fromList([
       ..._packFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
@@ -349,6 +387,26 @@ void main() {
     expect(roundTripped.frames.first.isShortFrame, isTrue);
     expect(roundTripped.frames.first.bitLength, 7);
   });
+}
+
+Uint8List _withCrcA(Uint8List data) {
+  int crc = 0x6363;
+
+  for (final byte in data) {
+    int value = (byte ^ (crc & 0xFF)) & 0xFF;
+    value ^= (value << 4) & 0xFF;
+    crc = ((crc >> 8) ^
+            (value << 8) ^
+            (value << 3) ^
+            (value >> 4)) &
+        0xFFFF;
+  }
+
+  return Uint8List.fromList([
+    ...data,
+    crc & 0xFF,
+    (crc >> 8) & 0xFF,
+  ]);
 }
 
 List<int> _packFrame(Uint8List data, {required bool isTx, int? rawBitLength}) {
