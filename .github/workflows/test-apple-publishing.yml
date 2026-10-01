@@ -1,0 +1,23 @@
+name: Test Apple publishing
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/publish-app.yml
+      - .github/workflows/test-apple-publishing.yml
+      - .github/tests/test_apple_publishing.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-apple-publishing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - run: python -m pip install PyYAML==6.0.3
+      - run: python .github/tests/test_apple_publishing.py
