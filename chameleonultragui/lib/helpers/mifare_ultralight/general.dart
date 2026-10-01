@@ -45,27 +45,26 @@ Future<MifareUltralightDumpReadResult> mfUltralightReadDump(
   final pageCount = mfUltralightGetPagesCount(type);
   final pages = <Uint8List>[];
   final authenticated = password != null;
-
-  if (authenticated) {
-    final pack = await communicator.send14ARaw(
-      Uint8List.fromList([0x1B, ...password]),
-      keepRfField: true,
-    );
-    if (pack.length < 2) {
-      return const MifareUltralightDumpReadResult(
-        status: MifareUltralightDumpReadStatus.invalidPassword,
-        pages: [],
-      );
-    }
-  }
-
   bool hasValidData = false;
 
   for (int page = 0; page < pageCount; page++) {
+    if (authenticated) {
+      final pack = await communicator.send14ARaw(
+        Uint8List.fromList([0x1B, ...password]),
+        keepRfField: true,
+      );
+      if (pack.length < 2) {
+        return MifareUltralightDumpReadResult(
+          status: MifareUltralightDumpReadStatus.invalidPassword,
+          pages: pages,
+          failedPage: page,
+        );
+      }
+    }
+
     final response = await communicator.send14ARaw(
       Uint8List.fromList([0x30, page]),
       autoSelect: !authenticated,
-      keepRfField: authenticated && page < pageCount - 1,
     );
 
     if (response.length < 4) {
