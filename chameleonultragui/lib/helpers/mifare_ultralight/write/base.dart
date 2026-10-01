@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -8,6 +9,17 @@ import 'package:flutter/material.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:flutter/services.dart';
+
+Uint8List mifareUltralightPageDataForWrite(CardSave card, int page) {
+  final passwordPage = mfUltralightGetPasswordPage(card.tag);
+  if (passwordPage != 0 &&
+      page == passwordPage &&
+      card.extraData.ultralightPassword.length == 4) {
+    return Uint8List.fromList(card.extraData.ultralightPassword);
+  }
+
+  return Uint8List.fromList(card.data[page]);
+}
 
 class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
   HFCardInfo? hfInfo;
@@ -144,7 +156,8 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
     for (var pass = 0; pass < 2; pass++) {
       for (var block = 0; block < totalBlocks; block++) {
         if (card.data[block].isNotEmpty) {
-          List<int> blockData = List.from(card.data[block]);
+          List<int> blockData =
+              List.from(mifareUltralightPageDataForWrite(card, block));
 
           if (pass == 0) {
             if (block == 2 && blockData.length >= 4) {
