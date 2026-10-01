@@ -294,6 +294,8 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
   bool expectNrAr = false;
   String? lastAuthKeyType;
   int? lastAuthBlock;
+  bool isoDepActive = false;
+  final chainedReaderInf = <int>[];
 
   for (final frame in frames) {
     final data = frame.data;
@@ -327,10 +329,33 @@ List<HfSniffAnnotatedFrame> annotateHf14aSniffFrames(
     } else {
       expectNt = false;
       expectNrAr = false;
-      label = _decodeHf14aFrame(frame);
+
+      final isoBlock = _parseIsoDepReaderIBlock(frame, isoDepActive);
+      if (isoBlock != null) {
+        chainedReaderInf.addAll(isoBlock.inf);
+        if (isoBlock.chaining) {
+          label = 'ISO-DEP I-block (chained)';
+        } else {
+          final apdu = Uint8List.fromList(chainedReaderInf);
+          chainedReaderInf.clear();
+          label = _decodeApduData(apdu) ?? 'ISO-DEP I-block';
+        }
+      } else {
+        label = _decodeHf14aFrame(frame);
+      }
     }
 
     annotated.add(HfSniffAnnotatedFrame(frame: frame, label: label));
+
+    if (frame.isReaderToCard && data.isNotEmpty && data[0] == 0xE0) {
+      isoDepActive = true;
+      chainedReaderInf.clear();
+    } else if (frame.isReaderToCard &&
+        data.isNotEmpty &&
+        (data[0] == 0x50 || data[0] == 0xC2)) {
+      isoDepActive = false;
+      chainedReaderInf.clear();
+    }
   }
 
   return annotated;
@@ -347,6 +372,8 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
   bool tcSeen = false;
   bool halted = false;
   bool ratsSeen = false;
+  bool isoDepActive = false;
+  final chainedReaderInf = <int>[];
   String? atcTag;
   int? amountMinorUnits;
 
@@ -374,13 +401,25 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
 
     if (b0 == 0xE0) {
       ratsSeen = true;
+      isoDepActive = true;
+      chainedReaderInf.clear();
     }
 
-    final apdu = _isoDepApdu(frame);
-    final apduB0 = apdu.isEmpty ? -1 : apdu[0];
+    Uint8List? apdu;
+    final isoBlock = _parseIsoDepReaderIBlock(frame, isoDepActive);
+    if (isoBlock != null) {
+      chainedReaderInf.addAll(isoBlock.inf);
+      if (!isoBlock.chaining) {
+        apdu = Uint8List.fromList(chainedReaderInf);
+        chainedReaderInf.clear();
+      }
+    } else {
+      apdu = data;
+    }
 
-    if (apduB0 == 0x00 &&
+    if (apdu != null &&
         apdu.length > 5 &&
+        apdu[0] == 0x00 &&
         apdu[1] == 0xA4 &&
         apdu.length >= 5 + apdu[4]) {
       final aid = Uint8List.fromList(apdu.sublist(5, 5 + apdu[4]));
@@ -404,7 +443,10 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
       }
     }
 
-    if (apduB0 == 0x80 && apdu.length > 2 && apdu[1] == 0xAE) {
+    if (apdu != null &&
+        apdu.length > 2 &&
+        apdu[0] == 0x80 &&
+        apdu[1] == 0xAE) {
       final mode = apdu[2] & 0xC0;
       if (mode == 0x80) {
         arqcSeen = true;
@@ -414,12 +456,18 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
       }
     }
 
-    if (apduB0 == 0x80 && apdu.length > 3 && apdu[1] == 0xCA) {
+    if (apdu != null &&
+        apdu.length > 3 &&
+        apdu[0] == 0x80 &&
+        apdu[1] == 0xCA) {
       final tag = (apdu[2] << 8) | apdu[3];
       atcTag = _knownBerTag(tag) ?? tag.toRadixString(16).padLeft(4, '0');
     }
 
-    if (apduB0 == 0x80 && apdu.length >= 11 && apdu[1] == 0xA8) {
+    if (apdu != null &&
+        apdu.length >= 11 &&
+        apdu[0] == 0x80 &&
+        apdu[1] == 0xA8) {
       final amountBytes = apdu.sublist(5, 11);
       final amount = _bytesToInt(Uint8List.fromList(amountBytes));
       if (amount > 0) {
@@ -429,6 +477,8 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
 
     if (b0 == 0x50 || b0 == 0xC2) {
       halted = true;
+      isoDepActive = false;
+      chainedReaderInf.clear();
     }
   }
 
@@ -615,18 +665,28 @@ int _oddParity8(int byte) {
   return (x & 1) ^ 1;
 }
 
-Uint8List _isoDepApdu(HfSniffFrame frame) {
+class _IsoDepReaderIBlock {
+  final Uint8List inf;
+  final bool chaining;
+
+  const _IsoDepReaderIBlock({
+    required this.inf,
+    required this.chaining,
+  });
+}
+
+_IsoDepReaderIBlock? _parseIsoDepReaderIBlock(
+    HfSniffFrame frame, bool isoDepActive) {
   final data = frame.data;
-  if (!frame.isReaderToCard || data.length < 2) {
-    return data;
+  if (!isoDepActive || !frame.isReaderToCard || data.isEmpty) {
+    return null;
   }
 
   final pcb = data[0];
 
   // ISO/IEC 14443-4 I-blocks have b8-b7 = 00 and the fixed b2 bit set.
-  // The INF field starts after PCB and any optional CID/NAD bytes.
   if ((pcb & 0xC2) != 0x02) {
-    return data;
+    return null;
   }
 
   var offset = 1;
@@ -636,11 +696,81 @@ Uint8List _isoDepApdu(HfSniffFrame frame) {
   if ((pcb & 0x04) != 0) {
     offset++; // NAD
   }
-
-  if (offset >= data.length) {
-    return Uint8List(0);
+  if (offset > data.length) {
+    return null;
   }
-  return Uint8List.fromList(data.sublist(offset));
+
+  return _IsoDepReaderIBlock(
+    inf: Uint8List.fromList(data.sublist(offset)),
+    chaining: (pcb & 0x10) != 0,
+  );
+}
+
+String? _decodeApduData(Uint8List data) {
+  if (data.length < 2) {
+    return null;
+  }
+
+  final cla = data[0];
+  if (cla != 0x00 && cla != 0x80 && cla != 0x90 && cla != 0xA0) {
+    return null;
+  }
+
+  final ins = data[1];
+  final p1 = data.length > 2 ? data[2] : 0;
+  final p2 = data.length > 3 ? data[3] : 0;
+
+  if (cla == 0x00 && ins == 0xA4) {
+    if (data.length > 5 && data.length >= 5 + data[4]) {
+      final aid = Uint8List.fromList(data.sublist(5, 5 + data[4]));
+      final knownName = _knownAidName(aid);
+      final rawAid = _hex(aid).toUpperCase();
+      return knownName.isEmpty
+          ? 'SELECT AID  $rawAid'
+          : 'SELECT AID  $rawAid  ($knownName)';
+    }
+    return 'SELECT';
+  }
+  if (cla == 0x00 && ins == 0xB0) {
+    final offset = (p1 << 8) | p2;
+    final length = data.length > 4 ? data[4] : 0;
+    return 'READ BINARY  off=$offset len=$length';
+  }
+  if (cla == 0x00 && ins == 0xB2) {
+    return 'READ RECORD  SFI=${p2 >> 3} rec=$p1';
+  }
+  if (cla == 0x80 && ins == 0xCA) {
+    final tag = (p1 << 8) | p2;
+    final name = _knownBerTag(tag);
+    return name == null
+        ? 'GET DATA  ${p1.toRadixString(16).padLeft(2, '0')}${p2.toRadixString(16).padLeft(2, '0')}'
+        : 'GET DATA  ${p1.toRadixString(16).padLeft(2, '0')}${p2.toRadixString(16).padLeft(2, '0')}  ($name)';
+  }
+  if (cla == 0x80 && ins == 0xA8) {
+    return 'GPO  (Get Processing Options)';
+  }
+  if (cla == 0x80 && ins == 0xAE) {
+    final request = switch (p1 & 0xC0) {
+      0x00 => 'AAC',
+      0x40 => 'TC',
+      0x80 => 'ARQC',
+      _ => 'AC/${p1.toRadixString(16).padLeft(2, '0')}',
+    };
+    return 'GENERATE AC  requesting $request';
+  }
+  if (cla == 0x00 && ins == 0x20) {
+    return 'VERIFY PIN';
+  }
+  if (cla == 0x00 && ins == 0x88) {
+    return 'INTERNAL AUTH';
+  }
+  if (cla == 0x00 && ins == 0x82) {
+    return 'EXTERNAL AUTH';
+  }
+  if (cla == 0x00 && ins == 0x70) {
+    return 'MANAGE CHANNEL';
+  }
+  return 'APDU  CLA=${cla.toRadixString(16).padLeft(2, '0')} INS=${ins.toRadixString(16).padLeft(2, '0')} P1=${p1.toRadixString(16).padLeft(2, '0')} P2=${p2.toRadixString(16).padLeft(2, '0')}';
 }
 
 String _decodeHf14aFrame(HfSniffFrame frame) {
@@ -752,67 +882,9 @@ String _decodeHf14aFrame(HfSniffFrame frame) {
     return 'MAGIC WIPE';
   }
 
-  final apdu = _isoDepApdu(frame);
-  final apduB0 = apdu.isEmpty ? -1 : apdu[0];
-
-  if (apdu.length >= 2 &&
-      (apduB0 == 0x00 || apduB0 == 0x80 || apduB0 == 0x90 || apduB0 == 0xA0)) {
-    final cla = apdu[0];
-    final ins = apdu[1];
-    final p1 = apdu.length > 2 ? apdu[2] : 0;
-    final p2 = apdu.length > 3 ? apdu[3] : 0;
-
-    if (cla == 0x00 && ins == 0xA4) {
-      if (apdu.length > 5 && apdu.length >= 5 + apdu[4]) {
-        final aid = Uint8List.fromList(apdu.sublist(5, 5 + apdu[4]));
-        final knownName = _knownAidName(aid);
-        final rawAid = _hex(aid).toUpperCase();
-        return knownName.isEmpty
-            ? 'SELECT AID  $rawAid'
-            : 'SELECT AID  $rawAid  ($knownName)';
-      }
-      return 'SELECT';
-    }
-    if (cla == 0x00 && ins == 0xB0) {
-      final offset = (p1 << 8) | p2;
-      final length = apdu.length > 4 ? apdu[4] : 0;
-      return 'READ BINARY  off=$offset len=$length';
-    }
-    if (cla == 0x00 && ins == 0xB2) {
-      return 'READ RECORD  SFI=${p2 >> 3} rec=$p1';
-    }
-    if (cla == 0x80 && ins == 0xCA) {
-      final tag = (p1 << 8) | p2;
-      final name = _knownBerTag(tag);
-      return name == null
-          ? 'GET DATA  ${p1.toRadixString(16).padLeft(2, '0')}${p2.toRadixString(16).padLeft(2, '0')}'
-          : 'GET DATA  ${p1.toRadixString(16).padLeft(2, '0')}${p2.toRadixString(16).padLeft(2, '0')}  ($name)';
-    }
-    if (cla == 0x80 && ins == 0xA8) {
-      return 'GPO  (Get Processing Options)';
-    }
-    if (cla == 0x80 && ins == 0xAE) {
-      final request = switch (p1 & 0xC0) {
-        0x00 => 'AAC',
-        0x40 => 'TC',
-        0x80 => 'ARQC',
-        _ => 'AC/${p1.toRadixString(16).padLeft(2, '0')}',
-      };
-      return 'GENERATE AC  requesting $request';
-    }
-    if (cla == 0x00 && ins == 0x20) {
-      return 'VERIFY PIN';
-    }
-    if (cla == 0x00 && ins == 0x88) {
-      return 'INTERNAL AUTH';
-    }
-    if (cla == 0x00 && ins == 0x82) {
-      return 'EXTERNAL AUTH';
-    }
-    if (cla == 0x00 && ins == 0x70) {
-      return 'MANAGE CHANNEL';
-    }
-    return 'APDU  CLA=${cla.toRadixString(16).padLeft(2, '0')} INS=${ins.toRadixString(16).padLeft(2, '0')} P1=${p1.toRadixString(16).padLeft(2, '0')} P2=${p2.toRadixString(16).padLeft(2, '0')}';
+  final apduLabel = _decodeApduData(data);
+  if (apduLabel != null) {
+    return apduLabel;
   }
 
   for (final swOffset in const <int>[-2, -4]) {
