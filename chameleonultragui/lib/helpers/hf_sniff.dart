@@ -402,6 +402,7 @@ HfSniffSummary summarizeHf14aSniff(List<HfSniffFrame> frames) {
   bool halted = false;
   bool ratsSeen = false;
   bool isoDepActive = false;
+  bool retryRequestedByCard = false;
   Uint8List? lastReaderIBlock;
   final chainedReaderInf = <int>[];
   String? atcTag;
