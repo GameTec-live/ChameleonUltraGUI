@@ -57,6 +57,47 @@ void main() {
     expect(capture.summary.authRequests.single.block, 0x04);
   });
 
+  test('ISO-DEP I-blocks expose APDUs to annotations and summary', () {
+    final raw = Uint8List.fromList([
+      ..._packFrame(
+          Uint8List.fromList([
+            0x02,
+            0x00,
+            0xA4,
+            0x04,
+            0x00,
+            0x07,
+            0xA0,
+            0x00,
+            0x00,
+            0x00,
+            0x04,
+            0x10,
+            0x10,
+          ]),
+          isTx: false),
+      ..._packFrame(
+          Uint8List.fromList([
+            0x0E,
+            0x01,
+            0x02,
+            0x80,
+            0xAE,
+            0x80,
+            0x00,
+            0x00,
+          ]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.aids.single, contains('Mastercard'));
+    expect(capture.summary.arqcSeen, isTrue);
+    expect(capture.annotatedFrames[0].label, contains('SELECT AID'));
+    expect(capture.annotatedFrames[1].label, contains('GENERATE AC'));
+  });
+
   test('extractHf14aSniffNonces groups paired exchanges for recovery', () {
     final raw = Uint8List.fromList([
       ..._packFrame(Uint8List.fromList([0x93, 0x70, 0x11, 0x22, 0x33, 0x44]),
