@@ -18,6 +18,72 @@ bool isMifareUltralight(TagType type) {
   ].contains(type);
 }
 
+enum MifareUltralightDumpReadStatus {
+  success,
+  invalidPassword,
+  readFailed,
+}
+
+class MifareUltralightDumpReadResult {
+  final MifareUltralightDumpReadStatus status;
+  final List<Uint8List> pages;
+  final int? failedPage;
+
+  const MifareUltralightDumpReadResult({
+    required this.status,
+    required this.pages,
+    this.failedPage,
+  });
+}
+
+Future<MifareUltralightDumpReadResult> mfUltralightReadDump(
+  ChameleonCommunicator communicator,
+  TagType type, {
+  Uint8List? password,
+  void Function(int page, int totalPages)? onProgress,
+}) async {
+  final pageCount = mfUltralightGetPagesCount(type);
+  final pages = <Uint8List>[];
+  final authenticated = password != null;
+
+  if (authenticated) {
+    final pack = await communicator.send14ARaw(
+      Uint8List.fromList([0x1B, ...password]),
+      keepRfField: true,
+    );
+    if (pack.length < 2) {
+      return const MifareUltralightDumpReadResult(
+        status: MifareUltralightDumpReadStatus.invalidPassword,
+        pages: [],
+      );
+    }
+  }
+
+  for (int page = 0; page < pageCount; page++) {
+    final response = await communicator.send14ARaw(
+      Uint8List.fromList([0x30, page]),
+      autoSelect: !authenticated,
+      keepRfField: authenticated && page < pageCount - 1,
+    );
+
+    if (response.length < 4) {
+      return MifareUltralightDumpReadResult(
+        status: MifareUltralightDumpReadStatus.readFailed,
+        pages: pages,
+        failedPage: page,
+      );
+    }
+
+    pages.add(Uint8List.fromList(response.sublist(0, 4)));
+    onProgress?.call(page + 1, pageCount);
+  }
+
+  return MifareUltralightDumpReadResult(
+    status: MifareUltralightDumpReadStatus.success,
+    pages: pages,
+  );
+}
+
 Future<Uint8List> mfUltralightGetVersion(
     ChameleonCommunicator communicator) async {
   return await communicator.send14ARaw(Uint8List.fromList([0x60]));
