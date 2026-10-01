@@ -270,8 +270,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       for (var page = 0;
           page < mfUltralightGetPagesCount(card.tag) && card.data.length > page;
           page++) {
-        await appState.communicator!
-            .mf0EmulatorWritePages(page, card.data[page]);
+        await appState.communicator!.mf0EmulatorWritePages(
+            page, mfUltralightGetRestorePageData(card, page));
 
         setUploadState(
             (page / mfUltralightGetPagesCount(card.tag) * 100).round());
