@@ -1107,10 +1107,12 @@ class ChameleonCommunicator {
       return false;
     }
     var resp = await sendCmd(ChameleonCommand.getT55xxWriteFeatures);
-    return resp != null &&
-        resp.status == 0x68 &&
-        resp.data.isNotEmpty &&
-        (resp.data[0] & t55xxWriteFeaturePasswordOptIn) != 0;
+    // Listed but no valid answer is an error, not older firmware: treating it as older
+    // firmware would drop the flags byte, and a requested password would not be set.
+    if (resp == null || resp.status != 0x68 || resp.data.isEmpty) {
+      throw ("T55xx write features query failed");
+    }
+    return (resp.data[0] & t55xxWriteFeaturePasswordOptIn) != 0;
   }
 
   Future<List<int>> getDeviceCapabilities() async {
