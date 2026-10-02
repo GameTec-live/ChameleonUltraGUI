@@ -5,6 +5,7 @@ import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/t55xx/keys.dart';
 import 'package:logger/logger.dart';
 
 // Some ChatGPT magic
@@ -616,79 +617,57 @@ class ChameleonCommunicator {
   }
 
   Future<void> writeEM410XtoT55XX(
-      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
-    List<int> keys = [];
-    keys.addAll(newKey);
-    for (var oldKey in oldKeys) {
-      keys.addAll(oldKey);
-    }
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys,
+      {bool? setPassword}) async {
+    final keys =
+        buildT55xxKeyTail(newKey, oldKeys, setPassword: setPassword);
     if (uid.length == 5) {
       await sendCmd(ChameleonCommand.writeEM410XtoT5577,
-          data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+          data: Uint8List.fromList([...uid, ...keys]));
       return;
     }
     if (uid.length == 13) {
       await sendCmd(ChameleonCommand.writeEM410XElectraToT5577,
-          data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+          data: Uint8List.fromList([...uid, ...keys]));
       return;
     }
     throw ("Invalid EM410X UID length");
   }
 
   Future<void> writeHIDProxToT55XX(
-      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
-    List<int> keys = [];
-
-    keys.addAll(newKey);
-
-    for (var oldKey in oldKeys) {
-      keys.addAll(oldKey);
-    }
-
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys,
+      {bool? setPassword}) async {
+    final keys =
+        buildT55xxKeyTail(newKey, oldKeys, setPassword: setPassword);
     await sendCmd(ChameleonCommand.writeHIDProxToT5577,
-        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+        data: Uint8List.fromList([...uid, ...keys]));
   }
 
   Future<void> writeVikingToT55XX(
-      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
-    List<int> keys = [];
-
-    keys.addAll(newKey);
-
-    for (var oldKey in oldKeys) {
-      keys.addAll(oldKey);
-    }
-
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys,
+      {bool? setPassword}) async {
+    final keys =
+        buildT55xxKeyTail(newKey, oldKeys, setPassword: setPassword);
     await sendCmd(ChameleonCommand.writeVikingToT5577,
-        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+        data: Uint8List.fromList([...uid, ...keys]));
   }
 
   Future<void> writePacToT55XX(
-      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
-    List<int> keys = [];
-
-    keys.addAll(newKey);
-
-    for (var oldKey in oldKeys) {
-      keys.addAll(oldKey);
-    }
-
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys,
+      {bool? setPassword}) async {
+    final keys =
+        buildT55xxKeyTail(newKey, oldKeys, setPassword: setPassword);
     await sendCmd(ChameleonCommand.writePacToT5577,
-        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+        data: Uint8List.fromList([...uid, ...keys]));
   }
 
   Future<void> writeIoProxToT55XX(
-      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
-    List<int> keys = [];
-
-    keys.addAll(newKey);
-
-    for (var oldKey in oldKeys) {
-      keys.addAll(oldKey);
-    }
-
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys,
+      {bool? setPassword}) async {
+    final keys =
+        buildT55xxKeyTail(newKey, oldKeys, setPassword: setPassword);
     await sendCmd(ChameleonCommand.writeIoProxToT5577,
-        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+        data: Uint8List.fromList([...uid, ...keys]));
   }
 
   Future<Uint8List> lfSniff({int timeoutMs = 2000}) async {
@@ -734,17 +713,12 @@ class ChameleonCommunicator {
   }
 
   Future<void> writeIdteckToT55XX(
-      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
-    List<int> keys = [];
-
-    keys.addAll(newKey);
-
-    for (var oldKey in oldKeys) {
-      keys.addAll(oldKey);
-    }
-
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys,
+      {bool? setPassword}) async {
+    final keys =
+        buildT55xxKeyTail(newKey, oldKeys, setPassword: setPassword);
     await sendCmd(ChameleonCommand.writeIdteckToT5577,
-        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+        data: Uint8List.fromList([...uid, ...keys]));
   }
 
   Future<void> setSlotTagName(
@@ -1123,6 +1097,22 @@ class ChameleonCommunicator {
         pairingEnabled: resp[6] == 1,
         key: utf8.decode(resp.sublist(7, 13), allowMalformed: true),
         wakeTimeSeconds: resp.length >= 14 ? resp[13] : null);
+  }
+
+  /// Whether the firmware writes T55xx tags without a password unless asked, and
+  /// understands the flags byte on T55xx write commands.
+  Future<bool> isT55xxPasswordOptIn() async {
+    if (!(await getDeviceCapabilities())
+        .contains(ChameleonCommand.getT55xxWriteFeatures.value)) {
+      return false;
+    }
+    var resp = await sendCmd(ChameleonCommand.getT55xxWriteFeatures);
+    // Listed but no valid answer is an error, not older firmware: treating it as older
+    // firmware would drop the flags byte, and a requested password would not be set.
+    if (resp == null || resp.status != 0x68 || resp.data.isEmpty) {
+      throw ("T55xx write features query failed");
+    }
+    return (resp.data[0] & t55xxWriteFeaturePasswordOptIn) != 0;
   }
 
   Future<List<int>> getDeviceCapabilities() async {
