@@ -248,7 +248,7 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
                       {
                         setState(() {
                           currentKey = "20206666";
-                          newKey = "20206666";
+                          newKey = newKeyController.text;
                           confirmed = true;
                         }),
                       },
