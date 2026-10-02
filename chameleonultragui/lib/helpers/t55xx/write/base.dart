@@ -233,45 +233,17 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
           alignment: WrapAlignment.end,
           children: [
             TextButton(
-              onPressed: () => {
-                if (newKeyController.text.isNotEmpty)
-                  {
-                    if (currentKeyController.text.isNotEmpty)
-                      {
-                        setState(() {
-                          currentKey = currentKeyController.text;
-                          newKey = newKeyController.text;
-                          confirmed = true;
-                        }),
-                      }
-                    else
-                      {
-                        setState(() {
-                          currentKey = "20206666";
-                          newKey = newKeyController.text;
-                          confirmed = true;
-                        }),
-                      },
-                  }
-                else
-                  {
-                    if (currentKeyController.text.isNotEmpty)
-                      {
-                        setState(() {
-                          currentKey = currentKeyController.text;
-                          newKey = currentKeyController.text;
-                          confirmed = true;
-                        }),
-                      }
-                    else
-                      {
-                        setState(() {
-                          currentKey = "20206666";
-                          newKey = "20206666";
-                          confirmed = true;
-                        }),
-                      },
-                  },
+              onPressed: () {
+                // Keys must be valid hex before they go into the request
+                if (!formKey.currentState!.validate()) return;
+                var current = currentKeyController.text.replaceAll(" ", "");
+                var typed = newKeyController.text.replaceAll(" ", "");
+                setState(() {
+                  // Without a key, try the default; without a new key, keep the current one
+                  currentKey = current.isNotEmpty ? current : "20206666";
+                  newKey = typed.isNotEmpty ? typed : currentKey;
+                  confirmed = true;
+                });
               },
               child: Text(localizations.next),
             ),
