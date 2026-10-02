@@ -91,6 +91,8 @@ enum ChameleonCommand {
   scanPacTag(3014),
   writePacToT5577(3015),
   writeIdteckToT5577(3018),
+  // Provisional ID: matches the firmware PR that adds it.
+  getT55xxWriteFeatures(3029),
   lfSniff(3031),
 
   mf1LoadBlockData(4000),
