@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/card_data.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -565,6 +566,10 @@ class CardEditMenuState extends State<CardEditMenu> {
                       hexToBytes(ultralightSignatureController.text),
                   ultralightVersion:
                       hexToBytes(ultralightVersionController.text),
+                  ultralightPassword: isMifareUltralight(selectedType)
+                      ? mfUltralightPasswordAfterTypeChange(
+                          widget.tagSave, selectedType)
+                      : Uint8List(0),
                   ultralightCounters: ultralightCounterControllers
                       .map((controller) => int.tryParse(controller.text) ?? 0)
                       .toList(),

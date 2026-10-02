@@ -8,6 +8,7 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/hf14a4_slot.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/card_data.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
@@ -289,8 +290,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       for (var page = 0;
           page < mfUltralightGetPagesCount(card.tag) && card.data.length > page;
           page++) {
-        await appState.communicator!
-            .mf0EmulatorWritePages(page, card.data[page]);
+        await appState.communicator!.mf0EmulatorWritePages(
+            page, mfUltralightGetRestorePageData(card, page));
 
         setUploadState(
             (page / mfUltralightGetPagesCount(card.tag) * 100).round());

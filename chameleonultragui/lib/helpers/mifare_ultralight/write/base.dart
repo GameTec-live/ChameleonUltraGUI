@@ -1,5 +1,7 @@
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/mifare_ultralight/card_data.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -144,7 +146,8 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
     for (var pass = 0; pass < 2; pass++) {
       for (var block = 0; block < totalBlocks; block++) {
         if (card.data[block].isNotEmpty) {
-          List<int> blockData = List.from(card.data[block]);
+          List<int> blockData =
+              List.from(mfUltralightGetRestorePageData(card, block));
 
           if (pass == 0) {
             if (block == 2 && blockData.length >= 4) {

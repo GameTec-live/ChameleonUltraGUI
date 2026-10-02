@@ -346,6 +346,7 @@ class CardFolderBundle {
 class CardSaveExtra {
   Uint8List ultralightSignature;
   Uint8List ultralightVersion;
+  Uint8List ultralightPassword;
   List<int> ultralightCounters;
 
   factory CardSaveExtra.import(Map<String, dynamic> data) {
@@ -356,6 +357,7 @@ class CardSaveExtra {
 
     final ultralightSignature = readBytes(data, 'ultralightSignature');
     final ultralightVersion = readBytes(data, 'ultralightVersion');
+    final ultralightPassword = readBytes(data, 'ultralightPassword');
     final ultralightCounters = data['ultralightCounters'] != null
         ? List<int>.from(data['ultralightCounters'] as List<dynamic>)
         : <int>[];
@@ -363,6 +365,7 @@ class CardSaveExtra {
     return CardSaveExtra(
         ultralightSignature: Uint8List.fromList(ultralightSignature),
         ultralightVersion: Uint8List.fromList(ultralightVersion),
+        ultralightPassword: Uint8List.fromList(ultralightPassword),
         ultralightCounters: ultralightCounters);
   }
 
@@ -377,6 +380,10 @@ class CardSaveExtra {
       json['ultralightVersion'] = ultralightVersion;
     }
 
+    if (ultralightPassword.isNotEmpty) {
+      json['ultralightPassword'] = ultralightPassword;
+    }
+
     if (ultralightCounters.isNotEmpty) {
       json['ultralightCounters'] = ultralightCounters;
     }
@@ -387,9 +394,11 @@ class CardSaveExtra {
   CardSaveExtra(
       {Uint8List? ultralightSignature,
       Uint8List? ultralightVersion,
+      Uint8List? ultralightPassword,
       List<int>? ultralightCounters})
       : ultralightSignature = ultralightSignature ?? Uint8List(0),
         ultralightVersion = ultralightVersion ?? Uint8List(0),
+        ultralightPassword = ultralightPassword ?? Uint8List(0),
         ultralightCounters = ultralightCounters ?? <int>[];
 }
 
