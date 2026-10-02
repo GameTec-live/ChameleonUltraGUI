@@ -154,7 +154,8 @@ class WriteCardPageState extends State<WriteCardPage> {
     } else {
       snackBar = SnackBar(
         content: Text(helper is BaseT55XXCardHelper
-            ? localizations.t55xx_failed_write
+            ? localizations.t55xx_failed_write(localizations.magic_failed_write,
+                localizations.tools, localizations.t55xx_password_cleaner)
             : localizations.magic_failed_write),
         // The T55xx message is longer; give it time to be read.
         duration: helper is BaseT55XXCardHelper

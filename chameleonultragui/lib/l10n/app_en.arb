@@ -265,7 +265,14 @@
   "keep_stable_warning": "Keep your Chameleon stable and close to the card during writing. Moving the device may cause failure or damage the card.",
   "magic_success_write": "Card written successfully",
   "magic_failed_write": "Something went wrong in card writing",
-  "t55xx_failed_write": "Something went wrong in card writing. If the tag is password protected, try Tools - T55XX password cleaner.",
+  "t55xx_failed_write": "{error}. If the tag is password protected, try {tools} - {tool}.",
+  "@t55xx_failed_write": {
+    "placeholders": {
+      "error": {"type": "String"},
+      "tools": {"type": "String"},
+      "tool": {"type": "String"}
+    }
+  },
   "skip_default_dictionary": "Skip default dictionary",
   "not_mifare_classic_card": "This card probably isn't Mifare Classic card",
   "magic_incompatible_card": "Your Magic card isn't compatible with this dump. Probably UID size or block count mismatch",
