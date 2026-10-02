@@ -307,8 +307,14 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
   Future<void> reset() async {
     currentKey = "";
     newKey = "";
-    setPassword = false;
     confirmed = false;
+  }
+
+  @override
+  void clearInputs() {
+    currentKeyController.clear();
+    newKeyController.clear();
+    setPassword = false;
   }
 
   List<Uint8List> get _oldKeys =>
