@@ -90,6 +90,14 @@ class SlotSettingsState extends State<SlotSettings> {
     var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     var navigator = Navigator.of(context);
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    void showError(Object e) {
+      scaffoldMessenger.showSnackBar(SnackBar(
+        content: Text("${localizations.error}: $e"),
+        action: SnackBarAction(label: localizations.close, onPressed: () {}),
+      ));
+    }
 
     showDialog(
       context: context,
@@ -113,6 +121,7 @@ class SlotSettingsState extends State<SlotSettings> {
     } catch (e) {
       appState.log!.e("Failed to read slot dump: $e");
       navigator.pop();
+      showError(e);
       return;
     }
 
@@ -165,6 +174,7 @@ class SlotSettingsState extends State<SlotSettings> {
           onProgress: (p) => progress.value = p / 100);
     } catch (e) {
       appState.log!.e("Failed to write slot dump: $e");
+      showError(e);
     } finally {
       navigator.pop();
       progress.dispose();

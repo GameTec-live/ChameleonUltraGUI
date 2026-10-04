@@ -25,6 +25,7 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
   TextEditingController keyController = TextEditingController();
   String? key;
   TagType? tagType;
+  bool writeLockAndCounter = false;
 
   bool get isUlc => tagType == TagType.ultralightC;
 
@@ -70,6 +71,16 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
                 required: true,
               ),
             ),
+          ),
+          CheckboxListTile(
+            value: writeLockAndCounter,
+            onChanged: (value) => setState(() {
+              writeLockAndCounter = value ?? false;
+            }),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            title: Text(localizations.ulc_write_lock_and_counter),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -207,10 +218,14 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
       return false;
     }
 
-    const int firstPage = 0x04;
-    const int lastPage = 0x27;
+    final List<int> pages = [
+      for (int page = 0x04; page <= 0x27; page++) page,
+      0x2A,
+      0x2B,
+    ];
 
-    for (int page = firstPage; page <= lastPage; page++) {
+    for (int i = 0; i < pages.length; i++) {
+      int page = pages[i];
       if (page < card.data.length && card.data[page].length == 4) {
         if (!await communicator.mf0UlcWritePage(
             ulcKey, page, card.data[page])) {
@@ -218,19 +233,68 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
         }
       }
 
-      update(
-          ((page - firstPage + 1) / (lastPage - firstPage + 1) * 100).round());
+      update(((i + 1) / pages.length * 100).round());
     }
 
+    Uint8List authKey = ulcKey;
     Uint8List? dumpKeyCardOrder = _ulcDumpKey(card);
     if (dumpKeyCardOrder != null) {
       Uint8List newKey = mfUltralightSwapUlcKeyOrder(dumpKeyCardOrder);
-      if (!await communicator.mf0UlcSetKey(ulcKey, newKey)) {
+      if (await communicator.mf0UlcSetKey(ulcKey, newKey)) {
+        authKey = newKey;
+      } else {
         failedBlocks.add(0x2C);
       }
     }
 
+    if (writeLockAndCounter) {
+      await writeUlcCounter(card, authKey);
+      await writeUlcLockBytes(card, authKey);
+    }
+
     return failedBlocks.isEmpty;
+  }
+
+  Future<void> writeUlcCounter(CardSave card, Uint8List authKey) async {
+    const int counterPage = 0x29;
+    if (card.data.length <= counterPage || card.data[counterPage].length != 4) {
+      return;
+    }
+
+    Uint8List counter = card.data[counterPage];
+    if (counter[0] == 0 && counter[1] == 0) {
+      return;
+    }
+
+    // Only the first write to a zero counter sets its value, later writes increment it
+    Uint8List current =
+        await communicator.mf0UlcReadPages(authKey, counterPage, 1);
+    if (current.length < 2 || current[0] != 0 || current[1] != 0) {
+      failedBlocks.add(counterPage);
+      return;
+    }
+
+    if (!await communicator.mf0UlcWritePage(authKey, counterPage,
+        Uint8List.fromList([counter[0], counter[1], 0, 0]))) {
+      failedBlocks.add(counterPage);
+    }
+  }
+
+  Future<void> writeUlcLockBytes(CardSave card, Uint8List authKey) async {
+    const int lockPage = 0x28;
+    if (card.data.length <= lockPage || card.data[lockPage].length != 4) {
+      return;
+    }
+
+    Uint8List lock = card.data[lockPage];
+    if (lock[0] == 0 && lock[1] == 0) {
+      return;
+    }
+
+    if (!await communicator.mf0UlcWritePage(
+        authKey, lockPage, Uint8List.fromList([lock[0], lock[1], 0, 0]))) {
+      failedBlocks.add(lockPage);
+    }
   }
 
   @override
