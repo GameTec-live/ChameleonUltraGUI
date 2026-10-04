@@ -47,8 +47,13 @@ class FlashingPage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                localizations.please_wait,
+                appState.awaitingDfuPortSelection
+                    ? localizations.select_chameleon_in_browser
+                    : appState.progress == null
+                        ? localizations.connecting_to_dfu
+                        : localizations.please_wait,
                 style: const TextStyle(fontSize: 20),
+                textAlign: TextAlign.center,
               ),
             ],
           ),

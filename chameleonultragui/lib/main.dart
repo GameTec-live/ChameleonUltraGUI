@@ -77,6 +77,7 @@ class ChameleonGUIState extends ChangeNotifier {
 
   bool devMode = false;
   double? progress; // DFU
+  bool awaitingDfuPortSelection = false;
 
   // Flashing easter egg
   bool easterEgg = false;
@@ -222,7 +223,9 @@ class _MainPageState extends State<MainPage> {
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
-        if (appState.connector!.pendingConnection) {
+        if (appState.awaitingDfuPortSelection) {
+          page = const FlashingPage();
+        } else if (appState.connector!.pendingConnection) {
           page = const PendingConnectionPage();
         } else {
           if (appState.connector!.connected) {

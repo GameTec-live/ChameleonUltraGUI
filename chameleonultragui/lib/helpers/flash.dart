@@ -170,7 +170,13 @@ Future<void> flashFile(
     await appState.connector!.connectSpecificDevice(chameleons[0].port);
   } else {
     await asyncSleep(1000);
-    await appState.connector!.connectSpecificDevice(null);
+    appState.awaitingDfuPortSelection = true;
+    appState.changesMade();
+    try {
+      await appState.connector!.connectSpecificDevice(null);
+    } finally {
+      appState.awaitingDfuPortSelection = false;
+    }
   }
 
   appState.changesMade();
