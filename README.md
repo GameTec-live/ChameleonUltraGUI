@@ -94,10 +94,10 @@ Crypto Currencies if your into that jam (Although open collective is preferred):
 
 ## Star History
 
-<a href="https://star-history.com/#GameTec-live/ChameleonUltraGUI&Timeline">
+<a href="https://star-history.dera.page/#GameTec-live/ChameleonUltraGUI&type=date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=GameTec-live/ChameleonUltraGUI&type=Timeline&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=GameTec-live/ChameleonUltraGUI&type=Timeline" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=GameTec-live/ChameleonUltraGUI&type=Timeline" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=GameTec-live/ChameleonUltraGUI&type=Timeline&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=GameTec-live/ChameleonUltraGUI&type=Timeline" />
+    <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=GameTec-live/ChameleonUltraGUI&type=Timeline" />
   </picture>
 </a>

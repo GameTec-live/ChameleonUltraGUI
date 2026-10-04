@@ -123,7 +123,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
         uidController.text = bytesToHexSpace(idteckCard.uid);
       } catch (_) {}
     } else if (isMifareClassic(selectedType!) ||
-        isMifareUltralight(selectedType!)) {
+        isMifareUltralight(selectedType!) ||
+        selectedType! == TagType.hf14a4) {
       try {
         CardData data = await appState.communicator!.mf1GetAntiCollData();
         uidController.text = bytesToHexSpace(data.uid);
@@ -234,7 +235,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
       await appState.communicator!.setIdteckEmulatorID(
           hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (isMifareClassic(selectedType!) ||
-        isMifareUltralight(selectedType!)) {
+        isMifareUltralight(selectedType!) ||
+        selectedType! == TagType.hf14a4) {
       var cardData = CardData(
           uid: hexToBytes(uidController.text),
           atqa: hexToBytes(atqaController.text),

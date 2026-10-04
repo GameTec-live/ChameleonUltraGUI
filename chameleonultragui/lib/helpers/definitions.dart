@@ -212,7 +212,8 @@ enum TagType {
   ultralight(1103),
   ultralightC(1104),
   ultralight11(1105),
-  ultralight21(1106);
+  ultralight21(1106),
+  hf14a4(3000);
 
   const TagType(this.value);
   final int value;

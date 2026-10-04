@@ -188,6 +188,8 @@ String chameleonTagToString(TagType tag, AppLocalizations localizations) {
     return "Ultralight EV1 (20)";
   } else if (tag == TagType.ultralight21) {
     return "Ultralight EV1 (41)";
+  } else if (tag == TagType.hf14a4) {
+    return "ISO14443-4 (T=CL)";
   } else {
     return localizations.unknown;
   }
@@ -409,6 +411,7 @@ Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
               chameleonTagTypeGetMfClassicType(tag.tag), tag.data,
               isEV1: chameleonTagSaveCheckForMifareClassicEV1(tag)),
           extraData: tag.extraData,
+          folderId: tag.folderId,
           color: tag.color);
     }
     await FilePicker.saveFile(
@@ -444,7 +447,8 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.ultralight,
       TagType.ultralightC,
       TagType.ultralight11,
-      TagType.ultralight21
+      TagType.ultralight21,
+      TagType.hf14a4
     ];
   } else if (frequency == TagFrequency.lf) {
     return [

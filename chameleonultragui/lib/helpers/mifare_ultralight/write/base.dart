@@ -48,78 +48,99 @@ class BaseMifareUltralightWriteHelper extends AbstractWriteHelper {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
     if (isUlc) {
-      return Row(children: [
-        Expanded(
-            child: Form(
-                key: formKey,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: keyController,
-                      decoration: InputDecoration(
-                          labelText: localizations.key,
-                          hintMaxLines: 4,
-                          hintText:
-                              localizations.enter_something(localizations.key)),
-                      inputFormatters: hexFormatter,
-                      validator: (value) => validateHex(value, localizations,
-                          exactBytes: 16,
-                          fieldName: localizations.key,
-                          required: true),
-                    )
-                  ],
-                ))),
-        TextButton(
-          onPressed: () {
-            if (formKey.currentState!.validate()) {
-              setState(() {
-                key = keyController.text;
-              });
-            }
-          },
-          child: Text(localizations.next),
-        ),
-      ]);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Form(
+            key: formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            child: TextFormField(
+              controller: keyController,
+              decoration: InputDecoration(
+                labelText: localizations.key,
+                hintMaxLines: 4,
+                hintText: localizations.enter_something(localizations.key),
+              ),
+              inputFormatters: hexFormatter,
+              validator: (value) => validateHex(
+                value,
+                localizations,
+                exactBytes: 16,
+                fieldName: localizations.key,
+                required: true,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            children: [
+              TextButton(
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    setState(() {
+                      key = keyController.text;
+                    });
+                  }
+                },
+                child: Text(localizations.next),
+              ),
+            ],
+          ),
+        ],
+      );
     }
 
-    return Row(children: [
-      Expanded(
-          child: Form(
-              key: formKey,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: keyController,
-                    decoration: InputDecoration(
-                        labelText: localizations.key,
-                        hintMaxLines: 4,
-                        hintText: localizations.enter_something(
-                            localizations.ultralight_key_prompt)),
-                    inputFormatters: hexFormatter,
-                    validator: (value) => validateHex(value, localizations,
-                        exactBytes: 4, fieldName: localizations.key),
-                  )
-                ],
-              ))),
-      TextButton(
-        onPressed: () => {
-          setState(() {
-            key = keyController.text;
-          })
-        },
-        child: Text(localizations.next),
-      ),
-      TextButton(
-        onPressed: () => {
-          setState(() {
-            key = "";
-          })
-        },
-        child: Text(localizations.no_key),
-      )
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Form(
+          key: formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: TextFormField(
+            controller: keyController,
+            decoration: InputDecoration(
+              labelText: localizations.key,
+              hintMaxLines: 4,
+              hintText: localizations.enter_something(
+                localizations.ultralight_key_prompt,
+              ),
+            ),
+            inputFormatters: hexFormatter,
+            validator: (value) => validateHex(
+              value,
+              localizations,
+              exactBytes: 4,
+              fieldName: localizations.key,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 8,
+          children: [
+            TextButton(
+              onPressed: () => {
+                setState(() {
+                  key = keyController.text;
+                }),
+              },
+              child: Text(localizations.next),
+            ),
+            TextButton(
+              onPressed: () => {
+                setState(() {
+                  key = "";
+                }),
+              },
+              child: Text(localizations.no_key),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override

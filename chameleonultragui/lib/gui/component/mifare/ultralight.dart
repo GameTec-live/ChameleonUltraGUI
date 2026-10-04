@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
+import 'package:chameleonultragui/gui/menu/pages/dump_editor.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -246,6 +247,41 @@ class CardReaderState extends State<MifareUltralightHelper> {
     }
   }
 
+  Future<void> viewDump() async {
+    var localizations = AppLocalizations.of(context)!;
+    final viewCard = CardSave(
+      uid: widget.hfInfo.uid,
+      sak: hexToBytes(widget.hfInfo.sak)[0],
+      atqa: hexToBytes(widget.hfInfo.atqa),
+      name: dumpName,
+      tag: widget.hfInfo.type,
+      data: cardData,
+      extraData: CardSaveExtra(
+        ultralightSignature: hexToBytes(signature),
+        ultralightVersion: hexToBytes(version),
+        ultralightCounters: counters,
+      ),
+      ats: (widget.hfInfo.ats != localizations.no)
+          ? hexToBytes(widget.hfInfo.ats)
+          : Uint8List(0),
+    );
+
+    await showDialog(
+      context: context,
+      builder: (context) => DumpEditor(
+        cardSave: viewCard,
+        onSave: (data) {
+          // Keep edits in memory so both save options use the modified dump.
+          cardData = data;
+        },
+      ),
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
@@ -318,10 +354,16 @@ class CardReaderState extends State<MifareUltralightHelper> {
         ],
         if (state == MifareUltralightState.save)
           Center(
-              child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+              child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
+                ElevatedButton(
+                  onPressed: viewDump,
+                  style: customCardButtonStyle(appState),
+                  child: Text(localizations.view_dump),
+                ),
                 ElevatedButton(
                   onPressed: () async {
                     await showDialog(
@@ -361,7 +403,6 @@ class CardReaderState extends State<MifareUltralightHelper> {
                   style: customCardButtonStyle(appState),
                   child: Text(localizations.save),
                 ),
-                const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () async {
                     await saveCard(bin: true);

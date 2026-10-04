@@ -18,8 +18,13 @@ import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class CardViewMenu extends StatefulWidget {
   final CardSave tagSave;
+  final Future<void> Function(CardSave card) onMove;
 
-  const CardViewMenu({super.key, required this.tagSave});
+  const CardViewMenu({
+    super.key,
+    required this.tagSave,
+    required this.onMove,
+  });
 
   @override
   CardViewMenuState createState() => CardViewMenuState();
@@ -240,6 +245,14 @@ class CardViewMenuState extends State<CardViewMenu> {
             alignment: WrapAlignment.end,
             children: [
               IconButton(
+                tooltip: localizations.move_card,
+                onPressed: () async {
+                  await widget.onMove(currentSavedCard);
+                  _refreshCardData();
+                },
+                icon: const Icon(Icons.drive_file_move_outline),
+              ),
+              IconButton(
                 onPressed: () async {
                   await showDialog(
                     context: context,
@@ -265,34 +278,36 @@ class CardViewMenuState extends State<CardViewMenu> {
                 },
                 icon: const Icon(Icons.copy_all),
               ),
-              if (isMifareClassic(widget.tagSave.tag) ||
-                  isMifareUltralight(widget.tagSave.tag))
+              if (isMifareClassic(currentSavedCard.tag) ||
+                  isMifareUltralight(currentSavedCard.tag))
                 IconButton(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => DumpEditor(
-                          cardSave: widget.tagSave,
+                          cardSave: currentSavedCard,
                           onSave: (dumpData) {
                             // Update card data
                             var updatedCard = CardSave(
-                              id: widget.tagSave.id,
-                              uid: widget.tagSave.uid,
-                              sak: widget.tagSave.sak,
-                              atqa: widget.tagSave.atqa,
-                              name: widget.tagSave.name,
-                              tag: widget.tagSave.tag,
+                              id: currentSavedCard.id,
+                              uid: currentSavedCard.uid,
+                              sak: currentSavedCard.sak,
+                              atqa: currentSavedCard.atqa,
+                              name: currentSavedCard.name,
+                              tag: currentSavedCard.tag,
                               data: dumpData,
-                              ats: widget.tagSave.ats,
-                              extraData: widget.tagSave.extraData,
+                              ats: currentSavedCard.ats,
+                              extraData: currentSavedCard.extraData,
+                              folderId: currentSavedCard.folderId,
+                              color: currentSavedCard.color,
                             );
 
                             // Update the card in storage
                             var cards =
                                 appState.sharedPreferencesProvider.getCards();
                             for (int i = 0; i < cards.length; i++) {
-                              if (cards[i].id == widget.tagSave.id) {
+                              if (cards[i].id == currentSavedCard.id) {
                                 cards[i] = updatedCard;
                                 break;
                               }
