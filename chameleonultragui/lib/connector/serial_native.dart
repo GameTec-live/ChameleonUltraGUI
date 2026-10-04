@@ -113,13 +113,27 @@ class SerialAdapter extends AbstractSerial {
       log.d("Connected to $address");
       log.d("Manufacturer: ${checkPort!.manufacturer}");
       log.d("Product: ${checkPort!.productName}");
-      if (checkPort!.manufacturer == "Proxgrind") {
-        if (checkPort!.productName!.contains('ChameleonUltra')) {
+      
+      bool isChameleon = false;
+      if (checkPort!.manufacturer == "Proxgrind" ||
+          (checkPort!.description != null &&
+              checkPort!.description!.toLowerCase().contains("chameleon"))) {
+        isChameleon = true;
+        if (checkPort!.productName != null &&
+            checkPort!.productName!.contains('ChameleonUltra')) {
+          device = ChameleonDevice.ultra;
+        } else if (checkPort!.description != null &&
+            checkPort!.description!.toLowerCase().contains('ultra')) {
           device = ChameleonDevice.ultra;
         } else {
           device = ChameleonDevice.lite;
         }
+      } else if (setPort) {
+        isChameleon = true;
+        device = ChameleonDevice.ultra;
+      }
 
+      if (isChameleon) {
         log.d("Found Chameleon ${chameleonDeviceName(device)}!");
 
         connectionType = ConnectionType.usb;
@@ -136,9 +150,13 @@ class SerialAdapter extends AbstractSerial {
         return true;
       }
 
+      checkPort!.close();
       return false;
     } on SerialPortError catch (e) {
       log.e(e);
+      try {
+        checkPort?.close();
+      } catch (_) {}
       return false;
     }
   }

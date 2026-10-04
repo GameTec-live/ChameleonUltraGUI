@@ -20,6 +20,7 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
   late MifareClassicRecovery recovery;
   late MifareClassicType type;
   late bool isEV1;
+  late bool vanitySak;
 
   HFCardInfo? hfInfo;
   MifareClassicInfo? mfcInfo;
@@ -126,24 +127,8 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
   }
 
   Uint8List createBlock0FromSave(CardSave card) {
-    List<int> block = [];
-    Uint8List uid = hexToBytes(card.uid);
-    block.addAll(uid);
-    if (uid.length == 4) {
-      int bcc = 0;
-
-      for (int i = 0; i < 4; i++) {
-        bcc ^= uid[i];
-      }
-
-      block.add(bcc);
-    }
-
-    block.add(card.sak);
-    block.addAll(card.atqa.reversed);
-    block.addAll(List.generate(16 - block.length, (index) => 0));
-
-    return Uint8List.fromList(block);
+    return mfClassicGenerateFirstBlock(
+        hexToBytes(card.uid), card.sak, card.atqa, vanitySak);
   }
 
   @override

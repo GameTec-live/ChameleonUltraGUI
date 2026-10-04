@@ -41,7 +41,11 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: Text(localizations.edit_dictionary),
+      title: Text(
+        widget.isNew
+            ? localizations.create_dictionary
+            : localizations.edit_dictionary,
+      ),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -136,6 +140,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
             Dictionary dict = Dictionary.fromString(keysController.text,
                 name: nameController.text, color: currentColor);
             dict.id = widget.isNew ? Uuid().v4() : widget.dictionary.id;
+            dict.folderId = widget.dictionary.folderId;
 
             if (dict.keys.isEmpty) {
               return;

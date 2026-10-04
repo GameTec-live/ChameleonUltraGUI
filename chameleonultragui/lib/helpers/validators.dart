@@ -36,6 +36,12 @@ String? validateUid(
       if (cleanValue.length != 14) {
         return l.must_be(7, l.uid);
       }
+    } else if (isCreate && tagType == TagType.hf14a4) {
+      if (!(cleanValue.length == 8 ||
+          cleanValue.length == 14 ||
+          cleanValue.length == 20)) {
+        return l.must_or("4, 7", "10", l.uid);
+      }
     } else if (isCreate) {
       if (cleanValue.length != 8 && cleanValue.length != 14) {
         return l.must_or("4", "7", l.uid);

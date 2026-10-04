@@ -16,6 +16,7 @@ class Dictionary {
   List<Uint8List> keys;
   Color color;
   int keyLength;
+  String? folderId;
 
   factory Dictionary.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
@@ -33,18 +34,19 @@ class Dictionary {
 
     final keyLength = data['keyLength'] as int;
     final color = hexToColor(data['color']);
+    final folderId = data['folderId'] as String?;
 
     List<Uint8List> keys = [];
     for (var key in encodedKeys) {
       keys.add(Uint8List.fromList(List<int>.from(key)));
     }
     return Dictionary(
-      id: id,
-      name: name,
-      keys: keys,
-      color: color,
-      keyLength: keyLength,
-    );
+        id: id,
+        name: name,
+        keys: keys,
+        color: color,
+        keyLength: keyLength,
+        folderId: folderId);
   }
 
   String toJson() {
@@ -54,6 +56,7 @@ class Dictionary {
       'color': colorToHex(color),
       'keys': keys.map((key) => key.toList()).toList(),
       'keyLength': keyLength,
+      if (folderId != null) 'folderId': folderId,
     });
   }
 
@@ -70,11 +73,8 @@ class Dictionary {
     return const Utf8Encoder().convert(toString());
   }
 
-  factory Dictionary.fromString(
-    String input, {
-    String name = '',
-    Color color = Colors.deepOrange,
-  }) {
+  factory Dictionary.fromString(String input,
+      {String name = '', Color color = Colors.deepOrange}) {
     List<Uint8List> keys = [];
     List<int> allowedKeySizes = [
       12, // 6 - Mifare Classic
@@ -102,21 +102,94 @@ class Dictionary {
     }
 
     return Dictionary(
-      id: const Uuid().v4(),
-      name: name,
-      keys: keys,
-      color: color,
-      keyLength: currentKeySize,
+        id: const Uuid().v4(),
+        name: name,
+        keys: keys,
+        color: color,
+        keyLength: currentKeySize);
+  }
+
+  Dictionary(
+      {String? id,
+      this.name = "",
+      this.keys = const [],
+      this.color = Colors.deepOrange,
+      this.keyLength = 0,
+      this.folderId})
+      : id = id ?? const Uuid().v4();
+}
+
+class DictionaryFolder {
+  String id;
+  String name;
+  Color color;
+  String? parentId;
+
+  DictionaryFolder({
+    String? id,
+    required this.name,
+    this.color = Colors.deepOrange,
+    this.parentId,
+  }) : id = id ?? const Uuid().v4();
+
+  factory DictionaryFolder.fromJson(String source) {
+    final data = jsonDecode(source) as Map<String, dynamic>;
+    return DictionaryFolder(
+      id: data['id'] as String,
+      name: data['name'] as String,
+      color: data['color'] == null
+          ? Colors.deepOrange
+          : hexToColor(data['color'] as String),
+      parentId: data['parentId'] as String?,
     );
   }
 
-  Dictionary({
-    String? id,
-    this.name = "",
-    this.keys = const [],
-    this.color = Colors.deepOrange,
-    this.keyLength = 0,
-  }) : id = id ?? const Uuid().v4();
+  String toJson() => jsonEncode({
+        'id': id,
+        'name': name,
+        'color': colorToHex(color),
+        if (parentId != null) 'parentId': parentId,
+      });
+}
+
+class DictionaryFolderBundle {
+  final String rootFolderId;
+  final List<DictionaryFolder> folders;
+  final List<Dictionary> dictionaries;
+
+  DictionaryFolderBundle({
+    required this.rootFolderId,
+    required this.folders,
+    required this.dictionaries,
+  });
+
+  factory DictionaryFolderBundle.fromJson(String source) {
+    final data = jsonDecode(source) as Map<String, dynamic>;
+    if (data['format'] != 'chameleon-ultra-gui-dictionary-folder' ||
+        data['version'] != 1) {
+      throw const FormatException('Unsupported dictionary folder file');
+    }
+    return DictionaryFolderBundle(
+      rootFolderId: data['rootFolderId'] as String,
+      folders: (data['folders'] as List<dynamic>)
+          .map((item) => DictionaryFolder.fromJson(jsonEncode(item)))
+          .toList(),
+      dictionaries: (data['dictionaries'] as List<dynamic>)
+          .map((item) => Dictionary.fromJson(jsonEncode(item)))
+          .toList(),
+    );
+  }
+
+  String toJson() => jsonEncode({
+        'format': 'chameleon-ultra-gui-dictionary-folder',
+        'version': 1,
+        'rootFolderId': rootFolderId,
+        'folders':
+            folders.map((folder) => jsonDecode(folder.toJson())).toList(),
+        'dictionaries': dictionaries
+            .map((dictionary) => jsonDecode(dictionary.toJson()))
+            .toList(),
+      });
 }
 
 class CardSave {
@@ -130,6 +203,7 @@ class CardSave {
   List<Uint8List> data;
   CardSaveExtra extraData;
   Color color;
+  String? folderId;
 
   factory CardSave.fromJson(String json) {
     Map<String, dynamic> data = jsonDecode(json);
@@ -141,25 +215,25 @@ class CardSave {
     final name = data['name'] as String;
     final tag = getTagTypeByValue(data['tag']);
     final extraData = CardSaveExtra.import(data['extra'] ?? {});
-    final color = data['color'] == null
-        ? Colors.deepOrange
-        : hexToColor(data['color']);
+    final color =
+        data['color'] == null ? Colors.deepOrange : hexToColor(data['color']);
+    final folderId = data['folderId'] as String?;
     List<Uint8List> tagData = (data['data'] as List<dynamic>)
         .map((e) => Uint8List.fromList(List<int>.from(e)))
         .toList();
 
     return CardSave(
-      id: id,
-      uid: uid,
-      sak: sak,
-      name: name,
-      tag: tag,
-      data: tagData,
-      color: color,
-      extraData: extraData,
-      ats: Uint8List.fromList(ats),
-      atqa: Uint8List.fromList(atqa),
-    );
+        id: id,
+        uid: uid,
+        sak: sak,
+        name: name,
+        tag: tag,
+        data: tagData,
+        color: color,
+        folderId: folderId,
+        extraData: extraData,
+        ats: Uint8List.fromList(ats),
+        atqa: Uint8List.fromList(atqa));
   }
 
   String toJson() {
@@ -174,6 +248,7 @@ class CardSave {
       'color': colorToHex(color),
       'data': data.map((data) => data.toList()).toList(),
       'extra': extraData.export(),
+      if (folderId != null) 'folderId': folderId,
     });
   }
 
@@ -187,12 +262,85 @@ class CardSave {
     Uint8List? ats,
     CardSaveExtra? extraData,
     this.color = Colors.deepOrange,
+    this.folderId,
     this.data = const [],
-  }) : id = id ?? const Uuid().v4(),
-       sak = sak ?? 0,
-       atqa = atqa ?? Uint8List(0),
-       ats = ats ?? Uint8List(0),
-       extraData = extraData ?? CardSaveExtra();
+  })  : id = id ?? const Uuid().v4(),
+        sak = sak ?? 0,
+        atqa = atqa ?? Uint8List(0),
+        ats = ats ?? Uint8List(0),
+        extraData = extraData ?? CardSaveExtra();
+}
+
+class CardFolder {
+  String id;
+  String name;
+  Color color;
+  String? parentId;
+
+  CardFolder({
+    String? id,
+    required this.name,
+    this.color = Colors.deepOrange,
+    this.parentId,
+  }) : id = id ?? const Uuid().v4();
+
+  factory CardFolder.fromJson(String source) {
+    final data = jsonDecode(source) as Map<String, dynamic>;
+    return CardFolder(
+      id: data['id'] as String,
+      name: data['name'] as String,
+      color: data['color'] == null
+          ? Colors.deepOrange
+          : hexToColor(data['color'] as String),
+      parentId: data['parentId'] as String?,
+    );
+  }
+
+  String toJson() => jsonEncode({
+        'id': id,
+        'name': name,
+        'color': colorToHex(color),
+        if (parentId != null) 'parentId': parentId,
+      });
+}
+
+/// Versioned Chameleon Ultra GUI folder interchange format.
+class CardFolderBundle {
+  final String rootFolderId;
+  final List<CardFolder> folders;
+  final List<CardSave> cards;
+
+  CardFolderBundle({
+    required this.rootFolderId,
+    required this.folders,
+    required this.cards,
+  });
+
+  factory CardFolderBundle.fromJson(String source) {
+    final data = jsonDecode(source) as Map<String, dynamic>;
+    if (data['format'] != 'chameleon-ultra-gui-folder' ||
+        data['version'] != 1) {
+      throw const FormatException('Unsupported folder file');
+    }
+    return CardFolderBundle(
+      rootFolderId: data['rootFolderId'] as String,
+      folders: (data['folders'] as List<dynamic>)
+          .map((item) => CardFolder.fromJson(jsonEncode(item)))
+          .toList(),
+      cards: (data['cards'] as List<dynamic>)
+          .map((item) => CardSave.fromJson(jsonEncode(item)))
+          .toList(),
+    );
+  }
+
+  String toJson() => jsonEncode({
+        'format': 'chameleon-ultra-gui-folder',
+        'version': 1,
+        'rootFolderId': rootFolderId,
+        'folders':
+            folders.map((folder) => jsonDecode(folder.toJson())).toList(),
+        'cards': cards.map((card) => jsonDecode(card.toJson())).toList(),
+      });
 }
 
 class CardSaveExtra {
@@ -203,8 +351,7 @@ class CardSaveExtra {
   factory CardSaveExtra.import(Map<String, dynamic> data) {
     List<int> readBytes(Map<String, dynamic> data, String key) {
       return List<int>.from(
-        data[key] != null ? data[key] as List<dynamic> : [],
-      );
+          data[key] != null ? data[key] as List<dynamic> : []);
     }
 
     final ultralightSignature = readBytes(data, 'ultralightSignature');
@@ -214,10 +361,9 @@ class CardSaveExtra {
         : <int>[];
 
     return CardSaveExtra(
-      ultralightSignature: Uint8List.fromList(ultralightSignature),
-      ultralightVersion: Uint8List.fromList(ultralightVersion),
-      ultralightCounters: ultralightCounters,
-    );
+        ultralightSignature: Uint8List.fromList(ultralightSignature),
+        ultralightVersion: Uint8List.fromList(ultralightVersion),
+        ultralightCounters: ultralightCounters);
   }
 
   Map<String, dynamic> export() {
@@ -238,13 +384,13 @@ class CardSaveExtra {
     return json;
   }
 
-  CardSaveExtra({
-    Uint8List? ultralightSignature,
-    Uint8List? ultralightVersion,
-    List<int>? ultralightCounters,
-  }) : ultralightSignature = ultralightSignature ?? Uint8List(0),
-       ultralightVersion = ultralightVersion ?? Uint8List(0),
-       ultralightCounters = ultralightCounters ?? <int>[];
+  CardSaveExtra(
+      {Uint8List? ultralightSignature,
+      Uint8List? ultralightVersion,
+      List<int>? ultralightCounters})
+      : ultralightSignature = ultralightSignature ?? Uint8List(0),
+        ultralightVersion = ultralightVersion ?? Uint8List(0),
+        ultralightCounters = ultralightCounters ?? <int>[];
 }
 
 class SharedPreferencesProvider extends ChangeNotifier {
@@ -352,6 +498,18 @@ class SharedPreferencesProvider extends ChangeNotifier {
     _sharedPreferences.setStringList('dictionaries', output);
   }
 
+  List<DictionaryFolder> getDictionaryFolders() {
+    final data = _sharedPreferences.getStringList('dictionary_folders') ?? [];
+    return data.map(DictionaryFolder.fromJson).toList();
+  }
+
+  void setDictionaryFolders(List<DictionaryFolder> folders) {
+    _sharedPreferences.setStringList(
+      'dictionary_folders',
+      folders.map((folder) => folder.toJson()).toList(),
+    );
+  }
+
   List<CardSave> getCards() {
     List<CardSave> output = [];
     final data = _sharedPreferences.getStringList('cards') ?? [];
@@ -367,6 +525,18 @@ class SharedPreferencesProvider extends ChangeNotifier {
       output.add(card.toJson());
     }
     _sharedPreferences.setStringList('cards', output);
+  }
+
+  List<CardFolder> getCardFolders() {
+    final data = _sharedPreferences.getStringList('card_folders') ?? [];
+    return data.map(CardFolder.fromJson).toList();
+  }
+
+  void setCardFolders(List<CardFolder> folders) {
+    _sharedPreferences.setStringList(
+      'card_folders',
+      folders.map((folder) => folder.toJson()).toList(),
+    );
   }
 
   void setLocale(Locale loc) {
@@ -479,9 +649,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
         case List l:
           // this is the reverse of the hack above :)
           _sharedPreferences.setStringList(
-            key,
-            l.map((e) => jsonEncode(e)).toList(),
-          );
+              key, l.map((e) => jsonEncode(e)).toList());
           break;
         default:
           break;

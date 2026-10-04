@@ -16,7 +16,7 @@ jobs:
     outputs:
       found: ${{ steps.PR.outputs.pr_found }}
     steps:
-      - uses: 8BitJonny/gh-get-current-pr@2.2.0
+      - uses: 8BitJonny/gh-get-current-pr@4.0.0
         id: PR
 
   build-android:
@@ -26,8 +26,8 @@ jobs:
       run:
         working-directory: ./chameleonultragui
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: "zulu"
           java-version: "21"
@@ -36,26 +36,26 @@ jobs:
           channel: "stable"
       - run: flutter pub get
       - run: flutter build apk --build-number ${{ github.run_number }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: apk
           path: chameleonultragui/build/app/outputs/flutter-apk/app-release.apk
 
   build-windows:
     needs: check
-    runs-on: windows-latest
+    runs-on: windows-2022
     defaults:
       run:
         working-directory: ./chameleonultragui
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: "stable"
       - run: flutter config --enable-windows-desktop
       - run: flutter build windows --build-number ${{ github.run_number }}
       - run: flutter test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: chameleonultragui/build/windows/x64/runner/Release/
@@ -64,7 +64,7 @@ jobs:
       - name: Create NSIS installer
         working-directory: ${{ github.workspace }}
         run: '& "${env:ProgramFiles(x86)}\NSIS\makensis.exe" nsis-installer.nsi'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows-installer
           path: chameleonultragui-setup-win.exe
@@ -76,7 +76,7 @@ jobs:
       run:
         working-directory: ./chameleonultragui
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: "stable"
@@ -86,13 +86,13 @@ jobs:
       - run: flutter config --enable-linux-desktop
       - run: flutter build linux --build-number ${{ github.run_number }}
       - run: flutter test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: chameleonultragui/build/linux/x64/release/bundle
       - run: dart pub global activate flutter_to_debian
       - run: flutter_to_debian
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-debian
           path: chameleonultragui/build/linux/x64/release/debian
@@ -106,7 +106,7 @@ jobs:
       run:
         working-directory: ./chameleonultragui
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - run:
           apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y
           ninja-build libgtk-3-dev clang jq build-essential curl git cmake lld
@@ -117,7 +117,7 @@ jobs:
       - run: flutter config --enable-linux-desktop
       - run: flutter build linux --build-number ${{ github.run_number }}
       - run: flutter test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-legacy
           path: chameleonultragui/build/linux/x64/release/bundle
@@ -129,7 +129,7 @@ jobs:
       run:
         working-directory: ./chameleonultragui
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: "stable"
@@ -146,7 +146,7 @@ jobs:
       run:
         working-directory: ./chameleonultragui
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: "stable"
@@ -169,9 +169,9 @@ jobs:
       - build-linux-legacy
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Download release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: "{apk,windows,windows-installer,linux,linux-debian,linux-legacy}"
           path: release-artifacts
@@ -183,7 +183,7 @@ jobs:
             zip -r "${artifact_name}.zip" "$dir"
           done
       - name: Upload to dev release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           body: |
             Auto-generated packages from latest commit on `main` branch.
@@ -213,9 +213,9 @@ jobs:
       - build-linux-legacy
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Download release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: "{apk,windows,windows-installer,linux,linux-debian,linux-legacy}"
           path: release-artifacts
@@ -227,7 +227,7 @@ jobs:
             zip -r "${artifact_name}.zip" "$dir"
           done
       - name: Upload to tagged release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           body: |
             Auto-generated packages for release ${{ github.ref_name }}

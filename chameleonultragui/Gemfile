@@ -1,4 +1,6 @@
 source "https://rubygems.org"
 
-gem "fastlane"
-gem "activesupport"
+ruby ">= 3.2.0"
+
+gem "fastlane", "~> 2.239"
+gem "activesupport", "~> 8.1"

@@ -9,7 +9,6 @@ import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
@@ -66,10 +65,8 @@ BigInt bytesToBigU64(Uint8List byteArray) {
   return result;
 }
 
-Future<Uint8List> platformFileReadBytes(PlatformFile result) async {
-  if (result.bytes != null) return result.bytes!;
-  if (kIsWeb) return await result.readAsBytes();
-  return await File(result.path!).readAsBytes();
+Future<Uint8List> platformFileReadBytes(PlatformFile result) {
+  return result.readAsBytes();
 }
 
 int parityToInt(int ntParErr) {
@@ -203,6 +200,8 @@ String chameleonTagToString(TagType tag, AppLocalizations localizations) {
     return "Ultralight EV1 (20)";
   } else if (tag == TagType.ultralight21) {
     return "Ultralight EV1 (41)";
+  } else if (tag == TagType.hf14a4) {
+    return "ISO14443-4 (T=CL)";
   } else {
     return localizations.unknown;
   }
@@ -392,21 +391,46 @@ AnimationSetting getAnimationModeType(int value) {
 Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
   var localizations = AppLocalizations.of(context)!;
   if (bin) {
-    List<int> tagDump = [];
-    for (var block in tag.data) {
-      tagDump.addAll(block);
+    Uint8List tagDump;
+    if (isMifareClassic(tag.tag)) {
+      tagDump = mfClassicGetExportBytes(
+          chameleonTagTypeGetMfClassicType(tag.tag), tag.data,
+          isEV1: chameleonTagSaveCheckForMifareClassicEV1(tag));
+    } else {
+      List<int> dump = [];
+      for (var block in tag.data) {
+        dump.addAll(block);
+      }
+      tagDump = Uint8List.fromList(dump);
     }
     if (tagDump.isEmpty) return;
     await FilePicker.saveFile(
       dialogTitle: '${localizations.output_file}:',
       fileName: '${tag.name}.bin',
-      bytes: Uint8List.fromList(tagDump),
+      bytes: tagDump,
     );
   } else {
+    var exportTag = tag;
+    if (isMifareClassic(tag.tag)) {
+      exportTag = CardSave(
+          id: tag.id,
+          uid: tag.uid,
+          sak: tag.sak,
+          atqa: tag.atqa,
+          ats: tag.ats,
+          name: tag.name,
+          tag: tag.tag,
+          data: mfClassicGetExportBlocks(
+              chameleonTagTypeGetMfClassicType(tag.tag), tag.data,
+              isEV1: chameleonTagSaveCheckForMifareClassicEV1(tag)),
+          extraData: tag.extraData,
+          folderId: tag.folderId,
+          color: tag.color);
+    }
     await FilePicker.saveFile(
       dialogTitle: '${localizations.output_file}:',
       fileName: '${tag.name}.json',
-      bytes: const Utf8Encoder().convert(tag.toJson()),
+      bytes: const Utf8Encoder().convert(exportTag.toJson()),
     );
   }
 }
@@ -436,7 +460,8 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.ultralight,
       TagType.ultralightC,
       TagType.ultralight11,
-      TagType.ultralight21
+      TagType.ultralight21,
+      TagType.hf14a4
     ];
   } else if (frequency == TagFrequency.lf) {
     return [
@@ -474,6 +499,8 @@ TagType getTagTypeByDumpSize(int size) {
     case 1024:
       return TagType.mifare1K;
     case 1088: // EV1
+    case 1152: // EV1
+      return TagType.mifare1K;
     case 2048:
       return TagType.mifare2K;
     case 4096:

@@ -135,7 +135,7 @@ extension TextStyleUseCustomSystemFont on TextStyle {
       fontVariations: [
         ...?fontVariations,
         if (fontWeight != null)
-          FontVariation('wght', (fontWeight!.index + 1) * 100),
+          FontVariation('wght', fontWeight!.value.toDouble()),
       ],
     );
   }
