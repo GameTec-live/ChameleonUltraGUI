@@ -290,7 +290,6 @@
   "ultralight_version": "Ultralight version",
   "ultralight_signature": "Ultralight signature",
   "no_key": "No key",
-  "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)",
   "gen1": "Gen1",
   "gen2": "Gen2 / Generic",
   "gen3": "Gen3",
@@ -574,5 +573,6 @@
   "sniff_device_required_hint": "No device connected. Connect a Chameleon to capture, or load a saved file.",
   "view_dump": "View dump",
   "enable_vanity_sak": "Enable Vanity SAK",
-  "enable_vanity_sak_tooltip": "When enabled, SAK stored in block 0 is increased by 0x80, mimicking genuine cards, primarily 7-byte UID ones.\nDefault on for 7-byte UID cards, off for 4, since some of them replay this byte as is."
+  "enable_vanity_sak_tooltip": "When enabled, SAK stored in block 0 is increased by 0x80, mimicking genuine cards, primarily 7-byte UID ones.\nDefault on for 7-byte UID cards, off for 4, since some of them replay this byte as is.",
+  "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)"
 }
