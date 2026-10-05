@@ -57,4 +57,6 @@ self.onmessage = async function(e) {
   }
 };
 
-init();
+init().catch(err => {
+  postMessage({ type: 'init_error', error: String(err) });
+});

@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -32,10 +35,16 @@ import 'package:logger/logger.dart';
 
 import 'package:chameleonultragui/connector/serial_stub.dart'
     if (dart.library.js_interop) 'package:chameleonultragui/connector/serial_web.dart'
-    if (Platform.isAndroid) 'package:chameleonultragui/connector/serial_android.dart'
-    if (Platform.isMacOS) 'package:chameleonultragui/connector/serial_macos.dart'
-    if (Platform.isIOS) 'package:chameleonultragui/connector/serial_ble.dart'
     if (dart.library.io) 'package:chameleonultragui/connector/serial_native.dart';
+import 'package:chameleonultragui/connector/serial_stub.dart'
+    if (dart.library.io) 'package:chameleonultragui/connector/serial_android.dart'
+    as android;
+import 'package:chameleonultragui/connector/serial_stub.dart'
+    if (dart.library.io) 'package:chameleonultragui/connector/serial_macos.dart'
+    as macos;
+import 'package:chameleonultragui/connector/serial_stub.dart'
+    if (dart.library.io) 'package:chameleonultragui/connector/serial_ble.dart'
+    as ble;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -171,6 +180,18 @@ class _MainPageState extends State<MainPage> {
   AbstractSerial getConnector(ChameleonGUIState appState) {
     if (appState._sharedPreferencesProvider!.isEmulatedChameleon()) {
       return EmulatorSerial(log: appState.log!);
+    }
+
+    if (!kIsWeb) {
+      if (Platform.isMacOS) {
+        return macos.SerialAdapter(log: appState.log!);
+      }
+      if (Platform.isAndroid) {
+        return android.SerialAdapter(log: appState.log!);
+      }
+      if (Platform.isIOS) {
+        return ble.SerialAdapter(log: appState.log!);
+      }
     }
 
     return SerialAdapter(log: appState.log!);

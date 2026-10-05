@@ -8,7 +8,10 @@ import 'package:chameleonultragui/recovery/definitions.dart';
 extension type _Worker._(JSObject _) implements JSObject {
   external factory _Worker(String url);
   external set onmessage(JSFunction? handler);
+  external set onerror(JSFunction? handler);
+  external set onmessageerror(JSFunction? handler);
   external void postMessage(JSObject msg);
+  external void terminate();
 }
 
 @JS('Object')
@@ -17,18 +20,32 @@ extension type _JsObj._(JSObject _) implements JSObject {
 }
 
 bool _initialized = false;
+Future<void>? _initializing;
 int _nextId = 0;
 late _Worker _worker;
 late JSFunction _onMessageHandler;
 final Map<int, Completer<JSObject>> _pending = {};
 
-Future<void> _ensureInitialized() async {
-  if (_initialized) return;
+Future<void> _ensureInitialized() {
+  if (_initialized) return Future.value();
+  return _initializing ??= _initializeWorker().whenComplete(() {
+    _initializing = null;
+  });
+}
 
+Future<void> _initializeWorker() async {
   final workerUrl = Uri.base.resolve('recovery_worker.js').toString();
-  _worker = _Worker(workerUrl);
+  final worker = _Worker(workerUrl);
+  _worker = worker;
 
   final readyCompleter = Completer<void>();
+
+  void failInitialization(String message) {
+    if (!readyCompleter.isCompleted) {
+      readyCompleter.completeError(
+          StateError('Recovery worker initialization failed: $message'));
+    }
+  }
 
   _onMessageHandler = (JSObject e) {
     final data = e['data'] as JSObject;
@@ -37,16 +54,37 @@ Future<void> _ensureInitialized() async {
       if (!readyCompleter.isCompleted) readyCompleter.complete();
       return;
     }
+    if (type == 'init_error') {
+      failInitialization((data['error'] as JSString).toDart);
+      return;
+    }
     final id = (data['id'] as JSNumber).toDartInt;
     final completer = _pending.remove(id);
     if (completer != null) {
       completer.complete(data);
     }
   }.toJS;
-  _worker.onmessage = _onMessageHandler;
+  worker.onmessage = _onMessageHandler;
+  worker.onerror = (JSObject e) {
+    failInitialization((e['message'] as JSString?)?.toDart ??
+        'Could not load recovery worker');
+  }.toJS;
+  worker.onmessageerror = (JSObject e) {
+    failInitialization('Could not read recovery worker message');
+  }.toJS;
 
-  await readyCompleter.future;
-  _initialized = true;
+  try {
+    await readyCompleter.future.timeout(const Duration(seconds: 30),
+        onTimeout: () =>
+            throw TimeoutException('Recovery worker initialization timed out'));
+    _initialized = true;
+  } catch (_) {
+    worker.onmessage = null;
+    worker.onerror = null;
+    worker.onmessageerror = null;
+    worker.terminate();
+    rethrow;
+  }
 }
 
 Future<JSObject> _call(String method, JSObject args) async {

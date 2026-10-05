@@ -61,6 +61,7 @@ Future<bool> saveImportedCard(
     if (action == 'overwrite') {
       final idx = tags.indexOf(duplicate);
       tag.id = duplicate.id;
+      tag.folderId = duplicate.folderId;
       tags[idx] = tag;
     } else if (action == 'create') {
       tag.id = const Uuid().v4();

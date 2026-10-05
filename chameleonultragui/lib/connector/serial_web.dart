@@ -115,6 +115,7 @@ class SerialAdapter extends AbstractSerial {
     isOpen = false;
     connectionType = ConnectionType.none;
     device = ChameleonDevice.none;
+    notifyConnectionStateChanged();
 
     return true;
   }
