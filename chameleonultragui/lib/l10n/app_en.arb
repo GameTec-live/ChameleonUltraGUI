@@ -291,7 +291,6 @@
   "ultralight_version": "Ultralight version",
   "ultralight_signature": "Ultralight signature",
   "no_key": "No key",
-  "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)",
   "gen1": "Gen1",
   "gen2": "Gen2 / Generic",
   "gen3": "Gen3",
@@ -582,5 +581,6 @@
   "overwrite": "Overwrite",
   "create_new": "Create new",
   "select_chameleon_in_browser": "Select Chameleon Ultra again in the browser popup",
-  "connecting_to_dfu": "Connecting to Chameleon Ultra in DFU mode..."
+  "connecting_to_dfu": "Connecting to Chameleon Ultra in DFU mode...",
+  "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)"
 }

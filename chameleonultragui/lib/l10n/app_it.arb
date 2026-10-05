@@ -346,7 +346,7 @@
   "failed_to_decode_access_conditions": "Impossibile decodificare le condizioni di accesso",
   "sector_trailer": "Trailer di settore",
   "bcc": "BCC",
-  "lock_bytes": "Blocca i Byte",
+  "lock_bytes": "Lock Byte",
   "password": "Password",
   "dump": "Dump",
   "invalid_data_in_block": "Dati non validi nel blocco",
@@ -573,5 +573,6 @@
   "sniff_device_required_hint": "Nessun dispositivo connesso. Connetti un Chameleon per catturare, o carica un file salvato.",
   "view_dump": "Visualizza il dump",
   "enable_vanity_sak": "Abilita il Vanity SAK",
-  "enable_vanity_sak_tooltip": "Se abilitata, il SAK memorizzato nel blocco 0 viene aumentato di 0x80, imitando le schede originali, in particolare quelle con UID da 7 byte.\nAttiva in maniera predefinita per le carte con UID da 7 byte, disattivata per quelle da 4, dato che alcune di queste ritrasmettono questo byte cos\u00ec com'\u00e8."
+  "enable_vanity_sak_tooltip": "Se abilitata, il SAK memorizzato nel blocco 0 viene aumentato di 0x80, imitando le schede originali, in particolare quelle con UID da 7 byte.\nAttiva in maniera predefinita per le carte con UID da 7 byte, disattivata per quelle da 4, dato che alcune di queste ritrasmettono questo byte cos\u00ec com'\u00e8.",
+  "ulc_write_lock_and_counter": "Scrivi i lock byte e il contatore (irreversibile)"
 }
