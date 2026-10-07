@@ -468,5 +468,7 @@
   "lf_sniff_hex_color_scale": "Schwellenwert- {threshold}, bedeutet {mean}, {peak}",
   "lf_sniff_hex_color_gap": "L\u00fccke",
   "lf_sniff_hex_color_low": "Unter Mittelwert",
-  "lf_sniff_hex_color_carrier": "Anbieter"
+  "lf_sniff_hex_color_carrier": "Anbieter",
+  "lf_sniff_hex_color_peak": "Spitzenwert",
+  "hf_sniff_amount": "Anzahl"
 }
