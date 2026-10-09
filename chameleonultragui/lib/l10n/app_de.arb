@@ -470,5 +470,6 @@
   "lf_sniff_hex_color_low": "Unter Mittelwert",
   "lf_sniff_hex_color_carrier": "Anbieter",
   "lf_sniff_hex_color_peak": "Spitzenwert",
+  "lf_sniff_hex_glyph_gap": "Sehr niedrig",
   "hf_sniff_amount": "Anzahl"
 }
