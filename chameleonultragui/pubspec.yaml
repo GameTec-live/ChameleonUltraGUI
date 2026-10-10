@@ -69,6 +69,10 @@ dependencies:
   wakelock_plus: ^1.8.0
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.4.0
+  serial: ^0.0.7+1
+  web: ^1.1.1
+  hooks: ^2.2.0
+  code_assets: ^2.0.0
 
 dev_dependencies:
   flutter_test:

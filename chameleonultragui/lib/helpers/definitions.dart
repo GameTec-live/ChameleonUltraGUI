@@ -384,8 +384,8 @@ class NestedNonces {
 class Darkside {
   int uid;
   int nt1;
-  int par;
-  int ks1;
+  BigInt par;
+  BigInt ks1;
   int nr;
   int ar;
 

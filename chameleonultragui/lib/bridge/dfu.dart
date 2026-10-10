@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'dart:math';
 
@@ -148,6 +149,8 @@ class DFUCommunicator {
     _serialInstance = port;
   }
 
+  List<int> _receiveBuffer = [];
+
   Future<Uint8List?> sendCmd(DFUCommand cmd, Uint8List data) async {
     var packet = Uint8List.fromList([cmd.value, ...data]);
     if (!isBLE) {
@@ -159,6 +162,7 @@ class DFUCommunicator {
     }
 
     responseCompleter = Completer<List<int>>();
+    _receiveBuffer = [];
 
     if (!_serialInstance!.isOpen) {
       await _serialInstance!.open();
@@ -166,7 +170,20 @@ class DFUCommunicator {
     }
 
     // we initialize completer each time in DFU, because it being recreated on each message
-    await _serialInstance!.registerCallback(responseCompleter?.complete);
+    await _serialInstance!.registerCallback((Uint8List chunk) {
+      if (responseCompleter == null || responseCompleter!.isCompleted) return;
+
+      if (isBLE) {
+        responseCompleter!.complete(chunk.toList());
+        return;
+      }
+
+      _receiveBuffer.addAll(chunk);
+      if (_receiveBuffer.contains(Slip.slipByteEnd)) {
+        responseCompleter!.complete(List<int>.from(_receiveBuffer));
+        _receiveBuffer = [];
+      }
+    });
 
     log.d("Sending: ${bytesToHex(packet)}");
     await _serialInstance!.write(packet);
@@ -244,6 +261,9 @@ class DFUCommunicator {
 
   Future<Map<String, int>> calculateChecksum() async {
     var response = await sendCmd(DFUCommand.calcChecSum, Uint8List(0));
+    if (response!.buffer.lengthInBytes < 8) {
+      response = await sendCmd(DFUCommand.calcChecSum, Uint8List(0));
+    }
     var offset = ByteData.view(response!.buffer).getUint32(0, Endian.little);
     var crc = ByteData.view(response.buffer).getUint32(4, Endian.little);
 
@@ -259,7 +279,7 @@ class DFUCommunicator {
     for (var offset = 0; offset < firmwareBytes.length; offset += length) {
       var tries = 0;
       var crcBackup = crc;
-      for (; tries < ((Platform.isIOS) ? 50 : 10); tries++) {
+      for (; tries < ((!kIsWeb && Platform.isIOS) ? 50 : 10); tries++) {
         await createObject(
             objectType, min(firmwareBytes.length - offset, length));
 
@@ -283,7 +303,7 @@ class DFUCommunicator {
         break;
       }
 
-      if (tries == ((Platform.isIOS) ? 50 : 10)) {
+      if (tries == ((!kIsWeb && Platform.isIOS) ? 50 : 10)) {
         throw ("Unable to recover from DFU");
       }
     }
@@ -325,6 +345,7 @@ class DFUCommunicator {
       offset += toTransmit.length;
       crc = calculateCRC32(toTransmit, crc) & 0xFFFFFFFF;
       currentPrn++;
+
       if (currentPrn == prn) {
         await asyncSleep(1);
         response = await calculateChecksum();
@@ -348,7 +369,7 @@ class DFUCommunicator {
       offsetSize = 20;
     }
 
-    if (Platform.isWindows || Platform.isMacOS || isBLE) {
+    if (kIsWeb || Platform.isWindows || Platform.isMacOS || isBLE) {
       for (var offset = 0; offset < packet.length; offset += offsetSize) {
         await _serialInstance!.write(
             packet.sublist(
@@ -356,7 +377,7 @@ class DFUCommunicator {
             firmware: true);
       }
 
-      if (isBLE && (Platform.isIOS || Platform.isMacOS)) {
+      if (kIsWeb || isBLE && (Platform.isIOS || Platform.isMacOS)) {
         await asyncSleep(250);
       }
     } else {

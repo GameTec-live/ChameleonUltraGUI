@@ -680,4 +680,12 @@ class SharedPreferencesProvider extends ChangeNotifier {
   void setAutoConnectFirstFoundDevice(bool value) {
     _sharedPreferences.setBool('auto_connect_first_found', value);
   }
+
+  String getCorsProxy() {
+    return _sharedPreferences.getString('cors_proxy') ?? '/cors?url=';
+  }
+
+  void setCorsProxy(String value) {
+    _sharedPreferences.setString('cors_proxy', value);
+  }
 }

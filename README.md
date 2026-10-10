@@ -38,6 +38,10 @@ Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.co
 
 Or, plain [APK](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/apk.zip) (not signed, incompatible with Google Play version)
 
+#### Web
+
+You can access web version at [Chameleon Ultra GUI](https://web.chameleon.run). Requires Web Serial API to work
+
 #### Pending stores:
 - F-Store: not yet
 - Chocolatey (Windows): not yet
@@ -55,6 +59,23 @@ Key:
 #### Note for Linux users:
 You might need to add your user to the `dialout` or, on Arch Linux, to the `uucp` group for the app to talk to the device. If your user is not in this group, you may get serial or permission errors.
 It is also highly recommended to either uninstall or disable ModemManager (`sudo systemctl disable --now modemmanager`) as many distros ship ModemManager and it may interfere with communication.
+
+#### Note for Web build:
+For key recovery to work you must set those headers (and use HTTPS):
+
+```
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
+
+Also you need a working CORS proxy to download firmware, for easier local development you might use `wrangler`:
+
+```
+mkcert -install
+mkcert 127.0.0.1 localhost ::1
+wrangler pages dev chameleonultragui/build/web --port 8788 --ip 127.0.0.1 --local-protocol https --https-cert-path ./127.0.0.1+2.pem --https-key-path ./127.0.0.1+2-key.pem
+```
+
 
 ## Buy a Chameleon Ultra
 - [Sneak Tech](https://sneaktechnology.com/product/chameleon-ultra/)

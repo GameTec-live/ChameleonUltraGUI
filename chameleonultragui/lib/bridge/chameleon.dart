@@ -363,8 +363,8 @@ class ChameleonCommunicator {
     return Darkside(
         uid: bytesToU32(resp.data.sublist(0, 4)),
         nt1: bytesToU32(resp.data.sublist(4, 8)),
-        par: bytesToU64(resp.data.sublist(8, 16)),
-        ks1: bytesToU64(resp.data.sublist(16, 24)),
+        par: bytesToBigU64(resp.data.sublist(8, 16)),
+        ks1: bytesToBigU64(resp.data.sublist(16, 24)),
         nr: bytesToU32(resp.data.sublist(24, 28)),
         ar: bytesToU32(resp.data.sublist(28, 32)));
   }

@@ -1,19 +1,16 @@
 import 'dart:io';
+
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/connector/serial_android.dart';
-import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
-import 'package:chameleonultragui/connector/serial_macos.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-
-import 'connector/serial_native.dart';
 
 // Page imports
 import 'package:chameleonultragui/gui/page/home.dart';
@@ -35,6 +32,19 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 // Logger
 import 'package:logger/logger.dart';
+
+import 'package:chameleonultragui/connector/serial_stub.dart'
+    if (dart.library.js_interop) 'package:chameleonultragui/connector/serial_web.dart'
+    if (dart.library.io) 'package:chameleonultragui/connector/serial_native.dart';
+import 'package:chameleonultragui/connector/serial_stub.dart'
+    if (dart.library.io) 'package:chameleonultragui/connector/serial_android.dart'
+    as android;
+import 'package:chameleonultragui/connector/serial_stub.dart'
+    if (dart.library.io) 'package:chameleonultragui/connector/serial_macos.dart'
+    as macos;
+import 'package:chameleonultragui/connector/serial_stub.dart'
+    if (dart.library.io) 'package:chameleonultragui/connector/serial_ble.dart'
+    as ble;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,6 +86,7 @@ class ChameleonGUIState extends ChangeNotifier {
 
   bool devMode = false;
   double? progress; // DFU
+  bool awaitingDfuPortSelection = false;
 
   // Flashing easter egg
   bool easterEgg = false;
@@ -152,8 +163,9 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => updateNavigationRailWidth(context));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => updateNavigationRailWidth(context),
+    );
   }
 
   @override
@@ -170,19 +182,19 @@ class _MainPageState extends State<MainPage> {
       return EmulatorSerial(log: appState.log!);
     }
 
-    if (Platform.isMacOS) {
-      return MacOSSerial(log: appState.log!);
+    if (!kIsWeb) {
+      if (Platform.isMacOS) {
+        return macos.SerialAdapter(log: appState.log!);
+      }
+      if (Platform.isAndroid) {
+        return android.SerialAdapter(log: appState.log!);
+      }
+      if (Platform.isIOS) {
+        return ble.SerialAdapter(log: appState.log!);
+      }
     }
 
-    if (Platform.isAndroid) {
-      return AndroidSerial(log: appState.log!);
-    }
-
-    if (Platform.isIOS) {
-      return BLESerial(log: appState.log!);
-    }
-
-    return NativeSerial(log: appState.log!);
+    return SerialAdapter(log: appState.log!);
   }
 
   Logger getLogger(ChameleonGUIState appState) {
@@ -190,9 +202,7 @@ class _MainPageState extends State<MainPage> {
         appState._sharedPreferencesProvider!.isDebugMode()) {
       return Logger(
         output: SharedPreferencesLogger(appState._sharedPreferencesProvider!),
-        printer: PrettyPrinter(
-          noBoxingByDefault: true,
-        ),
+        printer: PrettyPrinter(noBoxingByDefault: true),
         filter: ChameleonLogFilter(),
       );
     } else {
@@ -234,7 +244,9 @@ class _MainPageState extends State<MainPage> {
     switch (selectedIndex) {
       // Sidebar Navigation
       case 0:
-        if (appState.connector!.pendingConnection) {
+        if (appState.awaitingDfuPortSelection) {
+          page = const FlashingPage();
+        } else if (appState.connector!.pendingConnection) {
           page = const PendingConnectionPage();
         } else {
           if (appState.connector!.connected) {
@@ -285,43 +297,48 @@ class _MainPageState extends State<MainPage> {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-            seedColor: widget.sharedPreferencesProvider.getThemeColor()),
+          seedColor: widget.sharedPreferencesProvider.getThemeColor(),
+        ),
         brightness: Brightness.light,
         appBarTheme: AppBarTheme(
-            systemOverlayStyle: SystemUiOverlayStyle(
-                statusBarColor: ColorScheme.fromSeed(
-                        seedColor:
-                            widget.sharedPreferencesProvider.getThemeColor(),
-                        brightness: Brightness.light)
-                    .surface,
-                statusBarBrightness: Brightness.light,
-                statusBarIconBrightness: Brightness.dark)),
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: ColorScheme.fromSeed(
+              seedColor: widget.sharedPreferencesProvider.getThemeColor(),
+              brightness: Brightness.light,
+            ).surface,
+            statusBarBrightness: Brightness.light,
+            statusBarIconBrightness: Brightness.dark,
+          ),
+        ),
       ).useCustomSystemFont(Brightness.light),
       darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-            seedColor: widget.sharedPreferencesProvider.getThemeColor(),
-            brightness: Brightness.dark),
+          seedColor: widget.sharedPreferencesProvider.getThemeColor(),
+          brightness: Brightness.dark,
+        ),
         brightness: Brightness.dark,
         appBarTheme: AppBarTheme(
-            systemOverlayStyle: SystemUiOverlayStyle(
-                statusBarColor: ColorScheme.fromSeed(
-                        seedColor:
-                            widget.sharedPreferencesProvider.getThemeColor(),
-                        brightness: Brightness.dark)
-                    .surface,
-                statusBarBrightness: Brightness.dark,
-                statusBarIconBrightness: Brightness.light)),
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: ColorScheme.fromSeed(
+              seedColor: widget.sharedPreferencesProvider.getThemeColor(),
+              brightness: Brightness.dark,
+            ).surface,
+            statusBarBrightness: Brightness.dark,
+            statusBarIconBrightness: Brightness.light,
+          ),
+        ),
       ).useCustomSystemFont(Brightness.dark),
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
-      home: LayoutBuilder(// Build Page
-          builder: (context, constraints) {
-        return SafeArea(
-          left: false,
-          right: false,
-          top: false,
-          bottom: true,
-          child: Scaffold(
+      home: LayoutBuilder(
+        // Build Page
+        builder: (context, constraints) {
+          return SafeArea(
+            left: false,
+            right: false,
+            top: false,
+            bottom: true,
+            child: Scaffold(
               body: Row(
                 children: [
                   (!appState.connector!.isDFU || !appState.connector!.connected)
@@ -336,46 +353,54 @@ class _MainPageState extends State<MainPage> {
                               NavigationRailDestination(
                                 icon: const Icon(Icons.home),
                                 label: Text(
-                                    AppLocalizations.of(context)!.home), // Home
+                                  AppLocalizations.of(context)!.home,
+                                ), // Home
                               ),
                               NavigationRailDestination(
                                 disabled: !appState.connector!.connected,
                                 icon: const Icon(Icons.widgets),
                                 label: Text(
-                                    AppLocalizations.of(context)!.slot_manager),
+                                  AppLocalizations.of(context)!.slot_manager,
+                                ),
                               ),
                               NavigationRailDestination(
                                 icon: const Icon(Icons.auto_awesome_motion),
                                 label: Text(
-                                    AppLocalizations.of(context)!.saved_cards),
+                                  AppLocalizations.of(context)!.saved_cards,
+                                ),
                               ),
                               NavigationRailDestination(
                                 disabled: !appState.connector!.connected,
                                 icon: const Icon(Icons.sensors),
                                 label: Text(
-                                    AppLocalizations.of(context)!.read_card),
+                                  AppLocalizations.of(context)!.read_card,
+                                ),
                               ),
                               NavigationRailDestination(
                                 disabled: !appState.connector!.connected,
                                 icon: const Icon(Icons.system_update_alt),
                                 label: Text(
-                                    AppLocalizations.of(context)!.write_card),
+                                  AppLocalizations.of(context)!.write_card,
+                                ),
                               ),
                               NavigationRailDestination(
                                 icon: const Icon(Icons.handyman),
-                                label:
-                                    Text(AppLocalizations.of(context)!.tools),
+                                label: Text(
+                                  AppLocalizations.of(context)!.tools,
+                                ),
                               ),
                               NavigationRailDestination(
                                 icon: const Icon(Icons.settings),
                                 label: Text(
-                                    AppLocalizations.of(context)!.settings),
+                                  AppLocalizations.of(context)!.settings,
+                                ),
                               ),
                               if (appState.devMode)
                                 NavigationRailDestination(
                                   icon: const Icon(Icons.bug_report),
                                   label: Text(
-                                      '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
+                                    '🐞 ${AppLocalizations.of(context)!.debug} 🐞',
+                                  ),
                                 ),
                             ],
                             selectedIndex: selectedIndex,
@@ -395,9 +420,11 @@ class _MainPageState extends State<MainPage> {
                   ),
                 ],
               ),
-              bottomNavigationBar: const BottomProgressBar()),
-        );
-      }),
+              bottomNavigationBar: const BottomProgressBar(),
+            ),
+          );
+        },
+      ),
     );
   }
 }

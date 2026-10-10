@@ -57,6 +57,18 @@ int bytesToU64(Uint8List byteArray) {
   return byteArray.buffer.asByteData().getUint64(0, Endian.big);
 }
 
+BigInt bytesToBigU64(Uint8List byteArray) {
+  var result = BigInt.zero;
+  for (var b in byteArray) {
+    result = (result << 8) | BigInt.from(b);
+  }
+  return result;
+}
+
+Future<Uint8List> platformFileReadBytes(PlatformFile result) {
+  return result.readAsBytes();
+}
+
 int parityToInt(int ntParErr) {
   return int.parse([
     (ntParErr >> 3) & 1,
@@ -391,6 +403,7 @@ Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
       }
       tagDump = Uint8List.fromList(dump);
     }
+    if (tagDump.isEmpty) return;
     await FilePicker.saveFile(
       dialogTitle: '${localizations.output_file}:',
       fileName: '${tag.name}.bin',

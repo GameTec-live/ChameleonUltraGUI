@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/element_button.dart';
@@ -19,7 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:path/path.dart' show basename;
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/edit.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/create.dart';
@@ -27,6 +25,58 @@ import 'package:chameleonultragui/gui/menu/dialogs/confirm_delete.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+import 'package:uuid/uuid.dart';
+
+Future<bool> saveImportedCard(
+  CardSave tag,
+  BuildContext context,
+  ChameleonGUIState appState,
+) async {
+  var tags = appState.sharedPreferencesProvider.getCards();
+  final duplicate = tags.where((c) => c.uid == tag.uid).firstOrNull;
+
+  if (duplicate != null) {
+    final localizations = AppLocalizations.of(context)!;
+    final action = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations.card_uid_already_exists(duplicate.name)),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, 'overwrite'),
+            child: Text(localizations.overwrite),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, 'create'),
+            child: Text(localizations.create_new),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localizations.cancel),
+          ),
+        ],
+      ),
+    );
+
+    if (action == 'overwrite') {
+      final idx = tags.indexOf(duplicate);
+      tag.id = duplicate.id;
+      tag.folderId = duplicate.folderId;
+      tags[idx] = tag;
+    } else if (action == 'create') {
+      tag.id = const Uuid().v4();
+      tags.add(tag);
+    } else {
+      return false;
+    }
+  } else {
+    tags.add(tag);
+  }
+
+  appState.sharedPreferencesProvider.setCards(tags);
+  appState.changesMade();
+  return true;
+}
 
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
@@ -777,8 +827,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       await FilePicker.pickFile();
 
                                   if (result != null) {
-                                    File file = File(result.path!);
-                                    var contents = await file.readAsBytes();
+                                    var contents =
+                                        await platformFileReadBytes(result);
                                     try {
                                       var string =
                                           const Utf8Decoder().convert(contents);
@@ -794,9 +844,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         await _importFolderSource(string);
                                         return;
                                       }
-                                      var tags = appState
-                                          .sharedPreferencesProvider
-                                          .getCards();
                                       CardSave tag;
                                       if (string.contains(
                                           "\"Created\": \"proxmark3\",")) {
@@ -818,15 +865,14 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                         tag = CardSave.fromJson(string);
                                       }
 
-                                      tag.name = basename(file.path)
-                                              .contains('.')
-                                          ? basename(file.path).split('.')[0]
-                                          : basename(file.path);
+                                      tag.name = result.name.contains('.')
+                                          ? result.name.split('.')[0]
+                                          : result.name;
                                       tag.folderId = currentFolderId;
-                                      tags.add(tag);
-                                      appState.sharedPreferencesProvider
-                                          .setCards(tags);
-                                      appState.changesMade();
+                                      if (context.mounted) {
+                                        await saveImportedCard(
+                                            tag, context, appState);
+                                      }
                                     } catch (_) {
                                       selectedType =
                                           getTagTypeByDumpSize(contents.length);
@@ -1097,10 +1143,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                               i + blockSize));
                                                     }
 
-                                                    var tags = appState
-                                                        .sharedPreferencesProvider
-                                                        .getCards();
-
                                                     if (sak4Controller
                                                                 .text.length !=
                                                             2 ||
@@ -1149,12 +1191,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                         data: blocks);
                                                     tag.folderId =
                                                         currentFolderId;
-                                                    tags.add(tag);
-                                                    appState
-                                                        .sharedPreferencesProvider
-                                                        .setCards(tags);
-                                                    appState.changesMade();
-                                                    Navigator.pop(context);
+                                                    if (context.mounted) {
+                                                      await saveImportedCard(
+                                                          tag,
+                                                          context,
+                                                          appState);
+                                                    }
+                                                    if (context.mounted) {
+                                                      Navigator.pop(context);
+                                                    }
                                                   },
                                                   child: Text(localizations
                                                       .save_as(localizations
@@ -1175,10 +1220,6 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                     blocks.add(contents.sublist(
                                                         i, i + blockSize));
                                                   }
-
-                                                  var tags = appState
-                                                      .sharedPreferencesProvider
-                                                      .getCards();
 
                                                   if (sak7Controller
                                                               .text.length !=
@@ -1224,12 +1265,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                                       data: blocks);
                                                   tag.folderId =
                                                       currentFolderId;
-                                                  tags.add(tag);
-                                                  appState
-                                                      .sharedPreferencesProvider
-                                                      .setCards(tags);
-                                                  appState.changesMade();
-                                                  Navigator.pop(context);
+                                                  if (context.mounted) {
+                                                    await saveImportedCard(
+                                                        tag,
+                                                        context,
+                                                        appState);
+                                                  }
+                                                  if (context.mounted) {
+                                                    Navigator.pop(context);
+                                                  }
                                                 },
                                                 child: Text(localizations
                                                     .save_as(localizations
@@ -1485,11 +1529,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     await FilePicker.pickFile();
 
                                 if (result != null) {
-                                  File file = File(result.path!);
                                   String contents;
                                   try {
-                                    contents = const Utf8Decoder()
-                                        .convert(await file.readAsBytes());
+                                    contents = const Utf8Decoder().convert(
+                                        await platformFileReadBytes(result));
                                   } catch (e) {
                                     return;
                                   }

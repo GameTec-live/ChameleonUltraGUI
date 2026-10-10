@@ -110,6 +110,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                 await flashFirmware(appState,
                                     scaffoldMessenger: scaffoldMessenger);
                               } catch (e) {
+                                appState.log!.e(e);
                                 scaffoldMessenger.hideCurrentSnackBar();
                                 snackBar = SnackBar(
                                   content: Text(
@@ -140,6 +141,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                 await flashFirmwareZip(appState,
                                     scaffoldMessenger: scaffoldMessenger);
                               } catch (e) {
+                                appState.log!.e(e);
                                 scaffoldMessenger.hideCurrentSnackBar();
                                 var snackBar = SnackBar(
                                   content: Text(

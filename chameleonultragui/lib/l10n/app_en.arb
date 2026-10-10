@@ -275,6 +275,7 @@
   "reset": "Reset",
   "write_again": "Write again",
   "confirm_deletions": "Confirm deletions",
+  "cors_proxy_url": "CORS Proxy URL",
   "confirm_deletion": "Confirm deletion",
   "confirm_deletion_text": "Are you sure you want to delete {name}?",
   "delete": "Delete",
@@ -295,6 +296,8 @@
   "gen3": "Gen3",
   "t55xx": "T55XX",
   "connect_manually": "Connect manually",
+  "click_to_connect": "Click to connect",
+  "web_serial_not_supported": "Web Serial API is not supported by your browser. Please use Chrome or Firefox on desktop.",
   "port": "Port",
   "port_hint": "e.g. COM3, /dev/ttyUSB0",
   "hardnested_collecting_nonces": "Collecting required nonces {nonces}/256...",
@@ -574,5 +577,10 @@
   "view_dump": "View dump",
   "enable_vanity_sak": "Enable Vanity SAK",
   "enable_vanity_sak_tooltip": "When enabled, SAK stored in block 0 is increased by 0x80, mimicking genuine cards, primarily 7-byte UID ones.\nDefault on for 7-byte UID cards, off for 4, since some of them replay this byte as is.",
+  "card_uid_already_exists": "That card already exists ({name})",
+  "overwrite": "Overwrite",
+  "create_new": "Create new",
+  "select_chameleon_in_browser": "Select Chameleon Ultra again in the browser popup",
+  "connecting_to_dfu": "Connecting to Chameleon Ultra in DFU mode...",
   "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)"
 }

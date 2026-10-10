@@ -3,14 +3,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
 import 'serial_abstract.dart';
 
-class NativeSerial extends AbstractSerial {
+class SerialAdapter extends AbstractSerial {
   // Class for PC Serial Communication
   SerialPort? port;
   SerialPort? checkPort;
   bool checkDFU = true;
   SerialPortReader? reader;
 
-  NativeSerial({required super.log});
+  @override
+  // ignore: overridden_fields
+  String name = "Native";
+
+  SerialAdapter({required super.log});
 
   @override
   bool isManualConnectionSupported() {

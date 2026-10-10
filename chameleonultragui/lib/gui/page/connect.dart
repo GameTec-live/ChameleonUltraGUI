@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/manual_connect.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -95,13 +95,12 @@ class _ConnectPageState extends State<ConnectPage> {
 
   void _showPermissionsWarningIfNeeded(List<Chameleon> devices) {
     final appState = _appState;
-    if (appState.connector is! AndroidSerial) {
+    if (appState.connector!.name != "Android") {
       _showedPermissionsSnackbar = false;
       return;
     }
 
-    final androidSerial = appState.connector as AndroidSerial;
-    final shouldShow = devices.isEmpty && !androidSerial.hasAllPermissions;
+    final shouldShow = devices.isEmpty && !appState.connector!.hasAllPermissions;
     if (!shouldShow) {
       _showedPermissionsSnackbar = false;
       return;
@@ -338,6 +337,52 @@ class _ConnectPageState extends State<ConnectPage> {
     );
   }
 
+  Widget _buildWebConnectButton() {
+    final appState = _appState;
+    final localizations = AppLocalizations.of(context)!;
+
+    if (!appState.connector!.isApiAvailable) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.usb_off, size: 48),
+          const SizedBox(height: 16),
+          Text(
+            localizations.web_serial_not_supported,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      );
+    }
+
+    return ElevatedButton.icon(
+      onPressed: () async {
+        await appState.connector!.connectSpecificDevice(null);
+        if (appState.connector!.connected) {
+          if (appState.connector!.isDFU) {
+            await appState.connector!.performDisconnect();
+            if (mounted) {
+              _showDfuDialog(const Chameleon(
+                port: null,
+                device: ChameleonDevice.ultra,
+                type: ConnectionType.usb,
+                dfu: true,
+              ));
+            }
+            return;
+          }
+          appState.communicator =
+              ChameleonCommunicator(appState.log!, port: appState.connector);
+          appState.connector!.device =
+              await appState.communicator!.getDeviceType();
+          appState.changesMade();
+        }
+      },
+      icon: const Icon(Icons.usb),
+      label: Text(localizations.click_to_connect),
+    );
+  }
+
   Widget _buildDeviceGrid(AppLocalizations localizations) {
     return GridView(
       padding: const EdgeInsets.all(20),
@@ -432,6 +477,8 @@ class _ConnectPageState extends State<ConnectPage> {
       );
     }
 
+    final isWebSerial = appState.connector!.name == "Web";
+
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.connect),
@@ -440,17 +487,20 @@ class _ConnectPageState extends State<ConnectPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: IconButton(
-                onPressed: () => _scanNow(manual: true),
-                icon: const Icon(Icons.refresh),
+            if (!isWebSerial)
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  onPressed: () => _scanNow(manual: true),
+                  icon: const Icon(Icons.refresh),
+                ),
               ),
-            ),
             Expanded(
-              child: (_isLoading && !_initialScanCompleted)
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildDeviceGrid(localizations),
+              child: isWebSerial
+                  ? Center(child: _buildWebConnectButton())
+                  : (_isLoading && !_initialScanCompleted)
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildDeviceGrid(localizations),
             ),
             if (appState.connector!.isManualConnectionSupported())
               Align(

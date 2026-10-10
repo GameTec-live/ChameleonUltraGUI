@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 List<Map<String, String>> developers = [
@@ -22,12 +24,6 @@ List<Map<String, String>> developers = [
     'description': 'Developer',
     'avatarUrl': 'https://avatars.githubusercontent.com/u/13242738',
     'username': 'augustozanellato'
-  },
-  {
-    'name': 'Thomas Cannon',
-    'description': 'Apple maintainer',
-    'avatarUrl': 'https://avatars.githubusercontent.com/u/1297160',
-    'username': 'thomascannon'
   },
   {
     'name': 'Akisame',
@@ -102,8 +98,14 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
         for (var file in release["assets"]) {
           if (file["name"] ==
               "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
-            content =
-                await http.readBytes(Uri.parse(file["browser_download_url"]));
+            var url = file["browser_download_url"];
+            if (kIsWeb) {
+              var corsProxy = SharedPreferencesProvider().getCorsProxy();
+              if (corsProxy.isNotEmpty) {
+                url = "$corsProxy$url";
+              }
+            }
+            content = await http.readBytes(Uri.parse(url));
             break;
           }
         }
