@@ -244,6 +244,17 @@ class BLESerial extends AbstractSerial {
             connectionType = ConnectionType.ble;
             isDFU = false;
 
+            // Prefer lower latency / harder-to-kill link on Android.
+            // Idle BLE is often dropped when the phone sleeps or Doze runs.
+            try {
+              await flutterReactiveBle.requestConnectionPriority(
+                deviceId: connectionState.deviceId,
+                priority: ConnectionPriority.highPerformance,
+              );
+            } catch (e) {
+              log.w("requestConnectionPriority failed: $e");
+            }
+
             completer.complete(true);
           } catch (_) {
             try {
