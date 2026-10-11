@@ -172,19 +172,6 @@ class MobileDeviceController extends ChangeNotifier {
     _notify();
   }
 
-  Future<void> refreshBattery() async {
-    final communicator = _communicator;
-    if (communicator == null) {
-      return;
-    }
-
-    battery = await _safe<BatteryCharge?>(
-      communicator.getBatteryCharge,
-      battery,
-    );
-    _notify();
-  }
-
   Future<void> _loadSlots(ChameleonCommunicator communicator) async {
     final types = await _safe<List<SlotTypes>?>(
       communicator.getSlotTagTypes,
@@ -212,9 +199,6 @@ class MobileDeviceController extends ChangeNotifier {
   Future<bool> _areCapabilitiesSupported(
     ChameleonCommunicator communicator,
   ) async {
-    final int ultraCapability = ChameleonCommand.mf0UlcAuth.value;
-    final int liteCapability = ChameleonCommand.setIdteckEmulatorID.value;
-
     List<int> capabilities;
     try {
       capabilities = await communicator.getDeviceCapabilities();
@@ -222,18 +206,15 @@ class MobileDeviceController extends ChangeNotifier {
       return false;
     }
 
-    final device = appState.connector?.device;
-    if (device == ChameleonDevice.ultra &&
-        !capabilities.contains(ultraCapability)) {
-      return false;
-    }
-
-    if (device == ChameleonDevice.lite &&
-        !capabilities.contains(liteCapability)) {
-      return false;
-    }
-
-    return true;
+    return switch (appState.connector?.device) {
+      ChameleonDevice.ultra => capabilities.contains(
+        ChameleonCommand.mf0UlcAuth.value,
+      ),
+      ChameleonDevice.lite => capabilities.contains(
+        ChameleonCommand.setIdteckEmulatorID.value,
+      ),
+      _ => true,
+    };
   }
 
   Future<void> activateSlot(int slot) async {
@@ -285,11 +266,7 @@ class MobileDeviceController extends ChangeNotifier {
     String noName,
   ) async {
     final communicator = _communicator;
-    if (communicator == null || isUploading) {
-      return false;
-    }
-
-    if (!canLoadCardIntoSlot(card)) {
+    if (communicator == null || isUploading || !canLoadCardIntoSlot(card)) {
       return false;
     }
 

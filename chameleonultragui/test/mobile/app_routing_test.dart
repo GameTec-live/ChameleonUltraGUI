@@ -7,11 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'harness.dart';
+
 /// Goes through the real app entry point to check which interface is chosen.
 Future<void> pumpApp(WidgetTester tester, Size window) async {
-  tester.view.physicalSize = window;
-  tester.view.devicePixelRatio = 1;
-  addTearDown(tester.view.reset);
+  setPhoneSize(tester, window);
 
   SharedPreferences.setMockInitialValues({
     'emulate_device': true,
@@ -36,7 +36,7 @@ void main() {
       expect(find.byType(NavigationRail), findsOneWidget);
       expect(find.byType(MobileShell), findsNothing);
 
-      await tester.pumpWidget(const SizedBox());
+      await unmount(tester);
     },
   );
 
@@ -51,7 +51,7 @@ void main() {
     expect(find.byType(NavigationRail), findsNothing);
     expect(tester.takeException(), isNull);
 
-    await tester.pumpWidget(const SizedBox());
+    await unmount(tester);
   });
 
   testWidgets('swapping the connector (emulated device toggle) is safe', (
@@ -73,6 +73,6 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(MobileShell), findsOneWidget);
 
-    await tester.pumpWidget(const SizedBox());
+    await unmount(tester);
   });
 }

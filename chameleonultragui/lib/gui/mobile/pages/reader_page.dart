@@ -51,7 +51,7 @@ class _MobileReaderPageState extends State<MobileReaderPage> {
 
     final name = await showDialog<String>(
       context: context,
-      builder: (BuildContext context) => const _CardNameDialog(),
+      builder: (_) => const _CardNameDialog(),
     );
     if (name == null || !mounted) return;
 
@@ -66,72 +66,76 @@ class _MobileReaderPageState extends State<MobileReaderPage> {
         .showSnackBar(SnackBar(content: Text(localizations.done)));
   }
 
-  Future<void> _openOverrideDialog() async {
+  void _openOverrideDialog() {
     final localizations = AppLocalizations.of(context)!;
 
-    await showDialog<void>(
+    showDialog<void>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(localizations.override_card_type),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                localizations.override_card_type_description,
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              DropdownButton<TagType?>(
-                isExpanded: true,
-                value: _controller.hfInfo.type,
-                onChanged: (TagType? newValue) {
-                  if (newValue == null) return;
-                  Navigator.of(dialogContext).pop();
-                  _controller.overrideHfType(context, newValue);
-                },
-                items: [
-                  ...[
-                    ...getTagTypesByFrequency(TagFrequency.hf),
-                    TagType.unknown,
-                  ].map((TagType tagType) {
-                    return DropdownMenuItem<TagType?>(
-                      value: tagType,
-                      child: Text(chameleonTagToString(tagType, localizations)),
-                    );
-                  }),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(localizations.cancel),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(localizations.override_card_type),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              localizations.override_card_type_description,
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            DropdownButton<TagType?>(
+              isExpanded: true,
+              value: _controller.hfInfo.type,
+              onChanged: (TagType? newValue) {
+                if (newValue == null) return;
+                Navigator.of(dialogContext).pop();
+                _controller.overrideHfType(context, newValue);
+              },
+              items: [
+                for (final tagType in [
+                  ...getTagTypesByFrequency(TagFrequency.hf),
+                  TagType.unknown,
+                ])
+                  DropdownMenuItem<TagType?>(
+                    value: tagType,
+                    child: Text(chameleonTagToString(tagType, localizations)),
+                  ),
+              ],
             ),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(localizations.cancel),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    final appState = context.watch<ChameleonGUIState>();
-    final isLite = appState.connector?.device == ChameleonDevice.lite;
+    final isLite =
+        context.watch<ChameleonGUIState>().connector?.device ==
+        ChameleonDevice.lite;
 
     return Scaffold(
       appBar: AppBar(title: Text(localizations.read_card)),
       body: ListenableBuilder(
         listenable: _controller,
         builder: (context, _) {
-          final controller = _controller;
-          final isHf = controller.frequency == ReaderFrequency.hf;
+          final isHf = _controller.frequency == ReaderFrequency.hf;
+          final cardExist = isHf
+              ? _controller.hfInfo.cardExist
+              : _controller.lfInfo.cardExist;
+          final hasResult = isHf
+              ? _controller.hfInfo.uid.isNotEmpty
+              : _controller.lfInfo.card != null;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
+              spacing: 16,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SegmentedButton<ReaderFrequency>(
@@ -147,11 +151,10 @@ class _MobileReaderPageState extends State<MobileReaderPage> {
                       label: Text(localizations.lf),
                     ),
                   ],
-                  selected: {controller.frequency},
-                  onSelectionChanged: (Set<ReaderFrequency> selection) =>
-                      controller.setFrequency(selection.first),
+                  selected: {_controller.frequency},
+                  onSelectionChanged: (selection) =>
+                      _controller.setFrequency(selection.first),
                 ),
-                const SizedBox(height: 16),
                 if (isLite)
                   Card(
                     child: Padding(
@@ -169,30 +172,15 @@ class _MobileReaderPageState extends State<MobileReaderPage> {
                     ),
                   )
                 else
-                  _ScanButtons(controller: controller),
-                if (controller.error != null) ...[
-                  const SizedBox(height: 16),
-                  ErrorMessage(errorMessage: controller.error.toString()),
-                ],
-                if (isHf) ...[
-                  if (!controller.hfInfo.cardExist) ...[
-                    const SizedBox(height: 16),
-                    ErrorMessage(errorMessage: localizations.no_card_found),
-                  ],
-                  if (controller.hfInfo.uid.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    _buildHfResult(localizations, controller),
-                  ],
-                ] else ...[
-                  if (!controller.lfInfo.cardExist) ...[
-                    const SizedBox(height: 16),
-                    ErrorMessage(errorMessage: localizations.no_card_found),
-                  ],
-                  if (controller.lfInfo.card != null) ...[
-                    const SizedBox(height: 16),
-                    _buildLfResult(localizations, controller),
-                  ],
-                ],
+                  _ScanButtons(controller: _controller),
+                if (_controller.error != null)
+                  ErrorMessage(errorMessage: _controller.error.toString()),
+                if (!cardExist)
+                  ErrorMessage(errorMessage: localizations.no_card_found),
+                if (hasResult)
+                  isHf
+                      ? _buildHfResult(localizations)
+                      : _buildLfResult(localizations),
               ],
             ),
           );
@@ -201,123 +189,107 @@ class _MobileReaderPageState extends State<MobileReaderPage> {
     );
   }
 
-  Widget _buildHfResult(
-    AppLocalizations localizations,
-    MobileReaderController controller,
-  ) {
-    final hfInfo = controller.hfInfo;
+  Widget _buildHfResult(AppLocalizations localizations) {
+    final hfInfo = _controller.hfInfo;
+    final mfcInfo = _controller.mfcInfo;
     final isClassic = isMifareClassic(hfInfo.type);
 
     return Column(
+      spacing: 16,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        _InfoCard(
+          title: localizations.hf_tag_info,
+          children: [
+            _FieldText(label: localizations.uid, value: hfInfo.uid),
+            _FieldText(label: localizations.sak, value: hfInfo.sak),
+            _FieldText(label: localizations.atqa, value: hfInfo.atqa),
+            _FieldText(label: localizations.ats, value: hfInfo.ats),
+            Row(
               children: [
-                Text(
-                  localizations.hf_tag_info,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                _FieldText(label: localizations.uid, value: hfInfo.uid),
-                _FieldText(label: localizations.sak, value: hfInfo.sak),
-                _FieldText(label: localizations.atqa, value: hfInfo.atqa),
-                _FieldText(label: localizations.ats, value: hfInfo.ats),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _FieldText(
-                        label: localizations.card_tech,
-                        value: hfInfo.tech,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: _openOverrideDialog,
-                      icon: const Icon(Icons.edit),
-                      tooltip: localizations.override_card_type,
-                    ),
-                  ],
-                ),
-                if (isClassic) ...[
-                  if (controller.mfcInfo.ntLevel != null)
-                    _FieldText(
-                      label: localizations.prng_type,
-                      value: mfClassicGetPrngType(
-                        controller.mfcInfo.ntLevel!,
-                        localizations,
-                      ),
-                    ),
-                  if (controller.mfcInfo.hasBackdoor != null)
-                    _FieldText(
-                      label: localizations.has_backdoor_support,
-                      value: controller.mfcInfo.hasBackdoor!
-                          ? localizations.yes
-                          : localizations.no,
-                    ),
-                ],
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
+                Expanded(
+                  child: _FieldText(
+                    label: localizations.card_tech,
+                    value: hfInfo.tech,
                   ),
-                  onPressed: () => _saveCard(isHf: true),
-                  child: Text(localizations.save_only_uid),
+                ),
+                IconButton(
+                  onPressed: _openOverrideDialog,
+                  icon: const Icon(Icons.edit),
+                  tooltip: localizations.override_card_type,
                 ),
               ],
             ),
-          ),
+            if (isClassic) ...[
+              if (mfcInfo.ntLevel != null)
+                _FieldText(
+                  label: localizations.prng_type,
+                  value: mfClassicGetPrngType(mfcInfo.ntLevel!, localizations),
+                ),
+              if (mfcInfo.hasBackdoor != null)
+                _FieldText(
+                  label: localizations.has_backdoor_support,
+                  value: mfcInfo.hasBackdoor!
+                      ? localizations.yes
+                      : localizations.no,
+                ),
+            ],
+            const SizedBox(height: 8),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              onPressed: () => _saveCard(isHf: true),
+              child: Text(localizations.save_only_uid),
+            ),
+          ],
         ),
-        if (isClassic) ...[
-          const SizedBox(height: 16),
-          MifareClassicHelper(
-            mfcInfo: controller.mfcInfo,
-            hfInfo: controller.hfInfo,
-          ),
-        ],
-        if (isMifareUltralight(hfInfo.type)) ...[
-          const SizedBox(height: 16),
-          MifareUltralightHelper(hfInfo: controller.hfInfo),
-        ],
+        if (isClassic) MifareClassicHelper(mfcInfo: mfcInfo, hfInfo: hfInfo),
+        if (isMifareUltralight(hfInfo.type))
+          MifareUltralightHelper(hfInfo: hfInfo),
       ],
     );
   }
 
-  Widget _buildLfResult(
-    AppLocalizations localizations,
-    MobileReaderController controller,
-  ) {
-    final card = controller.lfInfo.card!;
+  Widget _buildLfResult(AppLocalizations localizations) {
+    final card = _controller.lfInfo.card!;
 
+    return _InfoCard(
+      title: localizations.lf_tag_info,
+      children: [
+        _FieldText(label: localizations.uid, value: card.toViewableString()),
+        _FieldText(
+          label: localizations.card_tech,
+          value: chameleonTagToString(card.type, localizations),
+        ),
+        const SizedBox(height: 8),
+        FilledButton.tonal(
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          onPressed: () => _saveCard(isHf: false),
+          child: Text(localizations.save),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              localizations.lf_tag_info,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            _FieldText(
-              label: localizations.uid,
-              value: card.toViewableString(),
-            ),
-            _FieldText(
-              label: localizations.card_tech,
-              value: chameleonTagToString(card.type, localizations),
-            ),
-            const SizedBox(height: 8),
-            FilledButton.tonal(
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-              ),
-              onPressed: () => _saveCard(isHf: false),
-              child: Text(localizations.save),
-            ),
+            ...children,
           ],
         ),
       ),

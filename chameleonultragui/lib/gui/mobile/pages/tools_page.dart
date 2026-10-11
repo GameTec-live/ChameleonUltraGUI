@@ -1,8 +1,8 @@
 import 'package:chameleonultragui/gui/menu/dialogs/chameleon_settings.dart';
+import 'package:chameleonultragui/gui/mobile/pages/settings_page.dart';
 import 'package:chameleonultragui/gui/mobile/pages/writer_page.dart';
 import 'package:chameleonultragui/gui/page/debug.dart';
 import 'package:chameleonultragui/gui/page/saved_cards.dart';
-import 'package:chameleonultragui/gui/mobile/pages/settings_page.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
@@ -26,15 +26,6 @@ class MobileToolsPage extends StatelessWidget {
     void push(Widget page) =>
         Navigator.of(context)
             .push(MaterialPageRoute<void>(builder: (_) => page));
-
-    Widget header(String title) => Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall
-            ?.copyWith(color: Theme.of(context).colorScheme.primary),
-      ),
-    );
 
     Widget tile({
       required IconData icon,
@@ -70,7 +61,7 @@ class MobileToolsPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 16),
         children: [
-          header(localizations.cards),
+          MobileSectionHeader(localizations.cards),
           tile(
             icon: Icons.system_update_alt,
             title: localizations.write_card,
@@ -85,7 +76,7 @@ class MobileToolsPage extends StatelessWidget {
               const SavedCardsPage(section: SavedCardsSection.dictionaries),
             ),
           ),
-          header(localizations.tools),
+          MobileSectionHeader(localizations.tools),
           for (final tool in tools)
             tile(
               icon: tool.icon,
@@ -100,7 +91,7 @@ class MobileToolsPage extends StatelessWidget {
                       builder: (_) => tool.onPressed!,
                     ),
             ),
-          header(localizations.device_settings),
+          MobileSectionHeader(localizations.device_settings),
           tile(
             icon: Icons.memory,
             title: localizations.firmware_management,
@@ -111,7 +102,7 @@ class MobileToolsPage extends StatelessWidget {
               builder: (_) => const ChameleonSettings(),
             ),
           ),
-          header(localizations.settings),
+          MobileSectionHeader(localizations.settings),
           tile(
             icon: Icons.settings,
             title: localizations.settings,

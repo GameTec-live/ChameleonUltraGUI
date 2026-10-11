@@ -88,7 +88,7 @@ class MobileReaderController extends ChangeNotifier {
           communicator,
           mfcInfo,
           context,
-          onRecoveryChanged,
+          _notify,
           override: type,
         );
         mfcInfo = info.$2;
@@ -104,10 +104,6 @@ class MobileReaderController extends ChangeNotifier {
       appState.log?.e(e);
       error = e;
     }
-    _notify();
-  }
-
-  void onRecoveryChanged() {
     _notify();
   }
 
@@ -147,7 +143,6 @@ class MobileReaderController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _timer?.cancel();
-    _timer = null;
     super.dispose();
   }
 
@@ -180,7 +175,7 @@ class MobileReaderController extends ChangeNotifier {
   }
 
   Future<void> _scanHf(BuildContext context) async {
-    final info = await readHFInfo(context, onRecoveryChanged);
+    final info = await readHFInfo(context, _notify);
     hfInfo = info.$1;
     mfcInfo = info.$2;
     mfuInfo = info.$3;

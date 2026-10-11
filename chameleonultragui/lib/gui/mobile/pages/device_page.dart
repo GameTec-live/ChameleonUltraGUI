@@ -361,13 +361,19 @@ class _SlotsSection extends StatelessWidget {
             ),
             if (device.readerMode)
               TextButton.icon(
-                onPressed: () => _setMode(context, false),
+                onPressed: () => showErrorOnFailure(
+                  context,
+                  () => device.setReaderMode(false),
+                ),
                 icon: const Icon(Icons.nfc_sharp),
                 label: Text(localizations.emulator_mode),
               )
             else
               TextButton.icon(
-                onPressed: () => _setMode(context, true),
+                onPressed: () => showErrorOnFailure(
+                  context,
+                  () => device.setReaderMode(true),
+                ),
                 icon: const Icon(Icons.barcode_reader),
                 label: Text(localizations.reader_mode),
               ),
@@ -389,31 +395,16 @@ class _SlotsSection extends StatelessWidget {
                 SlotGridTile(
                   slot: slot,
                   device: device,
-                  onTap: () async {
-                    try {
-                      await device.activateSlot(slot);
-                    } catch (e) {
-                      if (context.mounted) {
-                        showMessage(context, '${localizations.error}: $e');
-                      }
-                    }
-                  },
+                  onTap: () => showErrorOnFailure(
+                    context,
+                    () => device.activateSlot(slot),
+                  ),
                   onLongPress: () => showSlotActions(context, slot),
                 ),
             ],
           ),
       ],
     );
-  }
-
-  Future<void> _setMode(BuildContext context, bool reader) async {
-    try {
-      await device.setReaderMode(reader);
-    } catch (e) {
-      if (context.mounted) {
-        showMessage(context, '${AppLocalizations.of(context)!.error}: $e');
-      }
-    }
   }
 }
 

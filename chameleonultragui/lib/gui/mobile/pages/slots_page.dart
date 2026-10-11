@@ -14,21 +14,25 @@ import 'package:provider/provider.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
+/// Runs [action] and reports a failure in a snack bar.
+Future<void> showErrorOnFailure(
+  BuildContext context,
+  Future<void> Function() action,
+) async {
+  try {
+    await action();
+  } catch (e) {
+    if (context.mounted) {
+      showMessage(context, '${AppLocalizations.of(context)!.error}: $e');
+    }
+  }
+}
+
 /// Contextual actions for one slot: activate, load a saved card, and the
 /// existing slot settings dialog for advanced configuration.
 Future<void> showSlotActions(BuildContext context, int slot) {
   final device = context.read<MobileDeviceController>();
   final localizations = AppLocalizations.of(context)!;
-
-  Future<void> activate() async {
-    try {
-      await device.activateSlot(slot);
-    } catch (e) {
-      if (context.mounted) {
-        showMessage(context, '${localizations.error}: $e');
-      }
-    }
-  }
 
   Future<void> loadCard() async {
     final card = await Navigator.of(context).push<CardSave>(
@@ -61,7 +65,8 @@ Future<void> showSlotActions(BuildContext context, int slot) {
         icon: Icons.check_circle_outline,
         label: localizations.activate,
         enabled: device.activeSlot != slot,
-        onTap: activate,
+        onTap: () =>
+            showErrorOnFailure(context, () => device.activateSlot(slot)),
       ),
       SheetAction(
         icon: Icons.nfc,
@@ -130,15 +135,10 @@ class MobileSlotsPage extends StatelessWidget {
                   slot: slot,
                   device: device,
                   onTap: () => showSlotActions(context, slot),
-                  onToggle: (frequency, enabled) async {
-                    try {
-                      await device.setSlotEnabled(slot, frequency, enabled);
-                    } catch (e) {
-                      if (context.mounted) {
-                        showMessage(context, '${localizations.error}: $e');
-                      }
-                    }
-                  },
+                  onToggle: (frequency, enabled) => showErrorOnFailure(
+                    context,
+                    () => device.setSlotEnabled(slot, frequency, enabled),
+                  ),
                 ),
               ),
             ),

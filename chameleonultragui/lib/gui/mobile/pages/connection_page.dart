@@ -66,9 +66,6 @@ class _MobileConnectionPageState extends State<MobileConnectionPage> {
   }
 
   Future<void> _connect(Chameleon device) async {
-    final localizations = AppLocalizations.of(context)!;
-    final messenger = ScaffoldMessenger.of(context);
-
     final result = await _controller.connect(device);
     if (!mounted) {
       return;
@@ -77,15 +74,9 @@ class _MobileConnectionPageState extends State<MobileConnectionPage> {
     if (result == ConnectResult.dfu) {
       await _showDfuDialog(device);
     } else if (result == ConnectResult.failed && _controller.error != null) {
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('${localizations.error}: ${_controller.error}'),
-          action: SnackBarAction(
-            label: localizations.close,
-            onPressed: messenger.hideCurrentSnackBar,
-          ),
-        ),
+      showMessage(
+        context,
+        '${AppLocalizations.of(context)!.error}: ${_controller.error}',
       );
     }
   }
@@ -182,13 +173,13 @@ class _MobileConnectionPageState extends State<MobileConnectionPage> {
                   : const SizedBox(height: 4),
             ),
           ),
-          body: SafeArea(top: false, child: _buildBody(context, localizations)),
+          body: SafeArea(top: false, child: _buildBody(localizations)),
         );
       },
     );
   }
 
-  Widget _buildBody(BuildContext context, AppLocalizations localizations) {
+  Widget _buildBody(AppLocalizations localizations) {
     if (_controller.error != null && _controller.devices.isEmpty) {
       return MessageView(
         icon: Icons.error_outline,
@@ -257,8 +248,6 @@ class _DeviceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
-    final isBle = device.type == ConnectionType.ble;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -288,8 +277,8 @@ class _DeviceTile extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         trailing: Icon(
-          isBle ? Icons.bluetooth : Icons.usb,
-          color: scheme.primary,
+          device.type == ConnectionType.ble ? Icons.bluetooth : Icons.usb,
+          color: Theme.of(context).colorScheme.primary,
         ),
       ),
     );

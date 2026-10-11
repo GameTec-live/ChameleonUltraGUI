@@ -7,15 +7,25 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 void showMessage(BuildContext context, String message) {
-  final messenger = ScaffoldMessenger.of(context);
-  final localizations = AppLocalizations.of(context)!;
+  showMessageOn(
+    ScaffoldMessenger.of(context),
+    message,
+    AppLocalizations.of(context)!.close,
+  );
+}
 
+/// For callers that must grab the messenger before an async gap.
+void showMessageOn(
+  ScaffoldMessengerState messenger,
+  String message,
+  String closeLabel,
+) {
   messenger.hideCurrentSnackBar();
   messenger.showSnackBar(
     SnackBar(
       content: Text(message),
       action: SnackBarAction(
-        label: localizations.close,
+        label: closeLabel,
         onPressed: messenger.hideCurrentSnackBar,
       ),
     ),
@@ -25,8 +35,10 @@ void showMessage(BuildContext context, String message) {
 /// Asks for confirmation before deleting [name], unless the user turned
 /// deletion confirmations off in the settings.
 Future<bool> confirmDeletion(BuildContext context, String name) async {
-  final appState = context.read<ChameleonGUIState>();
-  if (!appState.sharedPreferencesProvider.getConfirmDelete()) {
+  if (!context
+      .read<ChameleonGUIState>()
+      .sharedPreferencesProvider
+      .getConfirmDelete()) {
     return true;
   }
 

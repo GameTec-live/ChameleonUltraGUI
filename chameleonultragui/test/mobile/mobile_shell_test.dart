@@ -1,4 +1,3 @@
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/mobile/controllers/device_controller.dart';
 import 'package:chameleonultragui/gui/mobile/mobile_shell.dart';
 import 'package:chameleonultragui/gui/mobile/pages/connection_page.dart';
@@ -10,22 +9,6 @@ import 'package:provider/provider.dart';
 
 import 'harness.dart';
 
-Future<void> connectEmulator(WidgetTester tester, MobileTestEnv env) async {
-  final connector = env.appState.connector!;
-  await connector.connectSpecificDevice('Demo');
-  env.appState.communicator = ChameleonCommunicator(
-    env.appState.log!,
-    port: connector,
-  );
-  await connector.registerCallback(env.appState.communicator!.onSerialMessage);
-  env.appState.changesMade();
-  await settle(tester);
-}
-
-Future<void> unmount(WidgetTester tester) async {
-  await tester.pumpWidget(const SizedBox());
-}
-
 void main() {
   const phones = {
     'small 320x568': Size(320, 568),
@@ -33,33 +16,31 @@ void main() {
   };
 
   group('disconnected', () {
-    {
-      testWidgets('shows the device list without overflow on a small phone', (
-        tester,
-      ) async {
-        setPhoneSize(tester, const Size(320, 568));
-        final env = await createEnv();
+    testWidgets('shows the device list without overflow on a small phone', (
+      tester,
+    ) async {
+      setPhoneSize(tester, const Size(320, 568));
+      final appState = await createAppState();
 
-        await tester.pumpWidget(buildMobileApp(env, textScale: 1.5));
-        await settle(tester);
+      await tester.pumpWidget(buildMobileApp(appState, textScale: 1.5));
+      await settle(tester);
 
-        expect(find.byType(MobileConnectionPage), findsOneWidget);
-        expect(find.text('Chameleon Ultra'), findsOneWidget);
-        expect(find.text('Demo'), findsOneWidget);
-        expect(find.byType(NavigationBar), findsOneWidget);
-        expect(tester.takeException(), isNull);
+      expect(find.byType(MobileConnectionPage), findsOneWidget);
+      expect(find.text('Chameleon Ultra'), findsOneWidget);
+      expect(find.text('Demo'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(tester.takeException(), isNull);
 
-        await unmount(tester);
-      });
-    }
+      await unmount(tester);
+    });
 
     testWidgets('Read needs a device but Cards and More stay available', (
       tester,
     ) async {
       setPhoneSize(tester, const Size(390, 844));
-      final env = await createEnv();
+      final appState = await createAppState();
 
-      await tester.pumpWidget(buildMobileApp(env));
+      await tester.pumpWidget(buildMobileApp(appState));
       await settle(tester);
 
       await tester.tap(find.text('Read'));
@@ -92,9 +73,9 @@ void main() {
       tester,
     ) async {
       setPhoneSize(tester, const Size(390, 844));
-      final env = await createEnv();
+      final appState = await createAppState();
 
-      await tester.pumpWidget(buildMobileApp(env));
+      await tester.pumpWidget(buildMobileApp(appState));
       await settle(tester);
 
       await tester.tap(find.text('More'));
@@ -114,15 +95,15 @@ void main() {
       tester,
     ) async {
       setPhoneSize(tester, const Size(390, 844));
-      final env = await createEnv();
+      final appState = await createAppState();
 
-      await tester.pumpWidget(buildMobileApp(env));
+      await tester.pumpWidget(buildMobileApp(appState));
       await settle(tester);
 
       await tester.tap(find.text('Chameleon Ultra'));
       await settle(tester);
 
-      expect(env.appState.connector!.connected, isTrue);
+      expect(appState.connector!.connected, isTrue);
       expect(find.byType(MobileDevicePage), findsOneWidget);
       expect(find.text('Quick actions'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -132,39 +113,39 @@ void main() {
     });
 
     for (final entry in phones.entries) {
-      for (final scale in [1.5]) {
-        testWidgets(
-          'dashboard has no overflow on ${entry.key} at text scale $scale',
-          (tester) async {
-            setPhoneSize(tester, entry.value);
-            final env = await createEnv();
+      testWidgets(
+        'dashboard has no overflow on ${entry.key} at text scale 1.5',
+        (tester) async {
+          setPhoneSize(tester, entry.value);
+          final appState = await createAppState();
 
-            await tester.pumpWidget(buildMobileApp(env, textScale: scale));
-            await connectEmulator(tester, env);
+          await tester.pumpWidget(buildMobileApp(appState, textScale: 1.5));
+          await connectEmulator(tester, appState);
 
-            expect(find.byType(MobileDevicePage), findsOneWidget);
-            expect(tester.takeException(), isNull);
+          expect(find.byType(MobileDevicePage), findsOneWidget);
+          expect(tester.takeException(), isNull);
 
-            await unmount(tester);
-          },
-        );
-      }
+          await unmount(tester);
+        },
+      );
     }
 
     testWidgets('device data is requested once, not on every rebuild', (
       tester,
     ) async {
       setPhoneSize(tester, const Size(390, 844));
-      final env = await createEnv(connector: (log) => CountingSerial(log: log));
-      final counting = env.appState.connector! as CountingSerial;
+      final appState = await createAppState(
+        connector: (log) => CountingSerial(log: log),
+      );
+      final counting = appState.connector! as CountingSerial;
 
-      await tester.pumpWidget(buildMobileApp(env));
-      await connectEmulator(tester, env);
+      await tester.pumpWidget(buildMobileApp(appState));
+      await connectEmulator(tester, appState);
       final afterLoad = counting.writes;
       expect(afterLoad, greaterThan(0));
 
       for (var i = 0; i < 5; i++) {
-        env.appState.changesMade();
+        appState.changesMade();
         await tester.pump(const Duration(milliseconds: 50));
       }
       await tester.tap(find.text('More'));
@@ -178,13 +159,13 @@ void main() {
 
     testWidgets('disconnecting returns to the connection list', (tester) async {
       setPhoneSize(tester, const Size(390, 844));
-      final env = await createEnv();
+      final appState = await createAppState();
 
-      await tester.pumpWidget(buildMobileApp(env));
-      await connectEmulator(tester, env);
+      await tester.pumpWidget(buildMobileApp(appState));
+      await connectEmulator(tester, appState);
       expect(find.byType(MobileDevicePage), findsOneWidget);
 
-      await env.appState.disconnect(manual: true);
+      await appState.disconnect(manual: true);
       await settle(tester);
 
       expect(find.byType(MobileConnectionPage), findsOneWidget);
@@ -201,13 +182,13 @@ void main() {
   group('DFU', () {
     testWidgets('hides navigation and shows flashing progress', (tester) async {
       setPhoneSize(tester, const Size(320, 568));
-      final env = await createEnv();
-      final connector = env.appState.connector!;
+      final appState = await createAppState();
+      final connector = appState.connector!;
       await connector.connectSpecificDevice('Demo');
       connector.isDFU = true;
-      env.appState.progress = 0.4;
+      appState.progress = 0.4;
 
-      await tester.pumpWidget(buildMobileApp(env));
+      await tester.pumpWidget(buildMobileApp(appState));
       await tester.pump();
 
       expect(find.byType(MobileDfuPage), findsOneWidget);

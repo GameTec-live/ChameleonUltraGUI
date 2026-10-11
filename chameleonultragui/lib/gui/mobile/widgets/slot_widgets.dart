@@ -6,6 +6,14 @@ import 'package:flutter/material.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
+TagType _slotType(
+  MobileDeviceController device,
+  int slot,
+  TagFrequency frequency,
+) => frequency == TagFrequency.hf
+    ? device.slotTypes[slot].hf
+    : device.slotTypes[slot].lf;
+
 /// "name (type)" for one frequency of a slot, or "Empty".
 String slotFrequencyLabel(
   MobileDeviceController device,
@@ -13,9 +21,7 @@ String slotFrequencyLabel(
   TagFrequency frequency,
   AppLocalizations localizations,
 ) {
-  final type = frequency == TagFrequency.hf
-      ? device.slotTypes[slot].hf
-      : device.slotTypes[slot].lf;
+  final type = _slotType(device, slot, frequency);
   if (type == TagType.unknown) {
     return localizations.empty;
   }
@@ -137,9 +143,7 @@ class SlotCard extends StatelessWidget {
     final active = device.activeSlot == slot;
 
     Widget row(TagFrequency frequency) {
-      final type = frequency == TagFrequency.hf
-          ? device.slotTypes[slot].hf
-          : device.slotTypes[slot].lf;
+      final type = _slotType(device, slot, frequency);
       final isEnabled = frequency == TagFrequency.hf
           ? device.enabledSlots[slot].hf
           : device.enabledSlots[slot].lf;

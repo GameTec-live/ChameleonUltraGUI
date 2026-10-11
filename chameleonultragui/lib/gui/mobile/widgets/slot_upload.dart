@@ -53,16 +53,7 @@ Future<void> loadCardIntoSlotWithProgress(
   }
 
   navigator.pop();
-  messenger.hideCurrentSnackBar();
-  messenger.showSnackBar(
-    SnackBar(
-      content: Text(message),
-      action: SnackBarAction(
-        label: localizations.close,
-        onPressed: messenger.hideCurrentSnackBar,
-      ),
-    ),
-  );
+  showMessageOn(messenger, message, localizations.close);
 }
 
 /// Lets the user choose one of the eight slots. Returns the zero based index.
@@ -112,16 +103,14 @@ String _slotSummary(
   int slot,
   AppLocalizations l,
 ) {
-  final hf = controller.slotNames[slot].hf;
-  final lf = controller.slotNames[slot].lf;
+  final names = controller.slotNames[slot];
   final parts = [
-    if (hf.isNotEmpty) '${l.hf}: $hf',
-    if (lf.isNotEmpty) '${l.lf}: $lf',
+    if (names.hf.isNotEmpty) '${l.hf}: ${names.hf}',
+    if (names.lf.isNotEmpty) '${l.lf}: ${names.lf}',
   ];
   return parts.isEmpty ? l.empty : parts.join('  ');
 }
 
-/// Convenience for flows that pick a slot and then upload [card].
 Future<void> pickSlotAndLoadCard(BuildContext context, CardSave card) async {
   final slot = await showSlotPicker(context);
   if (slot == null || !context.mounted) {
@@ -131,7 +120,6 @@ Future<void> pickSlotAndLoadCard(BuildContext context, CardSave card) async {
   await loadCardIntoSlotWithProgress(context, slot: slot, card: card);
 }
 
-/// Shown when an action needs a connected device.
 void showDeviceRequired(BuildContext context) {
   showMessage(context, AppLocalizations.of(context)!.connect_device_to_use);
 }

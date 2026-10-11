@@ -19,6 +19,11 @@ class MobileDfuPage extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
     final isUltra = appState.connector!.device == ChameleonDevice.ultra;
     final model = chameleonDeviceName(ChameleonDevice.ultra);
+    final image = !appState.easterEgg
+        ? deviceImageAsset(isUltra)
+        : isUltra
+        ? 'assets/black-ultra-standing-front-flashing.webp'
+        : 'assets/black-lite-standing-front-flashing.webp';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Chameleon DFU')),
@@ -37,11 +42,7 @@ class MobileDfuPage extends StatelessWidget {
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxHeight: 220),
                         child: Image.asset(
-                          appState.easterEgg
-                              ? (isUltra
-                                    ? 'assets/black-ultra-standing-front-flashing.webp'
-                                    : 'assets/black-lite-standing-front-flashing.webp')
-                              : deviceImageAsset(isUltra),
+                          image,
                           fit: BoxFit.contain,
                           excludeFromSemantics: true,
                         ),

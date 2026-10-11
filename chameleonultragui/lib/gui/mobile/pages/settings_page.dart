@@ -8,6 +8,27 @@ import 'package:url_launcher/url_launcher.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
+class MobileSectionHeader extends StatelessWidget {
+  const MobileSectionHeader(this.title, {super.key});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+      child: Text(
+        title,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.primary,
+        ),
+      ),
+    );
+  }
+}
+
 /// App settings as a grouped list. Same preferences and dialogs as the desktop
 /// settings page, minus the sidebar option, which has no meaning on phones.
 class MobileSettingsPage extends StatelessWidget {
@@ -18,17 +39,6 @@ class MobileSettingsPage extends StatelessWidget {
     final appState = context.watch<ChameleonGUIState>();
     final prefs = appState.sharedPreferencesProvider;
     final localizations = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-
-    Widget header(String title) => Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-      child: Text(
-        title,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
-        ),
-      ),
-    );
 
     Widget switchTile(String title, bool value, void Function(bool) onChanged) {
       return SwitchListTile(
@@ -41,7 +51,6 @@ class MobileSettingsPage extends StatelessWidget {
       );
     }
 
-    // Switches that ask for confirmation before flipping.
     Widget confirmedSwitchTile(
       String title,
       bool value,
@@ -72,7 +81,7 @@ class MobileSettingsPage extends StatelessWidget {
           bottom: MediaQuery.viewPaddingOf(context).bottom + 16,
         ),
         children: [
-          header(localizations.theme),
+          MobileSectionHeader(localizations.theme),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: SegmentedButton<ThemeMode>(
@@ -131,7 +140,7 @@ class MobileSettingsPage extends StatelessWidget {
               }).toList(),
             ),
           ),
-          header(localizations.connect),
+          MobileSectionHeader(localizations.connect),
           switchTile(
             localizations.auto_scan_devices,
             prefs.getAutoScanEnabled(),
@@ -147,7 +156,7 @@ class MobileSettingsPage extends StatelessWidget {
             prefs.getConfirmDelete(),
             prefs.setConfirmDelete,
           ),
-          header(localizations.other),
+          MobileSectionHeader(localizations.other),
           ListTile(
             minTileHeight: 56,
             leading: const Icon(Icons.upload),
@@ -160,7 +169,7 @@ class MobileSettingsPage extends StatelessWidget {
             title: Text(localizations.import_settings),
             onTap: () => showImportSettingsDialog(context),
           ),
-          header(localizations.about),
+          MobileSectionHeader(localizations.about),
           ListTile(
             minTileHeight: 56,
             leading: const Icon(Icons.info_outline),
@@ -190,7 +199,7 @@ class MobileSettingsPage extends StatelessWidget {
               Uri.parse('https://crowdin.com/project/chameleonultragui'),
             ),
           ),
-          header(localizations.advanced),
+          MobileSectionHeader(localizations.advanced),
           confirmedSwitchTile(
             localizations.emulate_device,
             prefs.isEmulatedChameleon(),

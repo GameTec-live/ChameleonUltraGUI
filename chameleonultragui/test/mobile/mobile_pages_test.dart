@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/gui/mobile/pages/library_page.dart';
 import 'package:chameleonultragui/gui/mobile/pages/slots_page.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
+import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,35 +19,23 @@ CardSave card(String name, TagType tag, {String uid = 'DEADBEEF'}) => CardSave(
   data: [],
 );
 
-Future<void> connectEmulator(WidgetTester tester, MobileTestEnv env) async {
-  final connector = env.appState.connector!;
-  await connector.connectSpecificDevice('Demo');
-  env.appState.communicator = ChameleonCommunicator(
-    env.appState.log!,
-    port: connector,
-  );
-  await connector.registerCallback(env.appState.communicator!.onSerialMessage);
-  env.appState.changesMade();
-  await settle(tester);
-}
-
 void main() {
   group('library', () {
-    Future<MobileTestEnv> libraryEnv() async {
-      final env = await createEnv();
-      env.appState.sharedPreferencesProvider.setCards([
+    Future<ChameleonGUIState> libraryState() async {
+      final appState = await createAppState();
+      appState.sharedPreferencesProvider.setCards([
         card('Office badge', TagType.mifare1K),
         card('Gym tag', TagType.em410X, uid: '0102030405'),
         card('Garage', TagType.ntag215, uid: '04AABBCCDDEE80'),
       ]);
-      return env;
+      return appState;
     }
 
     testWidgets('lists, searches and filters saved cards', (tester) async {
       setPhoneSize(tester, const Size(390, 844));
-      final env = await libraryEnv();
+      final appState = await libraryState();
 
-      await tester.pumpWidget(buildMobileApp(env));
+      await tester.pumpWidget(buildMobileApp(appState));
       await tester.tap(find.text('Cards'));
       await tester.pump();
 
@@ -71,16 +59,16 @@ void main() {
       expect(find.text('Office badge'), findsNothing);
       expect(tester.takeException(), isNull);
 
-      await tester.pumpWidget(const SizedBox());
+      await unmount(tester);
     });
 
     testWidgets('delete asks for confirmation and removes the card', (
       tester,
     ) async {
       setPhoneSize(tester, const Size(390, 844));
-      final env = await libraryEnv();
+      final appState = await libraryState();
 
-      await tester.pumpWidget(buildMobileApp(env));
+      await tester.pumpWidget(buildMobileApp(appState));
       await tester.tap(find.text('Cards'));
       await tester.pump();
 
@@ -93,16 +81,16 @@ void main() {
       await tester.tap(find.widgetWithText(TextButton, 'Delete'));
       await tester.pumpAndSettle();
 
-      expect(env.appState.sharedPreferencesProvider.getCards().length, 2);
-      await tester.pumpWidget(const SizedBox());
+      expect(appState.sharedPreferencesProvider.getCards().length, 2);
+      await unmount(tester);
     });
 
     testWidgets('pick mode returns the tapped card', (tester) async {
       setPhoneSize(tester, const Size(390, 844));
-      final env = await libraryEnv();
+      final appState = await libraryState();
       CardSave? picked;
 
-      await tester.pumpWidget(buildMobileApp(env));
+      await tester.pumpWidget(buildMobileApp(appState));
       await tester.pump();
       final navigator = tester.state<NavigatorState>(find.byType(Navigator));
       navigator
@@ -119,7 +107,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(picked?.name, 'Gym tag');
-      await tester.pumpWidget(const SizedBox());
+      await unmount(tester);
     });
   });
 
@@ -128,10 +116,10 @@ void main() {
       tester,
     ) async {
       setPhoneSize(tester, const Size(390, 844));
-      final env = await createEnv();
+      final appState = await createAppState();
 
-      await tester.pumpWidget(buildMobileApp(env));
-      await connectEmulator(tester, env);
+      await tester.pumpWidget(buildMobileApp(appState));
+      await connectEmulator(tester, appState);
 
       await tester.tap(find.widgetWithText(FilledButton, 'Slots'));
       await tester.pumpAndSettle();
@@ -146,7 +134,7 @@ void main() {
       expect(find.text('Slot Settings'), findsOneWidget);
       expect(find.text('Activate'), findsOneWidget);
 
-      await tester.pumpWidget(const SizedBox());
+      await unmount(tester);
     });
   });
 }

@@ -33,17 +33,21 @@ class MobileLibraryPage extends StatefulWidget {
 }
 
 class _MobileLibraryPageState extends State<MobileLibraryPage> {
+  static const _rootDestination = '__root__';
+
   String _query = '';
   _LibraryFilter _filter = _LibraryFilter.all;
 
-  bool _isConnected(BuildContext context) {
-    final connector = context.read<ChameleonGUIState>().connector;
+  ChameleonGUIState get _appState => context.read<ChameleonGUIState>();
+
+  SharedPreferencesProvider get _prefs => _appState.sharedPreferencesProvider;
+
+  bool get _isConnected {
+    final connector = _appState.connector;
     return connector != null && connector.connected && !connector.isDFU;
   }
 
-  Future<void> _import() async {
-    await importCardFromFile(context);
-  }
+  Future<void> _import() => importCardFromFile(context);
 
   void _openFolders() {
     Navigator.of(context).push(
@@ -62,17 +66,11 @@ class _MobileLibraryPageState extends State<MobileLibraryPage> {
 
   void _showActions(CardSave card) {
     final l = AppLocalizations.of(context)!;
-    final connected = _isConnected(context);
-    final hasFolders = context
-        .read<ChameleonGUIState>()
-        .sharedPreferencesProvider
-        .getCardFolders()
-        .isNotEmpty;
-    final name = card.name.isEmpty ? l.no_name : card.name;
+    final connected = _isConnected;
 
     showActionSheet(
       context,
-      title: name,
+      title: _cardName(card, l),
       subtitle: chameleonCardToString(card, l),
       actions: [
         SheetAction(
@@ -100,7 +98,7 @@ class _MobileLibraryPageState extends State<MobileLibraryPage> {
           label: l.load_into_slot,
           enabled: !connected || canLoadCardIntoSlot(card),
           onTap: () {
-            if (!_isConnected(context)) {
+            if (!_isConnected) {
               showDeviceRequired(context);
               return;
             }
@@ -121,7 +119,7 @@ class _MobileLibraryPageState extends State<MobileLibraryPage> {
           label: l.save,
           onTap: () => _export(card),
         ),
-        if (hasFolders)
+        if (_prefs.getCardFolders().isNotEmpty)
           SheetAction(
             icon: Icons.drive_file_move_outline,
             label: l.move_card,
@@ -137,6 +135,15 @@ class _MobileLibraryPageState extends State<MobileLibraryPage> {
     );
   }
 
+  void _editCard(CardSave card, void Function(CardSave card) edit) {
+    final cards = _prefs.getCards();
+    final index = cards.indexWhere((c) => c.id == card.id);
+    if (index == -1) return;
+    edit(cards[index]);
+    _prefs.setCards(cards);
+    _appState.changesMade();
+  }
+
   Future<void> _rename(CardSave card) async {
     final newName = await showDialog<String>(
       context: context,
@@ -144,74 +151,58 @@ class _MobileLibraryPageState extends State<MobileLibraryPage> {
     );
     if (newName == null || !mounted) return;
 
-    final appState = context.read<ChameleonGUIState>();
-    final cards = appState.sharedPreferencesProvider.getCards();
-    final index = cards.indexWhere((c) => c.id == card.id);
-    if (index == -1) return;
-    cards[index].name = newName;
-    appState.sharedPreferencesProvider.setCards(cards);
-    appState.changesMade();
+    _editCard(card, (saved) => saved.name = newName);
   }
 
-  Future<void> _export(CardSave card) async {
-    await showDialog(
+  void _export(CardSave card) {
+    showDialog(
       context: context,
       builder: (dialogContext) {
         final l = AppLocalizations.of(dialogContext)!;
+
+        Widget formatButton(String extension, bool bin) {
+          return ElevatedButton(
+            onPressed: () async {
+              await saveTag(card, dialogContext, bin);
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
+            },
+            child: Text(l.save_as(extension)),
+          );
+        }
+
         return AlertDialog(
           title: Text(l.select_save_format),
-          actions: [
-            ElevatedButton(
-              onPressed: () async {
-                await saveTag(card, dialogContext, true);
-                if (dialogContext.mounted) {
-                  Navigator.pop(dialogContext);
-                }
-              },
-              child: Text(l.save_as('.bin')),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                await saveTag(card, dialogContext, false);
-                if (dialogContext.mounted) {
-                  Navigator.pop(dialogContext);
-                }
-              },
-              child: Text(l.save_as('.json')),
-            ),
-          ],
+          actions: [formatButton('.bin', true), formatButton('.json', false)],
         );
       },
     );
   }
 
-  Future<String?> _pickFolderDestination() async {
+  Future<String?> _pickFolderDestination() {
     final l = AppLocalizations.of(context)!;
-    final folders = context
-        .read<ChameleonGUIState>()
-        .sharedPreferencesProvider
-        .getCardFolders();
+
     return showDialog<String>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
         title: Text(l.move_to_folder),
         children: [
           SimpleDialogOption(
-            onPressed: () => Navigator.pop(dialogContext, '__root__'),
+            onPressed: () => Navigator.pop(dialogContext, _rootDestination),
             child: ListTile(
               leading: const Icon(Icons.home),
               title: Text(l.saved_cards),
             ),
           ),
-          ...folders.map(
-            (folder) => SimpleDialogOption(
+          for (final folder in _prefs.getCardFolders())
+            SimpleDialogOption(
               onPressed: () => Navigator.pop(dialogContext, folder.id),
               child: ListTile(
                 leading: Icon(Icons.folder, color: folder.color),
                 title: Text(folder.name),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -221,181 +212,180 @@ class _MobileLibraryPageState extends State<MobileLibraryPage> {
     final destination = await _pickFolderDestination();
     if (destination == null || !mounted) return;
 
-    final appState = context.read<ChameleonGUIState>();
-    final cards = appState.sharedPreferencesProvider.getCards();
-    final index = cards.indexWhere((c) => c.id == card.id);
-    if (index == -1) return;
-    cards[index].folderId = destination == '__root__' ? null : destination;
-    appState.sharedPreferencesProvider.setCards(cards);
-    appState.changesMade();
+    _editCard(
+      card,
+      (saved) =>
+          saved.folderId = destination == _rootDestination ? null : destination,
+    );
   }
 
   Future<void> _delete(CardSave card) async {
-    if (!await confirmDeletion(context, card.name)) return;
-    if (!mounted) return;
+    if (!await confirmDeletion(context, card.name) || !mounted) return;
 
-    final appState = context.read<ChameleonGUIState>();
-    final cards = appState.sharedPreferencesProvider.getCards();
-    cards.removeWhere((c) => c.id == card.id);
-    appState.sharedPreferencesProvider.setCards(cards);
-    appState.changesMade();
+    final cards = _prefs.getCards()..removeWhere((c) => c.id == card.id);
+    _prefs.setCards(cards);
+    _appState.changesMade();
+  }
+
+  List<CardSave> _visibleCards(List<CardSave> cards, AppLocalizations l) {
+    final query = _query.trim().toLowerCase();
+
+    return cards.where((card) {
+        if (_filter != _LibraryFilter.all &&
+            (_filter == _LibraryFilter.hf) != _isHf(card)) {
+          return false;
+        }
+        return query.isEmpty ||
+            card.name.toLowerCase().contains(query) ||
+            card.uid.toLowerCase().contains(query) ||
+            chameleonCardToString(card, l).toLowerCase().contains(query);
+      }).toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  }
+
+  Widget _buildFilterBar(AppLocalizations l) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: SearchBar(
+            hintText: l.search_cards,
+            leading: const Icon(Icons.search),
+            onChanged: (value) => setState(() => _query = value),
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              for (final filter in _LibraryFilter.values)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(switch (filter) {
+                      _LibraryFilter.all => l.all,
+                      _LibraryFilter.hf => l.hf,
+                      _LibraryFilter.lf => l.lf,
+                    }),
+                    selected: _filter == filter,
+                    onSelected: (_) => setState(() => _filter = filter),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildCardList(
+    List<CardSave> cards,
+    Map<String, String> folderNames,
+    AppLocalizations l,
+  ) {
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 16),
+      itemCount: cards.length,
+      itemBuilder: (context, index) {
+        final card = cards[index];
+        final folderName = folderNames[card.folderId];
+        final details = chameleonCardToString(card, l);
+
+        return ListTile(
+          minTileHeight: 56,
+          leading: Icon(
+            _isHf(card) ? Icons.credit_card : Icons.wifi,
+            color: card.color,
+          ),
+          title: Text(
+            _cardName(card, l),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            folderName == null ? details : '$details · $folderName',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          onTap: widget.pickMode
+              ? () => Navigator.of(context).pop(card)
+              : () => _view(card),
+          onLongPress: widget.pickMode ? null : () => _showActions(card),
+          trailing: widget.pickMode
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () => _showActions(card),
+                ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-    final appState = context.watch<ChameleonGUIState>();
-    final prefs = appState.sharedPreferencesProvider;
+    final l = AppLocalizations.of(context)!;
+    final prefs = context.watch<ChameleonGUIState>().sharedPreferencesProvider;
     final allCards = prefs.getCards();
-    final folderNames = {
-      for (final folder in prefs.getCardFolders()) folder.id: folder.name,
-    };
+    final visible = _visibleCards(allCards, l);
 
-    final query = _query.trim().toLowerCase();
-    final visible =
-        allCards.where((card) {
-          if (_filter != _LibraryFilter.all) {
-            final isHf = chameleonTagToFrequency(card.tag) == TagFrequency.hf;
-            if ((_filter == _LibraryFilter.hf) != isHf) return false;
-          }
-          if (query.isEmpty) return true;
-          return card.name.toLowerCase().contains(query) ||
-              card.uid.toLowerCase().contains(query) ||
-              chameleonCardToString(
-                card,
-                localizations,
-              ).toLowerCase().contains(query);
-        }).toList()..sort(
-          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-        );
-
-    Widget content;
+    final Widget content;
     if (allCards.isEmpty) {
       content = MessageView(
         icon: Icons.credit_card_off,
-        title: localizations.no_saved_cards,
+        title: l.no_saved_cards,
         actions: widget.pickMode
             ? const []
             : [
                 FilledButton.tonal(
                   onPressed: _import,
-                  child: Text(localizations.import_card),
+                  child: Text(l.import_card),
                 ),
               ],
       );
     } else if (visible.isEmpty) {
-      content = MessageView(
-        icon: Icons.search_off,
-        title: localizations.no_matching_cards,
-      );
+      content = MessageView(icon: Icons.search_off, title: l.no_matching_cards);
     } else {
-      content = ListView.builder(
-        padding: const EdgeInsets.only(bottom: 16),
-        itemCount: visible.length,
-        itemBuilder: (context, index) {
-          final card = visible[index];
-          final isHf = chameleonTagToFrequency(card.tag) == TagFrequency.hf;
-          final folderName = card.folderId == null
-              ? null
-              : folderNames[card.folderId];
-          final baseText = chameleonCardToString(card, localizations);
-          final subtitle = folderName == null
-              ? baseText
-              : '$baseText · $folderName';
-
-          return ListTile(
-            minTileHeight: 56,
-            leading: Icon(
-              isHf ? Icons.credit_card : Icons.wifi,
-              color: card.color,
-            ),
-            title: Text(
-              card.name.isEmpty ? localizations.no_name : card.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(
-              subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            onTap: widget.pickMode
-                ? () => Navigator.of(context).pop(card)
-                : () => _view(card),
-            onLongPress: widget.pickMode ? null : () => _showActions(card),
-            trailing: widget.pickMode
-                ? null
-                : IconButton(
-                    icon: const Icon(Icons.more_vert),
-                    onPressed: () => _showActions(card),
-                  ),
-          );
-        },
-      );
+      content = _buildCardList(visible, {
+        for (final folder in prefs.getCardFolders()) folder.id: folder.name,
+      }, l);
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.pickMode
-              ? localizations.select_saved_card
-              : localizations.saved_cards,
-        ),
+        title: Text(widget.pickMode ? l.select_saved_card : l.saved_cards),
         actions: widget.pickMode
             ? null
             : [
                 IconButton(
                   icon: const Icon(Icons.file_upload),
-                  tooltip: localizations.import_card,
+                  tooltip: l.import_card,
                   onPressed: _import,
                 ),
                 IconButton(
                   icon: const Icon(Icons.folder_outlined),
-                  tooltip: localizations.folder,
+                  tooltip: l.folder,
                   onPressed: _openFolders,
                 ),
               ],
       ),
       body: Column(
         children: [
-          if (allCards.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: SearchBar(
-                hintText: localizations.search_cards,
-                leading: const Icon(Icons.search),
-                onChanged: (value) => setState(() => _query = value),
-              ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  for (final filter in _LibraryFilter.values)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(switch (filter) {
-                          _LibraryFilter.all => localizations.all,
-                          _LibraryFilter.hf => localizations.hf,
-                          _LibraryFilter.lf => localizations.lf,
-                        }),
-                        selected: _filter == filter,
-                        onSelected: (_) => setState(() => _filter = filter),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
+          if (allCards.isNotEmpty) _buildFilterBar(l),
           Expanded(child: content),
         ],
       ),
     );
   }
 }
+
+bool _isHf(CardSave card) =>
+    chameleonTagToFrequency(card.tag) == TagFrequency.hf;
+
+String _cardName(CardSave card, AppLocalizations l) =>
+    card.name.isEmpty ? l.no_name : card.name;
 
 class _RenameDialog extends StatefulWidget {
   const _RenameDialog({required this.initialName});

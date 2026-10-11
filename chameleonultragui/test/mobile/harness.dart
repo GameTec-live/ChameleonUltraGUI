@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -11,14 +12,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-/// A connector that finds nothing, for the empty "no devices" state.
-class NoDevicesSerial extends EmulatorSerial {
-  NoDevicesSerial({required super.log});
-
-  @override
-  Future<List<Chameleon>> availableChameleons(bool onlyDFU) async => [];
-}
 
 /// An emulated device that counts the commands written to it.
 class CountingSerial extends EmulatorSerial {
@@ -33,13 +26,7 @@ class CountingSerial extends EmulatorSerial {
   }
 }
 
-class MobileTestEnv {
-  MobileTestEnv(this.appState);
-
-  final ChameleonGUIState appState;
-}
-
-Future<MobileTestEnv> createEnv({
+Future<ChameleonGUIState> createAppState({
   AbstractSerial Function(Logger log)? connector,
   Map<String, Object> prefs = const {},
 }) async {
@@ -59,30 +46,21 @@ Future<MobileTestEnv> createEnv({
   appState.connector!.connectionStateCallback =
       appState.onConnectorStateChanged;
 
-  return MobileTestEnv(appState);
+  return appState;
 }
 
-Widget buildMobileApp(
-  MobileTestEnv env, {
-  Brightness brightness = Brightness.light,
-  double textScale = 1.0,
-}) {
+Widget buildMobileApp(ChameleonGUIState appState, {double textScale = 1.0}) {
   return MultiProvider(
     providers: [
-      ChangeNotifierProvider.value(
-        value: env.appState.sharedPreferencesProvider,
-      ),
-      ChangeNotifierProvider.value(value: env.appState),
+      ChangeNotifierProvider.value(value: appState.sharedPreferencesProvider),
+      ChangeNotifierProvider.value(value: appState),
     ],
     child: MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: brightness,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context)
@@ -106,4 +84,20 @@ Future<void> settle(WidgetTester tester) async {
   for (var i = 0; i < 20; i++) {
     await tester.pump(const Duration(milliseconds: 50));
   }
+}
+
+Future<void> connectEmulator(
+  WidgetTester tester,
+  ChameleonGUIState appState,
+) async {
+  final connector = appState.connector!;
+  await connector.connectSpecificDevice('Demo');
+  appState.communicator = ChameleonCommunicator(appState.log!, port: connector);
+  await connector.registerCallback(appState.communicator!.onSerialMessage);
+  appState.changesMade();
+  await settle(tester);
+}
+
+Future<void> unmount(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox());
 }
