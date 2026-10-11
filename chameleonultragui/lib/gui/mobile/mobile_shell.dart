@@ -72,10 +72,17 @@ class _MobileShellState extends State<MobileShell> {
       return;
     }
 
+    final previous = _tab;
     setState(() {
       _tab = tab;
       _visited.add(tab);
     });
+
+    // Reading and writing cards switches the device to reader mode.
+    if (tab == MobileTab.device &&
+        (previous == MobileTab.read || previous == MobileTab.cards)) {
+      context.read<MobileDeviceController>().refreshReaderMode();
+    }
   }
 
   Widget _buildTab(MobileTab tab, _ConnectionState connection) {
@@ -139,9 +146,13 @@ class _MobileShellState extends State<MobileShell> {
           index: _tab.index,
           children: [
             for (final tab in MobileTab.values)
-              _visited.contains(tab)
-                  ? _buildTab(tab, connection)
-                  : const SizedBox.shrink(),
+              if (_visited.contains(tab))
+                TickerMode(
+                  enabled: tab == _tab,
+                  child: _buildTab(tab, connection),
+                )
+              else
+                const SizedBox.shrink(),
           ],
         ),
         bottomNavigationBar: NavigationBar(

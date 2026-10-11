@@ -312,43 +312,8 @@ class SavedCardsPageState extends State<SavedCardsPage> {
     );
   }
 
-  Future<void> _importFolderSource(String source) async {
-    final localizations = AppLocalizations.of(context)!;
-    try {
-      final bundle = CardFolderBundle.fromJson(source);
-      final appState = context.read<ChameleonGUIState>();
-      final folders = appState.sharedPreferencesProvider.getCardFolders();
-      final cards = appState.sharedPreferencesProvider.getCards();
-      final idMap = <String, String>{};
-      for (final imported in bundle.folders) {
-        idMap[imported.id] = CardFolder(name: '').id;
-      }
-      for (final imported in bundle.folders) {
-        folders.add(CardFolder(
-          id: idMap[imported.id],
-          name: imported.name,
-          color: imported.color,
-          parentId: imported.id == bundle.rootFolderId
-              ? currentFolderId
-              : idMap[imported.parentId],
-        ));
-      }
-      for (final imported in bundle.cards) {
-        final copy = CardSave.fromJson(imported.toJson());
-        copy.id = CardFolder(name: '').id;
-        copy.folderId = idMap[imported.folderId];
-        cards.add(copy);
-      }
-      appState.sharedPreferencesProvider.setCardFolders(folders);
-      appState.sharedPreferencesProvider.setCards(cards);
-      appState.changesMade();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations.invalid_folder_export)),
-      );
-    }
-  }
+  Future<void> _importFolderSource(String source) =>
+      importCardFolder(context, source, parentId: currentFolderId);
 
   Set<String> _dictionaryFolderTreeIds(
       String rootId, List<DictionaryFolder> folders) {

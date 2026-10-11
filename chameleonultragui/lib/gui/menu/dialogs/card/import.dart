@@ -385,3 +385,49 @@ Future<void> importCardFromFile(
     }
   }
 }
+
+/// Adds the folders and cards of a folder export to the saved cards, inside
+/// [parentId] (the top level if null). Shows an error if [source] is not a
+/// valid folder export.
+Future<void> importCardFolder(
+  BuildContext context,
+  String source, {
+  String? parentId,
+}) async {
+  final localizations = AppLocalizations.of(context)!;
+  final messenger = ScaffoldMessenger.of(context);
+  final appState = context.read<ChameleonGUIState>();
+
+  try {
+    final bundle = CardFolderBundle.fromJson(source);
+    final folders = appState.sharedPreferencesProvider.getCardFolders();
+    final cards = appState.sharedPreferencesProvider.getCards();
+    final idMap = <String, String>{};
+    for (final imported in bundle.folders) {
+      idMap[imported.id] = CardFolder(name: '').id;
+    }
+    for (final imported in bundle.folders) {
+      folders.add(CardFolder(
+        id: idMap[imported.id],
+        name: imported.name,
+        color: imported.color,
+        parentId: imported.id == bundle.rootFolderId
+            ? parentId
+            : idMap[imported.parentId],
+      ));
+    }
+    for (final imported in bundle.cards) {
+      final copy = CardSave.fromJson(imported.toJson());
+      copy.id = CardFolder(name: '').id;
+      copy.folderId = idMap[imported.folderId];
+      cards.add(copy);
+    }
+    appState.sharedPreferencesProvider.setCardFolders(folders);
+    appState.sharedPreferencesProvider.setCards(cards);
+    appState.changesMade();
+  } catch (_) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(localizations.invalid_folder_export)),
+    );
+  }
+}

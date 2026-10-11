@@ -20,9 +20,10 @@ Future<String> checkForFirmwareUpdate(
 ) async {
   SnackBar snackBar;
   String latestCommit;
+  final connector = appState.connector!;
 
   try {
-    latestCommit = await latestAvailableCommit(appState.connector!.device);
+    latestCommit = await latestAvailableCommit(connector.device);
   } catch (e) {
     if (scaffoldMessenger.mounted) {
       scaffoldMessenger.hideCurrentSnackBar();
@@ -40,6 +41,11 @@ Future<String> checkForFirmwareUpdate(
     currentCommit = await resolveCommit(currentCommit);
   } catch (_) {}
 
+  // The device may have been disconnected or replaced during the requests.
+  if (!identical(connector, appState.connector)) {
+    return currentCommit;
+  }
+
   appState.log!.i(
     "Latest commit: $latestCommit, current commit $currentCommit",
   );
@@ -51,9 +57,7 @@ Future<String> checkForFirmwareUpdate(
   if (latestCommit.startsWith(currentCommit) && scaffoldMessenger.mounted) {
     snackBar = SnackBar(
       content: Text(
-        localizations.up_to_date(
-          chameleonDeviceName(appState.connector!.device),
-        ),
+        localizations.up_to_date(chameleonDeviceName(connector.device)),
       ),
       action: SnackBarAction(label: localizations.close, onPressed: () {}),
     );
@@ -62,9 +66,7 @@ Future<String> checkForFirmwareUpdate(
   } else if (scaffoldMessenger.mounted) {
     snackBar = SnackBar(
       content: Text(
-        localizations.downloading_fw(
-          chameleonDeviceName(appState.connector!.device),
-        ),
+        localizations.downloading_fw(chameleonDeviceName(connector.device)),
       ),
       action: SnackBarAction(
         label: localizations.close,

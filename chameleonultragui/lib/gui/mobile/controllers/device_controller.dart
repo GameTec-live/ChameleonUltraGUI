@@ -247,6 +247,19 @@ class MobileDeviceController extends ChangeNotifier {
     _notify();
   }
 
+  Future<void> refreshReaderMode() async {
+    final communicator = _communicator;
+    if (communicator == null) {
+      return;
+    }
+
+    final enabled = await _safe(communicator.isReaderDeviceMode, readerMode);
+    if (identical(communicator, _communicator)) {
+      readerMode = enabled;
+      _notify();
+    }
+  }
+
   Future<void> setReaderMode(bool enabled) async {
     final communicator = _communicator;
     if (communicator == null) {
@@ -286,6 +299,7 @@ class MobileDeviceController extends ChangeNotifier {
           }
         },
       );
+      readerMode = false;
     } finally {
       uploadProgress = -1;
       _notify();

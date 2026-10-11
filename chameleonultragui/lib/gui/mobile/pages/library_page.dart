@@ -47,7 +47,10 @@ class _MobileLibraryPageState extends State<MobileLibraryPage> {
     return connector != null && connector.connected && !connector.isDFU;
   }
 
-  Future<void> _import() => importCardFromFile(context);
+  Future<void> _import() => importCardFromFile(
+        context,
+        onFolderSource: (source) => importCardFolder(context, source),
+      );
 
   void _openFolders() {
     Navigator.of(context).push(

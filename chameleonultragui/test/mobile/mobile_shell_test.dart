@@ -3,6 +3,7 @@ import 'package:chameleonultragui/gui/mobile/mobile_shell.dart';
 import 'package:chameleonultragui/gui/mobile/pages/connection_page.dart';
 import 'package:chameleonultragui/gui/mobile/pages/device_page.dart';
 import 'package:chameleonultragui/gui/mobile/pages/dfu_page.dart';
+import 'package:chameleonultragui/gui/mobile/pages/reader_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -154,6 +155,28 @@ void main() {
       await tester.pump();
 
       expect(counting.writes, afterLoad);
+      await unmount(tester);
+    });
+
+    testWidgets('a hidden Read tab stops its timers', (tester) async {
+      setPhoneSize(tester, const Size(390, 844));
+      final appState = await createAppState();
+
+      await tester.pumpWidget(buildMobileApp(appState));
+      await connectEmulator(tester, appState);
+
+      await tester.tap(find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Read'),
+      ));
+      await tester.pump();
+      final reader = find.byType(MobileReaderPage, skipOffstage: false);
+      expect(TickerMode.valuesOf(tester.element(reader)).enabled, isTrue);
+
+      await tester.tap(find.text('Device'));
+      await tester.pump();
+      expect(TickerMode.valuesOf(tester.element(reader)).enabled, isFalse);
+
       await unmount(tester);
     });
 
