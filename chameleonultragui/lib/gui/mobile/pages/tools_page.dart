@@ -2,7 +2,7 @@ import 'package:chameleonultragui/gui/menu/dialogs/chameleon_settings.dart';
 import 'package:chameleonultragui/gui/mobile/pages/writer_page.dart';
 import 'package:chameleonultragui/gui/page/debug.dart';
 import 'package:chameleonultragui/gui/page/saved_cards.dart';
-import 'package:chameleonultragui/gui/page/settings.dart';
+import 'package:chameleonultragui/gui/mobile/pages/settings_page.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
@@ -45,19 +45,18 @@ class MobileToolsPage extends StatelessWidget {
       bool wip = false,
     }) {
       final needsDevice = deviceRequired && !connected;
+      final details = [
+        ?subtitle,
+        if (wip) localizations.wip,
+        if (needsDevice) localizations.device_required,
+      ].join(' · ');
       return ListTile(
         minTileHeight: 64,
         leading: Icon(icon),
         title: Text(title),
-        subtitle: Text(
-          [
-            ?subtitle,
-            if (wip) localizations.wip,
-            if (needsDevice) localizations.device_required,
-          ].join(' · '),
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-        ),
+        subtitle: details.isEmpty
+            ? null
+            : Text(details, maxLines: 3, overflow: TextOverflow.ellipsis),
         enabled: onTap != null && !needsDevice,
         onTap: onTap,
         trailing: onTap != null && !needsDevice
@@ -80,10 +79,11 @@ class MobileToolsPage extends StatelessWidget {
             onTap: () => push(const MobileWriterPage()),
           ),
           tile(
-            icon: Icons.folder_copy_outlined,
-            title: localizations.folders_and_dictionaries,
-            subtitle: '${localizations.dictionaries}, ${localizations.folder}',
-            onTap: () => push(const SavedCardsPage()),
+            icon: Icons.key,
+            title: localizations.dictionaries,
+            onTap: () => push(
+              const SavedCardsPage(section: SavedCardsSection.dictionaries),
+            ),
           ),
           header(localizations.tools),
           for (final tool in tools)
@@ -115,7 +115,7 @@ class MobileToolsPage extends StatelessWidget {
           tile(
             icon: Icons.settings,
             title: localizations.settings,
-            onTap: () => push(const SettingsMainPage()),
+            onTap: () => push(const MobileSettingsPage()),
           ),
           if (debug)
             tile(

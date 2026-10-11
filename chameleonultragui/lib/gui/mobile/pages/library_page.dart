@@ -45,9 +45,12 @@ class _MobileLibraryPageState extends State<MobileLibraryPage> {
     await importCardFromFile(context);
   }
 
-  void _openFoldersAndDictionaries() {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const SavedCardsPage()));
+  void _openFolders() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SavedCardsPage(section: SavedCardsSection.cards),
+      ),
+    );
   }
 
   void _view(CardSave card) {
@@ -348,8 +351,8 @@ class _MobileLibraryPageState extends State<MobileLibraryPage> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.folder_outlined),
-                  tooltip: localizations.folders_and_dictionaries,
-                  onPressed: _openFoldersAndDictionaries,
+                  tooltip: localizations.folder,
+                  onPressed: _openFolders,
                 ),
               ],
       ),

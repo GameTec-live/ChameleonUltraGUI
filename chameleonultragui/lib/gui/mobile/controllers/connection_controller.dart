@@ -61,10 +61,10 @@ class MobileConnectionController extends ChangeNotifier
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // Only reschedule: scanning right away would re-request the permissions
+      // whose system dialog just paused/resumed the app, in an endless loop.
       _paused = false;
-      if (_active) {
-        scan();
-      }
+      _scheduleNextScan();
     } else if (state == AppLifecycleState.paused) {
       _paused = true;
       _scanTimer?.cancel();
@@ -73,6 +73,7 @@ class MobileConnectionController extends ChangeNotifier
 
   bool get _shouldScan =>
       !_disposed &&
+      appState.connector != null &&
       _active &&
       !_paused &&
       !connectionInProgress &&
@@ -102,7 +103,10 @@ class MobileConnectionController extends ChangeNotifier
   void _scheduleNextScan() {
     _scanTimer?.cancel();
 
+    // Without permissions every rescan would show the system dialog again;
+    // the user retries manually.
     if (!_shouldScan ||
+        permissionsMissing ||
         !appState.sharedPreferencesProvider.getAutoScanEnabled()) {
       return;
     }

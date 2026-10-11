@@ -4,6 +4,7 @@ import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Goes through the real app entry point to check which interface is chosen.
@@ -49,6 +50,28 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationRail), findsNothing);
     expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('swapping the connector (emulated device toggle) is safe', (
+    tester,
+  ) async {
+    debugUiModeOverride = UiMode.mobile;
+    await pumpApp(tester, const Size(390, 844));
+
+    // Same sequence as the settings toggle: the connector is nulled and
+    // rebuilt by the next frame, while selectors already run.
+    final appState = tester
+        .element(find.byType(NavigationBar))
+        .read<ChameleonGUIState>();
+    appState.connector = null;
+    appState.changesMade();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 5));
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(MobileShell), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
   });

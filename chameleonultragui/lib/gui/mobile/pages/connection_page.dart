@@ -174,12 +174,13 @@ class _MobileConnectionPageState extends State<MobileConnectionPage> {
                 icon: const Icon(Icons.refresh),
               ),
             ],
-            bottom: busy
-                ? const PreferredSize(
-                    preferredSize: Size.fromHeight(4),
-                    child: LinearProgressIndicator(),
-                  )
-                : null,
+            // Always reserve the space so the app bar doesn't jump on rescans.
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(4),
+              child: busy
+                  ? const LinearProgressIndicator()
+                  : const SizedBox(height: 4),
+            ),
           ),
           body: SafeArea(top: false, child: _buildBody(context, localizations)),
         );

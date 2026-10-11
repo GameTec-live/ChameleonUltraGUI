@@ -600,8 +600,6 @@
   "card_loaded_to_slot": "Card loaded into slot {slot}",
   "card_type_not_loadable": "This card type can't be loaded into a slot yet",
   "advanced": "Advanced",
-  "folders_and_dictionaries": "Folders and dictionaries",
   "device_info_load_failed": "Failed to load device information",
-  "scan_card": "Scan card",
-  "slot_empty_short": "Empty"
+  "scan_card": "Scan card"
 }

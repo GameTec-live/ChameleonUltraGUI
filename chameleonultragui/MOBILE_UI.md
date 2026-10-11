@@ -30,7 +30,7 @@ Desktop pages now call these (behaviour unchanged):
 `helpers/slot_loader.dart` (load card into slot), `helpers/firmware_update.dart`
 (check/flash firmware), `gui/menu/dialogs/card/import.dart` (card import),
 `readLFCard()` in `helpers/general.dart`, `getToolItems()` in `page/tools.dart`.
-`WriteCardPage` gained an optional `initialCard`. `updateNavigationRailWidth`
+`gui/menu/dialogs/settings_actions.dart` holds the settings dialogs shared by both settings pages. `SavedCardsPage` gained a `section`, `WriteCardPage` an `initialCard`/`cardPicker`, and `DebugPage` narrow-screen sizing; defaults keep desktop unchanged. `updateNavigationRailWidth`
 tolerates a missing rail.
 
 ## Feature checklist (desktop → mobile)
@@ -42,11 +42,13 @@ tolerates a missing rail.
 | Slot manager: load card, slot settings (edit, dump editor, export, clear, enable) | Slots (quick action) + slot sheet → existing slot settings dialog |
 | Read card: HF/LF, continuous scan, override type, MIFARE Classic/Ultralight helpers, save | Read tab (reuses the same helper widgets) |
 | Saved cards: view/edit/export/delete/move, import | Cards tab |
-| Folders, dictionaries, folder import/export | Cards → "Folders and dictionaries" (existing page) |
+| Card folders (create/edit/move/export/import/delete) | Cards tab → folder button (full-screen `SavedCardsPage(section: cards)`) |
+| Dictionaries and dictionary folders | More → Dictionaries (full-screen `SavedCardsPage(section: dictionaries)`) |
 | Write card (magic cards) | Quick action, More, or card sheet → "Write to magic card" |
 | Tools: dictionary download, T55xx cleaner, HF/LF sniffing | More |
 | Firmware management / DFU / flash zip | More → Firmware management (existing dialog) |
-| Settings, Debug (when enabled) | More (existing pages) |
+| Settings | More → Settings (`MobileSettingsPage`, same preferences/dialogs, no sidebar option) |
+| Debug (when enabled) | More → Debug (existing page, responsive on narrow screens) |
 
 ## Baseline before this work (desktop, Flutter 3.47.7)
 

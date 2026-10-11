@@ -24,11 +24,17 @@ class DebugPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
+    // Narrow (phone) screens: smaller headings, side padding, centered text.
+    final compact = MediaQuery.sizeOf(context).width < 600;
+    double scale(double wide, double narrow) => compact ? narrow : wide;
+    final headingAlign = compact ? TextAlign.center : null;
     return Scaffold(
         appBar: AppBar(
           title: const Text('🐞'),
         ),
         body: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(compact ? 16 : 0, 0, compact ? 16 : 0,
+                compact ? MediaQuery.viewPaddingOf(context).bottom + 16 : 0),
             child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -43,16 +49,19 @@ class DebugPage extends StatelessWidget {
                   icon: const Icon(Icons.close),
                 ),
               ),
-              const Text(
+              Text(
                 '🐞 Chameleon Ultra GUI DEBUG MENU 🐞',
-                textScaler: TextScaler.linear(2),
+                textAlign: headingAlign,
+                textScaler: TextScaler.linear(scale(2, 1.3)),
               ),
               Text(
                 localizations.debug_page_warning,
-                textScaler: const TextScaler.linear(2),
+                textAlign: headingAlign,
+                textScaler: TextScaler.linear(scale(2, 1.1)),
               ),
               Text('⚠️ ${localizations.warned} ⚠️',
-                  textScaler: const TextScaler.linear(3)),
+                  textAlign: headingAlign,
+                  textScaler: TextScaler.linear(scale(3, 1.5))),
               Text('${localizations.platform}: ${Platform.operatingSystem}'),
               Text('${localizations.serial_protocol}: ${appState.connector}'),
               Text(
@@ -63,7 +72,7 @@ class DebugPage extends StatelessWidget {
                   '${localizations.shared_preferences_logging}: ${appState.sharedPreferencesProvider.isDebugLogging()} with ${appState.sharedPreferencesProvider.getLogLines().length} lines'),
               const SizedBox(height: 10),
               Text(localizations.production_logging,
-                  textScaler: const TextScaler.linear(1.5)),
+                  textScaler: TextScaler.linear(scale(1.5, 1.2))),
               const SizedBox(height: 5),
               Text(localizations.slow_down_warning,
                   textScaler: const TextScaler.linear(0.9)),
@@ -149,7 +158,7 @@ class DebugPage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(localizations.recovery_library,
-                  textScaler: const TextScaler.linear(1.5)),
+                  textScaler: TextScaler.linear(scale(1.5, 1.2))),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
@@ -435,7 +444,7 @@ class DebugPage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(localizations.force_flashing,
-                  textScaler: const TextScaler.linear(1.5)),
+                  textScaler: TextScaler.linear(scale(1.5, 1.2))),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
@@ -460,7 +469,7 @@ class DebugPage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(localizations.other,
-                  textScaler: const TextScaler.linear(1.5)),
+                  textScaler: TextScaler.linear(scale(1.5, 1.2))),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {

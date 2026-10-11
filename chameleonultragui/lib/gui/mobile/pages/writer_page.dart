@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/mobile/pages/library_page.dart';
 import 'package:chameleonultragui/gui/mobile/widgets/message_view.dart';
 import 'package:chameleonultragui/gui/page/write_card.dart';
 import 'package:chameleonultragui/main.dart';
@@ -41,6 +42,13 @@ class MobileWriterPage extends StatelessWidget {
       );
     }
 
-    return WriteCardPage(initialCard: card);
+    return WriteCardPage(
+      initialCard: card,
+      cardPicker: (context) => Navigator.of(context).push<CardSave>(
+        MaterialPageRoute(
+          builder: (_) => const MobileLibraryPage(pickMode: true),
+        ),
+      ),
+    );
   }
 }

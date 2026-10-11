@@ -18,7 +18,10 @@ class WriteCardPage extends StatefulWidget {
   /// Card to preselect (used by the mobile library's "write to card" action).
   final CardSave? initialCard;
 
-  const WriteCardPage({super.key, this.initialCard});
+  /// Replaces the search screen used to choose the card (mobile UI picker).
+  final Future<CardSave?> Function(BuildContext context)? cardPicker;
+
+  const WriteCardPage({super.key, this.initialCard, this.cardPicker});
 
   @override
   WriteCardPageState createState() => WriteCardPageState();
@@ -34,7 +37,16 @@ class WriteCardPageState extends State<WriteCardPage> {
   AbstractWriteHelper? baseHelper;
   AbstractWriteHelper? helper;
 
-  Future<String?> cardSelectDialog(BuildContext context) {
+  Future<String?> cardSelectDialog(BuildContext context) async {
+    final picker = widget.cardPicker;
+    if (picker != null) {
+      final picked = await picker(context);
+      if (picked != null && context.mounted) {
+        await onTap(picked, (_, _) {}, AppLocalizations.of(context)!);
+      }
+      return picked?.name;
+    }
+
     var appState = context.read<ChameleonGUIState>();
     var tags = appState.sharedPreferencesProvider.getCards();
 

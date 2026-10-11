@@ -25,10 +25,24 @@ class MobileScope extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return ChangeNotifierProvider<MobileDeviceController>(
       create: (context) =>
           MobileDeviceController(context.read<ChameleonGUIState>()),
-      child: child,
+      // The existing dialogs are shared with desktop; give them more of the
+      // narrow screen than the default 40 px side margins.
+      child: Theme(
+        data: theme.copyWith(
+          dialogTheme: theme.dialogTheme.copyWith(
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 24,
+            ),
+          ),
+        ),
+        child: child,
+      ),
     );
   }
 }
@@ -95,11 +109,15 @@ class _MobileShellState extends State<MobileShell> {
 
   @override
   Widget build(BuildContext context) {
+    // The connector is briefly null while it is swapped (emulated device
+    // toggle), and selectors run before the app rebuilds it.
     final connection = context.select<ChameleonGUIState, _ConnectionState>(
       (state) => (
-        connected: state.connector!.connected,
-        pending: state.connector!.pendingConnection,
-        dfu: state.connector!.connected && state.connector!.isDFU,
+        connected: state.connector?.connected ?? false,
+        pending: state.connector?.pendingConnection ?? false,
+        dfu:
+            (state.connector?.connected ?? false) &&
+            (state.connector?.isDFU ?? false),
       ),
     );
 

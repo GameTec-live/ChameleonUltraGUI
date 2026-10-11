@@ -24,8 +24,14 @@ import 'package:chameleonultragui/gui/menu/dialogs/confirm_delete.dart';
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
+/// Which parts of [SavedCardsPage] to show. Desktop shows both side by side;
+/// the mobile UI opens one at a time.
+enum SavedCardsSection { both, cards, dictionaries }
+
 class SavedCardsPage extends StatefulWidget {
-  const SavedCardsPage({super.key});
+  const SavedCardsPage({super.key, this.section = SavedCardsSection.both});
+
+  final SavedCardsSection section;
 
   @override
   SavedCardsPageState createState() => SavedCardsPageState();
@@ -730,7 +736,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localizations.saved_cards),
+        title: Text(switch (widget.section) {
+          SavedCardsSection.dictionaries => localizations.dictionaries,
+          _ => localizations.saved_cards,
+        }),
         leading: currentFolder == null
             ? null
             : IconButton(
@@ -743,6 +752,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
       ),
       body: Column(
         children: [
+          if (widget.section != SavedCardsSection.dictionaries)
           Expanded(
             child: Card(
                 child: Column(children: [
@@ -958,6 +968,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                           }))),
             ])),
           ),
+          if (widget.section != SavedCardsSection.cards)
           Expanded(
             child: Card(
                 child: Column(children: [
