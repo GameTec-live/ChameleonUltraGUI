@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/connector/serial_mobile.dart';
@@ -52,6 +51,33 @@ class AndroidSerial extends AbstractSerial {
     }
   }
 
+  static const _deviceChannel = MethodChannel('io.chameleon.ultra/device');
+
+  // Android 12 (API 31) introduced the "nearby devices" permissions.
+  static const _androidSdkWithNearbyDevices = 31;
+
+  Future<int?> _androidSdkInt() async {
+    try {
+      return await _deviceChannel.invokeMethod<int>('sdkInt');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// BLE scanning needs location only up to Android 11. From Android 12 it is
+  /// covered by the "nearby devices" permissions (scan is declared
+  /// `neverForLocation`), so location is not requested there. If the version
+  /// is unknown, assume a recent Android.
+  Future<List<Permission>> _requiredPermissions() async {
+    final sdk = await _androidSdkInt();
+
+    if (sdk != null && sdk < _androidSdkWithNearbyDevices) {
+      return [Permission.location];
+    }
+
+    return [Permission.bluetoothScan, Permission.bluetoothConnect];
+  }
+
   Future<bool> checkPermissions() async {
     if (permissionRequestFuture != null) {
       return await permissionRequestFuture!;
@@ -61,12 +87,7 @@ class AndroidSerial extends AbstractSerial {
     permissionRequestFuture = completer.future;
 
     try {
-      final statuses = await [
-        Permission.location,
-        Permission.bluetoothScan,
-        Permission.bluetoothAdvertise,
-        Permission.bluetoothConnect
-      ].request();
+      final statuses = await (await _requiredPermissions()).request();
 
       final allGranted = statuses.values.every((status) => status.isGranted);
       completer.complete(allGranted);

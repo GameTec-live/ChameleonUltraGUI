@@ -27,6 +27,37 @@ class ToolItem {
   });
 }
 
+List<ToolItem> getToolItems(AppLocalizations localizations) {
+  return [
+    ToolItem(
+        name: localizations.dictionary_download,
+        description: localizations.dictionary_download_description,
+        icon: Icons.key,
+        onPressed: const DictionaryDownloadMenu()),
+    ToolItem(
+        name: localizations.t55xx_password_cleaner,
+        description: localizations.t55xx_password_cleaner_description,
+        icon: Icons.password,
+        onPressed: const T55XXPasswordCleanerMenu(),
+        isDeviceRequired: true),
+    ToolItem(
+        name: localizations.lf_sniffing,
+        description: localizations.lf_sniffing_description,
+        icon: Icons.graphic_eq,
+        onPressed: const LfSniffingMenu()),
+    ToolItem(
+        name: localizations.hf_sniffing,
+        description: localizations.hf_sniffing_description,
+        icon: Icons.radar,
+        onPressed: const HfSniffingMenu()),
+    ToolItem(
+        name: localizations.mifare_classic_gen4,
+        description: localizations.mifare_classic_gen4_description,
+        icon: Icons.settings,
+        isDeviceRequired: true),
+  ];
+}
+
 class ToolsPage extends StatefulWidget {
   const ToolsPage({super.key});
 
@@ -40,34 +71,7 @@ class ToolsPageState extends State<ToolsPage> {
     var appState = context.read<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
-    List<ToolItem> tools = [
-      ToolItem(
-          name: localizations.dictionary_download,
-          description: localizations.dictionary_download_description,
-          icon: Icons.key,
-          onPressed: const DictionaryDownloadMenu()),
-      ToolItem(
-          name: localizations.t55xx_password_cleaner,
-          description: localizations.t55xx_password_cleaner_description,
-          icon: Icons.password,
-          onPressed: const T55XXPasswordCleanerMenu(),
-          isDeviceRequired: true),
-      ToolItem(
-          name: localizations.lf_sniffing,
-          description: localizations.lf_sniffing_description,
-          icon: Icons.graphic_eq,
-          onPressed: const LfSniffingMenu()),
-      ToolItem(
-          name: localizations.hf_sniffing,
-          description: localizations.hf_sniffing_description,
-          icon: Icons.radar,
-          onPressed: const HfSniffingMenu()),
-      ToolItem(
-          name: localizations.mifare_classic_gen4,
-          description: localizations.mifare_classic_gen4_description,
-          icon: Icons.settings,
-          isDeviceRequired: true),
-    ];
+    final tools = getToolItems(localizations);
 
     return Scaffold(
       appBar: AppBar(

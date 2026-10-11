@@ -5,6 +5,8 @@ import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
 import 'package:chameleonultragui/connector/serial_macos.dart';
+import 'package:chameleonultragui/gui/mobile/mobile_shell.dart';
+import 'package:chameleonultragui/gui/mobile/platform_selector.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -277,8 +279,13 @@ class _MainPageState extends State<MainPage> {
       WakelockPlus.toggle(enable: page is FlashingPage);
     } catch (_) {}
 
+    // Phones get the dedicated mobile interface; desktops and tablets keep
+    // the original one. Both share the theme and localization setup below.
+    final useMobileUi = resolveUiMode(context) == UiMode.mobile;
+
     return MaterialApp(
       title: 'Chameleon Ultra GUI', // App Name
+      builder: useMobileUi ? MobileScope.builder : null,
       locale: widget.sharedPreferencesProvider.getLocale(),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -314,7 +321,9 @@ class _MainPageState extends State<MainPage> {
                 statusBarIconBrightness: Brightness.light)),
       ).useCustomSystemFont(Brightness.dark),
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
-      home: LayoutBuilder(// Build Page
+      home: useMobileUi
+          ? const MobileShell()
+          : LayoutBuilder(// Build Page
           builder: (context, constraints) {
         return SafeArea(
           left: false,

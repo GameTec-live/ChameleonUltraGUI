@@ -1,0 +1,78 @@
+import 'package:chameleonultragui/gui/mobile/mobile_shell.dart';
+import 'package:chameleonultragui/gui/mobile/platform_selector.dart';
+import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'harness.dart';
+
+/// Goes through the real app entry point to check which interface is chosen.
+Future<void> pumpApp(WidgetTester tester, Size window) async {
+  setPhoneSize(tester, window);
+
+  SharedPreferences.setMockInitialValues({
+    'emulate_device': true,
+    'auto_scan_enabled': false,
+  });
+  final provider = SharedPreferencesProvider();
+  await provider.load();
+
+  await tester.pumpWidget(ChameleonGUI(provider));
+  await tester.pump(const Duration(milliseconds: 200));
+  await tester.pump(const Duration(seconds: 10));
+}
+
+void main() {
+  tearDown(() => debugUiModeOverride = null);
+
+  testWidgets(
+    'desktop keeps the navigation rail, even in a phone sized window',
+    (tester) async {
+      await pumpApp(tester, const Size(360, 640));
+
+      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(find.byType(MobileShell), findsNothing);
+
+      await unmount(tester);
+    },
+  );
+
+  testWidgets('phones get the mobile shell with bottom navigation', (
+    tester,
+  ) async {
+    debugUiModeOverride = UiMode.mobile;
+    await pumpApp(tester, const Size(390, 844));
+
+    expect(find.byType(MobileShell), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(NavigationRail), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    await unmount(tester);
+  });
+
+  testWidgets('swapping the connector (emulated device toggle) is safe', (
+    tester,
+  ) async {
+    debugUiModeOverride = UiMode.mobile;
+    await pumpApp(tester, const Size(390, 844));
+
+    // Same sequence as the settings toggle: the connector is nulled and
+    // rebuilt by the next frame, while selectors already run.
+    final appState = tester
+        .element(find.byType(NavigationBar))
+        .read<ChameleonGUIState>();
+    appState.connector = null;
+    appState.changesMade();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 5));
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(MobileShell), findsOneWidget);
+
+    await unmount(tester);
+  });
+}

@@ -1,17 +1,13 @@
-import 'dart:typed_data';
 
 import 'package:chameleonultragui/gui/component/card_list.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/slot/settings.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/helpers/hf14a4_slot.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
-import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
+import 'package:chameleonultragui/helpers/slot_loader.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 
@@ -83,255 +79,22 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       CardSave card, dynamic close, AppLocalizations localizations) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
-    if (isMifareClassic(card.tag)) {
-      close(context, card.name);
-      setUploadState(0);
-      var isEV1 = chameleonTagSaveCheckForMifareClassicEV1(card);
-      if (isEV1) {
-        card.tag = TagType.mifare2K;
-      }
+    close(context, card.name);
 
-      await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.hf, true);
-      await appState.communicator!.activateSlot(gridPosition);
-      await appState.communicator!.setSlotType(gridPosition, card.tag);
-      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      var cardData = CardData(
-          uid: hexToBytes(card.uid),
-          atqa: card.atqa,
-          sak: card.sak,
-          ats: card.ats);
-      await appState.communicator!.setMf1AntiCollision(cardData);
-
-      List<int> blockChunk = [];
-      int lastSend = 0;
-
-      for (var blockOffset = 0;
-          blockOffset <
-              mfClassicGetBlockCount(
-                  chameleonTagTypeGetMfClassicType(card.tag));
-          blockOffset++) {
-        if ((card.data.length > blockOffset &&
-                card.data[blockOffset].isEmpty) ||
-            blockChunk.length >= 128) {
-          if (blockChunk.isNotEmpty) {
-            await appState.communicator!
-                .setMf1BlockData(lastSend, Uint8List.fromList(blockChunk));
-            blockChunk = [];
-            lastSend = blockOffset;
-          }
-        }
-
-        if (card.data.length > blockOffset &&
-            card.data[blockOffset].length == 16) {
-          blockChunk.addAll(card.data[blockOffset]);
-        }
-
-        setUploadState((blockOffset /
-                mfClassicGetBlockCount(
-                    chameleonTagTypeGetMfClassicType(card.tag)) *
-                100)
-            .round());
-        await asyncSleep(1);
-      }
-
-      if (blockChunk.isNotEmpty) {
-        await appState.communicator!
-            .setMf1BlockData(lastSend, Uint8List.fromList(blockChunk));
-      }
-
-      setUploadState(100);
-
-      await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.hf);
-      await appState.communicator!.saveSlotData();
-      appState.changesMade();
-      refreshSlot();
-    } else if (card.tag == TagType.hf14a4) {
-      close(context, card.name);
-      setUploadState(0);
-      await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.hf, true);
-      await appState.communicator!.activateSlot(gridPosition);
-      await appState.communicator!.setSlotType(gridPosition, card.tag);
-      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      await writeHf14a4SlotIdentity(appState.communicator!, card);
-      await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.hf);
-      await appState.communicator!.saveSlotData();
-      setUploadState(100);
-      appState.changesMade();
-      refreshSlot();
-    } else if (isEM410X(card.tag)) {
-      close(context, card.name);
-      await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
-      await appState.communicator!.activateSlot(gridPosition);
-      TagType slotTagType = card.tag == TagType.em410XElectra
-          ? TagType.em410XElectra
-          : TagType.em410X;
-      await appState.communicator!.setSlotType(gridPosition, slotTagType);
-      await appState.communicator!
-          .setDefaultDataToSlot(gridPosition, slotTagType);
-      await appState.communicator!.setEM410XEmulatorID(hexToBytes(card.uid));
-      await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
-      await appState.communicator!.saveSlotData();
-      appState.changesMade();
-      refreshSlot();
-    } else if (card.tag == TagType.hidProx) {
-      close(context, card.name);
-      await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
-      await appState.communicator!.activateSlot(gridPosition);
-      await appState.communicator!.setSlotType(gridPosition, card.tag);
-      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      await appState.communicator!.setHIDProxEmulatorID(
-          hexToBytes(HIDCard.fromUID(card.uid).toString()));
-      await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
-      await appState.communicator!.saveSlotData();
-      appState.changesMade();
-      refreshSlot();
-    } else if (card.tag == TagType.viking) {
-      close(context, card.name);
-      await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
-      await appState.communicator!.activateSlot(gridPosition);
-      await appState.communicator!.setSlotType(gridPosition, card.tag);
-      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      await appState.communicator!.setVikingEmulatorID(hexToBytes(card.uid));
-      await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
-      await appState.communicator!.saveSlotData();
-      appState.changesMade();
-      refreshSlot();
-    } else if (card.tag == TagType.pac) {
-      close(context, card.name);
-      await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
-      await appState.communicator!.activateSlot(gridPosition);
-      await appState.communicator!.setSlotType(gridPosition, card.tag);
-      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      await appState.communicator!.setPacEmulatorID(hexToBytes(card.uid));
-      await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
-      await appState.communicator!.saveSlotData();
-      appState.changesMade();
-      refreshSlot();
-    } else if (card.tag == TagType.ioProx) {
-      close(context, card.name);
-      await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
-      await appState.communicator!.activateSlot(gridPosition);
-      await appState.communicator!.setSlotType(gridPosition, card.tag);
-      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      await appState.communicator!.setIoProxEmulatorID(hexToBytes(card.uid));
-      await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
-      await appState.communicator!.saveSlotData();
-      appState.changesMade();
-      refreshSlot();
-    } else if (card.tag == TagType.idteck) {
-      close(context, card.name);
-      await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
-      await appState.communicator!.activateSlot(gridPosition);
-      await appState.communicator!.setSlotType(gridPosition, card.tag);
-      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      await appState.communicator!.setIdteckEmulatorID(hexToBytes(card.uid));
-      await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
-      await appState.communicator!.saveSlotData();
-      appState.changesMade();
-      refreshSlot();
-    } else if (isMifareUltralight(card.tag)) {
-      close(context, card.name);
-      setUploadState(0);
-
-      await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.hf, true);
-      await appState.communicator!.activateSlot(gridPosition);
-      await appState.communicator!.setSlotType(gridPosition, card.tag);
-      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
-      var cardData = CardData(
-          uid: hexToBytes(card.uid),
-          atqa: card.atqa,
-          sak: card.sak,
-          ats: card.ats);
-      await appState.communicator!.setMf1AntiCollision(cardData);
-
-      for (var page = 0;
-          page < mfUltralightGetPagesCount(card.tag) && card.data.length > page;
-          page++) {
-        await appState.communicator!
-            .mf0EmulatorWritePages(page, card.data[page]);
-
-        setUploadState(
-            (page / mfUltralightGetPagesCount(card.tag) * 100).round());
-
-        await asyncSleep(1);
-      }
-
-      if (card.extraData.ultralightVersion.isNotEmpty) {
-        await appState.communicator!
-            .mf0EmulatorSetVersionData(card.extraData.ultralightVersion);
-      }
-
-      if (card.extraData.ultralightSignature.isNotEmpty) {
-        await appState.communicator!
-            .mf0EmulatorSetSignatureData(card.extraData.ultralightSignature);
-      }
-
-      if (card.extraData.ultralightCounters.isNotEmpty) {
-        for (int i = 0; i < card.extraData.ultralightCounters.length; i++) {
-          await appState.communicator!.mf0EmulatorSetCounterData(
-              i, card.extraData.ultralightCounters[i], true);
-        }
-      }
-
-      if (mfUltralightHasCounters(card.tag)) {
-        await appState.communicator!.mf0ResetAuthCount();
-      }
-
-      setUploadState(100);
-
-      await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.hf);
-      await appState.communicator!.saveSlotData();
-      appState.changesMade();
-      refreshSlot();
-    } else {
+    if (!canLoadCardIntoSlot(card)) {
       appState.log!.e("Can't write this card type yet.");
-      close(context, card.name);
+      return;
     }
+
+    await loadCardIntoSlot(
+      appState.communicator!,
+      gridPosition,
+      card,
+      noName: localizations.no_name,
+      onProgress: setUploadState,
+    );
+    appState.changesMade();
+    refreshSlot();
   }
 
   Future<String?> cardSelectDialog(BuildContext context) {
