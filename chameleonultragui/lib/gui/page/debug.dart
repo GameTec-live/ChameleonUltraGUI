@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/menu/pages/logs_viewer.dart';
+import 'package:chameleonultragui/gui/mobile/platform_selector.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -24,8 +25,9 @@ class DebugPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
-    // Narrow (phone) screens: smaller headings, side padding, centered text.
-    final compact = MediaQuery.sizeOf(context).width < 600;
+    // Phones only (not narrow desktop windows): smaller headings, side padding,
+    // centered text.
+    final compact = resolveUiMode(context) == UiMode.mobile;
     double scale(double wide, double narrow) => compact ? narrow : wide;
     final headingAlign = compact ? TextAlign.center : null;
     return Scaffold(
