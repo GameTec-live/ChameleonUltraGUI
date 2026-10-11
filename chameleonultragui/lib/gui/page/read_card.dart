@@ -120,16 +120,7 @@ class ReadCardPageState extends State<ReadCardPage> {
       lfInfo = LFCardInfo();
     });
 
-    if (!await appState.communicator!.isReaderDeviceMode()) {
-      await appState.communicator!.setReaderDeviceMode(true);
-    }
-
-    LFCard? card = await appState.communicator!.readEM410X();
-    card ??= await appState.communicator!.readHIDProx();
-    card ??= await appState.communicator!.readViking();
-    card ??= await appState.communicator!.readPac();
-    card ??= await appState.communicator!.readIoProx();
-
+    LFCard? card = await readLFCard(appState.communicator!);
 
     if (card != null) {
       setState(() {

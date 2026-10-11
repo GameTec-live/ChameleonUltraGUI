@@ -15,7 +15,10 @@ import 'package:provider/provider.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class WriteCardPage extends StatefulWidget {
-  const WriteCardPage({super.key});
+  /// Card to preselect (used by the mobile library's "write to card" action).
+  final CardSave? initialCard;
+
+  const WriteCardPage({super.key, this.initialCard});
 
   @override
   WriteCardPageState createState() => WriteCardPageState();
@@ -292,6 +295,15 @@ class WriteCardPageState extends State<WriteCardPage> {
   @override
   void initState() {
     super.initState();
+
+    final initialCard = widget.initialCard;
+    if (initialCard != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          onTap(initialCard, (_, _) {}, AppLocalizations.of(context)!);
+        }
+      });
+    }
   }
 
   @override

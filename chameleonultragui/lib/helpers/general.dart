@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
@@ -600,6 +601,21 @@ bool isEM410X(TagType type) {
     TagType.em410X64,
     TagType.em410XElectra
   ].contains(type);
+}
+
+/// Switches the device to reader mode (if needed) and tries every supported
+/// LF card format, returning null if no card is present.
+Future<LFCard?> readLFCard(ChameleonCommunicator communicator) async {
+  if (!await communicator.isReaderDeviceMode()) {
+    await communicator.setReaderDeviceMode(true);
+  }
+
+  LFCard? card = await communicator.readEM410X();
+  card ??= await communicator.readHIDProx();
+  card ??= await communicator.readViking();
+  card ??= await communicator.readPac();
+  card ??= await communicator.readIoProx();
+  return card;
 }
 
 Future<(HFCardInfo, MifareClassicInfo, MifareUltralightInfo)> readHFInfo(
