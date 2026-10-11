@@ -67,24 +67,15 @@ class AndroidSerial extends AbstractSerial {
   /// BLE scanning needs location only up to Android 11. From Android 12 it is
   /// covered by the "nearby devices" permissions (scan is declared
   /// `neverForLocation`), so location is not requested there. If the version
-  /// is unknown, everything is requested as before.
+  /// is unknown, assume a recent Android.
   Future<List<Permission>> _requiredPermissions() async {
     final sdk = await _androidSdkInt();
 
-    if (sdk == null) {
-      return [
-        Permission.location,
-        Permission.bluetoothScan,
-        Permission.bluetoothAdvertise,
-        Permission.bluetoothConnect,
-      ];
+    if (sdk != null && sdk < _androidSdkWithNearbyDevices) {
+      return [Permission.location];
     }
 
-    if (sdk >= _androidSdkWithNearbyDevices) {
-      return [Permission.bluetoothScan, Permission.bluetoothConnect];
-    }
-
-    return [Permission.location];
+    return [Permission.bluetoothScan, Permission.bluetoothConnect];
   }
 
   Future<bool> checkPermissions() async {
