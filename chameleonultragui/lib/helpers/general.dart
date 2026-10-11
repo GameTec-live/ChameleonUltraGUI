@@ -427,8 +427,12 @@ void updateNavigationRailWidth(BuildContext context) async {
   if (context.mounted) {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
     await asyncSleep(500);
-    appState.navigationRailSize =
-        appState.navigationRailKey.currentContext!.size;
+    // There is no rail on the mobile UI (or while flashing).
+    final railContext = appState.navigationRailKey.currentContext;
+    if (railContext == null || !railContext.mounted) {
+      return;
+    }
+    appState.navigationRailSize = railContext.size;
     appState.changesMade();
   }
 }

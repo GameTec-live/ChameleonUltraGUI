@@ -1,0 +1,130 @@
+import 'package:chameleonultragui/gui/menu/dialogs/chameleon_settings.dart';
+import 'package:chameleonultragui/gui/mobile/pages/writer_page.dart';
+import 'package:chameleonultragui/gui/page/debug.dart';
+import 'package:chameleonultragui/gui/page/saved_cards.dart';
+import 'package:chameleonultragui/gui/page/settings.dart';
+import 'package:chameleonultragui/gui/page/tools.dart';
+import 'package:chameleonultragui/main.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+// Localizations
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+
+/// The "More" tab: everything that doesn't fit the primary destinations.
+class MobileToolsPage extends StatelessWidget {
+  const MobileToolsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final appState = context.watch<ChameleonGUIState>();
+    final localizations = AppLocalizations.of(context)!;
+    final connected = appState.connector!.connected;
+    final debug = appState.sharedPreferencesProvider.isDebugMode();
+    final tools = getToolItems(localizations);
+
+    void push(Widget page) =>
+        Navigator.of(context)
+            .push(MaterialPageRoute<void>(builder: (_) => page));
+
+    Widget header(String title) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall
+            ?.copyWith(color: Theme.of(context).colorScheme.primary),
+      ),
+    );
+
+    Widget tile({
+      required IconData icon,
+      required String title,
+      String? subtitle,
+      VoidCallback? onTap,
+      bool deviceRequired = false,
+      bool wip = false,
+    }) {
+      final needsDevice = deviceRequired && !connected;
+      return ListTile(
+        minTileHeight: 64,
+        leading: Icon(icon),
+        title: Text(title),
+        subtitle: Text(
+          [
+            ?subtitle,
+            if (wip) localizations.wip,
+            if (needsDevice) localizations.device_required,
+          ].join(' · '),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+        enabled: onTap != null && !needsDevice,
+        onTap: onTap,
+        trailing: onTap != null && !needsDevice
+            ? const Icon(Icons.chevron_right)
+            : null,
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: Text(localizations.mobile_nav_more)),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 16),
+        children: [
+          header(localizations.cards),
+          tile(
+            icon: Icons.system_update_alt,
+            title: localizations.write_card,
+            subtitle: localizations.select_saved_card_to_write,
+            deviceRequired: true,
+            onTap: () => push(const MobileWriterPage()),
+          ),
+          tile(
+            icon: Icons.folder_copy_outlined,
+            title: localizations.folders_and_dictionaries,
+            subtitle: '${localizations.dictionaries}, ${localizations.folder}',
+            onTap: () => push(const SavedCardsPage()),
+          ),
+          header(localizations.tools),
+          for (final tool in tools)
+            tile(
+              icon: tool.icon,
+              title: tool.name,
+              subtitle: tool.description,
+              deviceRequired: tool.isDeviceRequired,
+              wip: tool.onPressed == null || tool.showWipBadge,
+              onTap: tool.onPressed == null
+                  ? null
+                  : () => showDialog<void>(
+                      context: context,
+                      builder: (_) => tool.onPressed!,
+                    ),
+            ),
+          header(localizations.device_settings),
+          tile(
+            icon: Icons.memory,
+            title: localizations.firmware_management,
+            subtitle: localizations.device_settings,
+            deviceRequired: true,
+            onTap: () => showDialog<void>(
+              context: context,
+              builder: (_) => const ChameleonSettings(),
+            ),
+          ),
+          header(localizations.settings),
+          tile(
+            icon: Icons.settings,
+            title: localizations.settings,
+            onTap: () => push(const SettingsMainPage()),
+          ),
+          if (debug)
+            tile(
+              icon: Icons.bug_report,
+              title: localizations.debug,
+              onTap: () => push(const DebugPage()),
+            ),
+        ],
+      ),
+    );
+  }
+}

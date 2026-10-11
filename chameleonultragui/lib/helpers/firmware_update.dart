@@ -28,10 +28,7 @@ Future<String> checkForFirmwareUpdate(
       scaffoldMessenger.hideCurrentSnackBar();
       snackBar = SnackBar(
         content: Text('${localizations.update_error}: ${e.toString()}'),
-        action: SnackBarAction(
-          label: localizations.close,
-          onPressed: () {},
-        ),
+        action: SnackBarAction(label: localizations.close, onPressed: () {}),
       );
 
       scaffoldMessenger.showSnackBar(snackBar);
@@ -44,7 +41,8 @@ Future<String> checkForFirmwareUpdate(
   } catch (_) {}
 
   appState.log!.i(
-      "Latest commit: $latestCommit, current commit $currentCommit");
+    "Latest commit: $latestCommit, current commit $currentCommit",
+  );
 
   if (latestCommit.isEmpty) {
     return currentCommit;
@@ -52,19 +50,22 @@ Future<String> checkForFirmwareUpdate(
 
   if (latestCommit.startsWith(currentCommit) && scaffoldMessenger.mounted) {
     snackBar = SnackBar(
-      content: Text(localizations
-          .up_to_date(chameleonDeviceName(appState.connector!.device))),
-      action: SnackBarAction(
-        label: localizations.close,
-        onPressed: () {},
+      content: Text(
+        localizations.up_to_date(
+          chameleonDeviceName(appState.connector!.device),
+        ),
       ),
+      action: SnackBarAction(label: localizations.close, onPressed: () {}),
     );
 
     scaffoldMessenger.showSnackBar(snackBar);
   } else if (scaffoldMessenger.mounted) {
     snackBar = SnackBar(
-      content: Text(localizations
-          .downloading_fw(chameleonDeviceName(appState.connector!.device))),
+      content: Text(
+        localizations.downloading_fw(
+          chameleonDeviceName(appState.connector!.device),
+        ),
+      ),
       action: SnackBarAction(
         label: localizations.close,
         onPressed: () {

@@ -42,14 +42,18 @@ Future<bool> loadCardIntoSlot(
     }
 
     await _prepareSlot(communicator, slot, card.tag, TagFrequency.hf);
-    await communicator.setMf1AntiCollision(CardData(
+    await communicator.setMf1AntiCollision(
+      CardData(
         uid: hexToBytes(card.uid),
         atqa: card.atqa,
         sak: card.sak,
-        ats: card.ats));
+        ats: card.ats,
+      ),
+    );
 
-    final blockCount =
-        mfClassicGetBlockCount(chameleonTagTypeGetMfClassicType(card.tag));
+    final blockCount = mfClassicGetBlockCount(
+      chameleonTagTypeGetMfClassicType(card.tag),
+    );
     List<int> blockChunk = [];
     int lastSend = 0;
 
@@ -58,7 +62,9 @@ Future<bool> loadCardIntoSlot(
           blockChunk.length >= 128) {
         if (blockChunk.isNotEmpty) {
           await communicator.setMf1BlockData(
-              lastSend, Uint8List.fromList(blockChunk));
+            lastSend,
+            Uint8List.fromList(blockChunk),
+          );
           blockChunk = [];
           lastSend = blockOffset;
         }
@@ -75,7 +81,9 @@ Future<bool> loadCardIntoSlot(
 
     if (blockChunk.isNotEmpty) {
       await communicator.setMf1BlockData(
-          lastSend, Uint8List.fromList(blockChunk));
+        lastSend,
+        Uint8List.fromList(blockChunk),
+      );
     }
 
     onProgress?.call(100);
@@ -91,11 +99,14 @@ Future<bool> loadCardIntoSlot(
   } else if (isMifareUltralight(card.tag)) {
     onProgress?.call(0);
     await _prepareSlot(communicator, slot, card.tag, TagFrequency.hf);
-    await communicator.setMf1AntiCollision(CardData(
+    await communicator.setMf1AntiCollision(
+      CardData(
         uid: hexToBytes(card.uid),
         atqa: card.atqa,
         sak: card.sak,
-        ats: card.ats));
+        ats: card.ats,
+      ),
+    );
 
     final pageCount = mfUltralightGetPagesCount(card.tag);
     for (var page = 0; page < pageCount && card.data.length > page; page++) {
@@ -105,19 +116,24 @@ Future<bool> loadCardIntoSlot(
     }
 
     if (card.extraData.ultralightVersion.isNotEmpty) {
-      await communicator
-          .mf0EmulatorSetVersionData(card.extraData.ultralightVersion);
+      await communicator.mf0EmulatorSetVersionData(
+        card.extraData.ultralightVersion,
+      );
     }
 
     if (card.extraData.ultralightSignature.isNotEmpty) {
-      await communicator
-          .mf0EmulatorSetSignatureData(card.extraData.ultralightSignature);
+      await communicator.mf0EmulatorSetSignatureData(
+        card.extraData.ultralightSignature,
+      );
     }
 
     if (card.extraData.ultralightCounters.isNotEmpty) {
       for (int i = 0; i < card.extraData.ultralightCounters.length; i++) {
         await communicator.mf0EmulatorSetCounterData(
-            i, card.extraData.ultralightCounters[i], true);
+          i,
+          card.extraData.ultralightCounters[i],
+          true,
+        );
       }
     }
 
@@ -138,7 +154,8 @@ Future<bool> loadCardIntoSlot(
   } else if (card.tag == TagType.hidProx) {
     await _prepareSlot(communicator, slot, card.tag, TagFrequency.lf);
     await communicator.setHIDProxEmulatorID(
-        hexToBytes(HIDCard.fromUID(card.uid).toString()));
+      hexToBytes(HIDCard.fromUID(card.uid).toString()),
+    );
     await _finishLfSlot(communicator, slot, name);
   } else if (card.tag == TagType.viking) {
     await _prepareSlot(communicator, slot, card.tag, TagFrequency.lf);
@@ -163,8 +180,12 @@ Future<bool> loadCardIntoSlot(
   return true;
 }
 
-Future<void> _prepareSlot(ChameleonCommunicator communicator, int slot,
-    TagType type, TagFrequency frequency) async {
+Future<void> _prepareSlot(
+  ChameleonCommunicator communicator,
+  int slot,
+  TagType type,
+  TagFrequency frequency,
+) async {
   await communicator.setReaderDeviceMode(false);
   await communicator.enableSlot(slot, frequency, true);
   await communicator.activateSlot(slot);
@@ -173,7 +194,10 @@ Future<void> _prepareSlot(ChameleonCommunicator communicator, int slot,
 }
 
 Future<void> _finishLfSlot(
-    ChameleonCommunicator communicator, int slot, String name) async {
+  ChameleonCommunicator communicator,
+  int slot,
+  String name,
+) async {
   await communicator.setSlotTagName(slot, name, TagFrequency.lf);
   await communicator.saveSlotData();
 }
