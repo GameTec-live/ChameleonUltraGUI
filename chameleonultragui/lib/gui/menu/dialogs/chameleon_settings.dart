@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
+import 'package:chameleonultragui/gui/component/long_press_threshold_input.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
@@ -386,7 +387,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                                 textScaler: const TextScaler.linear(0.8)),
                             // Keyed so typed value survives rebuilds, the forms
                             // around it get new GlobalKeys on every build
-                            _LongPressThresholdInput(
+                            LongPressThresholdInput(
                                 key: const ValueKey('long_press_threshold'),
                                 initialValue: settings.longPressThreshold!,
                                 onSave: (int threshold) async {
@@ -599,97 +600,5 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                 )));
           }
         });
-  }
-}
-
-class _LongPressThresholdInput extends StatefulWidget {
-  // Firmware raises anything below 200 ms to 200 ms and stores it as u16
-  static const int min = 200;
-  static const int max = 65535;
-
-  // Slider snaps to 50 ms steps with the 1000 ms default in the middle,
-  // values outside of it can still be typed in
-  static const int sliderMax = 1800;
-  static const int sliderStep = 50;
-
-  final int initialValue;
-  final Future<void> Function(int) onSave;
-
-  const _LongPressThresholdInput(
-      {super.key, required this.initialValue, required this.onSave});
-
-  @override
-  State<_LongPressThresholdInput> createState() =>
-      _LongPressThresholdInputState();
-}
-
-class _LongPressThresholdInputState extends State<_LongPressThresholdInput> {
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  late final TextEditingController controller =
-      TextEditingController(text: widget.initialValue.toString());
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    var localizations = AppLocalizations.of(context)!;
-    int sliderValue = (int.tryParse(controller.text) ?? widget.initialValue)
-        .clamp(
-            _LongPressThresholdInput.min, _LongPressThresholdInput.sliderMax);
-
-    return Form(
-        key: formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        child: Column(
-          children: [
-            Slider(
-              value: sliderValue.toDouble(),
-              min: _LongPressThresholdInput.min.toDouble(),
-              max: _LongPressThresholdInput.sliderMax.toDouble(),
-              divisions: (_LongPressThresholdInput.sliderMax -
-                      _LongPressThresholdInput.min) ~/
-                  _LongPressThresholdInput.sliderStep,
-              onChanged: (double value) {
-                setState(() {
-                  controller.text = value.round().toString();
-                });
-              },
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                      controller: controller,
-                      keyboardType: TextInputType.number,
-                      validator: (value) => validateIntRange(
-                            value,
-                            localizations,
-                            min: _LongPressThresholdInput.min,
-                            max: _LongPressThresholdInput.max,
-                          ),
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        // Always visible, slider covers only part of the range
-                        helperText:
-                            "${_LongPressThresholdInput.min}-${_LongPressThresholdInput.max}",
-                      )),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (formKey.currentState!.validate()) {
-                      await widget.onSave(int.parse(controller.text));
-                    }
-                  },
-                  child: Text(localizations.save),
-                ),
-              ],
-            ),
-          ],
-        ));
   }
 }
