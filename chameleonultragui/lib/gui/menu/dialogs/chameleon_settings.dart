@@ -384,14 +384,30 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             const SizedBox(height: 7),
                             Text(localizations.long_press_threshold,
                                 textScaler: const TextScaler.linear(0.8)),
+                            // Keyed so typed value survives rebuilds, the forms
+                            // around it get new GlobalKeys on every build
                             _LongPressThresholdInput(
+                                key: const ValueKey('long_press_threshold'),
                                 initialValue: settings.longPressThreshold!,
                                 onSave: (int threshold) async {
-                                  await appState.communicator!
-                                      .setLongPressThreshold(threshold);
-                                  await appState.communicator!.saveSettings();
+                                  try {
+                                    await appState.communicator!
+                                        .setLongPressThreshold(threshold);
+                                    await appState.communicator!.saveSettings();
+                                  } catch (e) {
+                                    scaffoldMessenger.showSnackBar(SnackBar(
+                                      content:
+                                          Text("${localizations.error}: $e"),
+                                      action: SnackBarAction(
+                                          label: localizations.close,
+                                          onPressed: () {}),
+                                    ));
+                                    return;
+                                  }
                                   settings.longPressThreshold = threshold;
-                                  setState(() {});
+                                  if (mounted) {
+                                    setState(() {});
+                                  }
                                   appState.changesMade();
                                 }),
                           ]
@@ -600,7 +616,7 @@ class _LongPressThresholdInput extends StatefulWidget {
   final Future<void> Function(int) onSave;
 
   const _LongPressThresholdInput(
-      {required this.initialValue, required this.onSave});
+      {super.key, required this.initialValue, required this.onSave});
 
   @override
   State<_LongPressThresholdInput> createState() =>
