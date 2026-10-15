@@ -574,6 +574,5 @@
   "view_dump": "View dump",
   "enable_vanity_sak": "Enable Vanity SAK",
   "enable_vanity_sak_tooltip": "When enabled, SAK stored in block 0 is increased by 0x80, mimicking genuine cards, primarily 7-byte UID ones.\nDefault on for 7-byte UID cards, off for 4, since some of them replay this byte as is.",
-  "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)",
-  "long_press_threshold": "Long press threshold (ms):"
+  "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)"
 }
