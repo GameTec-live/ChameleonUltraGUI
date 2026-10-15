@@ -46,6 +46,8 @@ enum ChameleonCommand {
   getDeviceCapabilities(1035),
   getSleepTimeout(1039),
   setSleepTimeout(1040),
+  getLongPressThreshold(1041),
+  setLongPressThreshold(1042),
 
   // button config
   getButtonPressConfig(1026),
@@ -481,6 +483,7 @@ class DeviceSettings {
   bool pairingEnabled;
   String key;
   int? wakeTimeSeconds;
+  int? longPressThreshold;
 
   DeviceSettings(
       {this.animation = AnimationSetting.none,
@@ -490,7 +493,8 @@ class DeviceSettings {
       this.bLongPress = ButtonConfig.disable,
       this.pairingEnabled = false,
       this.key = "",
-      this.wakeTimeSeconds});
+      this.wakeTimeSeconds,
+      this.longPressThreshold});
 }
 
 enum MifareClassicValueBlockOperator {

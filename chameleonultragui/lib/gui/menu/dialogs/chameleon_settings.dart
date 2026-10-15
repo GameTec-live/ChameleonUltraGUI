@@ -31,11 +31,24 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
 
   Future<DeviceSettings> getSettingsData() async {
     var appState = context.read<ChameleonGUIState>();
+    DeviceSettings settings;
     try {
-      return await appState.communicator!.getDeviceSettings();
+      settings = await appState.communicator!.getDeviceSettings();
     } catch (_) {
       return DeviceSettings();
     }
+
+    // Long press threshold is not part of device settings and older firmware
+    // does not support it, so failing here leaves the setting hidden
+    try {
+      var capabilities = await appState.communicator!.getDeviceCapabilities();
+      if (capabilities.contains(ChameleonCommand.getLongPressThreshold.value)) {
+        settings.longPressThreshold =
+            await appState.communicator!.getLongPressThreshold();
+      }
+    } catch (_) {}
+
+    return settings;
   }
 
   @override
@@ -366,6 +379,23 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           setState(() {});
                           appState.changesMade();
                         }),
+                    ...(settings.longPressThreshold != null)
+                        ? [
+                            const SizedBox(height: 7),
+                            Text(localizations.long_press_threshold,
+                                textScaler: const TextScaler.linear(0.8)),
+                            _LongPressThresholdInput(
+                                initialValue: settings.longPressThreshold!,
+                                onSave: (int threshold) async {
+                                  await appState.communicator!
+                                      .setLongPressThreshold(threshold);
+                                  await appState.communicator!.saveSettings();
+                                  settings.longPressThreshold = threshold;
+                                  setState(() {});
+                                  appState.changesMade();
+                                }),
+                          ]
+                        : [],
                     const SizedBox(height: 10),
                     const Text("BLE:"),
                     const SizedBox(height: 10),
@@ -553,5 +583,97 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                 )));
           }
         });
+  }
+}
+
+class _LongPressThresholdInput extends StatefulWidget {
+  // Firmware raises anything below 200 ms to 200 ms and stores it as u16
+  static const int min = 200;
+  static const int max = 65535;
+
+  // Slider snaps to 50 ms steps with the 1000 ms default in the middle,
+  // values outside of it can still be typed in
+  static const int sliderMax = 1800;
+  static const int sliderStep = 50;
+
+  final int initialValue;
+  final Future<void> Function(int) onSave;
+
+  const _LongPressThresholdInput(
+      {required this.initialValue, required this.onSave});
+
+  @override
+  State<_LongPressThresholdInput> createState() =>
+      _LongPressThresholdInputState();
+}
+
+class _LongPressThresholdInputState extends State<_LongPressThresholdInput> {
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  late final TextEditingController controller =
+      TextEditingController(text: widget.initialValue.toString());
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
+    int sliderValue = (int.tryParse(controller.text) ?? widget.initialValue)
+        .clamp(
+            _LongPressThresholdInput.min, _LongPressThresholdInput.sliderMax);
+
+    return Form(
+        key: formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: Column(
+          children: [
+            Slider(
+              value: sliderValue.toDouble(),
+              min: _LongPressThresholdInput.min.toDouble(),
+              max: _LongPressThresholdInput.sliderMax.toDouble(),
+              divisions: (_LongPressThresholdInput.sliderMax -
+                      _LongPressThresholdInput.min) ~/
+                  _LongPressThresholdInput.sliderStep,
+              onChanged: (double value) {
+                setState(() {
+                  controller.text = value.round().toString();
+                });
+              },
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                      controller: controller,
+                      keyboardType: TextInputType.number,
+                      validator: (value) => validateIntRange(
+                            value,
+                            localizations,
+                            min: _LongPressThresholdInput.min,
+                            max: _LongPressThresholdInput.max,
+                          ),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        // Always visible, slider covers only part of the range
+                        helperText:
+                            "${_LongPressThresholdInput.min}-${_LongPressThresholdInput.max}",
+                      )),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      await widget.onSave(int.parse(controller.text));
+                    }
+                  },
+                  child: Text(localizations.save),
+                ),
+              ],
+            ),
+          ],
+        ));
   }
 }

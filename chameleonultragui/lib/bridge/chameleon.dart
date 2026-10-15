@@ -992,6 +992,16 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([seconds]));
   }
 
+  Future<int> getLongPressThreshold() async {
+    var resp = await sendCmd(ChameleonCommand.getLongPressThreshold);
+    return bytesToU16(resp!.data);
+  }
+
+  Future<void> setLongPressThreshold(int milliseconds) async {
+    await sendCmd(ChameleonCommand.setLongPressThreshold,
+        data: u16ToBytes(milliseconds));
+  }
+
   Future<void> clearBLEBoundedDevices() async {
     await sendCmd(ChameleonCommand.bleClearBondedDevices, skipReceive: true);
   }
