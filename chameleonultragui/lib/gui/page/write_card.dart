@@ -5,6 +5,7 @@ import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/vanity_sak.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/base.dart';
+import 'package:chameleonultragui/helpers/t55xx/write/base.dart';
 import 'package:chameleonultragui/helpers/write.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -152,7 +153,14 @@ class WriteCardPageState extends State<WriteCardPage> {
       );
     } else {
       snackBar = SnackBar(
-        content: Text(localizations.magic_failed_write),
+        content: Text(helper is BaseT55XXCardHelper
+            ? localizations.t55xx_failed_write(localizations.magic_failed_write,
+                localizations.tools, localizations.t55xx_password_cleaner)
+            : localizations.magic_failed_write),
+        // The T55xx message is longer; give it time to be read.
+        duration: helper is BaseT55XXCardHelper
+            ? const Duration(seconds: 8)
+            : const Duration(seconds: 4),
         action: SnackBarAction(
           label: localizations.close,
           onPressed: () {},

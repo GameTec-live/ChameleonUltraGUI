@@ -10,6 +10,22 @@ import 'package:flutter/material.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:flutter/services.dart';
 
+// A single LF read can miss a tag that was written correctly, which made
+// good writes show as failed (RfidResearchGroup/ChameleonUltra#319).
+// Read a few times before giving up.
+Future<bool> t55xxReadBack(Future<Object?> Function() read, String uid,
+    {Duration delay = const Duration(milliseconds: 200)}) async {
+  for (var attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      await Future.delayed(delay);
+    }
+    if ((await read()).toString() == uid) {
+      return true;
+    }
+  }
+  return false;
+}
+
 class BaseT55XXCardHelper extends AbstractWriteHelper {
   LFCardInfo? lfInfo;
 
@@ -171,31 +187,26 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
       await communicator.writeEM410XtoT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
       await Future.delayed(const Duration(milliseconds: 500));
-      var newCard = await communicator.readEM410X();
-      return newCard.toString() == card.uid;
+      return await t55xxReadBack(communicator.readEM410X, card.uid);
     } else if (card.tag == TagType.hidProx) {
       await communicator.writeHIDProxToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
       await Future.delayed(const Duration(milliseconds: 500));
-      var newCard = await communicator.readHIDProx();
-      return newCard.toString() == card.uid;
+      return await t55xxReadBack(communicator.readHIDProx, card.uid);
     } else if (card.tag == TagType.viking) {
       await communicator.writeVikingToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
       await Future.delayed(const Duration(milliseconds: 500));
-      var newCard = await communicator.readViking();
-      return newCard.toString() == card.uid;
+      return await t55xxReadBack(communicator.readViking, card.uid);
     } else if (card.tag == TagType.pac) {
       await communicator.writePacToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
-      var newCard = await communicator.readPac();
-      return newCard.toString() == card.uid;
+      return await t55xxReadBack(communicator.readPac, card.uid);
     } else if (card.tag == TagType.ioProx) {
       await communicator.writeIoProxToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
       await Future.delayed(const Duration(milliseconds: 500));
-      var newCard = await communicator.readIoProx();
-      return newCard.toString() == card.uid;
+      return await t55xxReadBack(communicator.readIoProx, card.uid);
     } else if (card.tag == TagType.idteck) {
       await communicator.writeIdteckToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
