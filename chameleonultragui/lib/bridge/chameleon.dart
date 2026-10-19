@@ -592,7 +592,15 @@ class ChameleonCommunicator {
   }
 
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
-    await sendCmd(ChameleonCommand.setEM410XemulatorID, data: uid);
+    // Firmware accepts only exactly 5 (EM410X) or 13 (Electra) bytes and
+    // rejects type-prefixed payloads that older saves may still contain.
+    final Uint8List normalized = normalizeEm410xUid(uid);
+    final resp = await sendCmd(ChameleonCommand.setEM410XemulatorID,
+        data: normalized);
+    if (resp != null && resp.status != 0x68) {
+      throw Exception(
+          'Failed to set EM410X emulator ID (status=0x${resp.status.toRadixString(16)}, len=${normalized.length})');
+    }
   }
 
   Future<void> setHIDProxEmulatorID(Uint8List uid) async {

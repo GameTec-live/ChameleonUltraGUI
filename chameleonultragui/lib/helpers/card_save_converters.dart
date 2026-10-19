@@ -158,7 +158,9 @@ CardSave flipperRfidToCardSave(String data) {
 
   switch (type) {
     case 'EM4100':
-      tag = TagType.em410X64;
+      // Flipper "EM4100" is standard 64-clock EM410x; store as base EM410X
+      // so load-to-slot maps cleanly to firmware emulation type.
+      tag = TagType.em410X;
       break;
     case 'EM4100/32':
       tag = TagType.em410X32;
@@ -179,6 +181,10 @@ CardSave flipperRfidToCardSave(String data) {
       break;
     default:
       tag = TagType.unknown;
+  }
+
+  if (isEM410X(tag)) {
+    uid = bytesToHexSpace(normalizeEm410xUid(hexToBytes(uid), type: tag));
   }
 
   return CardSave(id: id, uid: uid, name: uid, tag: tag, color: color);
