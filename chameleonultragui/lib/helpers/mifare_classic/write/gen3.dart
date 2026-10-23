@@ -2,8 +2,6 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
-import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/write/gen2.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
@@ -30,22 +28,6 @@ class MifareClassicGen3WriteHelper extends MifareClassicGen2WriteHelper {
     } catch (_) {
       return false;
     }
-  }
-
-  @override
-  bool isReady() {
-    for (var sector = 0;
-        sector < mfClassicGetSectorCount(type, isEV1: isEV1);
-        sector++) {
-      for (var keyType = 0; keyType < 2; keyType++) {
-        if (recovery.checkMarks[sector + (keyType * 40)] !=
-            ChameleonKeyCheckmark.found) {
-          return false;
-        }
-      }
-    }
-
-    return true;
   }
 
   @override
