@@ -79,6 +79,23 @@ void main() {
           defaultFirmwareRepository);
     });
 
+    testWidgets('fits a small phone with the buttons below the field',
+        (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await pumpInput(tester);
+
+      final field = tester.getRect(find.byType(TextFormField));
+      expect(field.width, 320);
+      for (var label in [l10n.def, l10n.save]) {
+        expect(tester.getRect(find.text(label)).top,
+            greaterThanOrEqualTo(field.bottom),
+            reason: label);
+      }
+    });
+
     testWidgets('does not save a value that is not owner/name',
         (tester) async {
       final saved = await pumpInput(tester);
