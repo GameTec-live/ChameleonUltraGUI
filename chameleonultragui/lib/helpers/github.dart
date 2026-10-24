@@ -227,10 +227,17 @@ List<FirmwareBuild> firmwareBuildsFromArtifacts(
   final matching = artifacts
       .where((artifact) => _isMainFirmwareArtifact(artifact, device))
       .toList()
-    ..sort((a, b) => (b["workflow_run"]["id"] as int)
-        .compareTo(a["workflow_run"]["id"] as int));
+    ..sort((a, b) {
+      final byRun = (b["workflow_run"]["id"] as int)
+          .compareTo(a["workflow_run"]["id"] as int);
+      // Re-running a workflow uploads again under the same run ID
+      return byRun != 0
+          ? byRun
+          : DateTime.parse(b["created_at"])
+              .compareTo(DateTime.parse(a["created_at"]));
+    });
 
-  // Re-runs produce several artifacts for the same commit, keep the newest
+  // Several artifacts can exist for the same commit, keep the newest
   final commits = <String>{};
   return [
     for (var artifact in matching)

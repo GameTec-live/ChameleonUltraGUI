@@ -158,6 +158,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         fit: BoxFit.scaleDown,
                         child: ElevatedButton(
                             onPressed: () async {
+                              var device = appState.connector!.device;
                               var installedVersion = "";
                               try {
                                 installedVersion = await appState
@@ -171,8 +172,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
 
                               // Fetched once here, so rebuilding the picker
                               // does not query GitHub again
-                              var builds = fetchFirmwareBuilds(
-                                  appState.connector!.device);
+                              var builds = fetchFirmwareBuilds(device);
                               var firmware = await showDialog<FirmwareBuild>(
                                   context: buildContext,
                                   builder: (_) => FirmwarePicker(
@@ -188,6 +188,22 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                               }
 
                               Navigator.pop(buildContext);
+
+                              // The list only fits the device it was fetched
+                              // for, which may have been swapped meanwhile
+                              if (!appState.connector!.connected ||
+                                  appState.connector!.device != device) {
+                                scaffoldMessenger.showSnackBar(SnackBar(
+                                  content:
+                                      Text(localizations.chameleon_changed),
+                                  action: SnackBarAction(
+                                    label: localizations.close,
+                                    onPressed: () {},
+                                  ),
+                                ));
+                                return;
+                              }
+
                               await flashWithProgress(
                                   appState, scaffoldMessenger, localizations,
                                   firmware: firmware);

@@ -582,5 +582,6 @@
   "firmware_dev_builds": "Development builds",
   "installed": "Installed",
   "older_firmware_warning": "Flashing firmware older than the installed version can reset device settings to their defaults.",
-  "no_firmware_available": "No firmware available for this device"
+  "no_firmware_available": "No firmware available for this device",
+  "chameleon_changed": "The connected Chameleon changed. Open the firmware list again."
 }

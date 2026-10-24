@@ -103,9 +103,9 @@ void main() {
       artifact(4, 40083994172, "6b8abbc63d000000000000000000000000000000",
           branch: "gtl-ruff"),
       artifact(3, 40084496773, dev),
-      artifact(2, 40083294055, v230),
-      // A second artifact for the same commit, e.g. from a re-run
-      artifact(1, 40083294055, v230),
+      artifact(2, 40083294055, v230, created: "2026-10-24T09:47:56Z"),
+      // Re-running a workflow uploads again under the same run ID
+      artifact(1, 40083294055, v230, created: "2026-10-24T11:02:13Z"),
     ], ChameleonDevice.ultra);
 
     expect(builds.map((build) => build.name),
@@ -115,6 +115,9 @@ void main() {
     expect(builds[0].commit, dev);
     expect(builds[0].url.toString(),
         "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/40084496773/artifacts/3");
+    expect(builds[1].url.toString(),
+        "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/40083294055/artifacts/1");
+    expect(builds[1].date, DateTime.utc(2026, 10, 24, 11, 2, 13));
   });
 
   group('FirmwareBuild.isInstalled', () {
