@@ -269,7 +269,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               ),
               const SizedBox(height: 10),
               Text(
-                localizations.firmware_repository,
+                localizations.firmware_update_source,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               ConstrainedBox(
