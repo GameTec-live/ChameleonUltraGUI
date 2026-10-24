@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:chameleonultragui/helpers/colors.dart' as colors;
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -679,5 +680,14 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setAutoConnectFirstFoundDevice(bool value) {
     _sharedPreferences.setBool('auto_connect_first_found', value);
+  }
+
+  String getFirmwareRepository() {
+    return _sharedPreferences.getString('firmware_repository') ??
+        defaultFirmwareRepository;
+  }
+
+  void setFirmwareRepository(String value) {
+    _sharedPreferences.setString('firmware_repository', value);
   }
 }
