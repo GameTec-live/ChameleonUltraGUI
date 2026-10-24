@@ -172,7 +172,10 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
 
                               // Fetched once here, so rebuilding the picker
                               // does not query GitHub again
-                              var builds = fetchFirmwareBuilds(device);
+                              var builds = fetchFirmwareBuilds(
+                                  device,
+                                  appState.sharedPreferencesProvider
+                                      .getFirmwareRepository());
                               var firmware = await showDialog<FirmwareBuild>(
                                   context: buildContext,
                                   builder: (_) => FirmwarePicker(

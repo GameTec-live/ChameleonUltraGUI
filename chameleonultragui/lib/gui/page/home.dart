@@ -362,7 +362,9 @@ class HomePageState extends State<HomePage> {
 
                                 try {
                                   latestCommit = await latestAvailableCommit(
-                                      appState.connector!.device);
+                                      appState.connector!.device,
+                                      appState.sharedPreferencesProvider
+                                          .getFirmwareRepository());
                                 } catch (e) {
                                   if (context.mounted) {
                                     scaffoldMessenger.hideCurrentSnackBar();
@@ -381,8 +383,10 @@ class HomePageState extends State<HomePage> {
                                 }
 
                                 try {
-                                  fwVersion[1] =
-                                      await resolveCommit(fwVersion[1]);
+                                  fwVersion[1] = await resolveCommit(
+                                      fwVersion[1],
+                                      appState.sharedPreferencesProvider
+                                          .getFirmwareRepository());
                                 } catch (_) {}
 
                                 appState.log!.i(

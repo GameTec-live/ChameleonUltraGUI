@@ -82,13 +82,17 @@ Future<List<Map<String, String>>> fetchGitHubContributors() async {
   }
 }
 
-Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
+/// Firmware repository used unless another one is set in the app settings
+const String defaultFirmwareRepository = "RfidResearchGroup/ChameleonUltra";
+
+Future<Uint8List> fetchFirmwareFromReleases(
+    ChameleonDevice device, String repository) async {
   Uint8List content = Uint8List(0);
   String error = "";
 
   try {
     final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
+            "https://api.github.com/repos/$repository/releases")))
         .body
         .toString());
 
@@ -130,13 +134,15 @@ bool _isMainFirmwareArtifact(dynamic artifact, ChameleonDevice device) {
       artifact["expired"] != true &&
       run != null &&
       run["head_branch"] == "main" &&
-      run["head_repository_id"] == 581338100;
+      // Skip pull requests from forks, which can also be named main
+      run["head_repository_id"] == run["repository_id"];
 }
 
-Uri _artifactDownloadUrl(dynamic artifact) => Uri.parse(
-    "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}");
+Uri _artifactDownloadUrl(dynamic artifact, String repository) => Uri.parse(
+    "https://nightly.link/$repository/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}");
 
-/// Returns the newest non-expired DFU artifact built from upstream main.
+/// Returns the newest non-expired DFU artifact built from main of the
+/// repository itself.
 ///
 /// The artifacts API lists by artifact ID, which does not follow build order,
 /// so the first match can be an older build. Workflow run IDs do follow it,
@@ -223,7 +229,7 @@ List<FirmwareBuild> firmwareBuildsFromReleases(
 }
 
 List<FirmwareBuild> firmwareBuildsFromArtifacts(
-    List<dynamic> artifacts, ChameleonDevice device) {
+    List<dynamic> artifacts, ChameleonDevice device, String repository) {
   final matching = artifacts
       .where((artifact) => _isMainFirmwareArtifact(artifact, device))
       .toList()
@@ -246,7 +252,7 @@ List<FirmwareBuild> firmwareBuildsFromArtifacts(
           name: artifact["workflow_run"]["head_sha"].substring(0, 7),
           channel: FirmwareChannel.dev,
           date: DateTime.parse(artifact["created_at"]),
-          url: _artifactDownloadUrl(artifact),
+          url: _artifactDownloadUrl(artifact, repository),
           commit: artifact["workflow_run"]["head_sha"],
         ),
   ];
@@ -254,9 +260,10 @@ List<FirmwareBuild> firmwareBuildsFromArtifacts(
 
 /// Lists the releases, pre-releases and recent main builds that can be
 /// flashed to [device], newest first within each channel.
-Future<List<FirmwareBuild>> fetchFirmwareBuilds(ChameleonDevice device) async {
+Future<List<FirmwareBuild>> fetchFirmwareBuilds(
+    ChameleonDevice device, String repository) async {
   final releases = json.decode((await http.get(Uri.parse(
-          "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
+          "https://api.github.com/repos/$repository/releases")))
       .body
       .toString());
 
@@ -265,7 +272,7 @@ Future<List<FirmwareBuild>> fetchFirmwareBuilds(ChameleonDevice device) async {
   }
 
   final artifacts = json.decode((await http.get(Uri.parse(
-          "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100&name=${_dfuAppName(device)}")))
+          "https://api.github.com/repos/$repository/actions/artifacts?per_page=100&name=${_dfuAppName(device)}")))
       .body
       .toString());
 
@@ -275,20 +282,21 @@ Future<List<FirmwareBuild>> fetchFirmwareBuilds(ChameleonDevice device) async {
 
   return [
     ...firmwareBuildsFromReleases(releases, device),
-    ...firmwareBuildsFromArtifacts(artifacts["artifacts"], device),
+    ...firmwareBuildsFromArtifacts(artifacts["artifacts"], device, repository),
   ];
 }
 
 Future<Uint8List> downloadFirmwareBuild(FirmwareBuild build) =>
     http.readBytes(build.url);
 
-Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
+Future<Uint8List> fetchFirmwareFromActions(
+    ChameleonDevice device, String repository) async {
   Uint8List content = Uint8List(0);
   String error = "";
 
   try {
     final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100&name=${_dfuAppName(device)}")))
+            "https://api.github.com/repos/$repository/actions/artifacts?per_page=100&name=${_dfuAppName(device)}")))
         .body
         .toString());
 
@@ -300,7 +308,8 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
     final artifact =
         selectLatestFirmwareArtifact(artifacts["artifacts"], device);
     if (artifact != null) {
-      content = await http.readBytes(_artifactDownloadUrl(artifact));
+      content =
+          await http.readBytes(_artifactDownloadUrl(artifact, repository));
     }
   } catch (_) {}
 
@@ -311,12 +320,13 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
   return content;
 }
 
-Future<String> latestAvailableCommit(ChameleonDevice device) async {
+Future<String> latestAvailableCommit(
+    ChameleonDevice device, String repository) async {
   String error = "";
 
   try {
     final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100&name=${_dfuAppName(device)}")))
+            "https://api.github.com/repos/$repository/actions/artifacts?per_page=100&name=${_dfuAppName(device)}")))
         .body
         .toString());
 
@@ -334,7 +344,7 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
 
   try {
     final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
+            "https://api.github.com/repos/$repository/releases")))
         .body
         .toString());
 
@@ -358,14 +368,14 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
   return "";
 }
 
-Future<String> resolveCommit(String commitHash) async {
+Future<String> resolveCommit(String commitHash, String repository) async {
   if ('-'.allMatches(commitHash).length == 2) {
     return commitHash.split("-")[2].replaceAll('g', ''); // v2.0.0-1-gXXXXXX
   } else if (commitHash.startsWith('-dirty')) {
     return commitHash; // v2.0.0-1-gXXXXXX-dirty
   } else if ('-'.allMatches(commitHash).isEmpty) {
     final tags = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/tags")))
+            "https://api.github.com/repos/$repository/tags")))
         .body
         .toString());
     for (var tag in tags) {

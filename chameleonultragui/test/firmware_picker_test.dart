@@ -37,6 +37,7 @@ Map<String, dynamic> artifact(int id, int runId, String sha,
     "created_at": created,
     "workflow_run": {
       "id": runId,
+      "repository_id": 581338100,
       "head_branch": branch,
       "head_repository_id": 581338100,
       "head_sha": sha,
@@ -106,7 +107,7 @@ void main() {
       artifact(2, 40083294055, v230, created: "2026-10-24T09:47:56Z"),
       // Re-running a workflow uploads again under the same run ID
       artifact(1, 40083294055, v230, created: "2026-10-24T11:02:13Z"),
-    ], ChameleonDevice.ultra);
+    ], ChameleonDevice.ultra, defaultFirmwareRepository);
 
     expect(builds.map((build) => build.name),
         ["23507c2", "4e1a5b2", "4ffb657"]);
@@ -118,6 +119,15 @@ void main() {
     expect(builds[1].url.toString(),
         "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/40083294055/artifacts/1");
     expect(builds[1].date, DateTime.utc(2026, 10, 24, 11, 2, 13));
+  });
+
+  test('firmwareBuildsFromArtifacts downloads from the configured repository',
+      () {
+    final builds = firmwareBuildsFromArtifacts(
+        [artifact(1, 10, dev)], ChameleonDevice.ultra, "someone/fork");
+
+    expect(builds[0].url.toString(),
+        "https://nightly.link/someone/fork/suites/10/artifacts/1");
   });
 
   group('FirmwareBuild.isInstalled', () {

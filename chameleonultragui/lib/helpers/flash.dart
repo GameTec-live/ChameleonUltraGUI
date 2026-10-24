@@ -14,11 +14,12 @@ import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/protobuf/dfu-cc.pb.dart';
 import 'dart:math';
 
-Future<Uint8List> fetchFirmware(ChameleonDevice device) async {
-  var content = await fetchFirmwareFromActions(device);
+Future<Uint8List> fetchFirmware(
+    ChameleonDevice device, String repository) async {
+  var content = await fetchFirmwareFromActions(device, repository);
 
   if (content.isEmpty) {
-    content = await fetchFirmwareFromReleases(device);
+    content = await fetchFirmwareFromReleases(device, repository);
   }
 
   return content;
@@ -90,7 +91,8 @@ Future<void> flashFirmware(ChameleonGUIState appState,
   Uint8List content = (build != null)
       ? await downloadFirmwareBuild(build)
       : await fetchFirmware(
-          (device != null) ? device : appState.connector!.device);
+          (device != null) ? device : appState.connector!.device,
+          appState.sharedPreferencesProvider.getFirmwareRepository());
 
   (applicationDat, applicationBin) = await unpackFirmware(content);
 

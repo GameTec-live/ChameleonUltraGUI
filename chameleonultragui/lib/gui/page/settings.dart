@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/gui/component/developer_list.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
+import 'package:chameleonultragui/gui/component/firmware_repository_input.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/qr/settings.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -265,6 +266,26 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     },
                   ),
                 ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                localizations.firmware_repository,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: FirmwareRepositoryInput(
+                    initialValue: appState.sharedPreferencesProvider
+                        .getFirmwareRepository(),
+                    onSave: (value) {
+                      appState.sharedPreferencesProvider
+                          .setFirmwareRepository(value);
+                      appState.changesMade();
+                    },
+                  ),
+                ),
               ),
               const SizedBox(height: 10),
               FittedBox(

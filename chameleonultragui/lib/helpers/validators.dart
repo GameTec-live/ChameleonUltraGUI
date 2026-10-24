@@ -133,6 +133,14 @@ String? validateBlePin(String? value, AppLocalizations l) {
   return null;
 }
 
+String? validateRepository(String? value, AppLocalizations l) {
+  if (value == null ||
+      !RegExp(r'^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$').hasMatch(value)) {
+    return l.invalid_repository;
+  }
+  return null;
+}
+
 List<FilteringTextInputFormatter> hexFormatter = [
   FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f: ]'))
 ];
