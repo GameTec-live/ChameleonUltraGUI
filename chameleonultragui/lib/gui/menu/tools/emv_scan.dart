@@ -75,6 +75,21 @@ String _ascii(Uint8List b) {
   return String.fromCharCodes(b).trim();
 }
 
+bool _swOk(Uint8List resp) {
+  return resp.length >= 2 &&
+      resp[resp.length - 2] == 0x90 &&
+      resp[resp.length - 1] == 0x00;
+}
+
+String _swHex(Uint8List resp) {
+  if (resp.length < 2) return "??";
+  return resp
+      .sublist(resp.length - 2)
+      .map((b) => b.toRadixString(16).padLeft(2, '0'))
+      .join()
+      .toUpperCase();
+}
+
 class EmvScanMenu extends StatefulWidget {
   const EmvScanMenu({super.key});
 
@@ -136,41 +151,50 @@ class _EmvScanMenuState extends State<EmvScanMenu> {
       List<int> allRecordData = [];
       List<int> extraData = [];
       var ppseResp = pairs[0][1];
-      var ppseBody = ppseResp.length >= 2
-          ? ppseResp.sublist(0, ppseResp.length - 2)
-          : ppseResp;
       out.add("");
-      out.add("PPSE OK (${ppseResp.length}b)");
-      extraData.addAll(ppseBody);
+      if (_swOk(ppseResp)) {
+        out.add("PPSE OK (${ppseResp.length}b)");
+        extraData.addAll(ppseResp.sublist(0, ppseResp.length - 2));
+      } else {
+        out.add("PPSE FAILED (SW ${_swHex(ppseResp)})");
+      }
 
       if (pairs.length >= 2) {
         var selResp = pairs[1][1];
-        var selBody = selResp.length >= 2
-            ? selResp.sublist(0, selResp.length - 2)
-            : selResp;
-        out.add("SELECT AID OK (${selResp.length}b)");
-        extraData.addAll(selBody);
+        if (_swOk(selResp)) {
+          out.add("SELECT AID OK (${selResp.length}b)");
+          extraData.addAll(selResp.sublist(0, selResp.length - 2));
+        } else {
+          out.add("SELECT AID FAILED (SW ${_swHex(selResp)})");
+        }
       }
       if (pairs.length >= 3) {
         var gpoResp = pairs[2][1];
-        var gpoBody = gpoResp.length >= 2
-            ? gpoResp.sublist(0, gpoResp.length - 2)
-            : gpoResp;
-        out.add("GPO OK (${gpoResp.length}b)");
-        extraData.addAll(gpoBody);
+        if (_swOk(gpoResp)) {
+          out.add("GPO OK (${gpoResp.length}b)");
+          extraData.addAll(gpoResp.sublist(0, gpoResp.length - 2));
+        } else {
+          out.add("GPO FAILED (SW ${_swHex(gpoResp)})");
+        }
         for (var pair in pairs.sublist(3)) {
           var cb = pair[0], rb = pair[1];
           int sfiN = cb.length >= 4 ? (cb[3] >> 3) & 0x1F : 0;
           int recN = cb.length >= 3 ? cb[2] : 0;
-          var rBody = rb.length >= 2 ? rb.sublist(0, rb.length - 2) : rb;
-          out.add("READ RECORD SFI=$sfiN rec=$recN OK (${rb.length}b)");
-          allRecordData.addAll(rBody);
+          if (_swOk(rb)) {
+            out.add("READ RECORD SFI=$sfiN rec=$recN OK (${rb.length}b)");
+            allRecordData.addAll(rb.sublist(0, rb.length - 2));
+          } else {
+            out.add(
+                "READ RECORD SFI=$sfiN rec=$recN FAILED (SW ${_swHex(rb)})");
+          }
         }
       }
 
-      var allRecord = Uint8List.fromList(allRecordData);
+      // searchData also carries the PPSE/SELECT/GPO reply bodies, not just
+      // READ RECORD -- some cards return Track2 (tag 0x57) in the GPO reply
+      // directly without repeating it in a record.
       var searchData = Uint8List.fromList([...allRecordData, ...extraData]);
-      var tags = _tlvFind(allRecord, [0x5A, 0x57, 0x5F24, 0x5F20, 0x5F28]);
+      var tags = _tlvFind(searchData, [0x5A, 0x57, 0x5F24, 0x5F20, 0x5F28]);
       var appTags = _tlvFind(searchData, [0x9F12, 0x50]);
 
       out.add("");
