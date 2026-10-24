@@ -190,6 +190,18 @@ String chameleonTagToString(TagType tag, AppLocalizations localizations) {
     return "Ultralight EV1 (41)";
   } else if (tag == TagType.hf14a4) {
     return "ISO14443-4 (T=CL)";
+  } else if (tag == TagType.desfireEv1_2k) {
+    return "DESFire EV1 2K";
+  } else if (tag == TagType.desfireEv1_4k) {
+    return "DESFire EV1 4K";
+  } else if (tag == TagType.desfireEv1_8k) {
+    return "DESFire EV1 8K";
+  } else if (tag == TagType.desfireEv2_2k) {
+    return "DESFire EV2 2K";
+  } else if (tag == TagType.desfireEv2_4k) {
+    return "DESFire EV2 4K";
+  } else if (tag == TagType.desfireEv2_8k) {
+    return "DESFire EV2 8K";
   } else {
     return localizations.unknown;
   }
@@ -448,7 +460,13 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.ultralightC,
       TagType.ultralight11,
       TagType.ultralight21,
-      TagType.hf14a4
+      TagType.hf14a4,
+      TagType.desfireEv1_2k,
+      TagType.desfireEv1_4k,
+      TagType.desfireEv1_8k,
+      TagType.desfireEv2_2k,
+      TagType.desfireEv2_4k,
+      TagType.desfireEv2_8k,
     ];
   } else if (frequency == TagFrequency.lf) {
     return [
@@ -599,6 +617,17 @@ bool isEM410X(TagType type) {
     TagType.em410X32,
     TagType.em410X64,
     TagType.em410XElectra
+  ].contains(type);
+}
+
+bool isDesfire(TagType type) {
+  return [
+    TagType.desfireEv1_2k,
+    TagType.desfireEv1_4k,
+    TagType.desfireEv1_8k,
+    TagType.desfireEv2_2k,
+    TagType.desfireEv2_4k,
+    TagType.desfireEv2_8k,
   ].contains(type);
 }
 
