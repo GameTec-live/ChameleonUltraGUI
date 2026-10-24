@@ -83,11 +83,14 @@ void validateFiles(Uint8List dat, Uint8List bin) {
 Future<void> flashFirmware(ChameleonGUIState appState,
     {ScaffoldMessengerState? scaffoldMessenger,
     ChameleonDevice? device,
+    FirmwareBuild? build,
     bool enterDFU = true}) async {
   Uint8List applicationDat, applicationBin;
 
-  Uint8List content = await fetchFirmware(
-      (device != null) ? device : appState.connector!.device);
+  Uint8List content = (build != null)
+      ? await downloadFirmwareBuild(build)
+      : await fetchFirmware(
+          (device != null) ? device : appState.connector!.device);
 
   (applicationDat, applicationBin) = await unpackFirmware(content);
 

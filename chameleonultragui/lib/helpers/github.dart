@@ -124,6 +124,18 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
 String _dfuAppName(ChameleonDevice device) =>
     "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app";
 
+bool _isMainFirmwareArtifact(dynamic artifact, ChameleonDevice device) {
+  final run = artifact["workflow_run"];
+  return artifact["name"] == _dfuAppName(device) &&
+      artifact["expired"] != true &&
+      run != null &&
+      run["head_branch"] == "main" &&
+      run["head_repository_id"] == 581338100;
+}
+
+Uri _artifactDownloadUrl(dynamic artifact) => Uri.parse(
+    "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}");
+
 /// Returns the newest non-expired DFU artifact built from upstream main.
 ///
 /// The artifacts API lists by artifact ID, which does not follow build order,
@@ -134,22 +146,134 @@ Map<String, dynamic>? selectLatestFirmwareArtifact(
   Map<String, dynamic>? latest;
 
   for (var artifact in artifacts) {
-    final run = artifact["workflow_run"];
-    if (artifact["name"] != _dfuAppName(device) ||
-        artifact["expired"] == true ||
-        run == null ||
-        run["head_branch"] != "main" ||
-        run["head_repository_id"] != 581338100) {
+    if (!_isMainFirmwareArtifact(artifact, device)) {
       continue;
     }
 
-    if (latest == null || run["id"] > latest["workflow_run"]["id"]) {
+    if (latest == null ||
+        artifact["workflow_run"]["id"] > latest["workflow_run"]["id"]) {
       latest = artifact;
     }
   }
 
   return latest;
 }
+
+enum FirmwareChannel { release, prerelease, dev }
+
+class FirmwareBuild {
+  final String name;
+  final FirmwareChannel channel;
+  final DateTime date;
+  final Uri url;
+  final String? commit;
+
+  FirmwareBuild({
+    required this.name,
+    required this.channel,
+    required this.date,
+    required this.url,
+    this.commit,
+  });
+
+  /// Whether [gitVersion] (as reported by the device, e.g. `v2.3.0` or
+  /// `v2.3.0-2-g23507c2`) is this build.
+  bool isInstalled(String gitVersion) {
+    if (gitVersion == name) {
+      return true;
+    }
+
+    final installedCommit =
+        RegExp(r'-g([0-9a-f]{7,})').firstMatch(gitVersion)?.group(1);
+    return installedCommit != null &&
+        commit != null &&
+        commit!.startsWith(installedCommit);
+  }
+}
+
+List<FirmwareBuild> firmwareBuildsFromReleases(
+    List<dynamic> releases, ChameleonDevice device) {
+  final builds = <FirmwareBuild>[];
+
+  for (var release in releases) {
+    final asset = (release["assets"] as List)
+        .where((file) => file["name"] == "${_dfuAppName(device)}.zip")
+        .firstOrNull;
+    if (asset == null) {
+      continue;
+    }
+
+    // target_commitish is a branch name on some releases
+    final String commitish = release["target_commitish"] ?? "";
+    builds.add(FirmwareBuild(
+      name: release["tag_name"],
+      channel: release["prerelease"] == true
+          ? FirmwareChannel.prerelease
+          : FirmwareChannel.release,
+      // The rolling dev pre-release keeps its original publish date, so use
+      // the upload date of the firmware itself
+      date: DateTime.parse(asset["updated_at"]),
+      url: Uri.parse(asset["browser_download_url"]),
+      commit:
+          RegExp(r'^[0-9a-f]{40}$').hasMatch(commitish) ? commitish : null,
+    ));
+  }
+
+  return builds;
+}
+
+List<FirmwareBuild> firmwareBuildsFromArtifacts(
+    List<dynamic> artifacts, ChameleonDevice device) {
+  final matching = artifacts
+      .where((artifact) => _isMainFirmwareArtifact(artifact, device))
+      .toList()
+    ..sort((a, b) => (b["workflow_run"]["id"] as int)
+        .compareTo(a["workflow_run"]["id"] as int));
+
+  // Re-runs produce several artifacts for the same commit, keep the newest
+  final commits = <String>{};
+  return [
+    for (var artifact in matching)
+      if (commits.add(artifact["workflow_run"]["head_sha"]))
+        FirmwareBuild(
+          name: artifact["workflow_run"]["head_sha"].substring(0, 7),
+          channel: FirmwareChannel.dev,
+          date: DateTime.parse(artifact["created_at"]),
+          url: _artifactDownloadUrl(artifact),
+          commit: artifact["workflow_run"]["head_sha"],
+        ),
+  ];
+}
+
+/// Lists the releases, pre-releases and recent main builds that can be
+/// flashed to [device], newest first within each channel.
+Future<List<FirmwareBuild>> fetchFirmwareBuilds(ChameleonDevice device) async {
+  final releases = json.decode((await http.get(Uri.parse(
+          "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
+      .body
+      .toString());
+
+  if (releases is! List) {
+    throw releases["message"] ?? "Unexpected response from GitHub";
+  }
+
+  final artifacts = json.decode((await http.get(Uri.parse(
+          "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100&name=${_dfuAppName(device)}")))
+      .body
+      .toString());
+
+  if (artifacts.containsKey("message")) {
+    throw artifacts["message"];
+  }
+
+  return [
+    ...firmwareBuildsFromReleases(releases, device),
+    ...firmwareBuildsFromArtifacts(artifacts["artifacts"], device),
+  ];
+}
+
+Future<Uint8List> downloadFirmwareBuild(FirmwareBuild build) =>
+    http.readBytes(build.url);
 
 Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
   Uint8List content = Uint8List(0);
@@ -169,8 +293,7 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
     final artifact =
         selectLatestFirmwareArtifact(artifacts["artifacts"], device);
     if (artifact != null) {
-      content = await http.readBytes(Uri.parse(
-          "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
+      content = await http.readBytes(_artifactDownloadUrl(artifact));
     }
   } catch (_) {}
 
