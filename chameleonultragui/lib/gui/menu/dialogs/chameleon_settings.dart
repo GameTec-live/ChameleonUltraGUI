@@ -195,7 +195,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             child: Row(
                               children: [
                                 const Icon(Icons.history),
-                                Text(localizations.flash_other_version_dfu),
+                                Text(localizations.flash_specific_version_dfu),
                               ],
                             ))),
                     const SizedBox(height: 10),

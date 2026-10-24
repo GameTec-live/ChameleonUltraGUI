@@ -576,10 +576,11 @@
   "enable_vanity_sak_tooltip": "When enabled, SAK stored in block 0 is increased by 0x80, mimicking genuine cards, primarily 7-byte UID ones.\nDefault on for 7-byte UID cards, off for 4, since some of them replay this byte as is.",
   "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)",
   "long_press_threshold": "Long press threshold (ms):",
-  "flash_other_version_dfu": "Flash other FW version via DFU",
+  "flash_specific_version_dfu": "Flash specific FW version via DFU",
   "firmware_releases": "Releases",
   "firmware_prereleases": "Pre-releases",
   "firmware_dev_builds": "Development builds",
   "installed": "Installed",
-  "older_firmware_warning": "Flashing firmware older than the installed version can reset device settings to their defaults."
+  "older_firmware_warning": "Flashing firmware older than the installed version can reset device settings to their defaults.",
+  "no_firmware_available": "No firmware available for this device"
 }

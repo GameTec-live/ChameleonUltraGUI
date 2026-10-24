@@ -29,6 +29,8 @@ class FirmwarePicker extends StatelessWidget {
           } else if (snapshot.hasError) {
             content = Text(
                 '${localizations.update_error}: ${snapshot.error.toString()}');
+          } else if (snapshot.data!.isEmpty) {
+            content = Text(localizations.no_firmware_available);
           } else {
             content = SizedBox(
                 width: double.maxFinite,

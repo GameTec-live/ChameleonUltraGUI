@@ -221,6 +221,12 @@ void main() {
       expect(find.byType(FirmwarePicker), findsNothing);
     });
 
+    testWidgets('says so when there is no firmware to pick', (tester) async {
+      await openPicker(tester, () => Future.value(<FirmwareBuild>[]));
+
+      expect(find.text(l10n.no_firmware_available), findsOneWidget);
+    });
+
     testWidgets('shows the error when the builds cannot be fetched',
         (tester) async {
       await openPicker(
