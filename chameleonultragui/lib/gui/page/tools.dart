@@ -1,5 +1,7 @@
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+import 'package:chameleonultragui/gui/menu/tools/desfire_reader.dart';
 import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
+import 'package:chameleonultragui/gui/menu/tools/emv_scan.dart';
 import 'package:chameleonultragui/gui/menu/tools/hf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/lf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
@@ -66,6 +68,18 @@ class ToolsPageState extends State<ToolsPage> {
           name: localizations.mifare_classic_gen4,
           description: localizations.mifare_classic_gen4_description,
           icon: Icons.settings,
+          isDeviceRequired: true),
+      ToolItem(
+          name: localizations.desfire_title,
+          description: localizations.desfire_description,
+          icon: Icons.credit_card,
+          onPressed: const DesfireReaderMenu(),
+          isDeviceRequired: true),
+      ToolItem(
+          name: localizations.emv_scan_title,
+          description: localizations.emv_scan_description,
+          icon: Icons.payment,
+          onPressed: const EmvScanMenu(),
           isDeviceRequired: true),
     ];
 

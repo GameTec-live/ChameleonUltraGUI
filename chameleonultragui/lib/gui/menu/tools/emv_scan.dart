@@ -1,0 +1,308 @@
+// EMV scan tool (Phreakbyte fork addition). The device-side work is a
+// single firmware call (HF14A_4_EMV_SCAN, 6005) -- already wired in the
+// bridge as hf14a4EmvScan(), just never consumed by any GUI screen. This
+// adds the screen: runs the scan, then the same BER-TLV walk + PAN/expiry/
+// cardholder decode as chameleon_cli_unit.py's `emv scan` (and this fork's
+// web terminal port of it).
+import 'dart:typed_data';
+
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+import 'package:chameleonultragui/gui/component/error_page.dart';
+import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/main.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+Map<int, List<Uint8List>> _tlvFind(Uint8List data, List<int> wantTags) {
+  Map<int, List<Uint8List>> found = {for (var t in wantTags) t: []};
+  int i = 0;
+  while (i < data.length) {
+    if (i + 1 >= data.length) break;
+    int b0 = data[i];
+    int tl = (b0 & 0x1F) == 0x1F ? 2 : 1;
+    if (i + tl > data.length) break;
+    int tag = 0;
+    for (int k = 0; k < tl; k++) {
+      tag = (tag << 8) | data[i + k];
+    }
+    i += tl;
+    if (i >= data.length) break;
+    bool constructed = (b0 & 0x20) != 0;
+    int vlen;
+    if ((data[i] & 0x80) != 0) {
+      int nb = data[i] & 0x7F;
+      i++;
+      if (i + nb > data.length) break;
+      vlen = 0;
+      for (int k = 0; k < nb; k++) {
+        vlen = (vlen << 8) | data[i + k];
+      }
+      i += nb;
+    } else {
+      vlen = data[i];
+      i++;
+    }
+    bool truncated = i + vlen > data.length;
+    Uint8List val = truncated ? data.sublist(i) : data.sublist(i, i + vlen);
+    i = truncated ? data.length : i + vlen;
+    if (wantTags.contains(tag) && !truncated) found[tag]!.add(val);
+    if (constructed) {
+      var sub = _tlvFind(val, wantTags);
+      for (var t in wantTags) {
+        found[t]!.addAll(sub[t]!);
+      }
+    }
+  }
+  return found;
+}
+
+bool _panLuhn(String panHex) {
+  var digits = panHex.split('').where((c) => RegExp(r'[0-9]').hasMatch(c)).map(int.parse).toList().reversed.toList();
+  int total = 0;
+  for (int i = 0; i < digits.length; i++) {
+    int d = digits[i];
+    if (i % 2 == 0) {
+      total += d;
+    } else {
+      int d2 = d * 2;
+      total += d2 > 9 ? d2 - 9 : d2;
+    }
+  }
+  return total % 10 == 0;
+}
+
+String _ascii(Uint8List b) {
+  return String.fromCharCodes(b).trim();
+}
+
+class EmvScanMenu extends StatefulWidget {
+  const EmvScanMenu({super.key});
+
+  @override
+  State<EmvScanMenu> createState() => _EmvScanMenuState();
+}
+
+class _EmvScanMenuState extends State<EmvScanMenu> {
+  bool _busy = false;
+  List<String> _output = [];
+
+  Future<void> _scan() async {
+    setState(() {
+      _busy = true;
+      _output = [];
+    });
+    try {
+      var appState = context.read<ChameleonGUIState>();
+      var d = await appState.communicator!.hf14a4EmvScan();
+      if (d.isEmpty) {
+        setState(() => _output = ["No card found or scan failed."]);
+        return;
+      }
+      int off = 0;
+      int uidLen = d[off++];
+      var uid = d.sublist(off, off + uidLen);
+      off += uidLen;
+      var atqa = d.sublist(off, off + 2);
+      off += 2;
+      int sak = d[off++];
+      int atsLen = d[off++];
+      var ats = d.sublist(off, off + atsLen);
+      off += atsLen;
+
+      List<String> out = [
+        "UID : ${bytesToHex(uid)}",
+        "ATQA: ${bytesToHex(atqa)}  SAK: ${sak.toRadixString(16).padLeft(2, '0')}",
+        "ATS : ${bytesToHex(ats)}",
+      ];
+
+      int numApdus = d[off++];
+      List<List<Uint8List>> pairs = [];
+      for (int n = 0; n < numApdus; n++) {
+        int cl = d[off++];
+        var c = d.sublist(off, off + cl);
+        off += cl;
+        int rl = d[off] | (d[off + 1] << 8);
+        off += 2;
+        var r = d.sublist(off, off + rl);
+        off += rl;
+        pairs.add([c, r]);
+      }
+      if (pairs.isEmpty) {
+        out.add("No APDU responses captured.");
+        setState(() => _output = out);
+        return;
+      }
+
+      List<int> allRecordData = [];
+      List<int> extraData = [];
+      var ppseResp = pairs[0][1];
+      var ppseBody = ppseResp.length >= 2
+          ? ppseResp.sublist(0, ppseResp.length - 2)
+          : ppseResp;
+      out.add("");
+      out.add("PPSE OK (${ppseResp.length}b)");
+      extraData.addAll(ppseBody);
+
+      if (pairs.length >= 2) {
+        var selResp = pairs[1][1];
+        var selBody = selResp.length >= 2
+            ? selResp.sublist(0, selResp.length - 2)
+            : selResp;
+        out.add("SELECT AID OK (${selResp.length}b)");
+        extraData.addAll(selBody);
+      }
+      if (pairs.length >= 3) {
+        var gpoResp = pairs[2][1];
+        var gpoBody = gpoResp.length >= 2
+            ? gpoResp.sublist(0, gpoResp.length - 2)
+            : gpoResp;
+        out.add("GPO OK (${gpoResp.length}b)");
+        extraData.addAll(gpoBody);
+        for (var pair in pairs.sublist(3)) {
+          var cb = pair[0], rb = pair[1];
+          int sfiN = cb.length >= 4 ? (cb[3] >> 3) & 0x1F : 0;
+          int recN = cb.length >= 3 ? cb[2] : 0;
+          var rBody = rb.length >= 2 ? rb.sublist(0, rb.length - 2) : rb;
+          out.add("READ RECORD SFI=$sfiN rec=$recN OK (${rb.length}b)");
+          allRecordData.addAll(rBody);
+        }
+      }
+
+      var allRecord = Uint8List.fromList(allRecordData);
+      var searchData = Uint8List.fromList([...allRecordData, ...extraData]);
+      var tags = _tlvFind(allRecord, [0x5A, 0x57, 0x5F24, 0x5F20, 0x5F28]);
+      var appTags = _tlvFind(searchData, [0x9F12, 0x50]);
+
+      out.add("");
+      out.add("-- Card Details --");
+      var seenLabels = <String>{};
+      for (var v in appTags[0x50]!) {
+        var lbl = _ascii(v);
+        if (lbl.isNotEmpty && !seenLabels.contains(lbl)) {
+          seenLabels.add(lbl);
+          out.add("App Label     : $lbl");
+        }
+      }
+
+      String? panHex;
+      for (var v in tags[0x57]!) {
+        var t2 = bytesToHex(v).toUpperCase();
+        var sep = t2.indexOf("D");
+        if (sep > 0) {
+          panHex = t2.substring(0, sep);
+          break;
+        }
+      }
+      if (panHex == null && tags[0x5A]!.isNotEmpty) {
+        var raw = bytesToHex(tags[0x5A]![0]).toUpperCase();
+        panHex = raw.endsWith("F") ? raw.replaceAll(RegExp(r'F+$'), '') : raw;
+      }
+      if (panHex != null) {
+        var buf = StringBuffer();
+        for (int i = 0; i < panHex.length; i += 4) {
+          if (i > 0) buf.write(" ");
+          buf.write(panHex.substring(
+              i, i + 4 > panHex.length ? panHex.length : i + 4));
+        }
+        out.add(
+            "PAN           : $buf  Luhn: ${_panLuhn(panHex) ? 'ok' : 'FAIL'}");
+      } else {
+        out.add("PAN           : not found");
+      }
+
+      bool expiryFound = false;
+      for (var v in tags[0x5F24]!) {
+        if (v.length == 3) {
+          var exp = bytesToHex(v).toUpperCase();
+          out.add("Expiry        : 20${exp.substring(0, 2)}/${exp.substring(2, 4)}");
+          expiryFound = true;
+        }
+      }
+      if (!expiryFound && panHex != null) {
+        for (var v in tags[0x57]!) {
+          var t2 = bytesToHex(v).toUpperCase();
+          var sep = t2.indexOf("D");
+          if (sep > 0 && t2.length >= sep + 5) {
+            var yymm = t2.substring(sep + 1, sep + 5);
+            if (RegExp(r'^\d+$').hasMatch(yymm)) {
+              out.add(
+                  "Expiry        : 20${yymm.substring(0, 2)}/${yymm.substring(2, 4)} (from Track2)");
+              expiryFound = true;
+              break;
+            }
+          }
+        }
+      }
+      if (!expiryFound) out.add("Expiry        : not found");
+
+      for (var v in tags[0x5F20]!) {
+        if (v.isNotEmpty && v.every((b) => b >= 0x20 && b <= 0x7E)) {
+          var name = _ascii(v);
+          if (name.isNotEmpty) out.add("Cardholder    : $name");
+        }
+      }
+
+      setState(() => _output = out);
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => ErrorPage(errorMessage: e.toString()),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(localizations.emv_scan_title),
+      content: SizedBox(
+        width: 480,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(localizations.emv_scan_intro),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _busy ? null : _scan,
+                child: Text(localizations.emv_scan_button),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(minHeight: 100, maxHeight: 300),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    _output.isEmpty ? localizations.no_output_yet : _output.join("\n"),
+                    style: const TextStyle(fontFamily: "monospace", fontSize: 12),
+                  ),
+                ),
+              ),
+              if (_busy) ...[
+                const SizedBox(height: 8),
+                const LinearProgressIndicator(),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(localizations.close),
+        ),
+      ],
+    );
+  }
+}

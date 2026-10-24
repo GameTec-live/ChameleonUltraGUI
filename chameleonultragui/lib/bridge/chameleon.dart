@@ -1402,6 +1402,217 @@ class ChameleonCommunicator {
         .data;
   }
 
+  // ---- DESFire (Phreakbyte fork additions) ------------------------------
+  // Wire layouts copied from software/script/chameleon_cmd.py in
+  // nieldk/ChameleonUltra (DESFIRE_* commands, 6006-6013). GET_INFO/
+  // GET_CREDENTIAL/FACTORY_BLANK return status 0x60 (PAR_ERR) when the
+  // active slot's live DESFire buffer isn't populated yet (set the slot's
+  // tag type + default data first).
+
+  Future<DesfireInfo> desfireGetInfo() async {
+    var resp = (await sendCmd(ChameleonCommand.desfireGetInfo))!;
+    if (resp.status == 0x60) {
+      throw ("Slot's live DESFire buffer isn't populated -- set the tag "
+          "type and default data on this slot first.");
+    }
+    var d = resp.data;
+    if (d.length < 20) throw ("short DESFire GET_INFO reply (${d.length}b)");
+    int uidLen = d[0];
+    return DesfireInfo(
+      uid: d.sublist(1, 1 + uidLen),
+      numApps: d[8],
+      numFiles: d[9],
+      poolUsed: (d[10] << 8) | d[11],
+      poolSize: (d[12] << 8) | d[13],
+      credSize: (d[14] << 8) | d[15],
+      maxApps: d[16],
+      maxKeys: d[17],
+      maxFiles: d[18],
+      piccAuthCommand: d[19],
+    );
+  }
+
+  Future<DesfireStats> desfireGetStats() async {
+    var resp = (await sendCmd(ChameleonCommand.desfireGetStats))!;
+    var d = resp.data;
+    if (d.length < 10) throw ("short DESFire GET_STATS reply (${d.length}b)");
+    int u16(int o) => (d[o] << 8) | d[o + 1];
+    return DesfireStats(
+      framesRx: u16(0),
+      framesTx: u16(2),
+      engineErrors: u16(4),
+      maxHandlerUs: u16(6),
+      entropyStarvations: u16(8),
+      activationRequests: d.length >= 18 ? u16(10) : null,
+      atqaTx: d.length >= 18 ? u16(12) : null,
+      fdtTimeouts: d.length >= 18 ? u16(14) : null,
+      maxResetUs: d.length >= 18 ? u16(16) : null,
+    );
+  }
+
+  Future<Uint8List> desfireFactoryBlank({Uint8List? uid}) async {
+    var payload =
+        uid != null && uid.isNotEmpty ? [uid.length, ...uid] : <int>[];
+    var resp = (await sendCmd(ChameleonCommand.desfireFactoryBlank,
+        data: Uint8List.fromList(payload)))!;
+    if (resp.status == 0x60) {
+      throw ("Slot's live DESFire buffer isn't populated -- set the tag "
+          "type and default data on this slot first.");
+    }
+    return resp.data; // new UID
+  }
+
+  // Credential transfer is chunked (DESFIRE_CHUNK = 480 bytes/call, BLE
+  // MTU-constrained); the .dfcb blob itself is opaque here, same as the
+  // GUI's other raw-dump paths -- no DfcCredential parsing is done client
+  // side.
+  static const int desfireChunk = 480;
+
+  Future<Uint8List> desfireGetCredential(
+      {void Function(int sent, int total)? progress}) async {
+    List<int> out = [];
+    int? total;
+    int offset = 0;
+    for (int i = 0; i < 200; i++) {
+      var resp = (await sendCmd(ChameleonCommand.desfireGetCredential,
+          data: Uint8List.fromList([(offset >> 8) & 0xFF, offset & 0xFF])))!;
+      if (resp.status == 0x60) {
+        throw ("Slot's live DESFire buffer isn't populated -- set the tag "
+            "type and default data on this slot first.");
+      }
+      var d = resp.data;
+      if (d.length < 6) throw ("short DESFire GET_CREDENTIAL reply");
+      int gotTotal = (d[0] << 8) | d[1];
+      int gotOffset = (d[2] << 8) | d[3];
+      int chunkLen = (d[4] << 8) | d[5];
+      if (gotOffset != offset) {
+        throw ("device returned offset $gotOffset, expected $offset");
+      }
+      total ??= gotTotal;
+      out.addAll(d.sublist(6, 6 + chunkLen));
+      offset += chunkLen;
+      progress?.call(offset, total);
+      if (chunkLen == 0 || offset >= total) break;
+    }
+    return Uint8List.fromList(out);
+  }
+
+  Future<void> desfireSetCredential(Uint8List blob,
+      {void Function(int sent, int total)? progress}) async {
+    if (blob.isEmpty) throw ("empty credential blob");
+    if (blob.length > 0xFFFF) {
+      throw ("credential too large for the protocol (${blob.length} bytes, max 65535)");
+    }
+    int sent = 0;
+    while (sent < blob.length) {
+      var chunk = blob.sublist(
+          sent, sent + desfireChunk > blob.length ? blob.length : sent + desfireChunk);
+      var payload = [
+        (blob.length >> 8) & 0xFF, blob.length & 0xFF,
+        (sent >> 8) & 0xFF, sent & 0xFF,
+        (chunk.length >> 8) & 0xFF, chunk.length & 0xFF,
+        ...chunk,
+      ];
+      var resp = (await sendCmd(ChameleonCommand.desfireSetCredential,
+          data: Uint8List.fromList(payload)))!;
+      if (resp.status != 0x68) {
+        throw ("device rejected the credential at offset $sent (status ${resp.status})");
+      }
+      sent += chunk.length;
+      progress?.call(sent, blob.length);
+    }
+  }
+
+  // key_reference = (0x80 if aid != null else 0) | keyNo, matching
+  // desfire_reader_auth_iso7816's wire encoding (chameleon_cmd.py).
+  Future<DesfireAuthResult> desfireReaderAuthIso7816({
+    required int keyNo,
+    required String algorithm, // '2tdea' | '3tdea' | 'aes'
+    required Uint8List key,
+    Uint8List? aid,
+  }) async {
+    const algos = {
+      '2tdea': [0x02, 16],
+      '3tdea': [0x04, 24],
+      'aes': [0x09, 16],
+    };
+    var algo = algos[algorithm];
+    if (algo == null) throw ("algorithm must be one of ${algos.keys}");
+    int algByte = algo[0], wantLen = algo[1];
+    if (key.length != wantLen) {
+      throw ("$algorithm key must be $wantLen bytes, got ${key.length}");
+    }
+    if (keyNo < 0 || keyNo > 31) throw ("keyNo must be 0-31");
+    bool hasAid = aid != null;
+    if (hasAid && aid!.length != 3) throw ("aid must be 3 bytes");
+    int keyRef = (hasAid ? 0x80 : 0) | keyNo;
+    var payload = [
+      hasAid ? 1 : 0,
+      ...(hasAid ? aid! : Uint8List(3)),
+      keyRef, algByte, wantLen,
+      ...key,
+    ];
+    var resp = (await sendCmd(ChameleonCommand.desfireReaderAuthIso7816,
+        data: Uint8List.fromList(payload),
+        timeout: const Duration(seconds: 3)))!;
+    if (resp.status == 0x01) return DesfireAuthResult.noCard;
+    if (resp.status != 0x00) return DesfireAuthResult.requestError;
+    if (resp.data.isEmpty) return DesfireAuthResult.requestError;
+    int rc = resp.data[0];
+    if (rc == 0) return DesfireAuthResult.authenticated;
+    if (rc == 6 && resp.data.length >= 2) return DesfireAuthResult.cardRejected;
+    return DesfireAuthResult.failed;
+  }
+
+  // Three-frame GetVersion in one firmware call: frame(1 len+payload+2 SW)
+  // repeated `count` times, led by a frame-count byte. Returns the frames
+  // with their trailing SW1/SW2 stripped (see splitVersionFrames in the
+  // web terminal port of this same decode).
+  Future<List<Uint8List>> desfireReaderGetVersion() async {
+    var resp = (await sendCmd(ChameleonCommand.desfireReaderGetVersion,
+        timeout: const Duration(seconds: 3)))!;
+    var blob = resp.data;
+    List<Uint8List> frames = [];
+    if (blob.isEmpty) return frames;
+    int n = blob[0];
+    int o = 1;
+    for (int i = 0; i < n && o < blob.length; i++) {
+      int len = blob[o];
+      o++;
+      var chunk = blob.sublist(o, o + len);
+      o += len;
+      frames.add(chunk.length >= 2
+          ? chunk.sublist(0, chunk.length - 2)
+          : Uint8List(0));
+    }
+    return frames;
+  }
+
+  // GetApplicationIDs (native INS 0x6A) over the generic single-APDU
+  // reader primitive (hf14a4ReaderApdu/6004). That primitive re-selects
+  // the card on every call, so this can't continue a 0x91/0xAF multi-frame
+  // reply -- fine for GetApplicationIDs (always fits one frame), not a
+  // general DESFire command runner.
+  Future<List<Uint8List>> desfireGetApplicationIds() async {
+    var apdu = Uint8List.fromList([0x90, 0x6A, 0x00, 0x00, 0x00]);
+    var d = await hf14a4ReaderApdu(apdu);
+    if (d.length < 2) throw ("short APDU reply (${d.length} bytes)");
+    int sw1 = d[d.length - 2], sw2 = d[d.length - 1];
+    if (sw1 != 0x91) {
+      throw ("not a DESFire-over-ISO7816 reply (SW1=0x${sw1.toRadixString(16)})");
+    }
+    if (sw2 == 0xAF) {
+      throw ("reply needs a continuation frame -- more AIDs than fit one frame");
+    }
+    if (sw2 != 0x00) throw ("device status 0x${sw2.toRadixString(16)}");
+    var body = d.sublist(0, d.length - 2);
+    List<Uint8List> aids = [];
+    for (int o = 0; o + 3 <= body.length; o += 3) {
+      aids.add(body.sublist(o, o + 3));
+    }
+    return aids;
+  }
+
   Future<bool> mf0GetMagicMode() async {
     return (await sendCmd(ChameleonCommand.mf0NtagGetUidMagicMode))!.data[0] ==
         1;
