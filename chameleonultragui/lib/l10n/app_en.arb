@@ -645,7 +645,11 @@
   "emv_scan_expiry_track2_note": "from Track 2",
   "emv_scan_cardholder": "Cardholder",
   "emv_scan_trace_ppse": "PPSE OK ({bytes}b)",
+  "emv_scan_trace_ppse_failed": "PPSE FAILED (SW {sw})",
   "emv_scan_trace_select": "SELECT AID OK ({bytes}b)",
+  "emv_scan_trace_select_failed": "SELECT AID FAILED (SW {sw})",
   "emv_scan_trace_gpo": "GPO OK ({bytes}b)",
-  "emv_scan_trace_record": "READ RECORD SFI={sfi} rec={record} OK ({bytes}b)"
+  "emv_scan_trace_gpo_failed": "GPO FAILED (SW {sw})",
+  "emv_scan_trace_record": "READ RECORD SFI={sfi} rec={record} OK ({bytes}b)",
+  "emv_scan_trace_record_failed": "READ RECORD SFI={sfi} rec={record} FAILED (SW {sw})"
 }

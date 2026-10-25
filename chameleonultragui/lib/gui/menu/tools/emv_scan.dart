@@ -81,7 +81,6 @@ String _ascii(Uint8List b) {
   return String.fromCharCodes(b).trim();
 }
 
-<<<<<<< HEAD
 bool _swOk(Uint8List resp) {
   return resp.length >= 2 &&
       resp[resp.length - 2] == 0x90 &&
@@ -95,7 +94,8 @@ String _swHex(Uint8List resp) {
       .map((b) => b.toRadixString(16).padLeft(2, '0'))
       .join()
       .toUpperCase();
-=======
+}
+
 class _EmvResult {
   final String uid;
   final String atqaSak;
@@ -120,7 +120,6 @@ class _EmvResult {
     required this.cardholder,
     required this.trace,
   });
->>>>>>> eae6428 (GUI layout fixes)
 }
 
 class EmvScanMenu extends StatefulWidget {
@@ -198,73 +197,43 @@ class _EmvScanMenuState extends State<EmvScanMenu> {
       List<int> allRecordData = [];
       List<int> extraData = [];
       var ppseResp = pairs[0][1];
-<<<<<<< HEAD
-      out.add("");
       if (_swOk(ppseResp)) {
-        out.add("PPSE OK (${ppseResp.length}b)");
+        trace.add(localizations.emv_scan_trace_ppse(ppseResp.length));
         extraData.addAll(ppseResp.sublist(0, ppseResp.length - 2));
       } else {
-        out.add("PPSE FAILED (SW ${_swHex(ppseResp)})");
+        trace.add(localizations.emv_scan_trace_ppse_failed(_swHex(ppseResp)));
       }
 
       if (pairs.length >= 2) {
         var selResp = pairs[1][1];
         if (_swOk(selResp)) {
-          out.add("SELECT AID OK (${selResp.length}b)");
+          trace.add(localizations.emv_scan_trace_select(selResp.length));
           extraData.addAll(selResp.sublist(0, selResp.length - 2));
         } else {
-          out.add("SELECT AID FAILED (SW ${_swHex(selResp)})");
+          trace.add(
+              localizations.emv_scan_trace_select_failed(_swHex(selResp)));
         }
       }
       if (pairs.length >= 3) {
         var gpoResp = pairs[2][1];
         if (_swOk(gpoResp)) {
-          out.add("GPO OK (${gpoResp.length}b)");
+          trace.add(localizations.emv_scan_trace_gpo(gpoResp.length));
           extraData.addAll(gpoResp.sublist(0, gpoResp.length - 2));
         } else {
-          out.add("GPO FAILED (SW ${_swHex(gpoResp)})");
+          trace.add(localizations.emv_scan_trace_gpo_failed(_swHex(gpoResp)));
         }
-=======
-      var ppseBody = ppseResp.length >= 2
-          ? ppseResp.sublist(0, ppseResp.length - 2)
-          : ppseResp;
-      trace.add(localizations.emv_scan_trace_ppse(ppseResp.length));
-      extraData.addAll(ppseBody);
-
-      if (pairs.length >= 2) {
-        var selResp = pairs[1][1];
-        var selBody = selResp.length >= 2
-            ? selResp.sublist(0, selResp.length - 2)
-            : selResp;
-        trace.add(localizations.emv_scan_trace_select(selResp.length));
-        extraData.addAll(selBody);
-      }
-      if (pairs.length >= 3) {
-        var gpoResp = pairs[2][1];
-        var gpoBody = gpoResp.length >= 2
-            ? gpoResp.sublist(0, gpoResp.length - 2)
-            : gpoResp;
-        trace.add(localizations.emv_scan_trace_gpo(gpoResp.length));
-        extraData.addAll(gpoBody);
->>>>>>> eae6428 (GUI layout fixes)
         for (var pair in pairs.sublist(3)) {
           var cb = pair[0], rb = pair[1];
           int sfiN = cb.length >= 4 ? (cb[3] >> 3) & 0x1F : 0;
           int recN = cb.length >= 3 ? cb[2] : 0;
-<<<<<<< HEAD
           if (_swOk(rb)) {
-            out.add("READ RECORD SFI=$sfiN rec=$recN OK (${rb.length}b)");
+            trace.add(
+                localizations.emv_scan_trace_record(sfiN, recN, rb.length));
             allRecordData.addAll(rb.sublist(0, rb.length - 2));
           } else {
-            out.add(
-                "READ RECORD SFI=$sfiN rec=$recN FAILED (SW ${_swHex(rb)})");
+            trace.add(localizations.emv_scan_trace_record_failed(
+                sfiN, recN, _swHex(rb)));
           }
-=======
-          var rBody = rb.length >= 2 ? rb.sublist(0, rb.length - 2) : rb;
-          trace.add(
-              localizations.emv_scan_trace_record(sfiN, recN, rb.length));
-          allRecordData.addAll(rBody);
->>>>>>> eae6428 (GUI layout fixes)
         }
       }
 
