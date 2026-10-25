@@ -3,11 +3,11 @@
 // bridge as hf14a4EmvScan(), just never consumed by any GUI screen. This
 // adds the screen: runs the scan, then the same BER-TLV walk + PAN/expiry/
 // cardholder decode as chameleon_cli_unit.py's `emv scan` (and this fork's
-// web terminal port of it).
+// web terminal port of it). Result layout (summary cards + labeled panel)
+// follows hf_sniffing.dart's house style rather than a raw text dump.
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
-import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
@@ -57,7 +57,13 @@ Map<int, List<Uint8List>> _tlvFind(Uint8List data, List<int> wantTags) {
 }
 
 bool _panLuhn(String panHex) {
-  var digits = panHex.split('').where((c) => RegExp(r'[0-9]').hasMatch(c)).map(int.parse).toList().reversed.toList();
+  var digits = panHex
+      .split('')
+      .where((c) => RegExp(r'[0-9]').hasMatch(c))
+      .map(int.parse)
+      .toList()
+      .reversed
+      .toList();
   int total = 0;
   for (int i = 0; i < digits.length; i++) {
     int d = digits[i];
@@ -75,6 +81,7 @@ String _ascii(Uint8List b) {
   return String.fromCharCodes(b).trim();
 }
 
+<<<<<<< HEAD
 bool _swOk(Uint8List resp) {
   return resp.length >= 2 &&
       resp[resp.length - 2] == 0x90 &&
@@ -88,6 +95,32 @@ String _swHex(Uint8List resp) {
       .map((b) => b.toRadixString(16).padLeft(2, '0'))
       .join()
       .toUpperCase();
+=======
+class _EmvResult {
+  final String uid;
+  final String atqaSak;
+  final String ats;
+  final List<String> appLabels;
+  final String? pan;
+  final bool? panLuhnOk;
+  final String? expiry;
+  final bool expiryFromTrack2;
+  final String? cardholder;
+  final List<String> trace;
+
+  const _EmvResult({
+    required this.uid,
+    required this.atqaSak,
+    required this.ats,
+    required this.appLabels,
+    required this.pan,
+    required this.panLuhnOk,
+    required this.expiry,
+    required this.expiryFromTrack2,
+    required this.cardholder,
+    required this.trace,
+  });
+>>>>>>> eae6428 (GUI layout fixes)
 }
 
 class EmvScanMenu extends StatefulWidget {
@@ -99,18 +132,23 @@ class EmvScanMenu extends StatefulWidget {
 
 class _EmvScanMenuState extends State<EmvScanMenu> {
   bool _busy = false;
-  List<String> _output = [];
+  String? _errorMessage;
+  _EmvResult? _result;
 
   Future<void> _scan() async {
     setState(() {
       _busy = true;
-      _output = [];
+      _errorMessage = null;
     });
     try {
       var appState = context.read<ChameleonGUIState>();
+      var localizations = AppLocalizations.of(context)!;
       var d = await appState.communicator!.hf14a4EmvScan();
       if (d.isEmpty) {
-        setState(() => _output = ["No card found or scan failed."]);
+        setState(() {
+          _result = null;
+          _errorMessage = localizations.emv_scan_no_card;
+        });
         return;
       }
       int off = 0;
@@ -124,11 +162,7 @@ class _EmvScanMenuState extends State<EmvScanMenu> {
       var ats = d.sublist(off, off + atsLen);
       off += atsLen;
 
-      List<String> out = [
-        "UID : ${bytesToHex(uid)}",
-        "ATQA: ${bytesToHex(atqa)}  SAK: ${sak.toRadixString(16).padLeft(2, '0')}",
-        "ATS : ${bytesToHex(ats)}",
-      ];
+      List<String> trace = [];
 
       int numApdus = d[off++];
       List<List<Uint8List>> pairs = [];
@@ -143,14 +177,28 @@ class _EmvScanMenuState extends State<EmvScanMenu> {
         pairs.add([c, r]);
       }
       if (pairs.isEmpty) {
-        out.add("No APDU responses captured.");
-        setState(() => _output = out);
+        setState(() {
+          _result = _EmvResult(
+            uid: bytesToHex(uid),
+            atqaSak:
+                "${bytesToHex(atqa)} / 0x${sak.toRadixString(16).padLeft(2, '0')}",
+            ats: bytesToHex(ats),
+            appLabels: const [],
+            pan: null,
+            panLuhnOk: null,
+            expiry: null,
+            expiryFromTrack2: false,
+            cardholder: null,
+            trace: [localizations.emv_scan_no_apdu],
+          );
+        });
         return;
       }
 
       List<int> allRecordData = [];
       List<int> extraData = [];
       var ppseResp = pairs[0][1];
+<<<<<<< HEAD
       out.add("");
       if (_swOk(ppseResp)) {
         out.add("PPSE OK (${ppseResp.length}b)");
@@ -176,10 +224,34 @@ class _EmvScanMenuState extends State<EmvScanMenu> {
         } else {
           out.add("GPO FAILED (SW ${_swHex(gpoResp)})");
         }
+=======
+      var ppseBody = ppseResp.length >= 2
+          ? ppseResp.sublist(0, ppseResp.length - 2)
+          : ppseResp;
+      trace.add(localizations.emv_scan_trace_ppse(ppseResp.length));
+      extraData.addAll(ppseBody);
+
+      if (pairs.length >= 2) {
+        var selResp = pairs[1][1];
+        var selBody = selResp.length >= 2
+            ? selResp.sublist(0, selResp.length - 2)
+            : selResp;
+        trace.add(localizations.emv_scan_trace_select(selResp.length));
+        extraData.addAll(selBody);
+      }
+      if (pairs.length >= 3) {
+        var gpoResp = pairs[2][1];
+        var gpoBody = gpoResp.length >= 2
+            ? gpoResp.sublist(0, gpoResp.length - 2)
+            : gpoResp;
+        trace.add(localizations.emv_scan_trace_gpo(gpoResp.length));
+        extraData.addAll(gpoBody);
+>>>>>>> eae6428 (GUI layout fixes)
         for (var pair in pairs.sublist(3)) {
           var cb = pair[0], rb = pair[1];
           int sfiN = cb.length >= 4 ? (cb[3] >> 3) & 0x1F : 0;
           int recN = cb.length >= 3 ? cb[2] : 0;
+<<<<<<< HEAD
           if (_swOk(rb)) {
             out.add("READ RECORD SFI=$sfiN rec=$recN OK (${rb.length}b)");
             allRecordData.addAll(rb.sublist(0, rb.length - 2));
@@ -187,6 +259,12 @@ class _EmvScanMenuState extends State<EmvScanMenu> {
             out.add(
                 "READ RECORD SFI=$sfiN rec=$recN FAILED (SW ${_swHex(rb)})");
           }
+=======
+          var rBody = rb.length >= 2 ? rb.sublist(0, rb.length - 2) : rb;
+          trace.add(
+              localizations.emv_scan_trace_record(sfiN, recN, rb.length));
+          allRecordData.addAll(rBody);
+>>>>>>> eae6428 (GUI layout fixes)
         }
       }
 
@@ -197,14 +275,13 @@ class _EmvScanMenuState extends State<EmvScanMenu> {
       var tags = _tlvFind(searchData, [0x5A, 0x57, 0x5F24, 0x5F20, 0x5F28]);
       var appTags = _tlvFind(searchData, [0x9F12, 0x50]);
 
-      out.add("");
-      out.add("-- Card Details --");
+      List<String> appLabels = [];
       var seenLabels = <String>{};
       for (var v in appTags[0x50]!) {
         var lbl = _ascii(v);
         if (lbl.isNotEmpty && !seenLabels.contains(lbl)) {
           seenLabels.add(lbl);
-          out.add("App Label     : $lbl");
+          appLabels.add(lbl);
         }
       }
 
@@ -221,6 +298,8 @@ class _EmvScanMenuState extends State<EmvScanMenu> {
         var raw = bytesToHex(tags[0x5A]![0]).toUpperCase();
         panHex = raw.endsWith("F") ? raw.replaceAll(RegExp(r'F+$'), '') : raw;
       }
+      String? panDisplay;
+      bool? panLuhnOk;
       if (panHex != null) {
         var buf = StringBuffer();
         for (int i = 0; i < panHex.length; i += 4) {
@@ -228,64 +307,139 @@ class _EmvScanMenuState extends State<EmvScanMenu> {
           buf.write(panHex.substring(
               i, i + 4 > panHex.length ? panHex.length : i + 4));
         }
-        out.add(
-            "PAN           : $buf  Luhn: ${_panLuhn(panHex) ? 'ok' : 'FAIL'}");
-      } else {
-        out.add("PAN           : not found");
+        panDisplay = buf.toString();
+        panLuhnOk = _panLuhn(panHex);
       }
 
-      bool expiryFound = false;
+      String? expiry;
+      bool expiryFromTrack2 = false;
       for (var v in tags[0x5F24]!) {
         if (v.length == 3) {
           var exp = bytesToHex(v).toUpperCase();
-          out.add("Expiry        : 20${exp.substring(0, 2)}/${exp.substring(2, 4)}");
-          expiryFound = true;
+          expiry = "20${exp.substring(0, 2)}/${exp.substring(2, 4)}";
         }
       }
-      if (!expiryFound && panHex != null) {
+      if (expiry == null && panHex != null) {
         for (var v in tags[0x57]!) {
           var t2 = bytesToHex(v).toUpperCase();
           var sep = t2.indexOf("D");
           if (sep > 0 && t2.length >= sep + 5) {
             var yymm = t2.substring(sep + 1, sep + 5);
             if (RegExp(r'^\d+$').hasMatch(yymm)) {
-              out.add(
-                  "Expiry        : 20${yymm.substring(0, 2)}/${yymm.substring(2, 4)} (from Track2)");
-              expiryFound = true;
+              expiry = "20${yymm.substring(0, 2)}/${yymm.substring(2, 4)}";
+              expiryFromTrack2 = true;
               break;
             }
           }
         }
       }
-      if (!expiryFound) out.add("Expiry        : not found");
 
+      String? cardholder;
       for (var v in tags[0x5F20]!) {
         if (v.isNotEmpty && v.every((b) => b >= 0x20 && b <= 0x7E)) {
           var name = _ascii(v);
-          if (name.isNotEmpty) out.add("Cardholder    : $name");
+          if (name.isNotEmpty) {
+            cardholder = name;
+            break;
+          }
         }
       }
 
-      setState(() => _output = out);
+      setState(() {
+        _result = _EmvResult(
+          uid: bytesToHex(uid),
+          atqaSak:
+              "${bytesToHex(atqa)} / 0x${sak.toRadixString(16).padLeft(2, '0')}",
+          ats: bytesToHex(ats),
+          appLabels: appLabels,
+          pan: panDisplay,
+          panLuhnOk: panLuhnOk,
+          expiry: expiry,
+          expiryFromTrack2: expiryFromTrack2,
+          cardholder: cardholder,
+          trace: trace,
+        );
+      });
     } catch (e) {
       if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => ErrorPage(errorMessage: e.toString()),
-        );
+        setState(() => _errorMessage = e.toString());
       }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
+  Widget _buildPanel({
+    required Widget child,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
+  }) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.36),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: padding,
+        child: child,
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+          ),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryCard(String title, String value, String subtitle) {
+    return SizedBox(
+      width: 220,
+      child: _buildPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            Text(value, style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 8),
+            Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorBlock(String message) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Text(message),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
+    var result = _result;
     return AlertDialog(
       title: Text(localizations.emv_scan_title),
       content: SizedBox(
-        width: 480,
+        width: 520,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -297,25 +451,100 @@ class _EmvScanMenuState extends State<EmvScanMenu> {
                 onPressed: _busy ? null : _scan,
                 child: Text(localizations.emv_scan_button),
               ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                constraints: const BoxConstraints(minHeight: 100, maxHeight: 300),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                  borderRadius: BorderRadius.circular(4),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                _buildErrorBlock(_errorMessage!),
+              ],
+              if (_busy) ...[
+                const SizedBox(height: 12),
+                const LinearProgressIndicator(),
+              ],
+              if (result != null) ...[
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _summaryCard(
+                      localizations.emv_scan_pan,
+                      result.pan ?? localizations.emv_scan_not_found,
+                      result.panLuhnOk == null
+                          ? ""
+                          : result.panLuhnOk!
+                              ? "${localizations.emv_scan_luhn_label}: ${localizations.emv_scan_luhn_ok}"
+                              : "${localizations.emv_scan_luhn_label}: ${localizations.emv_scan_luhn_fail}",
+                    ),
+                    _summaryCard(
+                      localizations.emv_scan_expiry,
+                      result.expiry ?? localizations.emv_scan_not_found,
+                      result.expiryFromTrack2
+                          ? localizations.emv_scan_expiry_track2_note
+                          : "",
+                    ),
+                    _summaryCard(
+                      localizations.emv_scan_app_label,
+                      result.appLabels.isEmpty
+                          ? localizations.emv_scan_not_found
+                          : result.appLabels.first,
+                      "",
+                    ),
+                  ],
                 ),
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    _output.isEmpty ? localizations.no_output_yet : _output.join("\n"),
-                    style: const TextStyle(fontFamily: "monospace", fontSize: 12),
+                const SizedBox(height: 12),
+                _buildPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(localizations.emv_scan_summary,
+                          style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 12),
+                      _infoRow(localizations.emv_scan_uid, result.uid),
+                      _infoRow(
+                          localizations.emv_scan_atqa_sak, result.atqaSak),
+                      _infoRow(localizations.emv_scan_ats, result.ats),
+                      if (result.appLabels.isNotEmpty)
+                        _infoRow(localizations.emv_scan_app_label,
+                            result.appLabels.join(', ')),
+                      _infoRow(
+                        localizations.emv_scan_pan,
+                        result.pan == null
+                            ? localizations.emv_scan_not_found
+                            : "${result.pan} (${localizations.emv_scan_luhn_label}: ${result.panLuhnOk! ? localizations.emv_scan_luhn_ok : localizations.emv_scan_luhn_fail})",
+                      ),
+                      _infoRow(
+                        localizations.emv_scan_expiry,
+                        result.expiry == null
+                            ? localizations.emv_scan_not_found
+                            : result.expiryFromTrack2
+                                ? "${result.expiry} (${localizations.emv_scan_expiry_track2_note})"
+                                : result.expiry!,
+                      ),
+                      if (result.cardholder != null)
+                        _infoRow(localizations.emv_scan_cardholder,
+                            result.cardholder!),
+                    ],
                   ),
                 ),
-              ),
-              if (_busy) ...[
-                const SizedBox(height: 8),
-                const LinearProgressIndicator(),
+                const SizedBox(height: 12),
+                _buildPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(localizations.emv_scan_trace_title,
+                          style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 12),
+                      for (var line in result.trace)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: SelectableText(
+                            line,
+                            style: const TextStyle(
+                                fontFamily: "monospace", fontSize: 12),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ],
           ),
