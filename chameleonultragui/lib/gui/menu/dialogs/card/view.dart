@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/helpers/sl1_card_save.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/edit.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/export.dart';
 import 'package:chameleonultragui/gui/menu/pages/dump_editor.dart';
@@ -79,7 +80,16 @@ class CardViewMenuState extends State<CardViewMenu> {
           child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Row(
+            if (currentSavedCard.sl1Profile != null)
+              ExpansionTile(
+                title: const Text('Read details'),
+                children: [
+                  Text(
+                    'Classic coverage: ${(currentSavedCard.sl1Profile!.json['classic']['blocks'] as List).where((b) => !(b['data'] as String).contains('?')).length}/${(currentSavedCard.sl1Profile!.json['classic']['blocks'] as List).length} fully observed blocks. Known trailer keys are merged only for upload. Unknown bytes remain unknown in JSON.',
+                  ),
+                ],
+              ),
+            Row(
             children: [
               Expanded(
                 child: Text(
@@ -290,7 +300,10 @@ class CardViewMenuState extends State<CardViewMenu> {
                           onSave: (dumpData) {
                             // Update card data
                             var updatedCard = CardSave(
-                              id: currentSavedCard.id,
+                            sl1Profile: currentSavedCard.sl1Profile,
+                            nativeClassicCoverage:
+                                currentSavedCard.nativeClassicCoverage,
+                            id: currentSavedCard.id,
                               uid: currentSavedCard.uid,
                               sak: currentSavedCard.sak,
                               atqa: currentSavedCard.atqa,
@@ -301,7 +314,20 @@ class CardViewMenuState extends State<CardViewMenu> {
                               extraData: currentSavedCard.extraData,
                               folderId: currentSavedCard.folderId,
                               color: currentSavedCard.color,
-                            );
+                          );
+
+                          reconcileSl1(
+                            updatedCard,
+                            memoryChanged: !classicBlockListsEqual(
+                              currentSavedCard.data,
+                              dumpData,
+                            ),
+                          );
+
+                          reconcileNativeClassicCoverage(
+                            updatedCard,
+                            previous: currentSavedCard,
+                          );
 
                             // Update the card in storage
                             var cards =
@@ -334,8 +360,8 @@ class CardViewMenuState extends State<CardViewMenu> {
                           if (isMifareClassic(currentSavedCard.tag))
                             ElevatedButton(
                               onPressed: () async {
-                                await saveTag(currentSavedCard, context, true);
-                                if (context.mounted) {
+                              final exported = await saveTag(currentSavedCard, context, true);
+                                if (exported && context.mounted) {
                                   Navigator.pop(context);
                                 }
                               },
@@ -343,8 +369,8 @@ class CardViewMenuState extends State<CardViewMenu> {
                             ),
                           ElevatedButton(
                             onPressed: () async {
-                              await saveTag(currentSavedCard, context, false);
-                              if (context.mounted) {
+                            final exported = await saveTag(currentSavedCard, context, false);
+                              if (exported && context.mounted) {
                                 Navigator.pop(context);
                               }
                             },

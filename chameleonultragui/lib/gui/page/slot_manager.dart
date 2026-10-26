@@ -1,3 +1,5 @@
+import 'package:chameleonultragui/helpers/sl1_card_save.dart';
+
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/gui/component/card_list.dart';
@@ -83,6 +85,77 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       CardSave card, dynamic close, AppLocalizations localizations) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
+    if (card.nativeClassicCoverage != null) {
+      close(context, card.name);
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Native EV1 archive'),
+            content: const Text(
+              'The 72-block coverage is archival metadata. Common profile v1 does not support this composite image; no slot data was changed.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+    if (card.sl1Profile != null) {
+      close(context, card.name);
+      bool profileCommitted = false;
+      try {
+        validateSl1CardGeometry(card);
+        card.validateProfileConsistency();
+        setUploadState(0);
+        await appState.communicator!.sl1Uploader.upload(
+          card.sl1Profile!,
+          gridPosition,
+        );
+        profileCommitted = true;
+        await appState.communicator!.saveSl1SlotName(
+          gridPosition,
+          card.name.isEmpty ? localizations.no_name : card.name,
+        );
+        if (mounted) refreshSlot();
+      } catch (error) {
+        appState.log?.e(
+          profileCommitted
+              ? 'Profile saved; slot nickname failed: $error'
+              : 'Profile upload stopped: $error',
+        );
+        if (mounted) {
+          setUploadState(-1);
+          await showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: Text(
+                profileCommitted
+                    ? 'Profile saved; slot name failed'
+                    : 'Profile upload stopped',
+              ),
+              content: Text(
+                profileCommitted
+                    ? 'The profile was committed. Its slot nickname could not be persisted. $error'
+                    : error.toString(),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+      return;
+    }
     if (isMifareClassic(card.tag)) {
       close(context, card.name);
       setUploadState(0);
@@ -125,6 +198,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
         if (card.data.length > blockOffset &&
             card.data[blockOffset].length == 16) {
+          if (blockChunk.isEmpty) lastSend = blockOffset;
           blockChunk.addAll(card.data[blockOffset]);
         }
 
@@ -457,8 +531,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                             ],
                                           ),
                                         ),
-                                        IconButton(
-                                          onPressed: () {
+                                      IconButton(
+                                        onPressed: () {
                                             showDialog(
                                               context: context,
                                               builder: (BuildContext context) {

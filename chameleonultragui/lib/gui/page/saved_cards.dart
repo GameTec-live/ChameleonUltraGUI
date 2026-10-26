@@ -1,3 +1,5 @@
+import 'package:chameleonultragui/helpers/card_file_import.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -6,7 +8,6 @@ import 'package:chameleonultragui/gui/component/element_button.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/view.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/edit.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/view.dart';
-import 'package:chameleonultragui/helpers/card_save_converters.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
@@ -340,10 +341,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
       appState.sharedPreferencesProvider.setCardFolders(folders);
       appState.sharedPreferencesProvider.setCards(cards);
       appState.changesMade();
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations.invalid_folder_export)),
+        SnackBar(content: Text('${localizations.invalid_folder_export}: $error')),
       );
     }
   }
@@ -797,38 +798,40 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       var tags = appState
                                           .sharedPreferencesProvider
                                           .getCards();
-                                      CardSave tag;
-                                      if (string.contains(
-                                          "\"Created\": \"proxmark3\",")) {
-                                        // PM3 JSON
-                                        tag = pm3JsonToCardSave(string);
-                                      } else if (string.contains(
-                                          "Filetype: Flipper NFC device")) {
-                                        // Flipper NFC
-                                        tag = flipperNfcToCardSave(string);
-                                      } else if (string
-                                          .contains("+Sector: 0")) {
-                                        // Mifare Classic Tool
-                                        tag = mctToCardSave(string);
-                                      } else if (string.contains(
-                                          "Filetype: Flipper RFID key")) {
-                                        // Flipper RFID
-                                        tag = flipperRfidToCardSave(string);
-                                      } else {
-                                        tag = CardSave.fromJson(string);
-                                      }
-
-                                      tag.name = basename(file.path)
-                                              .contains('.')
-                                          ? basename(file.path).split('.')[0]
-                                          : basename(file.path);
+                                        final tag = importCardText(string,
+                                          filename: basename(file.path),
+                                        );
                                       tag.folderId = currentFolderId;
                                       tags.add(tag);
                                       appState.sharedPreferencesProvider
                                           .setCards(tags);
                                       appState.changesMade();
-                                    } catch (_) {
-                                      selectedType =
+                                    } catch (error) {
+                                        if (isStructuredCardFile(
+                                          contents,
+                                          filename: basename(file.path),
+                                        )) {
+                                          if (context.mounted) {
+                                            await showDialog(
+                                              context: context,
+                                              builder: (_) => AlertDialog(
+                                                title: const Text(
+                                                  'Card import failed',
+                                                ),
+                                                content: Text(error.toString()),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(context),
+                                                    child: const Text('Close'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }
+                                          return;
+                                        }
+                                        selectedType =
                                           getTagTypeByDumpSize(contents.length);
 
                                       if (selectedType == TagType.unknown) {
@@ -1372,9 +1375,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                           actions: [
                                             ElevatedButton(
                                               onPressed: () async {
-                                                await saveTag(
+                                              final exported = await saveTag(
                                                     tag, context, true);
-                                                if (context.mounted) {
+                                                if (exported && context.mounted) {
                                                   Navigator.pop(context);
                                                 }
                                               },
@@ -1383,9 +1386,9 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             ),
                                             ElevatedButton(
                                               onPressed: () async {
-                                                await saveTag(
+                                              final exported = await saveTag(
                                                     tag, context, false);
-                                                if (context.mounted) {
+                                                if (exported && context.mounted) {
                                                   Navigator.pop(context);
                                                 }
                                               },

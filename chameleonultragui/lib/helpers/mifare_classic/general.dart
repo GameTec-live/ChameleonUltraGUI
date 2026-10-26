@@ -298,6 +298,7 @@ bool chameleonTagSaveCheckForMifareClassicEV1(CardSave tag) {
     return false;
   }
 
+  if (tag.data.length == 72) return true;
   for (var block = 64; block < 72 && block < tag.data.length; block++) {
     if (tag.data[block].isNotEmpty) {
       return true;
@@ -609,7 +610,9 @@ Future<(TagType, MifareClassicInfo)> performMifareClassicScan(
     MifareClassicInfo mfcInfo,
     BuildContext context,
     dynamic updateMifareClassicRecovery,
-    {TagType? override}) async {
+    {TagType? override,
+  CardData? expectedIdentity,
+}) async {
   var appState = Provider.of<ChameleonGUIState>(context, listen: false);
   var localizations = AppLocalizations.of(context)!;
   MifareClassicType mifareClassicType;
@@ -632,6 +635,24 @@ Future<(TagType, MifareClassicInfo)> performMifareClassicScan(
       localizations: localizations,
       isMifareClassicEV1: isMifareClassicEV1);
 
+  final identity = expectedIdentity ?? await communicator.scan14443aTag();
+  if (identity == null) {
+    throw StateError('Card disappeared during initial scan');
+  }
+  recovery.bindIdentity(identity);
+  await recovery.requireIdentity();
+
+  bool cardAuthDetected = false;
+  if (!isMifareClassicEV1) {
+    try {
+      cardAuthDetected = await communicator.detectSl1CardAuth();
+    } catch (error) {
+      appState.log?.w('CardAuth detection unavailable: $error');
+    }
+    // The raw command releases its field; reselect and verify the bound card.
+    await recovery.requireIdentity();
+  }
+
   try {
     ntLevel = await communicator.getMf1NTLevel();
   } catch (_) {}
@@ -639,6 +660,7 @@ Future<(TagType, MifareClassicInfo)> performMifareClassicScan(
   bool hasBackdoor = await mfClassicHasBackdoor(communicator);
 
   mfcInfo.recovery = recovery;
+  mfcInfo.sl1CardAuthDetected = cardAuthDetected;
   mfcInfo.ntLevel = ntLevel;
   mfcInfo.hasBackdoor = hasBackdoor;
   mfcInfo.isEV1 = isMifareClassicEV1;

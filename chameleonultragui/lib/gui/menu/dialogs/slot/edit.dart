@@ -57,6 +57,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
   EmulatorSettings? emulatorSettings;
   Mf1PrngType? mf1PrngType;
   int detectionCount = 0;
+  CardData? originalAntiCollision;
+  bool cardAuthConfigured = false;
 
   @override
   void initState() {
@@ -127,12 +129,19 @@ class SlotEditMenuState extends State<SlotEditMenu> {
         selectedType! == TagType.hf14a4) {
       try {
         CardData data = await appState.communicator!.mf1GetAntiCollData();
+        originalAntiCollision = data;
         uidController.text = bytesToHexSpace(data.uid);
         sakController.text = bytesToHex(u8ToBytes(data.sak));
         atqaController.text = bytesToHexSpace(data.atqa);
         atsController.text = bytesToHexSpace(data.ats);
 
         if (isMifareClassic(selectedType!)) {
+          try {
+            final status = await appState.communicator!.sl1Uploader.status(widget.slot);
+            cardAuthConfigured = status[2] & 1 != 0;
+          } catch (_) {
+            cardAuthConfigured = false;
+          }
           emulatorSettings =
               await appState.communicator!.getMf1EmulatorSettings();
 
@@ -242,7 +251,15 @@ class SlotEditMenuState extends State<SlotEditMenu> {
           atqa: hexToBytes(atqaController.text),
           sak: bytesToU8(hexToBytes(sakController.text)),
           ats: hexToBytes(atsController.text));
-      await appState.communicator!.setMf1AntiCollision(cardData);
+      final original = originalAntiCollision;
+      final identityChanged = original == null ||
+          original.sak != cardData.sak ||
+          bytesToHex(original.uid) != bytesToHex(cardData.uid) ||
+          bytesToHex(original.atqa) != bytesToHex(cardData.atqa) ||
+          bytesToHex(original.ats) != bytesToHex(cardData.ats);
+      if (widget.slotType != selectedType || identityChanged) {
+        await appState.communicator!.setMf1AntiCollision(cardData);
+      }
 
       // Save Ultralight-specific data
       if (isMifareUltralight(selectedType!)) {
@@ -287,6 +304,10 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                 controller: nameController,
                 validator: (value) => validateName(value, localizations),
               ),
+              if (cardAuthConfigured)
+                const Text(
+                  'CardAuth is configured. To change its key, edit the saved card and upload it again. Changing the card type or identity disables CardAuth.',
+                ),
               const SizedBox(height: 8),
               DropdownButton<TagType>(
                 value: selectedType,
