@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/slot/sl1_profile_status.dart';
 
@@ -95,7 +96,11 @@ void main() {
     (tester) async {
       final device = StagedProfileDevice()..saveStatus = 0x66;
       await tester.pumpWidget(
-        MaterialApp(home: Sl1SlotDialog(slot: 3, uploader: device.sl1Uploader)),
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Sl1SlotDialog(slot: 3, uploader: device.sl1Uploader),
+        ),
       );
       await tester.pumpAndSettle();
       expect(find.text('Save staged profile'), findsOneWidget);
@@ -107,6 +112,8 @@ void main() {
       final incomplete = StagedProfileDevice()..received = 19;
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Sl1SlotDialog(
             key: UniqueKey(),
             slot: 3,
@@ -125,7 +132,11 @@ void main() {
         ..staged = false
         ..extraFlags = 0x90;
       await tester.pumpWidget(
-        MaterialApp(home: Sl1SlotDialog(slot: 3, uploader: device.sl1Uploader)),
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Sl1SlotDialog(slot: 3, uploader: device.sl1Uploader),
+        ),
       );
       await tester.pumpAndSettle();
       for (final label in ['Enable', 'Disable', 'Clear CardAuth']) {
@@ -161,7 +172,11 @@ void main() {
         ..staged = false
         ..extraFlags = 0x40;
       await tester.pumpWidget(
-        MaterialApp(home: Sl1SlotDialog(slot: 3, uploader: device.sl1Uploader)),
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Sl1SlotDialog(slot: 3, uploader: device.sl1Uploader),
+        ),
       );
       await tester.pumpAndSettle();
       for (final label in ['Enable', 'Disable', 'Clear CardAuth']) {
@@ -205,7 +220,11 @@ void main() {
     (tester) async {
       final device = StagedProfileDevice()..extraFlags = 0xc0;
       await tester.pumpWidget(
-        MaterialApp(home: Sl1SlotDialog(slot: 3, uploader: device.sl1Uploader)),
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Sl1SlotDialog(slot: 3, uploader: device.sl1Uploader),
+        ),
       );
       await tester.pumpAndSettle();
       expect(device.calls, isNot(contains(4048)));

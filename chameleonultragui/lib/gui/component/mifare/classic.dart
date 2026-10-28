@@ -100,12 +100,12 @@ class CardReaderState extends State<MifareClassicHelper> {
             await showDialog(
               context: context,
               builder: (_) => AlertDialog(
-                title: const Text('Incomplete Classic image'),
+                title: Text(localizations.classic_incomplete_image),
                 content: Text(error.toString()),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Close'),
+                    child: Text(localizations.close),
                   ),
                 ],
               ),

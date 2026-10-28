@@ -93,7 +93,9 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
   @override
   Future<bool> writeData(
       CardSave card, Function(int writeProgress) update) async {
-    List<Uint8List> data = card.data;
+    final prepared = dataForWrite(card);
+    if (prepared == null) return false;
+    List<Uint8List> data = prepared;
 
     if (await communicator.scan14443aTag() == null) {
       return false;
@@ -124,6 +126,18 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
     }
 
     return true;
+  }
+
+  // Archive projections can omit masked trailers even when their keys are
+  // known separately. Physical writes require the checked, key-filled image.
+  List<Uint8List>? dataForWrite(CardSave card) {
+    if (card.sl1Profile == null) return card.data;
+    try {
+      card.validateProfileConsistency();
+      return card.sl1Profile!.image();
+    } on FormatException {
+      return null;
+    }
   }
 
   Uint8List createBlock0FromSave(CardSave card) {

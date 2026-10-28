@@ -542,18 +542,18 @@ class CardEditMenuState extends State<CardEditMenu> {
                   await showDialog<bool>(
                     context: context,
                     builder: (_) => AlertDialog(
-                      title: const Text('Remove Classic profile metadata?'),
-                      content: const Text(
-                        'The selected type cannot retain Classic coverage or AES CardAuth metadata. The existing saved card is preserved if you cancel.',
+                      title: Text(localizations.card_profile_remove_title),
+                      content: Text(
+                        localizations.card_profile_remove_hint,
                       ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
+                          child: Text(localizations.cancel),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Change type and remove profile'),
+                          child: Text(localizations.card_profile_remove_action),
                         ),
                       ],
                     ),
@@ -670,14 +670,14 @@ class CardEditMenuState extends State<CardEditMenu> {
               await showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
-                  title: const Text('Card edit failed'),
+                  title: Text(localizations.card_edit_failed),
                   content: Text(
-                    '$error\nCorrect the identity fields and save again. The saved card has not changed.',
+                    '$error\n${localizations.card_edit_failed_hint}',
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Close'),
+                      child: Text(localizations.close),
                     ),
                   ],
                 ),

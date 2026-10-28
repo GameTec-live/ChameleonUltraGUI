@@ -72,6 +72,8 @@ class CardViewMenuState extends State<CardViewMenu> {
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
     var appState = context.watch<ChameleonGUIState>();
+    final coverageBlocks =
+        currentSavedCard.sl1Profile?.json['classic']['blocks'] as List?;
 
     return AlertDialog(
       title: Text(currentSavedCard.name,
@@ -80,12 +82,15 @@ class CardViewMenuState extends State<CardViewMenu> {
           child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-            if (currentSavedCard.sl1Profile != null)
+            if (coverageBlocks != null)
               ExpansionTile(
-                title: const Text('Read details'),
+                title: Text(localizations.card_read_details),
                 children: [
                   Text(
-                    'Classic coverage: ${(currentSavedCard.sl1Profile!.json['classic']['blocks'] as List).where((b) => !(b['data'] as String).contains('?')).length}/${(currentSavedCard.sl1Profile!.json['classic']['blocks'] as List).length} fully observed blocks. Known trailer keys are merged only for upload. Unknown bytes remain unknown in JSON.',
+                    localizations.classic_coverage_summary(
+                      coverageBlocks.where((b) => !(b['data'] as String).contains('?')).length,
+                      coverageBlocks.length,
+                    ),
                   ),
                 ],
               ),

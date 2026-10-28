@@ -6,6 +6,10 @@ import 'sl1_profile.dart';
 typedef Sl1Send = Future<Uint8List> Function(int command, Uint8List payload);
 
 class Sl1Uploader {
+  static bool supportsUpload(Iterable<int> capabilities) =>
+      const [4045, 4046, 4047, 4048, 4049, 4050, 4051]
+          .every(capabilities.contains);
+
   final Sl1Send send;
   final Future<List<int>> Function() capabilities;
   final Future<void> Function()? preparePersistence;
@@ -74,15 +78,7 @@ class Sl1Uploader {
     final p = Sl1Profile.fromJson(profile.json);
     final image = p.image();
     final caps = await capabilities();
-    if ([
-      4045,
-      4046,
-      4047,
-      4048,
-      4049,
-      4050,
-      4051,
-    ].any((c) => !caps.contains(c))) {
+    if (!supportsUpload(caps)) {
       throw UnsupportedError(
         'Firmware does not support the complete SL1 profile transaction',
       );

@@ -228,7 +228,7 @@ class SlotSettingsState extends State<SlotSettings> {
                 content: SingleChildScrollView(
                     child: Column(children: [
                   ExpansionTile(
-                      title: const Text('Advanced'),
+                      title: Text(localizations.advanced),
                       children: [
                         TextButton(
                           onPressed: () => showDialog(
@@ -238,7 +238,7 @@ class SlotSettingsState extends State<SlotSettings> {
                               uploader: appState.communicator!.sl1Uploader,
                             ),
                           ),
-                          child: const Text('CardAuth diagnostics'),
+                          child: Text(localizations.card_auth_diagnostics),
                         ),
                       ],
                     ),

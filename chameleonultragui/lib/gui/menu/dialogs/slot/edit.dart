@@ -305,8 +305,8 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                 validator: (value) => validateName(value, localizations),
               ),
               if (cardAuthConfigured)
-                const Text(
-                  'CardAuth is configured. To change its key, edit the saved card and upload it again. Changing the card type or identity disables CardAuth.',
+                Text(
+                  localizations.card_auth_configured_hint,
                 ),
               const SizedBox(height: 8),
               DropdownButton<TagType>(

@@ -88,6 +88,12 @@ void updateCardAuthKey(CardSave card, String input) {
   final profile = Sl1Profile.parse(
     (card.sl1Profile ?? legacySl1(card)).export(),
   );
+  if (card.sl1Profile == null) {
+    // A complete legacy image is supplied data, not read-verified coverage.
+    // Validate it before attaching a profile or replacing the native archive.
+    profile.json['classic']['provenance'] = 'imported';
+    profile.image();
+  }
   profile.json['cardAuth'] = key.isEmpty
       ? null
       : {

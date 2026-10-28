@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 
 class CardAuthKeyField extends StatefulWidget {
   final TextEditingController? controller;
@@ -39,13 +40,14 @@ class _CardAuthKeyFieldState extends State<CardAuthKeyField> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     if (!showField) {
       return ExpansionTile(
-        title: const Text('Additional settings'),
+        title: Text(localizations.additional_settings),
         children: [
           TextButton(
             onPressed: () => setState(() => showField = true),
-            child: const Text('Add CardAuth key'),
+            child: Text(localizations.card_auth_add_key),
           ),
         ],
       );
@@ -57,11 +59,11 @@ class _CardAuthKeyFieldState extends State<CardAuthKeyField> {
       autocorrect: false,
       enableSuggestions: false,
       decoration: InputDecoration(
-        labelText: 'CardAuth key (0x9004)',
-        helperText: 'Optional AES-128 key: 32 hexadecimal characters.',
+        labelText: localizations.card_auth_key_label,
+        helperText: localizations.card_auth_key_help,
         helperMaxLines: 2,
         suffixIcon: IconButton(
-          tooltip: 'Show/hide CardAuth key',
+          tooltip: localizations.card_auth_key_visibility,
           icon: Icon(visible ? Icons.visibility_off : Icons.visibility),
           onPressed: () => setState(() => visible = !visible),
         ),
@@ -70,7 +72,7 @@ class _CardAuthKeyFieldState extends State<CardAuthKeyField> {
         final key = (value ?? '').trim();
         return key.isEmpty || RegExp(r'^[0-9a-fA-F]{32}$').hasMatch(key)
             ? null
-            : 'Enter exactly 32 hex characters';
+            : localizations.card_auth_invalid_key;
       },
     );
   }

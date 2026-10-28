@@ -136,6 +136,8 @@ void main() {
           ..statusUnavailable = unavailable;
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: Sl1SlotDialog(slot: 3, uploader: device.sl1Uploader),
           ),
         );

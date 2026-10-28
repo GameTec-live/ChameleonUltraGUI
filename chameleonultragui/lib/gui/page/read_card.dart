@@ -149,7 +149,9 @@ class ReadCardPageState extends State<ReadCardPage> {
         );
         nextUltralight = info.$2;
       }
-      final current = await appState.communicator!.scan14443aTag();
+      final current = expected.ats.isEmpty
+          ? await appState.communicator!.scan14443aTag()
+          : await appState.communicator!.scan14443aTagWithAts();
       if (current == null ||
           bytesToHex(current.uid) != bytesToHex(expected.uid) ||
           bytesToHex(current.atqa) != bytesToHex(expected.atqa) ||
@@ -170,14 +172,14 @@ class ReadCardPageState extends State<ReadCardPage> {
       await showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text('Card type change failed'),
+          title: Text(localizations.card_type_change_failed),
           content: Text(
-            '$error\nPresent the originally scanned card and try again. The previous type and session are unchanged.',
+            '$error\n${localizations.card_type_change_hint}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(localizations.close),
             ),
           ],
         ),

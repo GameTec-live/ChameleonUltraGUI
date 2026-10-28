@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/helpers/sl1_card_save.dart';
+import 'package:chameleonultragui/helpers/sl1_profile_uploader.dart';
 
 import 'dart:typed_data';
 
@@ -91,14 +92,14 @@ class SlotManagerPageState extends State<SlotManagerPage> {
         await showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text('Native EV1 archive'),
-            content: const Text(
-              'The 72-block coverage is archival metadata. Common profile v1 does not support this composite image; no slot data was changed.',
+            title: Text(localizations.classic_native_ev1_archive),
+            content: Text(
+              localizations.classic_native_ev1_hint,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
+                child: Text(localizations.close),
               ),
             ],
           ),
@@ -106,23 +107,31 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       }
       return;
     }
+    List<Uint8List>? classicImage;
     if (card.sl1Profile != null) {
       close(context, card.name);
       bool profileCommitted = false;
       try {
         validateSl1CardGeometry(card);
         card.validateProfileConsistency();
-        setUploadState(0);
-        await appState.communicator!.sl1Uploader.upload(
-          card.sl1Profile!,
-          gridPosition,
-        );
-        profileCommitted = true;
-        await appState.communicator!.saveSl1SlotName(
-          gridPosition,
-          card.name.isEmpty ? localizations.no_name : card.name,
-        );
-        if (mounted) refreshSlot();
+        final capabilities =
+            await appState.communicator!.getDeviceCapabilities();
+        if (card.sl1Profile!.json['cardAuth'] == null &&
+            !Sl1Uploader.supportsUpload(capabilities)) {
+          classicImage = card.sl1Profile!.image();
+        } else {
+          setUploadState(0);
+          await appState.communicator!.sl1Uploader.upload(
+            card.sl1Profile!,
+            gridPosition,
+          );
+          profileCommitted = true;
+          await appState.communicator!.saveSl1SlotName(
+            gridPosition,
+            card.name.isEmpty ? localizations.no_name : card.name,
+          );
+          if (mounted) refreshSlot();
+        }
       } catch (error) {
         appState.log?.e(
           profileCommitted
@@ -136,28 +145,30 @@ class SlotManagerPageState extends State<SlotManagerPage> {
             builder: (_) => AlertDialog(
               title: Text(
                 profileCommitted
-                    ? 'Profile saved; slot name failed'
-                    : 'Profile upload stopped',
+                    ? localizations.card_profile_saved_name_failed
+                    : localizations.card_profile_upload_stopped,
               ),
               content: Text(
                 profileCommitted
-                    ? 'The profile was committed. Its slot nickname could not be persisted. $error'
+                    ? '${localizations.card_profile_saved_name_hint} $error'
                     : error.toString(),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
+                  child: Text(localizations.close),
                 ),
               ],
             ),
           );
         }
       }
-      return;
+      if (classicImage == null) return;
     }
+    if (!mounted) return;
     if (isMifareClassic(card.tag)) {
-      close(context, card.name);
+      if (classicImage == null) close(context, card.name);
+      final data = classicImage ?? card.data;
       setUploadState(0);
       var isEV1 = chameleonTagSaveCheckForMifareClassicEV1(card);
       if (isEV1) {
@@ -185,8 +196,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
               mfClassicGetBlockCount(
                   chameleonTagTypeGetMfClassicType(card.tag));
           blockOffset++) {
-        if ((card.data.length > blockOffset &&
-                card.data[blockOffset].isEmpty) ||
+        if ((data.length > blockOffset &&
+                data[blockOffset].isEmpty) ||
             blockChunk.length >= 128) {
           if (blockChunk.isNotEmpty) {
             await appState.communicator!
@@ -196,10 +207,10 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           }
         }
 
-        if (card.data.length > blockOffset &&
-            card.data[blockOffset].length == 16) {
+        if (data.length > blockOffset &&
+            data[blockOffset].length == 16) {
           if (blockChunk.isEmpty) lastSend = blockOffset;
-          blockChunk.addAll(card.data[blockOffset]);
+          blockChunk.addAll(data[blockOffset]);
         }
 
         setUploadState((blockOffset /

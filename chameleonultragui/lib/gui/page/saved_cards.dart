@@ -815,15 +815,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                             await showDialog(
                                               context: context,
                                               builder: (_) => AlertDialog(
-                                                title: const Text(
-                                                  'Card import failed',
+                                                title: Text(
+                                                  localizations.card_import_failed,
                                                 ),
                                                 content: Text(error.toString()),
                                                 actions: [
                                                   TextButton(
                                                     onPressed: () =>
                                                         Navigator.pop(context),
-                                                    child: const Text('Close'),
+                                                    child: Text(localizations.close),
                                                   ),
                                                 ],
                                               ),
