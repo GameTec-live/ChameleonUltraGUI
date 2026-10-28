@@ -196,6 +196,18 @@ class BaseT55XXCardHelper extends AbstractWriteHelper {
       await Future.delayed(const Duration(milliseconds: 500));
       var newCard = await communicator.readIoProx();
       return newCard.toString() == card.uid;
+    } else if (card.tag == TagType.awid) {
+      await communicator.writeAwidToT55XX(hexToBytes(card.uid),
+          hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+      await Future.delayed(const Duration(milliseconds: 500));
+      var newCard = await communicator.readAwid();
+      return newCard.toString() == card.uid;
+    } else if (card.tag == TagType.paradox) {
+      await communicator.writeParadoxToT55XX(hexToBytes(card.uid),
+          hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);
+      await Future.delayed(const Duration(milliseconds: 500));
+      var newCard = await communicator.readParadox();
+      return newCard.toString() == card.uid;
     } else if (card.tag == TagType.idteck) {
       await communicator.writeIdteckToT55XX(hexToBytes(card.uid),
           hexToBytes(newKey), [hexToBytes(currentKey), Uint8List(4)]);

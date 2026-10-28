@@ -112,6 +112,10 @@ enum ChameleonCommand {
   scanPacTag(3014),
   writePacToT5577(3015),
   writeIdteckToT5577(3018),
+  scanAwidTag(3021),
+  writeAwidToT5577(3022),
+  scanParadoxTag(3023),
+  writeParadoxToT5577(3024),
   ioProxDecodeRaw(3012),
   ioProxComposeID(3013),
   adcGenericRead(3009),
@@ -184,7 +188,13 @@ enum ChameleonCommand {
   getIoProxEmulatorID(5009),
 
   setIdteckEmulatorID(5012),
-  getIdteckEmulatorID(5013);
+  getIdteckEmulatorID(5013),
+
+  setAwidEmulatorID(5014),
+  getAwidEmulatorID(5015),
+
+  setParadoxEmulatorID(5016),
+  getParadoxEmulatorID(5017);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -201,6 +211,8 @@ enum TagType {
   viking(170),
   hidProx(200),
   ioProx(201),
+  awid(202),
+  paradox(203),
   idteck(310),
   mifareMini(1000),
   mifare1K(1001),
@@ -683,6 +695,196 @@ class IdteckCard extends LFCard {
 
   IdteckCard({
     super.type = TagType.idteck,
+    required super.uid,
+  });
+}
+
+// --- AWID / Paradox (ChameleonUnleashed fork) ---------------------------------
+// The device scan response, the T55xx-write payload and the emulator payload all
+// share the same 16-byte layout, so a card's `uid` is that 16-byte blob and can
+// be written/emulated as-is. Manual entry (facility code + card number) is turned
+// into that blob by the compose helpers below (ported from the desktop app).
+
+/// Compose the 16-byte AWID payload (26-bit Wiegand) from fc + cn.
+Uint8List composeAwid(int fc, int cn) {
+  fc &= 0xFF;
+  cn &= 0xFFFF;
+  final payload = List<int>.filled(66, 0);
+  for (int i = 0; i < 8; i++) {
+    payload[i] = (26 >> (7 - i)) & 1;
+  }
+  final wieg = <int>[];
+  for (int i = 0; i < 8; i++) {
+    wieg.add((fc >> (7 - i)) & 1);
+  }
+  for (int i = 0; i < 16; i++) {
+    wieg.add((cn >> (15 - i)) & 1);
+  }
+  int pe = 0;
+  for (int i = 0; i < 12; i++) {
+    pe ^= wieg[i];
+  }
+  int po = 1;
+  for (int i = 12; i < 24; i++) {
+    po ^= wieg[i];
+  }
+  payload[8] = pe;
+  for (int i = 0; i < 24; i++) {
+    payload[9 + i] = wieg[i];
+  }
+  payload[33] = po;
+  final stream = List<int>.filled(96, 0);
+  stream[7] = 1;
+  int o = 8;
+  for (int g = 0; g < 22; g++) {
+    int x = 0;
+    for (int b = 0; b < 3; b++) {
+      stream[o] = payload[g * 3 + b];
+      x ^= stream[o];
+      o++;
+    }
+    stream[o] = x ^ 1;
+    o++;
+  }
+  final raw = Uint8List(12);
+  for (int i = 0; i < 96; i++) {
+    if (stream[i] != 0) {
+      raw[i ~/ 8] |= 1 << (7 - (i % 8));
+    }
+  }
+  final out = Uint8List(16); // >BBH12s : format(26), fc, cn(BE), raw
+  out[0] = 26;
+  out[1] = fc & 0xFF;
+  out[2] = (cn >> 8) & 0xFF;
+  out[3] = cn & 0xFF;
+  out.setRange(4, 16, raw);
+  return out;
+}
+
+int _manchester16(int d) {
+  d &= 0xFFFF;
+  int out = 0;
+  const manTab = [0x01, 0x02];
+  for (int i = 0; i < 16; i++) {
+    out |= manTab[(d >> (15 - i)) & 1] << (30 - i * 2);
+  }
+  return out & 0xFFFFFFFF;
+}
+
+int _crc8Maxim(List<int> buff) {
+  int crc = 0;
+  for (final b in buff) {
+    crc ^= b;
+    for (int i = 0; i < 8; i++) {
+      crc = (crc & 1) != 0 ? (crc >> 1) ^ 0x8C : (crc >> 1);
+    }
+  }
+  return crc & 0xFF;
+}
+
+/// Compose the 16-byte Paradox payload from fc + cn.
+Uint8List composeParadox(int fc, int cn) {
+  fc &= 0xFF;
+  cn &= 0xFFFF;
+  final man = List<int>.filled(13, 0);
+  man[0] = 0x0F;
+  man[1] = 0x05;
+  man[2] = 0x55;
+  man[3] = 0x55;
+  int t1 = _manchester16(fc);
+  man[4] = (t1 >> 8) & 0xFF;
+  man[5] = t1 & 0xFF;
+  t1 = _manchester16(cn);
+  man[6] = (t1 >> 24) & 0xFF;
+  man[7] = (t1 >> 16) & 0xFF;
+  man[8] = (t1 >> 8) & 0xFF;
+  man[9] = t1 & 0xFF;
+  int crc = (_crc8Maxim(man.sublist(1, 10)) ^ 0x6) & 0xFF;
+  t1 = _manchester16(crc);
+  man[10] = (t1 >> 8) & 0xFF;
+  man[11] = t1 & 0xFF;
+  for (int i = 1; i < 12; i++) {
+    man[i] = ((man[i] << 4) + (man[i + 1] >> 4)) & 0xFF;
+  }
+  man[11] |= (1 << 3);
+  man[11] |= (1 << 1);
+  final out = Uint8List(16); // >BHB12s : fc, cn(BE), crc, man[0:12]
+  out[0] = fc & 0xFF;
+  out[1] = (cn >> 8) & 0xFF;
+  out[2] = cn & 0xFF;
+  out[3] = crc & 0xFF;
+  out.setRange(4, 16, man.sublist(0, 12));
+  return out;
+}
+
+class AwidCard extends LFCard {
+  int format; // u8, typically 26
+  int facilityCode; // u8
+  int cardNumber; // u16
+
+  factory AwidCard.fromBytes(Uint8List bytes) {
+    return AwidCard(
+      format: bytesToU8(bytes.sublist(0, 1)),
+      facilityCode: bytesToU8(bytes.sublist(1, 2)),
+      cardNumber: bytesToU16(bytes.sublist(2, 4)),
+      uid: bytes.sublist(0, 16),
+    );
+  }
+
+  factory AwidCard.fromFields(int fc, int cn) {
+    return AwidCard.fromBytes(composeAwid(fc, cn));
+  }
+
+  factory AwidCard.fromUID(String uid) {
+    return AwidCard.fromBytes(hexToBytes(uid));
+  }
+
+  @override
+  String toViewableString() {
+    return 'FC: $facilityCode, CN: $cardNumber (fmt $format)';
+  }
+
+  AwidCard({
+    super.type = TagType.awid,
+    this.format = 26,
+    required this.facilityCode,
+    required this.cardNumber,
+    required super.uid,
+  });
+}
+
+class ParadoxCard extends LFCard {
+  int facilityCode; // u8
+  int cardNumber; // u16
+  int checksum; // u8
+
+  factory ParadoxCard.fromBytes(Uint8List bytes) {
+    return ParadoxCard(
+      facilityCode: bytesToU8(bytes.sublist(0, 1)),
+      cardNumber: bytesToU16(bytes.sublist(1, 3)),
+      checksum: bytesToU8(bytes.sublist(3, 4)),
+      uid: bytes.sublist(0, 16),
+    );
+  }
+
+  factory ParadoxCard.fromFields(int fc, int cn) {
+    return ParadoxCard.fromBytes(composeParadox(fc, cn));
+  }
+
+  factory ParadoxCard.fromUID(String uid) {
+    return ParadoxCard.fromBytes(hexToBytes(uid));
+  }
+
+  @override
+  String toViewableString() {
+    return 'FC: $facilityCode, CN: $cardNumber';
+  }
+
+  ParadoxCard({
+    super.type = TagType.paradox,
+    required this.facilityCode,
+    required this.cardNumber,
+    this.checksum = 0,
     required super.uid,
   });
 }

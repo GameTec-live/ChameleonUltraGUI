@@ -42,6 +42,10 @@ class CardEditMenuState extends State<CardEditMenu> {
   TextEditingController issueLevelController = TextEditingController();
   TextEditingController oemController = TextEditingController();
 
+  // AWID / Paradox manual entry (facility code + card number)
+  TextEditingController awidFcController = TextEditingController();
+  TextEditingController awidCnController = TextEditingController();
+
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -87,6 +91,10 @@ class CardEditMenuState extends State<CardEditMenu> {
 
     if (selectedType == TagType.hidProx) {
       initHIDFields();
+    }
+
+    if (selectedType == TagType.awid || selectedType == TagType.paradox) {
+      initAwidParadoxFields();
     }
 
     nameController.text = widget.tagSave.name;
@@ -203,6 +211,20 @@ class CardEditMenuState extends State<CardEditMenu> {
     oemController.text = hidCard.oem.toString();
   }
 
+  void initAwidParadoxFields() {
+    try {
+      if (selectedType == TagType.awid) {
+        AwidCard card = AwidCard.fromUID(widget.tagSave.uid);
+        awidFcController.text = card.facilityCode.toString();
+        awidCnController.text = card.cardNumber.toString();
+      } else {
+        ParadoxCard card = ParadoxCard.fromUID(widget.tagSave.uid);
+        awidFcController.text = card.facilityCode.toString();
+        awidCnController.text = card.cardNumber.toString();
+      }
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
@@ -307,16 +329,20 @@ class CardEditMenuState extends State<CardEditMenu> {
               Visibility(
                 visible: selectedType != TagType.unknown,
                 child: Column(children: [
-                  TextFormField(
-                    controller: uidController,
-                    onChanged: (_) => refreshVanitySak(),
-                    decoration: InputDecoration(
-                        labelText: localizations.uid,
-                        hintText:
-                            localizations.enter_something(localizations.uid)),
-                    inputFormatters: hexFormatter,
-                    validator: (value) =>
-                        validateUid(value, localizations, selectedType),
+                  Visibility(
+                    visible: selectedType != TagType.awid &&
+                        selectedType != TagType.paradox,
+                    child: TextFormField(
+                      controller: uidController,
+                      onChanged: (_) => refreshVanitySak(),
+                      decoration: InputDecoration(
+                          labelText: localizations.uid,
+                          hintText:
+                              localizations.enter_something(localizations.uid)),
+                      inputFormatters: hexFormatter,
+                      validator: (value) =>
+                          validateUid(value, localizations, selectedType),
+                    ),
                   ),
                   Visibility(
                       visible: chameleonTagToFrequency(selectedType) !=
@@ -487,6 +513,37 @@ class CardEditMenuState extends State<CardEditMenu> {
                             value, localizations,
                             min: 0, max: 65535),
                       ),
+                    ]),
+                  if (selectedType == TagType.awid ||
+                      selectedType == TagType.paradox)
+                    Column(children: [
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: awidFcController,
+                        decoration: InputDecoration(
+                            labelText: localizations.facility_code,
+                            hintText: localizations
+                                .enter_something(localizations.facility_code)),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: (value) => validateIntRange(
+                            value, localizations,
+                            min: 0, max: 255),
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: awidCnController,
+                        decoration: const InputDecoration(
+                            labelText: "Card number",
+                            hintText: "Enter the card number"),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: (value) => validateIntRange(
+                            value, localizations,
+                            min: 0, max: 65535),
+                      ),
                     ])
                 ]),
               )
@@ -547,6 +604,14 @@ class CardEditMenuState extends State<CardEditMenu> {
               } catch (e) {
                 finalUid = bytesToHexSpace(hexToBytes(uidController.text));
               }
+            } else if (selectedType == TagType.awid) {
+              finalUid = AwidCard.fromFields(int.parse(awidFcController.text),
+                      int.parse(awidCnController.text))
+                  .toString();
+            } else if (selectedType == TagType.paradox) {
+              finalUid = ParadoxCard.fromFields(int.parse(awidFcController.text),
+                      int.parse(awidCnController.text))
+                  .toString();
             } else {
               finalUid = bytesToHexSpace(hexToBytes(uidController.text));
             }
