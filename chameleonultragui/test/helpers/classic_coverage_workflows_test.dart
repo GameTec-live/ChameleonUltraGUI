@@ -111,6 +111,38 @@ void main() {
     await expectDictionaryExport(tester, card, expected);
   });
 
+  for (final partial in [false, true]) {
+    testWidgets(
+      'Flipper dictionary export uses observed trailer keys, partial=$partial',
+      (tester) async {
+        final blocks = List.generate(64, (block) {
+          final keyA = partial && block == 3 ? '??' * 6 : 'FF' * 6;
+          final data = block % 4 == 3
+              ? '${keyA}FF078069${'00' * 6}'
+              : '00' * 16;
+          return 'Block $block: $data';
+        });
+        final source = [
+          'Filetype: Flipper NFC device',
+          'UID: 01 02 03 04',
+          'SAK: 08',
+          'ATQA: 0004',
+          ...blocks,
+        ].join('\n');
+        final card = importCardText(source, filename: 'synthetic.nfc');
+        expect(card.sl1Profile!.json['classic']['keys'][0]['a']['value'], isNull);
+        expect(card.sl1Profile!.json['classic']['keys'][0]['b']['value'], isNull);
+        await expectDictionaryExport(tester, card, [
+          for (var sector = 0; sector < 16; sector++) ...[
+            if (!partial || sector != 0)
+              Uint8List.fromList(List.filled(6, 255)),
+            Uint8List(6),
+          ],
+        ]);
+      },
+    );
+  }
+
   for (final header in [
     '+Sector: 0\n',
     '{"id":"synthetic","uid":"01020304",',

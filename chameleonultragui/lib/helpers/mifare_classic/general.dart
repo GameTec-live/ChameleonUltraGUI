@@ -359,11 +359,21 @@ List<Uint8List> mfClassicGetKeysFromCard(CardSave card) {
   final coverage = card.sl1Profile?.json['classic'] ??
       card.nativeClassicCoverage?.json;
   if (coverage == null) return mfClassicGetKeysFromDump(card.data);
-  return [
-    for (final sector in coverage['keys'])
-      for (final key in [sector['a'], sector['b']])
-        if (key['value'] != null) hexToBytes(key['value'] as String),
-  ];
+  final sectors = coverage['keys'] as List;
+  final keys = <Uint8List>[];
+  for (var sector = 0; sector < sectors.length; sector++) {
+    final block = mfClassicGetSectorTrailerBlockBySector(sector);
+    final trailer = coverage['blocks'][block]['data'] as String;
+    for (final (type, offset) in [('a', 0), ('b', 20)]) {
+      final known = sectors[sector][type]['value'] as String?;
+      final observed = trailer.substring(offset, offset + 12);
+      if (known != null) keys.add(hexToBytes(known));
+      if (!observed.contains('?') && observed != known) {
+        keys.add(hexToBytes(observed));
+      }
+    }
+  }
+  return keys;
 }
 
 typedef FilterResult = (List<int>, List<int>);
