@@ -74,6 +74,9 @@ class CardViewMenuState extends State<CardViewMenu> {
     var appState = context.watch<ChameleonGUIState>();
     final coverageBlocks =
         currentSavedCard.sl1Profile?.json['classic']['blocks'] as List?;
+    final dictionaryKeys = isMifareClassic(currentSavedCard.tag)
+        ? mfClassicGetKeysFromCard(currentSavedCard)
+        : <Uint8List>[];
 
     return AlertDialog(
       title: Text(currentSavedCard.name,
@@ -183,21 +186,17 @@ class CardViewMenuState extends State<CardViewMenu> {
                 children: [
                   const SizedBox(height: 8),
                   ElevatedButton(
-                      onPressed:
-                          (mfClassicGetKeysFromDump(currentSavedCard.data)
-                                  .isNotEmpty)
-                              ? () async {
-                                  List<Uint8List> keys =
-                                      mfClassicGetKeysFromDump(
-                                          currentSavedCard.data);
-                                  await showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return DictionaryExportMenu(keys: keys);
-                                    },
-                                  );
-                                }
-                              : null,
+                      onPressed: dictionaryKeys.isNotEmpty
+                          ? () async {
+                              await showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return DictionaryExportMenu(
+                                      keys: dictionaryKeys);
+                                },
+                              );
+                            }
+                          : null,
                       child: Text(localizations.export_to_dictionary)),
                 ],
               ),

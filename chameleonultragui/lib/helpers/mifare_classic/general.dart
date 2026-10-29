@@ -354,6 +354,18 @@ List<Uint8List> mfClassicGetKeysFromDump(List<Uint8List> dump) {
   return keys;
 }
 
+/// Known keys remain usable even when their trailer blocks are incomplete.
+List<Uint8List> mfClassicGetKeysFromCard(CardSave card) {
+  final coverage = card.sl1Profile?.json['classic'] ??
+      card.nativeClassicCoverage?.json;
+  if (coverage == null) return mfClassicGetKeysFromDump(card.data);
+  return [
+    for (final sector in coverage['keys'])
+      for (final key in [sector['a'], sector['b']])
+        if (key['value'] != null) hexToBytes(key['value'] as String),
+  ];
+}
+
 typedef FilterResult = (List<int>, List<int>);
 
 class _FilterKeysParams {

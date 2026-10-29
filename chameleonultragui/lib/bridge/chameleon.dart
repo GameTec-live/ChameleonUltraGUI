@@ -24,6 +24,7 @@ class ChameleonCommunicator {
   int dataLength = 0;
   List<ChameleonMessage> messageQueue = [];
   List<int> commandQueue = [];
+  Future<void> _hfScanFinished = Future<void>.value();
 
   final Logger log;
 
@@ -220,7 +221,22 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([readerMode ? 1 : 0]));
   }
 
-  Future<CardData?> scan14443aTag() async {
+  Future<CardData?> _serializeHfScan(
+      Future<CardData?> Function() scan) async {
+    final previous = _hfScanFinished;
+    final finished = Completer<void>();
+    _hfScanFinished = finished.future;
+    await previous;
+    try {
+      return await scan();
+    } finally {
+      finished.complete();
+    }
+  }
+
+  Future<CardData?> scan14443aTag() => _serializeHfScan(_scan14443aTag);
+
+  Future<CardData?> _scan14443aTag() async {
     var resp = await sendCmd(ChameleonCommand.scan14ATag);
 
     if (resp!.data.isNotEmpty) {
@@ -239,8 +255,11 @@ class ChameleonCommunicator {
   }
 
   /// Plus SL1 may answer RATS without advertising ISO-DEP in its Classic SAK.
-  Future<CardData?> scan14443aTagWithAts({CardData? selected}) async {
-    final originalCard = selected ?? await scan14443aTag();
+  Future<CardData?> scan14443aTagWithAts({CardData? selected}) =>
+      _serializeHfScan(() => _scan14443aTagWithAts(selected: selected));
+
+  Future<CardData?> _scan14443aTagWithAts({CardData? selected}) async {
+    final originalCard = selected ?? await _scan14443aTag();
     if (originalCard == null || originalCard.ats.isNotEmpty) {
       return originalCard;
     }
@@ -265,7 +284,7 @@ class ChameleonCommunicator {
     CardData? activated;
     try {
       await setConfig(Uint8List.fromList(original)..[3] = 1);
-      activated = await scan14443aTag();
+      activated = await _scan14443aTag();
     } catch (error) {
       scanError = error;
       rethrow;
@@ -282,7 +301,7 @@ class ChameleonCommunicator {
 
     // An ordinary Classic card can reject RATS. After restoring the reader,
     // reselect it normally rather than treating missing ATS as a missing card.
-    activated ??= await scan14443aTag();
+    activated ??= await _scan14443aTag();
     if (activated == null ||
         bytesToHex(activated.uid) != bytesToHex(originalCard.uid) ||
         bytesToHex(activated.atqa) != bytesToHex(originalCard.atqa) ||

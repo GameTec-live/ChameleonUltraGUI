@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/component/mifare/classic.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/view.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary/export.dart';
 import 'package:chameleonultragui/gui/menu/pages/dump_editor.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/card_file_import.dart';
@@ -57,7 +58,59 @@ MifareClassicHelper liveHelper(
     state: MifareClassicState.save,
   )..recovery = r,
 );
+
+Future<void> expectDictionaryExport(
+  WidgetTester tester,
+  CardSave card,
+  List<Uint8List> expectedKeys,
+) async {
+  final app = await appFor(card);
+  await tester.pumpWidget(
+    host(app, CardViewMenu(tagSave: card, onMove: (_) async {})),
+  );
+  await tester.pumpAndSettle();
+  final l = await AppLocalizations.delegate.load(const Locale('en'));
+  final button = find.widgetWithText(ElevatedButton, l.export_to_dictionary);
+  expect(tester.widget<ElevatedButton>(button).onPressed, isNotNull);
+  await tester.ensureVisible(button);
+  await tester.tap(button);
+  await tester.pumpAndSettle();
+  expect(
+    tester.widget<DictionaryExportMenu>(find.byType(DictionaryExportMenu)).keys,
+    expectedKeys,
+  );
+}
+
 void main() {
+  for (final ev1 in [false, true]) {
+    testWidgets(
+      'dictionary export keeps known B keys from a partial live save, EV1=$ev1',
+      (tester) async {
+        final (recovery, card) = await onlyBRead(ev1: ev1);
+        final app = await appFor(card);
+        app.sharedPreferencesProvider.setCards([]);
+        final key = GlobalKey<CardReaderState>();
+        await tester.pumpWidget(
+          host(app, Scaffold(body: liveHelper(key, recovery, card))),
+        );
+        await key.currentState!.saveCard();
+        final saved = app.sharedPreferencesProvider.getCards().single;
+        expect(mfClassicGetKeysFromDump(saved.data), isEmpty);
+        await expectDictionaryExport(tester, saved, [
+          for (var sector = 0; sector < (ev1 ? 18 : 5); sector++)
+            Uint8List.fromList(List.filled(6, 255)),
+        ]);
+      },
+    );
+  }
+
+  testWidgets('legacy dictionary export retains dump keys', (tester) async {
+    final card = sl1ToCard(fixture())..sl1Profile = null;
+    final expected = mfClassicGetKeysFromDump(card.data);
+    expect(expected, isNotEmpty);
+    await expectDictionaryExport(tester, card, expected);
+  });
+
   for (final header in [
     '+Sector: 0\n',
     '{"id":"synthetic","uid":"01020304",',

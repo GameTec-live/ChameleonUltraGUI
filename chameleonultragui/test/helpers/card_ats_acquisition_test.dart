@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -50,8 +51,76 @@ class AtsReadDevice extends ProfileRouteDevice {
   }
 }
 
+class PausedAtsReadDevice extends AtsReadDevice {
+  final forcedScanStarted = Completer<void>();
+  final releaseForcedScan = Completer<void>();
+  final scanSettings = <int>[];
+  bool _paused = false;
+
+  @override
+  Future<ChameleonMessage?> sendCmd(
+    ChameleonCommand cmd, {
+    Uint8List? data,
+    Duration timeout = const Duration(seconds: 5),
+    bool skipReceive = false,
+    bool firstRun = false,
+  }) async {
+    if (cmd == ChameleonCommand.scan14ATag) {
+      scanSettings.add(config[3]);
+      if (config[3] == 1 && !_paused) {
+        _paused = true;
+        forcedScanStarted.complete();
+        await releaseForcedScan.future;
+      }
+    }
+    return super.sendCmd(cmd, data: data);
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  for (final (withAts, failFirst) in [
+    (true, false),
+    (false, false),
+    (false, true),
+  ]) {
+    test(
+      'queued scan waits for ATS settings restoration, ATS=$withAts failure=$failFirst',
+      () async {
+        final device = PausedAtsReadDevice()..failForcedScan = failFirst;
+        final selected = device.identity;
+        final first = device.scan14443aTagWithAts().then<Object?>(
+          (card) => card,
+          onError: (Object error) => error,
+        );
+        await device.forcedScanStarted.future;
+        final next = (withAts
+                ? device.scan14443aTagWithAts(selected: selected)
+                : device.scan14443aTag())
+            .then<Object?>((card) => card, onError: (Object error) => error);
+        await Future<void>.delayed(Duration.zero);
+        final settingsWhileBlocked = device.scanSettings.toList();
+        device.releaseForcedScan.complete();
+        final firstResult = await first;
+        final nextResult = await next;
+
+        expect(settingsWhileBlocked, [2, 1]);
+        expect(firstResult, failFirst ? isA<StateError>() : isA<CardData>());
+        expect(nextResult, isA<CardData>());
+        expect((nextResult as CardData).ats, withAts ? [2, 0x75] : isEmpty);
+        expect(device.config, [255, 0, 0, 2]);
+        expect(device.writes, [
+          [255, 0, 0, 1],
+          [255, 0, 0, 2],
+          if (withAts) ...[
+            [255, 0, 0, 1],
+            [255, 0, 0, 2],
+          ],
+        ]);
+      },
+    );
+  }
 
   test(
     'Classic-compatible SAK acquires ATS and retains it through bound reads',
