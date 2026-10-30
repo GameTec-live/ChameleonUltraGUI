@@ -2,6 +2,21 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // usb_serial (git dep, fix-usbserial branch) pulls
+        // com.github.felHR85:UsbSerial from JitPack with a forced
+        // classifier/type (classifier 'release', type 'aar'). JitPack
+        // doesn't publish a POM for that artifact, and this project's
+        // Gradle version (via AGP 8.13.2) requires one by default, so
+        // resolution fails with "found but without metadata in Maven
+        // POM format". Declaring the repo here first with artifact()
+        // allowed lets Gradle accept the artifact-only JAR.
+        maven {
+            url "https://jitpack.io"
+            metadataSources {
+                mavenPom()
+                artifact()
+            }
+        }
     }
 }
 

@@ -184,7 +184,16 @@ enum ChameleonCommand {
   getIoProxEmulatorID(5009),
 
   setIdteckEmulatorID(5012),
-  getIdteckEmulatorID(5013);
+  getIdteckEmulatorID(5013),
+
+  // DESFire (Phreakbyte fork additions, data_cmd.h 6006-6013)
+  desfireSetCredential(6006),
+  desfireGetCredential(6007),
+  desfireGetInfo(6008),
+  desfireFactoryBlank(6009),
+  desfireGetStats(6011),
+  desfireReaderAuthIso7816(6012),
+  desfireReaderGetVersion(6013);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -215,7 +224,15 @@ enum TagType {
   ultralightC(1104),
   ultralight11(1105),
   ultralight21(1106),
-  hf14a4(3000);
+  hf14a4(3000),
+
+  // DESFire (Phreakbyte fork additions, chameleon_enum.py TagSpecificType)
+  desfireEv1_2k(1300),
+  desfireEv1_4k(1301),
+  desfireEv1_8k(1302),
+  desfireEv2_2k(1303),
+  desfireEv2_4k(1304),
+  desfireEv2_8k(1305);
 
   const TagType(this.value);
   final int value;
@@ -299,6 +316,60 @@ class ChameleonMessage {
   ChameleonMessage(
       {required this.command, required this.status, required this.data});
 }
+
+// DESFire (Phreakbyte fork additions) -- DESFIRE_GET_INFO/GET_STATS reply
+// shapes, straight from chameleon_cmd.py's desfire_get_info/desfire_get_stats.
+class DesfireInfo {
+  Uint8List uid;
+  int numApps;
+  int numFiles;
+  int poolUsed;
+  int poolSize;
+  int credSize;
+  int maxApps;
+  int maxKeys;
+  int maxFiles;
+  int piccAuthCommand;
+
+  DesfireInfo({
+    required this.uid,
+    required this.numApps,
+    required this.numFiles,
+    required this.poolUsed,
+    required this.poolSize,
+    required this.credSize,
+    required this.maxApps,
+    required this.maxKeys,
+    required this.maxFiles,
+    required this.piccAuthCommand,
+  });
+}
+
+class DesfireStats {
+  int framesRx;
+  int framesTx;
+  int engineErrors;
+  int maxHandlerUs;
+  int entropyStarvations;
+  int? activationRequests;
+  int? atqaTx;
+  int? fdtTimeouts;
+  int? maxResetUs;
+
+  DesfireStats({
+    required this.framesRx,
+    required this.framesTx,
+    required this.engineErrors,
+    required this.maxHandlerUs,
+    required this.entropyStarvations,
+    this.activationRequests,
+    this.atqaTx,
+    this.fdtTimeouts,
+    this.maxResetUs,
+  });
+}
+
+enum DesfireAuthResult { authenticated, cardRejected, noCard, requestError, failed }
 
 enum NTLevel { static, weak, hard, backdoor, unknown }
 
