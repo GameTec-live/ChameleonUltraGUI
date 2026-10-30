@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/helpers/sl1_card_save.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
@@ -11,6 +12,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/vanity_sak.dart';
 import 'package:chameleonultragui/gui/component/mifare/vanity_sak_checkbox.dart';
+import 'package:chameleonultragui/gui/component/card_auth_key_field.dart';
 
 // Localizations
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -32,6 +34,7 @@ class CardEditMenuState extends State<CardEditMenu> {
   TextEditingController sakController = TextEditingController();
   TextEditingController atqaController = TextEditingController();
   TextEditingController atsController = TextEditingController();
+  final cardAuthKeyController = TextEditingController();
 
   TextEditingController ultralightVersionController = TextEditingController();
   TextEditingController ultralightSignatureController = TextEditingController();
@@ -78,6 +81,8 @@ class CardEditMenuState extends State<CardEditMenu> {
     sakController.text = bytesToHexSpace(u8ToBytes(widget.tagSave.sak));
     atqaController.text = bytesToHexSpace(widget.tagSave.atqa);
     atsController.text = bytesToHexSpace(widget.tagSave.ats);
+    cardAuthKeyController.text =
+        widget.tagSave.sl1Profile?.json['cardAuth']?['key'] ?? '';
     ultralightVersionController.text =
         bytesToHexSpace(widget.tagSave.extraData.ultralightVersion);
     ultralightSignatureController.text =
@@ -114,6 +119,12 @@ class CardEditMenuState extends State<CardEditMenu> {
         sakController.text != originalSak ||
         atqaController.text != originalAtqa ||
         (originalVanitySak != null && vanitySak != originalVanitySak);
+  }
+
+  @override
+  void dispose() {
+    cardAuthKeyController.dispose();
+    super.dispose();
   }
 
   Future<bool> showUpdateDataDialog(BuildContext context) async {
@@ -156,6 +167,12 @@ class CardEditMenuState extends State<CardEditMenu> {
     List<Uint8List> updatedData = List<Uint8List>.from(originalData);
 
     if (isMifareClassic(selectedType)) {
+      if (widget.tagSave.sl1Profile != null ||
+          widget.tagSave.nativeClassicCoverage != null) {
+        // Reconcile from canonical per-byte observations after form validation;
+        // an empty legacy projection is not a zero-filled source block.
+        return updatedData;
+      }
       updatedData[0] = mfClassicPatchFirstBlock(updatedData[0], hexToBytes(uid),
           hexToBytes(sak)[0], hexToBytes(atqa), vanitySak);
     } else if (isMifareUltralight(selectedType)) {
@@ -279,6 +296,17 @@ class CardEditMenuState extends State<CardEditMenu> {
                         ))),
               ),
               const SizedBox(height: 8),
+              if (isMifareClassic(selectedType) &&
+                  widget.tagSave.nativeClassicCoverage == null &&
+                  !(widget.tagSave.tag == TagType.mifare1K &&
+                      widget.tagSave.data.length == 72)) ...[
+                CardAuthKeyField(
+                  controller: cardAuthKeyController,
+                  initiallyVisible: widget.tagSave.extraData.sl1CardAuthDetected ||
+                      widget.tagSave.sl1Profile?.json['cardAuth'] != null,
+                ),
+                const SizedBox(height: 16),
+              ],
               DropdownButton<TagType>(
                 value: selectedType,
                 items: getTagTypes()
@@ -507,12 +535,46 @@ class CardEditMenuState extends State<CardEditMenu> {
               return;
             }
 
+            bool removeProfile = false;
+            if (widget.tagSave.sl1Profile != null &&
+                !isMifareClassic(selectedType)) {
+              removeProfile =
+                  await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: Text(localizations.card_profile_remove_title),
+                      content: Text(
+                        localizations.card_profile_remove_hint,
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text(localizations.cancel),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text(localizations.card_profile_remove_action),
+                        ),
+                      ],
+                    ),
+                  ) ??
+                  false;
+              if (!removeProfile) return;
+            }
+            if (!context.mounted) return;
+            bool memoryChanged = false;
+            bool patchCanonicalBlockZero = false;
             List<Uint8List> cardData = widget.tagSave.data;
 
             if (hasDataChanged() &&
                 canUpdateSavedCardData(widget.tagSave, selectedType)) {
               bool shouldUpdateData = await showUpdateDataDialog(context);
               if (shouldUpdateData) {
+                memoryChanged = true;
+                patchCanonicalBlockZero =
+                    isMifareClassic(selectedType) &&
+                    (widget.tagSave.sl1Profile != null ||
+                        widget.tagSave.nativeClassicCoverage != null);
                 cardData = updateSavedCardData(
                   selectedType: selectedType,
                   uid: uidController.text,
@@ -552,7 +614,9 @@ class CardEditMenuState extends State<CardEditMenu> {
             }
 
             var tag = CardSave(
-                folderId: widget.tagSave.folderId,
+              sl1Profile: removeProfile ? null : widget.tagSave.sl1Profile,
+              nativeClassicCoverage: widget.tagSave.nativeClassicCoverage,
+              folderId: widget.tagSave.folderId,
                 id: widget.tagSave.id,
                 name: nameController.text,
                 sak: chameleonTagToFrequency(selectedType) == TagFrequency.lf
@@ -561,6 +625,11 @@ class CardEditMenuState extends State<CardEditMenu> {
                 atqa: hexToBytes(atqaController.text),
                 uid: finalUid,
                 extraData: CardSaveExtra(
+                  sl1CardAuthDetected:
+                      widget.tagSave.extraData.sl1CardAuthDetected &&
+                      selectedType == widget.tagSave.tag &&
+                      !hasDataChanged() &&
+                      atsController.text == bytesToHexSpace(widget.tagSave.ats),
                   ultralightSignature:
                       hexToBytes(ultralightSignatureController.text),
                   ultralightVersion:
@@ -573,6 +642,48 @@ class CardEditMenuState extends State<CardEditMenu> {
                 data: cardData,
                 color: currentColor,
                 ats: hexToBytes(atsController.text));
+
+            try {
+              if (tag.sl1Profile != null) {
+                reconcileSl1(tag, memoryChanged: memoryChanged);
+                if (patchCanonicalBlockZero) {
+                  patchSl1BlockZeroIdentity(
+                    tag,
+                    source: widget.tagSave.sl1Profile!,
+                    vanitySak: vanitySak,
+                  );
+                }
+              }
+              reconcileNativeClassicCoverage(
+                tag,
+                previous: widget.tagSave,
+                patchBlockZero: patchCanonicalBlockZero,
+                vanitySak: vanitySak,
+              );
+              if (isMifareClassic(selectedType) &&
+                  tag.nativeClassicCoverage == null &&
+                  !(tag.tag == TagType.mifare1K && tag.data.length == 72)) {
+                updateCardAuthKey(tag, cardAuthKeyController.text);
+              }
+            } catch (error) {
+              if (!context.mounted) return;
+              await showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: Text(localizations.card_edit_failed),
+                  content: Text(
+                    '$error\n${localizations.card_edit_failed_hint}',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(localizations.close),
+                    ),
+                  ],
+                ),
+              );
+              return;
+            }
 
             var tags = appState.sharedPreferencesProvider.getCards();
             var index =

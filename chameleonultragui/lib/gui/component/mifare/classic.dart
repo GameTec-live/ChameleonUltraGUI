@@ -1,3 +1,7 @@
+import 'package:chameleonultragui/helpers/sl1_native_projection.dart';
+import 'package:chameleonultragui/helpers/sl1_card_save.dart';
+import 'package:chameleonultragui/gui/component/card_auth_key_field.dart';
+
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/gui/component/card_button.dart';
@@ -48,15 +52,68 @@ class CardReaderState extends State<MifareClassicHelper> {
     );
   }
 
-  Future<void> saveCard({bool bin = false, bool skipDump = false}) async {
+  Future<void> saveCard({
+    bool bin = false,
+    bool skipDump = false,
+    String? cardAuthKey,
+  }) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
     var localizations = AppLocalizations.of(context)!;
     Uint8List cardDump = Uint8List(0);
     if (!skipDump) {
-      cardDump = mfClassicGetExportBytes(
-          widget.mfcInfo.type, widget.mfcInfo.recovery!.cardData,
-          isEV1: widget.mfcInfo.isEV1);
+      if (bin) {
+        final card = CardSave(
+          uid: widget.hfInfo.uid,
+          name: dumpName,
+          tag: mfClassicGetChameleonTagType(
+          widget.mfcInfo.type),
+          sak: hexToBytes(widget.hfInfo.sak)[0],
+          atqa: hexToBytes(widget.hfInfo.atqa),
+          data: widget.mfcInfo.isEV1
+              ? widget.mfcInfo.recovery!.cardData.take(72).toList()
+              : widget.mfcInfo.recovery!.cardData,
+          ats: widget.hfInfo.ats == localizations.no
+              ? Uint8List(0)
+              : hexToBytes(widget.hfInfo.ats),
+        );
+        try {
+          if (widget.mfcInfo.isEV1) {
+            card.nativeClassicCoverage = widget.mfcInfo.recovery!.coverageFor(
+              card,
+            );
+            card.data = card.nativeClassicCoverage!.project(
+              fillKnownKeys: true,
+            );
+            cardDump = classicExportBytesForCard(card);
+          } else {
+            cardDump = Uint8List.fromList(
+              widget.mfcInfo.recovery!
+                  .profileFor(card)
+                  .image()
+                  .expand((b) => b)
+                  .toList(),
+            );
+          }
+        } catch (error) {
+          if (context.mounted) {
+            await showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: Text(localizations.classic_incomplete_image),
+                content: Text(error.toString()),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(localizations.close),
+                  ),
+                ],
+              ),
+            );
+          }
+          return;
+        }
+      }
     }
 
     if (bin) {
@@ -67,7 +124,7 @@ class CardReaderState extends State<MifareClassicHelper> {
       );
     } else {
       var tags = appState.sharedPreferencesProvider.getCards();
-      tags.add(CardSave(
+      final savedCard = CardSave(
           uid: widget.hfInfo.uid,
           sak: hexToBytes(widget.hfInfo.sak)[0],
           atqa: hexToBytes(widget.hfInfo.atqa),
@@ -75,12 +132,93 @@ class CardReaderState extends State<MifareClassicHelper> {
           tag: (skipDump)
               ? TagType.mifare1K
               : mfClassicGetChameleonTagType(widget.mfcInfo.type),
-          data: widget.mfcInfo.recovery!.cardData,
+          data: widget.mfcInfo.isEV1
+            ? widget.mfcInfo.recovery!.cardData.take(72).toList()
+            : widget.mfcInfo.recovery!.cardData,
+          extraData: CardSaveExtra(
+            sl1CardAuthDetected: widget.mfcInfo.sl1CardAuthDetected,
+          ),
           ats: (widget.hfInfo.ats != localizations.no)
               ? hexToBytes(widget.hfInfo.ats)
-              : Uint8List(0)));
+              : Uint8List(0));
+      if (!skipDump && !widget.mfcInfo.isEV1) {
+        savedCard.sl1Profile = widget.mfcInfo.recovery!.profileFor(savedCard);
+        savedCard.data = Sl1NativeProjection.blocks(savedCard.sl1Profile!);
+      }
+      if (!skipDump && widget.mfcInfo.isEV1) {
+        savedCard.nativeClassicCoverage = widget.mfcInfo.recovery!.coverageFor(
+          savedCard,
+        );
+        savedCard.data = savedCard.nativeClassicCoverage!.project(
+          fillKnownKeys: true,
+        );
+      }
+      if (cardAuthKey != null) updateCardAuthKey(savedCard, cardAuthKey);
+      tags.add(savedCard);
       appState.sharedPreferencesProvider.setCards(tags);
     }
+  }
+
+  Future<void> showSaveDialog() async {
+    final localizations = AppLocalizations.of(context)!;
+    var name = dumpName;
+    var cardAuthKey = '';
+    final form = GlobalKey<FormState>();
+    String? error;
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, updateDialog) => AlertDialog(
+          title: Text(localizations.enter_name_of_card),
+          content: SingleChildScrollView(
+            child: Form(
+              key: form,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    initialValue: name,
+                    onChanged: (value) => name = value,
+                    decoration: InputDecoration(labelText: localizations.name),
+                  ),
+                  if (!widget.mfcInfo.isEV1) ...[
+                    const SizedBox(height: 16),
+                    CardAuthKeyField(
+                      initiallyVisible: widget.mfcInfo.sl1CardAuthDetected,
+                      onChanged: (value) => cardAuthKey = value,
+                    ),
+                  ],
+                  if (error != null) Text(error!),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(localizations.cancel),
+            ),
+            FilledButton(
+              onPressed: () async {
+                if (!form.currentState!.validate()) return;
+                try {
+                  dumpName = name;
+                  await saveCard(
+                    cardAuthKey: widget.mfcInfo.isEV1 ? null : cardAuthKey,
+                  );
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                } catch (e) {
+                  if (dialogContext.mounted) {
+                    updateDialog(() => error = 'Could not save card: $e');
+                  }
+                }
+              },
+              child: Text(localizations.save),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -211,10 +349,10 @@ class CardReaderState extends State<MifareClassicHelper> {
                                     widget.mfcInfo.state =
                                         MifareClassicState.save;
                                   });
-                                } catch (_) {
+                                } catch (error) {
                                   setState(() {
-                                    widget.mfcInfo.recovery?.error =
-                                        localizations.recovery_error_dump_data;
+                                    widget.mfcInfo.recovery?.error = error
+                                    .toString();
                                     widget.mfcInfo.state =
                                         MifareClassicState.dump;
                                   });
@@ -347,10 +485,9 @@ class CardReaderState extends State<MifareClassicHelper> {
                               widget.mfcInfo.recovery?.dumpProgress = 0;
                               widget.mfcInfo.state = MifareClassicState.save;
                             });
-                          } catch (_) {
+                          } catch (error) {
                             setState(() {
-                              widget.mfcInfo.recovery?.error =
-                                  localizations.recovery_error_dump_data;
+                              widget.mfcInfo.recovery?.error = error.toString();
                               widget.mfcInfo.state = MifareClassicState.dump;
                             });
                           }
@@ -393,7 +530,14 @@ class CardReaderState extends State<MifareClassicHelper> {
                       onSave: (data) {
                         // Apply edits back so a later save uses the
                         // modified dump without re-reading the card.
+                        final changed = !classicBlockListsEqual(
+                          widget.mfcInfo.recovery!.cardData,
+                          data,
+                        );
                         widget.mfcInfo.recovery!.cardData = data;
+                        widget.mfcInfo.recovery!.readCoverageEdited =
+                            widget.mfcInfo.recovery!.readCoverageEdited ||
+                            changed;
                       },
                     ),
                   );
@@ -406,41 +550,7 @@ class CardReaderState extends State<MifareClassicHelper> {
               ),
               const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: () async {
-                  await showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text(localizations.enter_name_of_card),
-                        content: TextField(
-                          onChanged: (value) {
-                            setState(() {
-                              dumpName = value;
-                            });
-                          },
-                        ),
-                        actions: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              await saveCard();
-                              if (context.mounted) {
-                                Navigator.pop(context);
-                              }
-                            },
-                            child: Text(localizations.ok),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(
-                                  context); // Close the modal without saving
-                            },
-                            child: Text(localizations.cancel),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
+                onPressed: showSaveDialog,
                 style: customCardButtonStyle(appState),
                 child: Text(localizations.save),
               ),

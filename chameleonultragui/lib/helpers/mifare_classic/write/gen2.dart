@@ -109,7 +109,9 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
   @override
   Future<bool> writeData(
       CardSave card, Function(int writeProgress) update) async {
-    List<Uint8List> data = card.data;
+    final prepared = dataForWrite(card);
+    if (prepared == null) return false;
+    List<Uint8List> data = prepared;
     List<bool> cleanSectors = List.generate(40, (index) => false);
     failedBlocks = [];
 

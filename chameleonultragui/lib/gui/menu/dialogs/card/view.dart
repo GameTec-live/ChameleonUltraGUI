@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/helpers/sl1_card_save.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/edit.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/export.dart';
 import 'package:chameleonultragui/gui/menu/pages/dump_editor.dart';
@@ -71,6 +72,11 @@ class CardViewMenuState extends State<CardViewMenu> {
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
     var appState = context.watch<ChameleonGUIState>();
+    final coverageBlocks =
+        currentSavedCard.sl1Profile?.json['classic']['blocks'] as List?;
+    final dictionaryKeys = isMifareClassic(currentSavedCard.tag)
+        ? mfClassicGetKeysFromCard(currentSavedCard)
+        : <Uint8List>[];
 
     return AlertDialog(
       title: Text(currentSavedCard.name,
@@ -79,7 +85,19 @@ class CardViewMenuState extends State<CardViewMenu> {
           child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Row(
+            if (coverageBlocks != null)
+              ExpansionTile(
+                title: Text(localizations.card_read_details),
+                children: [
+                  Text(
+                    localizations.classic_coverage_summary(
+                      coverageBlocks.where((b) => !(b['data'] as String).contains('?')).length,
+                      coverageBlocks.length,
+                    ),
+                  ),
+                ],
+              ),
+            Row(
             children: [
               Expanded(
                 child: Text(
@@ -168,21 +186,17 @@ class CardViewMenuState extends State<CardViewMenu> {
                 children: [
                   const SizedBox(height: 8),
                   ElevatedButton(
-                      onPressed:
-                          (mfClassicGetKeysFromDump(currentSavedCard.data)
-                                  .isNotEmpty)
-                              ? () async {
-                                  List<Uint8List> keys =
-                                      mfClassicGetKeysFromDump(
-                                          currentSavedCard.data);
-                                  await showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return DictionaryExportMenu(keys: keys);
-                                    },
-                                  );
-                                }
-                              : null,
+                      onPressed: dictionaryKeys.isNotEmpty
+                          ? () async {
+                              await showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return DictionaryExportMenu(
+                                      keys: dictionaryKeys);
+                                },
+                              );
+                            }
+                          : null,
                       child: Text(localizations.export_to_dictionary)),
                 ],
               ),
@@ -290,7 +304,10 @@ class CardViewMenuState extends State<CardViewMenu> {
                           onSave: (dumpData) {
                             // Update card data
                             var updatedCard = CardSave(
-                              id: currentSavedCard.id,
+                            sl1Profile: currentSavedCard.sl1Profile,
+                            nativeClassicCoverage:
+                                currentSavedCard.nativeClassicCoverage,
+                            id: currentSavedCard.id,
                               uid: currentSavedCard.uid,
                               sak: currentSavedCard.sak,
                               atqa: currentSavedCard.atqa,
@@ -301,7 +318,20 @@ class CardViewMenuState extends State<CardViewMenu> {
                               extraData: currentSavedCard.extraData,
                               folderId: currentSavedCard.folderId,
                               color: currentSavedCard.color,
-                            );
+                          );
+
+                          reconcileSl1(
+                            updatedCard,
+                            memoryChanged: !classicBlockListsEqual(
+                              currentSavedCard.data,
+                              dumpData,
+                            ),
+                          );
+
+                          reconcileNativeClassicCoverage(
+                            updatedCard,
+                            previous: currentSavedCard,
+                          );
 
                             // Update the card in storage
                             var cards =
@@ -334,8 +364,8 @@ class CardViewMenuState extends State<CardViewMenu> {
                           if (isMifareClassic(currentSavedCard.tag))
                             ElevatedButton(
                               onPressed: () async {
-                                await saveTag(currentSavedCard, context, true);
-                                if (context.mounted) {
+                              final exported = await saveTag(currentSavedCard, context, true);
+                                if (exported && context.mounted) {
                                   Navigator.pop(context);
                                 }
                               },
@@ -343,8 +373,8 @@ class CardViewMenuState extends State<CardViewMenu> {
                             ),
                           ElevatedButton(
                             onPressed: () async {
-                              await saveTag(currentSavedCard, context, false);
-                              if (context.mounted) {
+                            final exported = await saveTag(currentSavedCard, context, false);
+                              if (exported && context.mounted) {
                                 Navigator.pop(context);
                               }
                             },

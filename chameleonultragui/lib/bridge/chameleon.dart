@@ -1,3 +1,5 @@
+import 'package:chameleonultragui/helpers/sl1_profile_uploader.dart';
+
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
@@ -22,6 +24,7 @@ class ChameleonCommunicator {
   int dataLength = 0;
   List<ChameleonMessage> messageQueue = [];
   List<int> commandQueue = [];
+  Future<void> _hfScanFinished = Future<void>.value();
 
   final Logger log;
 
@@ -218,7 +221,22 @@ class ChameleonCommunicator {
         data: Uint8List.fromList([readerMode ? 1 : 0]));
   }
 
-  Future<CardData?> scan14443aTag() async {
+  Future<CardData?> _serializeHfScan(
+      Future<CardData?> Function() scan) async {
+    final previous = _hfScanFinished;
+    final finished = Completer<void>();
+    _hfScanFinished = finished.future;
+    await previous;
+    try {
+      return await scan();
+    } finally {
+      finished.complete();
+    }
+  }
+
+  Future<CardData?> scan14443aTag() => _serializeHfScan(_scan14443aTag);
+
+  Future<CardData?> _scan14443aTag() async {
     var resp = await sendCmd(ChameleonCommand.scan14ATag);
 
     if (resp!.data.isNotEmpty) {
@@ -234,6 +252,80 @@ class ChameleonCommunicator {
     } else {
       return null;
     }
+  }
+
+  /// Plus SL1 may answer RATS without advertising ISO-DEP in its Classic SAK.
+  Future<CardData?> scan14443aTagWithAts({CardData? selected}) =>
+      _serializeHfScan(() => _scan14443aTagWithAts(selected: selected));
+
+  Future<CardData?> _scan14443aTagWithAts({CardData? selected}) async {
+    final originalCard = selected ?? await _scan14443aTag();
+    if (originalCard == null || originalCard.ats.isNotEmpty) {
+      return originalCard;
+    }
+    final capabilities = await getDeviceCapabilities();
+    if (!capabilities.contains(ChameleonCommand.hf14aGetConfig.value) ||
+        !capabilities.contains(ChameleonCommand.hf14aSetConfig.value)) {
+      return originalCard;
+    }
+    final response = await sendCmd(ChameleonCommand.hf14aGetConfig);
+    if (response == null || response.status != 0x68 || response.data.length != 4) {
+      throw StateError('Could not read the reader configuration');
+    }
+    final original = Uint8List.fromList(response.data);
+    Future<void> setConfig(Uint8List config) async {
+      final result = await sendCmd(ChameleonCommand.hf14aSetConfig, data: config);
+      if (result == null || result.status != 0x68) {
+        throw StateError('Reader configuration failed: status ${result?.status}');
+      }
+    }
+
+    Object? scanError;
+    CardData? activated;
+    try {
+      await setConfig(Uint8List.fromList(original)..[3] = 1);
+      activated = await _scan14443aTag();
+    } catch (error) {
+      scanError = error;
+      rethrow;
+    } finally {
+      try {
+        await setConfig(original);
+      } catch (restoreError) {
+        throw StateError(
+          'Could not restore the reader configuration: $restoreError'
+          '${scanError == null ? '' : '; ATS scan failed: $scanError'}',
+        );
+      }
+    }
+
+    // An ordinary Classic card can reject RATS. After restoring the reader,
+    // reselect it normally rather than treating missing ATS as a missing card.
+    activated ??= await _scan14443aTag();
+    if (activated == null ||
+        bytesToHex(activated.uid) != bytesToHex(originalCard.uid) ||
+        bytesToHex(activated.atqa) != bytesToHex(originalCard.atqa) ||
+        activated.sak != originalCard.sak) {
+      throw StateError('Card changed or disappeared while reading ATS');
+    }
+    return activated;
+  }
+
+  /// Detects the first CardAuth response only; no key is supplied or verified.
+  Future<bool> detectSl1CardAuth() async {
+    final capabilities = await getDeviceCapabilities();
+    if (!capabilities.contains(ChameleonCommand.hf14ARawCommand.value)) {
+      return false;
+    }
+    final response = await sendCmd(
+      ChameleonCommand.hf14ARawCommand,
+      // Select, append/check CRC, wait 100 ms; keep-field is deliberately off.
+      data: Uint8List.fromList([0xF4, 0, 100, 0, 24, 0x76, 0x04, 0x90]),
+    );
+    return response != null &&
+        response.status == 0 &&
+        response.data.length == 17 &&
+        response.data[0] == 0x90;
   }
 
   Future<bool> detectMf1Support() async {
@@ -419,12 +511,14 @@ class ChameleonCommunicator {
     return resp!.status == 0 ? resp.data.sublist(1) : null;
   }
 
+  int? lastMf1ReadStatus;
   Future<Uint8List> mf1ReadBlock(int block, int keyType, Uint8List key) async {
     // Read block
     // keyType 0x60 if A key, 0x61 B key
-    return (await sendCmd(ChameleonCommand.mf1ReadBlock,
-            data: Uint8List.fromList([keyType, block, ...key])))!
-        .data;
+    final response = (await sendCmd(ChameleonCommand.mf1ReadBlock,
+            data: Uint8List.fromList([keyType, block, ...key])))!;
+    lastMf1ReadStatus = response.status;
+    return response.status == 0 ? response.data : Uint8List(0);
   }
 
   Future<bool> mf1WriteBlock(
@@ -754,6 +848,24 @@ class ChameleonCommunicator {
             Uint8List.fromList([index, frequency.value, ...utf8.encode(name)]));
   }
 
+  /// Called after a committed profile; metadata failure must not imply rollback.
+  Future<void> saveSl1SlotName(int slot, String name) async {
+    for (final request in [
+      (
+        ChameleonCommand.setSlotTagNick,
+        Uint8List.fromList([slot, TagFrequency.hf.value, ...utf8.encode(name)]),
+      ),
+      (ChameleonCommand.saveSlotNicks, Uint8List(0)),
+    ]) {
+      final response = await sendCmd(request.$1, data: request.$2);
+      if (response == null || response.status != 0x68) {
+        throw StateError(
+          'Slot nickname command ${request.$1.value} failed: status ${response?.status}',
+        );
+      }
+    }
+  }
+
   Future<String> getSlotTagName(int index, TagFrequency frequency) async {
     var resp = await sendCmd(ChameleonCommand.getSlotTagNick,
         data: Uint8List.fromList([index, frequency.value]));
@@ -879,7 +991,7 @@ class ChameleonCommunicator {
         isGen2: resp.data[2] == 1, // is gen2 mode enabled
         isAntiColl: resp.data[3] ==
             1, // use anti collision data from block 0 mode enabled
-        writeMode: mode // write mode
+        writeMode: mode, // write mode
         );
   }
 
@@ -1134,6 +1246,50 @@ class ChameleonCommunicator {
         key: utf8.decode(resp.sublist(7, 13), allowMalformed: true),
         wakeTimeSeconds: resp.length >= 14 ? resp[13] : null);
   }
+
+  /// Checked mode transition used only after profile preflight/capability checks.
+  Future<void> prepareSl1Persistence() async {
+    Future<bool> readerMode() async {
+      final response = await sendCmd(ChameleonCommand.getDeviceMode);
+      if (response == null ||
+          response.status != 0x68 ||
+          response.data.length != 1 ||
+          response.data[0] > 1) {
+        throw StateError('SL1 mode query failed: status ${response?.status}');
+      }
+      return response.data[0] == 1;
+    }
+
+    if (await readerMode()) {
+      final response = await sendCmd(
+        ChameleonCommand.changeDeviceMode,
+        data: Uint8List.fromList([0]),
+      );
+      if (response == null || response.status != 0x68) {
+        throw StateError(
+          'SL1 tag-mode transition failed: status ${response?.status}',
+        );
+      }
+      if (await readerMode()) {
+        throw StateError('SL1 device remained in reader mode');
+      }
+    }
+  }
+
+  Sl1Uploader get sl1Uploader => Sl1Uploader(
+    (command, payload) async {
+      final cmd = ChameleonCommand.values.firstWhere((c) => c.value == command);
+      final response = await sendCmd(cmd, data: payload);
+      if (response == null || response.status != 0x68) {
+        throw StateError(
+          'SL1 command $command failed: status ${response?.status}. Inspect profile status before retrying.',
+        );
+      }
+      return response.data;
+    },
+    getDeviceCapabilities,
+    preparePersistence: prepareSl1Persistence,
+  );
 
   Future<List<int>> getDeviceCapabilities() async {
     var resp = (await sendCmd(ChameleonCommand.getDeviceCapabilities))!.data;
@@ -1532,7 +1688,7 @@ class ChameleonCommunicator {
         isGen1a: false,
         isGen2: resp.data[1] == 1, // is uid magic mode enabled
         isAntiColl: false,
-        writeMode: mode // write mode
+        writeMode: mode, // write mode
         );
   }
 }

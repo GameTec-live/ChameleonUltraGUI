@@ -119,6 +119,14 @@ enum ChameleonCommand {
   scanEM4X05Tag(3030),
   lfSniff(3031),
 
+  sl1Status(4045),
+  sl1Begin(4046),
+  sl1Write(4047),
+  sl1Save(4048),
+  sl1Cancel(4049),
+  sl1Clear(4050),
+  sl1SetEnabled(4051),
+
   mf1LoadBlockData(4000),
   mf1SetAntiCollision(4001),
 
