@@ -116,6 +116,17 @@ class SlotEditMenuState extends State<SlotEditMenu> {
             await appState.communicator!.getIoProxEmulatorID();
         uidController.text = bytesToHexSpace(ioProxCard.uid);
       } catch (_) {}
+    } else if (selectedType! == TagType.awid) {
+      try {
+        AwidCard awidCard = await appState.communicator!.getAwidEmulatorID();
+        uidController.text = bytesToHexSpace(awidCard.uid);
+      } catch (_) {}
+    } else if (selectedType! == TagType.paradox) {
+      try {
+        ParadoxCard paradoxCard =
+            await appState.communicator!.getParadoxEmulatorID();
+        uidController.text = bytesToHexSpace(paradoxCard.uid);
+      } catch (_) {}
     } else if (selectedType! == TagType.idteck) {
       try {
         IdteckCard idteckCard =
@@ -230,6 +241,12 @@ class SlotEditMenuState extends State<SlotEditMenu> {
           .setPacEmulatorID(hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (selectedType! == TagType.ioProx) {
       await appState.communicator!.setIoProxEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
+    } else if (selectedType! == TagType.awid) {
+      await appState.communicator!
+          .setAwidEmulatorID(hexToBytes(uidController.text.replaceAll(' ', '')));
+    } else if (selectedType! == TagType.paradox) {
+      await appState.communicator!.setParadoxEmulatorID(
           hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (selectedType! == TagType.idteck) {
       await appState.communicator!.setIdteckEmulatorID(

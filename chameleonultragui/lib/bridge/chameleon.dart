@@ -591,6 +591,26 @@ class ChameleonCommunicator {
     return IoProxCard.fromBytes(resp.data);
   }
 
+  Future<AwidCard?> readAwid() async {
+    var resp = await sendCmd(ChameleonCommand.scanAwidTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
+    }
+
+    return AwidCard.fromBytes(resp.data);
+  }
+
+  Future<ParadoxCard?> readParadox() async {
+    var resp = await sendCmd(ChameleonCommand.scanParadoxTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
+    }
+
+    return ParadoxCard.fromBytes(resp.data);
+  }
+
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setEM410XemulatorID, data: uid);
   }
@@ -609,6 +629,14 @@ class ChameleonCommunicator {
 
   Future<void> setIoProxEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setIoProxEmulatorID, data: uid);
+  }
+
+  Future<void> setAwidEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setAwidEmulatorID, data: uid);
+  }
+
+  Future<void> setParadoxEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setParadoxEmulatorID, data: uid);
   }
 
   Future<void> setIdteckEmulatorID(Uint8List uid) async {
@@ -688,6 +716,34 @@ class ChameleonCommunicator {
     }
 
     await sendCmd(ChameleonCommand.writeIoProxToT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+  }
+
+  Future<void> writeAwidToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeAwidToT5577,
+        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+  }
+
+  Future<void> writeParadoxToT55XX(
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
+    List<int> keys = [];
+
+    keys.addAll(newKey);
+
+    for (var oldKey in oldKeys) {
+      keys.addAll(oldKey);
+    }
+
+    await sendCmd(ChameleonCommand.writeParadoxToT5577,
         data: Uint8List.fromList([...uid, ...newKey, ...keys]));
   }
 
@@ -1105,6 +1161,16 @@ class ChameleonCommunicator {
   Future<IoProxCard> getIoProxEmulatorID() async {
     return IoProxCard.fromBytes(
         (await sendCmd(ChameleonCommand.getIoProxEmulatorID))!.data);
+  }
+
+  Future<AwidCard> getAwidEmulatorID() async {
+    return AwidCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getAwidEmulatorID))!.data);
+  }
+
+  Future<ParadoxCard> getParadoxEmulatorID() async {
+    return ParadoxCard.fromBytes(
+        (await sendCmd(ChameleonCommand.getParadoxEmulatorID))!.data);
   }
 
   Future<IdteckCard> getIdteckEmulatorID() async {
