@@ -143,4 +143,24 @@ void main() {
       expect(await writer.writeData(card, (_) {}), isFalse);
     },
   );
+  test(
+    'Jablotron T55xx verification accepts imported UID formatting',
+    () async {
+      final communicator = _JablotronCommunicator();
+      final writer = BaseT55XXCardHelper(communicator)
+        ..currentKey = '11223344'
+        ..newKey = '55667788';
+      for (final uid in ['0012345678', '00 12 34 56 ab']) {
+        final card = CardSave.fromJson(
+          CardSave(
+            uid: uid,
+            name: 'Imported Jablotron',
+            tag: TagType.jablotron,
+          ).toJson(),
+        );
+        communicator.uid = hexToBytes(uid);
+        expect(await writer.writeData(card, (_) {}), isTrue, reason: uid);
+      }
+    },
+  );
 }
