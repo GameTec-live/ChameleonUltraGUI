@@ -140,15 +140,11 @@ class MifareClassicRecovery {
     initializeEV1();
   }
 
-  Future<bool>? _batchKeyCheckSupported;
+  bool? _batchKeyCheckSupported;
 
-  Future<bool> _supportsBatchKeyCheck() => _batchKeyCheckSupported ??= appState
-      .communicator!
-      .getDeviceCapabilities()
-      .then(
-        (commands) =>
-            commands.contains(ChameleonCommand.mf1CheckKeysOfSectors.value),
-      );
+  Future<bool> _supportsBatchKeyCheck() async => _batchKeyCheckSupported ??=
+      (await appState.communicator!.getDeviceCapabilities())
+          .contains(ChameleonCommand.mf1CheckKeysOfSectors.value);
 
   Future<void> _checkKeysInBatch(
     List<Uint8List> keys, {

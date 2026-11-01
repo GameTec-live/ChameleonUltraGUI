@@ -152,8 +152,9 @@ void main() {
     () async {
       final subject = await recovery(
         TestCommunicator((cmd, data, timeout) {
-          if (cmd == ChameleonCommand.getDeviceCapabilities)
+          if (cmd == ChameleonCommand.getDeviceCapabilities) {
             return reply(cmd, [7, 220]);
+          }
           expect(cmd, ChameleonCommand.mf1CheckKeysOfSectors);
           expect(data!.take(2), [255, 0]);
           return reply(cmd, result({8: key, 31: key}));
@@ -173,8 +174,9 @@ void main() {
       var rechecks = 0;
       final subject = await recovery(
         TestCommunicator((cmd, data, timeout) {
-          if (cmd == ChameleonCommand.getDeviceCapabilities)
+          if (cmd == ChameleonCommand.getDeviceCapabilities) {
             return reply(cmd, []);
+          }
           if (cmd == ChameleonCommand.mf1CheckKeysOnBlock) {
             blockChecks++;
             return reply(cmd, [1, ...key]);
@@ -192,11 +194,37 @@ void main() {
     },
   );
 
+  test(
+    'capability failure can be retried and successful results are cached',
+    () async {
+      var capabilityChecks = 0;
+      var batchChecks = 0;
+      final subject = await recovery(
+        TestCommunicator((cmd, data, timeout) {
+          if (cmd == ChameleonCommand.getDeviceCapabilities) {
+            if (++capabilityChecks == 1) throw StateError('timeout');
+            return reply(cmd, [7, 220]);
+          }
+          expect(cmd, ChameleonCommand.mf1CheckKeysOfSectors);
+          batchChecks++;
+          return reply(cmd, result({}));
+        }),
+      );
+      subject.selectedDictionary = Dictionary(keys: [key]);
+      await expectLater(subject.checkKeys(), throwsStateError);
+      await subject.checkKeys();
+      await subject.recheckKey(key, 0);
+      expect(capabilityChecks, 2);
+      expect(batchChecks, 2);
+    },
+  );
+
   test('batch error clears checking marks and progress', () async {
     final subject = await recovery(
       TestCommunicator((cmd, data, timeout) {
-        if (cmd == ChameleonCommand.getDeviceCapabilities)
+        if (cmd == ChameleonCommand.getDeviceCapabilities) {
           return reply(cmd, [7, 220]);
+        }
         throw StateError('disconnected');
       }),
     );
