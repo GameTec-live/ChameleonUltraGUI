@@ -575,5 +575,45 @@
   "enable_vanity_sak": "Enable Vanity SAK",
   "enable_vanity_sak_tooltip": "When enabled, SAK stored in block 0 is increased by 0x80, mimicking genuine cards, primarily 7-byte UID ones.\nDefault on for 7-byte UID cards, off for 4, since some of them replay this byte as is.",
   "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)",
-  "long_press_threshold": "Long press threshold (ms):"
+  "long_press_threshold": "Long press threshold (ms):",
+  "raw_hf": "Raw HF commands",
+  "raw_device": "Device commands",
+  "raw_hf_description": "Exchange raw ISO 14443-A frames with a card.",
+  "raw_device_description": "Send numeric firmware commands and inspect status and data.",
+  "raw_hf_help": "Send ISO 14443-A data. This tool switches to reader mode. Empty data can control the RF field.",
+  "raw_device_help": "Advanced: commands can change settings, erase data or disconnect the device. Command IDs accept decimal or 0x hexadecimal. No device mode is selected automatically.",
+  "raw_ultra_required": "HF reader commands require a Chameleon Ultra.",
+  "raw_command": "Command ID",
+  "raw_payload": "Payload (hex bytes; spaces allowed)",
+  "raw_timeout": "Response timeout (ms)",
+  "raw_crc_bytes": "Appending CRC requires non-empty, whole-byte data.",
+  "raw_bits": "Transmit bit length (optional)",
+  "raw_bits_help": "Default: all payload bits",
+  "raw_send": "Send",
+  "raw_status": "Status",
+  "raw_activate_rf": "Activate RF field",
+  "raw_wait_response": "Wait for card response",
+  "raw_append_crc": "Append CRC",
+  "raw_auto_select": "Select card automatically",
+  "raw_keep_rf": "Keep RF field on",
+  "raw_check_crc": "Check response CRC",
+  "raw_invalid_number": "Enter a number from {min} to {max}.",
+  "@raw_invalid_number": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "raw_invalid_hex": "Enter complete hex bytes, up to {max} bytes.",
+  "@raw_invalid_hex": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  }
 }

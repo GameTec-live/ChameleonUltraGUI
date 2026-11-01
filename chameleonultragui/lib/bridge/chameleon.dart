@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
+
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -22,6 +23,8 @@ class ChameleonCommunicator {
   int dataLength = 0;
   List<ChameleonMessage> messageQueue = [];
   List<int> commandQueue = [];
+  // The protocol has no request IDs: consume a late reply before reusing its command.
+  final Set<int> _timedOutCommands = {};
 
   final Logger log;
 
@@ -45,11 +48,18 @@ class ChameleonCommunicator {
   }
 
   Uint8List makeDataFrameBytes(
-      ChameleonCommand cmd, int status, Uint8List? data) {
+    ChameleonCommand cmd,
+    int status,
+    Uint8List? data,
+  ) {
+    return _makeRawDataFrameBytes(cmd.value, status, data);
+  }
+
+  Uint8List _makeRawDataFrameBytes(int command, int status, Uint8List? data) {
     List<int> frameList = [];
     frameList.add(dataFrameSof);
     frameList.add(lrcCalc(frameList.sublist(0, 1)));
-    frameList.addAll(_fromInt16BE(cmd.value));
+    frameList.addAll(_fromInt16BE(command));
     frameList.addAll(_fromInt16BE(status));
     frameList.addAll(_fromInt16BE(data == null ? 0 : data.length));
     frameList.add(lrcCalc(frameList.sublist(2, 8)));
@@ -105,7 +115,9 @@ class ChameleonCommunicator {
               "Received message: command = ${message.command}, status = ${message.status}, data = ${bytesToHex(message.data)}");
           dataPosition = 0;
           dataBuffer = [];
-          messageQueue.add(message);
+          if (!_timedOutCommands.remove(message.command)) {
+            messageQueue.add(message);
+          }
           return;
         } else {
           throw ('Data frame finally lrc error.');
@@ -116,65 +128,80 @@ class ChameleonCommunicator {
     }
   }
 
-  Future<ChameleonMessage?> sendCmd(ChameleonCommand cmd,
-      {Uint8List? data,
-      Duration timeout = const Duration(seconds: 5),
-      bool skipReceive = false,
-      bool firstRun = false}) async {
-    var startTime = DateTime.now();
-    var dataFrame = makeDataFrameBytes(cmd, 0x00, data);
+  Future<ChameleonMessage?> sendCmd(
+    ChameleonCommand cmd, {
+    Uint8List? data,
+    Duration timeout = const Duration(seconds: 5),
+    bool skipReceive = false,
+    bool firstRun = false,
+  }) async {
+    return sendRawCmd(
+      cmd.value,
+      data: data,
+      timeout: timeout,
+      skipReceive: skipReceive,
+    );
+  }
 
-    if (!_serialInstance!.isOpen) {
-      await _serialInstance!.open();
-      await _serialInstance!.registerCallback(onSerialMessage);
-      _serialInstance!.isOpen = true;
+  /// Sends a numeric firmware command and preserves its status and payload.
+  Future<ChameleonMessage?> sendRawCmd(
+    int command, {
+    Uint8List? data,
+    Duration timeout = const Duration(seconds: 5),
+    bool skipReceive = false,
+  }) async {
+    RangeError.checkValueInInterval(command, 0, 0xFFFF, 'command');
+    if ((data?.length ?? 0) > dataMaxLength) {
+      throw ArgumentError('Payload exceeds $dataMaxLength bytes');
     }
-
-    while (commandQueue.contains(cmd.value)) {
-      if (startTime.millisecondsSinceEpoch + (timeout.inMilliseconds * 2) <
-          DateTime.now().millisecondsSinceEpoch) {
-        throw ("Timeout waiting for queue for command ${cmd.value}");
+    if (timeout <= Duration.zero) {
+      throw ArgumentError('Timeout must be positive');
+    }
+    final serial = _serialInstance;
+    if (serial == null) {
+      throw StateError('No device connected');
+    }
+    final startTime = DateTime.now();
+    if (!serial.isOpen) {
+      await serial.open();
+      await serial.registerCallback(onSerialMessage);
+      serial.isOpen = true;
+    }
+    while (commandQueue.contains(command)) {
+      if (DateTime.now().difference(startTime) > timeout * 2) {
+        throw TimeoutException('Waiting for command $command');
       }
-
       await asyncSleep(1);
     }
-
-    commandQueue.add(cmd.value);
-
-    log.t("Sending: ${bytesToHex(dataFrame)}");
-    log.d(
-        "Sending message: command = ${cmd.value}, data = ${bytesToHex(data ?? Uint8List(0))}");
-
-    if (skipReceive) {
-      try {
-        await _serialInstance!.write(Uint8List.fromList(dataFrame));
-      } catch (_) {}
-      return null;
+    if (_timedOutCommands.contains(command)) {
+      throw StateError(
+          'Command $command has an outstanding timed-out reply. Wait for it or reconnect before retrying.');
     }
-
-    await _serialInstance!.write(Uint8List.fromList(dataFrame));
-
-    while (true) {
-      for (var message in messageQueue) {
-        if (message.command == cmd.value) {
-          messageQueue.remove(message);
-          commandQueue.remove(cmd.value);
-          return message;
-        }
+    messageQueue.removeWhere((message) => message.command == command);
+    commandQueue.add(command);
+    try {
+      final frame = _makeRawDataFrameBytes(command, 0, data);
+      log.t("Sending: ${bytesToHex(frame)}");
+      if (skipReceive) {
+        // Reboot/reset commands may disconnect before the write completes.
+        try {
+          await serial.write(frame);
+        } catch (_) {}
+        return null;
       }
-
-      if (startTime.millisecondsSinceEpoch + timeout.inMilliseconds <
-          DateTime.now().millisecondsSinceEpoch) {
-        commandQueue.remove(cmd.value);
-        if (firstRun) {
-          sendCmd(cmd, data: data, timeout: timeout, firstRun: false);
-        } else {
-          // no luck
-          throw ("Timeout waiting for response for command ${cmd.value}");
+      await serial.write(frame);
+      final sentAt = DateTime.now();
+      while (true) {
+        final index = messageQueue.indexWhere((m) => m.command == command);
+        if (index != -1) return messageQueue.removeAt(index);
+        if (DateTime.now().difference(sentAt) > timeout) {
+          _timedOutCommands.add(command);
+          throw TimeoutException('Waiting for response for command $command');
         }
+        await asyncSleep(1);
       }
-
-      await asyncSleep(1);
+    } finally {
+      commandQueue.remove(command);
     }
   }
 
@@ -183,7 +210,7 @@ class ChameleonCommunicator {
   }
 
   int _toInt16BE(Uint8List bytes) {
-    return bytes.buffer.asByteData().getInt16(0, Endian.big);
+    return bytes.buffer.asByteData().getUint16(0, Endian.big);
   }
 
   Future<FirmwareVersion> getFirmwareVersion() async {
