@@ -57,12 +57,37 @@ class SlotEditMenuState extends State<SlotEditMenu> {
   EmulatorSettings? emulatorSettings;
   Mf1PrngType? mf1PrngType;
   int detectionCount = 0;
+  // Capabilities (ChameleonCommand values) the connected device reports.
+  // Empty until loaded, which keeps fork-only types (DESFire) out of the
+  // dropdown by default rather than risk offering one stock firmware
+  // can't actually set via setSlotType/setDefaultDataToSlot.
+  List<int> _capabilities = [];
 
   @override
   void initState() {
     super.initState();
     selectedType = widget.slotType;
     nameController.text = widget.name;
+    _loadCapabilities();
+  }
+
+  Future<void> _loadCapabilities() async {
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+    try {
+      final caps = await appState.communicator!.getDeviceCapabilities();
+      if (mounted) setState(() => _capabilities = caps);
+    } catch (_) {}
+  }
+
+  // Drops tag types the connected firmware doesn't actually support.
+  List<TagType> _supportedTypes(List<TagType> types) {
+    return types.where((type) {
+      if (isDesfire(type) &&
+          !_capabilities.contains(ChameleonCommand.desfireGetInfo.value)) {
+        return false;
+      }
+      return true;
+    }).toList();
   }
 
   String getMf1PrngLabel(Mf1PrngType type, AppLocalizations localizations) {
@@ -291,7 +316,15 @@ class SlotEditMenuState extends State<SlotEditMenu> {
               DropdownButton<TagType>(
                 value: selectedType,
                 items: [
-                  ...getTagTypesByFrequency(widget.frequency),
+                  // Keep the slot's current type selectable even if it's
+                  // filtered out below (e.g. capabilities haven't loaded
+                  // yet on first frame) -- it's only on the slot because
+                  // this device already supports it.
+                  if (selectedType != null &&
+                      !_supportedTypes(getTagTypesByFrequency(widget.frequency))
+                          .contains(selectedType))
+                    selectedType!,
+                  ..._supportedTypes(getTagTypesByFrequency(widget.frequency)),
                   TagType.unknown
                 ].map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
