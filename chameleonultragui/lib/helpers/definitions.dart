@@ -117,6 +117,8 @@ enum ChameleonCommand {
   adcGenericRead(3009),
   writeT55XX(3016),
   scanEM4X05Tag(3030),
+  scanJablotronTag(3019),
+  writeJablotronToT5577(3020),
   lfSniff(3031),
 
   mf1LoadBlockData(4000),
@@ -183,6 +185,9 @@ enum ChameleonCommand {
   setIoProxEmulatorID(5008),
   getIoProxEmulatorID(5009),
 
+  setJablotronEmulatorID(5010),
+  getJablotronEmulatorID(5011),
+
   setIdteckEmulatorID(5012),
   getIdteckEmulatorID(5013);
 
@@ -199,6 +204,7 @@ enum TagType {
   em410XElectra(104),
   pac(150),
   viking(170),
+  jablotron(180),
   hidProx(200),
   ioProx(201),
   idteck(310),
@@ -638,6 +644,26 @@ class VikingCard extends LFCard {
 
   VikingCard({
     super.type = TagType.viking,
+    required super.uid,
+  });
+}
+
+class JablotronCard extends LFCard {
+  factory JablotronCard.fromBytes(Uint8List bytes) {
+    return JablotronCard(uid: bytes);
+  }
+
+  factory JablotronCard.fromUID(String uid) {
+    return JablotronCard.fromBytes(hexToBytes(uid));
+  }
+
+  @override
+  String toViewableString() {
+    return '${jablotronCardId(uid)} (${bytesToHexSpace(uid)})';
+  }
+
+  JablotronCard({
+    super.type = TagType.jablotron,
     required super.uid,
   });
 }
