@@ -351,6 +351,7 @@
   "dump": "Dump",
   "invalid_data_in_block": "Invalid data in block",
   "logs": "Logs",
+  "card_number": "Card number",
   "facility_code": "Facility Code",
   "issue_level": "Issue Level",
   "must_be_between": "Must be between {a} and {b}",
