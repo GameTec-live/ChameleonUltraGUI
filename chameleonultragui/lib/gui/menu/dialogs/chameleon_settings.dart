@@ -57,6 +57,18 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
     var scaffoldMessenger = ScaffoldMessenger.of(context);
+    final buttonActions = [
+      localizations.disable,
+      localizations.forward,
+      localizations.backward,
+      localizations.clone_uid,
+      localizations.charge,
+      localizations.nfc_field_generator,
+    ]
+        .indexed
+        .map((item) => DropdownMenuItem(
+            value: getButtonConfigType(item.$1), child: Text(item.$2)))
+        .toList();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final GlobalKey<FormState> wakeTimeFormKey = GlobalKey<FormState>();
     return FutureBuilder(
@@ -253,26 +265,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     Text("${localizations.button_x("A")}:",
                         textScaler: const TextScaler.linear(0.8)),
                     const SizedBox(height: 7),
-                    ToggleButtonsWrapper(
-                        items: [
-                          localizations.disable,
-                          localizations.forward,
-                          localizations.backward,
-                          localizations.clone_uid,
-                          localizations.charge
-                        ],
-                        selectedValue: settings.aPress.value,
-                        onChange: (int index) async {
-                          var mode = ButtonConfig.disable;
-                          if (index == 1) {
-                            mode = ButtonConfig.cycleForward;
-                          } else if (index == 2) {
-                            mode = ButtonConfig.cycleBackward;
-                          } else if (index == 3) {
-                            mode = ButtonConfig.cloneUID;
-                          } else if (index == 4) {
-                            mode = ButtonConfig.chargeStatus;
-                          }
+                    DropdownButton<ButtonConfig>(
+                        isExpanded: true,
+                        items: buttonActions,
+                        value: settings.aPress,
+                        onChanged: (ButtonConfig? mode) async {
+                          if (mode == null) return;
 
                           await appState.communicator!
                               .setButtonConfig(ButtonType.a, mode);
@@ -285,26 +283,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     Text("${localizations.button_x("B")}:",
                         textScaler: const TextScaler.linear(0.8)),
                     const SizedBox(height: 7),
-                    ToggleButtonsWrapper(
-                        items: [
-                          localizations.disable,
-                          localizations.forward,
-                          localizations.backward,
-                          localizations.clone_uid,
-                          localizations.charge
-                        ],
-                        selectedValue: settings.bPress.value,
-                        onChange: (int index) async {
-                          var mode = ButtonConfig.disable;
-                          if (index == 1) {
-                            mode = ButtonConfig.cycleForward;
-                          } else if (index == 2) {
-                            mode = ButtonConfig.cycleBackward;
-                          } else if (index == 3) {
-                            mode = ButtonConfig.cloneUID;
-                          } else if (index == 4) {
-                            mode = ButtonConfig.chargeStatus;
-                          }
+                    DropdownButton<ButtonConfig>(
+                        isExpanded: true,
+                        items: buttonActions,
+                        value: settings.bPress,
+                        onChanged: (ButtonConfig? mode) async {
+                          if (mode == null) return;
 
                           await appState.communicator!
                               .setButtonConfig(ButtonType.b, mode);
@@ -320,26 +304,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     Text("${localizations.button_x("A")}:",
                         textScaler: const TextScaler.linear(0.8)),
                     const SizedBox(height: 7),
-                    ToggleButtonsWrapper(
-                        items: [
-                          localizations.disable,
-                          localizations.forward,
-                          localizations.backward,
-                          localizations.clone_uid,
-                          localizations.charge
-                        ],
-                        selectedValue: settings.aLongPress.value,
-                        onChange: (int index) async {
-                          var mode = ButtonConfig.disable;
-                          if (index == 1) {
-                            mode = ButtonConfig.cycleForward;
-                          } else if (index == 2) {
-                            mode = ButtonConfig.cycleBackward;
-                          } else if (index == 3) {
-                            mode = ButtonConfig.cloneUID;
-                          } else if (index == 4) {
-                            mode = ButtonConfig.chargeStatus;
-                          }
+                    DropdownButton<ButtonConfig>(
+                        isExpanded: true,
+                        items: buttonActions,
+                        value: settings.aLongPress,
+                        onChanged: (ButtonConfig? mode) async {
+                          if (mode == null) return;
 
                           await appState.communicator!
                               .setLongButtonConfig(ButtonType.a, mode);
@@ -352,26 +322,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     Text("${localizations.button_x("B")}:",
                         textScaler: const TextScaler.linear(0.8)),
                     const SizedBox(height: 7),
-                    ToggleButtonsWrapper(
-                        items: [
-                          localizations.disable,
-                          localizations.forward,
-                          localizations.backward,
-                          localizations.clone_uid,
-                          localizations.charge
-                        ],
-                        selectedValue: settings.bLongPress.value,
-                        onChange: (int index) async {
-                          var mode = ButtonConfig.disable;
-                          if (index == 1) {
-                            mode = ButtonConfig.cycleForward;
-                          } else if (index == 2) {
-                            mode = ButtonConfig.cycleBackward;
-                          } else if (index == 3) {
-                            mode = ButtonConfig.cloneUID;
-                          } else if (index == 4) {
-                            mode = ButtonConfig.chargeStatus;
-                          }
+                    DropdownButton<ButtonConfig>(
+                        isExpanded: true,
+                        items: buttonActions,
+                        value: settings.bLongPress,
+                        onChanged: (ButtonConfig? mode) async {
+                          if (mode == null) return;
 
                           await appState.communicator!
                               .setLongButtonConfig(ButtonType.b, mode);
