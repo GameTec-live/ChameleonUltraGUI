@@ -3,15 +3,19 @@ import 'package:chameleonultragui/helpers/github.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Map<String, dynamic> artifact(int id, String name, int runId, String sha,
-    {String branch = "main", int repo = 581338100, bool expired = false}) {
+    {String branch = "main",
+    int repo = 581338100,
+    int? headRepo,
+    bool expired = false}) {
   return {
     "id": id,
     "name": name,
     "expired": expired,
     "workflow_run": {
       "id": runId,
+      "repository_id": repo,
       "head_branch": branch,
-      "head_repository_id": repo,
+      "head_repository_id": headRepo ?? repo,
       "head_sha": sha,
     },
   };
@@ -36,7 +40,7 @@ void main() {
       artifact(12556166963, "ultra-dfu-app", 40083294055, "4e1a5b26"),
       artifact(12556150414, "ultra-dfu-app", 40082361581, "d3767298"),
       artifact(12556020255, "ultra-dfu-app", 40081684055, "22f2c712",
-          branch: "feat/fsk-dc-robustness", repo: 1278913770),
+          branch: "feat/fsk-dc-robustness", headRepo: 1278913770),
       artifact(12556004448, "ultra-dfu-app", 40084008126, "6b8abbc6",
           branch: "gtl-ruff"),
       artifact(12555988496, "ultra-dfu-app", 40084496773, "23507c28"),
@@ -58,13 +62,22 @@ void main() {
     final artifacts = [
       artifact(5, "ultra-dfu-app", 50, "branch", branch: "gtl-ruff"),
       artifact(4, "ultra-dfu-app", 40, "tag", branch: "v2.3.0"),
-      artifact(3, "ultra-dfu-app", 30, "fork", repo: 1278913770),
+      artifact(3, "ultra-dfu-app", 30, "fork", headRepo: 1278913770),
       artifact(2, "lite-dfu-app", 20, "lite"),
       artifact(1, "ultra-dfu-app", 10, "ultra"),
     ];
 
     expect(latestSha(artifacts, ChameleonDevice.ultra), "ultra");
     expect(latestSha(artifacts, ChameleonDevice.lite), "lite");
+  });
+
+  test('accepts main builds of whichever repository is configured', () {
+    final artifacts = [
+      artifact(2, "ultra-dfu-app", 20, "fork pr", repo: 999, headRepo: 1000),
+      artifact(1, "ultra-dfu-app", 10, "own", repo: 999),
+    ];
+
+    expect(latestSha(artifacts, ChameleonDevice.ultra), "own");
   });
 
   test('returns null when there is no main build', () {

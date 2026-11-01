@@ -2,9 +2,11 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/component/long_press_threshold_input.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/firmware_picker.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/github.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -50,6 +52,38 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     } catch (_) {}
 
     return settings;
+  }
+
+  Future<void> flashWithProgress(
+      ChameleonGUIState appState,
+      ScaffoldMessengerState scaffoldMessenger,
+      AppLocalizations localizations,
+      {FirmwareBuild? firmware}) async {
+    var snackBar = SnackBar(
+      content: Text(localizations
+          .downloading_fw(chameleonDeviceName(appState.connector!.device))),
+      action: SnackBarAction(
+        label: localizations.close,
+        onPressed: () {},
+      ),
+    );
+
+    scaffoldMessenger.showSnackBar(snackBar);
+    try {
+      await flashFirmware(appState,
+          scaffoldMessenger: scaffoldMessenger, build: firmware);
+    } catch (e) {
+      scaffoldMessenger.hideCurrentSnackBar();
+      snackBar = SnackBar(
+        content: Text('${localizations.update_error}: ${e.toString()}'),
+        action: SnackBarAction(
+          label: localizations.close,
+          onPressed: () {},
+        ),
+      );
+
+      scaffoldMessenger.showSnackBar(snackBar);
+    }
   }
 
   @override
@@ -109,38 +143,78 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                         child: ElevatedButton(
                             onPressed: () async {
                               Navigator.pop(buildContext);
-                              var snackBar = SnackBar(
-                                content: Text(localizations.downloading_fw(
-                                    chameleonDeviceName(
-                                        appState.connector!.device))),
-                                action: SnackBarAction(
-                                  label: localizations.close,
-                                  onPressed: () {},
-                                ),
-                              );
-
-                              scaffoldMessenger.showSnackBar(snackBar);
-                              try {
-                                await flashFirmware(appState,
-                                    scaffoldMessenger: scaffoldMessenger);
-                              } catch (e) {
-                                scaffoldMessenger.hideCurrentSnackBar();
-                                snackBar = SnackBar(
-                                  content: Text(
-                                      '${localizations.update_error}: ${e.toString()}'),
-                                  action: SnackBarAction(
-                                    label: localizations.close,
-                                    onPressed: () {},
-                                  ),
-                                );
-
-                                scaffoldMessenger.showSnackBar(snackBar);
-                              }
+                              await flashWithProgress(
+                                  appState, scaffoldMessenger, localizations);
                             },
                             child: Row(
                               children: [
                                 const Icon(Icons.system_security_update),
                                 Text(localizations.flash_via_dfu),
+                              ],
+                            ))),
+                    const SizedBox(height: 10),
+                    FittedBox(
+                        alignment: Alignment.centerRight,
+                        fit: BoxFit.scaleDown,
+                        child: ElevatedButton(
+                            onPressed: () async {
+                              var device = appState.connector!.device;
+                              var installedVersion = "";
+                              try {
+                                installedVersion = await appState
+                                    .communicator!
+                                    .getGitCommitHash();
+                              } catch (_) {}
+
+                              if (!buildContext.mounted) {
+                                return;
+                              }
+
+                              // Fetched once here, so rebuilding the picker
+                              // does not query GitHub again
+                              var builds = fetchFirmwareBuilds(
+                                  device,
+                                  appState.sharedPreferencesProvider
+                                      .getFirmwareRepository());
+                              var firmware = await showDialog<FirmwareBuild>(
+                                  context: buildContext,
+                                  builder: (_) => FirmwarePicker(
+                                      builds: builds,
+                                      installedVersion: installedVersion));
+
+                              if (firmware == null) {
+                                return;
+                              }
+
+                              if (!buildContext.mounted) {
+                                return;
+                              }
+
+                              Navigator.pop(buildContext);
+
+                              // The list only fits the device it was fetched
+                              // for, which may have been swapped meanwhile
+                              if (!appState.connector!.connected ||
+                                  appState.connector!.device != device) {
+                                scaffoldMessenger.showSnackBar(SnackBar(
+                                  content:
+                                      Text(localizations.chameleon_changed),
+                                  action: SnackBarAction(
+                                    label: localizations.close,
+                                    onPressed: () {},
+                                  ),
+                                ));
+                                return;
+                              }
+
+                              await flashWithProgress(
+                                  appState, scaffoldMessenger, localizations,
+                                  firmware: firmware);
+                            },
+                            child: Row(
+                              children: [
+                                const Icon(Icons.history),
+                                Text(localizations.flash_specific_version_dfu),
                               ],
                             ))),
                     const SizedBox(height: 10),
