@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
-import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/chameleon_settings.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -28,6 +27,10 @@ void main() {
   testWidgets(
     'all four button assignments load, save and reload field generator',
     (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final communicator = _SettingsCommunicator();
       final appState = ChameleonGUIState(SharedPreferencesProvider())
         ..communicator = communicator;
@@ -50,19 +53,18 @@ void main() {
       await openSettings();
       expect(find.text('NFC field generator'), findsNWidgets(4));
       for (var i = 0; i < 4; i++) {
-        final selector = find.byType(ToggleButtonsWrapper).at(i + 1);
-        final toggles = find.descendant(
-          of: selector,
-          matching: find.byType(ToggleButtons),
+        final selector = find.byType(DropdownButton<ButtonConfig>).at(i);
+        expect(
+          tester.widget<DropdownButton<ButtonConfig>>(selector).value,
+          ButtonConfig.nfcFieldGenerator,
         );
-        expect(tester.widget<ToggleButtons>(toggles).isSelected[5], isTrue);
 
         // Change away and back to prove each callback sends the right command.
         for (final label in ['Disable', 'NFC field generator']) {
-          final option = find.descendant(
-            of: selector,
-            matching: find.text(label),
-          );
+          await tester.ensureVisible(selector);
+          await tester.tap(selector);
+          await tester.pumpAndSettle();
+          final option = find.text(label).last;
           await tester.ensureVisible(option);
           await tester.tap(option);
           await tester.pumpAndSettle();
@@ -78,12 +80,10 @@ void main() {
 
       await tester.pumpWidget(const SizedBox());
       await openSettings();
-      for (final toggles
-          in tester
-              .widgetList<ToggleButtons>(find.byType(ToggleButtons))
-              .skip(1)
-              .take(4)) {
-        expect(toggles.isSelected[5], isTrue);
+      for (final selector in tester.widgetList<DropdownButton<ButtonConfig>>(
+        find.byType(DropdownButton<ButtonConfig>),
+      )) {
+        expect(selector.value, ButtonConfig.nfcFieldGenerator);
       }
       expect(tester.takeException(), isNull);
     },
