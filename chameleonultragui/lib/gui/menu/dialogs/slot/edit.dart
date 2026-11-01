@@ -862,7 +862,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                 DropdownButton<int>(
                                   value:
                                       int.tryParse(hidTypeController.text) ?? 1,
-                                  items: List.generate(30, (index) => index + 1)
+                                  items: hidProxFormats.keys
                                       .map<DropdownMenuItem<int>>((int type) {
                                     return DropdownMenuItem<int>(
                                       value: type,
