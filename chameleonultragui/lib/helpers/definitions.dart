@@ -719,8 +719,9 @@ class IoProxCard extends LFCard {
   }
 
   @override
-  String toViewableString() =>
-      '$cardNumber (Version: $version, FC: $facilityCode, ${toString()})';
+  String toViewableString() => uid.length < 4
+      ? toString()
+      : '$cardNumber (Version: $version, FC: $facilityCode, ${toString()})';
 
   factory IoProxCard.fromBytes(Uint8List bytes) {
     return IoProxCard(uid: bytes);
