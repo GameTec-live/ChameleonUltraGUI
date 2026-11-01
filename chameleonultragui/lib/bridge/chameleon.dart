@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:chameleonultragui/helpers/definitions.dart';
+import 'package:chameleonultragui/helpers/em4x05.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
@@ -1332,22 +1333,22 @@ class ChameleonCommunicator {
             [block, ...word, usePwd ? 1 : 0, ...pwd, page1 ? 1 : 0]));
   }
 
-  Future<(int, int, int, bool, int)> scanEM4X05({int password = 0}) async {
-    var data = (await sendCmd(ChameleonCommand.scanEM4X05Tag,
-            data: Uint8List.fromList([
-              (password >> 24) & 0xFF,
-              (password >> 16) & 0xFF,
-              (password >> 8) & 0xFF,
-              password & 0xFF
-            ])))!
-        .data;
-    return (
-      bytesToU32(data.sublist(0, 4)),
-      bytesToU32(data.sublist(4, 8)),
-      bytesToU32(data.sublist(8, 12)),
-      data[12] == 1,
-      data[13]
-    );
+  Future<EM4X05Scan> scanEM4X05({int password = 0}) async {
+    if (password < 0 || password > 0xFFFFFFFF) {
+      throw ArgumentError.value(password, 'password', 'Expected a 32-bit word');
+    }
+    final response = (await sendCmd(
+      ChameleonCommand.scanEM4X05Tag,
+      data: Uint8List(4)
+        ..buffer.asByteData().setUint32(0, password, Endian.big),
+    ))!;
+    // LF_TAG_OK, as required by the CLI's em4x05_scan command.
+    if (response.status != 0x40) {
+      throw StateError(
+        'EM4x05 scan failed (0x${response.status.toRadixString(16)})',
+      );
+    }
+    return EM4X05Scan.fromBytes(response.data);
   }
 
   Future<(int, Uint8List)> hf14a4ApduRecv() async {

@@ -14,6 +14,7 @@
       - [Saved cards](#saved-cards)
       - [Read cards](#read-cards)
       - [Write cards](#write-cards)
+      - [EM4x05 / EM4x69 reader](#em4x05--em4x69-reader)
       - [Settings](#settings)
   - [Contributing](#contributing)
   - [Translations](#translations)
@@ -115,6 +116,12 @@ You can save it to use it in a slot. You can read HF and LF cards. When you read
 #### Write cards
 
 **Unimplemented yet**
+
+#### EM4x05 / EM4x69 reader
+
+Connect a Chameleon Ultra with firmware that supports EM4x05 scanning, then open **Tools → EM4x05 / EM4x69 reader**. Place the tag on the LF antenna, enter its eight-digit hexadecimal password (default `00000000`), and select **Read Card**.
+
+The result shows the detected tag family, 32-bit EM4x05 or 64-bit EM4x69 UID, configuration word, UID block, and whether LOGIN was used. This matches the firmware/CLI reader support; writing and emulation are not available for these tag families.
 
 #### Settings
 

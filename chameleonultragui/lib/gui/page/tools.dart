@@ -4,6 +4,7 @@ import 'package:chameleonultragui/gui/menu/tools/hf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/lf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/gui/menu/tools/em4x05_reader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:chameleonultragui/gui/component/element_button.dart';
@@ -41,6 +42,12 @@ class ToolsPageState extends State<ToolsPage> {
     var localizations = AppLocalizations.of(context)!;
 
     List<ToolItem> tools = [
+      ToolItem(
+          name: localizations.em4x05_reader,
+          description: localizations.em4x05_reader_description,
+          icon: Icons.contactless,
+          onPressed: const EM4X05ReaderMenu(),
+          isDeviceRequired: true),
       ToolItem(
           name: localizations.dictionary_download,
           description: localizations.dictionary_download_description,
