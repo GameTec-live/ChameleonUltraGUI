@@ -58,8 +58,7 @@ class SlotExportMenuState extends State<SlotExportMenu> {
         );
       } else if (widget.slotTypes.lf == TagType.jablotron) {
         return CardSave(
-          uid: (await appState.communicator!.getJablotronEmulatorID())
-              .toString(),
+          uid: (await appState.communicator!.getJablotronEmulatorID()).toString(),
           name: widget.names.lf,
           tag: widget.slotTypes.lf,
         );
