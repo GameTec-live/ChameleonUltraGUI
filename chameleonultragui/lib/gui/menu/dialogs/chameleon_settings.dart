@@ -259,20 +259,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.forward,
                           localizations.backward,
                           localizations.clone_uid,
-                          localizations.charge
+                          localizations.charge,
+                          localizations.nfc_field_generator
                         ],
                         selectedValue: settings.aPress.value,
                         onChange: (int index) async {
-                          var mode = ButtonConfig.disable;
-                          if (index == 1) {
-                            mode = ButtonConfig.cycleForward;
-                          } else if (index == 2) {
-                            mode = ButtonConfig.cycleBackward;
-                          } else if (index == 3) {
-                            mode = ButtonConfig.cloneUID;
-                          } else if (index == 4) {
-                            mode = ButtonConfig.chargeStatus;
-                          }
+                          var mode = getButtonConfigType(index);
 
                           await appState.communicator!
                               .setButtonConfig(ButtonType.a, mode);
@@ -291,20 +283,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.forward,
                           localizations.backward,
                           localizations.clone_uid,
-                          localizations.charge
+                          localizations.charge,
+                          localizations.nfc_field_generator
                         ],
                         selectedValue: settings.bPress.value,
                         onChange: (int index) async {
-                          var mode = ButtonConfig.disable;
-                          if (index == 1) {
-                            mode = ButtonConfig.cycleForward;
-                          } else if (index == 2) {
-                            mode = ButtonConfig.cycleBackward;
-                          } else if (index == 3) {
-                            mode = ButtonConfig.cloneUID;
-                          } else if (index == 4) {
-                            mode = ButtonConfig.chargeStatus;
-                          }
+                          var mode = getButtonConfigType(index);
 
                           await appState.communicator!
                               .setButtonConfig(ButtonType.b, mode);
@@ -326,20 +310,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.forward,
                           localizations.backward,
                           localizations.clone_uid,
-                          localizations.charge
+                          localizations.charge,
+                          localizations.nfc_field_generator
                         ],
                         selectedValue: settings.aLongPress.value,
                         onChange: (int index) async {
-                          var mode = ButtonConfig.disable;
-                          if (index == 1) {
-                            mode = ButtonConfig.cycleForward;
-                          } else if (index == 2) {
-                            mode = ButtonConfig.cycleBackward;
-                          } else if (index == 3) {
-                            mode = ButtonConfig.cloneUID;
-                          } else if (index == 4) {
-                            mode = ButtonConfig.chargeStatus;
-                          }
+                          var mode = getButtonConfigType(index);
 
                           await appState.communicator!
                               .setLongButtonConfig(ButtonType.a, mode);
@@ -358,20 +334,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.forward,
                           localizations.backward,
                           localizations.clone_uid,
-                          localizations.charge
+                          localizations.charge,
+                          localizations.nfc_field_generator
                         ],
                         selectedValue: settings.bLongPress.value,
                         onChange: (int index) async {
-                          var mode = ButtonConfig.disable;
-                          if (index == 1) {
-                            mode = ButtonConfig.cycleForward;
-                          } else if (index == 2) {
-                            mode = ButtonConfig.cycleBackward;
-                          } else if (index == 3) {
-                            mode = ButtonConfig.cloneUID;
-                          } else if (index == 4) {
-                            mode = ButtonConfig.chargeStatus;
-                          }
+                          var mode = getButtonConfigType(index);
 
                           await appState.communicator!
                               .setLongButtonConfig(ButtonType.b, mode);

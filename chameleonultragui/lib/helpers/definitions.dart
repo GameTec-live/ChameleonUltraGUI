@@ -278,7 +278,8 @@ enum ButtonConfig {
   cycleForward(1),
   cycleBackward(2),
   cloneUID(3),
-  chargeStatus(4);
+  chargeStatus(4),
+  nfcFieldGenerator(5);
 
   const ButtonConfig(this.value);
   final int value;

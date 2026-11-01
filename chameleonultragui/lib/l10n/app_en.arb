@@ -121,6 +121,7 @@
   "forward": "Forward",
   "backward": "Backward",
   "clone_uid": "Clone UID",
+  "nfc_field_generator": "NFC field generator",
   "other": "Other",
   "reset_settings": "Reset settings",
   "factory_reset": "Factory reset",
