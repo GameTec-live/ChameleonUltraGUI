@@ -575,5 +575,14 @@
   "enable_vanity_sak": "Enable Vanity SAK",
   "enable_vanity_sak_tooltip": "When enabled, SAK stored in block 0 is increased by 0x80, mimicking genuine cards, primarily 7-byte UID ones.\nDefault on for 7-byte UID cards, off for 4, since some of them replay this byte as is.",
   "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)",
-  "long_press_threshold": "Long press threshold (ms):"
+  "long_press_threshold": "Long press threshold (ms):",
+  "t55xx_block_editor": "T55xx block editor",
+  "t55xx_block_editor_description": "Write raw 32-bit blocks to T55xx tags",
+  "t55xx_block_editor_notice": "Firmware supports writes only, with no raw block readback. A successful command does not verify the tag contents. Writing configuration (page 0, block 0) or password (page 0, block 7) can change tag access. Place the tag on the LF antenna and check the target and data before writing.",
+  "t55xx_block_editor_unsupported": "This firmware does not support raw T55xx writes. Update your firmware and use a Chameleon Ultra.",
+  "t55xx_block_editor_checking": "Checking firmware support…",
+  "t55xx_block_editor_page": "Page",
+  "t55xx_block_editor_data": "Block data (8 hex digits)",
+  "t55xx_block_editor_use_password": "Authenticate with password",
+  "t55xx_block_editor_sent": "Write command completed. Tag contents have not been verified."
 }
