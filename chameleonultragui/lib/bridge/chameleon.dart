@@ -419,6 +419,46 @@ class ChameleonCommunicator {
     return resp!.status == 0 ? resp.data.sublist(1) : null;
   }
 
+  /// Mask bits are MSB-first, interleaved A/B per sector; set bits skip keys.
+  /// Returned indices use the same firmware order (sector * 2 + key type).
+  Future<Map<int, Uint8List>> mf1CheckKeysOfSectors(
+    Uint8List mask,
+    List<Uint8List> keys,
+  ) async {
+    if (mask.length != 10 ||
+        keys.isEmpty ||
+        keys.length > 83 ||
+        keys.any((key) => key.length != 6)) {
+      throw ArgumentError('Expected a 10-byte mask and 1–83 six-byte keys');
+    }
+    var remaining = 0;
+    for (var index = 0; index < 80; index++) {
+      if (mask[index ~/ 8] & (0x80 >> (index % 8)) == 0) remaining++;
+    }
+    if (remaining == 0) return {};
+
+    final response = (await sendCmd(
+      ChameleonCommand.mf1CheckKeysOfSectors,
+      data: Uint8List.fromList([...mask, ...keys.expand((key) => key)]),
+      timeout: Duration(
+        milliseconds: 1000 + (remaining + 1) * keys.length * 100,
+      ),
+    ))!;
+    // A removed card can still yield keys found before it left the field.
+    if (response.status != 0 && response.status != 1) {
+      throw StateError('Sector key check failed: ${response.status}');
+    }
+    if (response.data.isEmpty && response.status == 1) return {};
+    if (response.data.length != 490) {
+      throw const FormatException('Invalid sector key check response length');
+    }
+    return {
+      for (var index = 0; index < 80; index++)
+        if (response.data[index ~/ 8] & (0x80 >> (index % 8)) != 0)
+          index: response.data.sublist(10 + index * 6, 16 + index * 6),
+    };
+  }
+
   Future<Uint8List> mf1ReadBlock(int block, int keyType, Uint8List key) async {
     // Read block
     // keyType 0x60 if A key, 0x61 B key
