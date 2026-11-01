@@ -12,10 +12,12 @@ enum _Operation { read, write, increment, decrement, restore }
 class MifareValueBlockDialog extends StatefulWidget {
   final ChameleonCommunicator communicator;
   final MifareClassicType type;
+  final bool isEV1;
   const MifareValueBlockDialog({
     super.key,
     required this.communicator,
     required this.type,
+    this.isEV1 = false,
   });
   @override
   State<MifareValueBlockDialog> createState() => _MifareValueBlockDialogState();
@@ -83,7 +85,7 @@ class _MifareValueBlockDialogState extends State<MifareValueBlockDialog> {
     final block = int.tryParse(text ?? '');
     if (block == null ||
         block <= 0 ||
-        block >= mfClassicGetBlockCount(widget.type) ||
+        block >= mfClassicGetBlockCount(widget.type, isEV1: widget.isEV1) ||
         block ==
             mfClassicGetSectorTrailerBlockBySector(
               mfClassicGetSectorByBlock(block),
@@ -110,22 +112,29 @@ class _MifareValueBlockDialogState extends State<MifareValueBlockDialog> {
       final c = widget.communicator;
       final source = int.parse(_source.text);
       final sourceKey = hexToBytes(_sourceKey.text);
-      await c.setReaderDeviceMode(true);
+      final sourceType = _sourceType;
       if (_manipulates) {
         final operator = switch (_operation) {
           _Operation.increment => MifareClassicValueBlockOperator.increment,
           _Operation.decrement => MifareClassicValueBlockOperator.decrement,
           _ => MifareClassicValueBlockOperator.restore,
         };
+        final amount = _operation == _Operation.restore
+            ? 0
+            : int.parse(_value.text);
+        final destination = int.parse(_destination.text);
+        final destinationType = _destinationType;
+        final destinationKey = hexToBytes(_destinationKey.text);
+        await c.setReaderDeviceMode(true);
         await c.manipulateValueBlock(
           source,
-          _sourceType,
+          sourceType,
           sourceKey,
           operator,
-          _operation == _Operation.restore ? 0 : int.parse(_value.text),
-          int.parse(_destination.text),
-          _destinationType,
-          hexToBytes(_destinationKey.text),
+          amount,
+          destination,
+          destinationType,
+          destinationKey,
         );
         if (mounted) setState(() => _result = l.value_block_done);
       } else if (_operation == _Operation.write) {
@@ -135,12 +144,14 @@ class _MifareValueBlockDialogState extends State<MifareValueBlockDialog> {
             int.parse(_address.text),
           ),
         );
-        if (!await c.mf1WriteBlock(source, _sourceType, sourceKey, data)) {
+        await c.setReaderDeviceMode(true);
+        if (!await c.mf1WriteBlock(source, sourceType, sourceKey, data)) {
           throw StateError(l.value_block_failed);
         }
         if (mounted) setState(() => _result = l.value_block_done);
       } else {
-        final data = await c.mf1ReadBlock(source, _sourceType, sourceKey);
+        await c.setReaderDeviceMode(true);
+        final data = await c.mf1ReadBlock(source, sourceType, sourceKey);
         final hex = bytesToHex(data);
         final value = MifareClassicDumpAnalyzer.valueBlockToInt(hex);
         final address = MifareClassicDumpAnalyzer.valueBlockAddress(hex);

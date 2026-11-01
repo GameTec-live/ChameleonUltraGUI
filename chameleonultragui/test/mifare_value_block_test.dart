@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
@@ -16,6 +17,7 @@ class RecordingCommunicator extends ChameleonCommunicator {
   final calls = <(ChameleonCommand, Uint8List?)>[];
   int status = 0;
   bool supported = true;
+  Completer<void>? readerModeGate;
   @override
   Future<ChameleonMessage?> sendCmd(
     ChameleonCommand cmd, {
@@ -25,6 +27,9 @@ class RecordingCommunicator extends ChameleonCommunicator {
     bool firstRun = false,
   }) async {
     calls.add((cmd, data));
+    if (cmd == ChameleonCommand.changeDeviceMode) {
+      await readerModeGate?.future;
+    }
     final payload = cmd == ChameleonCommand.getDeviceCapabilities
         ? Uint8List.fromList(
             supported ? [0x07, 0xD8, 0x07, 0xD9, 0x07, 0xDB] : [],
@@ -40,13 +45,14 @@ Future<void> openDialog(
   WidgetTester tester,
   RecordingCommunicator c, {
   MifareClassicType type = MifareClassicType.m1k,
+  bool isEV1 = false,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
-        body: MifareValueBlockDialog(communicator: c, type: type),
+        body: MifareValueBlockDialog(communicator: c, type: type, isEV1: isEV1),
       ),
     ),
   );
@@ -54,7 +60,9 @@ Future<void> openDialog(
 }
 
 Future<void> selectOperation(WidgetTester tester, String label) async {
-  await tester.tap(find.byWidgetPredicate((widget) => widget is DropdownButtonFormField).first);
+  await tester.tap(
+    find.byWidgetPredicate((widget) => widget is DropdownButtonFormField).first,
+  );
   await tester.pumpAndSettle();
   await tester.tap(find.text(label).last);
   await tester.pumpAndSettle();
@@ -116,6 +124,89 @@ void main() {
     },
   );
 
+  for (final operation in ['Increment', 'Write value']) {
+    testWidgets('$operation uses inputs captured before reader-mode setup', (
+      tester,
+    ) async {
+      final c = RecordingCommunicator()..readerModeGate = Completer<void>();
+      await openDialog(tester, c);
+      await selectOperation(tester, operation);
+      final fields = find.byType(TextFormField);
+      if (operation == 'Increment') {
+        await tester.enterText(fields.at(2), '8');
+        await tester.enterText(fields.at(3), 'A0A1A2A3A4A5');
+        await tester.enterText(fields.at(4), '12');
+      } else {
+        await tester.enterText(fields.at(2), '-12');
+        await tester.enterText(fields.at(3), '9');
+      }
+      await tester.ensureVisible(
+        find.widgetWithText(ElevatedButton, operation),
+      );
+      await tester.tap(find.widgetWithText(ElevatedButton, operation));
+      await tester.pump();
+      // Keyboard input can still reach the focused editor while taps are blocked.
+      tester.testTextInput.enterText(operation == 'Increment' ? '999' : '255');
+      await tester.pump();
+      if (operation == 'Increment') {
+        tester.widget<TextFormField>(fields.at(2)).controller!.text = '12';
+        tester.widget<TextFormField>(fields.at(3)).controller!.text =
+            'BBBBBBBBBBBB';
+      } else {
+        tester.widget<TextFormField>(fields.at(2)).controller!.text = '123';
+      }
+      c.readerModeGate!.complete();
+      await tester.pumpAndSettle();
+      if (operation == 'Increment') {
+        expect(c.calls.last.$2!.sublist(9), [
+          0,
+          0,
+          0,
+          12,
+          0x60,
+          8,
+          0xA0,
+          0xA1,
+          0xA2,
+          0xA3,
+          0xA4,
+          0xA5,
+        ]);
+      } else {
+        expect(
+          c.calls.last.$2!.sublist(8),
+          hexToBytes(MifareClassicDumpAnalyzer.intToValueBlock(-12, 9)),
+        );
+      }
+    });
+  }
+
+  testWidgets(
+    'EV1 extra data blocks are available only for detected EV1 cards',
+    (tester) async {
+      final c = RecordingCommunicator();
+      await openDialog(tester, c, isEV1: true);
+      for (final block in ['64', '69']) {
+        await tester.enterText(find.byType(TextFormField).first, block);
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Read value'));
+        await tester.pumpAndSettle();
+        expect(c.calls.last.$1, ChameleonCommand.mf1ReadBlock);
+        expect(c.calls.last.$2![1], int.parse(block));
+      }
+      await tester.enterText(find.byType(TextFormField).first, '72');
+      c.calls.clear();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Read value'));
+      await tester.pumpAndSettle();
+      expect(c.calls, isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await openDialog(tester, c);
+      await tester.enterText(find.byType(TextFormField).first, '64');
+      c.calls.clear();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Read value'));
+      await tester.pumpAndSettle();
+      expect(c.calls, isEmpty);
+    },
+  );
   testWidgets('read displays signed live value and address', (tester) async {
     final c = RecordingCommunicator();
     await openDialog(tester, c);
