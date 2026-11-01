@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/slot/edit.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/slot/export.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/slot/sl1_profile_status.dart';
 import 'package:chameleonultragui/gui/menu/pages/dump_editor.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
@@ -226,6 +227,21 @@ class SlotSettingsState extends State<SlotSettings> {
                 ),
                 content: SingleChildScrollView(
                     child: Column(children: [
+                  ExpansionTile(
+                      title: Text(localizations.advanced),
+                      children: [
+                        TextButton(
+                          onPressed: () => showDialog(
+                            context: context,
+                            builder: (_) => Sl1SlotDialog(
+                              slot: widget.slot,
+                              uploader: appState.communicator!.sl1Uploader,
+                            ),
+                          ),
+                          child: Text(localizations.card_auth_diagnostics),
+                        ),
+                      ],
+                    ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

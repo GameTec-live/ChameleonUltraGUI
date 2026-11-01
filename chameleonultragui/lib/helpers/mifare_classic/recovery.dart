@@ -1,3 +1,7 @@
+import 'package:chameleonultragui/helpers/classic_coverage.dart';
+import 'package:chameleonultragui/helpers/sl1_profile.dart';
+import 'package:chameleonultragui/helpers/sl1_card_save.dart';
+
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -37,6 +41,153 @@ class MifareClassicRecovery {
   List<ChameleonKeyCheckmark> checkMarks;
   List<Uint8List> validKeys;
   List<Uint8List> cardData;
+  List<Map<String, dynamic>> readCoverage = [];
+  bool readCoverageEdited = false;
+  CardData? _acquisitionIdentity;
+  bool _acquisitionComplete = false;
+  ClassicCoverage? _acquiredCoverage;
+  final Set<String> _readVerifiedKeys = {};
+  String _identity(CardData card) =>
+      '${Sl1Profile.encodeBytes(card.uid)}:${Sl1Profile.encodeBytes(card.atqa)}:${card.sak}:${Sl1Profile.encodeBytes(card.ats)}';
+  void bindIdentity(CardData card) {
+    _acquisitionIdentity = CardData(
+      uid: Uint8List.fromList(card.uid),
+      atqa: Uint8List.fromList(card.atqa),
+      sak: card.sak,
+      ats: Uint8List.fromList(card.ats),
+    );
+    _acquisitionComplete = false;
+    _acquiredCoverage = null;
+    _readVerifiedKeys.clear();
+  }
+
+  Future<void> requireIdentity() async {
+    final expected = _acquisitionIdentity;
+    if (expected == null) {
+      throw StateError(
+        'Read session has no bound card identity; scan the card again',
+      );
+    }
+    final current = expected.ats.isEmpty
+        ? await appState.communicator!.scan14443aTag()
+        : await appState.communicator!.scan14443aTagWithAts();
+    if (current == null || _identity(current) != _identity(expected)) {
+      _acquisitionComplete = false;
+      throw StateError(
+        'Card identity changed or disappeared during acquisition; scan the intended card again',
+      );
+    }
+  }
+
+  ClassicCoverage _observedCoverage() {
+    final expected = _acquisitionIdentity!;
+    final count = mfClassicGetBlockCount(
+      mifareClassicType,
+      isEV1: isMifareClassicEV1,
+    );
+    final sectors = mfClassicGetSectorCount(
+      mifareClassicType,
+      isEV1: isMifareClassicEV1,
+    );
+    final c = <String, dynamic>{
+      'type': isMifareClassicEV1
+          ? ClassicCoverage.nativeEv1Type
+          : sl1Type(mfClassicGetChameleonTagType(mifareClassicType)),
+      'provenance': 'read',
+      'blocks': readCoverage.take(count).toList(),
+      'keys': List.generate(
+        sectors,
+        (_) => {
+          'a': {'value': null, 'status': 'unknown', 'evidence': null},
+          'b': {'value': null, 'status': 'unknown', 'evidence': null},
+        },
+      ),
+    };
+    for (var sector = 0; sector < c['keys'].length; sector++) {
+      for (var keyType = 0; keyType < 2; keyType++) {
+        final key = getSectorKey(sector, keyType);
+        if (key.length == 6) {
+          c['keys'][sector][keyType == 0 ? 'a' : 'b'] = {
+            'value': Sl1Profile.encodeBytes(key),
+            'status': _readVerifiedKeys.contains('$sector/$keyType')
+                ? 'verified'
+                : 'provided',
+            'evidence': _readVerifiedKeys.contains('$sector/$keyType')
+                ? 'Classic authenticated read for ${_identity(expected)}'
+                : null,
+          };
+        }
+        if (keyType == 1 && !_readVerifiedKeys.contains('$sector/1')) {
+          final trailer = mfClassicGetSectorTrailerBlockBySector(sector);
+          final observed = c['blocks'][trailer]['data'] as String;
+          final b = observed.substring(20);
+          if (!b.contains('?') &&
+              c['blocks'][trailer]['key'] == 'A' &&
+              c['blocks'][trailer]['status'] == 'read') {
+            c['keys'][sector]['b'] = {
+              'value': b,
+              'status': 'verified',
+              'evidence':
+                  'Key B bytes read under trailer access conditions with Key A',
+            };
+          }
+        }
+      }
+    }
+    return ClassicCoverage.fromClassic(c, nativeEv1: isMifareClassicEV1);
+  }
+
+  ClassicCoverage coverageFor(CardSave card) {
+    final expected = _acquisitionIdentity;
+    final savedIdentity = CardData(
+      uid: hexToBytes(card.uid),
+      atqa: card.atqa,
+      sak: card.sak,
+      ats: card.ats,
+    );
+    if (!_acquisitionComplete ||
+        expected == null ||
+        _acquiredCoverage == null ||
+        _identity(savedIdentity) != _identity(expected)) {
+      throw StateError(
+        'Acquisition is incomplete or does not match the saved identity',
+      );
+    }
+    final coverage = _acquiredCoverage!.copy();
+    if (card.tag != mfClassicGetChameleonTagType(mifareClassicType) ||
+        card.data
+            .skip(coverage.json['blocks'].length as int)
+            .any((b) => b.isNotEmpty)) {
+      throw const FormatException(
+        'Card geometry differs from the canonical acquisition; retain all source observations',
+      );
+    }
+    coverage.reconcile(card.data);
+    return coverage;
+  }
+
+  Sl1Profile profileFor(CardSave card) {
+    if (isMifareClassicEV1) {
+      throw const FormatException(
+        'Classic 1K EV1 includes 72 blocks and uses native archival coverage, not common profile v1',
+      );
+    }
+    final coverage = coverageFor(card);
+    return Sl1Profile.fromJson({
+      'format': 'chameleon-sl1-profile',
+      'version': 1,
+      'name': card.name,
+      'hf14a': {
+        'uid': card.uid.replaceAll(' ', '').toUpperCase(),
+        'atqa': Sl1Profile.encodeBytes(card.atqa.reversed),
+        'sak': Sl1Profile.encodeBytes([card.sak]),
+        'ats': Sl1Profile.encodeBytes(card.ats),
+      },
+      'classic': coverage.json,
+      'cardAuth': null,
+    });
+  }
+
   double dumpProgress;
   double? hardnestedProgress;
   double? keyCheckProgress;
@@ -68,11 +219,12 @@ class MifareClassicRecovery {
 
   Future<bool> checkKeysOnSector(
       List<Uint8List> keys, int keyType, int sector) async {
+    await requireIdentity();
     state = localizations.checking_keys(keys.length);
     Uint8List? key;
     keyCheckProgress = null;
     int chunkSize =
-        appState.connector!.connectionType == ConnectionType.ble ? 32 : 64;
+        appState.connector?.connectionType == ConnectionType.ble ? 32 : 64;
 
     if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found &&
         getSectorState(sector, keyType) != ChameleonKeyCheckmark.disabled) {
@@ -83,7 +235,9 @@ class MifareClassicRecovery {
         key = await appState.communicator!.mf1AuthMultipleKeys(
             mfClassicGetSectorTrailerBlockBySector(sector),
             0x60 + keyType,
-            chunk);
+            chunk,
+        );
+        await requireIdentity();
         if (key != null) {
           setKeyAsFound(sector, keyType, key);
           keyCheckProgress = null;
@@ -127,6 +281,14 @@ class MifareClassicRecovery {
       await appState.communicator!.setReaderDeviceMode(true);
     }
 
+    if (_acquisitionIdentity == null) {
+      final selected = await appState.communicator!.scan14443aTag();
+      if (selected == null) {
+        throw StateError('Card disappeared during initialization');
+      }
+      bindIdentity(selected);
+    }
+    await requireIdentity();
     var mifare = await appState.communicator!.detectMf1Support();
 
     if (mifare) {
@@ -146,6 +308,7 @@ class MifareClassicRecovery {
             mfClassicGetSectorCount(mifareClassicType,
                 isEV1: isMifareClassicEV1);
         sector++) {
+      await requireIdentity();
       for (var keyType = 0; keyType < 2; keyType++) {
         if (getSectorState(sector, keyType) == ChameleonKeyCheckmark.none) {
           state = localizations.checking_keys(1);
@@ -163,6 +326,7 @@ class MifareClassicRecovery {
             setMissingSector(sector, keyType);
           }
 
+          await requireIdentity();
           update();
         }
       }
@@ -569,13 +733,28 @@ class MifareClassicRecovery {
   }
 
   Future<void> dumpData() async {
+    _acquisitionComplete = false;
+    _acquiredCoverage = null;
+    _readVerifiedKeys.clear();
+    await requireIdentity();
     cardData = List.generate(256, (_) => Uint8List(0));
+    readCoverageEdited = false;
+    readCoverage = List.generate(
+      256,
+      (_) => <String, dynamic>{
+        'data': '??' * 16,
+        'status': 'unread',
+        'key': null,
+        'errors': <Map<String, dynamic>>[],
+      },
+    );
 
     for (var sector = 0;
         sector <
             mfClassicGetSectorCount(mifareClassicType,
                 isEV1: isMifareClassicEV1);
         sector++) {
+      await requireIdentity();
       for (var block = 0;
           block < mfClassicGetBlockCountBySector(sector);
           block++) {
@@ -585,22 +764,60 @@ class MifareClassicRecovery {
 
           if (getSectorKey(sector, keyType).isEmpty) {
             appState.log!.w("Skipping missing key");
-            cardData[block + mfClassicGetFirstBlockCountBySector(sector)] =
-                Uint8List(16);
             continue;
           }
 
-          var blockData = await appState.communicator!.mf1ReadBlock(
+          final coverage =
+              readCoverage[block + mfClassicGetFirstBlockCountBySector(sector)];
+          Uint8List blockData;
+          try {
+            blockData = await appState.communicator!.mf1ReadBlock(
               block + mfClassicGetFirstBlockCountBySector(sector),
               0x60 + keyType,
               getSectorKey(sector, keyType));
-
-          if (blockData.isEmpty) {
-            if (keyType == 1) {
-              blockData = Uint8List(16);
-            } else {
-              continue;
+          } catch (error) {
+            coverage['status'] = 'error';
+            coverage['errors'].add({
+              'key': keyType == 0 ? 'A' : 'B',
+              'status': null,
+              'reason': error.toString(),
+            });
+            continue;
+          }
+          if (blockData.length != 16) {
+            coverage['status'] = 'error';
+            coverage['errors'].add({
+              'key': keyType == 0 ? 'A' : 'B',
+              'status': appState.communicator!.lastMf1ReadStatus,
+              'reason': 'Read returned no complete block',
+            });
+            continue;
             }
+          _readVerifiedKeys.add('$sector/$keyType');
+          coverage['status'] = 'read';
+          coverage['key'] = keyType == 0 ? 'A' : 'B';
+          coverage['data'] = Sl1Profile.encodeBytes(blockData);
+
+          if (mfClassicGetSectorTrailerBlockBySector(sector) ==
+              block + mfClassicGetFirstBlockCountBySector(sector)) {
+            // Key A is masked on every trailer read. Key B is readable only
+            // for trailer access conditions 000, 001 or 010, with Key A.
+            final validAccess =
+                (((blockData[6] & 15) ^ (blockData[7] >> 4)) == 15 &&
+                ((blockData[6] >> 4) ^ (blockData[8] & 15)) == 15 &&
+                ((blockData[7] & 15) ^ (blockData[8] >> 4)) == 15);
+            final access =
+                ((blockData[7] >> 7) & 1) * 4 +
+                ((blockData[8] >> 3) & 1) * 2 +
+                ((blockData[8] >> 7) & 1);
+            final readableB =
+                validAccess && keyType == 0 && [0, 1, 2].contains(access);
+            coverage['data'] =
+                '??' * 6 +
+                Sl1Profile.encodeBytes(blockData.sublist(6, 10)) +
+                (readableB
+                    ? Sl1Profile.encodeBytes(blockData.sublist(10, 16))
+                    : '??' * 6);
           }
 
           if (mfClassicGetSectorTrailerBlockBySector(sector) ==
@@ -610,7 +827,8 @@ class MifareClassicRecovery {
               blockData.setRange(0, 6, getSectorKey(sector, 0));
             }
 
-            if (getSectorKey(sector, 1).isNotEmpty) {
+            if (getSectorKey(sector, 1).isNotEmpty &&
+                (coverage['data'] as String).substring(20).contains('?')) {
               blockData.setRange(10, 16, getSectorKey(sector, 1));
             }
           }
@@ -627,7 +845,12 @@ class MifareClassicRecovery {
           break;
         }
       }
+      await requireIdentity();
     }
+    await requireIdentity();
+    _acquisitionComplete = true;
+    _acquiredCoverage = _observedCoverage();
+    cardData = _acquiredCoverage!.project(fillKnownKeys: true);
   }
 
   Future<dynamic> collectHardnestedNonces(int block, int keyType,

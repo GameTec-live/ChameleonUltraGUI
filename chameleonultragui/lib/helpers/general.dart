@@ -1,3 +1,5 @@
+import 'package:chameleonultragui/helpers/sl1_card_save.dart';
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -376,14 +378,85 @@ AnimationSetting getAnimationModeType(int value) {
   }
 }
 
-Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
+Uint8List classicExportBytesForCard(CardSave card) {
+  card.validateProfileConsistency();
+  if (card.nativeClassicCoverage != null) {
+    return card.nativeClassicCoverage!.copy().image();
+  }
+  if (chameleonTagSaveCheckForMifareClassicEV1(card)) {
+    if (card.data.length < 72 ||
+        card.data.take(72).any((b) => b.length != 16) ||
+        card.data.skip(72).any((b) => b.isNotEmpty)) {
+      throw const FormatException(
+        'EV1 binary export requires all 72 complete blocks. Export native JSON to retain unknown block positions.',
+      );
+    }
+    return Uint8List.fromList(card.data.take(72).expand((b) => b).toList());
+  }
+  if (card.sl1Profile != null) {
+    return Uint8List.fromList(
+      card.sl1Profile!.image().expand((b) => b).toList(),
+    );
+  }
+  return mfClassicGetExportBytes(
+    chameleonTagTypeGetMfClassicType(card.tag),
+    card.data,
+  );
+}
+
+Future<bool> saveTag(CardSave tag, BuildContext context, bool bin) async {
+  try {
+    await _saveTagFile(tag, context, bin);
+    return true;
+  } catch (error) {
+    if (!context.mounted) return false;
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Card export failed'),
+        content: Text(
+          '$error\nExport JSON to preserve incomplete coverage, or acquire a complete image before exporting binary.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+    return false;
+  }
+}
+
+Future<void> _saveTagFile(CardSave tag, BuildContext context, bool bin) async {
+  tag.validateProfileConsistency();
   var localizations = AppLocalizations.of(context)!;
+  if (isMifareClassic(tag.tag) &&
+      chameleonTagSaveCheckForMifareClassicEV1(tag)) {
+    // Native archival retains all EV1 positions and any existing metadata;
+    // composite memory is not a common-v1 standalone profile.
+    await FilePicker.saveFile(
+      dialogTitle: '${localizations.output_file}:',
+      fileName: '${tag.name}.${bin ? 'bin' : 'json'}',
+      bytes: bin
+          ? classicExportBytesForCard(tag)
+          : const Utf8Encoder().convert(tag.toJson()),
+    );
+    return;
+  }
+  if (!bin && tag.sl1Profile != null) {
+    await FilePicker.saveFile(
+      dialogTitle: '${localizations.output_file}:',
+      fileName: '${tag.name}.json',
+      bytes: const Utf8Encoder().convert(exportSl1Card(tag)),
+    );
+    return;
+  }
   if (bin) {
     Uint8List tagDump;
     if (isMifareClassic(tag.tag)) {
-      tagDump = mfClassicGetExportBytes(
-          chameleonTagTypeGetMfClassicType(tag.tag), tag.data,
-          isEV1: chameleonTagSaveCheckForMifareClassicEV1(tag));
+      tagDump = classicExportBytesForCard(tag);
     } else {
       List<int> dump = [];
       for (var block in tag.data) {
@@ -407,9 +480,16 @@ Future<void> saveTag(CardSave tag, BuildContext context, bool bin) async {
           ats: tag.ats,
           name: tag.name,
           tag: tag.tag,
-          data: mfClassicGetExportBlocks(
+          data: chameleonTagSaveCheckForMifareClassicEV1(tag)
+            ? List.generate(
+                72,
+                (i) => i < tag.data.length
+                    ? Uint8List.fromList(tag.data[i])
+                    : Uint8List(0),
+              )
+            : mfClassicGetExportBlocks(
               chameleonTagTypeGetMfClassicType(tag.tag), tag.data,
-              isEV1: chameleonTagSaveCheckForMifareClassicEV1(tag)),
+              ),
           extraData: tag.extraData,
           folderId: tag.folderId,
           color: tag.color);
@@ -632,8 +712,13 @@ Future<(HFCardInfo, MifareClassicInfo, MifareUltralightInfo)> readHFInfo(
           await performMifareUltralightScan(appState.communicator!, mfuInfo);
     } else {
       if (context.mounted) {
+        card = await appState.communicator!.scan14443aTagWithAts(selected: card);
+        if (card == null) throw StateError('Card disappeared while reading ATS');
+        if (!context.mounted) throw StateError('Card reading was cancelled');
         (type, mfcInfo) = await performMifareClassicScan(appState.communicator!,
-            mfcInfo, context, updateMifareClassicRecovery);
+            mfcInfo, context, updateMifareClassicRecovery,
+          expectedIdentity: card,
+        );
       }
     }
 
@@ -647,7 +732,8 @@ Future<(HFCardInfo, MifareClassicInfo, MifareUltralightInfo)> readHFInfo(
         ? MifareClassicState.checkKeys
         : MifareClassicState.none;
     hfInfo.tech = chameleonTagToString(type, localizations) +
-        (mfcInfo.isEV1 ? " EV1" : "");
+        (mfcInfo.isEV1 ? " EV1" : "") +
+        (mfcInfo.sl1CardAuthDetected ? ' (SL1 CardAuth)' : '');
   } catch (e) {
     appState.log!.e(e.toString());
     hfInfo.cardExist = false;

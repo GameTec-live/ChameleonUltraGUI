@@ -58,6 +58,7 @@ class LFCardInfo {
 
 class MifareClassicInfo {
   bool isEV1;
+  bool sl1CardAuthDetected;
   MifareClassicRecovery? recovery;
   MifareClassicType type;
   MifareClassicState state;
@@ -67,6 +68,7 @@ class MifareClassicInfo {
   MifareClassicInfo({
     MifareClassicRecovery? recovery,
     this.isEV1 = false,
+    this.sl1CardAuthDetected = false,
     this.type = MifareClassicType.none,
     this.state = MifareClassicState.none,
     NTLevel? ntLevel,
@@ -100,6 +102,93 @@ class ReadCardPageState extends State<ReadCardPage> {
   bool scanInProgress = false;
   Timer? hfScanTimer;
   Timer? lfScanTimer;
+  bool _hfReadPending = false;
+  int _hfScanGeneration = 0;
+
+  int _typeOverrideGeneration = 0;
+  bool _typeOverridePending = false;
+
+  void cancelTypeOverride() {
+    _typeOverrideGeneration++;
+    _typeOverridePending = false;
+  }
+
+  Future<bool> applyTypeOverride(TagType type) async {
+    if (_typeOverridePending) return false;
+    final generation = ++_typeOverrideGeneration;
+    _typeOverridePending = true;
+    final appState = context.read<ChameleonGUIState>();
+    final localizations = AppLocalizations.of(context)!;
+    try {
+      final expected = CardData(
+        uid: hexToBytes(hfInfo.uid),
+        atqa: hexToBytes(hfInfo.atqa),
+        sak: hexToBytes(hfInfo.sak)[0],
+        ats: hfInfo.ats == localizations.no
+            ? Uint8List(0)
+            : hexToBytes(hfInfo.ats),
+      );
+      MifareClassicInfo nextClassic = mfcInfo;
+      MifareUltralightInfo nextUltralight = mfuInfo;
+      if (isMifareClassic(type)) {
+        final info = await performMifareClassicScan(
+          appState.communicator!,
+          MifareClassicInfo(),
+          context,
+          updateMifareClassicRecovery,
+          override: type,
+          expectedIdentity: expected,
+        );
+        nextClassic = info.$2;
+        nextClassic.state = MifareClassicState.checkKeys;
+      } else if (isMifareUltralight(type)) {
+        final info = await performMifareUltralightScan(
+          appState.communicator!,
+          MifareUltralightInfo(),
+          override: type,
+        );
+        nextUltralight = info.$2;
+      }
+      final current = expected.ats.isEmpty
+          ? await appState.communicator!.scan14443aTag()
+          : await appState.communicator!.scan14443aTagWithAts();
+      if (current == null ||
+          bytesToHex(current.uid) != bytesToHex(expected.uid) ||
+          bytesToHex(current.atqa) != bytesToHex(expected.atqa) ||
+          current.sak != expected.sak ||
+          bytesToHex(current.ats) != bytesToHex(expected.ats)) {
+        throw StateError('Card identity changed during type override');
+      }
+      if (!mounted || generation != _typeOverrideGeneration) return false;
+      setState(() {
+        hfInfo.type = type;
+        hfInfo.tech = chameleonTagToString(type, localizations);
+        mfcInfo = nextClassic;
+        mfuInfo = nextUltralight;
+      });
+      return true;
+    } catch (error) {
+      if (!mounted || generation != _typeOverrideGeneration) return false;
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(localizations.card_type_change_failed),
+          content: Text(
+            '$error\n${localizations.card_type_change_hint}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(localizations.close),
+            ),
+          ],
+        ),
+      );
+      return false;
+    } finally {
+      if (generation == _typeOverrideGeneration) _typeOverridePending = false;
+    }
+  }
 
   void updateMifareClassicRecovery() {
     setState(() {
@@ -145,7 +234,8 @@ class ReadCardPageState extends State<ReadCardPage> {
   }
 
   Future<void> startContinuousHFScan() async {
-    if (isContinuousHFScan) return;
+    if (isContinuousHFScan || _hfReadPending) return;
+    final generation = ++_hfScanGeneration;
 
     setState(() {
       isContinuousHFScan = true;
@@ -156,37 +246,39 @@ class ReadCardPageState extends State<ReadCardPage> {
 
     DateTime startTime = DateTime.now();
 
+    Future<void> scan() async {
+      if (_hfReadPending || !mounted || generation != _hfScanGeneration) return;
+      _hfReadPending = true;
+      try {
+        var info = await readHFInfo(context, updateMifareClassicRecovery);
+        if (!mounted || generation != _hfScanGeneration) return;
+        setState(() {
+          hfInfo = info.$1;
+          mfcInfo = info.$2;
+          mfuInfo = info.$3;
+        });
+        if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
+          stopContinuousHFScan();
+        }
+      } finally {
+        _hfReadPending = false;
+      }
+    }
+
     hfScanTimer = Timer.periodic(scanInterval, (timer) async {
       if (DateTime.now().difference(startTime) > maxDuration || !mounted) {
         stopContinuousHFScan();
         return;
       }
 
-      var info = await readHFInfo(context, updateMifareClassicRecovery);
-      setState(() {
-        hfInfo = info.$1;
-        mfcInfo = info.$2;
-        mfuInfo = info.$3;
-      });
-
-      if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
-        stopContinuousHFScan();
-      }
+      await scan();
     });
 
-    var info = await readHFInfo(context, updateMifareClassicRecovery);
-    setState(() {
-      hfInfo = info.$1;
-      mfcInfo = info.$2;
-      mfuInfo = info.$3;
-    });
-
-    if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
-      stopContinuousHFScan();
-    }
+    await scan();
   }
 
   void stopContinuousHFScan() {
+    _hfScanGeneration++;
     if (hfScanTimer != null) {
       hfScanTimer?.cancel();
       hfScanTimer = null;
@@ -245,8 +337,9 @@ class ReadCardPageState extends State<ReadCardPage> {
 
   @override
   void dispose() {
-    stopContinuousHFScan();
-    stopContinuousLFScan();
+    _hfScanGeneration++;
+    hfScanTimer?.cancel();
+    lfScanTimer?.cancel();
     super.dispose();
   }
 
@@ -376,38 +469,14 @@ class ReadCardPageState extends State<ReadCardPage> {
                                             value: hfInfo.type,
                                             onChanged:
                                                 (TagType? newValue) async {
-                                              setState(() {
-                                                hfInfo.type = newValue!;
-                                                hfInfo.tech =
-                                                    chameleonTagToString(
-                                                        newValue,
-                                                        localizations);
-                                              });
-
-                                              if (isMifareClassic(newValue!)) {
-                                                var info =
-                                                    await performMifareClassicScan(
-                                                        appState.communicator!,
-                                                        mfcInfo,
-                                                        context,
-                                                        updateMifareClassicRecovery,
-                                                        override: newValue);
-                                                setState(() {
-                                                  mfcInfo = info.$2;
-                                                });
-                                              } else if (isMifareUltralight(
-                                                  newValue)) {
-                                                var info =
-                                                    await performMifareUltralightScan(
-                                                        appState.communicator!,
-                                                        mfuInfo,
-                                                        override: newValue);
-                                                setState(() {
-                                                  mfuInfo = info.$2;
-                                                });
+                                                  if (newValue == null) {
+                                                    return;
                                               }
 
-                                              if (context.mounted) {
+                                              if (await applyTypeOverride(
+                                                        newValue,
+                                                      ) &&
+                                                      context.mounted) {
                                                 Navigator.of(context).pop();
                                               }
                                             },
@@ -439,7 +508,7 @@ class ReadCardPageState extends State<ReadCardPage> {
                                       ],
                                     );
                                   },
-                                );
+                                ).whenComplete(cancelTypeOverride);
                               },
                               icon: const Icon(Icons.edit),
                               iconSize: 20,
