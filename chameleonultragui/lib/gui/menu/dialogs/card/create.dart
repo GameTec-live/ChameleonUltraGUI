@@ -40,6 +40,18 @@ class CardCreateMenuState extends State<CardCreateMenu> {
   TextEditingController issueLevelController = TextEditingController();
   TextEditingController oemController = TextEditingController();
 
+  final ioProxVersionController = TextEditingController();
+  final ioProxFacilityCodeController = TextEditingController();
+  final ioProxCardNumberController = TextEditingController();
+
+  @override
+  void dispose() {
+    ioProxVersionController.dispose();
+    ioProxFacilityCodeController.dispose();
+    ioProxCardNumberController.dispose();
+    super.dispose();
+  }
+
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -218,18 +230,19 @@ class CardCreateMenuState extends State<CardCreateMenu> {
               Visibility(
                 visible: selectedType != TagType.unknown,
                 child: Column(children: [
-                  TextFormField(
-                    controller: uidController,
-                    onChanged: (_) => refreshVanitySak(),
-                    decoration: InputDecoration(
-                        labelText: localizations.uid,
-                        hintText:
-                            localizations.enter_something(localizations.uid)),
-                    inputFormatters: hexFormatter,
-                    validator: (value) => validateUid(
-                        value, localizations, selectedType,
-                        isCreate: true),
-                  ),
+                  if (selectedType != TagType.ioProx)
+                    TextFormField(
+                      controller: uidController,
+                      onChanged: (_) => refreshVanitySak(),
+                      decoration: InputDecoration(
+                          labelText: localizations.uid,
+                          hintText:
+                              localizations.enter_something(localizations.uid)),
+                      inputFormatters: hexFormatter,
+                      validator: (value) => validateUid(
+                          value, localizations, selectedType,
+                          isCreate: true),
+                    ),
                   Visibility(
                       visible: chameleonTagToFrequency(selectedType) !=
                           TagFrequency.lf,
@@ -309,6 +322,44 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                                   validateHex(value, localizations)),
                         ]
                       ])),
+                  if (selectedType == TagType.ioProx)
+                    Column(
+                      children: [
+                        for (final field in [
+                          (
+                            ioProxVersionController,
+                            localizations.version,
+                            255,
+                          ),
+                          (
+                            ioProxFacilityCodeController,
+                            localizations.facility_code,
+                            255,
+                          ),
+                          (
+                            ioProxCardNumberController,
+                            localizations.card_number,
+                            65535,
+                          ),
+                        ]) ...[
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: field.$1,
+                            decoration: InputDecoration(labelText: field.$2),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            validator: (value) => validateIntRange(
+                              value,
+                              localizations,
+                              min: 0,
+                              max: field.$3,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   if (selectedType == TagType.hidProx)
                     Column(children: [
                       const SizedBox(height: 20),
@@ -392,7 +443,13 @@ class CardCreateMenuState extends State<CardCreateMenu> {
             }
 
             String finalUid;
-            if (selectedType == TagType.hidProx) {
+            if (selectedType == TagType.ioProx) {
+              finalUid = IoProxCard.fromFields(
+                version: int.parse(ioProxVersionController.text),
+                facilityCode: int.parse(ioProxFacilityCodeController.text),
+                cardNumber: int.parse(ioProxCardNumberController.text),
+              ).toString();
+            } else if (selectedType == TagType.hidProx) {
               int hidType = int.parse(hidTypeController.text);
               int facilityCode = int.parse(facilityCodeController.text);
               int issueLevel = int.parse(issueLevelController.text);
