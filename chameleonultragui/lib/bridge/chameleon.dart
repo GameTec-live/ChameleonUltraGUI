@@ -1358,11 +1358,19 @@ class ChameleonCommunicator {
 
   Future<void> writeT55XX(int block, Uint8List word,
       {Uint8List? password, bool page1 = false}) async {
+    RangeError.checkValueInInterval(block, 0, page1 ? 3 : 7, 'block');
+    if (word.length != 4 || (password != null && password.length != 4)) {
+      throw ArgumentError('T55xx data and password must be exactly 4 bytes');
+    }
     bool usePwd = password != null;
     Uint8List pwd = password ?? Uint8List(4);
-    await sendCmd(ChameleonCommand.writeT55XX,
+    final response = await sendCmd(ChameleonCommand.writeT55XX,
         data: Uint8List.fromList(
             [block, ...word, usePwd ? 1 : 0, ...pwd, page1 ? 1 : 0]));
+    if (response == null || response.status != 0x40) {
+      throw StateError('T55xx write failed (status: '
+          '${response == null ? "no response" : "0x${response.status.toRadixString(16)}"})');
+    }
   }
 
   Future<(int, int, int, bool, int)> scanEM4X05({int password = 0}) async {
