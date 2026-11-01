@@ -4,6 +4,7 @@ import 'package:chameleonultragui/gui/menu/tools/hf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/lf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/gui/menu/tools/raw_commands.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:chameleonultragui/gui/component/element_button.dart';
@@ -37,10 +38,24 @@ class ToolsPage extends StatefulWidget {
 class ToolsPageState extends State<ToolsPage> {
   @override
   Widget build(BuildContext context) {
-    var appState = context.read<ChameleonGUIState>();
+    var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
     List<ToolItem> tools = [
+      ToolItem(
+        name: localizations.raw_hf,
+        description: localizations.raw_hf_description,
+        icon: Icons.nfc,
+        onPressed: const RawCommandsMenu(hf: true),
+        isDeviceRequired: true,
+      ),
+      ToolItem(
+        name: localizations.raw_device,
+        description: localizations.raw_device_description,
+        icon: Icons.terminal,
+        onPressed: const RawCommandsMenu(),
+        isDeviceRequired: true,
+      ),
       ToolItem(
           name: localizations.dictionary_download,
           description: localizations.dictionary_download_description,
@@ -102,6 +117,7 @@ class ToolsPageState extends State<ToolsPage> {
                                   appState.connector!.connected)
                           ? () {
                               showDialog(
+                                  barrierDismissible: tool.onPressed is! RawCommandsMenu,
                                   context: context,
                                   builder: (BuildContext context) {
                                     return tool.onPressed!;
