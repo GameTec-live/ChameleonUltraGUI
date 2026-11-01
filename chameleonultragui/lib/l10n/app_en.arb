@@ -575,5 +575,21 @@
   "enable_vanity_sak": "Enable Vanity SAK",
   "enable_vanity_sak_tooltip": "When enabled, SAK stored in block 0 is increased by 0x80, mimicking genuine cards, primarily 7-byte UID ones.\nDefault on for 7-byte UID cards, off for 4, since some of them replay this byte as is.",
   "ulc_write_lock_and_counter": "Write lock bytes and counter (irreversible)",
-  "long_press_threshold": "Long press threshold (ms):"
+  "long_press_threshold": "Long press threshold (ms):",
+  "live_value_blocks": "Live value blocks",
+  "value_block_live_hint": "Keep the physical card on the reader. Write, increment, decrement and restore change the card immediately. Destination may equal source. Restore copies the source to the destination.",
+  "value_block_source": "Source block (decimal)",
+  "value_block_destination": "Destination block (decimal)",
+  "value_block_address": "Value block address (decimal)",
+  "value_block_read": "Read value",
+  "value_block_write": "Write value",
+  "value_block_increment": "Increment",
+  "value_block_decrement": "Decrement",
+  "value_block_restore": "Restore / transfer",
+  "value_block_invalid_block": "Enter a data block within this card. Block 0 and sector trailers are excluded.",
+  "value_block_invalid_key": "Enter exactly 12 hexadecimal characters.",
+  "value_block_done": "Card operation completed.",
+  "value_block_failed": "Card write failed. Check the key and access conditions.",
+  "value_block_invalid_data": "Could not read a valid value block. Check the card, key and access conditions.",
+  "value_block_unsupported": "The connected firmware does not support this operation, or capabilities could not be read."
 }

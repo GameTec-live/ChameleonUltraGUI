@@ -1180,28 +1180,45 @@ class ChameleonCommunicator {
   }
 
   Future<void> manipulateValueBlock(
-      int srcBlock,
-      int srcKeyType,
-      Uint8List srcKey,
-      MifareClassicValueBlockOperator op,
-      int value,
-      int dstBlock,
-      int dstKeyType,
-      Uint8List dstKey) async {
-    await sendCmd(ChameleonCommand.mf1ManipulateValueBlock,
-        data: Uint8List.fromList([
-          srcKeyType,
-          srcBlock,
-          ...srcKey,
-          op.value,
-          value >> 24,
-          value >> 16 & 0xFF,
-          value >> 8 & 0xFF,
-          value & 0xFF,
-          dstKeyType,
-          dstBlock,
-          ...dstKey
-        ]));
+    int srcBlock,
+    int srcKeyType,
+    Uint8List srcKey,
+    MifareClassicValueBlockOperator op,
+    int value,
+    int dstBlock,
+    int dstKeyType,
+    Uint8List dstKey,
+  ) async {
+    RangeError.checkValueInInterval(srcBlock, 0, 255, 'srcBlock');
+    RangeError.checkValueInInterval(dstBlock, 0, 255, 'dstBlock');
+    RangeError.checkValueInInterval(value, -0x80000000, 0x7FFFFFFF, 'value');
+    if (srcKey.length != 6 ||
+        dstKey.length != 6 ||
+        ![0x60, 0x61].contains(srcKeyType) ||
+        ![0x60, 0x61].contains(dstKeyType)) {
+      throw ArgumentError('Expected six-byte keys and key type A or B');
+    }
+    final response = await sendCmd(
+      ChameleonCommand.mf1ManipulateValueBlock,
+      data: Uint8List.fromList([
+        srcKeyType,
+        srcBlock,
+        ...srcKey,
+        op.value,
+        (value >> 24) & 0xFF,
+        value >> 16 & 0xFF,
+        value >> 8 & 0xFF,
+        value & 0xFF,
+        dstKeyType,
+        dstBlock,
+        ...dstKey,
+      ]),
+    );
+    if (response == null || response.status != 0) {
+      throw StateError(
+        'Value block operation failed (status: ${response?.status})',
+      );
+    }
   }
 
   Future<Uint8List> send14ARaw(Uint8List data,
