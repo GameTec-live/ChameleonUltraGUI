@@ -983,9 +983,32 @@ class ChameleonCommunicator {
   }
 
   Future<BatteryCharge> getBatteryCharge() async {
-    var resp = await sendCmd(ChameleonCommand.getBatteryCharge);
+    // Older firmware may not support the capability query or extended command.
+    var extended = false;
+    try {
+      extended = (await getDeviceCapabilities()).contains(
+        ChameleonCommand.getBatteryChargeEx.value,
+      );
+    } catch (_) {}
+    final resp = (await sendCmd(
+      extended
+          ? ChameleonCommand.getBatteryChargeEx
+          : ChameleonCommand.getBatteryCharge,
+    ))!;
     return BatteryCharge(
-        voltage: _toInt16BE(resp!.data.sublist(0, 2)), percent: resp.data[2]);
+      voltage: _toInt16BE(resp.data.sublist(0, 2)),
+      percent: resp.data[2],
+      condition: extended && resp.data.length >= 4
+          ? switch (resp.data[3]) {
+              0 => BatteryCondition.critical,
+              1 => BatteryCondition.low,
+              2 => BatteryCondition.fair,
+              3 => BatteryCondition.good,
+              4 => BatteryCondition.excellent,
+              _ => BatteryCondition.unknown,
+            }
+          : null,
+    );
   }
 
   Future<ButtonConfig> getButtonConfig(ButtonType type) async {

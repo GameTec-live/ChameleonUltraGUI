@@ -9,6 +9,7 @@ enum ChameleonCommand {
   getDeviceMode(1002),
   getGitVersion(1017),
   getBatteryCharge(1025),
+  getBatteryChargeEx(1043),
 
   // slot
   setActiveSlot(1003),
@@ -458,11 +459,15 @@ class EnabledSlotInfo {
   EnabledSlotInfo({this.hf = false, this.lf = false});
 }
 
+// Firmware condition hint based on remaining capacity, not battery wear.
+enum BatteryCondition { critical, low, fair, good, excellent, unknown }
+
 class BatteryCharge {
   int voltage;
   int percent;
+  BatteryCondition? condition;
 
-  BatteryCharge({required this.voltage, required this.percent});
+  BatteryCharge({required this.voltage, required this.percent, this.condition});
 }
 
 class EmulatorSettings {
