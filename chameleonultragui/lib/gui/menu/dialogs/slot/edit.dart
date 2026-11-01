@@ -291,11 +291,15 @@ class SlotEditMenuState extends State<SlotEditMenu> {
               DropdownButton<TagType>(
                 value: selectedType,
                 items: [
-                  ...getTagTypesByFrequency(widget.frequency),
+                  // Pyramid has no slot-ID configuration command yet.
+                  ...getTagTypesByFrequency(widget.frequency)
+                      .where((type) =>
+                          type != TagType.pyramid || type == widget.slotType),
                   TagType.unknown
                 ].map<DropdownMenuItem<TagType>>((TagType type) {
                   return DropdownMenuItem<TagType>(
                     value: type,
+                    enabled: type != TagType.pyramid,
                     child: Text(
                       chameleonTagToString(type, localizations),
                     ),

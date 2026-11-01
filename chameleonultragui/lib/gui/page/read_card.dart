@@ -129,7 +129,7 @@ class ReadCardPageState extends State<ReadCardPage> {
     card ??= await appState.communicator!.readViking();
     card ??= await appState.communicator!.readPac();
     card ??= await appState.communicator!.readIoProx();
-
+    card ??= await appState.communicator!.readPyramid();
 
     if (card != null) {
       setState(() {

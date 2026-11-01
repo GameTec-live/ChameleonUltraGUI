@@ -168,6 +168,8 @@ String chameleonTagToString(TagType tag, AppLocalizations localizations) {
     return "PAC/Stanley";
   } else if (tag == TagType.ioProx) {
     return "ioProx";
+  } else if (tag == TagType.pyramid) {
+    return "Farpointe/Pyramid";
   } else if (tag == TagType.idteck) {
     return "IDTECK";
   } else if (tag == TagType.ntag210) {
@@ -461,6 +463,7 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.viking,
       TagType.pac,
       TagType.ioProx,
+      TagType.pyramid,
       TagType.idteck
     ];
   }
@@ -567,6 +570,10 @@ LFCard getLFCardFromUID(TagType type, String uid) {
     return IoProxCard.fromUID(uid);
   }
 
+  if (type == TagType.pyramid) {
+    return PyramidCard.fromUID(uid);
+  }
+
   if (type == TagType.idteck) {
     return IdteckCard.fromUID(uid);
   }
@@ -585,7 +592,7 @@ int uidSizeForLfTag(TagType type) {
     return 4;
   } else if (type == TagType.pac) {
     return 8;
-  } else if (type == TagType.ioProx) {
+  } else if (type == TagType.ioProx || type == TagType.pyramid) {
     return 16;
   } else if (type == TagType.idteck) {
     return 8;

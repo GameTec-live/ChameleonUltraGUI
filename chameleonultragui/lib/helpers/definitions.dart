@@ -107,6 +107,7 @@ enum ChameleonCommand {
   writeHIDProxToT5577(3003),
   scanVikingTag(3004),
   writeVikingToT5577(3005),
+  scanPyramidTag(3021),
   scanIoProxTag(3010),
   writeIoProxToT5577(3011),
   scanPacTag(3014),
@@ -201,6 +202,7 @@ enum TagType {
   viking(170),
   hidProx(200),
   ioProx(201),
+  pyramid(202),
   idteck(310),
   mifareMini(1000),
   mifare1K(1001),
@@ -685,4 +687,58 @@ class IdteckCard extends LFCard {
     super.type = TagType.idteck,
     required super.uid,
   });
+}
+
+// The firmware returns the complete on-air frame, including parity and CRC.
+class PyramidCard extends LFCard {
+  factory PyramidCard.fromBytes(Uint8List bytes) {
+    if (bytes.length != 16) {
+      throw const FormatException('Pyramid frame must be exactly 16 bytes');
+    }
+    return PyramidCard._(bytes);
+  }
+
+  factory PyramidCard.fromUID(String uid) =>
+      PyramidCard.fromBytes(hexToBytes(uid));
+
+  PyramidCard._(Uint8List uid) : super(type: TagType.pyramid, uid: uid);
+
+  // Match the CLI's pyramid_decode: discard each byte's odd parity bit,
+  // then locate the leading sentinel that determines the Wiegand format.
+  ({int formatLength, int? facilityCode, int cardNumber}) get decoded {
+    final bits = <int>[
+      for (final byte in uid.skip(1))
+        for (int bit = 7; bit >= 1; bit--) (byte >> bit) & 1,
+    ];
+    int read(int offset, int length) => bits
+        .skip(offset)
+        .take(length)
+        .fold(0, (value, bit) => (value << 1) | bit);
+    final sentinel = bits.indexOf(1);
+    final length = bits.length - (sentinel < 0 ? bits.length : sentinel) - 8;
+    if (length == 26) {
+      return (
+        formatLength: 26,
+        facilityCode: read(73, 8),
+        cardNumber: read(81, 16),
+      );
+    }
+    if (length == 45) {
+      return (
+        formatLength: 42,
+        facilityCode: read(53, 10),
+        cardNumber: read(63, 32),
+      );
+    }
+    return (formatLength: length, facilityCode: null, cardNumber: read(81, 16));
+  }
+
+  @override
+  String toViewableString() {
+    final info = decoded;
+    final facility = info.facilityCode == null
+        ? ''
+        : ', FC: ${info.facilityCode}';
+    return '${info.cardNumber} (${info.formatLength}-bit$facility, ${toString()})';
+  }
 }

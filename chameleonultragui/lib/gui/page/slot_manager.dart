@@ -336,7 +336,11 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
   Future<String?> cardSelectDialog(BuildContext context) {
     var appState = context.read<ChameleonGUIState>();
-    var tags = appState.sharedPreferencesProvider.getCards();
+    // Pyramid frames can be read and saved, but not configured in slots yet.
+    var tags = appState.sharedPreferencesProvider
+        .getCards()
+        .where((card) => card.tag != TagType.pyramid)
+        .toList();
 
     // Don't allow user to upload more tags while already uploading dump
     if (progress != -1) {

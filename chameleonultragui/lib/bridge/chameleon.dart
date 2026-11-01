@@ -591,6 +591,16 @@ class ChameleonCommunicator {
     return IoProxCard.fromBytes(resp.data);
   }
 
+  Future<PyramidCard?> readPyramid() async {
+    final response = await sendCmd(ChameleonCommand.scanPyramidTag);
+    // Older firmware does not implement this command. Treat unsupported and
+    // no-tag responses as no match so automatic LF scanning still works.
+    if (response == null || response.status != 0x40 || response.data.isEmpty) {
+      return null;
+    }
+    return PyramidCard.fromBytes(response.data);
+  }
+
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setEM410XemulatorID, data: uid);
   }
