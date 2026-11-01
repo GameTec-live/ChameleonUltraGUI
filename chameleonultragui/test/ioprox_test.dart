@@ -50,6 +50,15 @@ void main() {
     expect(reserved.toString(), endsWith('AA BB CC DD'));
   });
 
+  test('short imported ioProx identities retain their raw display', () {
+    for (final uid in ['', '01', '01 53', '01 53 30']) {
+      final imported = CardSave.fromJson(
+          CardSave(name: 'Short ioProx', tag: TagType.ioProx, uid: uid).toJson());
+      final card = getLFCardFromUID(imported.tag, imported.uid);
+      expect(card.toViewableString(), uid);
+    }
+  });
+
   testWidgets('create ioProx offline with required decimal fields and bounds',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
