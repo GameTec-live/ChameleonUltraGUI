@@ -636,5 +636,21 @@
   "hf_auth_status": "Authentication status: 0x{status} (0 = success).",
   "@hf_auth_status": {"placeholders": {"status": {"type": "String"}}},
   "hf_auth_prompt": "Capture an authentication exchange with a card using a known key.",
-  "hf_auth_timeout_help": "1 to 30000 ms. Poll for a card before authenticating."
+  "hf_auth_timeout_help": "1 to 30000 ms. Poll for a card before authenticating.",
+  "live_value_blocks": "Live value blocks",
+  "value_block_live_hint": "Keep the physical card on the reader. Write, increment, decrement and restore change the card immediately. Destination may equal source. Restore copies the source to the destination.",
+  "value_block_source": "Source block (decimal)",
+  "value_block_destination": "Destination block (decimal)",
+  "value_block_address": "Value block address (decimal)",
+  "value_block_read": "Read value",
+  "value_block_write": "Write value",
+  "value_block_increment": "Increment",
+  "value_block_decrement": "Decrement",
+  "value_block_restore": "Restore / transfer",
+  "value_block_invalid_block": "Enter a data block within this card. Block 0 and sector trailers are excluded.",
+  "value_block_invalid_key": "Enter exactly 12 hexadecimal characters.",
+  "value_block_done": "Card operation completed.",
+  "value_block_failed": "Card write failed. Check the key and access conditions.",
+  "value_block_invalid_data": "Could not read a valid value block. Check the card, key and access conditions.",
+  "value_block_unsupported": "The connected firmware does not support this operation, or capabilities could not be read."
 }
