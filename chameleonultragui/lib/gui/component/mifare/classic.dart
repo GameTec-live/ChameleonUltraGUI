@@ -121,6 +121,7 @@ class CardReaderState extends State<MifareClassicHelper> {
             builder: (_) => MifareValueBlockDialog(
               communicator: appState.communicator!,
               type: widget.mfcInfo.type,
+              isEV1: widget.mfcInfo.isEV1,
             ),
           ),
           child: Text(localizations.live_value_blocks),
