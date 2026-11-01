@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:chameleonultragui/gui/menu/dialogs/mifare_value_block.dart';
 
 import 'package:chameleonultragui/gui/component/card_button.dart';
 import 'package:chameleonultragui/gui/component/error_message.dart';
@@ -109,6 +110,23 @@ class CardReaderState extends State<MifareClassicHelper> {
     ].contains(widget.mfcInfo.state));
 
     return Column(children: [
+      if (appState.communicator != null &&
+          ![MifareClassicState.checkKeysOngoing,
+            MifareClassicState.recoveryOngoing,
+            MifareClassicState.dumpOngoing].contains(widget.mfcInfo.state))
+        ElevatedButton(
+          onPressed: () => showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => MifareValueBlockDialog(
+              communicator: appState.communicator!,
+              type: widget.mfcInfo.type,
+              isEV1: widget.mfcInfo.isEV1,
+            ),
+          ),
+          child: Text(localizations.live_value_blocks),
+        ),
+
       const SizedBox(height: 16),
       Text(
         localizations.keys,
