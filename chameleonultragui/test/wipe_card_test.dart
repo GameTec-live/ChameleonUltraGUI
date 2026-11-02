@@ -22,6 +22,7 @@ class _Card extends ChameleonCommunicator {
   final pages = List.generate(256, (_) => Uint8List(4));
   int storage = 0x0F;
   bool originalUltralight = false;
+  bool simulateMirror = false;
   bool present = true;
   bool supported = true;
   bool authenticated = false;
@@ -83,10 +84,16 @@ class _Card extends ChameleonCommunicator {
     if (protected && !authenticated) throw StateError('Authentication lost');
     if (data[0] == 0x30) {
       if (originalUltralight && data[1] >= 16) return Uint8List.fromList([0]);
-      return Uint8List.fromList([
+      final read = Uint8List.fromList([
         for (var i = 0; i < 4; i++)
           ...pages[originalUltralight ? (data[1] + i) % 16 : data[1] + i],
       ]);
+      if (simulateMirror &&
+          (pages[41][0] & 0xC0) != 0 &&
+          data[1] == pages[41][2]) {
+        read[0] = 0x30; // UID ASCII replaces the physical EEPROM zero.
+      }
+      return read;
     }
     if (data[0] == 0xA2) {
       writes.add((data[1], data.sublist(2), null));
@@ -125,6 +132,7 @@ class _Ulc extends _Card {
   @override
   Future<bool> mf0UlcWritePage(Uint8List key, int page, Uint8List data) async {
     writes.add((page, data.toList(), key.toList()));
+    if (page == reject) return false;
     pages[page] = data;
     return true;
   }
@@ -209,12 +217,78 @@ void main() {
     );
     expect(await CardWiper(card).wipeUltralight(target, null, (_) {}), isEmpty);
     expect(card.writes.map((w) => w.$1), [
+      for (var i = 4; i < 40; i++) i,
       42,
       43,
-      for (var i = 4; i < 40; i++) i,
     ]);
     expect(bytesToHex(card.newKey!), '425245414b4d454946594f5543414e21');
   });
+
+  test(
+    'failed NTAG and ULC erasure retains original protection and credentials',
+    () async {
+      final card = _Card()..protected = true;
+      final target = WipeTarget((await card.scan14443aTag())!, TagType.ntag213);
+      card.reject = 4;
+      expect(
+        await CardWiper(card)
+            .wipeUltralight(target, hexToBytes('12345678'), (_) {}),
+        [for (var p = 4; p < 40; p++) p],
+      );
+      expect(card.writes.map((w) => w.$1), [4]);
+      final ulc = _Ulc()..reject = 4;
+      final ulcTarget = WipeTarget(
+        (await ulc.scan14443aTag())!,
+        TagType.ultralightC,
+      );
+      expect(await CardWiper(ulc).wipeUltralight(ulcTarget, null, (_) {}), [4]);
+      expect(ulc.newKey, isNull);
+      expect(ulc.writes.any((w) => w.$1 >= 40), isFalse);
+    },
+  );
+
+  test(
+    'locked NTAG config does not prevent user erasure and is reported',
+    () async {
+      final card = _Card();
+      card.pages[42][0] = 0x40;
+      card.reject = 41;
+      final target = (await CardWiper(card).detect())!;
+      expect(await CardWiper(card).wipeUltralight(target, null, (_) {}), [
+        41,
+        42,
+      ]);
+      expect(card.writes.map((w) => w.$1), [
+        for (var p = 4; p < 40; p++) p,
+        43,
+        44,
+      ]);
+      expect(card.pages[42][0], 0x40);
+    },
+  );
+
+  test(
+    'active NTAG mirroring is disabled without opening access before erase',
+    () async {
+      final card = _Card()
+        ..simulateMirror = true
+        ..protected = true;
+      card.pages[41] = Uint8List.fromList([0x44, 0, 4, 4]);
+      card.pages[43] = hexToBytes('12345678');
+      final target = (await CardWiper(card).detect())!;
+      expect(
+        await CardWiper(card)
+            .wipeUltralight(target, hexToBytes('12345678'), (_) {}),
+        isEmpty,
+      );
+      expect(card.writes.first.$1, 41);
+      expect(card.writes.first.$2, [4, 0, 4, 4]);
+      expect(card.writes.skip(1).take(36).map((w) => w.$1), [
+        for (var p = 4; p < 40; p++) p,
+      ]);
+      expect(card.writes.skip(37).map((w) => w.$1), [41, 42, 43, 44]);
+    },
+  );
 
   test('T55xx opens config before clearing password, optional data, capability gate', () async {
     final card = _Card();
@@ -248,6 +322,7 @@ void main() {
         for (final page in card.pages) {
           page.fillRange(0, 4, 0xAB);
         }
+        card.pages[pwd - 2][0] &= 0x3F; // Test non-mirrored maps separately.
         final wiper = CardWiper(card);
         final target = (await wiper.detect())!;
         card.protected = true;
@@ -255,7 +330,7 @@ void main() {
           await wiper.wipeUltralight(target, hexToBytes('12345678'), (_) {}),
           isEmpty,
         );
-        expect(card.writes.take(4).map((w) => w.$1), [
+        expect(card.writes.skip(pwd - 7).map((w) => w.$1), [
           pwd - 2,
           pwd - 1,
           pwd,
@@ -265,7 +340,7 @@ void main() {
         expect(card.pages[pwd - 1][0], 0);
         expect(card.pages[pwd], [255, 255, 255, 255]);
         expect(
-          card.writes.skip(4).map((w) => w.$1),
+          card.writes.take(pwd - 7).map((w) => w.$1),
           List.generate(pwd - 7, (i) => i + 4),
         );
         for (final page in [0, 1, 2, 3, pwd - 3]) {
@@ -292,7 +367,9 @@ void main() {
       expect(card.writes, isEmpty);
       card.uid = '01020304050607';
       card.reject = 4;
-      expect(await wiper.wipeUltralight(target, null, (_) {}), [4]);
+      expect(await wiper.wipeUltralight(target, null, (_) {}), [
+        for (var p = 4; p < 40; p++) p,
+      ]);
     },
   );
 

@@ -188,37 +188,25 @@ class CardWiper {
       if (pack.length != 2) throw StateError('Password rejected');
     }
     final failed = <int>[];
-    // NTAG/EV1 config is followed by PWD and PACK. Preserve reserved bytes.
-    if (pwd != 0) {
-      final config = await _read(pwd - 2, select: key == null);
-      if (config.length != 16) {
-        throw StateError(
-          'Cannot read configuration; supply the current password',
-        );
-      }
-      final cfg0 = config.sublist(0, 4)..[3] = 0xFF;
-      final cfg1 = config.sublist(4, 8)..[0] = config[4] & 0x40;
-      // CFGLCK cannot be undone. Mirror/counter/protection features are disabled.
-      cfg0[0] = 0;
-      cfg0[2] = 0;
-      await _write(pwd - 2, cfg0);
-      await _write(pwd - 1, cfg1);
-      await _write(pwd, [255, 255, 255, 255]);
-      await _write(pwd + 1, [0, 0, 0, 0]);
-      final restored = await _read(pwd - 2, select: false);
-      if (restored.length != 16 ||
-          bytesToHex(restored.sublist(0, 8)) !=
-              bytesToHex(Uint8List.fromList([...cfg0, ...cfg1]))) {
-        throw StateError('Configuration verification failed');
-      }
-      await communicator.scan14443aTag();
-      final pack = await communicator.send14ARaw(
-        hexToBytes('1BFFFFFFFF'),
-        keepRfField: true,
+    // Read settings without changing protection or credentials before erasure.
+    final config = pwd == 0 ? null : await _read(pwd - 2, select: key == null);
+    if (config != null && config.length != 16) {
+      throw StateError(
+        'Cannot read configuration; supply the current password',
       );
-      if (bytesToHex(pack) != '0000') {
-        throw StateError('Default password verification failed');
-      }
+    }
+    // ASCII mirroring masks EEPROM bytes during READ. Disable only mirroring;
+    // retain AUTH0, ACCESS and credentials until every user page verifies.
+    if (config != null &&
+        [
+          TagType.ntag213,
+          TagType.ntag215,
+          TagType.ntag216,
+        ].contains(target.type) &&
+        (config[0] & 0xC0) != 0 &&
+        (config[4] & 0x40) == 0) {
+      final unmirrored = config.sublist(0, 4)..[0] = config[0] & 0x3F;
+      await _write(pwd - 2, unmirrored);
     }
     if (pwd == 0) await _read(0);
     final end = pwd == 0
@@ -239,10 +227,48 @@ class CardWiper {
           failed.add(page);
         }
       } catch (_) {
-        failed.add(page);
+        failed.addAll([
+          for (var skipped = page; skipped < end; skipped++) skipped,
+        ]);
         break; // Do not continue after losing the authenticated RF session.
       }
       progress(((page - 3) / (end - 4) * 100).round());
+    }
+    if (failed.isNotEmpty) return failed;
+    // NTAG/EV1 config is followed by PWD and PACK. Preserve reserved bytes.
+    if (config != null) {
+      final cfg0 = config.sublist(0, 4)..[3] = 0xFF;
+      final cfg1 = config.sublist(4, 8)..[0] = config[4] & 0x40;
+      // CFGLCK cannot be undone. Mirror/counter/protection features are disabled.
+      cfg0[0] = 0;
+      cfg0[2] = 0;
+      final locked = (config[4] & 0x40) != 0;
+      if (locked) {
+        failed.addAll([pwd - 2, pwd - 1]);
+      } else {
+        await _write(pwd - 2, cfg0);
+        await _write(pwd - 1, cfg1);
+      }
+      await _write(pwd, [255, 255, 255, 255]);
+      await _write(pwd + 1, [0, 0, 0, 0]);
+      final restored = await _read(pwd - 2, select: false);
+      if (restored.length != 16 ||
+          bytesToHex(restored.sublist(0, 8)) !=
+              bytesToHex(
+                locked
+                    ? config.sublist(0, 8)
+                    : Uint8List.fromList([...cfg0, ...cfg1]),
+              )) {
+        throw StateError('Configuration verification failed');
+      }
+      await communicator.scan14443aTag();
+      final pack = await communicator.send14ARaw(
+        hexToBytes('1BFFFFFFFF'),
+        keepRfField: true,
+      );
+      if (bytesToHex(pack) != '0000') {
+        throw StateError('Default password verification failed');
+      }
     }
     return failed;
   }
@@ -256,6 +282,16 @@ class CardWiper {
     if (!await communicator.mf0UlcAuth(key)) {
       throw StateError('Ultralight C key rejected');
     }
+    final failed = <int>[];
+    for (var page = 4; page < 0x28; page++) {
+      if (!await communicator.mf0UlcWritePage(key, page, Uint8List(4)) ||
+          bytesToHex(await communicator.mf0UlcReadPages(key, page, 1)) !=
+              '00000000') {
+        failed.add(page);
+      }
+      progress(((page - 3) / 36 * 100).round());
+    }
+    if (failed.isNotEmpty) return failed;
     // AUTH0=0x30 disables protection; AUTH1=1 is write-only protection if enabled.
     for (final (page, data) in [
       (0x2A, [0x30, 0, 0, 0]),
@@ -272,15 +308,6 @@ class CardWiper {
     final config = await communicator.mf0UlcReadPages(key, 0x2A, 2);
     if (bytesToHex(config) != '3000000001000000') {
       throw StateError('Ultralight C configuration verification failed');
-    }
-    final failed = <int>[];
-    for (var page = 4; page < 0x28; page++) {
-      if (!await communicator.mf0UlcWritePage(key, page, Uint8List(4)) ||
-          bytesToHex(await communicator.mf0UlcReadPages(key, page, 1)) !=
-              '00000000') {
-        failed.add(page);
-      }
-      progress(((page - 3) / 36 * 100).round());
     }
     if (!await communicator.mf0UlcSetKey(key, defaultKey) ||
         !await communicator.mf0UlcAuth(defaultKey)) {

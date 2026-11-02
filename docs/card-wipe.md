@@ -28,6 +28,13 @@ Supported writable areas:
   The result always says **unverified**, since firmware success only confirms
   command transmission, even if no tag responded.
 
+Ultralight/NTAG credentials and protection remain unchanged until all user
+pages have been erased and verified. On unlocked NTAG cards, ASCII mirroring
+is disabled first so readback can verify the physical memory; this does not
+change password protection. An interrupted NTAG wipe lists every
+skipped page. Permanently locked NTAG configuration does not prevent erasing
+writable user pages, but the locked settings are reported as incomplete.
+
 HF success requires readback of user data and configuration, plus verification
 of the restored password/key. Failed areas are reported as incomplete, rather
 than claiming a full reset. A stopped wipe can have already changed some data
