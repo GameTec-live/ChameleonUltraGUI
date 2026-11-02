@@ -13,10 +13,10 @@ class Gen4Configuration {
   }
 
   factory Gen4Configuration.fromResponse(Uint8List data) {
-    // Some cards include two trailing checksum bytes in C6 responses.
-    if (data.length != 30 && data.length != 32) {
+    // C6 may include an internal checksum and/or trailing RF CRC bytes.
+    if (data.length != 30 && data.length != 32 && data.length != 34) {
       throw const FormatException(
-        'Expected a 30 or 32 byte Gen4 configuration',
+        'Expected a 30, 32 or 34 byte Gen4 configuration',
       );
     }
     return Gen4Configuration(data.sublist(0, 30));
@@ -159,4 +159,15 @@ Uint8List gen4ParseHex(String text, {int? length, int? maxLength}) {
     for (var i = 0; i < clean.length; i += 2)
       int.parse(clean.substring(i, i + 2), radix: 16),
   ]);
+}
+
+/// CC is five version bytes, optionally followed by two RF CRC bytes.
+/// Unknown/truncated versions require an explicit PACK address choice.
+int? gen4PackPage(List<int> version) {
+  if ((version.length != 5 && version.length != 7) ||
+      version.take(3).any((byte) => byte != 0)) {
+    return null;
+  }
+  final revision = version[3] << 8 | version[4];
+  return revision == 0x06A0 || revision == 0x6666 ? 0x13 : 0xE6;
 }

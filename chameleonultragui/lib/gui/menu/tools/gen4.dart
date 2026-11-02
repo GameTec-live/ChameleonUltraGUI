@@ -32,6 +32,7 @@ class _Gen4MenuState extends State<Gen4Menu> {
   bool _busy = false;
   String? _status;
   String? _version;
+  int? _packPage;
   bool _failed = false;
 
   @override
@@ -117,6 +118,7 @@ class _Gen4MenuState extends State<Gen4Menu> {
     setState(() {
       _config = null;
       _version = null;
+      _packPage = null;
     });
     final config = await client.readConfiguration();
     if (!mounted) return;
@@ -127,7 +129,12 @@ class _Gen4MenuState extends State<Gen4Menu> {
     // Version info is optional on older cards; a failed query must not hide C6.
     try {
       final version = await client.readVersion();
-      if (mounted) setState(() => _version = gen4Hex(version));
+      if (mounted) {
+        setState(() {
+          _version = gen4Hex(version);
+          _packPage = gen4PackPage(version);
+        });
+      }
     } catch (_) {}
   }
 
@@ -283,7 +290,7 @@ class _Gen4MenuState extends State<Gen4Menu> {
       if (ul) ...[
         (label: l.gen4_otp, address: 0x03, length: 4, stride: 4),
         (label: l.gen4_ntag_password, address: 0xE5, length: 4, stride: 4),
-        (label: 'PACK', address: 0x13, length: 2, stride: 4),
+        (label: 'PACK', address: _packPage ?? 0x13, length: 2, stride: 4),
         (label: l.version, address: 0xFA, length: 8, stride: 4),
       ],
       (
@@ -294,6 +301,8 @@ class _Gen4MenuState extends State<Gen4Menu> {
       ),
     ];
     final setting = settings[_memoryTarget];
+    final isPack = ul && _memoryTarget == 2;
+    final needsPackPage = isPack && _packPage == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -306,6 +315,30 @@ class _Gen4MenuState extends State<Gen4Menu> {
             _memoryData.clear();
           },
         ),
+        if (isPack)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: DropdownButtonFormField<int>(
+              key: ValueKey('pack:$_packPage'),
+              initialValue: _packPage,
+              decoration: InputDecoration(
+                labelText: l.gen4_pack_page,
+                helperText: l.gen4_pack_page_help,
+                helperMaxLines: 3,
+                border: const OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 0x13, child: Text('13 · 06A0 / 6666')),
+                DropdownMenuItem(value: 0xE6, child: Text('E6')),
+              ],
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() {
+                      _packPage = value;
+                      _memoryData.clear();
+                    }),
+            ),
+          ),
         _hex(
           _memoryData,
           setting.label,
@@ -319,7 +352,7 @@ class _Gen4MenuState extends State<Gen4Menu> {
           spacing: 8,
           children: [
             OutlinedButton(
-              onPressed: _busy
+              onPressed: _busy || needsPackPage
                   ? null
                   : () => _run((client) async {
                       final data = await client.readMemory(
@@ -334,7 +367,7 @@ class _Gen4MenuState extends State<Gen4Menu> {
               child: Text(l.gen4_read_setting),
             ),
             OutlinedButton(
-              onPressed: _busy
+              onPressed: _busy || needsPackPage
                   ? null
                   : () async {
                       Uint8List data;

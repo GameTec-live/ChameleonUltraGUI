@@ -691,7 +691,7 @@
   "gen4_verify_failed": "Write completed, but readback differs. Read the card again before continuing.",
   "gen4_written_read_failed": "Configuration written. Readback pending; the current password has been updated.",
   "gen4_uid_and_memory": "UID and advanced memory access",
-  "gen4_memory_help": "Backdoor access reads/writes 16 bytes in both protocols. In Ultralight mode, only the first 4 bytes of each block map to a page. UID uses block 00 (and 01/02 for 7-byte Ultralight). Memory-backed settings: OTP page 03, NTAG PACK page 13, password page E5, version pages FA–FB, signature pages F2–F9 (Classic signature: blocks 45–46). Firmware variants may differ. Read before editing; preserve remaining bytes.",
+  "gen4_memory_help": "Backdoor access reads/writes 16 bytes in both protocols. In Ultralight mode, only the first 4 bytes of each block map to a page. UID uses block 00 (and 01/02 for 7-byte Ultralight). Memory-backed settings: OTP page 03, NTAG PACK page 13 (06A0/6666) or E6 (other revisions), password page E5, version pages FA–FB, signature pages F2–F9 (Classic signature: blocks 45–46). Firmware variants may differ. Read before editing; preserve remaining bytes.",
   "gen4_uid_help": "Must match the UID length already applied. Applies immediately, independently of the configuration form.",
   "gen4_uid_warning": "Write the UID using the configuration last read? Apply UID length or protocol changes first. Other manufacturer and lock bytes are preserved. A multi-block write can partially complete if the card is removed.",
   "gen4_uid_written": "UID written. Scan the card again to verify its identity.",
@@ -711,5 +711,7 @@
   "gen4_read_setting": "Read setting",
   "gen4_write_setting": "Write setting",
   "gen4_memory_value_help": "{length} hex bytes starting at block {address}. Apply a maximum block address covering this range first. Other bytes are preserved. Multi-block writes may partially complete if interrupted.",
-  "@gen4_memory_value_help": {"placeholders": {"length": {"type": "int"}, "address": {"type": "String"}}}
+  "@gen4_memory_value_help": {"placeholders": {"length": {"type": "int"}, "address": {"type": "String"}}},
+  "gen4_pack_page": "PACK page",
+  "gen4_pack_page_help": "Selected from the card revision when available. Choose 13 for 06A0/6666, E6 for other revisions. Unknown revisions require a choice before reading or writing PACK."
 }

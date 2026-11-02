@@ -7,6 +7,27 @@ const factoryConfig =
     '00000000000002000978009102DABC191010111213141516040008006B02';
 
 void main() {
+  test('PACK page follows CC revision and requires a choice for malformed versions', () {
+    expect(gen4PackPage(gen4ParseHex('00000006A0')), 0x13);
+    expect(gen4PackPage(gen4ParseHex('00000066661234')), 0x13);
+    expect(gen4PackPage(gen4ParseHex('00000003ABE731')), 0xE6);
+    expect(gen4PackPage(gen4ParseHex('3F')), isNull);
+    expect(gen4PackPage(gen4ParseHex('6300')), isNull);
+    expect(gen4PackPage(gen4ParseHex('90000003AB')), isNull);
+  });
+
+  test('accepts a recorded 34-byte configuration frame', () {
+    // Raw response from RfidResearchGroup/proxmark3#1822, including RF CRC.
+    final response = gen4ParseHex(
+      '00000000000002090978009102BDAC191310111213141516040008026B004F6BF441',
+    );
+    final config = Gen4Configuration.fromResponse(response);
+    expect(
+      gen4Hex(config.bytes),
+      '00000000000002090978009102BDAC191310111213141516040008026B00',
+    );
+  });
+
   test('decodes every configuration field, retaining unused ATS bytes', () {
     final bytes = gen4ParseHex(factoryConfig);
     expect(bytes, hasLength(30));

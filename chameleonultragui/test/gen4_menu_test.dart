@@ -50,4 +50,67 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  for (final revision in ['00000006A0', '00000003AB', '3F']) {
+    testWidgets('PACK address selection for CC $revision', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final device = Gen4TestDevice()..version = gen4ParseHex(revision);
+      device.config[0] = 1;
+      device.config[1] = 1;
+      await tester.pumpWidget(
+        ChangeNotifierProvider<ChameleonGUIState>.value(
+          value: gen4TestState(device),
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const Scaffold(body: Gen4Menu()),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Read configuration'));
+      await tester.pumpAndSettle();
+      final advanced = find.text('UID and advanced memory access');
+      await tester.ensureVisible(advanced);
+      await tester.tap(advanced);
+      await tester.pumpAndSettle();
+      final setting = find.widgetWithText(
+        DropdownButtonFormField<int>,
+        'Memory-backed setting',
+      );
+      await tester.ensureVisible(setting);
+      await tester.tap(setting);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('02 · PACK').last);
+      await tester.pumpAndSettle();
+      final read = find.text('Read setting');
+      await tester.ensureVisible(read);
+      if (revision == '3F') {
+        expect(
+          tester
+              .widget<OutlinedButton>(
+                find.widgetWithText(OutlinedButton, 'Read setting'),
+              )
+              .onPressed,
+          isNull,
+        );
+        final page = find.widgetWithText(
+          DropdownButtonFormField<int>,
+          'PACK page',
+        );
+        await tester.ensureVisible(page);
+        await tester.tap(page);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('E6').last);
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(read);
+      }
+      await tester.tap(read);
+      await tester.pumpAndSettle();
+      expect(
+        gen4Hex(device.commands.last.sublist(5)),
+        revision == '00000006A0' ? 'CE13' : 'CEE6',
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

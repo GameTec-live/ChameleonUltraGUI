@@ -16,6 +16,7 @@ class Gen4TestDevice extends ChameleonCommunicator {
   final commands = <Uint8List>[];
   bool reader = false;
   bool rejectWrite = false;
+  Uint8List version = gen4ParseHex('00000006A0');
 
   @override
   Future<bool> isReaderDeviceMode() async => reader;
@@ -47,7 +48,7 @@ class Gen4TestDevice extends ChameleonCommunicator {
       case 0xC6:
         return Uint8List.fromList(config);
       case 0xCC:
-        return gen4ParseHex('00000006A0');
+        return version;
       case 0xF0:
       case 0xF1:
         if (rejectWrite) return gen4ParseHex('6300');
