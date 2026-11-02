@@ -1424,9 +1424,13 @@ class ChameleonCommunicator {
   }
 
   Future<void> hf14aSetConfig(int bcc, int cl2, int cl3, int rats) async {
-    await sendCmd(ChameleonCommand.hf14aSetConfig,
+    final response = await sendCmd(ChameleonCommand.hf14aSetConfig,
         data: Uint8List.fromList(
             [bcc & 0xFF, cl2 & 0xFF, cl3 & 0xFF, rats & 0xFF]));
+    if (response?.status != 0) {
+      throw StateError(
+          'HF reader configuration rejected (status: ${response?.status})');
+    }
   }
 
   Future<Uint8List> ioProxDecodeRaw(Uint8List raw8) async {

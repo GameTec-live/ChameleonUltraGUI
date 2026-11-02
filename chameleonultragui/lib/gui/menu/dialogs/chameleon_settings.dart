@@ -487,22 +487,22 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           ]
                         : [],
                     const SizedBox(height: 10),
-                    HfReaderSettings(
-                      onLoad: () async {
-                        final communicator = appState.communicator!;
-                        final capabilities =
-                            await communicator.getDeviceCapabilities();
-                        if (!capabilities.contains(
-                                ChameleonCommand.hf14aGetConfig.value) ||
-                            !capabilities.contains(
-                                ChameleonCommand.hf14aSetConfig.value)) {
-                          return null;
-                        }
-                        return communicator.hf14aGetConfig();
-                      },
-                      onSave: appState.communicator!.hf14aSetConfig,
-                      onChanged: appState.changesMade,
-                    ),
+                    if (appState.communicator case final communicator?)
+                      HfReaderSettings(
+                        onLoad: () async {
+                          final capabilities =
+                              await communicator.getDeviceCapabilities();
+                          if (!capabilities.contains(
+                                  ChameleonCommand.hf14aGetConfig.value) ||
+                              !capabilities.contains(
+                                  ChameleonCommand.hf14aSetConfig.value)) {
+                            return null;
+                          }
+                          return communicator.hf14aGetConfig();
+                        },
+                        onSave: communicator.hf14aSetConfig,
+                        onChanged: appState.changesMade,
+                      ),
                     Text("${localizations.other}:"),
                     const SizedBox(height: 10),
                     FittedBox(
