@@ -430,7 +430,8 @@ class MifareClassicRecovery {
           validKey = getSectorKey(sector, keyType);
           validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
           validKeyType = keyType;
-          if (!isStaticEncrypted) {
+          // This detection is only used when backdoor data can select that attack.
+          if (hasBackdoor && !isStaticEncrypted) {
             isStaticEncrypted = await mfClassicIsStaticEncrypted(
                 appState.communicator!, validKeyBlock, validKeyType, validKey);
           }
@@ -535,7 +536,8 @@ class MifareClassicRecovery {
             } else if (prng == NTLevel.static) {
               var nested = StaticNestedDart(
                 uid: distance!.uid,
-                keyType: 0x60 + validKeyType,
+                // Gen-2 nonce timing depends on the target key type.
+                keyType: 0x60 + keyType,
                 nt0: nonces!.nonces[0].nt,
                 nt0Enc: nonces.nonces[0].ntEnc,
                 nt1: nonces.nonces[1].nt,

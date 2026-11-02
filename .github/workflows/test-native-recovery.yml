@@ -1,0 +1,60 @@
+name: Test native recovery
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'chameleonultragui/src/**'
+      - 'chameleonultragui/test/native/**'
+      - 'chameleonultragui/test/recovery_test.dart'
+      - '.github/workflows/test-native-recovery.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'chameleonultragui/src/**'
+      - 'chameleonultragui/test/native/**'
+      - 'chameleonultragui/test/recovery_test.dart'
+      - '.github/workflows/test-native-recovery.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  native-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check out the independent reference implementation
+        uses: actions/checkout@v7
+        with:
+          ref: 2673fa9512c9c501513cf2b5276f86a411ceb1e6
+          path: native-reference
+      - name: Build both recovery engines
+        run: |
+          cmake -S chameleonultragui/src -B build/native-recovery -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/native-recovery -j2
+          cmake -S native-reference/chameleonultragui/src -B build/native-reference \
+            -DCMAKE_BUILD_TYPE=Release -DSRC_DIR="$PWD/native-reference/chameleonultragui/src"
+          cmake --build build/native-reference -j2
+      - name: Compare candidate order and recovery results
+        run: |
+          python3 chameleonultragui/test/native/recovery_check.py \
+            build/native-recovery/librecovery.so \
+            --reference build/native-reference/librecovery.so --cases 4 --repeats 1 --hardnested
+      - name: Check every partial-sum table bit
+        run: |
+          cc -O3 -D_GNU_SOURCE chameleonultragui/test/native/hardnested_tables_check.c \
+            -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
+            -lrecovery -pthread -lm -o build/native-recovery/check-tables
+          build/native-recovery/check-tables
+      - name: Check failed thread launches with one and four CPUs
+        run: |
+          cc -shared -fPIC chameleonultragui/test/native/thread_fallback.c \
+            -ldl -o build/native-recovery/thread-fallback.so
+          for cpus in 1 4; do
+            RECOVERY_TEST_CPUS="$cpus" LD_PRELOAD="$PWD/build/native-recovery/thread-fallback.so" \
+              python3 chameleonultragui/test/native/recovery_check.py \
+              build/native-recovery/librecovery.so \
+              --reference build/native-reference/librecovery.so --cases 1 --repeats 1
+          done

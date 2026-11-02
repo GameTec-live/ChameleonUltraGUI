@@ -449,41 +449,36 @@ class StaticEncryptedKeysFilter {
   // Rewritten from staticnested_2x1nt_rf08s by Doegox
   // https://github.com/RfidResearchGroup/proxmark3/blob/master/tools/mfc/card_only/staticnested_2x1nt_rf08s.c
   static (List<int>, List<int>) filterKeys(
-      List<int> keys1, List<int> keys2, int nt1, int nt2) {
+    List<int> keys1,
+    List<int> keys2,
+    int nt1,
+    int nt2,
+  ) {
     _initLfsr16Table();
 
-    final List<int> seednt1 = [];
-    final List<bool> filterKeys1 = List<bool>.filled(keys1.length, false);
-    final List<bool> filterKeys2 = List<bool>.filled(keys2.length, false);
-
-    for (int i = 0; i < keys1.length; i++) {
-      seednt1.add(_computeSeednt16Nt32(nt1, keys1[i]));
+    final seeds1 = [for (final key in keys1) _computeSeednt16Nt32(nt1, key)];
+    final seeds2 = [for (final key in keys2) _computeSeednt16Nt32(nt2, key)];
+    // Seeds are 16-bit values. Direct membership uses 128 KiB and avoids
+    // hashing while retaining every matching occurrence in the original order.
+    final present1 = Uint8List(1 << 16);
+    final present2 = Uint8List(1 << 16);
+    for (final seed in seeds1) {
+      present1[seed] = 1;
+    }
+    for (final seed in seeds2) {
+      present2[seed] = 1;
     }
 
-    for (int j = 0; j < keys2.length; j++) {
-      int seednt2 = _computeSeednt16Nt32(nt2, keys2[j]);
-      for (int i = 0; i < keys1.length; i++) {
-        if (seednt2 == seednt1[i]) {
-          filterKeys1[i] = true;
-          filterKeys2[j] = true;
-        }
-      }
-    }
-
-    final List<int> filteredKeys1 = [];
-    final List<int> filteredKeys2 = [];
-
-    for (int i = 0; i < keys1.length; i++) {
-      if (filterKeys1[i]) {
-        filteredKeys1.add(keys1[i]);
-      }
-    }
-
-    for (int j = 0; j < keys2.length; j++) {
-      if (filterKeys2[j]) {
-        filteredKeys2.add(keys2[j]);
-      }
-    }
+    // Matching is by seed, not by key. Keep every matching occurrence in its
+    // original order, including duplicate keys and different keys sharing a seed.
+    final filteredKeys1 = [
+      for (var i = 0; i < keys1.length; i++)
+        if (present2[seeds1[i]] != 0) keys1[i],
+    ];
+    final filteredKeys2 = [
+      for (var i = 0; i < keys2.length; i++)
+        if (present1[seeds2[i]] != 0) keys2[i],
+    ];
 
     return (filteredKeys1, filteredKeys2);
   }
