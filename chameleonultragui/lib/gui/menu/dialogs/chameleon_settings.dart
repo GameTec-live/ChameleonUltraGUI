@@ -1,5 +1,6 @@
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
+import 'package:chameleonultragui/gui/component/hf_reader_settings.dart';
 import 'package:chameleonultragui/gui/component/long_press_threshold_input.dart';
 import 'package:chameleonultragui/gui/component/toggle_buttons.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
@@ -486,6 +487,22 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           ]
                         : [],
                     const SizedBox(height: 10),
+                    HfReaderSettings(
+                      onLoad: () async {
+                        final communicator = appState.communicator!;
+                        final capabilities =
+                            await communicator.getDeviceCapabilities();
+                        if (!capabilities.contains(
+                                ChameleonCommand.hf14aGetConfig.value) ||
+                            !capabilities.contains(
+                                ChameleonCommand.hf14aSetConfig.value)) {
+                          return null;
+                        }
+                        return communicator.hf14aGetConfig();
+                      },
+                      onSave: appState.communicator!.hf14aSetConfig,
+                      onChanged: appState.changesMade,
+                    ),
                     Text("${localizations.other}:"),
                     const SizedBox(height: 10),
                     FittedBox(

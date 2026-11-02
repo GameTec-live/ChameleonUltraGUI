@@ -614,5 +614,15 @@
   "t55xx_block_editor_page": "Page",
   "t55xx_block_editor_data": "Block data (8 hex digits)",
   "t55xx_block_editor_use_password": "Authenticate with password",
-  "t55xx_block_editor_sent": "Write command completed. Tag contents have not been verified."
+  "t55xx_block_editor_sent": "Write command completed. Tag contents have not been verified.",
+  "hf_reader_config": "HF reader configuration",
+  "hf_reader_config_help": "Advanced ISO 14443-A overrides. Changes last until the device restarts. Use standard behavior for normal cards.",
+  "hf_reader_standard": "Follow standard",
+  "hf_reader_fix_bcc": "Fix bad BCC",
+  "hf_reader_ignore_bcc": "Use card BCC even if invalid",
+  "hf_reader_force": "Always perform",
+  "hf_reader_skip": "Always skip",
+  "hf_reader_cl2": "Cascade level 2 (CL2)",
+  "hf_reader_cl3": "Cascade level 3 (CL3)",
+  "hf_reader_rats": "Request for Answer to Select (RATS)"
 }
