@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/menu/tools/wipe_card.dart';
 import 'package:chameleonultragui/gui/menu/tools/t55xx_block_editor.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
@@ -46,6 +47,13 @@ class ToolsPageState extends State<ToolsPage> {
     var localizations = AppLocalizations.of(context)!;
 
     List<ToolItem> tools = [
+      ToolItem(
+        name: localizations.wipe_card,
+        description: localizations.wipe_description,
+        icon: Icons.delete_forever,
+        isDeviceRequired: true,
+        onPressed: const WipeCardMenu(),
+      ),
       ToolItem(
         name: localizations.live_value_blocks,
         description: localizations.value_block_tool_description,
@@ -152,7 +160,9 @@ class ToolsPageState extends State<ToolsPage> {
                         return;
                       }
                       showDialog(
-                        barrierDismissible: tool.onPressed is! RawCommandsMenu,
+                        barrierDismissible:
+                            tool.onPressed is! RawCommandsMenu &&
+                            tool.onPressed is! WipeCardMenu,
                         context: context,
                         builder: (BuildContext context) {
                           return tool.onPressed!;

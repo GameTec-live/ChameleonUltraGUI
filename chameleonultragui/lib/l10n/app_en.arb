@@ -660,5 +660,34 @@
   "value_block_no_access": "This operation needs a value block, a supported firmware command, and recovered keys with the required access.",
   "value_block_done_unverified": "Card operation completed. Readback was unavailable; read the blocks again to verify the result.",
   "value_block_copy_mode": "Copy between blocks",
-  "value_block_select_block": "Select a block"
+  "value_block_select_block": "Select a block",
+  "wipe_card": "Wipe card",
+  "wipe_description": "Detect a card, erase writable data and restore default keys and access settings.",
+  "wipe_warning": "This permanently erases writable data. Present one card and keep it in place. Manufacturer/UID, OTP, permanent locks and counters cannot be reset. Enabled NTAG read counters may increment automatically during detection or wiping. Locked or inaccessible areas are reported as incomplete.",
+  "wipe_t55xx": "T55xx fallback",
+  "wipe_t55xx_warning": "T55xx cannot be identified or verified by this firmware. Enable only for a known T55xx tag. Writes may have no effect with an incorrect password or permanent locks.",
+  "wipe_detect": "Detect card",
+  "wipe_no_hf": "No HF card found. For a known T55xx tag, enable the T55xx fallback.",
+  "wipe_current_key": "Current password / key (optional)",
+  "wipe_t55xx_data": "Also erase T55xx data blocks 1–6",
+  "wipe_confirm": "I understand that the card data will be erased.",
+  "wipe_working": "Keep the card in place. Checking keys and wiping may take several minutes.",
+  "wipe_t55xx_sent": "T55xx writes sent: open configuration (00148040, PWD off), block 7 cleared. Card contents are unverified.",
+  "wipe_complete": "Wipe verified. Writable user data cleared and access settings restored. UID, OTP and locks preserved. Counters are not erased; enabled NTAG read counters may have incremented automatically.",
+  "wipe_incomplete": "Wipe incomplete. Failed blocks/pages or sectors ending at: {blocks}. Some data or keys may remain.",
+  "@wipe_incomplete": {
+    "placeholders": {
+      "blocks": {
+        "type": "String"
+      }
+    }
+  },
+  "wipe_error": "Wipe stopped: {error}. Some data or settings may already have changed; detect the card again before retrying.",
+  "@wipe_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }
