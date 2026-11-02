@@ -2,6 +2,7 @@ import 'package:chameleonultragui/gui/menu/tools/t55xx_block_editor.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
 import 'package:chameleonultragui/gui/menu/tools/hf_sniffing.dart';
+import 'package:chameleonultragui/gui/menu/tools/gen4.dart';
 import 'package:chameleonultragui/gui/menu/tools/lf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
 import 'package:chameleonultragui/main.dart';
@@ -89,6 +90,7 @@ class ToolsPageState extends State<ToolsPage> {
         name: localizations.mifare_classic_gen4,
         description: localizations.mifare_classic_gen4_description,
         icon: Icons.settings,
+        onPressed: const Gen4Menu(),
         isDeviceRequired: true,
       ),
     ];
