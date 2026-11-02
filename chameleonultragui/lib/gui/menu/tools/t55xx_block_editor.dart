@@ -102,8 +102,6 @@ class _T55xxBlockEditorMenuState extends State<T55xxBlockEditorMenu> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l.t55xx_block_editor_notice),
-                  const SizedBox(height: 16),
                   if (!connected)
                     Text(l.device_required)
                   else if (_supported == null)
