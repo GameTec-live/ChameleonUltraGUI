@@ -61,10 +61,10 @@ class Mfkey32MenuState extends State<Mfkey32Menu> {
   Future<void> handleMfkeyCalculation() async {
     var appState = context.read<ChameleonGUIState>();
 
-    var count = await operation
-        .wait(appState.communicator!.getMf1DetectionCount());
-    var detections = await operation
-        .wait(appState.communicator!.getMf1DetectionResult(count,
+    var count =
+        await operation.wait(appState.communicator!.getMf1DetectionCount());
+    var detections = await operation.wait(appState.communicator!
+        .getMf1DetectionResult(count,
             checkCancelled: operation.checkCancelled));
     for (var item in detections.entries) {
       var uid = item.key;
@@ -85,8 +85,8 @@ class Mfkey32MenuState extends State<Mfkey32Menu> {
                 nr1Enc: item1.nr,
                 ar1Enc: item1.ar,
               );
-              var recoveredKey = await operation.wait(recovery.mfkey32(mfkey),
-                  interrupt: recovery.cancelRecovery);
+              var recoveredKey = await operation
+                  .wait(recovery.mfkey32(mfkey, operation: operation));
               keys.add(u64ToBytes((recoveredKey)[0]).sublist(2, 8));
               outputUid =
                   bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase();

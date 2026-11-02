@@ -389,8 +389,8 @@ class MifareClassicRecovery {
               nr: data.nr,
               ar: data.ar));
 
-          var keys = await operation.wait(recovery.darkside(darkside),
-              interrupt: recovery.cancelRecovery);
+          var keys = await operation
+              .wait(recovery.darkside(darkside, operation: operation));
           if (keys.isNotEmpty) {
             appState.log!.d("Darkside: Found keys: $keys. Checking them...");
 
@@ -438,8 +438,8 @@ class MifareClassicRecovery {
             nt1Enc: nonces.nonces[1].ntEnc,
             par1: nonces.nonces[1].parity);
 
-        List<int> keys = await operation.wait(recovery.nested(nested),
-            interrupt: recovery.cancelRecovery);
+        List<int> keys =
+            await operation.wait(recovery.nested(nested, operation: operation));
 
         if (keys.isNotEmpty) {
           appState.log!.d("Found keys: $keys. Checking them...");
@@ -569,8 +569,8 @@ class MifareClassicRecovery {
                   nt1Enc: nonces.nonces[1].ntEnc,
                   par1: nonces.nonces[1].parity);
 
-              keys = await operation.wait(recovery.nested(nested),
-                  interrupt: recovery.cancelRecovery);
+              keys = await operation
+                  .wait(recovery.nested(nested, operation: operation));
             } else if (prng == NTLevel.static) {
               var nested = StaticNestedDart(
                 uid: distance!.uid,
@@ -582,31 +582,33 @@ class MifareClassicRecovery {
                 nt1Enc: nonces.nonces[1].ntEnc,
               );
 
-              keys = await operation.wait(recovery.staticNested(nested),
-                  interrupt: recovery.cancelRecovery);
+              keys = await operation
+                  .wait(recovery.staticNested(nested, operation: operation));
             } else if (prng == NTLevel.hard) {
               var nested =
                   HardNestedDart(nonces: nonces!.getHardNested(distance!.uid));
-              keys = await operation.wait(recovery.hardNested(nested),
-                  interrupt: recovery.cancelRecovery);
+              keys = await operation
+                  .wait(recovery.hardNested(nested, operation: operation));
             } else if (prng == NTLevel.backdoor) {
               setCheckingSector(sector, 1);
 
               var possibleAKeys = await operation.wait(
-                  recovery.staticEncryptedNested(StaticEncryptedNestedDart(
-                      uid: backdoorInfo!.$1,
-                      nt: backdoorInfo.$2.nonces[sector].nt,
-                      ntEnc: backdoorInfo.$2.nonces[sector].ntEnc,
-                      ntParEnc: backdoorInfo.$2.nonces[sector].parity)),
-                  interrupt: recovery.cancelRecovery);
+                  recovery.staticEncryptedNested(
+                      StaticEncryptedNestedDart(
+                          uid: backdoorInfo!.$1,
+                          nt: backdoorInfo.$2.nonces[sector].nt,
+                          ntEnc: backdoorInfo.$2.nonces[sector].ntEnc,
+                          ntParEnc: backdoorInfo.$2.nonces[sector].parity),
+                      operation: operation));
 
               var possibleBKeys = await operation.wait(
-                  recovery.staticEncryptedNested(StaticEncryptedNestedDart(
-                      uid: backdoorInfo.$1,
-                      nt: backdoorInfo.$3.nonces[sector].nt,
-                      ntEnc: backdoorInfo.$3.nonces[sector].ntEnc,
-                      ntParEnc: backdoorInfo.$3.nonces[sector].parity)),
-                  interrupt: recovery.cancelRecovery);
+                  recovery.staticEncryptedNested(
+                      StaticEncryptedNestedDart(
+                          uid: backdoorInfo.$1,
+                          nt: backdoorInfo.$3.nonces[sector].nt,
+                          ntEnc: backdoorInfo.$3.nonces[sector].ntEnc,
+                          ntParEnc: backdoorInfo.$3.nonces[sector].parity),
+                      operation: operation));
 
               var filtered = await operation.wait(
                   StaticEncryptedKeysFilterAsync.filterKeys(
@@ -629,8 +631,8 @@ class MifareClassicRecovery {
                 found = true;
                 break;
               } else if (await operation.wait(checkKeysOnSector(
-                  mfClassicConvertKeys(
-                      await operation.wait(StaticEncryptedKeysFilterAsync.findMatchingKeys(
+                  mfClassicConvertKeys(await operation.wait(
+                      StaticEncryptedKeysFilterAsync.findMatchingKeys(
                           backdoorInfo.$3.nonces[sector].nt,
                           bytesToU64(Uint8List.fromList(
                               [0, 0, ...validKeys[sector + 40]])),
