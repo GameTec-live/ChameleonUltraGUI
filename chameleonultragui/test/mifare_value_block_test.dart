@@ -548,4 +548,28 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets(
+    'resuming a skipped key restores recovery without resetting progress',
+    (tester) async {
+      final c = ValueBlockCommunicator()..dictionaryFindsKeys = false;
+      await pumpTool(tester, c);
+      await tester.tap(find.text('Scan card'));
+      await tester.pumpAndSettle();
+      for (var index = 0; index < 10; index++) {
+        await tester.tap(find.byTooltip('Skip recovery').first);
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text('Check keys from dictionary'));
+      await tester.pumpAndSettle();
+      expect(find.byType(KeyCheckMarks), findsNothing);
+      await tester.tap(find.text('Keys'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Resume recovery'), findsNWidgets(10));
+      await tester.tap(find.byTooltip('Resume recovery').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Recover keys'), findsOneWidget);
+      expect(find.byTooltip('Resume recovery'), findsNWidgets(9));
+      expect(find.byTooltip('Skip recovery'), findsOneWidget);
+    },
+  );
 }

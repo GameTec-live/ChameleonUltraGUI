@@ -190,6 +190,16 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
               validKeys: recovery.validKeys,
               onCheckmarkChanged: (index, state) => setState(() {
                 recovery.checkMarks[index] = state;
+                recovery.allKeysExists =
+                    [
+                      for (var sector = 0; sector < card.sectorCount; sector++)
+                        for (var keyType = 0; keyType < 2; keyType++)
+                          recovery.getSectorState(sector, keyType),
+                    ].every(
+                      (state) =>
+                          state == ChameleonKeyCheckmark.found ||
+                          state == ChameleonKeyCheckmark.disabled,
+                    );
               }),
             ),
           ),
