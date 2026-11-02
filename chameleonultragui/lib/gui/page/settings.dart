@@ -210,9 +210,11 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    localizations.auto_scan_devices,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  Flexible(
+                    child: Text(
+                      localizations.auto_scan_devices,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                   const SizedBox(width: 5),
                   Switch(
@@ -230,9 +232,11 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    localizations.auto_connect_first_device,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  Flexible(
+                    child: Text(
+                      localizations.auto_connect_first_device,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                   const SizedBox(width: 5),
                   Switch(
