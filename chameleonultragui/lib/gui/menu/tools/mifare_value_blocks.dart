@@ -240,17 +240,18 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
               onPressed: _busy ? null : () => _recover(dictionary: true),
               child: Text(l.check_keys_dict),
             ),
-          ] else if (!recovery.allKeysExists) ...[
+          ] else ...[
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                ElevatedButton(
-                  style: customCardButtonStyle(appState),
-                  onPressed: _busy ? null : () => _recover(dictionary: false),
-                  child: Text(l.recover_keys),
-                ),
+                if (!recovery.allKeysExists)
+                  ElevatedButton(
+                    style: customCardButtonStyle(appState),
+                    onPressed: _busy ? null : () => _recover(dictionary: false),
+                    child: Text(l.recover_keys),
+                  ),
                 ElevatedButton(
                   style: customCardButtonStyle(appState),
                   onPressed: _busy

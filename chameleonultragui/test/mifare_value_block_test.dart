@@ -6,6 +6,7 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/tools/mifare_value_blocks.dart';
 import 'package:chameleonultragui/gui/component/key_check_marks.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary/export.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -570,6 +571,28 @@ void main() {
       expect(find.text('Recover keys'), findsOneWidget);
       expect(find.byTooltip('Resume recovery'), findsNWidgets(9));
       expect(find.byTooltip('Skip recovery'), findsOneWidget);
+    },
+  );
+  testWidgets(
+    'completed keys can be exported by reopening the collapsed panel',
+    (tester) async {
+      await pumpTool(tester, ValueBlockCommunicator());
+      await discover(tester);
+      expect(find.byType(KeyCheckMarks), findsNothing);
+      await tester.tap(find.text('Keys'));
+      await tester.pumpAndSettle();
+      expect(find.text('Recover keys'), findsNothing);
+      expect(find.text('Check keys from dictionary'), findsNothing);
+      await tester.tap(find.text('Export found keys'));
+      await tester.pumpAndSettle();
+      expect(find.byType(DictionaryExportMenu), findsOneWidget);
+      expect(
+        tester
+            .widget<DictionaryExportMenu>(find.byType(DictionaryExportMenu))
+            .keys
+            .where((key) => key.length == 6),
+        hasLength(10),
+      );
     },
   );
 }
