@@ -117,6 +117,12 @@ void main() {
     'device form validates hex then sends and displays firmware error status',
     (tester) async {
       final serial = await open(tester);
+      await tester.enterText(find.byType(TextFormField).at(0), '-1');
+      await tester.tap(find.text('Send'));
+      await tester.pumpAndSettle();
+      expect(find.text('Enter a number from 0 to 65535.'), findsOneWidget);
+      expect(serial.frames, isEmpty);
+      await tester.enterText(find.byType(TextFormField).at(0), '1000');
       await tester.enterText(find.byType(TextFormField).at(1), 'A');
       await tester.tap(find.text('Send'));
       await tester.pumpAndSettle();

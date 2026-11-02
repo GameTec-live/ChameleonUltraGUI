@@ -604,23 +604,6 @@
   "raw_auto_select": "Select card automatically",
   "raw_keep_rf": "Keep RF field on",
   "raw_check_crc": "Check response CRC",
-  "raw_invalid_number": "Enter a number from {min} to {max}.",
-  "@raw_invalid_number": {
-    "placeholders": {
-      "min": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
-  "raw_invalid_hex": "Enter complete hex bytes, up to {max} bytes.",
-  "@raw_invalid_hex": {
-    "placeholders": {
-      "max": {
-        "type": "int"
-      }
-    }
-  }
+  "raw_invalid_number": "Enter a number from {lower} to {upper}.",
+  "raw_invalid_hex": "Enter complete hex bytes, up to {max} bytes."
 }
