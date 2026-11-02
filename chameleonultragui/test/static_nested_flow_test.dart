@@ -19,10 +19,13 @@ class StaticCardSerial extends Fake implements AbstractSerial {
 }
 
 class StaticCardCommunicator extends ChameleonCommunicator {
-  StaticCardCommunicator(this.sourceKeyType) : super(Logger(level: Level.off));
+  StaticCardCommunicator(this.sourceKeyType, {this.hasBackdoor = false})
+    : super(Logger(level: Level.off));
 
   final int sourceKeyType;
+  final bool hasBackdoor;
   final checkedTypes = <int>[];
+  int encryptedProbes = 0;
   static final knownKey = hexToBytes('FFFFFFFFFFFF');
   static final targetKeys = [
     hexToBytes('112233445566'),
@@ -44,8 +47,28 @@ class StaticCardCommunicator extends ChameleonCommunicator {
     bool firstRun = false,
   }) async {
     expect(cmd, ChameleonCommand.hf14ARawCommand);
-    // No backdoor; recover sector 0 using an already-known sector 15 key.
-    return ChameleonMessage(command: cmd.value, status: 0, data: Uint8List(0));
+    return ChameleonMessage(
+      command: cmd.value,
+      status: 0,
+      data: hasBackdoor ? hexToBytes('11223344') : Uint8List(0),
+    );
+  }
+
+  @override
+  Future<(int, NestedNonces, NestedNonces, Uint8List)?>
+  getMf1StaticEncryptedNestedAcquire({
+    int sectorCount = 16,
+    int startingSector = 0,
+  }) async {
+    expect(hasBackdoor, isTrue);
+    // The ordinary-static path only needs the backdoor key; encrypted nonce
+    // data is unused because the probe below identifies distinct first bytes.
+    return (
+      0x11223344,
+      NestedNonces(nonces: []),
+      NestedNonces(nonces: []),
+      knownKey,
+    );
   }
 
   @override
@@ -70,6 +93,7 @@ class StaticCardCommunicator extends ChameleonCommunicator {
     bool slow = false,
   }) async {
     if (level == NTLevel.hard) {
+      encryptedProbes++;
       // Distinct first bytes rule out the static-encrypted/backdoor path.
       return NestedNonces(
         nonces: [NestedNonce(nt: 0x11223344, ntEnc: 0x55667788, parity: 0)],
@@ -112,11 +136,19 @@ class StaticCardCommunicator extends ChameleonCommunicator {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  for (final sourceType in [0x60, 0x61]) {
+  for (final (sourceType, hasBackdoor) in [
+    (0x60, false),
+    (0x60, true),
+    (0x61, false),
+    (0x61, true),
+  ]) {
     test(
-      'static nested targets A then B using known key type $sourceType',
+      'static nested targets A/B using source $sourceType, backdoor $hasBackdoor',
       () async {
-        final communicator = StaticCardCommunicator(sourceType);
+        final communicator = StaticCardCommunicator(
+          sourceType,
+          hasBackdoor: hasBackdoor,
+        );
         final app = ChameleonGUIState(SharedPreferencesProvider())
           ..communicator = communicator
           ..connector = StaticCardSerial()
@@ -144,6 +176,11 @@ void main() {
 
         await subject.recoverKeys();
 
+        expect(
+          communicator.encryptedProbes,
+          hasBackdoor ? isPositive : isZero,
+          reason: 'Only backdoor-capable cards need encrypted detection',
+        );
         expect(communicator.checkedTypes, [0x60, 0x61]);
         expect(
           subject.getSectorKey(0, 0),

@@ -430,7 +430,8 @@ class MifareClassicRecovery {
           validKey = getSectorKey(sector, keyType);
           validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
           validKeyType = keyType;
-          if (!isStaticEncrypted) {
+          // This detection is only used when backdoor data can select that attack.
+          if (hasBackdoor && !isStaticEncrypted) {
             isStaticEncrypted = await mfClassicIsStaticEncrypted(
                 appState.communicator!, validKeyBlock, validKeyType, validKey);
           }
