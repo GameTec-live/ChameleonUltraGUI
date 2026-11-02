@@ -18,6 +18,11 @@
     Copyright (C) 2008-2014 bla <blapost@gmail.com>
 */
 #include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
 #include "parity.h"
 
 #include "crapto1.h"
@@ -64,46 +69,51 @@ static inline void update_contribution(uint32_t *item, const uint32_t mask1, con
 static inline void extend_table(uint32_t *tbl, uint32_t **end, int bit, int m1, int m2, uint32_t in)
 {
     in <<= 24;
-    for (*tbl <<= 1; tbl <= *end; *++tbl <<= 1)
-        if (crypto1_filter(*tbl) ^ crypto1_filter(*tbl | 1))
-        {
-            *tbl |= crypto1_filter(*tbl) ^ bit;
-            update_contribution(tbl, m1, m2);
-            *tbl ^= in;
-        }
-        else if (crypto1_filter(*tbl) == bit)
-        {
-            *++*end = tbl[1];
-            tbl[1] = tbl[0] | 1;
-            update_contribution(tbl, m1, m2);
-            *tbl++ ^= in;
-            update_contribution(tbl, m1, m2);
-            *tbl ^= in;
-        }
-        else
-            *tbl-- = *(*end)--;
-}
-/** extend_table_simple
- * using a bit of the keystream extend the table of possible lfsr states
- */
-static inline void extend_table_simple(uint32_t *tbl, uint32_t **end, int bit)
-{
-    for (*tbl <<= 1; tbl <= *end; *++tbl <<= 1)
-    {
-        if (crypto1_filter(*tbl) ^ crypto1_filter(*tbl | 1))
-        { // replace
-            *tbl |= crypto1_filter(*tbl) ^ bit;
-        }
-        else if (crypto1_filter(*tbl) == bit)
-        { // insert
-            *++*end = *++tbl;
-            *tbl = tbl[-1] | 1;
-        }
-        else
-        { // drop
-            *tbl-- = *(*end)--;
+    size_t count = *end >= tbl ? (size_t)(*end - tbl + 1) : 0;
+    size_t i = 0;
+    while (i < count) {
+        uint32_t value = tbl[i] << 1;
+        int f0 = crypto1_filter(value), f1 = crypto1_filter(value | 1);
+        if (f0 != f1) {
+            tbl[i] = value | (f0 ^ bit);
+            update_contribution(&tbl[i], m1, m2);
+            tbl[i++] ^= in;
+        } else if (f0 == bit) {
+            if (i + 1 < count) tbl[count] = tbl[i + 1];
+            ++count;
+            tbl[i] = value;
+            tbl[i + 1] = value | 1;
+            update_contribution(&tbl[i], m1, m2);
+            tbl[i++] ^= in;
+            update_contribution(&tbl[i], m1, m2);
+            tbl[i++] ^= in;
+        } else {
+            tbl[i] = tbl[--count];
         }
     }
+    *end = count ? tbl + count - 1 : tbl - 1;
+}
+
+// Extend without reading or shifting the entry past the candidate range.
+static inline void extend_table_simple(uint32_t *tbl, uint32_t **end, int bit)
+{
+    size_t count = *end >= tbl ? (size_t)(*end - tbl + 1) : 0;
+    size_t i = 0;
+    while (i < count) {
+        uint32_t value = tbl[i] << 1;
+        int f0 = crypto1_filter(value), f1 = crypto1_filter(value | 1);
+        if (f0 != f1) {
+            tbl[i++] = value | (f0 ^ bit);
+        } else if (f0 == bit) {
+            if (i + 1 < count) tbl[count] = tbl[i + 1];
+            ++count;
+            tbl[i++] = value;
+            tbl[i++] = value | 1;
+        } else {
+            tbl[i] = tbl[--count];
+        }
+    }
+    *end = count ? tbl + count - 1 : tbl - 1;
 }
 /** recover
  * recursively narrow down the search space, 4 bits of keystream at a time
@@ -111,7 +121,7 @@ static inline void extend_table_simple(uint32_t *tbl, uint32_t **end, int bit)
 static struct Crypto1State *
 recover(uint32_t *o_head, uint32_t *o_tail, uint32_t oks,
         uint32_t *e_head, uint32_t *e_tail, uint32_t eks, int rem,
-        struct Crypto1State *sl, uint32_t in, bucket_array_t bucket)
+        struct Crypto1State *sl, uint32_t in, uint32_t *scratch)
 {
     bucket_info_t bucket_info;
 
@@ -144,16 +154,154 @@ recover(uint32_t *o_head, uint32_t *o_tail, uint32_t oks,
             return sl;
     }
 
-    bucket_sort_intersect(e_head, e_tail, o_head, o_tail, &bucket_info, bucket);
+    bucket_sort_intersect(e_head, e_tail, o_head, o_tail, &bucket_info, scratch);
 
     for (int i = bucket_info.numbuckets - 1; i >= 0; i--)
     {
         sl = recover(bucket_info.bucket_info[1][i].head, bucket_info.bucket_info[1][i].tail, oks,
                      bucket_info.bucket_info[0][i].head, bucket_info.bucket_info[0][i].tail, eks,
-                     rem, sl, in, bucket);
+                     rem, sl, in, scratch);
     }
 
     return sl;
+}
+
+typedef struct {
+    uint32_t *head, *tail, stream;
+} seed_job;
+
+static void *recover_seed(void *arg)
+{
+    seed_job *job = arg;
+    job->tail = job->head - 1;
+    for (int i = 1 << 20; i >= 0; --i)
+        if (crypto1_filter(i) == (job->stream & 1)) *++job->tail = i;
+    for (unsigned bit = 0; bit < 4; ++bit)
+        extend_table_simple(job->head, &job->tail, (job->stream >>= 1) & 1);
+    return NULL;
+}
+
+typedef struct {
+    uint32_t *head, *tail, stream, input;
+    bool odd;
+} feedback_job;
+
+static void *recover_feedback(void *arg)
+{
+    feedback_job *job = arg;
+    for (unsigned bit = 0; bit < 4 && job->head <= job->tail; ++bit) {
+        job->stream >>= 1;
+        job->input >>= 2;
+        extend_table(job->head, &job->tail, job->stream & 1,
+                     job->odd ? (LF_POLY_EVEN << 1 | 1) : LF_POLY_ODD,
+                     job->odd ? (LF_POLY_ODD << 1) : (LF_POLY_EVEN << 1 | 1),
+                     job->odd ? 0 : job->input & 3);
+    }
+    return NULL;
+}
+
+// Each worker owns its extension buffers: ranges can grow during recovery.
+// Four workers bound extra workspace to 104 MiB, including sort/result buffers.
+typedef struct {
+    bucket_info_t *groups;
+    unsigned first, end;
+    uint32_t oks, eks, in;
+    uint32_t *odd, *even, *scratch;
+    struct Crypto1State *states, *tail;
+} recovery_job;
+
+static void *recover_groups(void *arg)
+{
+    recovery_job *job = arg;
+    job->tail = job->states;
+    job->tail->odd = job->tail->even = 0;
+    for (unsigned b = job->end; b-- > job->first;) {
+        size_t no = job->groups->bucket_info[1][b].tail - job->groups->bucket_info[1][b].head + 1;
+        size_t ne = job->groups->bucket_info[0][b].tail - job->groups->bucket_info[0][b].head + 1;
+        memcpy(job->odd, job->groups->bucket_info[1][b].head, no * sizeof(uint32_t));
+        memcpy(job->even, job->groups->bucket_info[0][b].head, ne * sizeof(uint32_t));
+        job->tail = recover(job->odd, job->odd + no - 1, job->oks,
+                            job->even, job->even + ne - 1, job->eks,
+                            7, job->tail, job->in, job->scratch);
+    }
+    return NULL;
+}
+
+static bool recover_parallel(uint32_t *oh, uint32_t *ot, uint32_t oks,
+                             uint32_t *eh, uint32_t *et, uint32_t eks,
+                             struct Crypto1State **states, uint32_t in, uint32_t *scratch)
+{
+    // The first four feedback bits establish independent contribution groups.
+    // Fall back before modifying the input if memory or CPU parallelism is scarce.
+#if !defined(_WIN32)
+    long cpus = sysconf(_SC_NPROCESSORS_ONLN);
+#else
+    long cpus = 4;
+#endif
+    unsigned workers = cpus > 4 ? 4 : (cpus > 1 ? (unsigned)cpus : 1);
+    if (workers == 1) return false;
+    recovery_job jobs[4] = {0};
+    bool allocated = true;
+    for (unsigned w = 0; w < workers; ++w) {
+        jobs[w].odd = malloc(sizeof(uint32_t) << 21);
+        jobs[w].even = malloc(sizeof(uint32_t) << 21);
+        jobs[w].scratch = malloc(sizeof(uint32_t) << 21);
+        jobs[w].states = malloc(sizeof(struct Crypto1State) << 18);
+        if (!jobs[w].odd || !jobs[w].even || !jobs[w].scratch || !jobs[w].states) allocated = false;
+    }
+    if (!allocated) {
+        for (unsigned w = 0; w < workers; ++w) {
+            free(jobs[w].odd); free(jobs[w].even); free(jobs[w].scratch); free(jobs[w].states);
+        }
+        return false;
+    }
+    feedback_job odd = {oh, ot, oks, in, true};
+    feedback_job even = {eh, et, eks, in, false};
+    pthread_t feedback_thread;
+    bool feedback_started = pthread_create(&feedback_thread, NULL, recover_feedback, &odd) == 0;
+    if (!feedback_started) recover_feedback(&odd);
+    recover_feedback(&even);
+    if (feedback_started) pthread_join(feedback_thread, NULL);
+    ot = odd.tail; oks = odd.stream;
+    et = even.tail; eks = even.stream; in = even.input;
+    bucket_info_t groups = {0};
+    if (oh <= ot && eh <= et)
+        bucket_sort_intersect(eh, et, oh, ot, &groups, scratch);
+    pthread_t threads[4];
+    bool started[4] = {false};
+    for (unsigned w = 0; w < workers; ++w) {
+        jobs[w].groups = &groups;
+        jobs[w].first = groups.numbuckets * w / workers;
+        jobs[w].end = groups.numbuckets * (w + 1) / workers;
+        jobs[w].oks = oks; jobs[w].eks = eks; jobs[w].in = in;
+        if (w + 1 < workers && pthread_create(&threads[w], NULL, recover_groups, &jobs[w]) == 0)
+            started[w] = true;
+        else
+            recover_groups(&jobs[w]);
+    }
+    size_t count = 0;
+    for (unsigned w = 0; w < workers; ++w) {
+        if (started[w]) pthread_join(threads[w], NULL);
+        count += jobs[w].tail - jobs[w].states;
+    }
+    struct Crypto1State *result = realloc(*states, (count + 1) * sizeof(**states));
+    if (result) {
+        *states = result;
+        size_t offset = 0;
+        for (unsigned w = workers; w-- > 0;) {
+            size_t n = jobs[w].tail - jobs[w].states;
+            memcpy(result + offset, jobs[w].states, n * sizeof(*result));
+            offset += n;
+        }
+        result[count].odd = result[count].even = 0;
+    } else {
+        free(*states);
+        *states = NULL;
+    }
+    for (unsigned w = 0; w < workers; ++w) {
+        free(jobs[w].odd); free(jobs[w].even); free(jobs[w].scratch); free(jobs[w].states);
+    }
+    return true;
 }
 
 #if !defined(__arm__) || defined(__linux__) || defined(_WIN32) || defined(__APPLE__) // bare metal ARM Proxmark lacks malloc()/free()
@@ -165,6 +313,7 @@ recover(uint32_t *o_head, uint32_t *o_tail, uint32_t oks,
 struct Crypto1State *lfsr_recovery32(uint32_t ks2, uint32_t in)
 {
     struct Crypto1State *statelist;
+    uint32_t *scratch = malloc(sizeof(uint32_t) << 21);
     uint32_t *odd_head = 0, *odd_tail = 0, oks = 0;
     uint32_t *even_head = 0, *even_tail = 0, eks = 0;
     int i;
@@ -178,56 +327,36 @@ struct Crypto1State *lfsr_recovery32(uint32_t ks2, uint32_t in)
     odd_head = odd_tail = malloc(sizeof(uint32_t) << 21);
     even_head = even_tail = malloc(sizeof(uint32_t) << 21);
     statelist = malloc(sizeof(struct Crypto1State) << 18);
-    if (!odd_tail-- || !even_tail-- || !statelist)
+    if (!odd_tail || !even_tail || !statelist || !scratch)
     {
         free(statelist);
         statelist = 0;
         goto out;
     }
 
+    --odd_tail;
+    --even_tail;
     statelist->odd = statelist->even = 0;
 
-    // allocate memory for out of place bucket_sort
-    bucket_array_t bucket;
-
-    for (i = 0; i < 2; i++)
-    {
-        for (uint32_t j = 0; j <= 0xff; j++)
-        {
-            bucket[i][j].head = malloc(sizeof(uint32_t) << 14);
-            if (!bucket[i][j].head)
-            {
-                goto out;
-            }
-        }
-    }
-
-    // initialize statelists: add all possible states which would result into the rightmost 2 bits of the keystream
-    for (i = 1 << 20; i >= 0; --i)
-    {
-        if (crypto1_filter(i) == (oks & 1))
-            *++odd_tail = i;
-        if (crypto1_filter(i) == (eks & 1))
-            *++even_tail = i;
-    }
-
-    // extend the statelists. Look at the next 8 Bits of the keystream (4 Bit each odd and even):
-    for (i = 0; i < 4; i++)
-    {
-        extend_table_simple(odd_head, &odd_tail, (oks >>= 1) & 1);
-        extend_table_simple(even_head, &even_tail, (eks >>= 1) & 1);
-    }
+    seed_job odd = {odd_head, odd_head, oks};
+    seed_job even = {even_head, even_head, eks};
+    pthread_t seed_thread;
+    bool started = pthread_create(&seed_thread, NULL, recover_seed, &odd) == 0;
+    if (!started) recover_seed(&odd);
+    recover_seed(&even);
+    if (started) pthread_join(seed_thread, NULL);
+    odd_tail = odd.tail; oks = odd.stream;
+    even_tail = even.tail; eks = even.stream;
 
     // the statelists now contain all states which could have generated the last 10 Bits of the keystream.
     // 22 bits to go to recover 32 bits in total. From now on, we need to take the "in"
     // parameter into account.
     in = (in >> 16 & 0xff) | (in << 16) | (in & 0xff00); // Byte swapping
-    recover(odd_head, odd_tail, oks, even_head, even_tail, eks, 11, statelist, in << 1, bucket);
+    if (!recover_parallel(odd_head, odd_tail, oks, even_head, even_tail, eks, &statelist, in << 1, scratch))
+        recover(odd_head, odd_tail, oks, even_head, even_tail, eks, 11, statelist, in << 1, scratch);
 
 out:
-    for (i = 0; i < 2; i++)
-        for (uint32_t j = 0; j <= 0xff; j++)
-            free(bucket[i][j].head);
+    free(scratch);
     free(odd_head);
     free(even_head);
     return statelist;
@@ -256,7 +385,7 @@ static const uint32_t C2[] = {0x1A822E0, 0x21A822E0, 0x21A822E0};
 /** Reverse 64 bits of keystream into possible cipher states
  * Variation mentioned in the paper. Somewhat optimized version
  */
-struct Crypto1State *lfsr_recovery64(uint32_t ks2, uint32_t ks3)
+static struct Crypto1State *recovery64_range(uint32_t ks2, uint32_t ks3, int first, int end)
 {
     struct Crypto1State *statelist, *sl;
     uint8_t oks[32], eks[32], hi[32];
@@ -280,7 +409,7 @@ struct Crypto1State *lfsr_recovery64(uint32_t ks2, uint32_t ks3)
         eks[16 + (i >> 1)] = BEBIT(ks3, i);
     }
 
-    for (i = 0xfffff; i >= 0; --i)
+    for (i = end - 1; i >= first; --i)
     {
         if (crypto1_filter(i) != oks[0])
             continue;
@@ -328,6 +457,50 @@ struct Crypto1State *lfsr_recovery64(uint32_t ks2, uint32_t ks3)
     }
     return statelist;
 }
+typedef struct {
+    uint32_t ks2, ks3;
+    int first, end;
+    struct Crypto1State *states;
+} recovery64_job;
+
+static void *recover64_worker(void *arg)
+{
+    recovery64_job *job = arg;
+    job->states = recovery64_range(job->ks2, job->ks3, job->first, job->end);
+    return NULL;
+}
+
+struct Crypto1State *lfsr_recovery64(uint32_t ks2, uint32_t ks3)
+{
+    recovery64_job jobs[4];
+    pthread_t threads[4];
+    bool started[4] = {false};
+    for (unsigned w = 0; w < 4; ++w) {
+        jobs[w] = (recovery64_job){ks2, ks3, (int)(w << 18), (int)((w + 1) << 18), NULL};
+        if (w < 3 && pthread_create(&threads[w], NULL, recover64_worker, &jobs[w]) == 0)
+            started[w] = true;
+        else
+            recover64_worker(&jobs[w]);
+    }
+    size_t count = 0;
+    bool ok = true;
+    for (unsigned w = 0; w < 4; ++w) {
+        if (started[w]) pthread_join(threads[w], NULL);
+        if (!jobs[w].states) { ok = false; continue; }
+        for (struct Crypto1State *p = jobs[w].states; p->odd | p->even; ++p) ++count;
+    }
+    struct Crypto1State *result = ok ? calloc(count + 1, sizeof(*result)) : NULL;
+    size_t offset = 0;
+    // Preserve the reference's descending initial-state traversal order.
+    for (int w = 3; w >= 0; --w) {
+        if (result)
+            for (struct Crypto1State *p = jobs[w].states; p->odd | p->even; ++p)
+                result[offset++] = *p;
+        free(jobs[w].states);
+    }
+    return result;
+}
+
 #endif
 
 /** lfsr_rollback_bit
@@ -378,41 +551,41 @@ uint32_t lfsr_rollback_word(struct Crypto1State *s, uint32_t in, int fb)
     uint32_t ret = 0;
     // note: xor args have been swapped because some compilers emit a warning
     // for 10^x and 2^x as possible misuses for exponentiation. No comment.
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 31), fb) << (24 ^ 31);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 30), fb) << (24 ^ 30);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 29), fb) << (24 ^ 29);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 28), fb) << (24 ^ 28);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 27), fb) << (24 ^ 27);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 26), fb) << (24 ^ 26);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 25), fb) << (24 ^ 25);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 24), fb) << (24 ^ 24);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 31), fb) << (24 ^ 31);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 30), fb) << (24 ^ 30);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 29), fb) << (24 ^ 29);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 28), fb) << (24 ^ 28);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 27), fb) << (24 ^ 27);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 26), fb) << (24 ^ 26);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 25), fb) << (24 ^ 25);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 24), fb) << (24 ^ 24);
 
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 23), fb) << (24 ^ 23);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 22), fb) << (24 ^ 22);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 21), fb) << (24 ^ 21);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 20), fb) << (24 ^ 20);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 19), fb) << (24 ^ 19);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 18), fb) << (24 ^ 18);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 17), fb) << (24 ^ 17);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 16), fb) << (24 ^ 16);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 23), fb) << (24 ^ 23);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 22), fb) << (24 ^ 22);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 21), fb) << (24 ^ 21);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 20), fb) << (24 ^ 20);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 19), fb) << (24 ^ 19);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 18), fb) << (24 ^ 18);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 17), fb) << (24 ^ 17);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 16), fb) << (24 ^ 16);
 
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 15), fb) << (24 ^ 15);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 14), fb) << (24 ^ 14);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 13), fb) << (24 ^ 13);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 12), fb) << (24 ^ 12);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 11), fb) << (24 ^ 11);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 10), fb) << (24 ^ 10);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 9), fb) << (24 ^ 9);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 8), fb) << (24 ^ 8);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 15), fb) << (24 ^ 15);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 14), fb) << (24 ^ 14);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 13), fb) << (24 ^ 13);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 12), fb) << (24 ^ 12);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 11), fb) << (24 ^ 11);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 10), fb) << (24 ^ 10);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 9), fb) << (24 ^ 9);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 8), fb) << (24 ^ 8);
 
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 7), fb) << (24 ^ 7);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 6), fb) << (24 ^ 6);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 5), fb) << (24 ^ 5);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 4), fb) << (24 ^ 4);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 3), fb) << (24 ^ 3);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 2), fb) << (24 ^ 2);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 1), fb) << (24 ^ 1);
-    ret |= lfsr_rollback_bit(s, BEBIT(in, 0), fb) << (24 ^ 0);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 7), fb) << (24 ^ 7);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 6), fb) << (24 ^ 6);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 5), fb) << (24 ^ 5);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 4), fb) << (24 ^ 4);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 3), fb) << (24 ^ 3);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 2), fb) << (24 ^ 2);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 1), fb) << (24 ^ 1);
+    ret |= (uint32_t)lfsr_rollback_bit(s, BEBIT(in, 0), fb) << (24 ^ 0);
     return ret;
 }
 
@@ -569,3 +742,39 @@ out:
     return statelist;
 }
 #endif
+
+// Plaintext rollback and key extraction are linear over GF(2). Generate the
+// byte maps from the reference primitives once, rather than hand coding them.
+static pthread_once_t rollback_once = PTHREAD_ONCE_INIT;
+static uint64_t rollback_state[6][256], rollback_input[4][256];
+static void init_rollback_tables(void)
+{
+    for (unsigned byte = 0; byte < 10; ++byte) {
+        uint64_t basis[8];
+        for (unsigned bit = 0; bit < 8; ++bit) {
+            struct Crypto1State state = {0};
+            uint32_t input = 0;
+            if (byte < 3) state.odd = 1u << (byte * 8 + bit);
+            else if (byte < 6) state.even = 1u << ((byte - 3) * 8 + bit);
+            else input = 1u << ((byte - 6) * 8 + bit);
+            lfsr_rollback_word(&state, input, 0);
+            crypto1_get_lfsr(&state, &basis[bit]);
+        }
+        uint64_t *table = byte < 6 ? rollback_state[byte] : rollback_input[byte - 6];
+        for (unsigned value = 0; value < 256; ++value)
+            for (unsigned bit = 0; bit < 8; ++bit)
+                if (value & (1u << bit)) table[value] ^= basis[bit];
+    }
+}
+uint64_t crypto1_rollback_key(const struct Crypto1State *state, uint32_t input)
+{
+    pthread_once(&rollback_once, init_rollback_tables);
+    uint64_t key = 0;
+    for (unsigned b = 0; b < 3; ++b) {
+        key ^= rollback_state[b][(state->odd >> (b * 8)) & 255];
+        key ^= rollback_state[b + 3][(state->even >> (b * 8)) & 255];
+    }
+    for (unsigned b = 0; b < 4; ++b)
+        key ^= rollback_input[b][(input >> (b * 8)) & 255];
+    return key;
+}
