@@ -73,7 +73,9 @@ class _HfReaderSettingsState extends State<HfReaderSettings> {
             if (snapshot.hasError) ...[
               Text('${l.error}: ${snapshot.error}'),
               TextButton(
-                onPressed: () => setState(() => _loadFuture = _load()),
+                onPressed: () => setState(() {
+                  _loadFuture = _load();
+                }),
                 child: const Icon(Icons.refresh),
               ),
             ] else if (!snapshot.hasData)
