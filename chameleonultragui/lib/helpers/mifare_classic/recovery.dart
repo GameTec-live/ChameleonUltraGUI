@@ -40,6 +40,7 @@ class MifareClassicRecovery {
   double dumpProgress;
   double? hardnestedProgress;
   double? keyCheckProgress;
+  bool checkingFoundKey = false;
   void Function() update;
   MifareClassicType mifareClassicType;
   bool isMifareClassicEV1;
@@ -64,6 +65,218 @@ class MifareClassicRecovery {
         validKeys = validKeys ?? List.generate(80, (_) => Uint8List(0)),
         cardData = cardData ?? List.generate(256, (_) => Uint8List(0)) {
     initializeEV1();
+  }
+
+  Future<void> _checkDictionaryCard(Uint8List uid) async {
+    final current = await appState.communicator!.scan14443aTag();
+    if (current == null) {
+      throw StateError('Card lost during dictionary check');
+    }
+    if (bytesToHex(current.uid) != bytesToHex(uid)) {
+      throw StateError('Card changed during dictionary check');
+    }
+  }
+
+  Future<void> _recheckDictionaryKey(
+    Uint8List key,
+    Uint8List expectedUid,
+  ) async {
+    if (key.length != 6) throw ArgumentError('Expected a six-byte key');
+    final device = appState.communicator!;
+    final sectors = mfClassicGetSectorCount(
+      mifareClassicType,
+      isEV1: isMifareClassicEV1,
+    );
+    final mask = Uint8List.fromList(List.filled(10, 255));
+    for (var sector = 0; sector < sectors; sector++) {
+      for (var type = 0; type < 2; type++) {
+        if (checkMarks[sector + type * 40] == ChameleonKeyCheckmark.found ||
+            checkMarks[sector + type * 40] == ChameleonKeyCheckmark.disabled) {
+          continue;
+        }
+        final position = sector * 2 + type;
+        mask[position ~/ 8] &= ~(0x80 >> (position % 8));
+      }
+    }
+    if (mask.every((byte) => byte == 255)) return;
+    checkingFoundKey = true;
+    update();
+    try {
+      final uid = Uint8List.fromList(expectedUid);
+      await _checkDictionaryCard(uid);
+      final found = await device.mf1CheckKeyOfSectors(mask, key);
+      await _checkDictionaryCard(uid);
+      for (final entry in found.entries) {
+        final sector = entry.key ~/ 2;
+        final index = sector + (entry.key % 2) * 40;
+        if (sector >= sectors ||
+            checkMarks[index] == ChameleonKeyCheckmark.found ||
+            checkMarks[index] == ChameleonKeyCheckmark.disabled) {
+          continue;
+        }
+        validKeys[index] = entry.value;
+        checkMarks[index] = ChameleonKeyCheckmark.found;
+      }
+    } finally {
+      checkingFoundKey = false;
+      update();
+    }
+  }
+
+  Future<List<NestedNonce>> _dictionaryNonces(
+    int block,
+    int keyType,
+    Uint8List key,
+    int targetBlock,
+    int targetType,
+    bool weak,
+  ) async {
+    final samples = <int, NestedNonce>{};
+    for (var attempt = 0; attempt < 8; attempt++) {
+      final batch = await appState.communicator!.getMf1NestedNonces(
+        block,
+        keyType,
+        key,
+        targetBlock,
+        targetType,
+        level: NTLevel.weak,
+      );
+      for (final nonce in batch.nonces) {
+        if (samples.containsKey(nonce.ntEnc) &&
+            samples[nonce.ntEnc]!.parity != nonce.parity) {
+          throw FormatException('Contradictory nested parity');
+        }
+        samples[nonce.ntEnc] = nonce;
+      }
+      if (samples.length >= (weak ? 1 : 8)) {
+        return samples.values.take(weak ? 2 : 8).toList();
+      }
+    }
+    throw FormatException('Insufficient distinct nested nonces');
+  }
+
+  Future<void> _checkNestedDictionary(Map<int, Uint8List> candidates) async {
+    final device = appState.communicator!;
+    bool nestedEnabled = true;
+    (int, int, Uint8List)? anchor;
+    NTLevel? level;
+
+    try {
+      final sectors = mfClassicGetSectorCount(
+        mifareClassicType,
+        isEV1: isMifareClassicEV1,
+      );
+      final card = await device.scan14443aTag();
+      if (card == null) {
+        throw StateError('Card lost during dictionary check');
+      }
+      final uid = Uint8List.fromList(card.uid);
+      if (![4, 7, 10].contains(uid.length)) {
+        throw FormatException('Invalid card UID');
+      }
+
+      for (var sector = 0; sector < sectors; sector++) {
+        for (var type = 0; type < 2; type++) {
+          final index = sector + type * 40;
+          if (checkMarks[index] == ChameleonKeyCheckmark.found) {
+            if (anchor == null && validKeys[index].length == 6) {
+              anchor = (
+                mfClassicGetSectorTrailerBlockBySector(sector),
+                0x60 + type,
+                validKeys[index],
+              );
+            }
+            continue;
+          }
+          if (checkMarks[index] == ChameleonKeyCheckmark.disabled) continue;
+          checkMarks[index] = ChameleonKeyCheckmark.checking;
+          update();
+          final block = mfClassicGetSectorTrailerBlockBySector(sector);
+          List<NestedNonce>? samples;
+          var weak = false;
+          if (nestedEnabled && anchor != null) {
+            await _checkDictionaryCard(uid);
+            try {
+              level ??= await device.getMf1NTLevel();
+              weak = level == NTLevel.weak;
+              samples = await _dictionaryNonces(
+                anchor.$1,
+                anchor.$2,
+                anchor.$3,
+                block,
+                0x60 + type,
+                weak,
+              );
+            } on ChameleonCommandException catch (e) {
+              if (e.status == 1) rethrow;
+              if (e.status == 0x67 || e.status == 0x69) {
+                nestedEnabled = false;
+              } else if (e.status < 2 || e.status > 6) {
+                rethrow;
+              }
+              appState.log!.w('Nested dictionary unavailable: $e');
+            } on FormatException catch (e) {
+              appState.log!.w('Nested dictionary capture failed: $e');
+            } on String catch (e) {
+              if (!e.startsWith('Timeout waiting for ')) rethrow;
+              nestedEnabled = false;
+              appState.log!.w('Nested dictionary timed out: $e');
+            }
+            await _checkDictionaryCard(uid);
+          }
+
+          final checked = <int>{};
+          final passes = samples != null && weak ? 2 : 1;
+          for (var pass = 0; pass < passes; pass++) {
+            List<int> keys = candidates.keys.toList();
+            if (samples != null) {
+              try {
+                keys = await recovery.nestedDictionary(
+                  bytesToU32(uid.sublist(uid.length - 4)),
+                  keys,
+                  samples.map((n) => n.ntEnc).toList(),
+                  samples.map((n) => n.parity).toList(),
+                  weak: weak && pass == 0,
+                );
+              } catch (e) {
+                appState.log!.w('Nested dictionary filter failed: $e');
+                samples = null;
+              }
+              await _checkDictionaryCard(uid);
+            }
+            for (final value in keys) {
+              if (!checked.add(value)) continue;
+              final key = candidates[value]!;
+              if (await device.mf1Auth(block, 0x60 + type, key, strict: true)) {
+                await _checkDictionaryCard(uid);
+                validKeys[index] = key;
+                checkMarks[index] = ChameleonKeyCheckmark.found;
+                anchor ??= (block, 0x60 + type, key);
+                update();
+                await recheckKey(key, 0, expectedUid: uid);
+                break;
+              }
+            }
+            if (checkMarks[index] == ChameleonKeyCheckmark.found ||
+                samples == null) {
+              break;
+            }
+          }
+          await _checkDictionaryCard(uid);
+          if (checkMarks[index] == ChameleonKeyCheckmark.checking) {
+            checkMarks[index] = ChameleonKeyCheckmark.none;
+          }
+          update();
+        }
+      }
+    } finally {
+      for (var i = 0; i < checkMarks.length; i++) {
+        if (checkMarks[i] == ChameleonKeyCheckmark.checking) {
+          checkMarks[i] = ChameleonKeyCheckmark.none;
+        }
+      }
+      update();
+    }
   }
 
   Future<bool> checkKeysOnSector(
@@ -204,27 +417,39 @@ class MifareClassicRecovery {
     }
   }
 
-  Future<void> recheckKey(Uint8List key, int startingSector) async {
+  Future<void> recheckKey(
+    Uint8List key,
+    int startingSector, {
+    Uint8List? expectedUid,
+  }) async {
+    if (key.length != 6) throw ArgumentError('Expected a six-byte key');
+    if (expectedUid != null) {
+      await _recheckDictionaryKey(key, expectedUid);
+      return;
+    }
     if (await _supportsBatchKeyCheck()) {
       await _checkKeysInBatch([key], startingSector: startingSector);
       return;
     }
-    for (var sector = startingSector;
-        sector <
-            mfClassicGetSectorCount(mifareClassicType,
-                isEV1: isMifareClassicEV1);
-        sector++) {
+    for (
+      var sector = startingSector;
+      sector <
+          mfClassicGetSectorCount(mifareClassicType, isEV1: isMifareClassicEV1);
+      sector++
+    ) {
       for (var keyType = 0; keyType < 2; keyType++) {
         if (getSectorState(sector, keyType) == ChameleonKeyCheckmark.none) {
           state = localizations.checking_keys(1);
           appState.log!.d(
-              "Checking found key ${bytesToHex(key)} on sector $sector, key type $keyType");
+            "Checking found key ${bytesToHex(key)} on sector $sector, key type $keyType",
+          );
           setCheckingSector(sector, keyType);
 
           if (await appState.communicator!.mf1Auth(
-              mfClassicGetSectorTrailerBlockBySector(sector),
-              0x60 + keyType,
-              key)) {
+            mfClassicGetSectorTrailerBlockBySector(sector),
+            0x60 + keyType,
+            key,
+          )) {
             // Found valid key
             setKeyAsFound(sector, keyType, key);
           } else {
@@ -247,13 +472,28 @@ class MifareClassicRecovery {
   }
 
   Future<void> checkKeys({bool skipDefaultDictionary = false}) async {
-    initializeEV1();
-
-    final keyList = [
+    allKeysExists = false;
+    error = '';
+    final candidates = <int, Uint8List>{};
+    for (final key in [
       ...selectedDictionary!.keys,
       if (!skipDefaultDictionary) ...gMifareClassicKeys,
-    ];
-    if (await _supportsBatchKeyCheck()) {
+    ]) {
+      if (key.length != 6) {
+        throw ArgumentError('Dictionary keys must contain six bytes');
+      }
+      candidates.putIfAbsent(
+        key.fold<int>(0, (n, b) => (n << 8) | b),
+        () => key,
+      );
+    }
+    initializeEV1();
+
+    final keyList = candidates.values.toList();
+    if (candidates.length > 100) {
+      state = localizations.checking_keys(candidates.length);
+      await _checkNestedDictionary(candidates);
+    } else if (await _supportsBatchKeyCheck()) {
       await _checkKeysInBatch(keyList);
     } else {
       for (
@@ -273,11 +513,12 @@ class MifareClassicRecovery {
 
     // Key check part competed, checking found keys
     allKeysExists = true;
-    for (var sector = 0;
-        sector <
-            mfClassicGetSectorCount(mifareClassicType,
-                isEV1: isMifareClassicEV1);
-        sector++) {
+    for (
+      var sector = 0;
+      sector <
+          mfClassicGetSectorCount(mifareClassicType, isEV1: isMifareClassicEV1);
+      sector++
+    ) {
       for (var keyType = 0; keyType < 2; keyType++) {
         if (getSectorState(sector, keyType) != ChameleonKeyCheckmark.found &&
             getSectorState(sector, keyType) != ChameleonKeyCheckmark.disabled) {

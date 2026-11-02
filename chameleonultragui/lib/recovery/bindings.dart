@@ -141,6 +141,43 @@ class Recovery {
           'hardnested');
   late final _hardnested =
       _hardnestedPtr.asFunction<int Function(ffi.Pointer<HardNested>)>();
+
+  int nested_dictionary(
+    int uid,
+    ffi.Pointer<ffi.Uint64> keys,
+    int key_count,
+    ffi.Pointer<ffi.Uint32> encrypted,
+    ffi.Pointer<ffi.Uint8> parity,
+    int nonce_count,
+    int weak,
+    ffi.Pointer<ffi.Uint64> output,
+  ) {
+    return _nested_dictionary(
+      uid,
+      keys,
+      key_count,
+      encrypted,
+      parity,
+      nonce_count,
+      weak,
+      output,
+    );
+  }
+
+  late final _nested_dictionaryPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Int64 Function(
+              ffi.Uint32,
+              ffi.Pointer<ffi.Uint64>,
+              ffi.Uint32,
+              ffi.Pointer<ffi.Uint32>,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Uint32,
+              ffi.Uint8,
+              ffi.Pointer<ffi.Uint64>)>>('nested_dictionary');
+  late final _nested_dictionary = _nested_dictionaryPtr.asFunction<
+      int Function(int, ffi.Pointer<ffi.Uint64>, int, ffi.Pointer<ffi.Uint32>,
+          ffi.Pointer<ffi.Uint8>, int, int, ffi.Pointer<ffi.Uint64>)>();
 }
 
 final class DarksideItem extends ffi.Struct {

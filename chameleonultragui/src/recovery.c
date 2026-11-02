@@ -392,6 +392,40 @@ static uint8_t valid_nonce(uint32_t Nt, uint32_t NtEnc, uint32_t Ks1, uint8_t *p
              : 0;
 }
 
+FFI_PLUGIN_EXPORT int64_t nested_dictionary(uint32_t uid, const uint64_t *keys,
+    uint32_t key_count, const uint32_t *encrypted, const uint8_t *parity,
+    uint32_t nonce_count, uint8_t weak, uint64_t *output)
+{
+  if (!nonce_count || !encrypted || !parity || (key_count && (!keys || !output)))
+    return -1;
+  for (uint32_t j = 0; j < nonce_count; j++)
+    if (parity[j] > 7) return -1;
+  for (uint32_t i = 0; i < key_count; i++)
+    if (keys[i] > UINT64_C(0xffffffffffff)) return -1;
+
+  int64_t count = 0;
+  for (uint32_t i = 0; i < key_count; i++)
+  {
+    bool matches = true;
+    for (uint32_t j = 0; j < nonce_count; j++)
+    {
+      struct Crypto1State state = {0};
+      crypto1_init(&state, keys[i]);
+      uint32_t ks = crypto1_word(&state, encrypted[j] ^ uid, 1);
+      uint32_t nt = encrypted[j] ^ ks;
+      uint8_t bits[] = {parity[j] & 1, (parity[j] >> 1) & 1, (parity[j] >> 2) & 1};
+      if ((weak && (!nt || !validate_prng_nonce(nt))) ||
+          !valid_nonce(nt, encrypted[j], ks, bits))
+      {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) output[count++] = keys[i];
+  }
+  return count;
+}
+
 FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *outputKeyCount)
 {
   NtpKs1 *pNK = NULL;

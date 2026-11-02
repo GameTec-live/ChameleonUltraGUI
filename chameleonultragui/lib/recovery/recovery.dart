@@ -110,6 +110,46 @@ class Mfkey32Dart {
       required this.ar1Enc});
 }
 
+class DictionaryRequest {
+  final int id;
+  final int uid;
+  final List<int> keys;
+  final List<int> encrypted;
+  final List<int> parity;
+  final bool weak;
+
+  const DictionaryRequest(
+      this.id, this.uid, this.keys, this.encrypted, this.parity, this.weak);
+}
+
+class DictionaryFailure {
+  final int id;
+  final String message;
+
+  const DictionaryFailure(this.id, this.message);
+}
+
+Future<List<int>> nestedDictionary(
+    int uid, List<int> keys, List<int> encrypted, List<int> parity,
+    {bool weak = false}) async {
+  if (uid < 0 ||
+      uid > 0xffffffff ||
+      encrypted.isEmpty ||
+      encrypted.length != parity.length ||
+      keys.any((key) => key < 0 || key > 0xffffffffffff) ||
+      encrypted.any((nt) => nt < 0 || nt > 0xffffffff) ||
+      parity.any((par) => par < 0 || par > 7)) {
+    throw ArgumentError('Invalid nested dictionary input');
+  }
+  if (keys.isEmpty) return [];
+  final port = await _helperIsolateSendPort;
+  final id = _nextSumRequestId++;
+  final completer = Completer<List<int>>();
+  requests[id] = completer;
+  port.send(DictionaryRequest(id, uid, keys, encrypted, parity, weak));
+  return completer.future;
+}
+
 class Mfkey64Dart {
   int uid;
   int nt;
@@ -310,6 +350,10 @@ Future<SendPort> _helperIsolateSendPort = () async {
         completer.complete(data);
         return;
       }
+      if (data is DictionaryFailure) {
+        requests.remove(data.id)!.completeError(StateError(data.message));
+        return;
+      }
       if (data is KeyResponse) {
         // The helper isolate sent us a response to a request we sent.
         final Completer<List<int>> completer = requests[data.id]!;
@@ -325,6 +369,45 @@ Future<SendPort> _helperIsolateSendPort = () async {
     final ReceivePort helperReceivePort = ReceivePort()
       ..listen((dynamic data) {
         // On the helper isolate listen to requests and respond to them.
+        if (data is DictionaryRequest) {
+          Pointer<Uint64> keys = nullptr;
+          Pointer<Uint64> output = nullptr;
+          Pointer<Uint32> encrypted = nullptr;
+          Pointer<Uint8> parity = nullptr;
+          try {
+            keys = calloc<Uint64>(data.keys.length);
+            output = calloc<Uint64>(data.keys.length);
+            encrypted = calloc<Uint32>(data.encrypted.length);
+            parity = calloc<Uint8>(data.parity.length);
+            keys.asTypedList(data.keys.length).setAll(0, data.keys);
+            encrypted
+                .asTypedList(data.encrypted.length)
+                .setAll(0, data.encrypted);
+            parity.asTypedList(data.parity.length).setAll(0, data.parity);
+            final count = _bindings.nested_dictionary(
+                data.uid,
+                keys,
+                data.keys.length,
+                encrypted,
+                parity,
+                data.encrypted.length,
+                data.weak ? 1 : 0,
+                output);
+            if (count < 0 || count > data.keys.length) {
+              throw StateError('Invalid native dictionary result');
+            }
+            sendPort.send(KeyResponse(
+                data.id, List<int>.from(output.asTypedList(count))));
+          } catch (error) {
+            sendPort.send(DictionaryFailure(data.id, error.toString()));
+          } finally {
+            calloc.free(keys);
+            calloc.free(output);
+            calloc.free(encrypted);
+            calloc.free(parity);
+          }
+          return;
+        }
         if (data is DarksideRequest) {
           Pointer<Darkside> pointer = calloc();
           final itemPointer = calloc<DarksideItem>(data.darkside.items.length);

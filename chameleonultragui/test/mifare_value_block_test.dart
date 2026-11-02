@@ -56,7 +56,8 @@ class ValueBlockCommunicator extends ChameleonCommunicator {
   @override
   Future<NTLevel> getMf1NTLevel() async => NTLevel.weak;
   @override
-  Future<bool> mf1Auth(int block, int type, Uint8List key) async =>
+  Future<bool> mf1Auth(int block, int type, Uint8List key,
+          {bool strict = false}) async =>
       dictionaryFindsKeys && block != 0x45;
   @override
   Future<Uint8List?> mf1AuthMultipleKeys(
