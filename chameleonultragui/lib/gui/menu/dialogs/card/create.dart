@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/component/ioprox_fields.dart';
 import 'package:chameleonultragui/gui/component/mifare/vanity_sak_checkbox.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -39,6 +40,18 @@ class CardCreateMenuState extends State<CardCreateMenu> {
   TextEditingController facilityCodeController = TextEditingController();
   TextEditingController issueLevelController = TextEditingController();
   TextEditingController oemController = TextEditingController();
+
+  final ioProxVersionController = TextEditingController();
+  final ioProxFacilityCodeController = TextEditingController();
+  final ioProxCardNumberController = TextEditingController();
+
+  @override
+  void dispose() {
+    ioProxVersionController.dispose();
+    ioProxFacilityCodeController.dispose();
+    ioProxCardNumberController.dispose();
+    super.dispose();
+  }
 
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
@@ -218,18 +231,19 @@ class CardCreateMenuState extends State<CardCreateMenu> {
               Visibility(
                 visible: selectedType != TagType.unknown,
                 child: Column(children: [
-                  TextFormField(
-                    controller: uidController,
-                    onChanged: (_) => refreshVanitySak(),
-                    decoration: InputDecoration(
-                        labelText: localizations.uid,
-                        hintText:
-                            localizations.enter_something(localizations.uid)),
-                    inputFormatters: hexFormatter,
-                    validator: (value) => validateUid(
-                        value, localizations, selectedType,
-                        isCreate: true),
-                  ),
+                  if (selectedType != TagType.ioProx)
+                    TextFormField(
+                      controller: uidController,
+                      onChanged: (_) => refreshVanitySak(),
+                      decoration: InputDecoration(
+                          labelText: localizations.uid,
+                          hintText:
+                              localizations.enter_something(localizations.uid)),
+                      inputFormatters: hexFormatter,
+                      validator: (value) => validateUid(
+                          value, localizations, selectedType,
+                          isCreate: true),
+                    ),
                   Visibility(
                       visible: chameleonTagToFrequency(selectedType) !=
                           TagFrequency.lf,
@@ -309,6 +323,12 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                                   validateHex(value, localizations)),
                         ]
                       ])),
+                  if (selectedType == TagType.ioProx)
+                    IoProxFields(
+                      versionController: ioProxVersionController,
+                      facilityCodeController: ioProxFacilityCodeController,
+                      cardNumberController: ioProxCardNumberController,
+                    ),
                   if (selectedType == TagType.hidProx)
                     Column(children: [
                       const SizedBox(height: 20),
@@ -392,7 +412,13 @@ class CardCreateMenuState extends State<CardCreateMenu> {
             }
 
             String finalUid;
-            if (selectedType == TagType.hidProx) {
+            if (selectedType == TagType.ioProx) {
+              finalUid = IoProxCard.fromFields(
+                version: int.parse(ioProxVersionController.text),
+                facilityCode: int.parse(ioProxFacilityCodeController.text),
+                cardNumber: int.parse(ioProxCardNumberController.text),
+              ).toString();
+            } else if (selectedType == TagType.hidProx) {
               int hidType = int.parse(hidTypeController.text);
               int facilityCode = int.parse(facilityCodeController.text);
               int issueLevel = int.parse(issueLevelController.text);
