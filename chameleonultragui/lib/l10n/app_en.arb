@@ -606,5 +606,13 @@
   "raw_keep_rf": "Keep RF field on",
   "raw_check_crc": "Check response CRC",
   "raw_invalid_number": "Enter a number from {lower} to {upper}.",
-  "raw_invalid_hex": "Enter complete hex bytes, up to {max} bytes."
+  "raw_invalid_hex": "Enter complete hex bytes, up to {max} bytes.",
+  "t55xx_block_editor": "T55xx block editor",
+  "t55xx_block_editor_description": "Write raw 32-bit blocks to T55xx tags",
+  "t55xx_block_editor_unsupported": "This firmware does not support raw T55xx writes. Update your firmware and use a Chameleon Ultra.",
+  "t55xx_block_editor_checking": "Checking firmware support…",
+  "t55xx_block_editor_page": "Page",
+  "t55xx_block_editor_data": "Block data (8 hex digits)",
+  "t55xx_block_editor_use_password": "Authenticate with password",
+  "t55xx_block_editor_sent": "Write command completed. Tag contents have not been verified."
 }

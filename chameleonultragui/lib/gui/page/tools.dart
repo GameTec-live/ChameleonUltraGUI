@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/menu/tools/t55xx_block_editor.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
 import 'package:chameleonultragui/gui/menu/tools/hf_sniffing.dart';
@@ -76,6 +77,13 @@ class ToolsPageState extends State<ToolsPage> {
     ];
 
     final advancedTools = <ToolItem>[
+      ToolItem(
+        name: localizations.t55xx_block_editor,
+        description: localizations.t55xx_block_editor_description,
+        icon: Icons.edit_note,
+        onPressed: const T55xxBlockEditorMenu(),
+        isDeviceRequired: true,
+      ),
       ToolItem(
         name: localizations.raw_hf,
         description: localizations.raw_hf_description,
