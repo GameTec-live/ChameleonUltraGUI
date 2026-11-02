@@ -19,6 +19,7 @@ class RawCommandsMenu extends StatefulWidget {
 
 class _RawCommandsMenuState extends State<RawCommandsMenu> {
   final _form = GlobalKey<FormState>();
+  final _scroll = ScrollController();
   final _command = TextEditingController(text: '1000');
   final _payload = TextEditingController();
   final _timeout = TextEditingController(text: '1000');
@@ -33,6 +34,7 @@ class _RawCommandsMenuState extends State<RawCommandsMenu> {
     for (final controller in [_command, _payload, _timeout, _bits]) {
       controller.dispose();
     }
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -120,106 +122,117 @@ class _RawCommandsMenuState extends State<RawCommandsMenu> {
         title: Text(widget.hf ? l.raw_hf : l.raw_device),
         content: SizedBox(
           width: 520,
-          child: SingleChildScrollView(
-            child: Form(
-              key: _form,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(widget.hf ? l.raw_hf_help : l.raw_device_help),
-                  if (!connected) Text(l.device_required),
-                  if (widget.hf && connected && !hfSupported)
-                    Text(l.raw_ultra_required),
-                  if (!widget.hf)
-                    TextFormField(
-                      controller: _command,
-                      enabled: !_busy,
-                      decoration: InputDecoration(labelText: l.raw_command),
-                      validator: (v) {
-                        final n = _number(v!);
-                        return n == null || n < 0 || n > 65535
-                            ? l.raw_invalid_number(0, 65535)
-                            : null;
-                      },
-                    ),
-                  TextFormField(
-                    controller: _payload,
-                    enabled: !_busy,
-                    minLines: 2,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      labelText: l.raw_payload,
-                      hintText: '60 00',
-                    ),
-                    validator: (v) {
-                      final hex = _hex(v!);
-                      return hex.length.isOdd ||
-                              !RegExp(r'^[0-9a-fA-F]*$').hasMatch(hex) ||
-                              hex.length >
-                                  (widget.hf ? (_options[2] ? 62 : 64) : 4096) *
-                                      2
-                          ? l.raw_invalid_hex(
-                              widget.hf ? (_options[2] ? 62 : 64) : 4096,
-                            )
-                          : null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _timeout,
-                    enabled: !_busy,
-                    decoration: InputDecoration(labelText: l.raw_timeout),
-                    validator: (v) {
-                      final n = _number(v!);
-                      return n == null || n < 1 || n > 65535
-                          ? l.raw_invalid_number(1, 65535)
-                          : null;
-                    },
-                  ),
-                  if (widget.hf) ...[
-                    TextFormField(
-                      controller: _bits,
-                      enabled: !_busy,
-                      decoration: InputDecoration(
-                        labelText: l.raw_bits,
-                        hintText: l.raw_bits_help,
-                      ),
-                      validator: (v) {
-                        if (v!.trim().isEmpty) {
-                          return _options[2] && _hex(_payload.text).isEmpty
-                              ? l.raw_crc_bytes
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context)
+                .copyWith(scrollbars: false),
+            child: Scrollbar(
+              controller: _scroll,
+              child: SingleChildScrollView(
+                controller: _scroll,
+                padding: const EdgeInsets.only(right: 16),
+                child: Form(
+                  key: _form,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (!connected) Text(l.device_required),
+                      if (widget.hf && connected && !hfSupported)
+                        Text(l.raw_ultra_required),
+                      if (!widget.hf)
+                        TextFormField(
+                          controller: _command,
+                          enabled: !_busy,
+                          decoration: InputDecoration(labelText: l.raw_command),
+                          validator: (v) {
+                            final n = _number(v!);
+                            return n == null || n < 0 || n > 65535
+                                ? l.raw_invalid_number(0, 65535)
+                                : null;
+                          },
+                        ),
+                      TextFormField(
+                        controller: _payload,
+                        enabled: !_busy,
+                        minLines: 2,
+                        maxLines: 4,
+                        decoration: InputDecoration(
+                          labelText: l.raw_payload,
+                          hintText: '60 00',
+                        ),
+                        validator: (v) {
+                          final hex = _hex(v!);
+                          return hex.length.isOdd ||
+                                  !RegExp(r'^[0-9a-fA-F]*$').hasMatch(hex) ||
+                                  hex.length >
+                                      (widget.hf
+                                              ? (_options[2] ? 62 : 64)
+                                              : 4096) *
+                                          2
+                              ? l.raw_invalid_hex(
+                                  widget.hf ? (_options[2] ? 62 : 64) : 4096,
+                                )
                               : null;
-                        }
-                        final n = _number(v);
-                        final max = _hex(_payload.text).length ~/ 2 * 8;
-                        if (_options[2] &&
-                            n != null &&
-                            (n == 0 || n % 8 != 0)) {
-                          return l.raw_crc_bytes;
-                        }
-                        final min = max == 0 ? 0 : max - 7;
-                        return n == null || n < min || n > max
-                            ? l.raw_invalid_number(min, max)
-                            : null;
-                      },
-                    ),
-                    for (var i = 0; i < optionLabels.length; i++)
-                      CheckboxListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(optionLabels[i]),
-                        value: _options[i],
-                        onChanged: _busy
-                            ? null
-                            : (value) => setState(() => _options[i] = value!),
+                        },
                       ),
-                  ],
-                  if (_busy) const LinearProgressIndicator(),
-                  if (_result != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: SelectableText(_result!),
-                    ),
-                ],
+                      TextFormField(
+                        controller: _timeout,
+                        enabled: !_busy,
+                        decoration: InputDecoration(labelText: l.raw_timeout),
+                        validator: (v) {
+                          final n = _number(v!);
+                          return n == null || n < 1 || n > 65535
+                              ? l.raw_invalid_number(1, 65535)
+                              : null;
+                        },
+                      ),
+                      if (widget.hf) ...[
+                        TextFormField(
+                          controller: _bits,
+                          enabled: !_busy,
+                          decoration: InputDecoration(
+                            labelText: l.raw_bits,
+                            hintText: l.raw_bits_help,
+                          ),
+                          validator: (v) {
+                            if (v!.trim().isEmpty) {
+                              return _options[2] && _hex(_payload.text).isEmpty
+                                  ? l.raw_crc_bytes
+                                  : null;
+                            }
+                            final n = _number(v);
+                            final max = _hex(_payload.text).length ~/ 2 * 8;
+                            if (_options[2] &&
+                                n != null &&
+                                (n == 0 || n % 8 != 0)) {
+                              return l.raw_crc_bytes;
+                            }
+                            final min = max == 0 ? 0 : max - 7;
+                            return n == null || n < min || n > max
+                                ? l.raw_invalid_number(min, max)
+                                : null;
+                          },
+                        ),
+                        for (var i = 0; i < optionLabels.length; i++)
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(optionLabels[i]),
+                            value: _options[i],
+                            onChanged: _busy
+                                ? null
+                                : (value) =>
+                                      setState(() => _options[i] = value!),
+                          ),
+                      ],
+                      if (_busy) const LinearProgressIndicator(),
+                      if (_result != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: SelectableText(_result!),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
