@@ -175,6 +175,7 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
     final appState = context.read<ChameleonGUIState>();
     return Card(
       child: ExpansionTile(
+        shape: const Border(),
         key: ObjectKey(card),
         controller: _recoveryController,
         initiallyExpanded: !recovery.allKeysExists,
@@ -537,6 +538,7 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
                 ],
               ),
             ],
+            const SizedBox(height: 12),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(l.value_block_copy_mode),
