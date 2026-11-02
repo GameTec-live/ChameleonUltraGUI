@@ -1442,8 +1442,16 @@ class ChameleonCommunicator {
         .data;
   }
 
+  /// Read LF ADC samples with the reader field enabled (CLI: lf generic adcread).
   Future<Uint8List> adcGenericRead() async {
-    return (await sendCmd(ChameleonCommand.adcGenericRead))!.data;
+    final resp = await sendCmd(ChameleonCommand.adcGenericRead);
+    if (resp == null) {
+      throw ('No response from LF ADC command');
+    }
+    if (resp.status != 0x40) {
+      throw ('LF ADC capture failed with status 0x${resp.status.toRadixString(16)}');
+    }
+    return resp.data;
   }
 
   Future<void> writeT55XX(int block, Uint8List word,
