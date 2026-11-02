@@ -176,6 +176,8 @@ String chameleonTagToString(TagType tag, AppLocalizations localizations) {
     return "HID Prox";
   } else if (tag == TagType.viking) {
     return "Viking";
+  } else if (tag == TagType.jablotron) {
+    return "Jablotron";
   } else if (tag == TagType.pac) {
     return "PAC/Stanley";
   } else if (tag == TagType.ioProx) {
@@ -369,6 +371,8 @@ ButtonConfig getButtonConfigType(int value) {
     return ButtonConfig.cloneUID;
   } else if (value == 4) {
     return ButtonConfig.chargeStatus;
+  } else if (value == 5) {
+    return ButtonConfig.nfcFieldGenerator;
   } else {
     return ButtonConfig.disable;
   }
@@ -472,6 +476,7 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.em410XElectra,
       TagType.hidProx,
       TagType.viking,
+      TagType.jablotron,
       TagType.pac,
       TagType.ioProx,
       TagType.idteck
@@ -526,40 +531,42 @@ TagType getTagTypeByDumpSize(int size) {
   return TagType.unknown;
 }
 
-String getNameForHIDProxType(int type) {
-  return [
-    "HID H10301 26-bit",
-    "Indala 26-bit",
-    "Indala 27-bit",
-    "Indala ASC 27-bit",
-    "Tecom 27-bit",
-    "2804 Wiegand 28-bit",
-    "Indala 29-bit",
-    "ATS Wiegand 30-bit",
-    "HID ADT 31-bit",
-    "HID Check Point 32-bit",
-    "HID Hewlett-Packard 32-bit",
-    "Kastle 32-bit",
-    "Indala/Kantech KFS 32-bit",
-    "Wiegand 32-bit",
-    "HID D10202 33-bit",
-    "HID H10306 34-bit",
-    "Honeywell/Northern N10002 34-bit",
-    "Indala Optus 34-bit",
-    "Cardkey Smartpass 34-bit",
-    "BQT 34-bit",
-    "HID Corporate 1000 35-bit Std",
-    "HID KeyScan 36-bit",
-    "HID Simplex 36-bit",
-    "HID 36-bit Siemens",
-    "HID H10320 37-bit BCD",
-    "HID H10302 37-bit huge ID",
-    "HID H10304 37-bit",
-    "HID P10004 37-bit PCSC",
-    "HID Generic 37-bit",
-    "PointGuard MDI 37-bit",
-  ][type - 1];
-}
+// Firmware format IDs are sparse: ACTPHID is 42, not the next list index.
+const hidProxFormats = <int, String>{
+  1: "HID H10301 26-bit",
+  2: "Indala 26-bit",
+  3: "Indala 27-bit",
+  4: "Indala ASC 27-bit",
+  5: "Tecom 27-bit",
+  6: "2804 Wiegand 28-bit",
+  7: "Indala 29-bit",
+  8: "ATS Wiegand 30-bit",
+  9: "HID ADT 31-bit",
+  10: "HID Check Point 32-bit",
+  11: "HID Hewlett-Packard 32-bit",
+  12: "Kastle 32-bit",
+  13: "Indala/Kantech KFS 32-bit",
+  14: "Wiegand 32-bit",
+  15: "HID D10202 33-bit",
+  16: "HID H10306 34-bit",
+  17: "Honeywell/Northern N10002 34-bit",
+  18: "Indala Optus 34-bit",
+  19: "Cardkey Smartpass 34-bit",
+  20: "BQT 34-bit",
+  21: "HID Corporate 1000 35-bit Std",
+  22: "HID KeyScan 36-bit",
+  23: "HID Simplex 36-bit",
+  24: "HID 36-bit Siemens",
+  25: "HID H10320 37-bit BCD",
+  26: "HID H10302 37-bit huge ID",
+  27: "HID H10304 37-bit",
+  28: "HID P10004 37-bit PCSC",
+  29: "HID Generic 37-bit",
+  30: "PointGuard MDI 37-bit",
+  42: "HID ACTProx 36-bit",
+};
+
+String getNameForHIDProxType(int type) => hidProxFormats[type]!;
 
 LFCard getLFCardFromUID(TagType type, String uid) {
   if (type == TagType.hidProx) {
@@ -568,6 +575,10 @@ LFCard getLFCardFromUID(TagType type, String uid) {
 
   if (type == TagType.viking) {
     return VikingCard.fromUID(uid);
+  }
+
+  if (type == TagType.jablotron) {
+    return JablotronCard.fromUID(uid);
   }
 
   if (type == TagType.pac) {
@@ -594,6 +605,8 @@ int uidSizeForLfTag(TagType type) {
     return 5;
   } else if (type == TagType.viking) {
     return 4;
+  } else if (type == TagType.jablotron) {
+    return 5;
   } else if (type == TagType.pac) {
     return 8;
   } else if (type == TagType.ioProx) {
@@ -613,6 +626,15 @@ bool isEM410X(TagType type) {
     TagType.em410X64,
     TagType.em410XElectra
   ].contains(type);
+}
+
+// Converts the 5 raw Jablotron bytes to the decimal card number via BCD.
+int jablotronCardId(Uint8List bytes) {
+  int cardId = 0;
+  for (var b in bytes) {
+    cardId = cardId * 100 + ((b >> 4) * 10) + (b & 0x0F);
+  }
+  return cardId;
 }
 
 Future<(HFCardInfo, MifareClassicInfo, MifareUltralightInfo)> readHFInfo(

@@ -141,6 +141,12 @@ class HfSniffCapture {
     return HfSniffCapture._build(pm3Bytes, frames);
   }
 
+  /// Active-auth firmware records byte frames without interleaved parity.
+  factory HfSniffCapture.fromAuthenticationBytes(Uint8List bytes) {
+    final frames = parseChameleonHfSniffFrames(bytes, includesParity: false);
+    return HfSniffCapture._build(buildProxmarkTrace(frames), frames);
+  }
+
   factory HfSniffCapture.fromProxmarkTrace(Uint8List traceBytes) {
     final frames = parseProxmarkTrace(traceBytes);
     return HfSniffCapture._build(traceBytes, frames);
@@ -159,7 +165,8 @@ class HfSniffCapture {
   }
 }
 
-List<HfSniffFrame> parseChameleonHfSniffFrames(Uint8List buffer) {
+List<HfSniffFrame> parseChameleonHfSniffFrames(Uint8List buffer,
+    {bool includesParity = true}) {
   final frames = <HfSniffFrame>[];
   int offset = 0;
 
@@ -181,7 +188,9 @@ List<HfSniffFrame> parseChameleonHfSniffFrames(Uint8List buffer) {
     final rawBytes = buffer.sublist(offset, offset + rawByteLength);
     offset += rawByteLength;
 
-    final stripped = _stripParityBits(rawBytes, rawBitLength);
+    final stripped = includesParity
+        ? _stripParityBits(rawBytes, rawBitLength)
+        : _StripResult(rawBitLength, rawBytes, Uint8List(0));
     frames.add(HfSniffFrame(
       rawBitLength: rawBitLength,
       bitLength: stripped.bitLength,
