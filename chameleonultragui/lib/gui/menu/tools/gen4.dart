@@ -180,13 +180,42 @@ class _Gen4MenuState extends State<Gen4Menu> {
         false;
   }
 
+  Future<bool> _confirmPermanentLock() async {
+    final l = AppLocalizations.of(context)!;
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            icon: const Icon(Icons.lock),
+            title: Text(l.gen4_permanent_lock),
+            content: SizedBox(width: 420, child: Text(l.gen4_fuse_warning)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l.gen4_confirm_lock),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   Future<void> _apply({bool permanent = false}) async {
     if (!_form.currentState!.validate()) return;
     final l = AppLocalizations.of(context)!;
     final config = _editedConfiguration();
-    if (!await _confirm(
-      permanent ? l.gen4_fuse_warning : l.gen4_apply_warning,
-    )) {
+    final confirmed = permanent
+        ? await _confirmPermanentLock()
+        : await _confirm(l.gen4_apply_warning);
+    if (!confirmed) {
       return;
     }
     if (!mounted) return;
@@ -218,35 +247,28 @@ class _Gen4MenuState extends State<Gen4Menu> {
     bool validate = true,
   }) {
     final l = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: TextFormField(
-        controller: controller,
-        enabled: !_busy,
-        decoration: InputDecoration(
-          labelText: label,
-          helperText: help,
-          helperMaxLines: 4,
-          border: const OutlineInputBorder(),
-        ),
-        autocorrect: false,
-        validator: validate
-            ? (text) {
-                try {
-                  gen4ParseHex(
-                    text ?? '',
-                    length: length,
-                    maxLength: maxLength,
-                  );
-                  return null;
-                } catch (_) {
-                  return l.gen4_hex_required(
-                    length?.toString() ?? '0–$maxLength',
-                  );
-                }
-              }
-            : null,
+    return TextFormField(
+      controller: controller,
+      enabled: !_busy,
+      decoration: InputDecoration(
+        labelText: label,
+        helperText: help,
+        helperMaxLines: 4,
+        border: const OutlineInputBorder(),
       ),
+      autocorrect: false,
+      validator: validate
+          ? (text) {
+              try {
+                gen4ParseHex(text ?? '', length: length, maxLength: maxLength);
+                return null;
+              } catch (_) {
+                return l.gen4_hex_required(
+                  length?.toString() ?? '0–$maxLength',
+                );
+              }
+            }
+          : null,
     );
   }
 
@@ -260,26 +282,23 @@ class _Gen4MenuState extends State<Gen4Menu> {
       for (var i = 0; i < labels.length; i++) i: labels[i],
     };
     entries.putIfAbsent(value, () => '0x${gen4Hex([value])}');
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: DropdownButtonFormField<int>(
-        key: ValueKey('$label:$value'),
-        initialValue: value,
-        isExpanded: true,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-        items: entries.entries
-            .map(
-              (e) => DropdownMenuItem(
-                value: e.key,
-                child: Text('${gen4Hex([e.key])} · ${e.value}'),
-              ),
-            )
-            .toList(),
-        onChanged: _busy ? null : (v) => setState(() => change(v!)),
+    return DropdownButtonFormField<int>(
+      key: ValueKey('$label:$value'),
+      initialValue: value,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
       ),
+      items: entries.entries
+          .map(
+            (e) => DropdownMenuItem(
+              value: e.key,
+              child: Text('${gen4Hex([e.key])} · ${e.value}'),
+            ),
+          )
+          .toList(),
+      onChanged: _busy ? null : (v) => setState(() => change(v!)),
     );
   }
 
@@ -304,6 +323,7 @@ class _Gen4MenuState extends State<Gen4Menu> {
     final isPack = ul && _memoryTarget == 2;
     final needsPackPage = isPack && _packPage == null;
     return Column(
+      spacing: 16,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _select(
@@ -316,28 +336,25 @@ class _Gen4MenuState extends State<Gen4Menu> {
           },
         ),
         if (isPack)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: DropdownButtonFormField<int>(
-              key: ValueKey('pack:$_packPage'),
-              initialValue: _packPage,
-              decoration: InputDecoration(
-                labelText: l.gen4_pack_page,
-                helperText: l.gen4_pack_page_help,
-                helperMaxLines: 3,
-                border: const OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: 0x13, child: Text('13 · 06A0 / 6666')),
-                DropdownMenuItem(value: 0xE6, child: Text('E6')),
-              ],
-              onChanged: _busy
-                  ? null
-                  : (value) => setState(() {
-                      _packPage = value;
-                      _memoryData.clear();
-                    }),
+          DropdownButtonFormField<int>(
+            key: ValueKey('pack:$_packPage'),
+            initialValue: _packPage,
+            decoration: InputDecoration(
+              labelText: l.gen4_pack_page,
+              helperText: l.gen4_pack_page_help,
+              helperMaxLines: 3,
+              border: const OutlineInputBorder(),
             ),
+            items: const [
+              DropdownMenuItem(value: 0x13, child: Text('13 · 06A0 / 6666')),
+              DropdownMenuItem(value: 0xE6, child: Text('E6')),
+            ],
+            onChanged: _busy
+                ? null
+                : (value) => setState(() {
+                    _packPage = value;
+                    _memoryData.clear();
+                  }),
           ),
         _hex(
           _memoryData,
@@ -349,7 +366,8 @@ class _Gen4MenuState extends State<Gen4Menu> {
           ),
         ),
         Wrap(
-          spacing: 8,
+          spacing: 12,
+          runSpacing: 12,
           children: [
             OutlinedButton(
               onPressed: _busy || needsPackPage
@@ -428,6 +446,7 @@ class _Gen4MenuState extends State<Gen4Menu> {
             child: Form(
               key: _form,
               child: Column(
+                spacing: 16,
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -451,7 +470,6 @@ class _Gen4MenuState extends State<Gen4Menu> {
                   if (_version != null)
                     SelectableText('${l.version}: $_version'),
                   if (_config != null) ...[
-                    const SizedBox(height: 12),
                     _select(l.gen4_protocol, _protocol, [
                       'MIFARE Classic',
                       'Ultralight / NTAG',
@@ -468,10 +486,11 @@ class _Gen4MenuState extends State<Gen4Menu> {
                       l.gen4_high_speed,
                       l.gen4_split,
                     ], (v) => _shadow = v),
-                    Text(
-                      l.gen4_shadow_warning,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+                    if (_shadow == 1 || _shadow == 4)
+                      Text(
+                        l.gen4_shadow_warning,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     _hex(
                       _newPassword,
                       l.gen4_new_password,
@@ -479,7 +498,7 @@ class _Gen4MenuState extends State<Gen4Menu> {
                       help: l.gen4_password_help,
                     ),
                     _hex(_ats, 'ATS', maxLength: 16, help: l.gen4_ats_help),
-                    _hex(_atqa, 'ATQA', length: 2, help: l.gen4_atqa_help),
+                    _hex(_atqa, 'ATQA', length: 2),
                     _hex(_sak, 'SAK', length: 1, help: l.gen4_sak_help),
                     _select(l.gen4_ul_mode, _ulMode, [
                       'Ultralight EV1',
@@ -498,128 +517,139 @@ class _Gen4MenuState extends State<Gen4Menu> {
                       l.disabled,
                       l.gen4_factory_default,
                     ], (v) => _block0 = v),
-                    FilledButton(
-                      onPressed: _busy ? null : _apply,
-                      child: Text(l.gen4_apply),
-                    ),
-                    const SizedBox(height: 12),
                     ExpansionTile(
                       title: Text(l.gen4_uid_and_memory),
+                      childrenPadding: const EdgeInsets.symmetric(vertical: 16),
                       children: [
-                        Text(l.gen4_memory_help),
-                        _hex(
-                          _uid,
-                          'UID',
-                          validate: false,
-                          help: l.gen4_uid_help,
-                        ),
-                        OutlinedButton(
-                          onPressed: _busy
-                              ? null
-                              : () async {
-                                  final config = _config!;
-                                  Uint8List uid;
-                                  try {
-                                    uid = gen4ParseHex(
-                                      _uid.text,
-                                      length: config.uidLength,
-                                    );
-                                  } catch (_) {
-                                    setState(() {
-                                      _status = l.gen4_hex_required(
-                                        '${config.uidLength}',
-                                      );
-                                      _failed = true;
-                                    });
-                                    return;
-                                  }
-                                  if (!await _confirm(l.gen4_uid_warning) ||
-                                      !mounted) {
-                                    return;
-                                  }
-                                  _run((client) async {
-                                    await client.writeUid(config, uid);
-                                    if (mounted) {
-                                      setState(
-                                        () => _status = l.gen4_uid_written,
-                                      );
-                                    }
-                                  });
-                                },
-                          child: Text(l.gen4_write_uid),
-                        ),
-                        _memoryEditor(),
-                        _hex(_block, l.gen4_block_address, validate: false),
-                        _hex(_blockData, l.gen4_block_data, validate: false),
-                        Wrap(
-                          spacing: 8,
+                        Column(
+                          spacing: 16,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            OutlinedButton(
-                              onPressed: _busy
-                                  ? null
-                                  : () => _run((client) async {
-                                      final block = gen4ParseHex(
-                                        _block.text,
-                                        length: 1,
-                                      ).single;
-                                      final data = await client.readBlock(
-                                        block,
-                                      );
-                                      if (mounted) {
-                                        setState(
-                                          () => _blockData.text = gen4Hex(data),
-                                        );
-                                      }
-                                    }),
-                              child: Text(l.gen4_read_block),
+                            _hex(
+                              _uid,
+                              'UID',
+                              validate: false,
+                              help: l.gen4_uid_help,
                             ),
                             OutlinedButton(
                               onPressed: _busy
                                   ? null
                                   : () async {
-                                      // Parse before asking for confirmation or touching the card.
-                                      int block;
-                                      Uint8List data;
+                                      final config = _config!;
+                                      Uint8List uid;
                                       try {
-                                        block = gen4ParseHex(
-                                          _block.text,
-                                          length: 1,
-                                        ).single;
-                                        data = gen4ParseHex(
-                                          _blockData.text,
-                                          length: 16,
+                                        uid = gen4ParseHex(
+                                          _uid.text,
+                                          length: config.uidLength,
                                         );
-                                      } catch (e) {
+                                      } catch (_) {
                                         setState(() {
-                                          _status = e.toString();
+                                          _status = l.gen4_hex_required(
+                                            '${config.uidLength}',
+                                          );
                                           _failed = true;
                                         });
                                         return;
                                       }
-                                      if (!await _confirm(
-                                            l.gen4_block_warning,
-                                          ) ||
+                                      if (!await _confirm(l.gen4_uid_warning) ||
                                           !mounted) {
                                         return;
                                       }
                                       _run((client) async {
-                                        await client.writeBlock(block, data);
-                                        final readback = await client.readBlock(
-                                          block,
-                                        );
+                                        await client.writeUid(config, uid);
                                         if (mounted) {
-                                          setState(() {
-                                            _failed =
-                                                gen4Hex(readback) !=
-                                                gen4Hex(data);
-                                            _status = _failed
-                                                ? l.gen4_verify_failed
-                                                : l.gen4_verified;
-                                          });
+                                          setState(
+                                            () => _status = l.gen4_uid_written,
+                                          );
                                         }
                                       });
                                     },
-                              child: Text(l.gen4_write_block),
+                              child: Text(l.gen4_write_uid),
+                            ),
+                            _memoryEditor(),
+                            const Divider(),
+                            _hex(_block, l.gen4_block_address, validate: false),
+                            _hex(
+                              _blockData,
+                              l.gen4_block_data,
+                              validate: false,
+                            ),
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: _busy
+                                      ? null
+                                      : () => _run((client) async {
+                                          final block = gen4ParseHex(
+                                            _block.text,
+                                            length: 1,
+                                          ).single;
+                                          final data = await client.readBlock(
+                                            block,
+                                          );
+                                          if (mounted) {
+                                            setState(
+                                              () => _blockData.text = gen4Hex(
+                                                data,
+                                              ),
+                                            );
+                                          }
+                                        }),
+                                  child: Text(l.gen4_read_block),
+                                ),
+                                OutlinedButton(
+                                  onPressed: _busy
+                                      ? null
+                                      : () async {
+                                          // Parse before asking for confirmation or touching the card.
+                                          int block;
+                                          Uint8List data;
+                                          try {
+                                            block = gen4ParseHex(
+                                              _block.text,
+                                              length: 1,
+                                            ).single;
+                                            data = gen4ParseHex(
+                                              _blockData.text,
+                                              length: 16,
+                                            );
+                                          } catch (e) {
+                                            setState(() {
+                                              _status = e.toString();
+                                              _failed = true;
+                                            });
+                                            return;
+                                          }
+                                          if (!await _confirm(
+                                                l.gen4_block_warning,
+                                              ) ||
+                                              !mounted) {
+                                            return;
+                                          }
+                                          _run((client) async {
+                                            await client.writeBlock(
+                                              block,
+                                              data,
+                                            );
+                                            final readback = await client
+                                                .readBlock(block);
+                                            if (mounted) {
+                                              setState(() {
+                                                _failed =
+                                                    gen4Hex(readback) !=
+                                                    gen4Hex(data);
+                                                _status = _failed
+                                                    ? l.gen4_verify_failed
+                                                    : l.gen4_verified;
+                                              });
+                                            }
+                                          });
+                                        },
+                                  child: Text(l.gen4_write_block),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -627,8 +657,8 @@ class _Gen4MenuState extends State<Gen4Menu> {
                     ),
                     ExpansionTile(
                       title: Text(l.gen4_permanent_lock),
+                      childrenPadding: const EdgeInsets.symmetric(vertical: 16),
                       children: [
-                        Text(l.gen4_fuse_warning),
                         TextButton(
                           onPressed: _busy
                               ? null
@@ -665,6 +695,11 @@ class _Gen4MenuState extends State<Gen4Menu> {
             onPressed: _busy ? null : () => Navigator.pop(context),
             child: Text(l.close),
           ),
+          if (_config != null)
+            FilledButton(
+              onPressed: _busy ? null : _apply,
+              child: Text(l.gen4_apply),
+            ),
         ],
       ),
     );

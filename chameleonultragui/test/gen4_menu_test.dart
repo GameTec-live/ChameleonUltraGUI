@@ -29,7 +29,7 @@ void main() {
       await tester.tap(find.text('Read configuration'));
       await tester.pumpAndSettle();
       expect(device.reader, isTrue);
-      expect(find.text('Apply configuration'), findsOneWidget);
+      expect(find.text('Apply configuration').hitTestable(), findsOneWidget);
       final password = find.widgetWithText(
         TextFormField,
         'New backdoor password (4 bytes)',
@@ -37,7 +37,7 @@ void main() {
       await tester.ensureVisible(password);
       await tester.enterText(password, 'AABBCCDD');
       final apply = find.text('Apply configuration');
-      await tester.ensureVisible(apply);
+      expect(apply.hitTestable(), findsOneWidget);
       await tester.tap(apply);
       await tester.pumpAndSettle();
       expect(device.commands.where((c) => c[5] == 0xF0), isEmpty);
@@ -50,6 +50,49 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets('permanent lock requires its own explicit confirmation', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final device = Gen4TestDevice();
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ChameleonGUIState>.value(
+        value: gen4TestState(device),
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const Scaffold(body: Gen4Menu()),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Read configuration'));
+    await tester.pumpAndSettle();
+    final section = find.text('Permanently lock configuration');
+    await tester.ensureVisible(section);
+    await tester.tap(section);
+    await tester.pumpAndSettle();
+    final lock = find.widgetWithText(
+      TextButton,
+      'Permanently lock configuration',
+    );
+    await tester.ensureVisible(lock);
+    await tester.tap(lock);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNWidgets(2));
+    expect(find.text('Lock permanently'), findsOneWidget);
+    expect(device.commands.where((c) => c[5] == 0xF1), isEmpty);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(device.commands.where((c) => c[5] == 0xF1), isEmpty);
+    await tester.tap(lock);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lock permanently'));
+    await tester.pumpAndSettle();
+    expect(device.commands.where((c) => c[5] == 0xF1), hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
+
   for (final revision in ['00000006A0', '00000003AB', '3F']) {
     testWidgets('PACK address selection for CC $revision', (tester) async {
       SharedPreferences.setMockInitialValues({});
