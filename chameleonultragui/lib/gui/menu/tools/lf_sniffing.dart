@@ -26,6 +26,19 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
   final _waveformScrollController = ScrollController();
 
   bool _isCapturing = false;
+  bool _useAdc = false;
+  bool _binaryHex = false;
+  bool? _adcSupported;
+  int _plotStart = 0;
+  int _plotLength = 4000;
+  int _hexLength = 512;
+
+  bool? get _selectedCapability =>
+      _useAdc ? _adcSupported : _capabilitySupported;
+
+  LfSniffCapture _plotCapture(LfSniffCapture capture) =>
+      LfSniffCapture.fromSamples(lfSampleWindow(capture.samples,
+          start: _plotStart, length: _plotLength));
   bool _invertDecode = false;
   double _expandedWaveformZoom = 1.0;
   bool? _capabilitySupported;
@@ -63,6 +76,8 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
         return;
       }
       setState(() {
+        _adcSupported =
+            capabilities.contains(ChameleonCommand.adcGenericRead.value);
         _capabilitySupported =
             capabilities.contains(ChameleonCommand.lfSniff.value);
       });
@@ -86,13 +101,15 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
       return;
     }
 
-    final timeoutMs = int.parse(_timeoutController.text);
+    final timeoutMs = int.tryParse(_timeoutController.text) ?? 2000;
     final appState = context.read<ChameleonGUIState>();
 
     setState(() {
       _isCapturing = true;
       _errorMessage = null;
-      _statusMessage = localizations.lf_sniff_capture_in_progress(timeoutMs);
+      _statusMessage = _useAdc
+          ? localizations.lf_adc_capture_in_progress
+          : localizations.lf_sniff_capture_in_progress(timeoutMs);
     });
 
     try {
@@ -100,8 +117,9 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
         await appState.communicator!.setReaderDeviceMode(true);
       }
 
-      final samples =
-          await appState.communicator!.lfSniff(timeoutMs: timeoutMs);
+      final samples = _useAdc
+          ? await appState.communicator!.adcGenericRead()
+          : await appState.communicator!.lfSniff(timeoutMs: timeoutMs);
       if (!mounted) {
         return;
       }
@@ -135,7 +153,11 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
       final firmwareUnsupported = _isFirmwareUnsupportedError(errorText);
       setState(() {
         if (firmwareUnsupported) {
-          _capabilitySupported = false;
+          if (_useAdc) {
+            _adcSupported = false;
+          } else {
+            _capabilitySupported = false;
+          }
           _statusMessage = null;
           _errorMessage = null;
         } else {
@@ -159,9 +181,7 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
       Uint8List samples) {
     final localizations = AppLocalizations.of(context)!;
     final clockDivisor = int.tryParse(_clockController.text);
-    if (clockDivisor == null ||
-        !kLfClockDivisors.contains(clockDivisor) ||
-        clockDivisor <= 0) {
+    if (clockDivisor == null || clockDivisor <= 0) {
       return (
         result: null,
         error: localizations.lf_sniff_invalid_clock,
@@ -281,20 +301,26 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
     scaffoldMessenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
-  String _hexPreview({int maxBytes = 512}) {
+  String _sampleLevels(Iterable<int> samples) => samples
+      .map((value) => _binaryHex
+          ? (value >= 0xBF ? '1' : '0')
+          : levelGlyph(value))
+      .join();
+
+  String _hexPreview() {
     final capture = _capture;
     if (capture == null) {
       return '';
     }
 
-    final rows = buildLfHexRows(capture.samples, maxBytes: maxBytes);
+    final rows = buildLfHexRows(capture.samples, maxBytes: _hexLength);
     final buffer = StringBuffer();
     for (final row in rows) {
       final hexPart = row.bytes
           .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
           .join(' ');
       buffer.writeln(
-          '${row.offset.toRadixString(16).padLeft(4, '0')}  ${hexPart.padRight(47)}  ${row.levels}');
+          '${row.offset.toRadixString(16).padLeft(4, '0')}  ${hexPart.padRight(47)}  ${_sampleLevels(row.bytes)}');
     }
     return buffer.toString().trimRight();
   }
@@ -509,6 +535,30 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildCapabilityBanner(localizations),
+                        DropdownButtonFormField<bool>(
+                          initialValue: _useAdc,
+                          decoration: InputDecoration(
+                            labelText: localizations.lf_capture_source,
+                          ),
+                          items: [
+                            DropdownMenuItem(
+                              value: false,
+                              child: Text(localizations.lf_capture_sniff),
+                            ),
+                            DropdownMenuItem(
+                              value: true,
+                              child: Text(localizations.lf_capture_adc),
+                            ),
+                          ],
+                          onChanged: _isCapturing
+                              ? null
+                              : (value) => setState(() {
+                                    _useAdc = value!;
+                                    _errorMessage = null;
+                                    _statusMessage = null;
+                                  }),
+                        ),
+                        const SizedBox(height: 12),
                         Form(
                           key: _formKey,
                           child: _buildHeaderControls(localizations, isWide),
@@ -578,7 +628,7 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
   Widget _buildCaptureField(AppLocalizations localizations) {
     return TextFormField(
       controller: _timeoutController,
-      enabled: !_isCapturing,
+      enabled: !_isCapturing && !_useAdc,
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       decoration: InputDecoration(
@@ -586,12 +636,14 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
         helperText: localizations.lf_sniff_timeout_help,
         border: const OutlineInputBorder(),
       ),
-      validator: (value) => validateIntRange(
-        value,
-        localizations,
-        min: 1,
-        max: 10000,
-      ),
+      validator: (value) => _useAdc
+          ? null
+          : validateIntRange(
+              value,
+              localizations,
+              min: 1,
+              max: 10000,
+            ),
     );
   }
 
@@ -639,7 +691,7 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
         children: [
           FilledButton.icon(
             onPressed: (_isCapturing ||
-                    _capabilitySupported == false ||
+                    _selectedCapability == false ||
                     !_isDeviceConnected())
                 ? null
                 : _captureLfSamples,
@@ -728,7 +780,7 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
       );
     }
 
-    if (_capabilitySupported != false) {
+    if (_selectedCapability != false) {
       return const SizedBox.shrink();
     }
 
@@ -745,7 +797,9 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  localizations.lf_sniff_firmware_unsupported,
+                  _useAdc
+                      ? localizations.lf_adc_firmware_unsupported
+                      : localizations.lf_sniff_firmware_unsupported,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -863,7 +917,8 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
   }
 
   Widget _buildWaveformTab(AppLocalizations localizations) {
-    final capture = _capture;
+    final source = _capture;
+    final capture = source == null ? null : _plotCapture(source);
     if (capture == null) {
       return _buildEmptyState(localizations.lf_sniff_capture_prompt);
     }
@@ -880,6 +935,19 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
+        _sampleRangeField(localizations.lf_plot_start, _plotStart, (value) {
+          setState(() => _plotStart = value);
+        }, allowZero: true),
+        const SizedBox(height: 12),
+        _sampleRangeField(localizations.lf_plot_length, _plotLength, (value) {
+          setState(() => _plotLength = value);
+        }),
+        const SizedBox(height: 12),
+        Text(localizations.lf_plot_range(
+          math.min(_plotStart, source!.samples.length),
+          math.min(_plotStart, source.samples.length) + capture.samples.length,
+        )),
+        if (capture.samples.isEmpty) Text(localizations.lf_sniff_no_samples),
         if (isCompact) ...[
           Text(
             localizations.lf_sniff_waveform_help,
@@ -977,7 +1045,7 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
                 ),
                 validator: (value) {
                   final parsed = int.tryParse(value ?? '');
-                  if (parsed == null || !kLfClockDivisors.contains(parsed)) {
+                  if (parsed == null || parsed <= 0) {
                     return localizations.lf_sniff_invalid_clock;
                   }
                   return null;
@@ -1109,11 +1177,20 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
       return _buildEmptyState(localizations.lf_sniff_capture_prompt);
     }
 
-    final shownBytes = math.min(capture.samples.length, 512);
+    final shownBytes = math.min(capture.samples.length, _hexLength);
 
     return ListView(
       padding: EdgeInsets.zero,
       children: [
+        SwitchListTile(
+          title: Text(localizations.lf_adc_binary),
+          value: _binaryHex,
+          onChanged: (value) => setState(() => _binaryHex = value),
+        ),
+        _sampleRangeField(localizations.lf_hex_length, _hexLength, (value) {
+          setState(() => _hexLength = value);
+        }),
+        const SizedBox(height: 12),
         _buildHexLegend(localizations, capture.summary),
         const SizedBox(height: 10),
         Text(localizations.lf_sniff_hex_help(
@@ -1128,10 +1205,36 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
             indexedByteColorBuilder: (offset, value) =>
                 _lfSampleColor(context, capture.summary, offset, value),
             trailingTextBuilder: (row) =>
-                row.map((value) => levelGlyph(value)).join(),
+                _sampleLevels(row),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _sampleRangeField(String label, int initial, ValueChanged<int> onChanged,
+      {bool allowZero = false}) {
+    return TextFormField(
+      initialValue: '$initial',
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: (value) {
+        final parsed = int.tryParse(value ?? '');
+        return parsed == null || parsed < (allowZero ? 0 : 1)
+            ? AppLocalizations.of(context)!.lf_sample_range_invalid
+            : null;
+      },
+      onChanged: (value) {
+        final parsed = int.tryParse(value);
+        if (parsed != null && parsed >= (allowZero ? 0 : 1)) {
+          onChanged(parsed);
+        }
+      },
     );
   }
 
