@@ -5,6 +5,7 @@ import 'package:chameleonultragui/gui/menu/tools/hf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/lf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/gui/menu/tools/mifare_value_blocks.dart';
 import 'package:chameleonultragui/gui/menu/tools/raw_commands.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -17,6 +18,7 @@ class ToolItem {
   final IconData icon;
   final bool isDeviceRequired;
   final bool showWipBadge;
+  final bool fullScreen;
   final Widget? onPressed;
 
   ToolItem({
@@ -25,6 +27,7 @@ class ToolItem {
     required this.icon,
     this.isDeviceRequired = false,
     this.showWipBadge = false,
+    this.fullScreen = false,
     this.onPressed,
   });
 }
@@ -43,6 +46,14 @@ class ToolsPageState extends State<ToolsPage> {
     var localizations = AppLocalizations.of(context)!;
 
     List<ToolItem> tools = [
+      ToolItem(
+        name: localizations.live_value_blocks,
+        description: localizations.value_block_tool_description,
+        icon: Icons.exposure,
+        isDeviceRequired: true,
+        fullScreen: true,
+        onPressed: const MifareValueBlocksTool(),
+      ),
       ToolItem(
         name: localizations.dictionary_download,
         description: localizations.dictionary_download_description,
@@ -132,6 +143,14 @@ class ToolsPageState extends State<ToolsPage> {
                   tool.onPressed != null &&
                       (!tool.isDeviceRequired || appState.connector!.connected)
                   ? () {
+                      if (tool.fullScreen) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => tool.onPressed!,
+                          ),
+                        );
+                        return;
+                      }
                       showDialog(
                         barrierDismissible: tool.onPressed is! RawCommandsMenu,
                         context: context,
