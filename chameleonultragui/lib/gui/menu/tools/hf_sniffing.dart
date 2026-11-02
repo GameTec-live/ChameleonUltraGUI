@@ -451,11 +451,14 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
                     _buildCapabilityBanner(localizations),
                     Form(
                       key: _formKey,
-                      child: Column(children: [
-                        if (widget.activeAuthentication)
-                          _buildAuthenticationControls(localizations),
-                        _buildHeaderControls(localizations),
-                      ]),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (widget.activeAuthentication)
+                            _buildAuthenticationControls(localizations),
+                          _buildHeaderControls(localizations),
+                        ],
+                      ),
                     ),
                     if (_statusMessage != null || _errorMessage != null)
                       Padding(
