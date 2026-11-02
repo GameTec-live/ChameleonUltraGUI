@@ -69,6 +69,12 @@ class ToolsPageState extends State<ToolsPage> {
         onPressed: const HfSniffingMenu(),
       ),
       ToolItem(
+        name: localizations.hf_auth_trace,
+        description: localizations.hf_auth_description,
+        icon: Icons.key,
+        onPressed: const HfSniffingMenu(activeAuthentication: true),
+      ),
+      ToolItem(
         name: localizations.mifare_classic_gen4,
         description: localizations.mifare_classic_gen4_description,
         icon: Icons.settings,

@@ -626,5 +626,15 @@
   "lf_sample_range_invalid": "Enter a valid sample count",
   "lf_adc_firmware_unsupported": "LF ADC read is not supported by this firmware. Update the firmware to use it.",
   "lf_adc_capture_in_progress": "Reading LF ADC samples…",
-  "lf_adc_binary": "Binary levels (1 at ADC ≥ 0xBF)"
+  "lf_adc_binary": "Binary levels (1 at ADC ≥ 0xBF)",
+  "hf_tool_unsupported": "This firmware does not support this HF tool. Update the device firmware.",
+  "hf_auth_trace": "Active authentication trace",
+  "hf_auth_description": "Authenticate with a known MIFARE Classic key and inspect the exchange.",
+  "hf_auth_block": "Block (0–255)",
+  "hf_auth_key_type": "Key type",
+  "hf_auth_key": "Key (6 bytes, hex)",
+  "hf_auth_status": "Authentication status: 0x{status} (0 = success).",
+  "@hf_auth_status": {"placeholders": {"status": {"type": "String"}}},
+  "hf_auth_prompt": "Capture an authentication exchange with a card using a known key.",
+  "hf_auth_timeout_help": "1 to 30000 ms. Poll for a card before authenticating."
 }

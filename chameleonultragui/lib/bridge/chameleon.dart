@@ -1408,13 +1408,18 @@ class ChameleonCommunicator {
     return cards;
   }
 
-  Future<Uint8List> hf14aAuthTrace(int block, int keyType, Uint8List key,
+  /// Retains partial traces and status, including failed authentication.
+  Future<ChameleonMessage> hf14aAuthTrace(int block, int keyType, Uint8List key,
       {int timeoutMs = 5000}) async {
+    RangeError.checkValueInInterval(block, 0, 255, 'block');
+    RangeError.checkValueInInterval(timeoutMs, 1, 30000, 'timeoutMs');
+    if (key.length != 6 || (keyType != 0x60 && keyType != 0x61)) {
+      throw ArgumentError('Expected a six-byte key and Key A (0x60) or B (0x61)');
+    }
     return (await sendCmd(ChameleonCommand.hf14aAuthTrace,
-            data: Uint8List.fromList(
-                [keyType, block, ...key, (timeoutMs >> 8) & 0xFF, timeoutMs & 0xFF]),
-            timeout: Duration(milliseconds: timeoutMs + 3000)))!
-        .data;
+        data: Uint8List.fromList(
+            [keyType, block, ...key, (timeoutMs >> 8) & 0xFF, timeoutMs & 0xFF]),
+        timeout: Duration(milliseconds: timeoutMs + 3000)))!;
   }
 
   Future<(int, int, int, int)> hf14aGetConfig() async {
