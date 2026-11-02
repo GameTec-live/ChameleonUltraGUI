@@ -1,23 +1,67 @@
-import 'dart:typed_data';
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
-import 'package:chameleonultragui/gui/menu/dialogs/mifare_value_block.dart';
+import 'package:chameleonultragui/gui/menu/tools/mifare_value_blocks.dart';
+import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/dump_analyzer.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/value_blocks.dart';
+import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class RecordingCommunicator extends ChameleonCommunicator {
-  RecordingCommunicator() : super(Logger(level: Level.off));
+class TestSerial extends Fake implements AbstractSerial {
+  @override
+  ConnectionType get connectionType => ConnectionType.usb;
+  @override
+  bool get connected => true;
+}
+
+class ValueBlockCommunicator extends ChameleonCommunicator {
+  ValueBlockCommunicator() : super(Logger(level: Level.off));
   final calls = <(ChameleonCommand, Uint8List?)>[];
+  final memory = <int, Uint8List>{
+    4: hexToBytes(MifareClassicDumpAnalyzer.intToValueBlock(-42, 4)),
+    8: hexToBytes(MifareClassicDumpAnalyzer.intToValueBlock(100, 8)),
+  };
+  Uint8List currentUid = hexToBytes('11223344');
   int status = 0;
-  bool supported = true;
-  Completer<void>? readerModeGate;
+  Completer<void>? modeGate;
+  bool rejectReadback = false;
+
+  @override
+  Future<bool> isReaderDeviceMode() async => true;
+  @override
+  Future<CardData?> scan14443aTag() async => CardData(
+    uid: currentUid,
+    sak: 8,
+    atqa: hexToBytes('0400'),
+    ats: Uint8List(0),
+  );
+  @override
+  Future<bool> detectMf1Support() async => true;
+  @override
+  Future<NTLevel> getMf1NTLevel() async => NTLevel.weak;
+  @override
+  Future<bool> mf1Auth(int block, int type, Uint8List key) async =>
+      block != 0x45;
+  @override
+  Future<Uint8List?> mf1AuthMultipleKeys(
+    int block,
+    int type,
+    List<Uint8List> keys,
+  ) async => keys.isEmpty ? null : keys.first;
+
   @override
   Future<ChameleonMessage?> sendCmd(
     ChameleonCommand cmd, {
@@ -27,263 +71,353 @@ class RecordingCommunicator extends ChameleonCommunicator {
     bool firstRun = false,
   }) async {
     calls.add((cmd, data));
-    if (cmd == ChameleonCommand.changeDeviceMode) {
-      await readerModeGate?.future;
+    var payload = Uint8List(0);
+    if (cmd == ChameleonCommand.getDeviceCapabilities) {
+      payload = Uint8List.fromList([0x07, 0xD8, 0x07, 0xD9, 0x07, 0xDB]);
+    } else if (cmd == ChameleonCommand.changeDeviceMode) {
+      await modeGate?.future;
+    } else if (cmd == ChameleonCommand.mf1ReadBlock && !rejectReadback) {
+      final block = data![1];
+      payload =
+          memory[block] ??
+          (block % 4 == 3
+              ? hexToBytes('FFFFFFFFFFFFFF078069FFFFFFFFFFFF')
+              : Uint8List(16));
+    } else if (cmd == ChameleonCommand.mf1WriteBlock && status == 0) {
+      memory[data![1]] = Uint8List.fromList(data.sublist(8));
+    } else if (cmd == ChameleonCommand.mf1ManipulateValueBlock && status == 0) {
+      final source = data![1], destination = data[14];
+      final value = MifareClassicDumpAnalyzer.valueBlockToInt(
+        bytesToHex(memory[source]!),
+      )!;
+      final amount = ByteData.sublistView(data, 9, 13).getInt32(0, Endian.big);
+      final result = data[8] == 0xC1
+          ? value + amount
+          : data[8] == 0xC0
+          ? value - amount
+          : value;
+      memory[destination] = hexToBytes(
+        MifareClassicDumpAnalyzer.intToValueBlock(result, source),
+      );
     }
-    final payload = cmd == ChameleonCommand.getDeviceCapabilities
-        ? Uint8List.fromList(
-            supported ? [0x07, 0xD8, 0x07, 0xD9, 0x07, 0xDB] : [],
-          )
-        : cmd == ChameleonCommand.mf1ReadBlock
-        ? hexToBytes(MifareClassicDumpAnalyzer.intToValueBlock(-42, 4))
-        : Uint8List(0);
     return ChameleonMessage(command: cmd.value, status: status, data: payload);
   }
 }
 
-Future<void> openDialog(
-  WidgetTester tester,
-  RecordingCommunicator c, {
-  MifareClassicType type = MifareClassicType.m1k,
+Future<ChameleonGUIState> appState(ValueBlockCommunicator c) async {
+  SharedPreferences.setMockInitialValues({});
+  final preferences = SharedPreferencesProvider();
+  await preferences.load();
+  return ChameleonGUIState(preferences)
+    ..communicator = c
+    ..connector = TestSerial()
+    ..log = Logger(level: Level.off);
+}
+
+Future<MifareValueBlocks> session(
+  ValueBlockCommunicator c, {
+  MifareClassicType type = MifareClassicType.mini,
   bool isEV1 = false,
 }) async {
+  final app = await appState(c);
+  final recovery = MifareClassicRecovery(
+    appState: app,
+    update: () {},
+    localizations: await AppLocalizations.delegate.load(const Locale('en')),
+    mifareClassicType: type,
+    isMifareClassicEV1: isEV1,
+  );
+  for (
+    var sector = 0;
+    sector < mfClassicGetSectorCount(type, isEV1: isEV1);
+    sector++
+  ) {
+    recovery.setKeyAsFound(sector, 0, hexToBytes('FFFFFFFFFFFF'));
+    recovery.setKeyAsFound(sector, 1, hexToBytes('A0A1A2A3A4A5'));
+  }
+  return MifareValueBlocks(
+    communicator: c,
+    recovery: recovery,
+    uid: '11 22 33 44',
+    capabilities: {2008, 2009, 2011},
+  );
+}
+
+Future<ChameleonGUIState> pumpTool(
+  WidgetTester tester,
+  ValueBlockCommunicator c, {
+  bool toolsPage = false,
+}) async {
+  await tester.binding.setSurfaceSize(const Size(1200, 1200));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+  final app = await appState(c);
   await tester.pumpWidget(
-    MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: MifareValueBlockDialog(communicator: c, type: type, isEV1: isEV1),
+    ChangeNotifierProvider.value(
+      value: app,
+      child: MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: toolsPage ? const ToolsPage() : const MifareValueBlocksTool(),
       ),
     ),
   );
   await tester.pumpAndSettle();
+  return app;
 }
 
-Future<void> selectOperation(WidgetTester tester, String label) async {
-  await tester.tap(
-    find.byWidgetPredicate((widget) => widget is DropdownButtonFormField).first,
-  );
+Future<void> discover(WidgetTester tester) async {
+  await tester.tap(find.text('Scan card'));
   await tester.pumpAndSettle();
-  await tester.tap(find.text(label).last);
+  await tester.tap(find.text('Check keys from dictionary'));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  test(
-    'firmware payload uses independent keys and signed network byte order',
-    () async {
-      final c = RecordingCommunicator();
-      await c.manipulateValueBlock(
+  test('firmware command preserves independent keys, signed byte order, and failures', () async {
+    final c = ValueBlockCommunicator();
+    c.status = 6;
+    await expectLater(
+      c.manipulateValueBlock(
         4,
         0x60,
-        Uint8List.fromList([1, 2, 3, 4, 5, 6]),
+        hexToBytes('010203040506'),
         MifareClassicValueBlockOperator.decrement,
         -2,
         128,
         0x61,
-        Uint8List.fromList([6, 5, 4, 3, 2, 1]),
+        hexToBytes('060504030201'),
+      ),
+      throwsStateError,
+    );
+    expect(c.calls.single.$2, [
+      0x60,
+      4,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      0xC0,
+      0xFF,
+      0xFF,
+      0xFF,
+      0xFE,
+      0x61,
+      128,
+      6,
+      5,
+      4,
+      3,
+      2,
+      1,
+    ]);
+  });
+
+  test(
+    'layout includes EV1 and 4K geometry while protecting reserved blocks',
+    () async {
+      final ev1 = await session(
+        ValueBlockCommunicator(),
+        type: MifareClassicType.m1k,
+        isEV1: true,
       );
-      expect(c.calls.single.$1, ChameleonCommand.mf1ManipulateValueBlock);
-      expect(c.calls.single.$2, [
-        0x60,
-        4,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        0xC0,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFE,
-        0x61,
-        128,
-        6,
-        5,
-        4,
-        3,
-        2,
-        1,
-      ]);
-      c.status = 6;
+      expect(ev1.blockCount, 72);
+      expect(ev1.isDataBlock(64), isTrue);
+      expect(ev1.isDataBlock(69), isTrue);
+      expect(ev1.isDataBlock(71), isFalse);
+      expect(ev1.isDataBlock(72), isFalse);
+      final large = await session(
+        ValueBlockCommunicator(),
+        type: MifareClassicType.m4k,
+      );
+      expect(large.sectorCount, 40);
+      for (final block in [0, 3, 127, 143, 255, 256]) {
+        expect(large.isDataBlock(block), isFalse);
+      }
+      expect(large.isDataBlock(142), isTrue);
+    },
+  );
+
+  test('automatic authentication respects source and destination access conditions', () async {
+    final c = ValueBlockCommunicator();
+    final card = await session(c);
+    await card.refresh();
+    // Source increment requires B; destination allows decrement/transfer with A or B.
+    card.blocks[7] = hexToBytes(
+      'FFFFFFFFFFFF${MifareClassicDumpAnalyzer.encodeAccessConditions([3, 0, 0, 1])}69FFFFFFFFFFFF',
+    );
+    card.blocks[11] = hexToBytes(
+      'FFFFFFFFFFFF${MifareClassicDumpAnalyzer.encodeAccessConditions([4, 0, 0, 1])}69FFFFFFFFFFFF',
+    );
+    await card.apply(ValueBlockOperation.increment, 4, 8, 2);
+    final call = c.calls.last;
+    expect(call.$1, ChameleonCommand.mf1ManipulateValueBlock);
+    expect(call.$2!.sublist(0, 8), [
+      0x61,
+      4,
+      0xA0,
+      0xA1,
+      0xA2,
+      0xA3,
+      0xA4,
+      0xA5,
+    ]);
+    expect(call.$2!.sublist(13), [0x60, 8, 255, 255, 255, 255, 255, 255]);
+    expect(card.blocks[8], isNull);
+    await card.readBlock(8);
+    expect(card.value(8), -40);
+  });
+
+  test('write initializes selected block; transfer preserves source value and address', () async {
+    final c = ValueBlockCommunicator();
+    final card = await session(c);
+    await card.refresh();
+    await card.apply(ValueBlockOperation.write, 5, 5, -2147483648);
+    await card.readBlock(5);
+    expect(card.value(5), -2147483648);
+    expect(card.address(5), 5);
+    await card.apply(ValueBlockOperation.transfer, 5, 8, 0);
+    await card.readBlock(8);
+    expect(card.value(8), -2147483648);
+    expect(card.address(8), 5);
+  });
+
+  test(
+    'mutations snapshot keys and refuse a different physical card',
+    () async {
+      final c = ValueBlockCommunicator();
+      final card = await session(c);
+      await card.refresh();
+      c.modeGate = Completer<void>();
+      final operation = card.apply(ValueBlockOperation.increment, 4, 8, 7);
+      card.recovery.getSectorKey(1, 0).fillRange(0, 6, 0);
+      c.modeGate!.complete();
+      await operation;
+      expect(c.calls.last.$2!.sublist(2, 8), [255, 255, 255, 255, 255, 255]);
+      await card.readBlock(4);
+      c.currentUid = hexToBytes('55667788');
+      c.calls.clear();
       await expectLater(
-        c.manipulateValueBlock(
-          4,
-          0x60,
-          Uint8List(6),
-          MifareClassicValueBlockOperator.restore,
-          0,
-          4,
-          0x60,
-          Uint8List(6),
-        ),
+        card.apply(ValueBlockOperation.increment, 4, 8, 1),
         throwsStateError,
       );
-    },
-  );
-
-  for (final operation in ['Increment', 'Write value']) {
-    testWidgets('$operation uses inputs captured before reader-mode setup', (
-      tester,
-    ) async {
-      final c = RecordingCommunicator()..readerModeGate = Completer<void>();
-      await openDialog(tester, c);
-      await selectOperation(tester, operation);
-      final fields = find.byType(TextFormField);
-      if (operation == 'Increment') {
-        await tester.enterText(fields.at(2), '8');
-        await tester.enterText(fields.at(3), 'A0A1A2A3A4A5');
-        await tester.enterText(fields.at(4), '12');
-      } else {
-        await tester.enterText(fields.at(2), '-12');
-        await tester.enterText(fields.at(3), '9');
-      }
-      await tester.ensureVisible(
-        find.widgetWithText(ElevatedButton, operation),
-      );
-      await tester.tap(find.widgetWithText(ElevatedButton, operation));
-      await tester.pump();
-      // Keyboard input can still reach the focused editor while taps are blocked.
-      tester.testTextInput.enterText(operation == 'Increment' ? '999' : '255');
-      await tester.pump();
-      if (operation == 'Increment') {
-        tester.widget<TextFormField>(fields.at(2)).controller!.text = '12';
-        tester.widget<TextFormField>(fields.at(3)).controller!.text =
-            'BBBBBBBBBBBB';
-      } else {
-        tester.widget<TextFormField>(fields.at(2)).controller!.text = '123';
-      }
-      c.readerModeGate!.complete();
-      await tester.pumpAndSettle();
-      if (operation == 'Increment') {
-        expect(c.calls.last.$2!.sublist(9), [
-          0,
-          0,
-          0,
-          12,
-          0x60,
-          8,
-          0xA0,
-          0xA1,
-          0xA2,
-          0xA3,
-          0xA4,
-          0xA5,
-        ]);
-      } else {
-        expect(
-          c.calls.last.$2!.sublist(8),
-          hexToBytes(MifareClassicDumpAnalyzer.intToValueBlock(-12, 9)),
-        );
-      }
-    });
-  }
-
-  testWidgets(
-    'EV1 extra data blocks are available only for detected EV1 cards',
-    (tester) async {
-      final c = RecordingCommunicator();
-      await openDialog(tester, c, isEV1: true);
-      for (final block in ['64', '69']) {
-        await tester.enterText(find.byType(TextFormField).first, block);
-        await tester.tap(find.widgetWithText(ElevatedButton, 'Read value'));
-        await tester.pumpAndSettle();
-        expect(c.calls.last.$1, ChameleonCommand.mf1ReadBlock);
-        expect(c.calls.last.$2![1], int.parse(block));
-      }
-      await tester.enterText(find.byType(TextFormField).first, '72');
-      c.calls.clear();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Read value'));
-      await tester.pumpAndSettle();
-      expect(c.calls, isEmpty);
-      await tester.pumpWidget(const SizedBox.shrink());
-      await openDialog(tester, c);
-      await tester.enterText(find.byType(TextFormField).first, '64');
-      c.calls.clear();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Read value'));
-      await tester.pumpAndSettle();
-      expect(c.calls, isEmpty);
-    },
-  );
-  testWidgets('read displays signed live value and address', (tester) async {
-    final c = RecordingCommunicator();
-    await openDialog(tester, c);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Read value'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('-42'), findsOneWidget);
-    expect(
-      c.calls.map((e) => e.$1),
-      containsAllInOrder([
-        ChameleonCommand.changeDeviceMode,
-        ChameleonCommand.mf1ReadBlock,
-      ]),
-    );
-  });
-
-  testWidgets('increment sends one firmware operation with destination auth', (
-    tester,
-  ) async {
-    final c = RecordingCommunicator();
-    await openDialog(tester, c);
-    await selectOperation(tester, 'Increment');
-    final fields = find.byType(TextFormField);
-    await tester.enterText(fields.at(2), '8');
-    await tester.enterText(fields.at(3), 'A0A1A2A3A4A5');
-    await tester.ensureVisible(
-      find.widgetWithText(ElevatedButton, 'Increment'),
-    );
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Increment'));
-    await tester.pumpAndSettle();
-    final payload = c.calls.last.$2!;
-    expect(c.calls.last.$1, ChameleonCommand.mf1ManipulateValueBlock);
-    expect(payload[8], 0xC1);
-    expect(payload.sublist(9, 13), [0, 0, 0, 1]);
-    expect(payload.sublist(13), [0x60, 8, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]);
-    expect(find.text('Card operation completed.'), findsOneWidget);
-  });
-
-  testWidgets('write encodes signed value and redundant address', (
-    tester,
-  ) async {
-    final c = RecordingCommunicator();
-    await openDialog(tester, c);
-    await selectOperation(tester, 'Write value');
-    await tester.enterText(find.byType(TextFormField).at(2), '-2147483648');
-    await tester.enterText(find.byType(TextFormField).at(3), '255');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Write value'));
-    await tester.pumpAndSettle();
-    expect(c.calls.last.$1, ChameleonCommand.mf1WriteBlock);
-    expect(
-      c.calls.last.$2!.sublist(8),
-      hexToBytes(MifareClassicDumpAnalyzer.intToValueBlock(-2147483648, 255)),
-    );
-  });
-
-  testWidgets('reject trailers, manufacturer block and out of range blocks', (
-    tester,
-  ) async {
-    final c = RecordingCommunicator();
-    await openDialog(tester, c, type: MifareClassicType.m4k);
-    for (final block in ['0', '3', '127', '143', '255', '256']) {
-      await tester.enterText(find.byType(TextFormField).first, block);
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Read value'));
-      await tester.pumpAndSettle();
       expect(
-        c.calls.where((e) => e.$1 == ChameleonCommand.mf1ReadBlock),
+        c.calls.where(
+          (call) => call.$1 == ChameleonCommand.mf1ManipulateValueBlock,
+        ),
         isEmpty,
       );
-      expect(find.textContaining('Enter a data block'), findsOneWidget);
-    }
-  });
+    },
+  );
 
-  testWidgets('unsupported firmware disables execution', (tester) async {
-    final c = RecordingCommunicator()..supported = false;
-    await openDialog(tester, c);
-    expect(
-      tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
-      isNull,
-    );
-  });
+  test(
+    'failed mutations invalidate cached destination without retrying',
+    () async {
+      final c = ValueBlockCommunicator();
+      final card = await session(c);
+      await card.refresh();
+      c.status = 6;
+      c.calls.clear();
+      await expectLater(
+        card.apply(ValueBlockOperation.decrement, 4, 8, 1),
+        throwsStateError,
+      );
+      expect(card.blocks[8], isNull);
+      expect(
+        c.calls.where(
+          (call) => call.$1 == ChameleonCommand.mf1ManipulateValueBlock,
+        ),
+        hasLength(1),
+      );
+    },
+  );
+
+  testWidgets(
+    'saved dictionaries feed the existing recovery flow on narrow screens',
+    (tester) async {
+      final c = ValueBlockCommunicator();
+      final app = await pumpTool(tester, c);
+      app.sharedPreferencesProvider.setDictionaries([
+        Dictionary(
+          id: 'office',
+          name: 'Office',
+          keyLength: 12,
+          keys: [hexToBytes('A0A1A2A3A4A5')],
+        ),
+      ]);
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scan card'));
+      await tester.pumpAndSettle();
+      final dropdown = find.byWidgetPredicate(
+        (widget) => widget is DropdownButtonFormField<String>,
+      );
+      await tester.ensureVisible(dropdown);
+      await tester.tap(dropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Office (1)').last);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byType(CheckboxListTile));
+      await tester.tap(find.byType(CheckboxListTile));
+      await tester.ensureVisible(find.text('Check keys from dictionary'));
+      await tester.tap(find.text('Check keys from dictionary'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Increment'));
+      await tester.tap(find.text('Increment'));
+      await tester.pumpAndSettle();
+      final payload = c.calls
+          .lastWhere(
+            (call) => call.$1 == ChameleonCommand.mf1ManipulateValueBlock,
+          )
+          .$2!;
+      expect(payload.sublist(2, 8), [0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'Tools opens a full page with dictionary recovery and visual operations',
+    (tester) async {
+      final c = ValueBlockCommunicator();
+      await pumpTool(tester, c, toolsPage: true);
+      await tester.tap(find.text('Live value blocks'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      await discover(tester);
+      expect(find.text('Recover keys'), findsOneWidget);
+      final source = find.byKey(const ValueKey('value-block-4'));
+      await tester.ensureVisible(source);
+      await tester.tap(source);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Increment'));
+      await tester.pumpAndSettle();
+      expect(
+        MifareClassicDumpAnalyzer.valueBlockToInt(bytesToHex(c.memory[4]!)),
+        -41,
+      );
+      expect(find.text('Card operation completed.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'destination tile uses recovered keys without manual key fields',
+    (tester) async {
+      final c = ValueBlockCommunicator();
+      await pumpTool(tester, c);
+      await discover(tester);
+      await tester.tap(find.text('Destination').first);
+      final target = find.byKey(const ValueKey('value-block-8'));
+      await tester.ensureVisible(target);
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Copy value'));
+      await tester.pumpAndSettle();
+      expect(
+        MifareClassicDumpAnalyzer.valueBlockToInt(bytesToHex(c.memory[8]!)),
+        -42,
+      );
+      expect(find.byType(TextField), findsOneWidget);
+    },
+  );
 }
