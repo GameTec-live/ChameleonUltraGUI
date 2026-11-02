@@ -17,14 +17,19 @@ List<CardData> parseHfScanCards(Uint8List data) {
     if (end > data.length) {
       throw const FormatException('Truncated HF card record');
     }
-    cards.add(CardData(
-      uid: data.sublist(offset + 1, offset + uidLength + 1),
-      atqa: Uint8List.fromList(data
-          .sublist(offset + uidLength + 1, offset + uidLength + 3)
-          .reversed.toList()),
-      sak: data[offset + uidLength + 3],
-      ats: data.sublist(offset + uidLength + 5, end),
-    ));
+    cards.add(
+      CardData(
+        uid: data.sublist(offset + 1, offset + uidLength + 1),
+        atqa: Uint8List.fromList(
+          data
+              .sublist(offset + uidLength + 1, offset + uidLength + 3)
+              .reversed
+              .toList(),
+        ),
+        sak: data[offset + uidLength + 3],
+        ats: data.sublist(offset + uidLength + 5, end),
+      ),
+    );
     offset = end;
   }
   return cards;

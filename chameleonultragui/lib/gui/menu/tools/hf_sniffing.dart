@@ -133,7 +133,12 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
         authStatus = response.status;
         rawBytes = response.data;
         if (authStatus == 0x67 || authStatus == 0x69) {
-          if (mounted) setState(() => _capabilitySupported = false);
+          if (mounted) {
+            setState(() {
+              _capabilitySupported = false;
+              _statusMessage = null;
+            });
+          }
           return;
         }
       } else {
@@ -516,7 +521,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
               labelText: localizations.hf_sniff_timeout,
-              helperText: localizations.hf_sniff_timeout_help,
+              helperText: widget.activeAuthentication
+                  ? localizations.hf_auth_timeout_help
+                  : localizations.hf_sniff_timeout_help,
               border: const OutlineInputBorder(),
             ),
             validator: (value) => validateIntRange(
@@ -710,7 +717,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   Widget _buildSummaryTab(AppLocalizations localizations) {
     final capture = _capture;
     if (capture == null) {
-      return _buildEmptyState(localizations.hf_sniff_capture_prompt);
+      return _buildEmptyState(widget.activeAuthentication
+          ? localizations.hf_auth_prompt
+          : localizations.hf_sniff_capture_prompt);
     }
 
     final summary = capture.summary;
@@ -795,7 +804,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   Widget _buildFramesTab(AppLocalizations localizations) {
     final capture = _capture;
     if (capture == null) {
-      return _buildEmptyState(localizations.hf_sniff_capture_prompt);
+      return _buildEmptyState(widget.activeAuthentication
+          ? localizations.hf_auth_prompt
+          : localizations.hf_sniff_capture_prompt);
     }
 
     if (capture.annotatedFrames.isEmpty) {
@@ -821,7 +832,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   Widget _buildNoncesTab(AppLocalizations localizations) {
     final capture = _capture;
     if (capture == null) {
-      return _buildEmptyState(localizations.hf_sniff_capture_prompt);
+      return _buildEmptyState(widget.activeAuthentication
+          ? localizations.hf_auth_prompt
+          : localizations.hf_sniff_capture_prompt);
     }
 
     if (capture.nonceGroups.isEmpty) {
@@ -904,7 +917,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   Widget _buildRecoveryTab(AppLocalizations localizations) {
     final capture = _capture;
     if (capture == null) {
-      return _buildEmptyState(localizations.hf_sniff_capture_prompt);
+      return _buildEmptyState(widget.activeAuthentication
+          ? localizations.hf_auth_prompt
+          : localizations.hf_sniff_capture_prompt);
     }
 
     final groups = capture.nonceGroups;
@@ -1059,7 +1074,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   Widget _buildRawTab(AppLocalizations localizations) {
     final capture = _capture;
     if (capture == null) {
-      return _buildEmptyState(localizations.hf_sniff_capture_prompt);
+      return _buildEmptyState(widget.activeAuthentication
+          ? localizations.hf_auth_prompt
+          : localizations.hf_sniff_capture_prompt);
     }
 
     final shownBytes = math.min(capture.rawBytes.length, 1024);

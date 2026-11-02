@@ -640,5 +640,7 @@
   "hf_auth_key_type": "Key type",
   "hf_auth_key": "Key (6 bytes, hex)",
   "hf_auth_status": "Authentication status: 0x{status} (0 = success).",
-  "@hf_auth_status": {"placeholders": {"status": {"type": "String"}}}
+  "@hf_auth_status": {"placeholders": {"status": {"type": "String"}}},
+  "hf_auth_prompt": "Capture an authentication exchange with a card using a known key.",
+  "hf_auth_timeout_help": "1 to 30000 ms. Poll for a card before authenticating."
 }

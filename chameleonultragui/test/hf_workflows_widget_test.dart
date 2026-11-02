@@ -20,41 +20,67 @@ class _Reader extends ChameleonCommunicator {
   bool readerMode = false;
 
   @override
-  Future<List<int>> getDeviceCapabilities() async => unsupported ? [] : [2016, 2017];
+  Future<List<int>> getDeviceCapabilities() async =>
+      unsupported ? [] : [2016, 2017];
   @override
   Future<bool> isReaderDeviceMode() async => readerMode;
   @override
-  Future<void> setReaderDeviceMode(bool mode) async { readerMode = mode; }
+  Future<void> setReaderDeviceMode(bool mode) async {
+    readerMode = mode;
+  }
+
   @override
-  Future<void> hf14aSetFieldOff() async { fieldOffCalls++; }
+  Future<void> hf14aSetFieldOff() async {
+    fieldOffCalls++;
+  }
+
   @override
   Future<List<CardData>> scan14443aTagKeep() async => [
-    for (final id in [1, 2]) CardData(uid: Uint8List.fromList([id, 2, 3, 4]),
-        sak: 8, atqa: Uint8List.fromList([0, 4]), ats: Uint8List(0)),
+    for (final id in [1, 2])
+      CardData(
+        uid: Uint8List.fromList([id, 2, 3, 4]),
+        sak: 8,
+        atqa: Uint8List.fromList([0, 4]),
+        ats: Uint8List(0),
+      ),
   ];
   @override
-  Future<ChameleonMessage> hf14aAuthTrace(int block, int keyType, Uint8List key,
-      {int timeoutMs = 5000}) async {
+  Future<ChameleonMessage> hf14aAuthTrace(
+    int block,
+    int keyType,
+    Uint8List key, {
+    int timeoutMs = 5000,
+  }) async {
     authCalls++;
-    return ChameleonMessage(command: 2017, status: 6,
-        data: Uint8List.fromList([0, 32, 0x60, 0, 0, 0]));
+    return ChameleonMessage(
+      command: 2017,
+      status: 6,
+      data: Uint8List.fromList([0, 32, 0x60, 0, 0, 0]),
+    );
   }
 }
 
 Future<void> _show(WidgetTester tester, _Reader reader, Widget menu) async {
   await tester.binding.setSurfaceSize(const Size(1100, 1000));
   addTearDown(() => tester.binding.setSurfaceSize(null));
-  await tester.pumpWidget(ChangeNotifierProvider.value(
-    value: ChameleonGUIState(SharedPreferencesProvider())..communicator = reader,
-    child: MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: menu)),
-  ));
+  await tester.pumpWidget(
+    ChangeNotifierProvider.value(
+      value: ChameleonGUIState(SharedPreferencesProvider())
+        ..communicator = reader,
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: menu),
+      ),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('selects the second scan record and releases the RF field', (tester) async {
+  testWidgets('selects the second scan record and releases the RF field', (
+    tester,
+  ) async {
     final reader = _Reader();
     await _show(tester, reader, const HfSelectionMenu());
     await tester.tap(find.text('Scan tags'));
@@ -67,19 +93,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('unsupported selection does not scan or activate field', (tester) async {
+  testWidgets('unsupported selection does not scan or activate field', (
+    tester,
+  ) async {
     final reader = _Reader()..unsupported = true;
     await _show(tester, reader, const HfSelectionMenu());
     await tester.tap(find.text('Scan tags'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('does not support this HF tool'), findsOneWidget);
+    expect(
+      find.textContaining('does not support this HF tool'),
+      findsOneWidget,
+    );
     expect(reader.readerMode, isFalse);
     expect(reader.fieldOffCalls, 0);
   });
 
-  testWidgets('validates auth inputs and displays partial failed trace', (tester) async {
+  testWidgets('validates auth inputs and displays partial failed trace', (
+    tester,
+  ) async {
     final reader = _Reader();
-    await _show(tester, reader, const HfSniffingMenu(activeAuthentication: true));
+    await _show(
+      tester,
+      reader,
+      const HfSniffingMenu(activeAuthentication: true),
+    );
     final fields = find.byType(TextFormField);
     await tester.enterText(fields.at(0), '256');
     await tester.tap(find.text('Capture'));
@@ -90,7 +127,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(reader.authCalls, 1);
     expect(reader.readerMode, isTrue);
-    expect(find.text('Authentication status: 0x6 (0 = success).'), findsOneWidget);
+    expect(
+      find.text('Authentication status: 0x6 (0 = success).'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 }
