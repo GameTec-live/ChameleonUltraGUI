@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/component/ioprox_fields.dart';
 import 'package:chameleonultragui/gui/component/mifare/vanity_sak_checkbox.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -323,42 +324,10 @@ class CardCreateMenuState extends State<CardCreateMenu> {
                         ]
                       ])),
                   if (selectedType == TagType.ioProx)
-                    Column(
-                      children: [
-                        for (final field in [
-                          (
-                            ioProxVersionController,
-                            localizations.version,
-                            255,
-                          ),
-                          (
-                            ioProxFacilityCodeController,
-                            localizations.facility_code,
-                            255,
-                          ),
-                          (
-                            ioProxCardNumberController,
-                            localizations.card_number,
-                            65535,
-                          ),
-                        ]) ...[
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            controller: field.$1,
-                            decoration: InputDecoration(labelText: field.$2),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            validator: (value) => validateIntRange(
-                              value,
-                              localizations,
-                              min: 0,
-                              max: field.$3,
-                            ),
-                          ),
-                        ],
-                      ],
+                    IoProxFields(
+                      versionController: ioProxVersionController,
+                      facilityCodeController: ioProxFacilityCodeController,
+                      cardNumberController: ioProxCardNumberController,
                     ),
                   if (selectedType == TagType.hidProx)
                     Column(children: [

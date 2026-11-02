@@ -1,3 +1,5 @@
+import 'package:chameleonultragui/gui/menu/dialogs/card/view.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/card/edit.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/card/create.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
@@ -53,7 +55,8 @@ void main() {
   test('short imported ioProx identities retain their raw display', () {
     for (final uid in ['', '01', '01 53', '01 53 30']) {
       final imported = CardSave.fromJson(
-          CardSave(name: 'Short ioProx', tag: TagType.ioProx, uid: uid).toJson());
+          CardSave(name: 'Short ioProx', tag: TagType.ioProx, uid: uid)
+              .toJson());
       final card = getLFCardFromUID(imported.tag, imported.uid);
       expect(card.toViewableString(), uid);
     }
@@ -109,6 +112,78 @@ void main() {
     expect(saved.uid, payload);
     expect(saved.folderId, 'folder');
     expect(saved.tag, TagType.ioProx);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('view and edit ioProx fields, preserving untouched payloads',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = SharedPreferencesProvider();
+    await preferences.load();
+    final saved = CardSave(
+      name: 'ioProx',
+      tag: TagType.ioProx,
+      uid: payload.replaceFirst('00 00 00 00', 'AA BB CC DD'),
+      folderId: 'folder',
+    );
+    preferences.setCards([saved]);
+    await tester.binding.setSurfaceSize(const Size(420, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(ChangeNotifierProvider(
+      create: (_) => ChameleonGUIState(preferences),
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home:
+            Scaffold(body: CardViewMenu(tagSave: saved, onMove: (_) async {})),
+      ),
+    ));
+    expect(find.text('Version: 1'), findsOneWidget);
+    expect(find.text('Facility Code: 83'), findsOneWidget);
+    expect(find.text('Card number: 12345'), findsOneWidget);
+    expect(find.text('UID: ${saved.uid}'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.edit));
+    await tester.pumpAndSettle();
+    final edit = tester.state<CardEditMenuState>(find.byType(CardEditMenu));
+    expect(edit.ioProxVersionController.text, '1');
+    expect(edit.ioProxFacilityCodeController.text, '83');
+    expect(edit.ioProxCardNumberController.text, '12345');
+    expect(find.widgetWithText(TextFormField, 'UID'), findsNothing);
+    edit.nameController.text = 'Renamed';
+    await tester.tap(find.text('Save').last);
+    await tester.pumpAndSettle();
+    expect(preferences.getCards().single.uid, saved.uid);
+    expect(find.text('Renamed'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.edit));
+    await tester.pumpAndSettle();
+    final changed = tester.state<CardEditMenuState>(find.byType(CardEditMenu));
+    for (final values in [
+      ('', '83', '12345'),
+      ('256', '83', '12345'),
+      ('1', '256', '12345'),
+      ('1', '83', '65536')
+    ]) {
+      changed.ioProxVersionController.text = values.$1;
+      changed.ioProxFacilityCodeController.text = values.$2;
+      changed.ioProxCardNumberController.text = values.$3;
+      await tester.tap(find.text('Save').last);
+      await tester.pumpAndSettle();
+      expect(find.byType(CardEditMenu), findsOneWidget);
+      expect(preferences.getCards().single.uid, saved.uid);
+    }
+    changed.ioProxVersionController.text = '255';
+    changed.ioProxFacilityCodeController.text = '255';
+    changed.ioProxCardNumberController.text = '65535';
+    await tester.tap(find.text('Save').last);
+    await tester.pumpAndSettle();
+    final updated = preferences.getCards().single;
+    expect(updated.uid, 'FF FF FF FF 00 78 7F FF FF FF FC 4F 00 00 00 00');
+    expect(updated.id, saved.id);
+    expect(updated.folderId, 'folder');
+    expect(find.text('Version: 255'), findsOneWidget);
+    expect(find.text('Facility Code: 255'), findsOneWidget);
+    expect(find.text('Card number: 65535'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
