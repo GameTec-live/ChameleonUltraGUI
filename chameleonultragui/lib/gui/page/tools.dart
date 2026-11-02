@@ -2,7 +2,6 @@ import 'package:chameleonultragui/gui/menu/tools/t55xx_block_editor.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
 import 'package:chameleonultragui/gui/menu/tools/hf_sniffing.dart';
-import 'package:chameleonultragui/gui/menu/tools/hf_selection.dart';
 import 'package:chameleonultragui/gui/menu/tools/lf_sniffing.dart';
 import 'package:chameleonultragui/gui/menu/tools/t55xx_password_cleaner.dart';
 import 'package:chameleonultragui/main.dart';
@@ -68,13 +67,6 @@ class ToolsPageState extends State<ToolsPage> {
         description: localizations.hf_sniffing_description,
         icon: Icons.radar,
         onPressed: const HfSniffingMenu(),
-      ),
-      ToolItem(
-        name: localizations.hf_selection,
-        description: localizations.hf_selection_description,
-        icon: Icons.nfc,
-        isDeviceRequired: true,
-        onPressed: const HfSelectionMenu(),
       ),
       ToolItem(
         name: localizations.hf_auth_trace,

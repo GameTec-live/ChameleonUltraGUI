@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
 
-import 'package:chameleonultragui/helpers/hf_selection.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -1387,11 +1386,26 @@ class ChameleonCommunicator {
 
   Future<List<CardData>> scan14443aTagKeep() async {
     var resp = await sendCmd(ChameleonCommand.hf14aScanKeep);
-    if (resp!.status == 1) return []; // No tag in the field.
-    if (resp.status != 0) {
-      throw StateError('HF scan failed (0x${resp.status.toRadixString(16)})');
+    List<CardData> cards = [];
+    if (resp != null && resp.data.isNotEmpty) {
+      int offset = 0;
+      while (offset < resp.data.length) {
+        int uidLength = resp.data[offset];
+        int atsLength = resp.data[offset + uidLength + 4];
+        cards.add(CardData(
+          uid: resp.data.sublist(offset + 1, offset + uidLength + 1),
+          atqa: Uint8List.fromList(resp.data
+              .sublist(offset + uidLength + 1, offset + uidLength + 3)
+              .reversed
+              .toList()),
+          sak: resp.data[offset + uidLength + 3],
+          ats: resp.data.sublist(
+              offset + uidLength + 5, offset + uidLength + 5 + atsLength),
+        ));
+        offset += uidLength + 5 + atsLength;
+      }
     }
-    return parseHfScanCards(resp.data);
+    return cards;
   }
 
   /// Retains partial traces and status, including failed authentication.

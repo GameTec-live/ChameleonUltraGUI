@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
-import 'package:chameleonultragui/helpers/hf_selection.dart';
 import 'package:chameleonultragui/helpers/hf_sniff.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
@@ -34,52 +33,6 @@ class RecordingCommunicator extends ChameleonCommunicator {
 }
 
 void main() {
-  test('scan parses multiple cards, reversed ATQA and variable ATS', () {
-    final cards = parseHfScanCards(
-      Uint8List.fromList([
-        4,
-        1,
-        2,
-        3,
-        4,
-        0x04,
-        0,
-        8,
-        0,
-        7,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        0x44,
-        3,
-        0x20,
-        2,
-        0x75,
-        0x77,
-      ]),
-    );
-    expect(cards, hasLength(2));
-    expect(cards[0].uid, [1, 2, 3, 4]);
-    expect(cards[1].uid, [4, 5, 6, 7, 8, 9, 10]);
-    expect(cards[1].atqa, [3, 0x44]);
-    expect(cards[1].sak, 0x20);
-    expect(cards[1].ats, [0x75, 0x77]);
-    expect(parseHfScanCards(Uint8List(0)), isEmpty);
-    expect(
-      () => parseHfScanCards(Uint8List.fromList([4, 1])),
-      throwsFormatException,
-    );
-    expect(
-      () =>
-          parseHfScanCards(Uint8List.fromList([4, 1, 2, 3, 4, 4, 0, 8, 2, 1])),
-      throwsFormatException,
-    );
-  });
-
   test('active SELECT keeps all 72 bits and survives trace export/import', () {
     final select = [0x93, 0x70, 1, 2, 3, 4, 4, 0, 0];
     final capture = HfSniffCapture.fromAuthenticationBytes(
@@ -91,13 +44,6 @@ void main() {
     final imported = HfSniffCapture.fromProxmarkTrace(capture.rawBytes);
     expect(imported.frames.first.data, select);
     expect(imported.frames.last.data, [1, 2, 3, 4]);
-  });
-
-  test('scan distinguishes no tags from firmware failures', () async {
-    final communicator = RecordingCommunicator()..status = 1;
-    expect(await communicator.scan14443aTagKeep(), isEmpty);
-    communicator.status = 0x67;
-    await expectLater(communicator.scan14443aTagKeep(), throwsStateError);
   });
 
   test(

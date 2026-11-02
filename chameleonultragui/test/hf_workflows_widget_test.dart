@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
-import 'package:chameleonultragui/gui/menu/tools/hf_selection.dart';
 import 'package:chameleonultragui/gui/menu/tools/hf_sniffing.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/main.dart';
@@ -14,14 +13,12 @@ import 'package:provider/provider.dart';
 
 class _Reader extends ChameleonCommunicator {
   _Reader() : super(Logger());
-  int fieldOffCalls = 0;
   int authCalls = 0;
-  bool unsupported = false;
   bool readerMode = false;
 
   @override
   Future<List<int>> getDeviceCapabilities() async =>
-      unsupported ? [] : [2016, 2017];
+      [2017];
   @override
   Future<bool> isReaderDeviceMode() async => readerMode;
   @override
@@ -29,21 +26,6 @@ class _Reader extends ChameleonCommunicator {
     readerMode = mode;
   }
 
-  @override
-  Future<void> hf14aSetFieldOff() async {
-    fieldOffCalls++;
-  }
-
-  @override
-  Future<List<CardData>> scan14443aTagKeep() async => [
-    for (final id in [1, 2])
-      CardData(
-        uid: Uint8List.fromList([id, 2, 3, 4]),
-        sak: 8,
-        atqa: Uint8List.fromList([0, 4]),
-        ats: Uint8List(0),
-      ),
-  ];
   @override
   Future<ChameleonMessage> hf14aAuthTrace(
     int block,
@@ -78,36 +60,6 @@ Future<void> _show(WidgetTester tester, _Reader reader, Widget menu) async {
 }
 
 void main() {
-  testWidgets('selects the second scan record and releases the RF field', (
-    tester,
-  ) async {
-    final reader = _Reader();
-    await _show(tester, reader, const HfSelectionMenu());
-    await tester.tap(find.text('Scan tags'));
-    await tester.pumpAndSettle();
-    expect(reader.fieldOffCalls, 1);
-    expect(reader.readerMode, isTrue);
-    await tester.tap(find.text('02 02 03 04'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('UID: 02 02 03 04'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('unsupported selection does not scan or activate field', (
-    tester,
-  ) async {
-    final reader = _Reader()..unsupported = true;
-    await _show(tester, reader, const HfSelectionMenu());
-    await tester.tap(find.text('Scan tags'));
-    await tester.pumpAndSettle();
-    expect(
-      find.textContaining('does not support this HF tool'),
-      findsOneWidget,
-    );
-    expect(reader.readerMode, isFalse);
-    expect(reader.fieldOffCalls, 0);
-  });
-
   testWidgets('validates auth inputs and displays partial failed trace', (
     tester,
   ) async {

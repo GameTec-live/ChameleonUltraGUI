@@ -604,8 +604,6 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
 
   Widget _buildAuthenticationControls(AppLocalizations l) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(l.hf_auth_help),
-      const SizedBox(height: 12),
       Wrap(spacing: 12, runSpacing: 12, children: [
         SizedBox(width: 120, child: TextFormField(
           controller: _blockController, enabled: !_isCapturing,
