@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/component/cancel_recovery.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/component/key_check_marks.dart';
 import 'package:chameleonultragui/gui/component/card_button.dart';
@@ -108,6 +109,7 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
     if (dictionary) {
       try {
         await card.recovery.checkKeys(skipDefaultDictionary: _skipDefault);
+        if (card.recovery.operation.wasCancelled) return;
         _dictionaryChecked = true;
       } catch (_) {
         for (var index = 0; index < card.recovery.checkMarks.length; index++) {
@@ -121,6 +123,7 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
     } else {
       await card.recovery.recoverKeys();
     }
+    if (card.recovery.operation.wasCancelled) return;
     if (card.recovery.error.isNotEmpty) throw StateError(card.recovery.error);
     if (mounted && card.recovery.allKeysExists) {
       _recoveryController.collapse();
@@ -267,6 +270,8 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
               ],
             ),
           ],
+          if (recovery.operation.isRunning)
+            CancelRecovery(operation: recovery.operation),
           if (recovery.state.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(recovery.state),

@@ -1,3 +1,5 @@
+import 'package:chameleonultragui/gui/component/cancel_recovery.dart';
+import 'package:chameleonultragui/helpers/recovery_operation.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/dictionary/export.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -26,6 +28,7 @@ class Mfkey32MenuState extends State<Mfkey32Menu> {
   List<Uint8List> keys = [];
   bool saveKeys = false;
   bool loading = false;
+  final operation = RecoveryOperation();
   String outputUid = "";
   List<Row> displayKeys = [];
   List<int> displayedKeys = [];
@@ -58,8 +61,11 @@ class Mfkey32MenuState extends State<Mfkey32Menu> {
   Future<void> handleMfkeyCalculation() async {
     var appState = context.read<ChameleonGUIState>();
 
-    var count = await appState.communicator!.getMf1DetectionCount();
-    var detections = await appState.communicator!.getMf1DetectionResult(count);
+    var count = await operation
+        .wait(appState.communicator!.getMf1DetectionCount());
+    var detections = await operation
+        .wait(appState.communicator!.getMf1DetectionResult(count,
+            checkCancelled: operation.checkCancelled));
     for (var item in detections.entries) {
       var uid = item.key;
       for (var item in item.value.entries) {
@@ -79,7 +85,8 @@ class Mfkey32MenuState extends State<Mfkey32Menu> {
                 nr1Enc: item1.nr,
                 ar1Enc: item1.ar,
               );
-              var recoveredKey = await recovery.mfkey32(mfkey);
+              var recoveredKey = await operation.wait(recovery.mfkey32(mfkey),
+                  interrupt: recovery.cancelRecovery);
               keys.add(u64ToBytes((recoveredKey)[0]).sublist(2, 8));
               outputUid =
                   bytesToHex(u64ToBytes(uid).sublist(4, 8)).toUpperCase();
@@ -184,17 +191,24 @@ class Mfkey32MenuState extends State<Mfkey32Menu> {
                                     setState(() {
                                       loading = true;
                                     });
-                                    await handleMfkeyCalculation();
-                                    setState(() {
-                                      saveKeys = true;
-                                      loading = false;
-                                      progress = -1;
-                                    });
+                                    try {
+                                      await operation
+                                          .run(handleMfkeyCalculation);
+                                    } finally {
+                                      if (mounted) {
+                                        setState(() {
+                                          saveKeys = keys.isNotEmpty;
+                                          loading = false;
+                                          progress = -1;
+                                        });
+                                      }
+                                    }
                                   }
                                 : null,
                             child: Text(localizations
                                 .recover_keys_nonce(detectionCount)),
                           ),
+                    if (loading) CancelRecovery(operation: operation),
                     const SizedBox(height: 8.0),
                     Visibility(
                       visible: saveKeys,

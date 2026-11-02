@@ -541,9 +541,10 @@ class ChameleonCommunicator {
   }
 
   Future<Map<int, Map<int, Map<String, List<DetectionResult>>>>>
-      getMf1DetectionResult(int count) async {
+      getMf1DetectionResult(int count, {void Function()? checkCancelled}) async {
     List<DetectionResult> resultList = [];
     while (resultList.length < count) {
+      checkCancelled?.call();
       // Get results from index
       var resp = (await sendCmd(ChameleonCommand.mf1GetDetectionResult,
               data: Uint8List(4)
@@ -552,6 +553,7 @@ class ChameleonCommunicator {
                     .setInt32(0, resultList.length, Endian.big)))!
           .data;
 
+      checkCancelled?.call();
       int pos = 0;
       while (pos < resp.length) {
         resultList.add(DetectionResult(

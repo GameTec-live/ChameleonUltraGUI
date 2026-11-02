@@ -125,7 +125,14 @@ class Mfkey64Dart {
       required this.atEnc});
 }
 
+final _setCancelled = ffi.DynamicLibrary.open(resolvePath())
+    .lookupFunction<ffi.Void Function(ffi.Int32), void Function(int)>(
+        'recovery_set_cancelled');
+
+void cancelRecovery() => _setCancelled(1);
+
 Future<List<int>> darkside(DarksideDart darkside) async {
+  _setCancelled(0);
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final DarksideRequest request = DarksideRequest(requestId, darkside);
@@ -136,6 +143,7 @@ Future<List<int>> darkside(DarksideDart darkside) async {
 }
 
 Future<List<int>> nested(NestedDart nested) async {
+  _setCancelled(0);
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final NestedRequest request = NestedRequest(requestId, nested);
@@ -146,6 +154,7 @@ Future<List<int>> nested(NestedDart nested) async {
 }
 
 Future<List<int>> hardNested(HardNestedDart nested) async {
+  _setCancelled(0);
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final HardNestedRequest request = HardNestedRequest(requestId, nested);
@@ -156,6 +165,7 @@ Future<List<int>> hardNested(HardNestedDart nested) async {
 }
 
 Future<List<int>> staticNested(StaticNestedDart nested) async {
+  _setCancelled(0);
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final StaticNestedRequest request = StaticNestedRequest(requestId, nested);
@@ -167,6 +177,7 @@ Future<List<int>> staticNested(StaticNestedDart nested) async {
 
 Future<List<int>> staticEncryptedNested(
     StaticEncryptedNestedDart nested) async {
+  _setCancelled(0);
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final StaticEncryptedNestedRequest request =
@@ -178,6 +189,7 @@ Future<List<int>> staticEncryptedNested(
 }
 
 Future<List<int>> mfkey32(Mfkey32Dart mfkey) async {
+  _setCancelled(0);
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final Mfkey32Request request = Mfkey32Request(requestId, mfkey);
@@ -188,6 +200,7 @@ Future<List<int>> mfkey32(Mfkey32Dart mfkey) async {
 }
 
 Future<List<int>> mfkey64(Mfkey64Dart mfkey) async {
+  _setCancelled(0);
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
   final int requestId = _nextSumRequestId++;
   final Mfkey64Request request = Mfkey64Request(requestId, mfkey);
