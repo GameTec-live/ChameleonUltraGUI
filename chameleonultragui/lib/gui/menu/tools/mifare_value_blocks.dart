@@ -1,9 +1,12 @@
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/component/key_check_marks.dart';
+import 'package:chameleonultragui/gui/component/card_button.dart';
+import 'package:chameleonultragui/gui/menu/dialogs/dictionary/export.dart';
 import 'package:chameleonultragui/gui/page/read_card.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
+import 'package:chameleonultragui/helpers/mifare_classic/recovery.dart';
 import 'package:chameleonultragui/helpers/mifare_classic/value_blocks.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -19,7 +22,9 @@ class MifareValueBlocksTool extends StatefulWidget {
 
 class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
   final _amount = TextEditingController(text: '1');
-  final _writeValue = TextEditingController(text: '0');
+  final _recoveryController = ExpansibleController();
+  bool _dictionaryChecked = false;
+  bool _copyMode = false;
   MifareValueBlocks? _card;
   HFCardInfo? _info;
   bool _busy = false;
@@ -35,7 +40,7 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
   @override
   void dispose() {
     _amount.dispose();
-    _writeValue.dispose();
+    _recoveryController.dispose();
     super.dispose();
   }
 
@@ -66,6 +71,8 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
       _source = null;
       _destination = null;
       _chooseDestination = false;
+      _copyMode = false;
+      _dictionaryChecked = false;
     });
     final appState = context.read<ChameleonGUIState>();
     final communicator = appState.communicator!;
@@ -99,11 +106,25 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
     await card.ensureCard();
     card.recovery.error = '';
     if (dictionary) {
-      await card.recovery.checkKeys(skipDefaultDictionary: _skipDefault);
+      try {
+        await card.recovery.checkKeys(skipDefaultDictionary: _skipDefault);
+        _dictionaryChecked = true;
+      } catch (_) {
+        for (var index = 0; index < card.recovery.checkMarks.length; index++) {
+          if (card.recovery.checkMarks[index] ==
+              ChameleonKeyCheckmark.checking) {
+            card.recovery.checkMarks[index] = ChameleonKeyCheckmark.none;
+          }
+        }
+        rethrow;
+      }
     } else {
       await card.recovery.recoverKeys();
     }
     if (card.recovery.error.isNotEmpty) throw StateError(card.recovery.error);
+    if (mounted && card.recovery.allKeysExists) {
+      _recoveryController.collapse();
+    }
     await _readLayout(card);
   });
 
@@ -116,24 +137,19 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
     _source ??= List.generate(card.blockCount, (index) => index)
         .where((block) => card.isDataBlock(block) && card.value(block) != null)
         .firstOrNull;
-    _destination ??= _source;
-    _result = l.value_block_layout_loaded;
+    _result = null;
   }
 
   Future<void> _apply(ValueBlockOperation operation) async {
     final card = _card!;
     final source = _source;
-    final destination = operation == ValueBlockOperation.write
-        ? source
-        : _destination;
+    final copying = operation == ValueBlockOperation.transfer;
+    if (copying != _copyMode) return;
+    final destination = copying ? _destination : source;
     if (_busy || source == null || destination == null) return;
     final amount = operation == ValueBlockOperation.transfer
         ? 0
-        : int.tryParse(
-            operation == ValueBlockOperation.write
-                ? _writeValue.text
-                : _amount.text,
-          );
+        : int.tryParse(_amount.text);
     final minimum = operation == ValueBlockOperation.write ? -0x80000000 : 0;
     if (amount == null || amount < minimum || amount > 0x7FFFFFFF) {
       setState(() => _error = '$minimum … 2147483647');
@@ -156,11 +172,13 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
 
   Widget _recovery(MifareValueBlocks card) {
     final recovery = card.recovery;
+    final appState = context.read<ChameleonGUIState>();
     return Card(
       child: ExpansionTile(
-        initiallyExpanded: true,
+        key: ObjectKey(card),
+        controller: _recoveryController,
+        initiallyExpanded: !recovery.allKeysExists,
         title: Text(l.keys),
-        subtitle: Text(l.value_block_recovery_hint),
         childrenPadding: const EdgeInsets.all(16),
         children: [
           AbsorbPointer(
@@ -175,57 +193,80 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
               }),
             ),
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            key: ObjectKey(recovery),
-            initialValue: recovery.selectedDictionary!.id,
-            decoration: InputDecoration(labelText: l.additional_key_dict),
-            items: recovery.dictionaries
-                .map(
-                  (dictionary) => DropdownMenuItem(
-                    value: dictionary.id,
-                    child: Text(
-                      '${dictionary.name} (${dictionary.keys.length})',
+          if (!_dictionaryChecked) ...[
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l.skip_default_dictionary),
+              value: _skipDefault,
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _skipDefault = value!),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            DropdownButtonFormField<String>(
+              key: ObjectKey(recovery),
+              initialValue: recovery.selectedDictionary!.id,
+              decoration: InputDecoration(labelText: l.additional_key_dict),
+              items: recovery.dictionaries
+                  .map(
+                    (dictionary) => DropdownMenuItem(
+                      value: dictionary.id,
+                      child: Text(
+                        '${dictionary.name} (${dictionary.keys.length})',
+                      ),
                     ),
-                  ),
-                )
-                .toList(),
-            onChanged: _busy
-                ? null
-                : (id) => setState(() {
-                    recovery.selectedDictionary = recovery.dictionaries
-                        .firstWhere((entry) => entry.id == id);
-                  }),
-          ),
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(l.skip_default_dictionary),
-            value: _skipDefault,
-            onChanged: _busy
-                ? null
-                : (value) => setState(() => _skipDefault = value!),
-          ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilledButton.icon(
-                onPressed: _busy ? null : () => _recover(dictionary: true),
-                icon: const Icon(Icons.search),
-                label: Text(l.check_keys_dict),
-              ),
-              OutlinedButton.icon(
-                onPressed: _busy ? null : () => _recover(dictionary: false),
-                icon: const Icon(Icons.key),
-                label: Text(l.recover_keys),
-              ),
-            ],
-          ),
-          if (recovery.state.isNotEmpty) Text(recovery.state),
-          if (recovery.keyCheckProgress != null)
+                  )
+                  .toList(),
+              onChanged: _busy
+                  ? null
+                  : (id) => setState(() {
+                      recovery.selectedDictionary = recovery.dictionaries
+                          .firstWhere((entry) => entry.id == id);
+                    }),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              style: customCardButtonStyle(appState),
+              onPressed: _busy ? null : () => _recover(dictionary: true),
+              child: Text(l.check_keys_dict),
+            ),
+          ] else if (!recovery.allKeysExists) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ElevatedButton(
+                  style: customCardButtonStyle(appState),
+                  onPressed: _busy ? null : () => _recover(dictionary: false),
+                  child: Text(l.recover_keys),
+                ),
+                ElevatedButton(
+                  style: customCardButtonStyle(appState),
+                  onPressed: _busy
+                      ? null
+                      : () => showDialog(
+                          context: context,
+                          builder: (_) =>
+                              DictionaryExportMenu(keys: recovery.validKeys),
+                        ),
+                  child: Text(l.export_to_dictionary),
+                ),
+              ],
+            ),
+          ],
+          if (recovery.state.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(recovery.state),
+          ],
+          if (recovery.keyCheckProgress != null) ...[
+            const SizedBox(height: 8),
             LinearProgressIndicator(value: recovery.keyCheckProgress),
-          if (recovery.hardnestedProgress != null)
+          ],
+          if (recovery.hardnestedProgress != null) ...[
+            const SizedBox(height: 8),
             LinearProgressIndicator(value: recovery.hardnestedProgress),
+          ],
         ],
       ),
     );
@@ -276,9 +317,6 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
                     if (_chooseDestination) {
                       _destination = block;
                     } else {
-                      if (_destination == null || _destination == _source) {
-                        _destination = block;
-                      }
                       _source = block;
                     }
                     _error = null;
@@ -314,8 +352,9 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
                   ),
                   Row(
                     children: [
-                      if (_source == block) const Icon(Icons.output, size: 14),
-                      if (_destination == block)
+                      if (_copyMode && _source == block)
+                        const Icon(Icons.output, size: 14),
+                      if (_copyMode && _destination == block)
                         const Icon(Icons.input, size: 14),
                     ],
                   ),
@@ -333,8 +372,6 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
     children: [
       Text(l.value_block_layout, style: Theme.of(context).textTheme.titleLarge),
       const SizedBox(height: 8),
-      Text(l.value_block_layout_hint),
-      const SizedBox(height: 12),
       for (var sector = 0; sector < card.sectorCount; sector++)
         Card(
           child: Padding(
@@ -369,30 +406,37 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
     ],
   );
 
-  Widget _selection(String title, int? block, MifareValueBlocks card) =>
-      Expanded(
-        child: Column(
-          children: [
-            Text(title),
-            Text(
-              block == null ? '—' : '${l.block} $block',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            if (block != null) Text(card.value(block)?.toString() ?? '—'),
-          ],
-        ),
-      );
+  Widget _selection(
+    String title,
+    int? block,
+    MifareValueBlocks card,
+    bool destination,
+  ) => Expanded(
+    child: ChoiceChip(
+      showCheckmark: false,
+      selected: _chooseDestination == destination,
+      onSelected: _busy
+          ? null
+          : (_) => setState(() => _chooseDestination = destination),
+      label: Column(
+        children: [
+          Text(title),
+          Text(block == null ? '—' : '${l.block} $block'),
+          if (block != null) Text(card.value(block)?.toString() ?? '—'),
+        ],
+      ),
+    ),
+  );
 
   Widget _actions(MifareValueBlocks card) {
     final source = _source;
-    final destination = _destination;
     bool canApply(ValueBlockOperation op) =>
         !_busy &&
         source != null &&
         card.canApply(
           op,
           source,
-          op == ValueBlockOperation.write ? source : destination ?? -1,
+          op == ValueBlockOperation.transfer ? _destination ?? -1 : source,
         );
     return Card(
       child: Padding(
@@ -400,106 +444,101 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l.value_block_operations,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            SegmentedButton<bool>(
-              segments: [
-                ButtonSegment(
-                  value: false,
-                  icon: const Icon(Icons.output),
-                  label: Text(l.value_block_select_source),
-                ),
-                ButtonSegment(
-                  value: true,
-                  icon: const Icon(Icons.input),
-                  label: Text(l.value_block_select_destination),
-                ),
-              ],
-              selected: {_chooseDestination},
-              onSelectionChanged: _busy
-                  ? null
-                  : (selection) =>
-                        setState(() => _chooseDestination = selection.single),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _selection(l.value_block_select_source, source, card),
-                const Icon(Icons.arrow_forward),
-                _selection(l.value_block_select_destination, destination, card),
-              ],
-            ),
-            if (source != null && card.address(source) != null)
-              Text('${l.value_block_address}: ${card.address(source)}'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _amount,
-              enabled: !_busy,
-              decoration: InputDecoration(
-                labelText: l.value_block_amount,
-                border: const OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.tonalIcon(
-                  onPressed: canApply(ValueBlockOperation.increment)
-                      ? () => _apply(ValueBlockOperation.increment)
-                      : null,
-                  icon: const Icon(Icons.add),
-                  label: Text(l.value_block_increment),
-                ),
-                FilledButton.tonalIcon(
-                  onPressed: canApply(ValueBlockOperation.decrement)
-                      ? () => _apply(ValueBlockOperation.decrement)
-                      : null,
-                  icon: const Icon(Icons.remove),
-                  label: Text(l.value_block_decrement),
-                ),
-                OutlinedButton.icon(
-                  onPressed: canApply(ValueBlockOperation.transfer)
-                      ? () => _apply(ValueBlockOperation.transfer)
-                      : null,
-                  icon: const Icon(Icons.arrow_forward),
-                  label: Text(l.value_block_copy),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l.value_block_access_hint,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              title: Text(l.value_block_write),
-              children: [
-                Text(l.value_block_write_hint),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _writeValue,
-                  enabled: !_busy,
-                  decoration: InputDecoration(labelText: l.value),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    signed: true,
+            if (_copyMode) ...[
+              Row(
+                children: [
+                  _selection(l.value_block_select_source, source, card, false),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(Icons.arrow_forward),
                   ),
+                  _selection(
+                    l.value_block_select_destination,
+                    _destination,
+                    card,
+                    true,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: canApply(ValueBlockOperation.transfer)
+                    ? () => _apply(ValueBlockOperation.transfer)
+                    : null,
+                icon: const Icon(Icons.arrow_forward),
+                label: Text(l.value_block_copy),
+              ),
+            ] else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    source == null
+                        ? l.value_block_select_block
+                        : '${l.block} $source',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  if (source != null && card.value(source) != null)
+                    Text(
+                      '${card.value(source)}',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _amount,
+                enabled: !_busy,
+                decoration: InputDecoration(
+                  labelText: l.value,
+                  border: const OutlineInputBorder(),
                 ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: canApply(ValueBlockOperation.write)
-                      ? () => _apply(ValueBlockOperation.write)
-                      : null,
-                  icon: const Icon(Icons.edit),
-                  label: Text(l.value_block_write),
+                keyboardType: const TextInputType.numberWithOptions(
+                  signed: true,
                 ),
-              ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton.tonalIcon(
+                    onPressed: canApply(ValueBlockOperation.increment)
+                        ? () => _apply(ValueBlockOperation.increment)
+                        : null,
+                    icon: const Icon(Icons.add),
+                    label: Text(l.value_block_increment),
+                  ),
+                  FilledButton.tonalIcon(
+                    onPressed: canApply(ValueBlockOperation.decrement)
+                        ? () => _apply(ValueBlockOperation.decrement)
+                        : null,
+                    icon: const Icon(Icons.remove),
+                    label: Text(l.value_block_decrement),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: canApply(ValueBlockOperation.write)
+                        ? () => _apply(ValueBlockOperation.write)
+                        : null,
+                    icon: const Icon(Icons.edit),
+                    label: Text(l.value_block_write),
+                  ),
+                ],
+              ),
+            ],
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l.value_block_copy_mode),
+              value: _copyMode,
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() {
+                      _copyMode = value;
+                      _destination = null;
+                      _chooseDestination = value && _source != null;
+                      _error = null;
+                      _result = null;
+                    }),
             ),
             if (_result != null) Text(_result!),
             if (_error != null)
@@ -528,8 +567,6 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(l.value_block_tool_hint),
-                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 12,
                     runSpacing: 8,
@@ -540,7 +577,7 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
                         icon: const Icon(Icons.nfc),
                         label: Text(l.value_block_scan),
                       ),
-                      if (card != null)
+                      if (card != null && _dictionaryChecked)
                         OutlinedButton.icon(
                           onPressed: _busy || !connected
                               ? null
@@ -548,11 +585,19 @@ class _MifareValueBlocksToolState extends State<MifareValueBlocksTool> {
                           icon: const Icon(Icons.refresh),
                           label: Text(l.value_block_refresh),
                         ),
-                      if (_info != null) Text('${_info!.uid} • ${_info!.tech}'),
+                      if (_info != null) ...[
+                        Chip(label: Text(_info!.uid)),
+                        Chip(label: Text(_info!.tech)),
+                      ],
                     ],
                   ),
                   if (!connected) Text(l.device_required),
-                  if (_busy) const LinearProgressIndicator(),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    key: const ValueKey('value-progress'),
+                    height: 4,
+                    child: _busy ? const LinearProgressIndicator() : null,
+                  ),
                   if (card == null && _error != null)
                     Text(
                       _error!,

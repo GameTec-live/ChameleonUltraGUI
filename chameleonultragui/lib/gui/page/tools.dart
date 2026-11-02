@@ -144,8 +144,11 @@ class ToolsPageState extends State<ToolsPage> {
                       (!tool.isDeviceRequired || appState.connector!.connected)
                   ? () {
                       if (tool.fullScreen) {
-                        Navigator.of(context).push(MaterialPageRoute<void>(
-                            builder: (_) => tool.onPressed!));
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => tool.onPressed!,
+                          ),
+                        );
                         return;
                       }
                       showDialog(

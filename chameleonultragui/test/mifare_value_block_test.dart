@@ -5,6 +5,7 @@ import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/tools/mifare_value_blocks.dart';
+import 'package:chameleonultragui/gui/component/key_check_marks.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -38,6 +39,7 @@ class ValueBlockCommunicator extends ChameleonCommunicator {
   int status = 0;
   Completer<void>? modeGate;
   bool rejectReadback = false;
+  bool dictionaryFindsKeys = true;
 
   @override
   Future<bool> isReaderDeviceMode() async => true;
@@ -54,13 +56,13 @@ class ValueBlockCommunicator extends ChameleonCommunicator {
   Future<NTLevel> getMf1NTLevel() async => NTLevel.weak;
   @override
   Future<bool> mf1Auth(int block, int type, Uint8List key) async =>
-      block != 0x45;
+      dictionaryFindsKeys && block != 0x45;
   @override
   Future<Uint8List?> mf1AuthMultipleKeys(
     int block,
     int type,
     List<Uint8List> keys,
-  ) async => keys.isEmpty ? null : keys.first;
+  ) async => keys.isEmpty || !dictionaryFindsKeys ? null : keys.first;
 
   @override
   Future<ChameleonMessage?> sendCmd(
@@ -355,16 +357,24 @@ void main() {
         (widget) => widget is DropdownButtonFormField<String>,
       );
       await tester.ensureVisible(dropdown);
+      await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Office (1)').last);
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byType(CheckboxListTile));
+      await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(CheckboxListTile));
       await tester.ensureVisible(find.text('Check keys from dictionary'));
+      await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Check keys from dictionary'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Increment'));
+      await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Increment'));
       await tester.pumpAndSettle();
       final payload = c.calls
@@ -385,9 +395,20 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(AlertDialog), findsNothing);
       await discover(tester);
-      expect(find.text('Recover keys'), findsOneWidget);
+      expect(find.text('Recover keys'), findsNothing);
+      expect(
+        tester
+            .widget<ExpansionTile>(find.byType(ExpansionTile))
+            .controller!
+            .isExpanded,
+        isFalse,
+      );
+      expect(find.byType(Chip), findsNWidgets(2));
+      expect(find.byType(KeyCheckMarks), findsNothing);
       final source = find.byKey(const ValueKey('value-block-4'));
       await tester.ensureVisible(source);
+      await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
       await tester.tap(source);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Increment'));
@@ -397,27 +418,134 @@ void main() {
         -41,
       );
       expect(find.text('Card operation completed.'), findsOneWidget);
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      await tester.pumpAndSettle();
+      expect(find.byType(KeyCheckMarks), findsNothing);
     },
   );
 
-  testWidgets(
-    'destination tile uses recovered keys without manual key fields',
-    (tester) async {
-      final c = ValueBlockCommunicator();
-      await pumpTool(tester, c);
-      await discover(tester);
-      await tester.tap(find.text('Destination').first);
-      final target = find.byKey(const ValueKey('value-block-8'));
-      await tester.ensureVisible(target);
-      await tester.tap(target);
+  testWidgets('copy targeting never redirects in-place arithmetic or writing', (
+    tester,
+  ) async {
+    final c = ValueBlockCommunicator();
+    await pumpTool(tester, c);
+    await discover(tester);
+    await tester.tap(find.text('Copy between blocks'));
+    await tester.pumpAndSettle();
+    expect(find.text('Increment'), findsNothing);
+    expect(find.text('Decrement'), findsNothing);
+    expect(find.text('Write value'), findsNothing);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find
+                .byWidgetPredicate(
+                  (widget) =>
+                      widget is FilledButton && widget.onPressed == null,
+                )
+                .first,
+          )
+          .onPressed,
+      isNull,
+    );
+    final target = find.byKey(const ValueKey('value-block-8'));
+    await tester.ensureVisible(target);
+    await tester.pumpAndSettle();
+    await tester.tap(target);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Copy value'));
+    await tester.pumpAndSettle();
+    expect(
+      MifareClassicDumpAnalyzer.valueBlockToInt(bytesToHex(c.memory[8]!)),
+      -42,
+    );
+    final transfer = c.calls
+        .lastWhere(
+          (call) => call.$1 == ChameleonCommand.mf1ManipulateValueBlock,
+        )
+        .$2!;
+    expect(transfer[1], 4);
+    expect(transfer[14], 8);
+
+    await tester.tap(find.text('Copy between blocks'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '3');
+    for (final label in ['Increment', 'Decrement']) {
+      await tester.tap(find.text(label));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Copy value'));
-      await tester.pumpAndSettle();
+      final call = c.calls
+          .lastWhere(
+            (entry) => entry.$1 == ChameleonCommand.mf1ManipulateValueBlock,
+          )
+          .$2!;
+      expect(call[1], 4);
+      expect(call[14], 4);
       expect(
         MifareClassicDumpAnalyzer.valueBlockToInt(bytesToHex(c.memory[8]!)),
         -42,
       );
-      expect(find.byType(TextField), findsOneWidget);
+    }
+    await tester.enterText(find.byType(TextField), '-7');
+    await tester.tap(find.text('Write value'));
+    await tester.pumpAndSettle();
+    expect(
+      MifareClassicDumpAnalyzer.valueBlockToInt(bytesToHex(c.memory[4]!)),
+      -7,
+    );
+    expect(
+      MifareClassicDumpAnalyzer.valueBlockToInt(bytesToHex(c.memory[8]!)),
+      -42,
+    );
+    await tester.tap(find.text('Copy between blocks'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('—'),
+      findsOneWidget,
+    ); // Each copy starts with no destination.
+  });
+
+  testWidgets(
+    'dictionary check precedes recovery and progress clears the header buttons',
+    (tester) async {
+      final c = ValueBlockCommunicator()..dictionaryFindsKeys = false;
+      await pumpTool(tester, c);
+      await tester.tap(find.text('Scan card'));
+      await tester.pumpAndSettle();
+      expect(find.text('Recover keys'), findsNothing);
+      await tester.tap(find.text('Check keys from dictionary'));
+      await tester.pumpAndSettle();
+      expect(find.text('Recover keys'), findsOneWidget);
+      expect(find.text('Export found keys'), findsOneWidget);
+      expect(find.text('Check keys from dictionary'), findsNothing);
+      expect(
+        tester
+            .widget<ExpansionTile>(find.byType(ExpansionTile))
+            .controller!
+            .isExpanded,
+        isTrue,
+      );
+
+      c.modeGate = Completer<void>();
+      await tester.tap(find.text('Read blocks'));
+      await tester.pump();
+      final button = find
+          .ancestor(
+            of: find.text('Read blocks'),
+            matching: find.byWidgetPredicate(
+              (widget) => widget is OutlinedButton,
+            ),
+          )
+          .first;
+      final progress = tester.getRect(
+        find.byKey(const ValueKey('value-progress')),
+      );
+      expect(
+        progress.top,
+        greaterThanOrEqualTo(tester.getRect(button).bottom + 12),
+      );
+      c.modeGate!.complete();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
     },
   );
 }
