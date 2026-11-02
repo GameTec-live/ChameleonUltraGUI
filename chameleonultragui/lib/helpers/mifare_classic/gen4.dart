@@ -137,7 +137,9 @@ class Gen4Client {
     } else {
       final block = await readBlock(0);
       block.setRange(0, uid.length, uid);
-      if (config.protocol == 0) {
+      // Only four-byte Classic UIDs store a BCC after the UID;
+      // seven-byte layouts store SAK there.
+      if (config.protocol == 0 && uid.length == 4) {
         block[uid.length] = uid.fold<int>(0, (bcc, byte) => bcc ^ byte);
       }
       await writeBlock(0, block);

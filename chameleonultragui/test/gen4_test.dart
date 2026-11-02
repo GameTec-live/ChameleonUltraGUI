@@ -101,6 +101,24 @@ void main() {
   );
 
   test(
+    'seven-byte Classic UID preserves stored SAK and manufacturer data',
+    () async {
+      final original = gen4ParseHex('04112233445566884400010203040506');
+      Uint8List? written;
+      final client = Gen4Client((command) async {
+        if (command[5] == 0xCE) return original;
+        written = command.sublist(7);
+        return gen4ParseHex('9000');
+      }, Uint8List(4));
+      final config = Gen4Configuration(gen4ParseHex(factoryConfig)..[1] = 1);
+      final uid = gen4ParseHex('04123456789ABC');
+      await client.writeUid(config, uid);
+      expect(written!.sublist(0, 7), uid);
+      expect(written!.sublist(7), original.sublist(7));
+    },
+  );
+
+  test(
     'Ultralight UID updates BCC without overwriting lock or OTP bytes',
     () async {
       final memory = [
