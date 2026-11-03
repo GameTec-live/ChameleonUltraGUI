@@ -734,17 +734,12 @@ class ChameleonCommunicator {
   }
 
   Future<void> writeJablotronToT55XX(
-      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys) async {
-    List<int> keys = [];
-
-    keys.addAll(newKey);
-
-    for (var oldKey in oldKeys) {
-      keys.addAll(oldKey);
-    }
-
+      Uint8List uid, Uint8List newKey, List<Uint8List> oldKeys,
+      {bool? setPassword}) async {
+    final keys =
+        buildT55xxKeyTail(newKey, oldKeys, setPassword: setPassword);
     await sendCmd(ChameleonCommand.writeJablotronToT5577,
-        data: Uint8List.fromList([...uid, ...newKey, ...keys]));
+        data: Uint8List.fromList([...uid, ...keys]));
   }
 
   Future<void> writePacToT55XX(
