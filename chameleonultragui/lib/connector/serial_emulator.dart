@@ -12,6 +12,10 @@ class EmulatorSerial extends AbstractSerial {
   EmulatorSerial({required super.log});
 
   @override
+  // ignore: overridden_fields
+  String name = "Emulator";
+
+  @override
   Future<bool> performConnect() async {
     return true;
   }

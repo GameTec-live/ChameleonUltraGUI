@@ -1,19 +1,22 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/connector/serial_ble.dart';
-import 'package:chameleonultragui/connector/serial_mobile.dart';
+import 'package:chameleonultragui/connector/serial_ble.dart' as ble;
+import 'package:chameleonultragui/connector/serial_android_serial.dart'
+    as serial;
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 // Class combines Android OTG and BLE serial
-class AndroidSerial extends AbstractSerial {
-  late BLESerial bleSerial = BLESerial(log: log);
-  late MobileSerial mobileSerial = MobileSerial(log: log);
+class SerialAdapter extends AbstractSerial {
+  late ble.SerialAdapter bleSerial = ble.SerialAdapter(log: log);
+  late serial.SerialAdapter mobileSerial = serial.SerialAdapter(log: log);
   Future<bool>? permissionRequestFuture;
-  late bool hasAllPermissions = true;
+  @override
+  // ignore: overridden_fields
+  String name = "Android";
 
-  AndroidSerial({required super.log}) {
+  SerialAdapter({required super.log}) {
     bleSerial.connectionStateCallback = notifyConnectionStateChanged;
     mobileSerial.connectionStateCallback = notifyConnectionStateChanged;
   }

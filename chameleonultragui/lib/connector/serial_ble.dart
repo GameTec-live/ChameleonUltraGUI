@@ -16,7 +16,7 @@ Uuid dfuUUID = Uuid.parse("FE59");
 Uuid dfuControl = Uuid.parse("8EC90001-F315-4F60-9FB8-838830DAEA50");
 Uuid dfuFirmware = Uuid.parse("8EC90002-F315-4F60-9FB8-838830DAEA50");
 
-class BLESerial extends AbstractSerial {
+class SerialAdapter extends AbstractSerial {
   FlutterReactiveBle flutterReactiveBle = FlutterReactiveBle();
   QualifiedCharacteristic? txCharacteristic;
   QualifiedCharacteristic? rxCharacteristic;
@@ -26,7 +26,11 @@ class BLESerial extends AbstractSerial {
   Map<String, Chameleon> chameleonMap = {};
   bool inSearch = false;
 
-  BLESerial({required super.log});
+  @override
+  // ignore: overridden_fields
+  String name = "BLE";
+
+  SerialAdapter({required super.log});
 
   Future<List> availableDevices() async {
     if (inSearch) {

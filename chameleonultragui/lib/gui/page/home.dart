@@ -257,7 +257,6 @@ class HomePageState extends State<HomePage> {
                               children: [
                                 IconButton(
                                   onPressed: () async {
-                                    // Disconnect
                                     await appState.disconnect(manual: true);
                                   },
                                   icon: const Icon(Icons.close),
@@ -363,6 +362,7 @@ class HomePageState extends State<HomePage> {
                                   latestCommit = await latestAvailableCommit(
                                       appState.connector!.device);
                                 } catch (e) {
+                                  appState.log!.e(e);
                                   if (context.mounted) {
                                     scaffoldMessenger.hideCurrentSnackBar();
                                     snackBar = SnackBar(
@@ -422,6 +422,7 @@ class HomePageState extends State<HomePage> {
                                     await flashFirmware(appState,
                                         scaffoldMessenger: scaffoldMessenger);
                                   } catch (e) {
+                                    appState.log!.e(e);
                                     if (context.mounted) {
                                       scaffoldMessenger.hideCurrentSnackBar();
                                       snackBar = SnackBar(
