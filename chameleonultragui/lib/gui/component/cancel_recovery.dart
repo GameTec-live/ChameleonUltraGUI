@@ -15,39 +15,42 @@ class _CancelRecoveryState extends State<CancelRecovery> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    return Align(
-      alignment: Alignment.centerRight,
-      child: TextButton.icon(
-        onPressed: widget.operation.isCancelling
-            ? null
-            : () async {
-                final operation = widget.operation;
-                final generation = operation.generation;
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(l.cancel_recovery_title),
-                    content: Text(l.cancel_recovery_message),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text(l.continue_recovery)),
-                      TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: Text(l.cancel)),
-                    ],
-                  ),
-                );
-                if (confirmed == true &&
-                    mounted &&
-                    operation.isRunning &&
-                    operation.generation == generation) {
-                  setState(operation.cancel);
-                }
-              },
-        icon: const Icon(Icons.close, size: 18),
-        label: Text(
-            widget.operation.isCancelling ? l.cancelling_recovery : l.cancel),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: TextButton.icon(
+          onPressed: widget.operation.isCancelling
+              ? null
+              : () async {
+                  final operation = widget.operation;
+                  final generation = operation.generation;
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text(l.cancel_recovery_title),
+                      content: Text(l.cancel_recovery_message),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: Text(l.continue_recovery)),
+                        TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: Text(l.cancel)),
+                      ],
+                    ),
+                  );
+                  if (confirmed == true &&
+                      mounted &&
+                      operation.isRunning &&
+                      operation.generation == generation) {
+                    setState(operation.cancel);
+                  }
+                },
+          icon: const Icon(Icons.close, size: 18),
+          label: Text(
+              widget.operation.isCancelling ? l.cancelling_recovery : l.cancel),
+        ),
       ),
     );
   }
