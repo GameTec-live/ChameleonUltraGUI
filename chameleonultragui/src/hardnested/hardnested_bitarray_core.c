@@ -67,9 +67,23 @@ void free_bitarray(uint32_t *x)
 #endif
 }
 
+// Keep population counts inline and vectorizable on CPUs without a baseline
+// POPCNT instruction. Calling a scalar runtime helper per word dominates scans.
+static inline uint32_t count_word(uint32_t x)
+{
+#if defined(__GNUC__) && (defined(__arm__) || defined(__aarch64__) || defined(__POPCNT__))
+    return __builtin_popcount(x);
+#else
+    x -= (x >> 1) & 0x55555555u;
+    x = (x & 0x33333333u) + ((x >> 2) & 0x33333333u);
+    x = (x + (x >> 4)) & 0x0f0f0f0fu;
+    return (x * 0x01010101u) >> 24;
+#endif
+}
+
 uint32_t bitcount(uint32_t a)
 {
-    return __builtin_popcountl(a);
+    return count_word(a);
 }
 
 uint32_t count_states(uint32_t *A)
@@ -77,7 +91,7 @@ uint32_t count_states(uint32_t *A)
     uint32_t count = 0;
     for (uint32_t i = 0; i < (1 << 19); i++)
     {
-        count += __builtin_popcountl(A[i]);
+        count += count_word(A[i]);
     }
     return count;
 }
@@ -114,7 +128,7 @@ uint32_t count_bitarray_AND(uint32_t *restrict A, uint32_t *restrict B)
     for (uint32_t i = 0; i < (1 << 19); i++)
     {
         A[i] &= B[i];
-        count += __builtin_popcountl(A[i]);
+        count += count_word(A[i]);
     }
     return count;
 }
@@ -131,7 +145,7 @@ uint32_t count_bitarray_low20_AND(uint32_t *restrict A, uint32_t *restrict B)
         {
             a[i] = 0;
         }
-        count += __builtin_popcountl(a[i]);
+        count += count_word(a[i]);
     }
     return count;
 }
@@ -165,7 +179,7 @@ uint32_t count_bitarray_AND2(uint32_t *restrict A, uint32_t *restrict B)
     uint32_t count = 0;
     for (uint32_t i = 0; i < (1 << 19); i++)
     {
-        count += __builtin_popcountl(A[i] & B[i]);
+        count += count_word(A[i] & B[i]);
     }
     return count;
 }
@@ -178,7 +192,7 @@ uint32_t count_bitarray_AND3(uint32_t *restrict A, uint32_t *restrict B, uint32_
     uint32_t count = 0;
     for (uint32_t i = 0; i < (1 << 19); i++)
     {
-        count += __builtin_popcountl(A[i] & B[i] & C[i]);
+        count += count_word(A[i] & B[i] & C[i]);
     }
     return count;
 }
@@ -192,7 +206,7 @@ uint32_t count_bitarray_AND4(uint32_t *restrict A, uint32_t *restrict B, uint32_
     uint32_t count = 0;
     for (uint32_t i = 0; i < (1 << 19); i++)
     {
-        count += __builtin_popcountl(A[i] & B[i] & C[i] & D[i]);
+        count += count_word(A[i] & B[i] & C[i] & D[i]);
     }
     return count;
 }

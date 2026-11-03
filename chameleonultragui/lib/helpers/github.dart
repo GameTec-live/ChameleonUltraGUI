@@ -100,13 +100,16 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
     for (var release in releases) {
       if (release["prerelease"]) {
         for (var file in release["assets"]) {
-          if (file["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
+          if (file["name"] == "${_dfuAppName(device)}.zip") {
             content =
                 await http.readBytes(Uri.parse(file["browser_download_url"]));
             break;
           }
         }
+      }
+
+      if (content.isNotEmpty) {
+        break;
       }
     }
   } catch (_) {}
@@ -118,13 +121,43 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
   return content;
 }
 
+String _dfuAppName(ChameleonDevice device) =>
+    "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app";
+
+/// Returns the newest non-expired DFU artifact built from upstream main.
+///
+/// The artifacts API lists by artifact ID, which does not follow build order,
+/// so the first match can be an older build. Workflow run IDs do follow it,
+/// and unlike created_at they do not change when an old run is re-run.
+Map<String, dynamic>? selectLatestFirmwareArtifact(
+    List<dynamic> artifacts, ChameleonDevice device) {
+  Map<String, dynamic>? latest;
+
+  for (var artifact in artifacts) {
+    final run = artifact["workflow_run"];
+    if (artifact["name"] != _dfuAppName(device) ||
+        artifact["expired"] == true ||
+        run == null ||
+        run["head_branch"] != "main" ||
+        run["head_repository_id"] != 581338100) {
+      continue;
+    }
+
+    if (latest == null || run["id"] > latest["workflow_run"]["id"]) {
+      latest = artifact;
+    }
+  }
+
+  return latest;
+}
+
 Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
   Uint8List content = Uint8List(0);
   String error = "";
 
   try {
     final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100")))
+            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100&name=${_dfuAppName(device)}")))
         .body
         .toString());
 
@@ -133,15 +166,11 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
       throw error;
     }
 
-    for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
-          artifact["workflow_run"]["head_branch"] == "main" &&
-          artifact["workflow_run"]["head_repository_id"] == 581338100) {
-        content = await http.readBytes(Uri.parse(
-            "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
-        break;
-      }
+    final artifact =
+        selectLatestFirmwareArtifact(artifacts["artifacts"], device);
+    if (artifact != null) {
+      content = await http.readBytes(Uri.parse(
+          "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
     }
   } catch (_) {}
 
@@ -157,7 +186,7 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
 
   try {
     final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100")))
+            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100&name=${_dfuAppName(device)}")))
         .body
         .toString());
 
@@ -166,13 +195,10 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
       throw error;
     }
 
-    for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
-          artifact["workflow_run"]["head_branch"] == "main" &&
-          artifact["workflow_run"]["head_repository_id"] == 581338100) {
-        return artifact["workflow_run"]["head_sha"];
-      }
+    final artifact =
+        selectLatestFirmwareArtifact(artifacts["artifacts"], device);
+    if (artifact != null) {
+      return artifact["workflow_run"]["head_sha"];
     }
   } catch (_) {}
 

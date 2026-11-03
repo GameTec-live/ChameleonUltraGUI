@@ -1,54 +1,35 @@
 #include "bucketsort.h"
+#include <string.h>
 
-extern void bucket_sort_intersect(uint32_t *const estart, uint32_t *const estop,
-                                  uint32_t *const ostart, uint32_t *const ostop,
-                                  bucket_info_t *bucket_info, bucket_array_t bucket)
+// Stable counting sort uses one reusable scratch range instead of 512 fixed
+// buckets. Stability also preserves recovery order for sentinel/ambiguous inputs.
+void bucket_sort_intersect(uint32_t *const estart, uint32_t *const estop,
+                           uint32_t *const ostart, uint32_t *const ostop,
+                           bucket_info_t *info, uint32_t *scratch)
 {
-    uint32_t *p1, *p2;
-    uint32_t *start[2];
-    uint32_t *stop[2];
-
-    start[0] = estart;
-    stop[0] = estop;
-    start[1] = ostart;
-    stop[1] = ostop;
-
-    // init buckets to be empty
-    for (uint32_t i = 0; i < 2; i++)
-    {
-        for (uint32_t j = 0x00; j <= 0xff; j++)
-        {
-            bucket[i][j].bp = bucket[i][j].head;
+    uint32_t *start[2] = {estart, ostart};
+    uint32_t *stop[2] = {estop, ostop};
+    size_t count[2][256] = {{0}};
+    for (unsigned side = 0; side < 2; ++side)
+        for (uint32_t *p = start[side]; p <= stop[side]; ++p)
+            ++count[side][*p >> 24];
+    for (unsigned side = 0; side < 2; ++side) {
+        size_t offset[257] = {0}, next[256];
+        for (unsigned b = 0; b < 256; ++b) {
+            offset[b + 1] = offset[b] + count[side][b];
+            next[b] = offset[b];
         }
-    }
-
-    // sort the lists into the buckets based on the MSB (contribution bits)
-    for (uint32_t i = 0; i < 2; i++)
-    {
-        for (p1 = start[i]; p1 <= stop[i]; p1++)
-        {
-            uint32_t bucket_index = (*p1 & 0xff000000) >> 24;
-            *(bucket[i][bucket_index].bp++) = *p1;
+        for (uint32_t *p = start[side]; p <= stop[side]; ++p)
+            scratch[next[*p >> 24]++] = *p;
+        uint32_t *out = start[side];
+        info->numbuckets = 0;
+        for (unsigned b = 0; b < 256; ++b) {
+            if (!count[0][b] || !count[1][b]) continue;
+            unsigned n = info->numbuckets++;
+            info->bucket_info[side][n].head = out;
+            memcpy(out, scratch + offset[b], count[side][b] * sizeof(*out));
+            out += count[side][b];
+            info->bucket_info[side][n].tail = out - 1;
         }
-    }
-
-    // write back intersecting buckets as sorted list.
-    // fill in bucket_info with head and tail of the bucket contents in the list and number of non-empty buckets.
-    for (uint32_t i = 0; i < 2; i++)
-    {
-        p1 = start[i];
-        uint32_t nonempty_bucket = 0;
-        for (uint32_t j = 0x00; j <= 0xff; j++)
-        {
-            if (bucket[0][j].bp != bucket[0][j].head && bucket[1][j].bp != bucket[1][j].head)
-            { // non-empty intersecting buckets only
-                bucket_info->bucket_info[i][nonempty_bucket].head = p1;
-                for (p2 = bucket[i][j].head; p2 < bucket[i][j].bp; *p1++ = *p2++)
-                    ;
-                bucket_info->bucket_info[i][nonempty_bucket].tail = p1 - 1;
-                nonempty_bucket++;
-            }
-        }
-        bucket_info->numbuckets = nonempty_bucket;
     }
 }

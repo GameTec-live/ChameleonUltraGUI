@@ -83,4 +83,8 @@ static inline int crypto1_filter(uint32_t const x)
     return BIT(0xEC57E80A, f);
 }
 #endif
+
+// Roll back a plaintext word and extract the key without modifying the state.
+uint64_t crypto1_rollback_key(const struct Crypto1State *state, uint32_t input);
+
 #endif

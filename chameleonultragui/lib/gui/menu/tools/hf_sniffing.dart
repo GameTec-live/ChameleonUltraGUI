@@ -16,7 +16,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class HfSniffingMenu extends StatefulWidget {
-  const HfSniffingMenu({super.key});
+  const HfSniffingMenu({super.key, this.activeAuthentication = false});
+
+  final bool activeAuthentication;
 
   @override
   State<HfSniffingMenu> createState() => _HfSniffingMenuState();
@@ -42,6 +44,10 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   final _formKey = GlobalKey<FormState>();
   final _timeoutController = TextEditingController(text: '5000');
 
+  final _blockController = TextEditingController(text: '0');
+  final _keyController = TextEditingController(text: 'FFFFFFFFFFFF');
+  int _keyType = 0x60;
+
   bool _isCapturing = false;
   bool _isRecoveringAll = false;
   bool? _capabilitySupported;
@@ -62,6 +68,8 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   @override
   void dispose() {
     _timeoutController.dispose();
+    _blockController.dispose();
+    _keyController.dispose();
     super.dispose();
   }
 
@@ -77,7 +85,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
       }
       setState(() {
         _capabilitySupported =
-            capabilities.contains(ChameleonCommand.hf14aSniff.value);
+            capabilities.contains(widget.activeAuthentication
+                ? ChameleonCommand.hf14aAuthTrace.value
+                : ChameleonCommand.hf14aSniff.value);
       });
     } catch (_) {
       if (!mounted) {
@@ -107,29 +117,56 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
     });
 
     try {
-      if (await appState.communicator!.isReaderDeviceMode()) {
-        await appState.communicator!.setReaderDeviceMode(false);
+      final communicator = appState.communicator!;
+      if (await communicator.isReaderDeviceMode() != widget.activeAuthentication) {
+        await communicator.setReaderDeviceMode(widget.activeAuthentication);
       }
 
-      final rawBytes =
-          await appState.communicator!.hf14aSniff(timeoutMs: timeoutMs);
+      int? authStatus;
+      final Uint8List rawBytes;
+      if (widget.activeAuthentication) {
+        final response = await communicator.hf14aAuthTrace(
+          int.parse(_blockController.text), _keyType,
+          hexToBytes(_keyController.text.replaceAll(' ', '')),
+          timeoutMs: timeoutMs,
+        );
+        authStatus = response.status;
+        rawBytes = response.data;
+        if (authStatus == 0x67 || authStatus == 0x69) {
+          if (mounted) {
+            setState(() {
+              _capabilitySupported = false;
+              _statusMessage = null;
+            });
+          }
+          return;
+        }
+      } else {
+        rawBytes = await communicator.hf14aSniff(timeoutMs: timeoutMs);
+      }
       if (!mounted) {
         return;
       }
 
       if (rawBytes.isEmpty) {
         setState(() {
-          _statusMessage = localizations.hf_sniff_no_frames;
+          _statusMessage = authStatus == null
+              ? localizations.hf_sniff_no_frames
+              : localizations.hf_auth_status(authStatus.toRadixString(16));
         });
         return;
       }
 
-      final capture = HfSniffCapture.fromChameleonBytes(rawBytes);
+      final capture = widget.activeAuthentication
+          ? HfSniffCapture.fromAuthenticationBytes(rawBytes)
+          : HfSniffCapture.fromChameleonBytes(rawBytes);
       setState(() {
         _capture = capture;
-        _statusMessage = capture.frames.isEmpty
-            ? localizations.hf_sniff_no_decoded_frames
-            : localizations.hf_sniff_capture_done(capture.frames.length);
+        _statusMessage = authStatus != null
+            ? localizations.hf_auth_status(authStatus.toRadixString(16))
+            : capture.frames.isEmpty
+                ? localizations.hf_sniff_no_decoded_frames
+                : localizations.hf_sniff_capture_done(capture.frames.length);
       });
     } catch (error) {
       if (!mounted) {
@@ -397,7 +434,8 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
         math.min(MediaQuery.of(context).size.height * 0.84, 780.0).toDouble();
 
     return AlertDialog(
-      title: Text(localizations.hf_sniffing),
+      title: Text(widget.activeAuthentication
+          ? localizations.hf_auth_trace : localizations.hf_sniffing),
       content: SizedBox(
         width: dialogWidth,
         height: dialogHeight,
@@ -413,7 +451,14 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
                     _buildCapabilityBanner(localizations),
                     Form(
                       key: _formKey,
-                      child: _buildHeaderControls(localizations),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (widget.activeAuthentication)
+                            _buildAuthenticationControls(localizations),
+                          _buildHeaderControls(localizations),
+                        ],
+                      ),
                     ),
                     if (_statusMessage != null || _errorMessage != null)
                       Padding(
@@ -479,7 +524,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
               labelText: localizations.hf_sniff_timeout,
-              helperText: localizations.hf_sniff_timeout_help,
+              helperText: widget.activeAuthentication
+                  ? localizations.hf_auth_timeout_help
+                  : localizations.hf_sniff_timeout_help,
               border: const OutlineInputBorder(),
             ),
             validator: (value) => validateIntRange(
@@ -558,6 +605,32 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
     );
   }
 
+  Widget _buildAuthenticationControls(AppLocalizations l) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Wrap(spacing: 12, runSpacing: 12, children: [
+        SizedBox(width: 120, child: TextFormField(
+          controller: _blockController, enabled: !_isCapturing,
+          decoration: InputDecoration(labelText: l.hf_auth_block),
+          keyboardType: TextInputType.number,
+          validator: (value) => validateIntRange(value, l, min: 0, max: 255),
+        )),
+        SizedBox(width: 130, child: DropdownButtonFormField<int>(
+          initialValue: _keyType,
+          decoration: InputDecoration(labelText: l.hf_auth_key_type),
+          items: const [DropdownMenuItem(value: 0x60, child: Text('Key A')),
+            DropdownMenuItem(value: 0x61, child: Text('Key B'))],
+          onChanged: _isCapturing ? null : (value) => setState(() => _keyType = value!),
+        )),
+        SizedBox(width: 230, child: TextFormField(
+          controller: _keyController, enabled: !_isCapturing,
+          decoration: InputDecoration(labelText: l.hf_auth_key),
+          validator: (value) => validateHex(value, l, exactBytes: 6, required: true),
+        )),
+      ]),
+      const SizedBox(height: 16),
+    ]);
+  }
+
   Widget _buildCapabilityBanner(AppLocalizations localizations) {
     if (!_isDeviceConnected()) {
       return Padding(
@@ -601,7 +674,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  localizations.hf_sniff_firmware_unsupported,
+                  widget.activeAuthentication
+                      ? localizations.hf_tool_unsupported
+                      : localizations.hf_sniff_firmware_unsupported,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -643,7 +718,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   Widget _buildSummaryTab(AppLocalizations localizations) {
     final capture = _capture;
     if (capture == null) {
-      return _buildEmptyState(localizations.hf_sniff_capture_prompt);
+      return _buildEmptyState(widget.activeAuthentication
+          ? localizations.hf_auth_prompt
+          : localizations.hf_sniff_capture_prompt);
     }
 
     final summary = capture.summary;
@@ -728,7 +805,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   Widget _buildFramesTab(AppLocalizations localizations) {
     final capture = _capture;
     if (capture == null) {
-      return _buildEmptyState(localizations.hf_sniff_capture_prompt);
+      return _buildEmptyState(widget.activeAuthentication
+          ? localizations.hf_auth_prompt
+          : localizations.hf_sniff_capture_prompt);
     }
 
     if (capture.annotatedFrames.isEmpty) {
@@ -754,7 +833,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   Widget _buildNoncesTab(AppLocalizations localizations) {
     final capture = _capture;
     if (capture == null) {
-      return _buildEmptyState(localizations.hf_sniff_capture_prompt);
+      return _buildEmptyState(widget.activeAuthentication
+          ? localizations.hf_auth_prompt
+          : localizations.hf_sniff_capture_prompt);
     }
 
     if (capture.nonceGroups.isEmpty) {
@@ -837,7 +918,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   Widget _buildRecoveryTab(AppLocalizations localizations) {
     final capture = _capture;
     if (capture == null) {
-      return _buildEmptyState(localizations.hf_sniff_capture_prompt);
+      return _buildEmptyState(widget.activeAuthentication
+          ? localizations.hf_auth_prompt
+          : localizations.hf_sniff_capture_prompt);
     }
 
     final groups = capture.nonceGroups;
@@ -992,7 +1075,9 @@ class _HfSniffingMenuState extends State<HfSniffingMenu> {
   Widget _buildRawTab(AppLocalizations localizations) {
     final capture = _capture;
     if (capture == null) {
-      return _buildEmptyState(localizations.hf_sniff_capture_prompt);
+      return _buildEmptyState(widget.activeAuthentication
+          ? localizations.hf_auth_prompt
+          : localizations.hf_sniff_capture_prompt);
     }
 
     final shownBytes = math.min(capture.rawBytes.length, 1024);
