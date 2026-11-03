@@ -71,6 +71,10 @@ class CardViewMenuState extends State<CardViewMenu> {
   Widget build(BuildContext context) {
     var localizations = AppLocalizations.of(context)!;
     var appState = context.watch<ChameleonGUIState>();
+    final ioProxCard = currentSavedCard.tag == TagType.ioProx &&
+            hexToBytes(currentSavedCard.uid).length >= 4
+        ? IoProxCard.fromUID(currentSavedCard.uid)
+        : null;
 
     return AlertDialog(
       title: Text(currentSavedCard.name,
@@ -83,7 +87,7 @@ class CardViewMenuState extends State<CardViewMenu> {
             children: [
               Expanded(
                 child: Text(
-                  "${localizations.uid}: $uid",
+                  "${localizations.uid}: ${ioProxCard == null ? uid : currentSavedCard.uid}",
                   softWrap: true,
                   overflow: TextOverflow.visible,
                 ),
@@ -118,6 +122,20 @@ class CardViewMenuState extends State<CardViewMenu> {
               ),
             ],
           ),
+          if (ioProxCard != null)
+            for (final field in [
+              (localizations.version, ioProxCard.version),
+              (localizations.facility_code, ioProxCard.facilityCode),
+              (localizations.card_number, ioProxCard.cardNumber),
+            ])
+              Row(children: [
+                Expanded(child: Text('${field.$1}: ${field.$2}')),
+                IconButton(
+                  onPressed: () => Clipboard.setData(
+                      ClipboardData(text: field.$2.toString())),
+                  icon: const Icon(Icons.copy),
+                ),
+              ]),
           if (chameleonTagToFrequency(currentSavedCard.tag) ==
               TagFrequency.hf) ...[
             Row(

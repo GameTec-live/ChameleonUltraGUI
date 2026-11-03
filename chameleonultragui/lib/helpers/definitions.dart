@@ -9,6 +9,7 @@ enum ChameleonCommand {
   getDeviceMode(1002),
   getGitVersion(1017),
   getBatteryCharge(1025),
+  getBatteryChargeEx(1043),
 
   // slot
   setActiveSlot(1003),
@@ -22,6 +23,7 @@ enum ChameleonCommand {
   getSlotInfo(1019),
   getEnabledSlots(1023),
   deleteSlotInfo(1024),
+  deleteSlotTagNick(1021),
   getAllSlotNicks(1038),
 
   // bootloader
@@ -45,6 +47,8 @@ enum ChameleonCommand {
   getDeviceCapabilities(1035),
   getSleepTimeout(1039),
   setSleepTimeout(1040),
+  getLongPressThreshold(1041),
+  setLongPressThreshold(1042),
 
   // button config
   getButtonPressConfig(1026),
@@ -71,12 +75,30 @@ enum ChameleonCommand {
   mf1ReadBlock(2008),
   mf1WriteBlock(2009),
   mf1ManipulateValueBlock(2011),
-  mf1CheckKeysOfSectors(2012), // not implemented
+  mf1CheckKeysOfSectors(2012),
   mf1HardNestedAcquire(2013),
   mf1StaticEncryptedNestedAcquire(2014),
   mf1CheckKeysOnBlock(2015),
   hf14ARawCommand(2010),
+  hf14aScanKeep(2016),
+  hf14aAuthTrace(2017),
+  mf0UlcAuth(2018),
+  mf0UlcRead(2019),
+  mf0UlcWrite(2021),
+  mf0UlcSetKey(2022),
   hf14aSniff(2020),
+  hf14aSetFieldOn(2100),
+  hf14aSetFieldOff(2101),
+  hf14aGetConfig(2200),
+  hf14aSetConfig(2201),
+
+  // hf 14a-4 (T=CL) commands
+  hf14a4ApduRecv(6000),
+  hf14a4ApduSend(6001),
+  hf14a4SetAntiColl(6002),
+  hf14a4StaticResp(6003),
+  hf14a4ReaderApdu(6004),
+  hf14a4EmvScan(6005),
 
   // lf commands
   scanEM410Xtag(3000),
@@ -91,6 +113,13 @@ enum ChameleonCommand {
   scanPacTag(3014),
   writePacToT5577(3015),
   writeIdteckToT5577(3018),
+  ioProxDecodeRaw(3012),
+  ioProxComposeID(3013),
+  adcGenericRead(3009),
+  writeT55XX(3016),
+  scanEM4X05Tag(3030),
+  scanJablotronTag(3019),
+  writeJablotronToT5577(3020),
   lfSniff(3031),
 
   mf1LoadBlockData(4000),
@@ -134,6 +163,8 @@ enum ChameleonCommand {
   mf0NtagGetEmulatorConfig(4037),
   mf1GetPrngType(4040),
   mf1SetPrngType(4041),
+  mf1SetFieldOffDoReset(4038),
+  mf1GetFieldOffDoReset(4039),
 
   // read slot info
   mf1GetBlockData(4008),
@@ -155,6 +186,9 @@ enum ChameleonCommand {
   setIoProxEmulatorID(5008),
   getIoProxEmulatorID(5009),
 
+  setJablotronEmulatorID(5010),
+  getJablotronEmulatorID(5011),
+
   setIdteckEmulatorID(5012),
   getIdteckEmulatorID(5013);
 
@@ -171,6 +205,7 @@ enum TagType {
   em410XElectra(104),
   pac(150),
   viking(170),
+  jablotron(180),
   hidProx(200),
   ioProx(201),
   idteck(310),
@@ -244,7 +279,8 @@ enum ButtonConfig {
   cycleForward(1),
   cycleBackward(2),
   cloneUID(3),
-  chargeStatus(4);
+  chargeStatus(4),
+  nfcFieldGenerator(5);
 
   const ButtonConfig(this.value);
   final int value;
@@ -424,11 +460,15 @@ class EnabledSlotInfo {
   EnabledSlotInfo({this.hf = false, this.lf = false});
 }
 
+// Firmware condition hint based on remaining capacity, not battery wear.
+enum BatteryCondition { critical, low, fair, good, excellent, unknown }
+
 class BatteryCharge {
   int voltage;
   int percent;
+  BatteryCondition? condition;
 
-  BatteryCharge({required this.voltage, required this.percent});
+  BatteryCharge({required this.voltage, required this.percent, this.condition});
 }
 
 class EmulatorSettings {
@@ -455,6 +495,7 @@ class DeviceSettings {
   bool pairingEnabled;
   String key;
   int? wakeTimeSeconds;
+  int? longPressThreshold;
 
   DeviceSettings(
       {this.animation = AnimationSetting.none,
@@ -464,7 +505,8 @@ class DeviceSettings {
       this.bLongPress = ButtonConfig.disable,
       this.pairingEnabled = false,
       this.key = "",
-      this.wakeTimeSeconds});
+      this.wakeTimeSeconds,
+      this.longPressThreshold});
 }
 
 enum MifareClassicValueBlockOperator {
@@ -612,6 +654,26 @@ class VikingCard extends LFCard {
   });
 }
 
+class JablotronCard extends LFCard {
+  factory JablotronCard.fromBytes(Uint8List bytes) {
+    return JablotronCard(uid: bytes);
+  }
+
+  factory JablotronCard.fromUID(String uid) {
+    return JablotronCard.fromBytes(hexToBytes(uid));
+  }
+
+  @override
+  String toViewableString() {
+    return '${jablotronCardId(uid)} (${bytesToHexSpace(uid)})';
+  }
+
+  JablotronCard({
+    super.type = TagType.jablotron,
+    required super.uid,
+  });
+}
+
 class PacCard extends LFCard {
   factory PacCard.fromBytes(Uint8List bytes) {
     return PacCard(uid: bytes);
@@ -628,6 +690,45 @@ class PacCard extends LFCard {
 }
 
 class IoProxCard extends LFCard {
+  int get version => uid[0];
+  int get facilityCode => uid[1];
+  int get cardNumber => (uid[2] << 8) | uid[3];
+
+  /// Builds the firmware's 16-byte identity, including the raw XSF frame.
+  factory IoProxCard.fromFields({
+    required int version,
+    required int facilityCode,
+    required int cardNumber,
+  }) {
+    RangeError.checkValueInInterval(version, 0, 255, 'version');
+    RangeError.checkValueInInterval(facilityCode, 0, 255, 'facilityCode');
+    RangeError.checkValueInInterval(cardNumber, 0, 65535, 'cardNumber');
+    final high = cardNumber >> 8;
+    final low = cardNumber & 0xFF;
+    final checksum =
+        0xFF - ((0xF0 + facilityCode + version + high + low) & 0xFF);
+    final data = Uint8List(16);
+    data.setAll(0, [version, facilityCode, high, low]);
+
+    // Seven MSB-first bytes, each followed by a separator; the last bit is 1.
+    final groups = [0, 0xF0, facilityCode, version, high, low, checksum];
+    for (var group = 0; group < groups.length; group++) {
+      for (var bit = 0; bit < 9; bit++) {
+        final value =
+            bit == 8 ? (group == 0 ? 0 : 1) : (groups[group] >> (7 - bit)) & 1;
+        final position = group * 9 + bit;
+        data[4 + position ~/ 8] |= value << (7 - position % 8);
+      }
+    }
+    data[11] |= 1;
+    return IoProxCard(uid: data);
+  }
+
+  @override
+  String toViewableString() => uid.length < 4
+      ? toString()
+      : '$cardNumber (Version: $version, FC: $facilityCode, ${toString()})';
+
   factory IoProxCard.fromBytes(Uint8List bytes) {
     return IoProxCard(uid: bytes);
   }

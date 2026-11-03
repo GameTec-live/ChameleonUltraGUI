@@ -570,5 +570,10 @@
   "lf_sniff_load_file": "Carrega fitxer .bin",
   "lf_sniff_load_failed": "Error carregant el fitxer: {error}",
   "lf_sniff_loaded": "Carregades {count} mostra(es) del fitxer.",
-  "sniff_device_required_hint": "No hi ha cap dispositiu connectat. Connecteu un Chameleon per capturar, o carregueu un fitxer desat."
+  "sniff_device_required_hint": "No hi ha cap dispositiu connectat. Connecteu un Chameleon per capturar, o carregueu un fitxer desat.",
+  "view_dump": "Veure bolcat",
+  "enable_vanity_sak": "Activa el Vanity SAK",
+  "enable_vanity_sak_tooltip": "Quan l'opci\u00f3 \u00e9s activa, el SAK desat al bloc 0 s'incrementa 0x08, imitant les targetes genu\u00efnes, b\u00e0sicament les que tenen el UID de 7 bytes.\nPer defecte actiu a les targetes amb UID de 7-bytes, desactivat per les de 4 bytes, ja que algunes repeteixen aquest byte tal qual.",
+  "ulc_write_lock_and_counter": "Escriu els bytes de bloqueig i comptador (irreversible)",
+  "long_press_threshold": "Llindar de la pulsaci\u00f3 llarga (ms):"
 }

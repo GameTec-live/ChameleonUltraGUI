@@ -152,11 +152,34 @@ int uint64_compare(const void *a, const void *b)
   return (*(uint64_t *)a > *(uint64_t *)b) - (*(uint64_t *)a < *(uint64_t *)b);
 }
 
+// Byte radix sorting avoids comparison callbacks for large candidate lists.
+// Sort all 64 bits, so this helper also handles non-key uint64_t values.
+static void sort_keys(uint64_t *keys, uint32_t size)
+{
+  uint64_t *scratch = size >= 1024 ? malloc((size_t)size * sizeof(*scratch)) : NULL;
+  if (!scratch) { qsort(keys, size, sizeof(*keys), uint64_compare); return; }
+  uint64_t *src = keys, *dst = scratch;
+  for (unsigned shift = 0; shift < 64; shift += 8) {
+    size_t offsets[256] = {0};
+    for (uint32_t i = 0; i < size; ++i) ++offsets[(src[i] >> shift) & 255];
+    size_t total = 0;
+    for (unsigned b = 0; b < 256; ++b) {
+      size_t count = offsets[b]; offsets[b] = total; total += count;
+    }
+    for (uint32_t i = 0; i < size; ++i) dst[offsets[(src[i] >> shift) & 255]++] = src[i];
+    uint64_t *tmp = src; src = dst; dst = tmp;
+  }
+  free(scratch);
+}
+
 uint64_t *most_frequent_uint64(uint64_t *keys, uint32_t size, uint32_t *outputKeyCount)
 {
+  *outputKeyCount = 0;
+  if (!size) return NULL;
   uint64_t i, maxFreq = 1, currentFreq = 1, currentItem = keys[0];
   uint64_t *output = calloc(size, sizeof(uint64_t));
-  qsort(keys, size, sizeof(uint64_t), uint64_compare);
+  if (!output) return NULL;
+  sort_keys(keys, size);
 
   for (i = 1; i < size; i++)
   {
@@ -239,31 +262,21 @@ FFI_PLUGIN_EXPORT uint64_t *static_encrypted_nested(StaticEncryptedNested *data,
 
   uint64_t *result_keys = (uint64_t *)calloc(1, KEY_SPACE_SIZE * sizeof(uint64_t));
 
-  struct Crypto1State *revstate, *revstate_start = NULL, *s = NULL;
+  struct Crypto1State *revstate, *revstate_start = NULL;
   uint64_t lfsr = 0;
   uint32_t ks1 = nt ^ nt_enc;
 
   revstate = lfsr_recovery32(ks1, nt ^ authuid);
   revstate_start = revstate;
-
-  s = crypto1_create(0);
+  if (!revstate || !result_keys) { free(revstate); free(result_keys); return NULL; }
 
   while ((revstate->odd != 0x0) || (revstate->even != 0x0))
   {
-    lfsr_rollback_word(revstate, nt ^ authuid, 0);
-    crypto1_get_lfsr(revstate, &lfsr);
-
-    // only filtering possibility: last parity bit ks in ks2
-    uint32_t ks2;
-    uint8_t lastpar1, lastpar2, kslastp;
-    crypto1_init(s, lfsr);
-    crypto1_word(s, nt ^ authuid, 0);
-    ks2 = crypto1_word(s, 0, 0);
-    lastpar1 = oddparity8(nt & 0xFF);
-    kslastp = (ks2 >> 24) & 1;
-    lastpar2 = (nt_par_enc & 1) ^ kslastp;
-    if (lastpar1 == lastpar2)
+    // Recovery states are already immediately after the nonce. The next
+    // filter bit is the keystream for its last parity bit: no replay needed.
+    if (oddparity8(nt & 0xFF) == ((nt_par_enc & 1) ^ crypto1_filter(revstate->odd)))
     {
+      lfsr = crypto1_rollback_key(revstate, nt ^ authuid);
       result_keys[(*outputKeyCount)++] = lfsr;
       if (*outputKeyCount == KEY_SPACE_SIZE)
       {
@@ -274,110 +287,54 @@ FFI_PLUGIN_EXPORT uint64_t *static_encrypted_nested(StaticEncryptedNested *data,
     revstate++;
   }
 
-  crypto1_destroy(s);
   crypto1_destroy(revstate_start);
   revstate_start = NULL;
   return result_keys;
 }
 
-// nested decrypt
+// Recover every candidate, growing geometrically instead of repeatedly copying
+// the entire list in fixed-size chunks. The caller consumes only keyCount items.
 static void nested_recover(RecPar *rp)
 {
-  struct Crypto1State *revstate, *revstate_start = NULL;
-  uint64_t lfsr = 0;
-  uint32_t i, kcount = 0;
-
+  uint32_t capacity = 0;
   rp->keyCount = 0;
   rp->keys = NULL;
 
-  for (i = rp->startPos; i < rp->endPos; i++)
+  for (uint32_t i = rp->startPos; i < rp->endPos; ++i)
   {
-    uint32_t nt_probe = rp->pNK[i].ntp;
-    uint32_t ks1 = rp->pNK[i].ks1;
-    // And finally recover the first 32 bits of the key
-    revstate = lfsr_recovery32(ks1, nt_probe ^ rp->authuid);
-    if (revstate_start == NULL)
+    uint32_t input = rp->pNK[i].ntp ^ rp->authuid;
+    struct Crypto1State *states = lfsr_recovery32(rp->pNK[i].ks1, input);
+    if (!states) goto failed;
+    for (struct Crypto1State *state = states; state->odd | state->even; ++state)
     {
-      revstate_start = revstate;
-    }
-    while ((revstate->odd != 0x0) || (revstate->even != 0x0))
-    {
-      lfsr_rollback_word(revstate, nt_probe ^ rp->authuid, 0);
-      crypto1_get_lfsr(revstate, &lfsr);
-      // Allocate a new space for keys
-      if (((kcount % MEM_CHUNK) == 0) || (kcount >= rp->keyCount))
+      if (rp->keyCount == capacity)
       {
-        rp->keyCount += MEM_CHUNK;
-        // printf("New chunk by %d, sizeof %lu\n", kcount, key_count * sizeof(uint64_t));
-        void *tmp = realloc(rp->keys, rp->keyCount * sizeof(uint64_t));
-        if (tmp == NULL)
-        {
-          printf("Memory allocation error for pk->possibleKeys");
-          // exit(EXIT_FAILURE);
-          rp->keyCount = 0;
-          return;
-        }
-        rp->keys = (uint64_t *)tmp;
+        uint32_t next = capacity ? capacity * 2 : MEM_CHUNK;
+        void *keys = realloc(rp->keys, (size_t)next * sizeof(*rp->keys));
+        if (!keys) { free(states); goto failed; }
+        rp->keys = keys;
+        capacity = next;
       }
-      rp->keys[kcount] = lfsr;
-      kcount++;
-      revstate++;
+      rp->keys[rp->keyCount++] = crypto1_rollback_key(state, input);
     }
-    free(revstate_start);
-    revstate_start = NULL;
+    free(states);
   }
-  // Truncate
-  if (kcount != 0)
-  {
-    rp->keyCount = --kcount;
-    void *tmp = (uint64_t *)realloc(rp->keys, rp->keyCount * sizeof(uint64_t));
-    if (tmp == NULL)
-    {
-      printf("Memory allocation error for pk->possibleKeys");
-      // exit(EXIT_FAILURE);
-      rp->keyCount = 0;
-      return;
-    }
-    rp->keys = tmp;
-    return;
-  }
-  rp->keyCount = 0;
   return;
+
+failed:
+  free(rp->keys);
+  rp->keys = NULL;
+  rp->keyCount = 0;
 }
 
 uint64_t *nested_run(NtpKs1 *pNK, uint32_t sizePNK, uint32_t authuid, uint32_t *keyCount, uint32_t *outputKeyCount)
 {
-  *keyCount = 0;
   *outputKeyCount = 0;
-
-  RecPar *pRPs = malloc(sizeof(RecPar));
-  if (pRPs == NULL)
-  {
-    return NULL;
-  }
-
-  pRPs->pNK = pNK;
-  pRPs->authuid = authuid;
-  pRPs->startPos = 0;
-  pRPs->endPos = sizePNK;
-
-  // start recover
-  nested_recover(pRPs);
-  *keyCount = pRPs->keyCount;
-
-  uint64_t *keys = NULL;
-  if (*keyCount != 0)
-  {
-    keys = malloc(*keyCount * sizeof(uint64_t));
-    if (keys != NULL)
-    {
-      memcpy(keys, pRPs->keys, pRPs->keyCount * sizeof(uint64_t));
-      free(pRPs->keys);
-      keys = most_frequent_uint64(keys, *keyCount, outputKeyCount);
-    }
-  }
-  free(pRPs);
-
+  RecPar rp = {.pNK = pNK, .authuid = authuid, .startPos = 0, .endPos = sizePNK};
+  nested_recover(&rp);
+  *keyCount = rp.keyCount;
+  uint64_t *keys = rp.keyCount ? most_frequent_uint64(rp.keys, rp.keyCount, outputKeyCount) : NULL;
+  free(rp.keys);
   return keys;
 }
 
@@ -443,6 +400,7 @@ FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *outputKeyCount)
 
   uint32_t keyCount = 0;
   uint64_t *keys = nested_run(pNK, j, authuid, &keyCount, outputKeyCount);
+  free(pNK);
   return keys;
 }
 
@@ -519,6 +477,7 @@ FFI_PLUGIN_EXPORT uint64_t *static_nested(StaticNested *data, uint32_t *outputKe
 
   uint32_t keyCount = 0;
   uint64_t *keys = nested_run(pNK, j, authuid, &keyCount, outputKeyCount);
+  free(pNK);
   return keys;
 }
 
@@ -535,6 +494,7 @@ FFI_PLUGIN_EXPORT uint64_t mfkey32(Mfkey32 *data)
   ks2 = data->ar0_enc ^ p64;
 
   s = lfsr_recovery32(data->ar0_enc ^ p64, 0);
+  if (!s) return UINT64_MAX;
 
   for (t = s; t->odd | t->even; ++t)
   {

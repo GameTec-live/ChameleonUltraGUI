@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/gui/component/error_page.dart';
+import 'package:chameleonultragui/gui/component/battery_tooltip.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/chameleon_settings.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
@@ -53,7 +54,7 @@ class HomePageState extends State<HomePage> {
     // Checks that firmware supports all functions of current app
     // If not, prompt user to update firmware (as outdated firmware might break app)
 
-    int ultraCapability = ChameleonCommand.setIdteckEmulatorID.value;
+    int ultraCapability = ChameleonCommand.mf0UlcAuth.value;
     int liteCapability = ChameleonCommand.setIdteckEmulatorID.value;
 
     var appState = context.read<ChameleonGUIState>();
@@ -284,10 +285,8 @@ class HomePageState extends State<HomePage> {
                                         ConnectionType.ble
                                     ? Icons.bluetooth
                                     : Icons.usb),
-                                Tooltip(
-                                  message: localizations.battery_info(
-                                      batteryInfo.$2.percent,
-                                      batteryInfo.$2.voltage),
+                                BatteryTooltip(
+                                  battery: batteryInfo.$2,
                                   child: batteryInfo.$1,
                                 ),
                               ],

@@ -336,59 +336,40 @@ static uint16_t PartialSumProperty(uint32_t state, odd_even_t odd_even)
     return sum;
 }
 
+// Each side is independent. Reuse its partial-sum calculation for a0 and a8
+// instead of evaluating the same 20-bit state twice.
+static void *init_part_sum_side(void *arg)
+{
+    odd_even_t side = *(odd_even_t *)arg;
+    for (unsigned sum = 0; sum < NUM_PART_SUMS; ++sum) {
+        part_sum_a0_bitarrays[side][sum] = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
+        part_sum_a8_bitarrays[side][sum] = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
+        if (!part_sum_a0_bitarrays[side][sum] || !part_sum_a8_bitarrays[side][sum]) {
+            PrintAndLogEx("Out of memory error in init_part_sum_bitarrays(). Aborting...\n");
+            exit(4);
+        }
+        clear_bitarray24(part_sum_a0_bitarrays[side][sum]);
+        clear_bitarray24(part_sum_a8_bitarrays[side][sum]);
+    }
+    for (uint32_t state = 0; state < (1 << 20); ++state) {
+        unsigned sum = PartialSumProperty(state, side) / 2;
+        // All sixteen low-bit extensions occupy one aligned half-word.
+        part_sum_a0_bitarrays[side][sum][state >> 1] |=
+            (state & 1) ? 0x0000ffffu : 0xffff0000u;
+        for (uint32_t high = 0; high < 16; ++high)
+            set_bit24(part_sum_a8_bitarrays[side][sum], state | (high << 20));
+    }
+    return NULL;
+}
+
 static void init_part_sum_bitarrays(void)
 {
-    for (odd_even_t odd_even = EVEN_STATE; odd_even <= ODD_STATE; odd_even++)
-    {
-        for (uint16_t part_sum_a0 = 0; part_sum_a0 < NUM_PART_SUMS; part_sum_a0++)
-        {
-            part_sum_a0_bitarrays[odd_even][part_sum_a0] = (uint32_t *)malloc_bitarray(sizeof(uint32_t) * (1 << 19));
-            if (part_sum_a0_bitarrays[odd_even][part_sum_a0] == NULL)
-            {
-                PrintAndLogEx("Out of memory error in init_part_suma0_statelists(). Aborting...\n");
-                exit(4);
-            }
-            clear_bitarray24(part_sum_a0_bitarrays[odd_even][part_sum_a0]);
-        }
-    }
-    for (odd_even_t odd_even = EVEN_STATE; odd_even <= ODD_STATE; odd_even++)
-    {
-        // PrintAndLogEx("(%d, %" PRIu16 ")...", odd_even, part_sum_a0);
-        for (uint32_t state = 0; state < (1 << 20); state++)
-        {
-            uint16_t part_sum_a0 = PartialSumProperty(state, odd_even) / 2;
-            for (uint16_t low_bits = 0; low_bits < 1 << 4; low_bits++)
-            {
-                set_bit24(part_sum_a0_bitarrays[odd_even][part_sum_a0], state << 4 | low_bits);
-            }
-        }
-    }
-
-    for (odd_even_t odd_even = EVEN_STATE; odd_even <= ODD_STATE; odd_even++)
-    {
-        for (uint16_t part_sum_a8 = 0; part_sum_a8 < NUM_PART_SUMS; part_sum_a8++)
-        {
-            part_sum_a8_bitarrays[odd_even][part_sum_a8] = (uint32_t *)malloc_bitarray(sizeof(uint32_t) * (1 << 19));
-            if (part_sum_a8_bitarrays[odd_even][part_sum_a8] == NULL)
-            {
-                PrintAndLogEx("Out of memory error in init_part_suma8_statelists(). Aborting...\n");
-                exit(4);
-            }
-            clear_bitarray24(part_sum_a8_bitarrays[odd_even][part_sum_a8]);
-        }
-    }
-    for (odd_even_t odd_even = EVEN_STATE; odd_even <= ODD_STATE; odd_even++)
-    {
-        // PrintAndLogEx("(%d, %" PRIu16 ")...", odd_even, part_sum_a8);
-        for (uint32_t state = 0; state < (1 << 20); state++)
-        {
-            uint16_t part_sum_a8 = PartialSumProperty(state, odd_even) / 2;
-            for (uint16_t high_bits = 0; high_bits < 1 << 4; high_bits++)
-            {
-                set_bit24(part_sum_a8_bitarrays[odd_even][part_sum_a8], state | high_bits << 20);
-            }
-        }
-    }
+    odd_even_t sides[2] = {EVEN_STATE, ODD_STATE};
+    pthread_t thread;
+    bool started = pthread_create(&thread, NULL, init_part_sum_side, &sides[0]) == 0;
+    if (!started) init_part_sum_side(&sides[0]);
+    init_part_sum_side(&sides[1]);
+    if (started) pthread_join(thread, NULL);
 }
 
 static void free_part_sum_bitarrays(void)

@@ -58,12 +58,14 @@ abstract class AbstractWriteHelper {
     }
 
     if (isMifareUltralight(type)) {
-      return BaseMifareUltralightWriteHelper(appState.communicator!);
+      return BaseMifareUltralightWriteHelper(appState.communicator!,
+          tagType: type);
     }
 
     if (isEM410X(type) ||
         type == TagType.hidProx ||
         type == TagType.viking ||
+        type == TagType.jablotron ||
         type == TagType.pac ||
         type == TagType.ioProx ||
         type == TagType.idteck) {

@@ -140,7 +140,75 @@ class MifareClassicRecovery {
     initializeEV1();
   }
 
+  bool? _batchKeyCheckSupported;
+
+  Future<bool> _supportsBatchKeyCheck() async => _batchKeyCheckSupported ??=
+      (await appState.communicator!.getDeviceCapabilities())
+          .contains(ChameleonCommand.mf1CheckKeysOfSectors.value);
+
+  Future<void> _checkKeysInBatch(
+    List<Uint8List> keys, {
+    int startingSector = 0,
+  }) async {
+    final sectorCount = mfClassicGetSectorCount(
+      mifareClassicType,
+      isEV1: isMifareClassicEV1,
+    );
+    final chunkSize = appState.connector!.connectionType == ConnectionType.ble
+        ? 32
+        : 64;
+    state = localizations.checking_keys(keys.length);
+    keyCheckProgress = 0;
+    update();
+    try {
+      var checked = 0;
+      for (final chunk in keys.partition(chunkSize)) {
+        final mask = Uint8List(10)..fillRange(0, 10, 0xff);
+        var pending = false;
+        for (var sector = startingSector; sector < sectorCount; sector++) {
+          for (var keyType = 0; keyType < 2; keyType++) {
+            final mark = getSectorState(sector, keyType);
+            if (mark == ChameleonKeyCheckmark.found ||
+                mark == ChameleonKeyCheckmark.disabled) {
+              continue;
+            }
+            final index = sector * 2 + keyType;
+            mask[index ~/ 8] &= ~(0x80 >> (index % 8));
+            setCheckingSector(sector, keyType);
+            pending = true;
+          }
+        }
+        if (!pending) break;
+        final found = await appState.communicator!.mf1CheckKeysOfSectors(
+          mask,
+          chunk,
+        );
+        for (final entry in found.entries) {
+          final index = entry.key;
+          if (mask[index ~/ 8] & (0x80 >> (index % 8)) == 0) {
+            setKeyAsFound(index ~/ 2, index % 2, entry.value);
+          }
+        }
+        checked += chunk.length;
+        keyCheckProgress = checked / keys.length;
+        update();
+      }
+    } finally {
+      for (var sector = startingSector; sector < sectorCount; sector++) {
+        for (var keyType = 0; keyType < 2; keyType++) {
+          setMissingSector(sector, keyType);
+        }
+      }
+      keyCheckProgress = null;
+      update();
+    }
+  }
+
   Future<void> recheckKey(Uint8List key, int startingSector) async {
+    if (await _supportsBatchKeyCheck()) {
+      await _checkKeysInBatch([key], startingSector: startingSector);
+      return;
+    }
     for (var sector = startingSector;
         sector <
             mfClassicGetSectorCount(mifareClassicType,
@@ -181,20 +249,25 @@ class MifareClassicRecovery {
   Future<void> checkKeys({bool skipDefaultDictionary = false}) async {
     initializeEV1();
 
-    for (var sector = 0;
+    final keyList = [
+      ...selectedDictionary!.keys,
+      if (!skipDefaultDictionary) ...gMifareClassicKeys,
+    ];
+    if (await _supportsBatchKeyCheck()) {
+      await _checkKeysInBatch(keyList);
+    } else {
+      for (
+        var sector = 0;
         sector <
-            mfClassicGetSectorCount(mifareClassicType,
-                isEV1: isMifareClassicEV1);
-        sector++) {
-      List<Uint8List> keyList = [
-        ...selectedDictionary!.keys,
-        if (!skipDefaultDictionary)
-          ...gMifareClassicKeys
-              .where((key) => !selectedDictionary!.keys.contains(key))
-      ];
-
-      for (var keyType = 0; keyType < 2; keyType++) {
-        await checkKeysOnSector(keyList, keyType, sector);
+            mfClassicGetSectorCount(
+              mifareClassicType,
+              isEV1: isMifareClassicEV1,
+            );
+        sector++
+      ) {
+        for (var keyType = 0; keyType < 2; keyType++) {
+          await checkKeysOnSector(keyList, keyType, sector);
+        }
       }
     }
 
@@ -357,7 +430,8 @@ class MifareClassicRecovery {
           validKey = getSectorKey(sector, keyType);
           validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
           validKeyType = keyType;
-          if (!isStaticEncrypted) {
+          // This detection is only used when backdoor data can select that attack.
+          if (hasBackdoor && !isStaticEncrypted) {
             isStaticEncrypted = await mfClassicIsStaticEncrypted(
                 appState.communicator!, validKeyBlock, validKeyType, validKey);
           }
@@ -462,7 +536,8 @@ class MifareClassicRecovery {
             } else if (prng == NTLevel.static) {
               var nested = StaticNestedDart(
                 uid: distance!.uid,
-                keyType: 0x60 + validKeyType,
+                // Gen-2 nonce timing depends on the target key type.
+                keyType: 0x60 + keyType,
                 nt0: nonces!.nonces[0].nt,
                 nt0Enc: nonces.nonces[0].ntEnc,
                 nt1: nonces.nonces[1].nt,
