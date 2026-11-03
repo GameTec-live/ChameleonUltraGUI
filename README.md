@@ -18,12 +18,15 @@ Or, [portable version](https://github.com/GameTec-live/ChameleonUltraGUI/release
 
 #### Linux
 
-Download the Linux build
+Download the build matching your Linux system architecture (`uname -m`: `x86_64` = x64, `aarch64` = ARM64).
 
-- [Debian-based (.deb)](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-debian.zip)
+| Package | x64 (Intel / AMD) | ARM64 (AArch64) |
+| --- | --- | --- |
+| Debian-based (.deb) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-debian.zip) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-debian-arm64.zip) |
+| Portable | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux.zip) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-arm64.zip) |
+| Portable legacy (built on Ubuntu 20.04 LTS) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-legacy.zip) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-legacy-arm64.zip) |
+
 - [Arch-based](https://aur.archlinux.org/packages/chameleonultragui-git)
-- [Other](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux.zip)
-- [Other (legacy, built on Ubuntu 20.04 LTS)](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-legacy.zip)
 - [Flathub (Not built in our CI, updates may be slower)](https://flathub.org/apps/run.chameleon.chameleonultragui)
 
 #### macOS / iOS / iPadOS
@@ -46,9 +49,9 @@ Note: Under some Linux systems, especially ones running KDE desktop environments
 
 Key:
 - apk: Android APK, download and install either via ADB or your app/file manager of choice
-- linux: zip file containing the linux build, either run the binary manually or install using cmake
-- linux-legacy: same as `linux`, but built on Ubuntu 20.04 LTS. Suited for users on old glibc
-- linux-debian: Debian Auto Packaging, download and install with dpkg or apt
+- linux / linux-arm64: zip file containing the x64 / ARM64 Linux build, either run the binary manually or install using cmake
+- linux-legacy / linux-legacy-arm64: corresponding Linux builds made on Ubuntu 20.04 LTS, suited for users on old glibc
+- linux-debian / linux-debian-arm64: Debian packages for amd64 / arm64, download and install with dpkg or apt
 - windows: zip file containing windows build, run the binary manually
 - windows-installer: NSIS based Windows Installer, Installs the Windows build and creates Shortcuts
 
