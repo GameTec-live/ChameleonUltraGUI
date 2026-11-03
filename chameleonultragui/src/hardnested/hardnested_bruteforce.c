@@ -1,3 +1,4 @@
+#include "../recovery_cancel.h"
 //-----------------------------------------------------------------------------
 // Copyright (C) 2016, 2017 by piwi
 //
@@ -203,7 +204,7 @@ static void *
     thread_arg = (struct arg *)x;
     const int thread_id = thread_arg->thread_ID;
     uint32_t current_bucket = thread_id;
-    while (current_bucket < bucket_count)
+    while (current_bucket < bucket_count && !recovery_is_cancelled())
     {
         statelist_t *bucket = buckets[current_bucket];
         if (bucket)

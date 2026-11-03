@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/gui/component/cancel_recovery.dart';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/gui/component/card_button.dart';
@@ -161,6 +162,8 @@ class CardReaderState extends State<MifareClassicHelper> {
               value: widget.mfcInfo.recovery?.keyCheckProgress),
           const SizedBox(height: 12)
         ],
+        if (widget.mfcInfo.recovery!.operation.isRunning)
+          CancelRecovery(operation: widget.mfcInfo.recovery!.operation),
         if (widget.mfcInfo.state == MifareClassicState.recovery ||
             widget.mfcInfo.state == MifareClassicState.recoveryOngoing)
           _ResponsiveButtonGroup(children: [
@@ -176,7 +179,8 @@ class CardReaderState extends State<MifareClassicHelper> {
 
                               await widget.mfcInfo.recovery?.recoverKeys();
 
-                              if (widget.mfcInfo.recovery!.error.isNotEmpty) {
+                              if (widget.mfcInfo.recovery!.operation.wasCancelled ||
+                                  widget.mfcInfo.recovery!.error.isNotEmpty) {
                                 setState(() {
                                   widget.mfcInfo.state =
                                       MifareClassicState.recovery;
@@ -208,8 +212,8 @@ class CardReaderState extends State<MifareClassicHelper> {
 
                                   setState(() {
                                     widget.mfcInfo.recovery?.dumpProgress = 0;
-                                    widget.mfcInfo.state =
-                                        MifareClassicState.save;
+                                    widget.mfcInfo.state = widget.mfcInfo.recovery!.operation.wasCancelled
+                                        ? MifareClassicState.recovery : MifareClassicState.save;
                                   });
                                 } catch (_) {
                                   setState(() {
@@ -293,6 +297,12 @@ class CardReaderState extends State<MifareClassicHelper> {
                         await widget.mfcInfo.recovery!.checkKeys(
                             skipDefaultDictionary: skipDefaultDictionary);
 
+                        if (widget.mfcInfo.recovery!.operation.wasCancelled) {
+                          if (mounted) {
+                            setState(() => widget.mfcInfo.state = MifareClassicState.checkKeys);
+                          }
+                          return;
+                        }
                         if (widget.mfcInfo.recovery!.allKeysExists) {
                           // all keys exists
                           setState(() {
@@ -345,7 +355,8 @@ class CardReaderState extends State<MifareClassicHelper> {
 
                             setState(() {
                               widget.mfcInfo.recovery?.dumpProgress = 0;
-                              widget.mfcInfo.state = MifareClassicState.save;
+                              widget.mfcInfo.state = widget.mfcInfo.recovery!.operation.wasCancelled
+                                  ? MifareClassicState.dump : MifareClassicState.save;
                             });
                           } catch (_) {
                             setState(() {

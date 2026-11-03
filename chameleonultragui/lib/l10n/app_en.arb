@@ -691,5 +691,9 @@
   "@gen4_memory_value_help": {"placeholders": {"length": {"type": "int"}, "address": {"type": "String"}}},
   "gen4_pack_page": "PACK page",
   "gen4_pack_page_help": "13 for 06A0 / 6666; E6 for other revisions.",
-  "gen4_confirm_lock": "Lock permanently"
+  "gen4_confirm_lock": "Lock permanently",
+  "cancel_recovery_title": "Cancel this process?",
+  "cancel_recovery_message": "Keys already recovered will be kept. Calculations will be interrupted. Any device command already in progress will finish before stopping.",
+  "continue_recovery": "Keep running",
+  "cancelling_recovery": "Cancelling\u2026"
 }

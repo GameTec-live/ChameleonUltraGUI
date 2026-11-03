@@ -1,3 +1,4 @@
+#include "../recovery_cancel.h"
 //-----------------------------------------------------------------------------
 // Copyright (C) 2016, 2017 by piwi
 //
@@ -339,7 +340,7 @@ uint64_t CRACK_STATES_BITSLICED(uint32_t cuid, uint8_t *best_first_bytes, statel
     for (uint32_t const *restrict p_odd = p->states[ODD_STATE]; p_odd < p->states[ODD_STATE] + p->len[ODD_STATE]; ++p_odd)
     {
         // early abort
-        if (*keys_found)
+        if (*keys_found || recovery_is_cancelled())
         {
             goto out;
         }

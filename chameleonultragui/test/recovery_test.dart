@@ -3,8 +3,45 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:chameleonultragui/helpers/recovery_operation.dart';
 
 void main() {
+  for (final cancelActive in [false, true]) {
+    test(
+        'cancelling ${cancelActive ? "active" : "queued"} native search does not affect another request',
+        () async {
+      final active = RecoveryOperation();
+      final queued = RecoveryOperation();
+      NestedDart input() => NestedDart(
+            uid: 2374329723,
+            distance: 613,
+            nt0: 1999585272,
+            nt0Enc: 3173333529,
+            par0: 3,
+            nt1: 128306861,
+            nt1Enc: 2363514210,
+            par1: 7,
+          );
+      List<int> activeKeys = [];
+      List<int> queuedKeys = [];
+      final first = active.run(() async {
+        activeKeys = await recovery.nested(input(), operation: active);
+      });
+      final second = queued.run(() async {
+        queuedKeys = await recovery.nested(input(), operation: queued);
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(active.isRunning, isTrue);
+      (cancelActive ? active : queued).cancel();
+      await Future.wait([first, second]);
+      expect(active.wasCancelled, cancelActive);
+      expect(queued.wasCancelled, !cancelActive);
+      expect(cancelActive ? queuedKeys : activeKeys, contains(0xFFFFFFFFFFFF));
+      final retry = await recovery.nested(input());
+      expect(retry, contains(0xFFFFFFFFFFFF));
+    });
+  }
+
   test('Test darkside', () async {
     var darkside = DarksideDart(uid: 2374329723, items: []);
     darkside.items.add(DarksideItemDart(

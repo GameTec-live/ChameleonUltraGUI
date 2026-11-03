@@ -20,6 +20,27 @@
 
 #include "hardnested.h"
 
+#include "recovery_cancel.h"
+
+// Use platform atomics: cancellation can arrive while native workers are active.
+#if WIN32
+static volatile LONG recovery_cancelled = 0;
+FFI_PLUGIN_EXPORT void recovery_set_cancelled(int cancelled) {
+  InterlockedExchange(&recovery_cancelled, cancelled);
+}
+int recovery_is_cancelled(void) {
+  return InterlockedCompareExchange(&recovery_cancelled, 0, 0);
+}
+#else
+static int recovery_cancelled = 0;
+FFI_PLUGIN_EXPORT void recovery_set_cancelled(int cancelled) {
+  __atomic_store_n(&recovery_cancelled, cancelled, __ATOMIC_RELAXED);
+}
+int recovery_is_cancelled(void) {
+  return __atomic_load_n(&recovery_cancelled, __ATOMIC_RELAXED);
+}
+#endif
+
 #define MEM_CHUNK 10000
 #define TRY_KEYS 50
 
@@ -79,7 +100,7 @@ FFI_PLUGIN_EXPORT uint64_t *darkside(Darkside *data, uint32_t *outputKeyCount)
     dps[count].ar = data->items[count].ar;
   }
 
-  for (i = 0; i < count && *outputKeyCount == 0; i++)
+  for (i = 0; i < count && *outputKeyCount == 0 && !recovery_is_cancelled(); i++)
   {
     uint32_t nt = dps[i].nt;
     uint32_t nr = dps[i].nr;
@@ -300,7 +321,7 @@ static void nested_recover(RecPar *rp)
   rp->keyCount = 0;
   rp->keys = NULL;
 
-  for (uint32_t i = rp->startPos; i < rp->endPos; ++i)
+  for (uint32_t i = rp->startPos; i < rp->endPos && !recovery_is_cancelled(); ++i)
   {
     uint32_t input = rp->pNK[i].ntp ^ rp->authuid;
     struct Crypto1State *states = lfsr_recovery32(rp->pNK[i].ks1, input);
@@ -496,7 +517,7 @@ FFI_PLUGIN_EXPORT uint64_t mfkey32(Mfkey32 *data)
   s = lfsr_recovery32(data->ar0_enc ^ p64, 0);
   if (!s) return UINT64_MAX;
 
-  for (t = s; t->odd | t->even; ++t)
+  for (t = s; (t->odd | t->even) && !recovery_is_cancelled(); ++t)
   {
     lfsr_rollback_word(t, 0, 0);
     lfsr_rollback_word(t, data->nr0_enc, 1);

@@ -23,7 +23,7 @@ class TestSerial extends AbstractSerial {
 class TestCommunicator extends ChameleonCommunicator {
   TestCommunicator(this.respond) : super(Logger());
   final ChameleonMessage Function(ChameleonCommand, Uint8List?, Duration)
-  respond;
+      respond;
 
   @override
   Future<ChameleonMessage?> sendCmd(
@@ -32,18 +32,20 @@ class TestCommunicator extends ChameleonCommunicator {
     Duration timeout = const Duration(seconds: 5),
     bool skipReceive = false,
     bool firstRun = false,
-  }) async => respond(cmd, data, timeout);
+  }) async =>
+      respond(cmd, data, timeout);
 }
 
 ChameleonMessage reply(
   ChameleonCommand cmd,
   List<int> data, {
   int status = 0,
-}) => ChameleonMessage(
-  command: cmd.value,
-  status: status,
-  data: Uint8List.fromList(data),
-);
+}) =>
+    ChameleonMessage(
+      command: cmd.value,
+      status: status,
+      data: Uint8List.fromList(data),
+    );
 
 Uint8List result(Map<int, List<int>> keys) {
   final data = Uint8List(490);
@@ -101,6 +103,33 @@ void main() {
       mifareClassicType: MifareClassicType.m1k,
     );
   }
+
+  test(
+      'cancelling a dictionary stops after the active batch and preserves keys',
+      () async {
+    late MifareClassicRecovery subject;
+    var batches = 0;
+    final communicator = TestCommunicator((cmd, data, timeout) {
+      if (cmd == ChameleonCommand.getDeviceCapabilities) {
+        return reply(cmd, [7, 220]);
+      }
+      batches++;
+      subject.operation.cancel();
+      return reply(cmd, result({3: key}));
+    });
+    subject = await recovery(communicator);
+    subject.setKeyAsFound(0, 0, key);
+    subject.selectedDictionary =
+        Dictionary(keys: List.generate(130, (_) => key));
+    await subject.checkKeys(skipDefaultDictionary: true);
+    expect(batches, 1);
+    expect(subject.operation.wasCancelled, isTrue);
+    expect(subject.getSectorKey(0, 0), key);
+    expect(subject.checkMarks, isNot(contains(ChameleonKeyCheckmark.checking)));
+    expect(subject.state, isEmpty);
+    expect(subject.error, isEmpty);
+    expect(subject.keyCheckProgress, isNull);
+  });
 
   for (final type in [ConnectionType.usb, ConnectionType.ble]) {
     test(

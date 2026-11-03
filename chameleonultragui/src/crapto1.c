@@ -1,3 +1,4 @@
+#include "recovery_cancel.h"
 /*  crapto1.c
 
     This program is free software; you can redistribute it and/or
@@ -124,6 +125,7 @@ recover(uint32_t *o_head, uint32_t *o_tail, uint32_t oks,
         struct Crypto1State *sl, uint32_t in, uint32_t *scratch)
 {
     bucket_info_t bucket_info;
+    if (recovery_is_cancelled()) return sl;
 
     if (rem == -1)
     {
@@ -409,7 +411,7 @@ static struct Crypto1State *recovery64_range(uint32_t ks2, uint32_t ks3, int fir
         eks[16 + (i >> 1)] = BEBIT(ks3, i);
     }
 
-    for (i = end - 1; i >= first; --i)
+    for (i = end - 1; i >= first && !recovery_is_cancelled(); --i)
     {
         if (crypto1_filter(i) != oks[0])
             continue;
@@ -646,7 +648,7 @@ uint32_t *lfsr_prefix_ks(uint8_t ks[8], int isodd)
 
     int size = 0;
 
-    for (int i = 0; i < 1 << 21; ++i)
+    for (int i = 0; i < 1 << 21 && !recovery_is_cancelled(); ++i)
     {
         int good = 1;
         for (uint32_t c = 0; good && c < 8; ++c)
@@ -726,8 +728,8 @@ struct Crypto1State *lfsr_common_prefix(uint32_t pfx, uint32_t rr, uint8_t ks[8]
         goto out;
     }
 
-    for (o = odd; *o + 1; ++o)
-        for (e = even; *e + 1; ++e)
+    for (o = odd; *o + 1 && !recovery_is_cancelled(); ++o)
+        for (e = even; *e + 1 && !recovery_is_cancelled(); ++e)
             for (top = 0; top < 64; ++top)
             {
                 *o += 1 << 21;
