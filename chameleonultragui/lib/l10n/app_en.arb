@@ -621,6 +621,7 @@
   "lf_plot_start": "Plot start sample (zero-based)",
   "lf_plot_length": "Samples to plot",
   "lf_plot_range": "Sample range: {start}\u2013{end} (end exclusive, 8 \u00b5s/sample)",
+  "@lf_plot_range": {"placeholders": {"start": {"type": "int"}, "end": {"type": "int"}}},
   "lf_hex_length": "Hex samples to display and copy",
   "lf_sample_range_invalid": "Enter a valid sample count",
   "lf_adc_firmware_unsupported": "LF ADC read is not supported by this firmware. Update the firmware to use it.",
