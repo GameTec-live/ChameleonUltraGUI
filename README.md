@@ -26,8 +26,6 @@ Download the build matching your Linux system architecture (`uname -m`: `x86_64`
 | Portable | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux.zip) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-arm64.zip) |
 | Portable legacy (built on Ubuntu 20.04 LTS) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-legacy.zip) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-legacy-arm64.zip) |
 
-These links point to development builds. Tagged builds are available on the [releases page](https://github.com/GameTec-live/ChameleonUltraGUI/releases).
-
 - [Arch-based](https://aur.archlinux.org/packages/chameleonultragui-git)
 - [Flathub (Not built in our CI, updates may be slower)](https://flathub.org/apps/run.chameleon.chameleonultragui)
 
