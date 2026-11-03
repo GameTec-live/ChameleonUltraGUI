@@ -137,6 +137,28 @@ class CardReaderState extends State<MifareClassicHelper> {
             const Spacer(),
           ],
         ),
+        if (widget.mfcInfo.recovery!.checkingFoundKey)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Semantics(
+              liveRegion: true,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  localizations.checking_found_key_other_sectors,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color:
+                          Theme.of(context).colorScheme.onSecondaryContainer),
+                ),
+              ),
+            ),
+          ),
         if (widget.mfcInfo.recovery?.error != "") ...[
           const SizedBox(height: 16),
           ErrorMessage(errorMessage: widget.mfcInfo.recovery!.error),

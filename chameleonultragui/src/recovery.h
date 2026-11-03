@@ -100,3 +100,7 @@ FFI_PLUGIN_EXPORT uint64_t mfkey32(Mfkey32 *data);
 FFI_PLUGIN_EXPORT uint64_t mfkey64(Mfkey64 *data);
 
 FFI_PLUGIN_EXPORT uint64_t hardnested(HardNested *data);
+
+FFI_PLUGIN_EXPORT int64_t nested_dictionary(uint32_t uid, const uint64_t *keys,
+    uint32_t key_count, const uint32_t *encrypted, const uint8_t *parity,
+    uint32_t nonce_count, uint8_t weak, uint64_t *output);

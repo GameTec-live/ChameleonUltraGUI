@@ -272,7 +272,15 @@ class ChameleonCommunicator {
 
   Future<NTLevel> getMf1NTLevel() async {
     // Get level of nt (weak/static/hard) in Mifare Classic
-    var resp = (await sendCmd(ChameleonCommand.mf1NTLevelDetect))!.data[0];
+    final message = await sendCmd(ChameleonCommand.mf1NTLevelDetect);
+    if (message == null) throw StateError('Missing PRNG response');
+    if (message.status != 0) {
+      throw ChameleonCommandException(message.command, message.status);
+    }
+    if (message.data.length != 1) {
+      throw FormatException('Invalid PRNG response');
+    }
+    var resp = message.data[0];
     if (resp == 0) {
       return NTLevel.static;
     } else if (resp == 1) {
@@ -349,6 +357,15 @@ class ChameleonCommunicator {
           targetBlock
         ]),
         timeout: const Duration(seconds: 30));
+    if (command == ChameleonCommand.mf1NestedAcquire) {
+      if (resp == null) throw FormatException('Missing nested response');
+      if (resp.status != 0) {
+        throw ChameleonCommandException(command.value, resp.status);
+      }
+      if (resp.data.length != 18 || resp.data[8] > 7 || resp.data[17] > 7) {
+        throw FormatException('Invalid command 2006 response');
+      }
+    }
     var nonces = NestedNonces(nonces: []);
 
     while (i < resp!.data.length) {
@@ -396,6 +413,34 @@ class ChameleonCommunicator {
         ar: bytesToU32(resp.data.sublist(28, 32)));
   }
 
+  Future<Map<int, Uint8List>> mf1CheckKeyOfSectors(
+      Uint8List skipMask, Uint8List key) async {
+    if (skipMask.length != 10 || key.length != 6) {
+      throw ArgumentError('Expected a ten-byte sector mask and a six-byte key');
+    }
+    var targets = 0;
+    for (var position = 0; position < 80; position++) {
+      if ((skipMask[position ~/ 8] & (0x80 >> (position % 8))) == 0) targets++;
+    }
+    if (targets == 0) return {};
+    final response = await sendCmd(ChameleonCommand.mf1CheckKeysOfSectors,
+        data: Uint8List.fromList([...skipMask, ...key]),
+        timeout: Duration(milliseconds: 1000 + (targets + 1) * 100));
+    if (response == null) throw FormatException('Missing sector key response');
+    if (response.status != 0) {
+      throw ChameleonCommandException(
+          ChameleonCommand.mf1CheckKeysOfSectors.value, response.status);
+    }
+    if (response.data.length != 490) {
+      throw FormatException('Invalid command 2012 response');
+    }
+    return {
+      for (var position = 0; position < 80; position++)
+        if ((response.data[position ~/ 8] & (0x80 >> (position % 8))) != 0)
+          position: response.data.sublist(10 + position * 6, 16 + position * 6),
+    };
+  }
+
   Future<(int, NestedNonces, NestedNonces, Uint8List)?>
       getMf1StaticEncryptedNestedAcquire(
           {int sectorCount = 16, int startingSector = 0}) async {
@@ -427,12 +472,18 @@ class ChameleonCommunicator {
     return null;
   }
 
-  Future<bool> mf1Auth(int block, int keyType, Uint8List key) async {
+  Future<bool> mf1Auth(int block, int keyType, Uint8List key,
+      {bool strict = false}) async {
     // Check if key is valid for block
     // keyType 0x60 if A key, 0x61 B key
     int status = (await sendCmd(ChameleonCommand.mf1CheckKey,
             data: Uint8List.fromList([keyType, block, ...key])))!
         .status;
+
+    if (strict && status != 0 && status != 0x06) {
+      throw ChameleonCommandException(
+          ChameleonCommand.mf1CheckKey.value, status);
+    }
 
     return status == 0;
   }

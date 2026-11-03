@@ -299,6 +299,16 @@ class CardData {
       required this.ats});
 }
 
+class ChameleonCommandException implements Exception {
+  final int command;
+  final int status;
+
+  const ChameleonCommandException(this.command, this.status);
+
+  @override
+  String toString() => 'Command $command failed with status $status';
+}
+
 class ChameleonMessage {
   int command;
   int status;

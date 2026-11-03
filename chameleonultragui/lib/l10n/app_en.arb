@@ -307,6 +307,7 @@
   "port_hint": "e.g. COM3, /dev/ttyUSB0",
   "hardnested_collecting_nonces": "Collecting required nonces {nonces}/256...",
   "hardnested_calculating_key": "Calculating key...",
+  "checking_found_key_other_sectors": "Checking found key on other sectors...",
   "invalid_input": "One of the fields is filled in incorrectly",
   "failed_to_fetch_oc_contributors": "Failed to fetch OpenCollective contributors",
   "recovery_old_firmware": "Failed to collect nonces, is your firmware up to date?",
