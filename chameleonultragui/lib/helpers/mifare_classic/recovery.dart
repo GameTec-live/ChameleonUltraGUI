@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -217,8 +218,7 @@ class MifareClassicRecovery {
               appState.log!.w('Nested dictionary unavailable: $e');
             } on FormatException catch (e) {
               appState.log!.w('Nested dictionary capture failed: $e');
-            } on String catch (e) {
-              if (!e.startsWith('Timeout waiting for ')) rethrow;
+            } on TimeoutException catch (e) {
               nestedEnabled = false;
               appState.log!.w('Nested dictionary timed out: $e');
             }
