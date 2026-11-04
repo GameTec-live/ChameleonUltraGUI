@@ -110,10 +110,10 @@ def main():
     rng = random.Random(0xC1A551C)
     timings = {}
 
-    def measure(name, call, expected=None, compare=True):
+    def measure(name, call, expected=None, compare=True, use_reference=True):
         samples = []
         outputs = []
-        engines = [reference, engine] if reference else [engine]
+        engines = [reference, engine] if reference and use_reference else [engine]
         for e in engines:
             values = []
             result = None
@@ -238,6 +238,12 @@ def main():
         data = bytes.fromhex(max(re.findall(r"'([0-9a-f]+)'", fixture.read_text()), key=len))
         hard = Hard(data, len(data))
         measure('hardnested/capture', lambda e: e.lib.hardnested(C.byref(hard)), 0xfbf225dc5d58)
+        data = (Path(__file__).parent / 'fixtures' / 'hardnested-filtering.bin').read_bytes()
+        hard = Hard(data, len(data))
+        # The independent reference also confuses decompressed bytes with state
+        # counts and rejects this key. Use the synthetic key as the oracle.
+        measure('hardnested/filtering', lambda e: e.lib.hardnested(C.byref(hard)),
+                0x405044544951, use_reference=False)
     if args.report:
         args.report.write_text(json.dumps(timings, indent=2) + "\n")
     print(json.dumps(timings, indent=2))

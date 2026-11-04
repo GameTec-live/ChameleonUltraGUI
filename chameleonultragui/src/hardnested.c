@@ -228,15 +228,15 @@ static void init_bitflip_bitarrays(void)
             bitflip_info p = get_bitflip(odd_even, bitflip);
             if (p.input_buffer != NULL && !recovery_is_cancelled())
             {
-                uint32_t count = sizeof(uint32_t) * ((1 << 19) + 1);
-                uint32_t *bitset = (uint32_t *)malloc_bitarray(count);
+                uint32_t size = sizeof(uint32_t) * ((1 << 19) + 1);
+                uint32_t *bitset = (uint32_t *)malloc_bitarray(size);
                 if (bitset == NULL)
                 {
                     printf("Out of memory error in init_bitflip_statelists(). Aborting...\n");
                     exit(4);
                 }
 
-                bool success = XzDecode(p.input_buffer, p.len, (uint8_t *)bitset, &count);
+                bool success = XzDecode(p.input_buffer, p.len, (uint8_t *)bitset, &size);
                 if (!success)
                 {
                     printf("Failed to decompress states\n");
@@ -244,11 +244,13 @@ static void init_bitflip_bitarrays(void)
                 }
 
                 bitflip_bitarrays_pointers[odd_even][bitflip] = bitset;
+                // The first word counts states; the decoder returns bytes.
+                uint32_t count = bitset[0];
                 if ((float)count / (1 << 24) < IGNORE_BITFLIP_THRESHOLD)
                 {
                     effective_bitflip[odd_even][num_effective_bitflips[odd_even]++] = bitflip;
                     bitflip_bitarrays[odd_even][bitflip] = bitset + 1;
-                    count_bitflip_bitarrays[odd_even][bitflip] = bitset[0];
+                    count_bitflip_bitarrays[odd_even][bitflip] = count;
                 }
             }
         }
