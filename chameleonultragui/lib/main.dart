@@ -36,6 +36,17 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 // Logger
 import 'package:logger/logger.dart';
 
+enum _NavigationPage {
+  home,
+  slotManager,
+  savedCards,
+  readCard,
+  writeCard,
+  tools,
+  settings,
+  debug,
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferencesProvider = SharedPreferencesProvider();
@@ -147,7 +158,22 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  var selectedIndex = 0;
+  static const double _compactWidthBreakpoint = 700;
+
+  static const List<_NavigationPage> _primaryTabPages = [
+    _NavigationPage.home,
+    _NavigationPage.savedCards,
+    _NavigationPage.readCard,
+    _NavigationPage.tools,
+  ];
+
+  static const List<_NavigationPage> _deviceOnlyPages = [
+    _NavigationPage.slotManager,
+    _NavigationPage.readCard,
+    _NavigationPage.writeCard,
+  ];
+
+  _NavigationPage selectedPage = _NavigationPage.home;
 
   @override
   void initState() {
@@ -200,6 +226,127 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  int get _moreTabIndex => _primaryTabPages.length;
+
+  int _bottomNavSelectedIndex(_NavigationPage page) {
+    var tab = _primaryTabPages.indexOf(page);
+    return tab == -1 ? _moreTabIndex : tab;
+  }
+
+  void _showDeviceRequired(BuildContext context) {
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
+    var localizations = AppLocalizations.of(context)!;
+
+    scaffoldMessenger.hideCurrentSnackBar();
+    var snackBar = SnackBar(
+      content: Text(localizations.device_required),
+      action: SnackBarAction(
+        label: localizations.close,
+        onPressed: () {},
+      ),
+    );
+
+    scaffoldMessenger.showSnackBar(snackBar);
+  }
+
+  void _onBottomNavSelected(
+      BuildContext context, ChameleonGUIState appState, int value) {
+    if (value == _moreTabIndex) {
+      _showMoreMenu(context);
+      return;
+    }
+
+    _goToPage(context, appState, _primaryTabPages[value]);
+  }
+
+  void _goToPage(
+      BuildContext context, ChameleonGUIState appState, _NavigationPage page) {
+    if (_deviceOnlyPages.contains(page) && !appState.connector!.connected) {
+      _showDeviceRequired(context);
+      return;
+    }
+
+    setState(() {
+      selectedPage = page;
+    });
+  }
+
+  void _showMoreMenu(BuildContext context) {
+    var localizations = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => Consumer<ChameleonGUIState>(
+        builder: (_, appState, __) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _moreMenuItem(context, appState, Icons.widgets,
+                  localizations.slot_manager, _NavigationPage.slotManager),
+              _moreMenuItem(context, appState, Icons.system_update_alt,
+                  localizations.write_card, _NavigationPage.writeCard),
+              _moreMenuItem(context, appState, Icons.settings,
+                  localizations.settings, _NavigationPage.settings),
+              if (appState.devMode)
+                _moreMenuItem(context, appState, Icons.bug_report,
+                    '🐞 ${localizations.debug} 🐞', _NavigationPage.debug),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _moreMenuItem(BuildContext context, ChameleonGUIState appState,
+      IconData icon, String label, _NavigationPage page) {
+    var needsDevice =
+        _deviceOnlyPages.contains(page) && !appState.connector!.connected;
+    return ListTile(
+      leading: Icon(icon,
+          color: needsDevice ? Theme.of(context).disabledColor : null),
+      title: Text(label),
+      selected: selectedPage == page,
+      onTap: () {
+        Navigator.of(context).pop();
+        _goToPage(context, appState, page);
+      },
+    );
+  }
+
+  NavigationBar _buildBottomNavigationBar(
+      BuildContext context, ChameleonGUIState appState) {
+    var localizations = AppLocalizations.of(context)!;
+    var connected = appState.connector!.connected;
+    return NavigationBar(
+      selectedIndex: _bottomNavSelectedIndex(selectedPage),
+      onDestinationSelected: (value) =>
+          _onBottomNavSelected(context, appState, value),
+      destinations: [
+        NavigationDestination(
+          icon: const Icon(Icons.home),
+          label: localizations.home,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.auto_awesome_motion),
+          label: localizations.saved_cards,
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.sensors,
+              color: connected ? null : Theme.of(context).disabledColor),
+          label: localizations.read_card,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.handyman),
+          label: localizations.tools,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.more_horiz),
+          label: localizations.more,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
@@ -222,18 +369,13 @@ class _MainPageState extends State<MainPage> {
 
     Widget page; // Set Page
     if (!appState.connector!.connected &&
-        selectedIndex != 0 &&
-        selectedIndex != 2 &&
-        selectedIndex != 5 &&
-        selectedIndex != 6 &&
-        selectedIndex != 7) {
-      // If not connected, and not on home, tools, settings or dev page, go to home page
-      selectedIndex = 0;
+        _deviceOnlyPages.contains(selectedPage)) {
+      selectedPage = _NavigationPage.home;
     }
 
-    switch (selectedIndex) {
+    switch (selectedPage) {
       // Sidebar Navigation
-      case 0:
+      case _NavigationPage.home:
         if (appState.connector!.pendingConnection) {
           page = const PendingConnectionPage();
         } else {
@@ -248,29 +390,27 @@ class _MainPageState extends State<MainPage> {
           }
         }
         break;
-      case 1:
+      case _NavigationPage.slotManager:
         page = const SlotManagerPage();
         break;
-      case 2:
+      case _NavigationPage.savedCards:
         page = const SavedCardsPage();
         break;
-      case 3:
+      case _NavigationPage.readCard:
         page = const ReadCardPage();
         break;
-      case 4:
+      case _NavigationPage.writeCard:
         page = const WriteCardPage();
         break;
-      case 5:
+      case _NavigationPage.tools:
         page = const ToolsPage();
         break;
-      case 6:
+      case _NavigationPage.settings:
         page = const SettingsMainPage();
         break;
-      case 7:
+      case _NavigationPage.debug:
         page = const DebugPage();
         break;
-      default:
-        throw UnimplementedError('no widget for $selectedIndex');
     }
 
     try {
@@ -316,15 +456,19 @@ class _MainPageState extends State<MainPage> {
       themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
       home: LayoutBuilder(// Build Page
           builder: (context, constraints) {
+        final showNavigation =
+            !(appState.connector!.isDFU && appState.connector!.connected);
+        final useRail = constraints.maxWidth >= _compactWidthBreakpoint;
         return SafeArea(
           left: false,
           right: false,
           top: false,
-          bottom: true,
+          bottom: useRail ||
+              !showNavigation, // Reserve inset when the NavigationBar bar is absent (side rail, or hidden during DFU).
           child: Scaffold(
               body: Row(
                 children: [
-                  (!appState.connector!.isDFU || !appState.connector!.connected)
+                  (useRail && showNavigation)
                       ? SafeArea(
                           child: NavigationRail(
                             key: appState.navigationRailKey,
@@ -378,10 +522,10 @@ class _MainPageState extends State<MainPage> {
                                       '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
                                 ),
                             ],
-                            selectedIndex: selectedIndex,
+                            selectedIndex: selectedPage.index,
                             onDestinationSelected: (value) {
                               setState(() {
-                                selectedIndex = value;
+                                selectedPage = _NavigationPage.values[value];
                               });
                             },
                           ),
@@ -395,7 +539,16 @@ class _MainPageState extends State<MainPage> {
                   ),
                 ],
               ),
-              bottomNavigationBar: const BottomProgressBar()),
+              bottomNavigationBar: useRail
+                  ? const BottomProgressBar()
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const BottomProgressBar(),
+                        if (showNavigation)
+                          _buildBottomNavigationBar(context, appState),
+                      ],
+                    )),
         );
       }),
     );
