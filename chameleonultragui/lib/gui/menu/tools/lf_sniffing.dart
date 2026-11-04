@@ -944,8 +944,8 @@ class _LfSniffingMenuState extends State<LfSniffingMenu> {
         }),
         const SizedBox(height: 12),
         Text(localizations.lf_plot_range(
-          math.min(_plotStart, source!.samples.length),
-          math.min(_plotStart, source.samples.length) + capture.samples.length,
+          math.min(_plotStart, source!.samples.length) + capture.samples.length,
+          math.min(_plotStart, source.samples.length),
         )),
         if (capture.samples.isEmpty) Text(localizations.lf_sniff_no_samples),
         if (isCompact) ...[

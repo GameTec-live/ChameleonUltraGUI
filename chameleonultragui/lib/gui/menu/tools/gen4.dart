@@ -361,8 +361,8 @@ class _Gen4MenuState extends State<Gen4Menu> {
           setting.label,
           validate: false,
           help: l.gen4_memory_value_help(
-            setting.length,
             gen4Hex([setting.address]),
+            setting.length,
           ),
         ),
         Wrap(
