@@ -147,6 +147,12 @@ void main() {
         await tester.pumpAndSettle();
         await tester.ensureVisible(read);
       }
+      expect(
+        find.text(revision == '00000006A0'
+            ? '2 hex bytes, starting at block 13.'
+            : '2 hex bytes, starting at block E6.'),
+        findsOneWidget,
+      );
       await tester.tap(read);
       await tester.pumpAndSettle();
       expect(
