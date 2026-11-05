@@ -3,6 +3,10 @@
 #include "../../src/hardnested.c"
 #include <assert.h>
 
+#ifdef RECOVERY_TEST_CPU_COUNT
+int num_CPUs(void) { return RECOVERY_TEST_CPU_COUNT; }
+#endif
+
 int main(void)
 {
     init_part_sum_bitarrays();

@@ -1,4 +1,7 @@
 Native recovery checks run independently of Flutter and card hardware.
+The current implementation uses shared immutable pages for filters and nonce
+maps. Earlier dense-build measurements are retained below for comparison;
+the compact-page measurements follow them.
 
 Build the library:
 
@@ -38,9 +41,13 @@ done
 scalar construction. `hardnested_memory_check` compares shared and owned
 bitmap intersections against the original in-place operation, checks all
 65536 parity lookups against list traversal (including missing and duplicate
-entries), verifies every filter's count, compares every concurrently decoded table byte
-against serial decompression (including ignored tables), and exercises mixed
-ownership and repeated cleanup. CI runs these on x86-64 and ARM64.
+entries), verifies every filter's count, compares every packed table word
+against original-table decompression (including the ignored-table decision), checks all fused-kernel
+counts, partial-slice boundaries and multi-group fallbacks, and exercises mixed
+ownership and repeated cleanup. Compact page checks cover chunk growth,
+rehashing, deduplication, zero pages and hash collisions. Candidate predicates
+are checked against the original arithmetic-first rule in both representations.
+CI runs these on x86-64 and ARM64.
 
 For sanitizer checks, build the library and check executable with
 `-fsanitize=address,undefined -fno-omit-frame-pointer`. The bundled LZMA decoder
@@ -62,20 +69,47 @@ Timing includes table initialization, reduction, brute force and cleanup.
 Use `taskset -c 0` before the command to measure the single-CPU path.
 Desktop measurements do not establish mobile performance.
 
-The changes preserve the dense bitmap lookup path and candidate ordering.
-Bitflip tables are decoded in batches of at most eight, applied to disjoint
-ranges of nonce bytes, then freed. Intersections commute, so every applicable
-filter still contributes to the same final bitmap. Decoder state is thread-local;
-failed thread launches run the same work synchronously. The decoder helpers
-compile together to permit inlining (as they already did in Apple builds).
+Candidate ordering and applicable filters are preserved. Dense scratch maps
+are filtered with the existing vectorized kernels, in 256-byte pages. Finished
+pages are interned in worker-owned pools and remain immutable. A page hash is
+only an index: full word comparisons establish equality, so collisions cannot
+merge unequal pages. Pointer directories keep membership constant-time and
+avoid a hash lookup during candidate checks. This follows
+[ChameLab's page-sharing idea](https://github.com/m0n5ter/ChameLab/blob/431be79c4e3a5a54cd34a681011a27a4f9cc5ef9/software/chamelab/ChameLab/Crypto/Hardnested/HardnestedBitSet.cs),
+with page-wise vectorized filtering and the existing native candidate search.
 
-The earlier optimizations also remain: unused sum bitmaps are removed,
-unfiltered nonce halves share an immutable all-ones bitmap until the first
-intersection, second-byte parity uses a 64 KiB index instead of list traversal,
-and candidate scratch bitmaps allocate 2 MiB instead of 4 MiB.
-[ChameLab](https://github.com/m0n5ter/ChameLab) was inspected for ideas. Its sparse
-page representation was not ported; fully filtered nonce bitmaps can still
-occupy 1 GiB. These changes do not make hardnested fit every phone.
+`src/hardnested/generate_compact_tables.py` derives a packed table resource
+from this repository's original XZ tables. It contains the same 241 effective
+filters, sharing 23502 pages. The resource is 263756 compressed bytes and
+9967960 decoded bytes. Regenerate it after changing `tables.c` or
+`IGNORE_BITFLIP_THRESHOLD`; no generator
+or external resource is needed when building or running the app. Exhaustive
+native checks compare every packed word to the original tables.
+
+Reduction uses at most four workers, each with two 2 MiB scratch maps and its
+own page pool. An earlier nonce can eliminate a high-20-bit group from the
+worker's local domain before the next nonce is filtered. The final shared
+domain is applied when reading every immutable map, including earlier maps.
+This preserves the final intersections while avoiding the 512 dense maps
+that previously retained 1 GiB. Failed thread launches execute the same jobs
+synchronously. Unused sum maps, the parity index, cached partial sums and
+candidate scratch reductions from the earlier passes remain.
+
+Run the eight deterministic cases from ChameLab's published benchmark:
+
+```sh
+python3 chameleonultragui/test/native/hardnested_corpus_check.py \
+  build/native-recovery/librecovery.so --reference /path/to/baseline/librecovery.so \
+  --repeats 3 --report build/native-recovery/corpus.json
+python3 chameleonultragui/test/native/hardnested_cancel_check.py \
+  build/native-recovery/librecovery.so
+```
+
+The corpus uses the published keys, UIDs, xorshift seeds and nonce counts,
+including sparse/dense all-one keys. Captures are generated before timing.
+Each native call checks both success status and recovered key. These runs
+compare native builds on this host; the published managed results use a
+different host and are not directly comparable.
 
 For a complete reduction comparison, compile `hardnested_reduction_check.c`
 against both libraries. The host check also requires zlib (`-lz`). For the eager
@@ -102,6 +136,7 @@ and full filtering fixture; leak detection was disabled only for the Python-host
 full recovery run. GCC and Clang builds passed. ARM64 checks are configured in
 CI, but were not run locally.
 
+The following measurements record checkpoint `28a3863a` before filter fusion.
 Measured locally on Linux x86-64 with four exposed Xeon E5-2620 v3 CPUs,
 Release/GCC, five fresh-process samples per build/fixture. The reference for
 this second pass is the saved library from the first optimization pass:
@@ -127,3 +162,168 @@ With affinity restricted to one CPU, three fresh-process samples per build:
 Both fixtures improved on one CPU as well. A three-CPU filtering recovery and a
 Clang-built captured recovery also passed. Forced worker-launch failures produced
 exactly the reference reduction snapshot for the filtering fixture.
+
+The next optimization pass fuses each nonce's applicable filters into one scan,
+counts only the final intersection, processes the low-20-bit projection a full
+word at a time, and caches the fixed candidate traversal order. Partial-sum
+construction uses up to eight workers with 32-state-aligned boundaries, preserving
+exclusive ownership of every bitmap word.
+
+Complete reduction snapshots still matched checkpoint `28a3863a` for both stored
+fixtures, the generated all-one key, and an empty capture. The 32-case solver
+comparison and six recoveries passed again, as did ASan/UBSan. Fused scans were
+checked at every specialized arity, zero filters, repeated immutable pointers,
+and the generic fallback. The group projection was checked against the scalar
+half-word rule over every possible 16-bit input and zero-half combinations.
+All partial-sum bits matched scalar construction for CPU counts 1, 6 and 8,
+including forced thread-launch failures; six CPUs exercise non-power-of-two
+partitioning. GCC and Clang builds passed.
+
+Five-second baseline measurements against checkpoint `28a3863a`, same four-CPU host, five
+fresh-process samples per build/fixture:
+
+| Fixture | Checkpoint median | Fused median | Checkpoint peak RSS¹ | Fused peak RSS¹ |
+| --- | ---: | ---: | ---: | ---: |
+| Captured | 8.321 s | 5.079 s | 1150.9 MiB | 1156.8 MiB |
+| Filtering | 8.874 s | 4.890 s | 1150.7 MiB | 1158.8 MiB |
+
+¹ Median of per-process peaks. Current memory remains approximately 1.13 GiB.
+The larger bounded table batch trades roughly 6–8 MiB for fewer bitmap scans.
+CPU availability is captured once per worker partition so changing affinity
+cannot produce an inconsistent worker count during partition calculations.
+
+With one CPU, three fresh-process samples per build:
+
+| Fixture | Checkpoint median | Fused median |
+| --- | ---: | ---: |
+| Captured | 20.650 s | 13.798 s |
+| Filtering | 20.050 s | 12.888 s |
+
+The single-CPU path improved too. These desktop results do not establish mobile
+performance or a fixed recovery duration for arbitrary captures.
+
+The three-second pass removes counts between filter batches entirely. Final
+nonce counts are computed immediately before domain reduction consumes them;
+both register halves reduce their own domains and sum tables in parallel.
+Filtering operates on 512-word slices across nonce bytes so table slices remain
+in cache. Larger batches reuse the same fixed-arity kernels in smaller groups.
+
+Partial sums now evaluate shared subtrees of the four-bit path enumeration,
+inspired by ChameLab's managed construction. Exhaustive scalar comparisons
+verify every output bit in both halves. Candidate checks reuse the immutable
+1 MiB Crypto1 lookup table already owned by the solver; no duplicate table is
+retained. If that table is unavailable (`LOWMEM` or MSVC), scalar construction
+and the arithmetic filter remain available. Temporary partial-sum allocation
+failure also falls back to scalar construction.
+
+Full reduction snapshots matched the five-second baseline for both fixtures,
+the all-one-key capture and an empty capture. The 32-case solver comparisons,
+six complete recoveries, ASan/UBSan, and scalar table checks passed again.
+Tests cover every fused arity through 33 filters, repeated input pointers,
+zero-length slices, unaligned slice starts, vector tails and cache-block
+boundaries. GNU-compatible x86-64 builds use groups of eight filters to avoid
+source-pointer register spills; other targets retain groups of sixteen.
+Lookup tests cover every 20-bit input, ignored high bits, and the
+arithmetic fallback. The `LOWMEM` build passed exhaustive partial-sum checks
+and both stored recoveries. CI now checks its fallback path on x86-64 and ARM64.
+
+Sparse candidate checks fetch each aligned group of low-bit alternatives with
+one bitmap read and evaluate only the permitted states, preserving their order.
+Dense sets retain the original arithmetic-first evaluation. Exhaustive group
+extraction and comparisons with the original candidate predicate cover both
+halves, empty/dense/sparse maps, the density threshold, and lookup/arithmetic
+filters. Workers waiting for a shared candidate list now sleep on a condition
+variable instead of repeatedly scanning the work book. A revision counter
+prevents missed publications; checks exercise spurious notifications, normal
+completion and cancellation.
+
+Dense-build measurements against the saved five-second build, on the same four-CPU
+host with five fresh-process samples per build/fixture:
+
+| Fixture | Five-second build median | Current median | Previous peak RSS¹ | Current peak RSS¹ |
+| --- | ---: | ---: | ---: | ---: |
+| Captured | 5.225 s | 3.324 s | 1156.8 MiB | 1182.9 MiB |
+| Filtering | 4.957 s | 3.225 s | 1158.8 MiB | 1182.9 MiB |
+
+¹ Median of per-process peaks. The thirty-two-table batch costs approximately
+24–26 MiB relative to the five-second build; current peak memory is about
+1.16 GiB. Measured recovery time fell by 35–36%. Timings vary on this shared VM
+and are specific to these fixtures and host; generated captures that
+need additional guesses can take longer, and mobile performance is unmeasured.
+
+The dense build again passed all 32 solver comparisons, six complete hardnested
+recoveries (including zero-key and multi-guess captures), exact filtering
+reduction comparison, ownership/candidate/cache checks, failed-launch fallback
+checks, and ASan/UBSan. Clang-built kernels and a complete Clang recovery passed;
+both stored captures also passed with `LOWMEM`. Sanitizer leak detection was
+disabled only for the Python-hosted full recovery. ARM64 validation remains
+configured in CI rather than executed locally.
+
+With affinity restricted to one CPU, three fresh-process samples per build:
+
+| Fixture | Five-second build median | Current median |
+| --- | ---: | ---: |
+| Captured | 13.887 s | 8.597 s |
+| Filtering | 12.852 s | 7.777 s |
+
+Both fixtures improved by approximately 38–39% on one CPU as well.
+
+## Compact-page results
+
+Compared with the saved three-second dense build from the start of this memory
+pass, on the same four-CPU Linux x86-64 host. Five fresh-process samples per
+build/fixture, sequentially with alternating build order:
+
+| Fixture | Dense median | Compact median | Dense peak RSS¹ | Compact peak RSS¹ |
+| --- | ---: | ---: | ---: | ---: |
+| Captured | 3.325 s | 2.946 s | 1183.1 MiB | 162.7 MiB |
+| Filtering | 3.201 s | 2.246 s | 1182.8 MiB | 159.7 MiB |
+
+¹ Median of per-process peaks, including the same Python harness. Memory fell
+by approximately 86%, to 167–171 MB decimal. Recovery time fell by 11–30%.
+These are measured workloads, not a universal memory or duration bound.
+
+Complete reductions matched the saved dense build word for word for both
+stored fixtures, the generated all-one-key capture, and an empty capture.
+One-, three- and four-worker reductions also matched, including forced launch
+failures. Candidate tests compare 24576 cases against the original predicate
+across both representations, both halves, lookup/scalar filters and both sides
+of the density threshold. Page tests exercise zero pages, sharing, chunk growth,
+hash-table growth, unequal-page hash collisions and cleanup after freezing.
+
+Both stored captures and four generated known-key captures recovered correctly.
+Native ASan/UBSan checks passed, as did a full recovery and cancellation followed
+by successful recovery in the same process. Leak detection was disabled only
+for the Python-hosted sanitizer calls. Clang and `LOWMEM` recoveries passed.
+CI includes the packed-table oracle, page/candidate tests, complete reduction
+comparisons, eight-case corpus and cancellation on x86-64 and ARM64. ARM64/mobile
+execution was not available locally.
+
+Three fresh-process samples per build for each of the eight published cases:
+
+| Case | Dense median | Compact median | Compact peak RSS¹ |
+| --- | ---: | ---: | ---: |
+| reference | 2.881 s | 2.105 s | 158.5 MiB |
+| sparse | 3.312 s | 2.026 s | 161.3 MiB |
+| ones-sparse | 78.764 s | 76.949 s | 158.7 MiB |
+| zero | 3.042 s | 1.602 s | 155.9 MiB |
+| transport | 2.822 s | 2.034 s | 157.2 MiB |
+| mixed | 3.228 s | 2.571 s | 163.8 MiB |
+| new-seed | 3.004 s | 2.033 s | 158.5 MiB |
+| ones-dense | 62.669 s | 61.749 s | 157.4 MiB |
+
+All 48/48 paired corpus recoveries passed (24 per build). Every compact median
+was faster; the hardest all-one-key cases remain dominated by their unchanged
+brute-force search. The maximum observed compact peak over all corpus samples
+was 163.8 MiB, approximately 172 MB decimal. These data use the same inputs
+as the published corpus, but timings here compare our two native builds.
+
+With affinity restricted to one CPU, three samples per build/fixture:
+
+| Fixture | Dense median | Compact median | Compact peak RSS¹ |
+| --- | ---: | ---: | ---: |
+| Capture | 8.664 s | 8.659 s | 147.7 MiB |
+| Filtering | 7.786 s | 4.610 s | 146.0 MiB |
+
+Single-CPU captured recovery time was unchanged; filtering recovery improved
+by approximately 41%. Both retained the memory reduction.

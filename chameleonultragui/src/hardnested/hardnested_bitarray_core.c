@@ -120,6 +120,92 @@ void bitarray_low20_AND(uint32_t *restrict A, uint32_t *restrict B)
     }
 }
 
+// Fixed-count kernels let compilers vectorize the scan. Fusing filters avoids
+// repeatedly reading/writing the destination and counting intermediate states.
+#define FILTER_1(i) filters[0][i]
+#define FILTER_2(i) (FILTER_1(i) & filters[1][i])
+#define FILTER_3(i) (FILTER_2(i) & filters[2][i])
+#define FILTER_4(i) (FILTER_3(i) & filters[3][i])
+#define FILTER_5(i) (FILTER_4(i) & filters[4][i])
+#define FILTER_6(i) (FILTER_5(i) & filters[5][i])
+#define FILTER_7(i) (FILTER_6(i) & filters[6][i])
+#define FILTER_8(i) (FILTER_7(i) & filters[7][i])
+#define FILTER_9(i) (FILTER_8(i) & filters[8][i])
+#define FILTER_10(i) (FILTER_9(i) & filters[9][i])
+#define FILTER_11(i) (FILTER_10(i) & filters[10][i])
+#define FILTER_12(i) (FILTER_11(i) & filters[11][i])
+#define FILTER_13(i) (FILTER_12(i) & filters[12][i])
+#define FILTER_14(i) (FILTER_13(i) & filters[13][i])
+#define FILTER_15(i) (FILTER_14(i) & filters[14][i])
+#define FILTER_16(i) (FILTER_15(i) & filters[15][i])
+#define FILTER_CASE(n) case n: \
+    for (uint32_t i = 0; i < words; ++i) { \
+        A[i] &= FILTER_##n(i); \
+    } \
+    return;
+
+void bitarray_AND_many(uint32_t *restrict A, uint32_t *const *restrict filters, unsigned count, uint32_t words)
+{
+#if defined(__GNUC__) && defined(__x86_64__)
+    // Limit live source-pointer pressure in the x86-64 vectorized kernels.
+    if (count > 8) {
+        while (count) {
+            unsigned batch = count > 8 ? 8 : count;
+            bitarray_AND_many(A, filters, batch, words);
+            filters += batch;
+            count -= batch;
+        }
+        return;
+    }
+#endif
+    switch (count) {
+        case 0: return;
+        FILTER_CASE(1)
+        FILTER_CASE(2)
+        FILTER_CASE(3)
+        FILTER_CASE(4)
+        FILTER_CASE(5)
+        FILTER_CASE(6)
+        FILTER_CASE(7)
+        FILTER_CASE(8)
+        FILTER_CASE(9)
+        FILTER_CASE(10)
+        FILTER_CASE(11)
+        FILTER_CASE(12)
+        FILTER_CASE(13)
+        FILTER_CASE(14)
+        FILTER_CASE(15)
+        FILTER_CASE(16)
+        default:
+            // Larger batches reuse these vectorized kernels on cache-sized
+            // slices; the destination stays hot between groups of filters.
+            while (count) {
+                unsigned batch = count > BITARRAY_MAX_FILTERS ? BITARRAY_MAX_FILTERS : count;
+                bitarray_AND_many(A, filters, batch, words);
+                filters += batch;
+                count -= batch;
+            }
+            return;
+    }
+}
+#undef FILTER_CASE
+#undef FILTER_1
+#undef FILTER_2
+#undef FILTER_3
+#undef FILTER_4
+#undef FILTER_5
+#undef FILTER_6
+#undef FILTER_7
+#undef FILTER_8
+#undef FILTER_9
+#undef FILTER_10
+#undef FILTER_11
+#undef FILTER_12
+#undef FILTER_13
+#undef FILTER_14
+#undef FILTER_15
+#undef FILTER_16
+
 uint32_t count_bitarray_AND(uint32_t *restrict A, uint32_t *restrict B)
 {
     // A = __builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
@@ -135,17 +221,15 @@ uint32_t count_bitarray_AND(uint32_t *restrict A, uint32_t *restrict B)
 
 uint32_t count_bitarray_low20_AND(uint32_t *restrict A, uint32_t *restrict B)
 {
-    uint16_t *a = (uint16_t *)__builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
-    uint16_t *b = (uint16_t *)__builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
     uint32_t count = 0;
-
-    for (uint32_t i = 0; i < (1 << 20); i++)
-    {
-        if (!b[i])
-        {
-            a[i] = 0;
-        }
-        count += count_word(a[i]);
+    for (uint32_t i = 0; i < (1 << 19); ++i) {
+        // Each half-word represents the sixteen low-nibble extensions of one
+        // 20-bit state. Keep a group iff B permits at least one extension.
+        uint32_t mask = ((0u - ((B[i] & 0xffffu) != 0)) & 0xffffu)
+                      | ((0u - ((B[i] >> 16) != 0)) & 0xffff0000u);
+        uint32_t value = A[i] & mask;
+        A[i] = value;
+        count += count_word(value);
     }
     return count;
 }

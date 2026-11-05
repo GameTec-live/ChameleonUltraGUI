@@ -58,6 +58,9 @@ uint32_t bitcount(uint32_t a);
 uint32_t count_states(uint32_t *A);
 void bitarray_AND(uint32_t *A, uint32_t *B);
 void bitarray_low20_AND(uint32_t *A, uint32_t *B);
+#define BITARRAY_MAX_FILTERS 16
+// Apply immutable filters to a word slice; callers count after all batches finish.
+void bitarray_AND_many(uint32_t *A, uint32_t *const *filters, unsigned count, uint32_t words);
 uint32_t count_bitarray_AND(uint32_t *A, uint32_t *B);
 uint32_t count_bitarray_low20_AND(uint32_t *A, uint32_t *B);
 void bitarray_AND4(uint32_t *A, uint32_t *B, uint32_t *C, uint32_t *D);

@@ -52,6 +52,15 @@ static void __attribute__((constructor)) fill_lut(void)
 #define crypto1_filter(x) (filterlut[(x)&0xfffff])
 #endif
 
+const uint8_t *crypto1_filter_table(void)
+{
+#if !defined LOWMEM && !defined(_MSC_VER)
+    return filterlut;
+#else
+    return NULL;
+#endif
+}
+
 /** update_contribution
  * helper, calculates the partial linear feedback contributions and puts in MSB
  */

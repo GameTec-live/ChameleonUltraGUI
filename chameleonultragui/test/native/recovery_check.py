@@ -96,6 +96,13 @@ class Engine:
         return ar, at
 
 
+def filter_bit(x):
+    f = ((0xf22c0 >> (x & 15)) & 16) | ((0x6c9c0 >> ((x >> 4) & 15)) & 8)
+    f |= ((0x3c8b0 >> ((x >> 8) & 15)) & 4) | ((0x1e458 >> ((x >> 12) & 15)) & 2)
+    f |= (0x0d938 >> ((x >> 16) & 15)) & 1
+    return (0xEC57E80A >> f) & 1
+
+
 def hardnested_capture(engine, key, seed):
     """Encrypt 8192+ deterministic nonces, covering every first byte."""
     rng = random.Random(seed)
@@ -103,12 +110,6 @@ def hardnested_capture(engine, key, seed):
     encrypt = engine.lib.crypto1_byte
     encrypt.argtypes = [C.POINTER(State), C.c_uint8, C.c_int]
     encrypt.restype = C.c_uint8
-
-    def filter_bit(x):
-        f = ((0xf22c0 >> (x & 15)) & 16) | ((0x6c9c0 >> ((x >> 4) & 15)) & 8)
-        f |= ((0x3c8b0 >> ((x >> 8) & 15)) & 4) | ((0x1e458 >> ((x >> 12) & 15)) & 2)
-        f |= (0x0d938 >> ((x >> 16) & 15)) & 1
-        return (0xEC57E80A >> f) & 1
 
     data = bytearray(uid.to_bytes(4, 'big') + bytes([0, 0x60]))
     seen = set()

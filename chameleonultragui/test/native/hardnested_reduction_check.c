@@ -8,6 +8,10 @@
 #include <assert.h>
 #include <zlib.h>
 
+#ifdef RECOVERY_TEST_CPU_COUNT
+int num_CPUs(void) { return RECOVERY_TEST_CPU_COUNT; }
+#endif
+
 static gzFile output;
 static bool verify;
 
@@ -70,11 +74,23 @@ int main(int argc, char **argv)
 #endif
     output = gzopen(argv[2], verify ? "rb" : "wb1");
     assert(output);
+#ifdef HARDNESTED_COMPACT_STATES
+    uint32_t *scratch = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
+    assert(scratch);
+#endif
     for (unsigned byte = 0; byte < 256; ++byte)
         for (unsigned side = 0; side < 2; ++side) {
             write_word(nonces[byte].num_states_bitarray[side]);
+#ifdef HARDNESTED_COMPACT_STATES
+            materialize_nonce(byte, side, scratch);
+            write_bitmap(scratch);
+#else
             write_bitmap(nonces[byte].states_bitarray[side]);
+#endif
         }
+#ifdef HARDNESTED_COMPACT_STATES
+    free_bitarray(scratch);
+#endif
     for (unsigned side = 0; side < 2; ++side) {
         write_word(num_all_bitflips_bitarray[side]);
         write_bitmap(all_bitflips_bitarray[side]);
@@ -100,5 +116,5 @@ int main(int argc, char **argv)
     free_part_sum_bitarrays();
     free_bitarray(all_bitflips_bitarray[0]);
     free_bitarray(all_bitflips_bitarray[1]);
-    puts("Complete reduction snapshot written");
+    puts(verify ? "Complete reduction snapshot matched" : "Complete reduction snapshot written");
 }
