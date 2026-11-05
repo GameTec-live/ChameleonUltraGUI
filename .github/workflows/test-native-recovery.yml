@@ -45,13 +45,19 @@ jobs:
         run: |
           python3 chameleonultragui/test/native/recovery_check.py \
             build/native-recovery/librecovery.so \
-            --reference build/native-reference/librecovery.so --cases 4 --repeats 1 --hardnested
+            --reference build/native-reference/librecovery.so --cases 4 --repeats 1 --hardnested --hardnested-generated 2
       - name: Check every partial-sum table bit
         run: |
           cc -O3 -D_GNU_SOURCE chameleonultragui/test/native/hardnested_tables_check.c \
             -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
             -lrecovery -pthread -lm -o build/native-recovery/check-tables
           build/native-recovery/check-tables
+      - name: Check shared bitmaps, concurrent decoding and parity lookup
+        run: |
+          cc -O3 -D_GNU_SOURCE chameleonultragui/test/native/hardnested_memory_check.c \
+            -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
+            -lrecovery -pthread -lm -o build/native-recovery/check-memory
+          build/native-recovery/check-memory
       - name: Check failed thread launches with one and four CPUs
         run: |
           cc -shared -fPIC chameleonultragui/test/native/thread_fallback.c \
@@ -62,3 +68,5 @@ jobs:
               build/native-recovery/librecovery.so \
               --reference build/native-reference/librecovery.so --cases 1 --repeats 1
           done
+          LD_PRELOAD="$PWD/build/native-recovery/thread-fallback.so" \
+            build/native-recovery/check-memory

@@ -75,7 +75,7 @@ typedef struct _RANGE_DECODER_STATE
     uint32_t Range;
     uint32_t Code;
 } RANGE_DECODER_STATE, *PRANGE_DECODER_STATE;
-RANGE_DECODER_STATE RcState;
+static MINLZ_THREAD_LOCAL RANGE_DECODER_STATE RcState;
 
 bool RcInitialize(
     uint16_t *ChunkSize)
