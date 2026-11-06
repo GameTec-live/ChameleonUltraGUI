@@ -106,6 +106,23 @@ jobs:
             build/native-recovery/check-reduction-3 \
             chameleonultragui/test/native/fixtures/hardnested-filtering.bin \
             build/native-recovery/reduction.snapshot.gz --verify
+      - name: Check candidate launch failures and complete hardnested recovery
+        run: |
+          cc -O3 -D_GNU_SOURCE chameleonultragui/test/native/hardnested_threads_check.c \
+            -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
+            -lrecovery -pthread -lm -o build/native-recovery/check-threads
+          build/native-recovery/check-threads \
+            chameleonultragui/test/native/fixtures/hardnested-filtering.bin
+          for every in 1 2; do
+            for fixture in capture filtering; do
+              RECOVERY_TEST_FAIL_EVERY="$every" LD_PRELOAD="$PWD/build/native-recovery/thread-fallback.so" \
+                python3 chameleonultragui/test/native/hardnested_benchmark.py \
+                build/native-recovery/librecovery.so --worker "$fixture"
+            done
+            RECOVERY_TEST_FAIL_EVERY="$every" LD_PRELOAD="$PWD/build/native-recovery/thread-fallback.so" \
+              python3 chameleonultragui/test/native/hardnested_corpus_check.py \
+              build/native-recovery/librecovery.so --worker zero
+          done
       - name: Check construction without the optional Crypto1 table
         run: |
           cmake -S chameleonultragui/src -B build/native-lowmem \

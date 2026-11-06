@@ -3,6 +3,21 @@ The current implementation uses shared immutable pages for filters and nonce
 maps. Earlier dense-build measurements are retained below for comparison;
 the compact-page measurements follow them.
 
+Candidate generation and brute force run workers whose launches failed on the
+calling thread and join only successfully created threads. Candidate workers
+share a work book; brute-force workers must each retain their bucket stride.
+`hardnested_threads_check.c` injects first/middle/last/alternating/all candidate
+launch failures, rejects invalid or repeated joins, and compares every state
+in every nonempty candidate bucket (including multiplicity) with the successful
+launch run. Compile/link it like the other internal checks and pass
+`test/native/fixtures/hardnested-filtering.bin` as its argument.
+
+The Linux `thread_fallback.c` shim fails all launches by default, or one in N
+with `RECOVERY_TEST_FAIL_EVERY=N`. Complete captured/filtering/zero-key
+recoveries passed with all and alternating launches failed; CI runs them on
+both architectures. This exercises candidate generation and brute force
+together, rather than stopping before the key search.
+
 Build the library:
 
 ```sh

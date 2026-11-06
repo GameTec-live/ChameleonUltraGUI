@@ -2022,19 +2022,21 @@ static void generate_candidates(uint8_t sum_a0_idx, uint8_t sum_a8_idx)
     const uint32_t capacity = workers;
 #endif
     pthread_t thread_id[capacity];
+    bool started[capacity];
     uint16_t sums1[capacity][3];
     for (uint32_t i = 0; i < workers; i++)
     {
         sums1[i][0] = sum_a0_idx;
         sums1[i][1] = sum_a8_idx;
         sums1[i][2] = i + 1;
-        pthread_create(thread_id + i, NULL, generate_candidates_worker_thread, sums1[i]);
+        started[i] = pthread_create(thread_id + i, NULL, generate_candidates_worker_thread, sums1[i]) == 0;
+        if (!started[i]) generate_candidates_worker_thread(sums1[i]);
     }
 
     // wait for threads to terminate:
     for (uint32_t i = 0; i < workers; i++)
     {
-        pthread_join(thread_id[i], NULL);
+        if (started[i]) pthread_join(thread_id[i], NULL);
     }
 
     maximum_states = 0;
