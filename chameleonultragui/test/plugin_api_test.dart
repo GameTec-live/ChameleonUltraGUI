@@ -12,6 +12,7 @@ import 'package:chameleonultragui/plugins/runtime.dart';
 import 'package:chameleonultragui/plugins/store.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations_en.dart';
@@ -199,11 +200,21 @@ void main() {
       find.widgetWithText(TextField, 'Resources (JSON object of key: text)'),
       '{"module":"return 42"}',
     );
+    await tester.ensureVisible(find.byTooltip('Pick a color'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Pick a color'));
+    await tester.pumpAndSettle();
+    tester
+        .widget<ColorPicker>(find.byType(ColorPicker))
+        .onColorChanged(Colors.blue);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     expect(find.text('Example'), findsOneWidget);
     final saved = (await PluginStore().load()).single;
     expect(saved.description, 'A test plugin');
+    expect(saved.color, Colors.blue.toARGB32());
     expect(saved.resources, {'module': 'return 42'});
     expect(saved.code, contains('chameleon.ui.info'));
   });

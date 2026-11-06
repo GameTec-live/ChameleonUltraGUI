@@ -176,6 +176,7 @@ class _PluginsPageState extends State<PluginsPage> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: Text(_localizations.plugins),
+      actionsPadding: const EdgeInsets.only(right: 12),
       actions: [
         IconButton(
           tooltip: _localizations.plugin_import,
@@ -199,7 +200,11 @@ class _PluginsPageState extends State<PluginsPage> {
             builder: (context, constraints) => GridView.builder(
               padding: const EdgeInsets.all(12),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: constraints.maxWidth >= 700 ? 2 : 1,
+                crossAxisCount: constraints.maxWidth >= 1200
+                    ? 3
+                    : constraints.maxWidth >= 700
+                    ? 2
+                    : 1,
                 mainAxisExtent: 170,
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 10,
@@ -277,10 +282,6 @@ class _PluginsPageState extends State<PluginsPage> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Text(
-                            _localizations.plugin_tap_to_run,
-                            style: TextStyle(fontSize: 12),
-                          ),
                         ],
                       ),
                     ),
@@ -347,6 +348,38 @@ class _PluginEditorState extends State<_PluginEditor> {
     }
   }
 
+  Future<void> _pickColor() async {
+    var picked = _color;
+    final selected = await showDialog<Color>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_localizations.pick_color),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: picked,
+            onColorChanged: (color) => picked = color,
+            pickerAreaHeightPercent: 0.8,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, Colors.deepOrange),
+            child: Text(_localizations.reset_default),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(_localizations.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, picked),
+            child: Text(_localizations.ok),
+          ),
+        ],
+      ),
+    );
+    if (selected != null && mounted) setState(() => _color = selected);
+  }
+
   @override
   Widget build(BuildContext context) => Dialog.fullscreen(
     child: Scaffold(
@@ -356,6 +389,7 @@ class _PluginEditorState extends State<_PluginEditor> {
               ? _localizations.plugin_create
               : _localizations.plugin_edit,
         ),
+        actionsPadding: const EdgeInsets.only(right: 16),
         actions: [
           TextButton(onPressed: _save, child: Text(_localizations.save)),
         ],
@@ -366,7 +400,14 @@ class _PluginEditorState extends State<_PluginEditor> {
           children: [
             TextField(
               controller: _name,
-              decoration: InputDecoration(labelText: _localizations.name),
+              decoration: InputDecoration(
+                labelText: _localizations.name,
+                prefixIcon: IconButton(
+                  tooltip: _localizations.pick_color,
+                  icon: Icon(Icons.extension, color: _color),
+                  onPressed: _pickColor,
+                ),
+              ),
             ),
             TextField(
               controller: _description,
@@ -374,16 +415,6 @@ class _PluginEditorState extends State<_PluginEditor> {
                 labelText: _localizations.description,
               ),
               maxLines: 2,
-            ),
-            ExpansionTile(
-              title: Text(_localizations.color),
-              leading: Icon(Icons.palette, color: _color),
-              children: [
-                ColorPicker(
-                  pickerColor: _color,
-                  onColorChanged: (value) => setState(() => _color = value),
-                ),
-              ],
             ),
             TextField(
               controller: _code,
@@ -400,7 +431,6 @@ class _PluginEditorState extends State<_PluginEditor> {
               controller: _resources,
               decoration: InputDecoration(
                 labelText: _localizations.plugin_resources_label,
-                helperText: _localizations.plugin_resources_help,
               ),
               minLines: 5,
               maxLines: null,
