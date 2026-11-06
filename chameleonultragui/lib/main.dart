@@ -6,6 +6,7 @@ import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
 import 'package:chameleonultragui/connector/serial_macos.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
+import 'package:chameleonultragui/gui/page/plugins.dart';
 import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
@@ -226,8 +227,9 @@ class _MainPageState extends State<MainPage> {
         selectedIndex != 2 &&
         selectedIndex != 5 &&
         selectedIndex != 6 &&
-        selectedIndex != 7) {
-      // If not connected, and not on home, tools, settings or dev page, go to home page
+        selectedIndex != 7 &&
+        selectedIndex != 8) {
+      // Offline pages remain available without a device.
       selectedIndex = 0;
     }
 
@@ -264,9 +266,12 @@ class _MainPageState extends State<MainPage> {
         page = const ToolsPage();
         break;
       case 6:
-        page = const SettingsMainPage();
+        page = const PluginsPage();
         break;
       case 7:
+        page = const SettingsMainPage();
+        break;
+      case 8:
         page = const DebugPage();
         break;
       default:
@@ -365,6 +370,10 @@ class _MainPageState extends State<MainPage> {
                                 icon: const Icon(Icons.handyman),
                                 label:
                                     Text(AppLocalizations.of(context)!.tools),
+                              ),
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.extension),
+                                label: Text(AppLocalizations.of(context)!.plugins),
                               ),
                               NavigationRailDestination(
                                 icon: const Icon(Icons.settings),
