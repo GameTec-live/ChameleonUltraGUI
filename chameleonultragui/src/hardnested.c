@@ -43,20 +43,8 @@
 #include "hardnested/hardnested_bf_core.h"
 #include "hardnested/hardnested_bitarray_core.h"
 #include "minlzlib/xzstream.h"
-
-// Just hope we won't reach 1024 cores in near future
-// MSVC is "very good compiler"
-#if defined(_MSC_VER)
-#define NUM_CHECK_BITFLIPS_THREADS 1024
-#else
-#define NUM_CHECK_BITFLIPS_THREADS (num_CPUs())
-#endif
-
-#if defined(_MSC_VER)
-#define NUM_REDUCTION_WORKING_THREADS 1024
-#else
-#define NUM_REDUCTION_WORKING_THREADS (num_CPUs())
-#endif
+#include "hardnested/hardnested_bitset.h"
+#include "hardnested/tables_compact.h"
 
 // ignore bitflip arrays which have nearly only valid states
 #define IGNORE_BITFLIP_THRESHOLD 0.9901
@@ -79,11 +67,6 @@ static uint16_t sums[NUM_SUMS] = {
 
 static uint32_t num_acquired_nonces = 0;
 static uint64_t start_time = 0;
-static uint16_t effective_bitflip[2][0x400];
-static uint16_t num_effective_bitflips[2] = {0, 0};
-static uint16_t all_effective_bitflip[0x400];
-static uint16_t num_all_effective_bitflips = 0;
-static uint16_t num_1st_byte_effective_bitflips = 0;
 #define CHECK_1ST_BYTES 0x01
 #define CHECK_2ND_BYTES 0x02
 static uint8_t hardnested_stage = CHECK_1ST_BYTES;
@@ -199,115 +182,11 @@ static inline uint32_t next_state(uint32_t *bitarray, uint32_t state)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // bitflip property bitarrays
 
-static uint32_t *bitflip_bitarrays[2][0x400];
-static uint32_t *bitflip_bitarrays_pointers[2][0x400];
-static uint32_t count_bitflip_bitarrays[2][0x400];
-
-static int compare_count_bitflip_bitarrays(const void *b1, const void *b2)
-{
-    uint64_t count1 = (uint64_t)count_bitflip_bitarrays[ODD_STATE][*(uint16_t *)b1] * count_bitflip_bitarrays[EVEN_STATE][*(uint16_t *)b1];
-    uint64_t count2 = (uint64_t)count_bitflip_bitarrays[ODD_STATE][*(uint16_t *)b2] * count_bitflip_bitarrays[EVEN_STATE][*(uint16_t *)b2];
-    return (count1 > count2) - (count2 > count1);
-}
-
-#define OUTPUT_BUFFER_LEN 80
-#define INPUT_BUFFER_LEN 80
-
-//----------------------------------------------------------------------------
-// Initialize decompression of the respective bitflip_bitarray stream
-//----------------------------------------------------------------------------
-static void init_bitflip_bitarrays(void)
-{
-    for (odd_even_t odd_even = EVEN_STATE; odd_even <= ODD_STATE; odd_even++)
-    {
-        num_effective_bitflips[odd_even] = 0;
-        for (uint16_t bitflip = 0x001; bitflip < 0x400; bitflip++)
-        {
-            bitflip_bitarrays[odd_even][bitflip] = NULL;
-            count_bitflip_bitarrays[odd_even][bitflip] = 1 << 24;
-            bitflip_info p = get_bitflip(odd_even, bitflip);
-            if (p.input_buffer != NULL && !recovery_is_cancelled())
-            {
-                uint32_t size = sizeof(uint32_t) * ((1 << 19) + 1);
-                uint32_t *bitset = (uint32_t *)malloc_bitarray(size);
-                if (bitset == NULL)
-                {
-                    printf("Out of memory error in init_bitflip_statelists(). Aborting...\n");
-                    exit(4);
-                }
-
-                bool success = XzDecode(p.input_buffer, p.len, (uint8_t *)bitset, &size);
-                if (!success)
-                {
-                    printf("Failed to decompress states\n");
-                    exit(4);
-                }
-
-                bitflip_bitarrays_pointers[odd_even][bitflip] = bitset;
-                // The first word counts states; the decoder returns bytes.
-                uint32_t count = bitset[0];
-                if ((float)count / (1 << 24) < IGNORE_BITFLIP_THRESHOLD)
-                {
-                    effective_bitflip[odd_even][num_effective_bitflips[odd_even]++] = bitflip;
-                    bitflip_bitarrays[odd_even][bitflip] = bitset + 1;
-                    count_bitflip_bitarrays[odd_even][bitflip] = count;
-                }
-            }
-        }
-        effective_bitflip[odd_even][num_effective_bitflips[odd_even]] = 0x400; // EndOfList marker
-    }
-    uint16_t i = 0;
-    uint16_t j = 0;
-    num_all_effective_bitflips = 0;
-    num_1st_byte_effective_bitflips = 0;
-    while (i < num_effective_bitflips[EVEN_STATE] || j < num_effective_bitflips[ODD_STATE])
-    {
-        if (effective_bitflip[EVEN_STATE][i] < effective_bitflip[ODD_STATE][j])
-        {
-            all_effective_bitflip[num_all_effective_bitflips++] = effective_bitflip[EVEN_STATE][i];
-            i++;
-        }
-        else if (effective_bitflip[EVEN_STATE][i] > effective_bitflip[ODD_STATE][j])
-        {
-            all_effective_bitflip[num_all_effective_bitflips++] = effective_bitflip[ODD_STATE][j];
-            j++;
-        }
-        else
-        {
-            all_effective_bitflip[num_all_effective_bitflips++] = effective_bitflip[EVEN_STATE][i];
-            i++;
-            j++;
-        }
-        if (!(all_effective_bitflip[num_all_effective_bitflips - 1] & BITFLIP_2ND_BYTE))
-        {
-            num_1st_byte_effective_bitflips = num_all_effective_bitflips;
-        }
-    }
-    qsort(all_effective_bitflip, num_1st_byte_effective_bitflips, sizeof(uint16_t), compare_count_bitflip_bitarrays);
-    qsort(all_effective_bitflip + num_1st_byte_effective_bitflips, num_all_effective_bitflips - num_1st_byte_effective_bitflips, sizeof(uint16_t), compare_count_bitflip_bitarrays);
-    char progress_text[80];
-    sprintf(progress_text, "Using %d precalculated bitflip state tables", num_all_effective_bitflips);
-    hardnested_print_progress(0, progress_text, (float)(1LL << 47), 0);
-}
-
-static void free_bitflip_bitarrays(void)
-{
-    for (int16_t bitflip = 0x3ff; bitflip > 0x000; bitflip--)
-    {
-        free_bitarray(bitflip_bitarrays_pointers[ODD_STATE][bitflip]);
-    }
-    for (int16_t bitflip = 0x3ff; bitflip > 0x000; bitflip--)
-    {
-        free_bitarray(bitflip_bitarrays_pointers[EVEN_STATE][bitflip]);
-    }
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // sum property bitarrays
 
 static uint32_t *part_sum_a0_bitarrays[2][NUM_PART_SUMS];
 static uint32_t *part_sum_a8_bitarrays[2][NUM_PART_SUMS];
-static uint32_t *sum_a0_bitarrays[2][NUM_SUMS];
 
 static uint16_t PartialSumProperty(uint32_t state, odd_even_t odd_even)
 {
@@ -339,40 +218,112 @@ static uint16_t PartialSumProperty(uint32_t state, odd_even_t odd_even)
     return sum;
 }
 
-// Each side is independent. Reuse its partial-sum calculation for a0 and a8
-// instead of evaluating the same 20-bit state twice.
+typedef struct {
+    odd_even_t side;
+    uint32_t first;
+    uint32_t end;
+    const uint8_t *values;
+} part_sum_work_t;
+
+// Ranges start and end on 32-state boundaries, so a0 and a8 words are each
+// written by exactly one worker, even when neighboring states have equal sums.
+HN_SIMD
 static void *init_part_sum_side(void *arg)
 {
-    odd_even_t side = *(odd_even_t *)arg;
-    for (unsigned sum = 0; sum < NUM_PART_SUMS; ++sum) {
-        part_sum_a0_bitarrays[side][sum] = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
-        part_sum_a8_bitarrays[side][sum] = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
-        if (!part_sum_a0_bitarrays[side][sum] || !part_sum_a8_bitarrays[side][sum]) {
-            PrintAndLogEx("Out of memory error in init_part_sum_bitarrays(). Aborting...\n");
-            exit(4);
-        }
-        clear_bitarray24(part_sum_a0_bitarrays[side][sum]);
-        clear_bitarray24(part_sum_a8_bitarrays[side][sum]);
-    }
-    for (uint32_t state = 0; state < (1 << 20) && !recovery_is_cancelled(); ++state) {
-        unsigned sum = PartialSumProperty(state, side) / 2;
-        // All sixteen low-bit extensions occupy one aligned half-word.
+    part_sum_work_t *work = arg;
+    odd_even_t side = work->side;
+    for (uint32_t state = work->first; state < work->end && !recovery_is_cancelled(); ++state) {
+        unsigned sum = work->values ? work->values[state] : PartialSumProperty(state, side) / 2;
         part_sum_a0_bitarrays[side][sum][state >> 1] |=
             (state & 1) ? 0x0000ffffu : 0xffff0000u;
-        for (uint32_t high = 0; high < 16; ++high)
-            set_bit24(part_sum_a8_bitarrays[side][sum], state | (high << 20));
+        set_bit24(part_sum_a8_bitarrays[side][sum], state);
     }
     return NULL;
 }
 
+static const uint8_t *candidate_filter_table;
+
+static inline int candidate_filter(uint32_t state)
+{
+    return candidate_filter_table ? candidate_filter_table[state & 0xfffffu] : crypto1_filter(state);
+}
+
+// Share each subtree of the four-bit path enumeration (as in ChameLab's
+// managed table construction). Scalar tests verify every state in both halves.
+HN_SIMD
+static void build_partial_sum_values(uint8_t *values[2])
+{
+    const uint32_t size = 1 << 20;
+    candidate_filter_table = crypto1_filter_table();
+    values[0] = values[1] = NULL;
+    if (!candidate_filter_table) return; // Preserve the low-memory path.
+    uint8_t *current = calloc(size, 1), *next = malloc(size);
+    if (!current || !next) {
+        free(current);
+        free(next);
+        return; // Scalar construction needs no temporary arrays.
+    }
+    for (unsigned depth = 0; depth < 4; ++depth) {
+        unsigned paths = 1u << depth;
+        for (uint32_t state = 0; state < size; ++state) {
+            uint32_t left = (state << 1) & (size - 1), right = left | 1;
+            next[state] = (candidate_filter_table[left] ? paths - current[left] : current[left])
+                        + (candidate_filter_table[right] ? paths - current[right] : current[right]);
+        }
+        uint8_t *swap = current;
+        current = next;
+        next = swap;
+    }
+    for (uint32_t state = 0; state < size; ++state) {
+        next[state] = (candidate_filter_table[state] ? current[state] : 16 - current[state]) / 2;
+        current[state] /= 2;
+    }
+    values[EVEN_STATE] = current;
+    values[ODD_STATE] = next;
+}
+
 static void init_part_sum_bitarrays(void)
 {
-    odd_even_t sides[2] = {EVEN_STATE, ODD_STATE};
-    pthread_t thread;
-    bool started = pthread_create(&thread, NULL, init_part_sum_side, &sides[0]) == 0;
-    if (!started) init_part_sum_side(&sides[0]);
-    init_part_sum_side(&sides[1]);
-    if (started) pthread_join(thread, NULL);
+    uint8_t *values[2];
+    build_partial_sum_values(values);
+    for (odd_even_t side = EVEN_STATE; side <= ODD_STATE; ++side) {
+        for (unsigned sum = 0; sum < NUM_PART_SUMS; ++sum) {
+            part_sum_a0_bitarrays[side][sum] = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
+            part_sum_a8_bitarrays[side][sum] = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
+            if (!part_sum_a0_bitarrays[side][sum] || !part_sum_a8_bitarrays[side][sum]) {
+                PrintAndLogEx("Out of memory error in init_part_sum_bitarrays(). Aborting...\n");
+                exit(4);
+            }
+            clear_bitarray24(part_sum_a0_bitarrays[side][sum]);
+            memset(part_sum_a8_bitarrays[side][sum], 0, sizeof(uint32_t) * (1 << 15));
+        }
+    }
+    const int cpus = num_CPUs();
+    unsigned pieces = MIN(MAX(cpus / 2, 1), 4);
+    unsigned workers = 2 * pieces;
+    pthread_t threads[8];
+    bool started[8];
+    part_sum_work_t work[8];
+    for (unsigned i = 0; i < workers; ++i) {
+        unsigned piece = i % pieces;
+        work[i] = (part_sum_work_t){i / pieces,
+            ((1 << 15) * piece / pieces) * 32,
+            ((1 << 15) * (piece + 1) / pieces) * 32, values[i / pieces]};
+        started[i] = i + 1 < workers && pthread_create(&threads[i], NULL, init_part_sum_side, &work[i]) == 0;
+        if (!started[i]) init_part_sum_side(&work[i]);
+    }
+    for (unsigned i = 0; i < workers; ++i)
+        if (started[i]) pthread_join(threads[i], NULL);
+    // a8 depends only on the low 20 bits. Construct that region once, then
+    // replicate it after all disjoint construction ranges have finished.
+    if (!recovery_is_cancelled())
+        for (unsigned side = 0; side < 2; ++side)
+            for (unsigned sum = 0; sum < NUM_PART_SUMS; ++sum)
+                for (unsigned high = 1; high < 16; ++high)
+                    memcpy(part_sum_a8_bitarrays[side][sum] + (high << 15),
+                           part_sum_a8_bitarrays[side][sum], sizeof(uint32_t) * (1 << 15));
+    free(values[0]);
+    free(values[1]);
 }
 
 static void free_part_sum_bitarrays(void)
@@ -392,44 +343,6 @@ static void free_part_sum_bitarrays(void)
     for (int16_t part_sum_a0 = (NUM_PART_SUMS - 1); part_sum_a0 >= 0; part_sum_a0--)
     {
         free_bitarray(part_sum_a0_bitarrays[EVEN_STATE][part_sum_a0]);
-    }
-}
-
-static void init_sum_bitarrays(void)
-{
-    for (uint16_t sum_a0 = 0; sum_a0 < NUM_SUMS; sum_a0++)
-    {
-        for (odd_even_t odd_even = EVEN_STATE; odd_even <= ODD_STATE; odd_even++)
-        {
-            sum_a0_bitarrays[odd_even][sum_a0] = (uint32_t *)malloc_bitarray(sizeof(uint32_t) * (1 << 19));
-            if (sum_a0_bitarrays[odd_even][sum_a0] == NULL)
-            {
-                PrintAndLogEx("Out of memory error in init_sum_bitarrays(). Aborting...\n");
-                exit(4);
-            }
-            clear_bitarray24(sum_a0_bitarrays[odd_even][sum_a0]);
-        }
-    }
-    for (uint8_t p = 0; p < NUM_PART_SUMS; p++)
-    {
-        for (uint8_t q = 0; q < NUM_PART_SUMS; q++)
-        {
-            uint16_t sum_a0 = 2 * p * (16 - 2 * q) + (16 - 2 * p) * 2 * q;
-            uint16_t sum_a0_idx = 0;
-            while (sums[sum_a0_idx] != sum_a0)
-                sum_a0_idx++;
-            bitarray_OR(sum_a0_bitarrays[EVEN_STATE][sum_a0_idx], part_sum_a0_bitarrays[EVEN_STATE][q]);
-            bitarray_OR(sum_a0_bitarrays[ODD_STATE][sum_a0_idx], part_sum_a0_bitarrays[ODD_STATE][p]);
-        }
-    }
-}
-
-static void free_sum_bitarrays(void)
-{
-    for (int8_t sum_a0 = NUM_SUMS - 1; sum_a0 >= 0; sum_a0--)
-    {
-        free_bitarray(sum_a0_bitarrays[ODD_STATE][sum_a0]);
-        free_bitarray(sum_a0_bitarrays[EVEN_STATE][sum_a0]);
     }
 }
 
@@ -461,6 +374,53 @@ static uint64_t last_sample_clock = 0;
 static uint64_t sample_period = 0;
 static uint64_t num_keys_tested = 0;
 static statelist_t *candidates = NULL;
+
+// Directories stay immutable after reduction; each worker owns its page pool.
+static state_bitset_t nonce_bitsets[2][256];
+static state_page_pool_t nonce_page_pools[4];
+static unsigned compact_domains;
+static uint8_t compact_domain_ends[4];
+
+static inline uint32_t nonce_word(unsigned byte, odd_even_t side, uint32_t word)
+{
+    const state_bitset_t *bits = &nonce_bitsets[side][byte];
+    return bits->pages ? state_bitset_word(bits, word) & all_bitflips_bitarray[side][word]
+                       : nonces[byte].states_bitarray[side][word];
+}
+
+// Raw pages omit the final domain. Callers must mask it explicitly or use a
+// partial-sum bitmap that has already been intersected with that domain.
+static inline const uint32_t *nonce_source_page(unsigned byte, odd_even_t side, unsigned page)
+{
+    const state_bitset_t *bits = &nonce_bitsets[side][byte];
+    return bits->pages ? bits->pages[page] : nonces[byte].states_bitarray[side] + page * STATE_PAGE_WORDS;
+}
+
+HN_SIMD
+static uint32_t count_nonce_states(unsigned byte, odd_even_t side, const uint32_t *active, unsigned length)
+{
+    uint32_t count = 0;
+    for (unsigned i = 0; i < length; ++i) {
+        uint32_t index = active[i];
+        count += state_count_word(nonce_word(byte, side, index));
+    }
+    return count;
+}
+
+static void materialize_nonce(unsigned byte, odd_even_t side, uint32_t *words)
+{
+    const state_bitset_t *bits = &nonce_bitsets[side][byte];
+    if (!bits->pages) {
+        memcpy(words, nonces[byte].states_bitarray[side], sizeof(uint32_t) * (1 << 19));
+        return;
+    }
+    for (uint32_t page = 0; page < STATE_PAGE_COUNT; ++page) {
+        const uint32_t *source = bits->pages[page];
+        uint32_t base = page * STATE_PAGE_WORDS;
+        for (unsigned i = 0; i < STATE_PAGE_WORDS; ++i)
+            words[base + i] = source[i] & all_bitflips_bitarray[side][base + i];
+    }
+}
 
 static int add_nonce(uint32_t nonce_enc, uint8_t par_enc)
 {
@@ -528,8 +488,34 @@ static int add_nonce(uint32_t nonce_enc, uint8_t par_enc)
     return (1);                                   // new nonce added
 }
 
+// All unfiltered nonce halves share one immutable bitmap. The first filter
+// copies its result directly, avoiding 1 GiB of initialization and 512 scans.
+static uint32_t *unconstrained_states;
+
+static uint32_t intersect_nonce_states(uint8_t byte, odd_even_t side,
+                                       uint32_t *filter, uint32_t filter_count)
+{
+    uint32_t **states = &nonces[byte].states_bitarray[side];
+    if (*states != unconstrained_states)
+        return count_bitarray_AND(*states, filter);
+
+    *states = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
+    if (*states == NULL) {
+        PrintAndLogEx("Out of memory filtering nonce states. Aborting...\n");
+        exit(4);
+    }
+    memcpy(*states, filter, sizeof(uint32_t) * (1 << 19));
+    return filter_count;
+}
+
 static void init_nonce_memory(void)
 {
+    unconstrained_states = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
+    if (unconstrained_states == NULL) {
+        PrintAndLogEx("Out of memory in init_nonce_memory(). Aborting...\n");
+        exit(4);
+    }
+    set_bitarray24(unconstrained_states);
     for (uint16_t i = 0; i < 256; i++)
     {
         nonces[i].num = 0;
@@ -545,22 +531,10 @@ static void init_nonce_memory(void)
         {
             nonces[i].BitFlips[bitflip] = 0;
         }
-        nonces[i].states_bitarray[EVEN_STATE] = (uint32_t *)malloc_bitarray(sizeof(uint32_t) * (1 << 19));
-        if (nonces[i].states_bitarray[EVEN_STATE] == NULL)
-        {
-            PrintAndLogEx("Out of memory error in init_nonce_memory(). Aborting...\n");
-            exit(4);
+        for (odd_even_t side = EVEN_STATE; side <= ODD_STATE; ++side) {
+            nonces[i].states_bitarray[side] = unconstrained_states;
+            nonces[i].num_states_bitarray[side] = 1 << 24;
         }
-        set_bitarray24(nonces[i].states_bitarray[EVEN_STATE]);
-        nonces[i].num_states_bitarray[EVEN_STATE] = 1 << 24;
-        nonces[i].states_bitarray[ODD_STATE] = (uint32_t *)malloc_bitarray(sizeof(uint32_t) * (1 << 19));
-        if (nonces[i].states_bitarray[ODD_STATE] == NULL)
-        {
-            PrintAndLogEx("Out of memory error in init_nonce_memory(). Aborting...\n");
-            exit(4);
-        }
-        set_bitarray24(nonces[i].states_bitarray[ODD_STATE]);
-        nonces[i].num_states_bitarray[ODD_STATE] = 1 << 24;
         nonces[i].all_bitflips_dirty[EVEN_STATE] = false;
         nonces[i].all_bitflips_dirty[ODD_STATE] = false;
     }
@@ -583,15 +557,26 @@ static void free_nonce_list(noncelistentry_t *p)
 
 static void free_nonces_memory(void)
 {
+    for (unsigned side = 0; side < 2; ++side)
+        for (unsigned byte = 0; byte < 256; ++byte) {
+            free(nonce_bitsets[side][byte].pages);
+            nonce_bitsets[side][byte] = (state_bitset_t){0};
+        }
+    for (unsigned i = 0; i < 4; ++i) state_pool_free(&nonce_page_pools[i]);
     for (uint16_t i = 0; i < 256; i++)
     {
         free_nonce_list(nonces[i].first);
     }
     for (int i = 255; i >= 0; i--)
     {
-        free_bitarray(nonces[i].states_bitarray[ODD_STATE]);
-        free_bitarray(nonces[i].states_bitarray[EVEN_STATE]);
+        for (odd_even_t side = EVEN_STATE; side <= ODD_STATE; ++side) {
+            if (nonces[i].states_bitarray[side] != unconstrained_states)
+                free_bitarray(nonces[i].states_bitarray[side]);
+            nonces[i].states_bitarray[side] = NULL;
+        }
     }
+    free_bitarray(unconstrained_states);
+    unconstrained_states = NULL;
 }
 
 static double p_hypergeometric(uint16_t i_K, uint16_t n, uint16_t k)
@@ -677,6 +662,7 @@ static uint32_t part_sum_count[2][NUM_PART_SUMS][NUM_PART_SUMS];
 
 static void init_allbitflips_array(void)
 {
+    compact_domains = 0;
     for (odd_even_t odd_even = EVEN_STATE; odd_even <= ODD_STATE; odd_even++)
     {
         uint32_t *bitset = all_bitflips_bitarray[odd_even] = (uint32_t *)malloc_bitarray(sizeof(uint32_t) * (1 << 19));
@@ -691,27 +677,43 @@ static void init_allbitflips_array(void)
     }
 }
 
-static void update_allbitflips_array(void)
+HN_SIMD
+static void update_allbitflips_side(odd_even_t side)
 {
-    if (hardnested_stage & CHECK_2ND_BYTES)
-    {
-        for (uint16_t i = 0; i < 256; i++)
-        {
-            for (odd_even_t odd_even = EVEN_STATE; odd_even <= ODD_STATE; odd_even++)
-            {
-                if (nonces[i].all_bitflips_dirty[odd_even])
-                {
-                    uint32_t old_count = num_all_bitflips_bitarray[odd_even];
-                    num_all_bitflips_bitarray[odd_even] = count_bitarray_low20_AND(all_bitflips_bitarray[odd_even], nonces[i].states_bitarray[odd_even]);
-                    nonces[i].all_bitflips_dirty[odd_even] = false;
-                    if (num_all_bitflips_bitarray[odd_even] != old_count)
-                    {
-                        all_bitflips_bitarray_dirty[odd_even] = true;
-                    }
-                }
+    if (!(hardnested_stage & CHECK_2ND_BYTES)) return;
+    bool dirty[256];
+    for (unsigned byte = 0; byte < 256; ++byte) {
+        dirty[byte] = nonces[byte].all_bitflips_dirty[side];
+        if (compact_domains && nonce_bitsets[side][byte].pages) dirty[byte] = false;
+        if (dirty[byte] && !nonce_bitsets[side][byte].pages)
+            nonces[byte].num_states_bitarray[side] = count_states(nonces[byte].states_bitarray[side]);
+        nonces[byte].all_bitflips_dirty[side] = false;
+    }
+    // The last map in each worker's half includes that worker's entire
+    // prior low-20-bit domain. Its projection therefore represents all maps
+    // in that range, so projecting these endpoints is exactly equivalent.
+    for (unsigned i = 0; i < compact_domains; ++i) dirty[compact_domain_ends[i]] = true;
+    // Keep one domain page hot while projecting all nonce maps. No consumer
+    // needs intermediate counts, and an empty page can skip the remaining maps.
+    for (unsigned page = 0; page < STATE_PAGE_COUNT; ++page) {
+        uint32_t *domain = all_bitflips_bitarray[side] + page * STATE_PAGE_WORDS;
+        uint32_t any = 0;
+        for (unsigned i = 0; i < STATE_PAGE_WORDS; ++i) any |= domain[i];
+        for (unsigned byte = 0; byte < 256 && any; ++byte) {
+            if (!dirty[byte]) continue;
+            const uint32_t *words = nonce_source_page(byte, side, page);
+            any = 0;
+            for (unsigned i = 0; i < STATE_PAGE_WORDS; ++i) {
+                uint32_t mask = ((0u - ((words[i] & 0xffffu) != 0)) & 0xffffu)
+                              | ((0u - ((words[i] >> 16) != 0)) & 0xffff0000u);
+                domain[i] &= mask;
+                any |= domain[i];
             }
         }
     }
+    uint32_t old = num_all_bitflips_bitarray[side];
+    num_all_bitflips_bitarray[side] = count_states(all_bitflips_bitarray[side]);
+    if (old != num_all_bitflips_bitarray[side]) all_bitflips_bitarray_dirty[side] = true;
 }
 
 static uint32_t estimated_num_states_part_sum_coarse(uint16_t part_sum_a0_idx, uint16_t part_sum_a8_idx, odd_even_t odd_even)
@@ -721,19 +723,17 @@ static uint32_t estimated_num_states_part_sum_coarse(uint16_t part_sum_a0_idx, u
 
 static uint32_t estimated_num_states_part_sum(uint8_t first_byte, uint16_t part_sum_a0_idx, uint16_t part_sum_a8_idx, odd_even_t odd_even)
 {
-    if (odd_even == ODD_STATE)
-    {
-        return count_bitarray_AND3(part_sum_a0_bitarrays[odd_even][part_sum_a0_idx],
-                                   part_sum_a8_bitarrays[odd_even][part_sum_a8_idx],
-                                   nonces[first_byte].states_bitarray[odd_even]);
+    uint32_t count = 0;
+    for (unsigned page = 0; page < STATE_PAGE_COUNT; ++page) {
+        unsigned base = page * STATE_PAGE_WORDS;
+        const uint32_t *a = part_sum_a0_bitarrays[odd_even][part_sum_a0_idx] + base;
+        const uint32_t *b = part_sum_a8_bitarrays[odd_even][part_sum_a8_idx] + base;
+        const uint32_t *words = nonce_source_page(first_byte, odd_even, page);
+        const uint32_t *other = odd_even == EVEN_STATE ? nonce_source_page(first_byte ^ 0x80, odd_even, page) : unconstrained_states;
+        for (unsigned i = 0; i < STATE_PAGE_WORDS; ++i)
+            count += state_count_word(a[i] & b[i] & words[i] & other[i]);
     }
-    else
-    {
-        return count_bitarray_AND4(part_sum_a0_bitarrays[odd_even][part_sum_a0_idx],
-                                   part_sum_a8_bitarrays[odd_even][part_sum_a8_idx],
-                                   nonces[first_byte].states_bitarray[odd_even],
-                                   nonces[first_byte ^ 0x80].states_bitarray[odd_even]);
-    }
+    return count;
 
     // estimate reduction by all_bitflips_match()
     // if (odd_even) {
@@ -823,6 +823,12 @@ static void update_sum_bitarrays(odd_even_t odd_even)
 {
     if (all_bitflips_bitarray_dirty[odd_even])
     {
+        unsigned length = 0;
+        for (unsigned i = 0; i < (1 << 19); ++i) length += all_bitflips_bitarray[odd_even][i] != 0;
+        uint32_t *active = state_alloc(MAX(length, 1) * sizeof(*active));
+        unsigned at = 0;
+        for (unsigned i = 0; i < (1 << 19); ++i)
+            if (all_bitflips_bitarray[odd_even][i]) active[at++] = i;
         for (uint8_t part_sum = 0; part_sum < NUM_PART_SUMS; part_sum++)
         {
             bitarray_AND(part_sum_a0_bitarrays[odd_even][part_sum], all_bitflips_bitarray[odd_even]);
@@ -830,15 +836,25 @@ static void update_sum_bitarrays(odd_even_t odd_even)
         }
         for (uint16_t i = 0; i < 256; i++)
         {
-            nonces[i].num_states_bitarray[odd_even] = count_bitarray_AND(nonces[i].states_bitarray[odd_even], all_bitflips_bitarray[odd_even]);
+            if (nonce_bitsets[odd_even][i].pages) {
+                nonces[i].num_states_bitarray[odd_even] = count_nonce_states(i, odd_even, active, length);
+            } else {
+                nonces[i].num_states_bitarray[odd_even] = intersect_nonce_states(i, odd_even, all_bitflips_bitarray[odd_even], num_all_bitflips_bitarray[odd_even]);
+            }
         }
         for (uint8_t part_sum_a0 = 0; part_sum_a0 < NUM_PART_SUMS; part_sum_a0++)
         {
             for (uint8_t part_sum_a8 = 0; part_sum_a8 < NUM_PART_SUMS; part_sum_a8++)
             {
-                part_sum_count[odd_even][part_sum_a0][part_sum_a8] += count_bitarray_AND2(part_sum_a0_bitarrays[odd_even][part_sum_a0], part_sum_a8_bitarrays[odd_even][part_sum_a8]);
+                uint32_t count = 0;
+                const uint32_t *a = part_sum_a0_bitarrays[odd_even][part_sum_a0];
+                const uint32_t *b = part_sum_a8_bitarrays[odd_even][part_sum_a8];
+                for (unsigned i = 0; i < length; ++i)
+                    count += state_count_word(a[active[i]] & b[active[i]]);
+                part_sum_count[odd_even][part_sum_a0][part_sum_a8] += count;
             }
         }
+        free(active);
         all_bitflips_bitarray_dirty[odd_even] = false;
     }
 }
@@ -1164,195 +1180,217 @@ static int read_nonces(char *nonces_char, uint32_t length)
     return 1;
 }
 
-static noncelistentry_t *SearchFor2ndByte(uint8_t b1, uint8_t b2)
+// -1 marks a missing second byte; otherwise retain the parity of the first
+// matching list entry, exactly as the former linear lookup did.
+static int8_t second_byte_parity[256][256];
+
+static void index_second_byte_parity(void)
 {
-    noncelistentry_t *p = nonces[b1].first;
-    while (p != NULL)
-    {
-        if ((p->nonce_enc >> 16 & 0xff) == b2)
-        {
-            return p;
+    for (unsigned first = 0; first < 256; ++first) {
+        for (unsigned second = 0; second < 256; ++second)
+            second_byte_parity[first][second] = -1;
+        for (noncelistentry_t *p = nonces[first].first; p != NULL; p = p->next) {
+            unsigned second = (p->nonce_enc >> 16) & 0xff;
+            if (second_byte_parity[first][second] < 0)
+                second_byte_parity[first][second] = (p->par_enc >> 2) & 1;
         }
-        p = p->next;
     }
+}
+
+static bool nonce_has_bitflip(unsigned byte, unsigned flip)
+{
+    if (!(flip & BITFLIP_2ND_BYTE)) {
+        noncelistentry_t *a = nonces[byte].first;
+        noncelistentry_t *b = nonces[byte ^ (flip & 255)].first;
+        return a && b && (((a->par_enc >> 3) == (b->par_enc >> 3)) == !(flip & 256));
+    }
+    for (unsigned second = 0; second < 256; ++second) {
+        int a = second_byte_parity[byte][second];
+        int b = second_byte_parity[byte][second ^ (flip & 255)];
+        if (a >= 0 && b >= 0 && ((a == b) == !(flip & 256)))
+            return true;
+    }
+    return false;
+}
+
+typedef struct {
+    const uint8_t *pages;
+    const uint32_t *words;
+    uint32_t full_page;
+    uint32_t count;
+    unsigned flip;
+    odd_even_t side;
+} compact_filter_t;
+
+typedef struct {
+    compact_filter_t *filters;
+    unsigned count;
+    const uint8_t *applicable;
+    unsigned first, end, pool;
+} compact_reduce_work_t;
+
+static int compare_compact_filters(const void *a, const void *b)
+{
+    const compact_filter_t *left = a, *right = b;
+    return (left->count > right->count) - (left->count < right->count);
+}
+
+HN_SIMD
+static void *reduce_compact_states(void *arg)
+{
+    compact_reduce_work_t *job = arg;
+    uint32_t *words = state_alloc(sizeof(uint32_t) * (1 << 19));
+    uint32_t *domain = state_alloc(sizeof(uint32_t) * (1 << 19));
+    set_bitarray24(domain);
+    unsigned width = job->end - job->first;
+    for (unsigned item = 0; item < 2 * width && !recovery_is_cancelled(); ++item) {
+        odd_even_t side = item / width;
+        unsigned byte = job->first + item % width;
+        if (item == width) set_bitarray24(domain);
+        // Cutting a high-20-bit group that an earlier nonce forbids cannot
+        // remove any state from the final shared domain. The final domain is
+        // still applied to every immutable map, including earlier ones.
+        memcpy(words, domain, sizeof(uint32_t) * (1 << 19));
+        const compact_filter_t *selected[2048];
+        unsigned selected_count = 0;
+        for (unsigned f = 0; f < job->count; ++f)
+            if (job->filters[f].side == side && job->applicable[byte * job->count + f])
+                selected[selected_count++] = &job->filters[f];
+        for (unsigned page = 0; page < STATE_PAGE_COUNT && !recovery_is_cancelled(); ++page) {
+            uint32_t *destination = words + page * STATE_PAGE_WORDS;
+            uint32_t any = 0;
+            for (unsigned i = 0; i < STATE_PAGE_WORDS; ++i) any |= destination[i];
+            for (unsigned f = 0; f < selected_count && any;) {
+                unsigned group = 0;
+                uint32_t *sources[8];
+                while (f < selected_count && group < 8) {
+                    const compact_filter_t *filter = selected[f++];
+                    unsigned id = filter->pages[page * 2] | ((unsigned)filter->pages[page * 2 + 1] << 8);
+                    if (id == filter->full_page) continue;
+                    if (!id) {
+                        memset(destination, 0, STATE_PAGE_WORDS * sizeof(uint32_t));
+                        any = 0;
+                        break;
+                    }
+                    sources[group++] = (uint32_t *)filter->words + id * STATE_PAGE_WORDS;
+                }
+                if (!any) break;
+                bitarray_AND_many(destination, sources, group, STATE_PAGE_WORDS);
+                any = 0;
+                for (unsigned i = 0; i < STATE_PAGE_WORDS; ++i) any |= destination[i];
+            }
+        }
+        nonce_bitsets[side][byte] = state_bitset_build(&nonce_page_pools[job->pool], words);
+        nonces[byte].num_states_bitarray[side] = count_states(words);
+        nonces[byte].all_bitflips_dirty[side] = true;
+        bitarray_low20_AND(domain, words);
+    }
+    state_pool_freeze(&nonce_page_pools[job->pool]);
+    free(words);
+    free(domain);
     return NULL;
 }
 
-static bool timeout(void)
+static uint32_t compact_u32(const uint8_t *bytes)
 {
-    return (msclock() > last_sample_clock + sample_period);
+    return bytes[0] | ((uint32_t)bytes[1] << 8) | ((uint32_t)bytes[2] << 16) | ((uint32_t)bytes[3] << 24);
 }
 
-static void
-#ifdef __has_attribute
-#if __has_attribute(force_align_arg_pointer)
-    __attribute__((force_align_arg_pointer))
-#endif
-#endif
-    * check_for_BitFlipProperties_thread(void *args)
+static compact_filter_t *load_compact_filters(unsigned *filter_count, uint8_t **storage)
 {
-    uint8_t first_byte = ((uint8_t *)args)[0];
-    uint8_t last_byte = ((uint8_t *)args)[1];
-    uint8_t time_budget = ((uint8_t *)args)[2];
-
-    if (hardnested_stage & CHECK_1ST_BYTES)
-    {
-        // for (uint16_t bitflip = 0x001; bitflip < 0x200; bitflip++) {
-        for (uint16_t bitflip_idx = 0; bitflip_idx < num_1st_byte_effective_bitflips; bitflip_idx++)
-        {
-            uint16_t bitflip = all_effective_bitflip[bitflip_idx];
-            if (time_budget && timeout())
-            {
-#if defined(DEBUG_REDUCTION)
-                PrintAndLogEx("break at bitflip_idx " _YELLOW_("%d") " ...", bitflip_idx);
-#endif
-                return NULL;
-            }
-            for (uint16_t i = first_byte; i <= last_byte; i++)
-            {
-
-                if (nonces[i].BitFlips[bitflip] == 0 && nonces[i].BitFlips[bitflip ^ 0x100] == 0 && nonces[i].first != NULL && nonces[i ^ (bitflip & 0xff)].first != NULL)
-                {
-
-                    uint8_t parity1 = (nonces[i].first->par_enc) >> 3;                    // parity of first byte
-                    uint8_t parity2 = (nonces[i ^ (bitflip & 0xff)].first->par_enc) >> 3; // parity of nonce with bits flipped
-
-                    if ((parity1 == parity2 && !(bitflip & 0x100)) // bitflip
-                        || (parity1 != parity2 && (bitflip & 0x100)))
-                    { // not bitflip
-
-                        nonces[i].BitFlips[bitflip] = 1;
-
-                        for (odd_even_t odd_even = EVEN_STATE; odd_even <= ODD_STATE; odd_even++)
-                        {
-
-                            if (bitflip_bitarrays[odd_even][bitflip] != NULL)
-                            {
-                                uint32_t old_count = nonces[i].num_states_bitarray[odd_even];
-                                nonces[i].num_states_bitarray[odd_even] = count_bitarray_AND(nonces[i].states_bitarray[odd_even], bitflip_bitarrays[odd_even][bitflip]);
-                                if (nonces[i].num_states_bitarray[odd_even] != old_count)
-                                {
-                                    nonces[i].all_bitflips_dirty[odd_even] = true;
-                                }
-                                // PrintAndLogEx("bitflip: %d old: %d, new: %d ", bitflip, old_count, nonces[i].num_states_bitarray[odd_even]);
-                            }
-                        }
-                    }
-                }
-            }
-            ((uint8_t *)args)[1] = num_1st_byte_effective_bitflips - bitflip_idx - 1; // bitflips still to go in stage 1
-        }
+    uint32_t bytes = COMPACT_BITFLIP_BYTES;
+    uint8_t *packed = state_alloc(bytes);
+    if (!XzDecode((uint8_t *)compact_bitflip_xz, sizeof(compact_bitflip_xz), packed, &bytes) || bytes != COMPACT_BITFLIP_BYTES) {
+        PrintAndLogEx("Failed to decode compact bitflip tables. Aborting...\n");
+        exit(4);
     }
-
-    ((uint8_t *)args)[1] = 0; // stage 1 definitely completed
-
-    if (hardnested_stage & CHECK_2ND_BYTES)
-    {
-        for (uint16_t bitflip_idx = num_1st_byte_effective_bitflips; bitflip_idx < num_all_effective_bitflips; bitflip_idx++)
-        {
-            uint16_t bitflip = all_effective_bitflip[bitflip_idx];
-            if (time_budget && timeout())
-            {
-#if defined(DEBUG_REDUCTION)
-                PrintAndLogEx("break at bitflip_idx " _YELLOW_("%d") " ...", bitflip_idx);
-#endif
-                return NULL;
-            }
-            for (uint16_t i = first_byte; i <= last_byte; i++)
-            {
-                // Check for Bit Flip Property of 2nd bytes
-                if (nonces[i].BitFlips[bitflip] == 0)
-                {
-                    for (uint16_t j = 0; j < 256; j++)
-                    { // for each 2nd Byte
-                        noncelistentry_t *byte1 = SearchFor2ndByte(i, j);
-                        noncelistentry_t *byte2 = SearchFor2ndByte(i, j ^ (bitflip & 0xff));
-                        if (byte1 != NULL && byte2 != NULL)
-                        {
-                            uint8_t parity1 = byte1->par_enc >> 2 & 0x01;  // parity of 2nd byte
-                            uint8_t parity2 = byte2->par_enc >> 2 & 0x01;  // parity of 2nd byte with bits flipped
-                            if ((parity1 == parity2 && !(bitflip & 0x100)) // bitflip
-                                || (parity1 != parity2 && (bitflip & 0x100)))
-                            { // not bitflip
-                                nonces[i].BitFlips[bitflip] = 1;
-                                for (odd_even_t odd_even = EVEN_STATE; odd_even <= ODD_STATE; odd_even++)
-                                {
-                                    if (bitflip_bitarrays[odd_even][bitflip] != NULL)
-                                    {
-                                        uint32_t old_count = nonces[i].num_states_bitarray[odd_even];
-                                        nonces[i].num_states_bitarray[odd_even] = count_bitarray_AND(nonces[i].states_bitarray[odd_even], bitflip_bitarrays[odd_even][bitflip]);
-                                        if (nonces[i].num_states_bitarray[odd_even] != old_count)
-                                        {
-                                            nonces[i].all_bitflips_dirty[odd_even] = true;
-                                        }
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-                // PrintAndLogEx("states_bitarray[0][%" PRIu16 "] contains %d ones.\n", i, count_states(nonces[i].states_bitarray[EVEN_STATE]));
-                // PrintAndLogEx("states_bitarray[1][%" PRIu16 "] contains %d ones.\n", i, count_states(nonces[i].states_bitarray[ODD_STATE]));
-            }
-        }
+    uint32_t page_count = compact_u32(packed + 4);
+    unsigned count = compact_u32(packed + 8);
+    if (compact_u32(packed) != 0x31544348u || !page_count || page_count > 65536 || !count || count > 2048
+            || bytes != 12 + (uint64_t)page_count * STATE_PAGE_WORDS * 4 + (uint64_t)count * (12 + STATE_PAGE_COUNT * 2)) {
+        PrintAndLogEx("Invalid compact bitflip table layout. Aborting...\n");
+        exit(4);
     }
+    const uint32_t *page_words = (const uint32_t *)(packed + 12);
+    // Decode page words explicitly on big-endian hosts.
+    const uint32_t endian = 1;
+    if (!*(const uint8_t *)&endian)
+        for (uint32_t i = 0; i < page_count * STATE_PAGE_WORDS; ++i) {
+            uint8_t *p = packed + 12 + i * 4;
+            ((uint32_t *)(packed + 12))[i] = compact_u32(p);
+        }
+    uint32_t full_page = UINT32_MAX;
+    for (uint32_t page = 0; page < page_count; ++page) {
+        uint32_t all = UINT32_MAX;
+        for (unsigned i = 0; i < STATE_PAGE_WORDS; ++i) all &= page_words[page * STATE_PAGE_WORDS + i];
+        if (all == UINT32_MAX) { full_page = page; break; }
+    }
+    compact_filter_t *tables = state_alloc(count * sizeof(*tables));
+    const uint8_t *entry = packed + 12 + page_count * STATE_PAGE_WORDS * sizeof(uint32_t);
+    for (unsigned i = 0; i < count; ++i) {
+        uint32_t fields[3];
+        for (unsigned j = 0; j < 3; ++j) fields[j] = compact_u32(entry + j * 4);
+        tables[i] = (compact_filter_t){entry + 12, page_words, full_page, fields[2], fields[1], fields[0]};
+        entry += 12 + STATE_PAGE_COUNT * 2;
+    }
+    *filter_count = count;
+    *storage = packed;
+    return tables;
+}
 
+static void filter_compact_bitflip_bitarrays(void)
+{
+    index_second_byte_parity();
+    unsigned count;
+    uint8_t *packed;
+    compact_filter_t *tables = load_compact_filters(&count, &packed);
+    qsort(tables, count, sizeof(*tables), compare_compact_filters);
+    uint8_t *applicable = state_alloc(256 * (count ? count : 1));
+    for (unsigned byte = 0; byte < 256; ++byte)
+        for (unsigned f = 0; f < count; ++f) {
+            bool match = nonce_has_bitflip(byte, tables[f].flip);
+            applicable[byte * count + f] = match;
+            if (match) nonces[byte].BitFlips[tables[f].flip] = 1;
+        }
+    const int cpus = num_CPUs();
+    // Bound scratch maps and independently interned pools on large hosts.
+    unsigned workers = MIN(MAX(cpus, 1), 4);
+    pthread_t threads[4];
+    bool started[4];
+    compact_reduce_work_t jobs[4];
+    for (unsigned i = 0; i < workers; ++i) {
+        jobs[i] = (compact_reduce_work_t){tables, count, applicable, 256 * i / workers, 256 * (i + 1) / workers, i};
+        started[i] = i + 1 < workers && pthread_create(&threads[i], NULL, reduce_compact_states, &jobs[i]) == 0;
+        if (!started[i]) reduce_compact_states(&jobs[i]);
+    }
+    for (unsigned i = 0; i < workers; ++i) if (started[i]) pthread_join(threads[i], NULL);
+    for (unsigned i = 0; i < workers; ++i) compact_domain_ends[i] = jobs[i].end - 1;
+    compact_domains = workers;
+    free(tables);
+    free(applicable);
+    free(packed);
+    hardnested_stage &= ~CHECK_1ST_BYTES;
+}
+
+static void *reduce_nonce_side(void *arg)
+{
+    odd_even_t side = *(odd_even_t *)arg;
+    update_allbitflips_side(side);
+    update_sum_bitarrays(side);
     return NULL;
 }
 
-static void check_for_BitFlipProperties(bool time_budget)
+static void update_nonce_data(void)
 {
-    // create and run worker threads
-    pthread_t thread_id[NUM_CHECK_BITFLIPS_THREADS];
-
-    uint8_t args[NUM_CHECK_BITFLIPS_THREADS][3];
-    uint16_t bytes_per_thread = (256 + (num_CPUs() / 2)) / num_CPUs();
-    for (uint32_t i = 0; i < num_CPUs(); i++)
-    {
-        args[i][0] = i * bytes_per_thread;
-        args[i][1] = MIN(args[i][0] + bytes_per_thread - 1, 255);
-        args[i][2] = time_budget;
-    }
-    // args[][] is uint8_t so max 255, no need to check it
-    // args[NUM_CHECK_BITFLIPS_THREADS - 1][1] = MAX(args[NUM_CHECK_BITFLIPS_THREADS - 1][1], 255);
-
-    // start threads
-    for (uint32_t i = 0; i < num_CPUs(); i++)
-    {
-        pthread_create(&thread_id[i], NULL, check_for_BitFlipProperties_thread, args[i]);
-    }
-
-    // wait for threads to terminate:
-    for (uint32_t i = 0; i < num_CPUs(); i++)
-    {
-        pthread_join(thread_id[i], NULL);
-    }
-
-    if (hardnested_stage & CHECK_2ND_BYTES)
-    {
-        hardnested_stage &= ~CHECK_1ST_BYTES; // we are done with 1st stage, except...
-        for (uint32_t i = 0; i < num_CPUs(); i++)
-        {
-            if (args[i][1] != 0)
-            {
-                hardnested_stage |= CHECK_1ST_BYTES; // ... when any of the threads didn't complete in time
-                break;
-            }
-        }
-    }
-#if defined(DEBUG_REDUCTION)
-    if (hardnested_stage & CHECK_1ST_BYTES)
-        PrintAndLogEx("stage 1 not completed yet\n");
-#endif
-}
-
-static void update_nonce_data(bool time_budget)
-{
-    check_for_BitFlipProperties(time_budget);
-    update_allbitflips_array();
-    update_sum_bitarrays(EVEN_STATE);
-    update_sum_bitarrays(ODD_STATE);
+    filter_compact_bitflip_bitarrays();
+    if (recovery_is_cancelled()) return;
+    // Each half owns its domain, nonce counts and partial-sum tables.
+    odd_even_t sides[2] = {EVEN_STATE, ODD_STATE};
+    pthread_t thread;
+    bool started = num_CPUs() > 1 && pthread_create(&thread, NULL, reduce_nonce_side, &sides[0]) == 0;
+    if (!started) reduce_nonce_side(&sides[0]);
+    reduce_nonce_side(&sides[1]);
+    if (started) pthread_join(thread, NULL);
     update_p_K();
     estimate_sum_a8();
 }
@@ -1361,7 +1399,7 @@ static inline bool invariant_holds(uint_fast8_t byte_diff, uint_fast32_t state1,
 {
     uint_fast8_t j_1_bit_mask = 0x01 << (bit - 1);
     uint_fast8_t bit_diff = byte_diff & j_1_bit_mask;                                                                 // difference of (j-1)th bit
-    uint_fast8_t filter_diff = crypto1_filter(state1 >> (4 - state_bit)) ^ crypto1_filter(state2 >> (4 - state_bit)); // difference in filter function
+    uint_fast8_t filter_diff = candidate_filter(state1 >> (4 - state_bit)) ^ candidate_filter(state2 >> (4 - state_bit));
     uint_fast8_t mask_y12_y13 = (0xc0 >> state_bit);
     uint_fast8_t state_bits_diff = (state1 ^ state2) & mask_y12_y13;               // difference in state bits 12 and 13
     uint_fast8_t all_diff = evenparity8(bit_diff ^ state_bits_diff ^ filter_diff); // use parity function to XOR all bits
@@ -1444,6 +1482,8 @@ static inline bool remaining_bits_match(uint_fast8_t num_common_bits, uint_fast8
 }
 
 static pthread_mutex_t statelist_cache_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t statelist_cache_changed = PTHREAD_COND_INITIALIZER;
+static uint64_t statelist_cache_revision;
 static pthread_mutex_t book_of_work_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef enum
@@ -1463,6 +1503,7 @@ static struct sl_cache_entry
 static void init_statelist_cache(void)
 {
     pthread_mutex_lock(&statelist_cache_mutex);
+    statelist_cache_revision = 0;
     for (uint16_t i = 0; i < NUM_PART_SUMS; i++)
     {
         for (uint16_t j = 0; j < NUM_PART_SUMS; j++)
@@ -1494,51 +1535,62 @@ static void free_statelist_cache(void)
     pthread_mutex_unlock(&statelist_cache_mutex);
 }
 
-#ifdef DEBUG_KEY_ELIMINATION
-static inline bool bitflips_match(uint8_t byte, uint32_t state, odd_even_t odd_even, bool quiet)
-#else
-static inline bool bitflips_match(uint8_t byte, uint32_t state, odd_even_t odd_even)
-#endif
-{
-    uint32_t *bitset = nonces[byte].states_bitarray[odd_even];
-    bool possible = test_bit24(bitset, state);
-    if (!possible)
-    {
-        return false;
-    }
-
-    return true;
-}
-
 static uint_fast8_t reverse(uint_fast8_t b)
 {
     return (b * 0x0202020202ULL & 0x010884422010ULL) % 1023;
 }
 
+// The traversal order is fixed for every candidate and both register halves.
+static uint8_t match_byte_diff[256];
+static uint8_t match_common_bits[256];
+
+// Low-bit alternatives are aligned groups of 1, 2, 4, 8 or 16 states. A
+// group never crosses a word, so fetch all permitted alternatives at once.
+static inline uint32_t candidate_group(uint32_t word, uint32_t base, unsigned alternatives)
+{
+    return (word << (base & 31)) & ~(UINT32_MAX >> alternatives);
+}
+
 static bool all_bitflips_match(uint8_t byte, uint32_t state, odd_even_t odd_even)
 {
-    uint32_t masks[2][8] = {
+    static const uint32_t masks[2][8] = {
         {0x00fffff0, 0x00fffff8, 0x00fffff8, 0x00fffffc, 0x00fffffc, 0x00fffffe, 0x00fffffe, 0x00ffffff},
         {0x00fffff0, 0x00fffff0, 0x00fffff8, 0x00fffff8, 0x00fffffc, 0x00fffffc, 0x00fffffe, 0x00fffffe}};
 
     for (uint16_t i = 1; i < 256; i++)
     {
-        uint_fast8_t bytes_diff = reverse(i); // start with most common bits
+        uint_fast8_t bytes_diff = match_byte_diff[i]; // start with most common bits
         uint_fast8_t byte2 = byte ^ bytes_diff;
-        uint_fast8_t num_common = trailing_zeros(bytes_diff);
+        uint_fast8_t num_common = match_common_bits[i];
         uint32_t mask = masks[odd_even][num_common];
         bool found_match = false;
-        for (uint8_t remaining_bits = 0; remaining_bits <= (~mask & 0xff); remaining_bits++)
-        {
-            if (remaining_bits_match(num_common, bytes_diff, state, (state & mask) | remaining_bits, odd_even))
-            {
 
-#ifdef DEBUG_KEY_ELIMINATION
-                if (bitflips_match(byte2, (state & mask) | remaining_bits, odd_even, true))
+        // Sparse sets reject most alternatives with one cached bitmap read.
+        // Dense sets retain the arithmetic-first order to avoid wasted reads.
+        bool sparse = nonces[byte2].num_states_bitarray[odd_even] <= (1 << 20);
+        uint32_t base = state & mask;
+        unsigned alternatives = (~mask & 0xff) + 1;
+        if (sparse) {
+            uint32_t word = nonce_word(byte2, odd_even, base >> 5);
+            uint32_t available = candidate_group(word, base, alternatives);
+            while (available) {
+#if defined(__GNUC__)
+                unsigned low = __builtin_clz(available);
 #else
-                if (bitflips_match(byte2, (state & mask) | remaining_bits, odd_even))
+                unsigned low = 0;
+                while (!(available & (0x80000000u >> low))) ++low;
 #endif
-                {
+                if (remaining_bits_match(num_common, bytes_diff, state, base | low, odd_even)) {
+                    found_match = true;
+                    break;
+                }
+                available &= ~(0x80000000u >> low);
+            }
+        } else {
+            for (unsigned low = 0; low < alternatives; ++low) {
+                uint32_t other = base | low;
+                if (remaining_bits_match(num_common, bytes_diff, state, other, odd_even)
+                        && (nonce_word(byte2, odd_even, other >> 5) & (0x80000000u >> (other & 31)))) {
                     found_match = true;
                     break;
                 }
@@ -1602,7 +1654,7 @@ static void add_matching_states(statelist_t *cands, uint8_t part_sum_a0, uint8_t
         exit(4);
     }
 
-    uint32_t *cands_bitarray = (uint32_t *)malloc_bitarray(sizeof(uint32_t) * worstcase_size);
+    uint32_t *cands_bitarray = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
     if (cands_bitarray == NULL)
     {
         PrintAndLogEx("Out of memory error in add_matching_states() - bitarray.\n");
@@ -1612,9 +1664,12 @@ static void add_matching_states(statelist_t *cands, uint8_t part_sum_a0, uint8_t
 
     uint32_t *bitarray_a0 = part_sum_a0_bitarrays[odd_even][part_sum_a0 / 2];
     uint32_t *bitarray_a8 = part_sum_a8_bitarrays[odd_even][part_sum_a8 / 2];
-    uint32_t *bitarray_bitflips = nonces[best_first_bytes[0]].states_bitarray[odd_even];
-
-    bitarray_AND4(cands_bitarray, bitarray_a0, bitarray_a8, bitarray_bitflips);
+    for (unsigned page = 0; page < STATE_PAGE_COUNT; ++page) {
+        unsigned base = page * STATE_PAGE_WORDS;
+        const uint32_t *words = nonce_source_page(best_first_bytes[0], odd_even, page);
+        for (unsigned i = 0; i < STATE_PAGE_WORDS; ++i)
+            cands_bitarray[base + i] = bitarray_a0[base + i] & bitarray_a8[base + i] & words[i];
+    }
 
     bitarray_to_list(best_first_bytes[0], cands_bitarray, cands->states[odd_even], &(cands->len[odd_even]), odd_even);
 
@@ -1633,6 +1688,8 @@ static void add_matching_states(statelist_t *cands, uint8_t part_sum_a0, uint8_t
     sl_cache[part_sum_a0 / 2][part_sum_a8 / 2][odd_even].sl = cands->states[odd_even];
     sl_cache[part_sum_a0 / 2][part_sum_a8 / 2][odd_even].len = cands->len[odd_even];
     sl_cache[part_sum_a0 / 2][part_sum_a8 / 2][odd_even].cache_status = COMPLETED;
+    ++statelist_cache_revision;
+    pthread_cond_broadcast(&statelist_cache_changed);
     pthread_mutex_unlock(&statelist_cache_mutex);
     return;
 }
@@ -1676,7 +1733,11 @@ static void add_bitflip_candidates(uint8_t byte)
             exit(4);
         }
 
-        bitarray_to_list(byte, nonces[byte].states_bitarray[odd_even], candidates1->states[odd_even], &(candidates1->len[odd_even]), odd_even);
+        uint32_t *scratch = malloc_bitarray(sizeof(uint32_t) * (1 << 19));
+        if (!scratch) { PrintAndLogEx("Out of memory extracting compact states.\n"); exit(4); }
+        materialize_nonce(byte, odd_even, scratch);
+        bitarray_to_list(byte, scratch, candidates1->states[odd_even], &(candidates1->len[odd_even]), odd_even);
+        free_bitarray(scratch);
 
         // slim down the allocated memory.
         if (candidates1->len[odd_even] + 1 < worstcase_size)
@@ -1774,6 +1835,9 @@ static void
     bool there_might_be_more_work = true;
     do
     {
+        pthread_mutex_lock(&statelist_cache_mutex);
+        uint64_t revision = statelist_cache_revision;
+        pthread_mutex_unlock(&statelist_cache_mutex);
         there_might_be_more_work = false;
         for (uint8_t p = 0; p < NUM_PART_SUMS && !recovery_is_cancelled(); p++)
         {
@@ -1893,6 +1957,8 @@ static void
                                     { // no need to calculate even states yet
                                         pthread_mutex_lock(&statelist_cache_mutex);
                                         sl_cache[q][s][EVEN_STATE].cache_status = TO_BE_DONE;
+                                        ++statelist_cache_revision;
+                                        pthread_cond_broadcast(&statelist_cache_changed);
                                         pthread_mutex_unlock(&statelist_cache_mutex);
                                         current_candidates->len[EVEN_STATE] = 0;
                                         current_candidates->states[EVEN_STATE] = NULL;
@@ -1924,6 +1990,16 @@ static void
                 }
             }
         }
+        if (there_might_be_more_work) {
+            pthread_mutex_lock(&statelist_cache_mutex);
+            // A blocked entry always has an active producer. Its completion
+            // (or rollback to TO_BE_DONE) wakes waiters, including on cancel.
+            // The revision check prevents a publication between scan and wait
+            // from being lost; spurious wakes simply rescan the work book.
+            if (revision == statelist_cache_revision && !recovery_is_cancelled())
+                pthread_cond_wait(&statelist_cache_changed, &statelist_cache_mutex);
+            pthread_mutex_unlock(&statelist_cache_mutex);
+        }
     } while (there_might_be_more_work && !recovery_is_cancelled());
 
     return NULL;
@@ -1932,29 +2008,35 @@ static void
 static void generate_candidates(uint8_t sum_a0_idx, uint8_t sum_a8_idx)
 {
 
-    // create mutexes for accessing the statelist cache and our "book of work"
-    pthread_mutex_init(&statelist_cache_mutex, NULL);
-    pthread_mutex_init(&book_of_work_mutex, NULL);
-
+    // Reuse the statically initialized locks; all prior workers have joined.
     init_statelist_cache();
     init_book_of_work();
 
-    // create and run worker threads
-    pthread_t thread_id[NUM_REDUCTION_WORKING_THREADS];
-
-    uint16_t sums1[NUM_REDUCTION_WORKING_THREADS][3];
-    for (uint32_t i = 0; i < num_CPUs(); i++)
+    // Keep creation and joins consistent if CPU affinity changes mid-search.
+    const int cpus = num_CPUs();
+#if defined(_MSC_VER)
+    enum { capacity = 1024 }; // MSVC does not support variable-length arrays.
+    const uint32_t workers = MIN(MAX(cpus, 1), capacity);
+#else
+    const uint32_t workers = MAX(cpus, 1);
+    const uint32_t capacity = workers;
+#endif
+    pthread_t thread_id[capacity];
+    bool started[capacity];
+    uint16_t sums1[capacity][3];
+    for (uint32_t i = 0; i < workers; i++)
     {
         sums1[i][0] = sum_a0_idx;
         sums1[i][1] = sum_a8_idx;
         sums1[i][2] = i + 1;
-        pthread_create(thread_id + i, NULL, generate_candidates_worker_thread, sums1[i]);
+        started[i] = pthread_create(thread_id + i, NULL, generate_candidates_worker_thread, sums1[i]) == 0;
+        if (!started[i]) generate_candidates_worker_thread(sums1[i]);
     }
 
     // wait for threads to terminate:
-    for (uint32_t i = 0; i < num_CPUs(); i++)
+    for (uint32_t i = 0; i < workers; i++)
     {
-        pthread_join(thread_id[i], NULL);
+        if (started[i]) pthread_join(thread_id[i], NULL);
     }
 
     maximum_states = 0;
@@ -2038,6 +2120,10 @@ static void set_test_state(uint8_t byte)
 
 static void init_it_all(void)
 {
+    for (unsigned i = 1; i < 256; ++i) {
+        match_byte_diff[i] = reverse(i);
+        match_common_bits[i] = trailing_zeros(match_byte_diff[i]);
+    }
     memset(nonces, 0, sizeof(nonces));
     maximum_states = 0;
     best_first_byte_smallest_bitarray = 0;
@@ -2056,10 +2142,6 @@ static void init_it_all(void)
     candidates = NULL;
     num_acquired_nonces = 0;
     start_time = 0;
-    num_effective_bitflips[0] = 0;
-    num_effective_bitflips[1] = 0;
-    num_all_effective_bitflips = 0;
-    num_1st_byte_effective_bitflips = 0;
     hardnested_stage = CHECK_1ST_BYTES;
     known_target_key = 0;
     test_state[0] = 0;
@@ -2068,14 +2150,8 @@ static void init_it_all(void)
     init_book_of_work();
     real_sum_a8 = 0;
 
-    memset(effective_bitflip, 0, sizeof(effective_bitflip));
-    memset(all_effective_bitflip, 0, sizeof(all_effective_bitflip));
-    memset(bitflip_bitarrays, 0, sizeof(bitflip_bitarrays));
-    memset(bitflip_bitarrays_pointers, 0, sizeof(bitflip_bitarrays_pointers));
-    memset(count_bitflip_bitarrays, 0, sizeof(count_bitflip_bitarrays));
     memset(part_sum_a0_bitarrays, 0, sizeof(part_sum_a0_bitarrays));
     memset(part_sum_a8_bitarrays, 0, sizeof(part_sum_a8_bitarrays));
-    memset(sum_a0_bitarrays, 0, sizeof(sum_a0_bitarrays));
 }
 
 int mfnestedhard(uint8_t blockNo, uint8_t keyType, uint8_t *key, uint8_t trgBlockNo, uint8_t trgKeyType, uint8_t *trgkey,
@@ -2093,18 +2169,11 @@ int mfnestedhard(uint8_t blockNo, uint8_t keyType, uint8_t *key, uint8_t trgBloc
     char progress_text[80];
     snprintf(progress_text, sizeof(progress_text), "Start using %d threads", num_CPUs());
     hardnested_print_progress(0, progress_text, (float)(1LL << 47), 0);
-    init_bitflip_bitarrays();
-    if (recovery_is_cancelled()) {
-        free_bitflip_bitarrays();
-        return 0;
-    }
     init_part_sum_bitarrays();
     if (recovery_is_cancelled()) {
         free_part_sum_bitarrays();
-        free_bitflip_bitarrays();
         return 0;
     }
-    init_sum_bitarrays();
     init_allbitflips_array();
     init_nonce_memory();
     update_reduction_rate(0.0, true);
@@ -2112,16 +2181,16 @@ int mfnestedhard(uint8_t blockNo, uint8_t keyType, uint8_t *key, uint8_t trgBloc
     int res = read_nonces(nonces_char, length);
     if (res != 1 || recovery_is_cancelled())
     {
-        free_bitflip_bitarrays();
         free_nonces_memory();
         free_bitarray(all_bitflips_bitarray[ODD_STATE]);
         free_bitarray(all_bitflips_bitarray[EVEN_STATE]);
-        free_sum_bitarrays();
         free_part_sum_bitarrays();
         return res;
     }
     hardnested_stage = CHECK_1ST_BYTES | CHECK_2ND_BYTES;
-    update_nonce_data(false);
+    bool key_found = false;
+    update_nonce_data();
+    if (recovery_is_cancelled()) goto cleanup;
     float brute_force_depth;
     shrink_key_space(&brute_force_depth);
 
@@ -2135,8 +2204,6 @@ int mfnestedhard(uint8_t blockNo, uint8_t keyType, uint8_t *key, uint8_t trgBloc
         known_target_key = -1;
     }
 
-    free_bitflip_bitarrays();
-    bool key_found = false;
     num_keys_tested = 0;
     uint32_t num_odd = nonces[best_first_byte_smallest_bitarray].num_states_bitarray[ODD_STATE];
     uint32_t num_even = nonces[best_first_byte_smallest_bitarray].num_states_bitarray[EVEN_STATE];
@@ -2198,10 +2265,10 @@ int mfnestedhard(uint8_t blockNo, uint8_t keyType, uint8_t *key, uint8_t trgBloc
         }
     }
 
+cleanup:
     free_nonces_memory();
     free_bitarray(all_bitflips_bitarray[ODD_STATE]);
     free_bitarray(all_bitflips_bitarray[EVEN_STATE]);
-    free_sum_bitarrays();
     free_part_sum_bitarrays();
 
     return (key_found) ? 1 : 0;

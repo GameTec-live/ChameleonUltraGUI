@@ -45,13 +45,49 @@ jobs:
         run: |
           python3 chameleonultragui/test/native/recovery_check.py \
             build/native-recovery/librecovery.so \
-            --reference build/native-reference/librecovery.so --cases 4 --repeats 1 --hardnested
+            --reference build/native-reference/librecovery.so --cases 4 --repeats 1 --hardnested --hardnested-generated 2
       - name: Check every partial-sum table bit
         run: |
           cc -O3 -D_GNU_SOURCE chameleonultragui/test/native/hardnested_tables_check.c \
             -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
             -lrecovery -pthread -lm -o build/native-recovery/check-tables
           build/native-recovery/check-tables
+          for cpus in 1 3 6 8; do
+            cc -O3 -D_GNU_SOURCE -DRECOVERY_TEST_CPU_COUNT="$cpus" \
+              chameleonultragui/test/native/hardnested_tables_check.c \
+              -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
+              -lrecovery -pthread -lm -o "build/native-recovery/check-tables-$cpus"
+            "build/native-recovery/check-tables-$cpus"
+          done
+      - name: Check compact pages, packed tables and candidate predicates
+        run: |
+          cc -O3 -D_GNU_SOURCE chameleonultragui/test/native/hardnested_memory_check.c \
+            -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
+            -lrecovery -pthread -lm -o build/native-recovery/check-memory
+          build/native-recovery/check-memory
+      - name: Check the eight deterministic hardnested cases and cancellation
+        run: |
+          python3 chameleonultragui/test/native/hardnested_corpus_check.py \
+            build/native-recovery/librecovery.so
+          python3 chameleonultragui/test/native/hardnested_cancel_check.py \
+            build/native-recovery/librecovery.so
+      - name: Compare complete reductions across worker counts and launch failures
+        run: |
+          cc -O3 -D_GNU_SOURCE chameleonultragui/test/native/hardnested_reduction_check.c \
+            -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
+            -lrecovery -pthread -lm -lz -o build/native-recovery/check-reduction
+          build/native-recovery/check-reduction \
+            chameleonultragui/test/native/fixtures/hardnested-filtering.bin \
+            build/native-recovery/reduction.snapshot.gz
+          for cpus in 1 3; do
+            cc -O3 -D_GNU_SOURCE -DRECOVERY_TEST_CPU_COUNT="$cpus" \
+              chameleonultragui/test/native/hardnested_reduction_check.c \
+              -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
+              -lrecovery -pthread -lm -lz -o "build/native-recovery/check-reduction-$cpus"
+            "build/native-recovery/check-reduction-$cpus" \
+              chameleonultragui/test/native/fixtures/hardnested-filtering.bin \
+              build/native-recovery/reduction.snapshot.gz --verify
+          done
       - name: Check failed thread launches with one and four CPUs
         run: |
           cc -shared -fPIC chameleonultragui/test/native/thread_fallback.c \
@@ -62,3 +98,51 @@ jobs:
               build/native-recovery/librecovery.so \
               --reference build/native-reference/librecovery.so --cases 1 --repeats 1
           done
+          LD_PRELOAD="$PWD/build/native-recovery/thread-fallback.so" \
+            build/native-recovery/check-memory
+          LD_PRELOAD="$PWD/build/native-recovery/thread-fallback.so" \
+            build/native-recovery/check-tables-8
+          RECOVERY_TEST_CPUS=3 LD_PRELOAD="$PWD/build/native-recovery/thread-fallback.so" \
+            build/native-recovery/check-reduction-3 \
+            chameleonultragui/test/native/fixtures/hardnested-filtering.bin \
+            build/native-recovery/reduction.snapshot.gz --verify
+      - name: Check candidate launch failures and complete hardnested recovery
+        run: |
+          cc -O3 -D_GNU_SOURCE chameleonultragui/test/native/hardnested_threads_check.c \
+            -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
+            -lrecovery -pthread -lm -o build/native-recovery/check-threads
+          build/native-recovery/check-threads \
+            chameleonultragui/test/native/fixtures/hardnested-filtering.bin
+          for every in 1 2; do
+            for fixture in capture filtering; do
+              RECOVERY_TEST_FAIL_EVERY="$every" LD_PRELOAD="$PWD/build/native-recovery/thread-fallback.so" \
+                python3 chameleonultragui/test/native/hardnested_benchmark.py \
+                build/native-recovery/librecovery.so --worker "$fixture"
+            done
+            RECOVERY_TEST_FAIL_EVERY="$every" LD_PRELOAD="$PWD/build/native-recovery/thread-fallback.so" \
+              python3 chameleonultragui/test/native/hardnested_corpus_check.py \
+              build/native-recovery/librecovery.so --worker zero
+          done
+      - name: Check construction without the optional Crypto1 table
+        run: |
+          cmake -S chameleonultragui/src -B build/native-lowmem \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-DLOWMEM
+          cmake --build build/native-lowmem -j2
+          cc -O3 -D_GNU_SOURCE -DLOWMEM chameleonultragui/test/native/hardnested_tables_check.c \
+            -Lbuild/native-lowmem -Wl,-rpath,"$PWD/build/native-lowmem" \
+            -lrecovery -pthread -lm -o build/native-lowmem/check-tables
+          build/native-lowmem/check-tables
+          python3 chameleonultragui/test/native/hardnested_benchmark.py \
+            build/native-lowmem/librecovery.so --worker capture
+      - name: Check the portable kernels without CPU dispatch
+        run: |
+          cmake -S chameleonultragui/src -B build/native-portable \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-DHN_DISABLE_SIMD
+          cmake --build build/native-portable -j2
+          cc -O3 -D_GNU_SOURCE -DHN_DISABLE_SIMD \
+            chameleonultragui/test/native/hardnested_memory_check.c \
+            -Lbuild/native-portable -Wl,-rpath,"$PWD/build/native-portable" \
+            -lrecovery -pthread -lm -o build/native-portable/check-memory
+          build/native-portable/check-memory
+          python3 chameleonultragui/test/native/hardnested_benchmark.py \
+            build/native-portable/librecovery.so --worker capture

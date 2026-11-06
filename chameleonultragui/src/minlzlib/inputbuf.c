@@ -40,7 +40,7 @@ typedef struct _BUFFER_STATE
     uint32_t SoftLimit;
     uint32_t Size;
 } BUFFER_STATE, * PBUFFER_STATE;
-BUFFER_STATE In;
+static MINLZ_THREAD_LOCAL BUFFER_STATE In;
 
 bool
 BfAlign (

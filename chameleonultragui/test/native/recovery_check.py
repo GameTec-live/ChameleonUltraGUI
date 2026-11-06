@@ -96,6 +96,50 @@ class Engine:
         return ar, at
 
 
+def filter_bit(x):
+    f = ((0xf22c0 >> (x & 15)) & 16) | ((0x6c9c0 >> ((x >> 4) & 15)) & 8)
+    f |= ((0x3c8b0 >> ((x >> 8) & 15)) & 4) | ((0x1e458 >> ((x >> 12) & 15)) & 2)
+    f |= (0x0d938 >> ((x >> 16) & 15)) & 1
+    return (0xEC57E80A >> f) & 1
+
+
+def hardnested_capture(engine, key, seed):
+    """Encrypt 8192+ deterministic nonces, covering every first byte."""
+    rng = random.Random(seed)
+    uid = rng.getrandbits(32)
+    encrypt = engine.lib.crypto1_byte
+    encrypt.argtypes = [C.POINTER(State), C.c_uint8, C.c_int]
+    encrypt.restype = C.c_uint8
+
+    data = bytearray(uid.to_bytes(4, 'big') + bytes([0, 0x60]))
+    seen = set()
+    while len(seen) < 256 or len(data) < 6 + 4096 * 9:
+        pair, packed_parity = bytearray(), 0
+        for _ in range(2):
+            state = engine.state(key)
+            plain = rng.getrandbits(32).to_bytes(4, 'big')
+            encrypted, parity = bytearray(), 0
+            for byte, uid_byte in zip(plain, uid.to_bytes(4, 'big')):
+                encrypted.append(byte ^ encrypt(C.byref(state), byte ^ uid_byte, 0))
+                parity = (parity << 1) | (1 ^ (byte.bit_count() & 1) ^ filter_bit(state.odd))
+            seen.add(encrypted[0])
+            pair.extend(encrypted)
+            packed_parity = (packed_parity << 4) | parity
+        data.extend(pair + bytes([packed_parity]))
+    return bytes(data)
+
+
+def recover_hardnested_checked(engine, data):
+    # Check the status as well as the key: zero is also a valid key.
+    f = engine.lib.mfnestedhard
+    byte, pointer = C.c_uint8, C.POINTER(C.c_uint8)
+    f.argtypes = [byte, byte, pointer, byte, byte, pointer, C.c_bool, C.c_bool, C.c_bool, C.POINTER(U64), C.c_char_p, U32]
+    f.restype = C.c_int
+    found = U64()
+    assert f(0, 0, None, 0, 0, None, False, False, False, C.byref(found), data, len(data)) == 1
+    return found.value
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('library')
@@ -103,6 +147,7 @@ def main():
     ap.add_argument('--cases', type=int, default=32)
     ap.add_argument('--repeats', type=int, default=3)
     ap.add_argument('--hardnested', action='store_true')
+    ap.add_argument('--hardnested-generated', type=int, default=0, help='Additional known-key synthetic captures, including the zero key')
     ap.add_argument('--report', type=Path)
     args = ap.parse_args()
     engine = Engine(args.library)
@@ -244,6 +289,10 @@ def main():
         # counts and rejects this key. Use the synthetic key as the oracle.
         measure('hardnested/filtering', lambda e: e.lib.hardnested(C.byref(hard)),
                 0x405044544951, use_reference=False)
+    for i in range(args.hardnested_generated):
+        key = [0, 0xa0a1a2a3a4a5][i] if i < 2 else rng.getrandbits(48)
+        data = hardnested_capture(engine, key, 0x48415244 + i)
+        measure(f'hardnested/generated/{i}', lambda e: recover_hardnested_checked(e, data), key, use_reference=False)
     if args.report:
         args.report.write_text(json.dumps(timings, indent=2) + "\n")
     print(json.dumps(timings, indent=2))

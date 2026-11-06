@@ -42,7 +42,7 @@ typedef struct _DICTIONARY_STATE
     uint32_t Offset;
     uint32_t Limit;
 } DICTIONARY_STATE, *PDICTIONARY_STATE;
-DICTIONARY_STATE Dictionary;
+static MINLZ_THREAD_LOCAL DICTIONARY_STATE Dictionary;
 
 void
 DtInitialize (

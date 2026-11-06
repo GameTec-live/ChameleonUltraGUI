@@ -38,7 +38,7 @@ typedef struct _CHECKSUM_STATE
     uint64_t Crc64Table[256];
     bool Initialized;
 } CHECKSUM_STATE, * PCHECKSUM_STATE;
-CHECKSUM_STATE Checksum;
+static MINLZ_THREAD_LOCAL CHECKSUM_STATE Checksum;
 
 void
 XzCrcInitialize (

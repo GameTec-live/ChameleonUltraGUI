@@ -1,6 +1,5 @@
-// Linux test shim: force the single-CPU path and every thread launch to fail.
-// LD_PRELOAD this library when running recovery_check.py (without hardnested,
-// whose upstream thread management does not support launch failures).
+// Linux test shim: fail every launch by default, or one in N launches with
+// RECOVERY_TEST_FAIL_EVERY=N. LD_PRELOAD when checking recovery fallbacks.
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <errno.h>
@@ -11,8 +10,14 @@
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start)(void *), void *arg)
 {
-    (void)thread; (void)attr; (void)start; (void)arg;
-    return EAGAIN;
+    static unsigned calls;
+    const char *setting = getenv("RECOVERY_TEST_FAIL_EVERY");
+    long every = setting ? strtol(setting, NULL, 10) : 1;
+    if (every <= 1 || __atomic_fetch_add(&calls, 1, __ATOMIC_RELAXED) % (unsigned long)every == 0)
+        return EAGAIN;
+    int (*real_create)(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *) =
+        (int (*)(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *))dlsym(RTLD_NEXT, "pthread_create");
+    return real_create(thread, attr, start, arg);
 }
 
 long sysconf(int name)

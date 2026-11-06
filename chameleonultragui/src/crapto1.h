@@ -34,6 +34,8 @@ void crypto1_deinit(struct Crypto1State *);
 struct Crypto1State *crypto1_create(uint64_t key);
 void crypto1_destroy(struct Crypto1State *);
 #endif
+// Optional immutable filter table; NULL in builds that omit the table.
+const uint8_t *crypto1_filter_table(void);
 void crypto1_get_lfsr(struct Crypto1State *, uint64_t *);
 uint8_t crypto1_bit(struct Crypto1State *, uint8_t, int);
 uint8_t crypto1_byte(struct Crypto1State *, uint8_t, int);

@@ -1,9 +1,12 @@
-set(MINLZLIB_SOURCES "inputbuf.c" "dictbuf.c" "lzma2dec.c" "lzmadec.c" "rangedec.c" "xzcrc.c" "xzstream.c" "lzmadec.h" "xzstream.h" "minlzlib.h")
+set(MINLZLIB_SOURCES "minlzlib.c" "lzmadec.h" "xzstream.h" "minlzlib.h")
 
 add_library (minlzlib STATIC ${MINLZLIB_SOURCES})
 set_target_properties(minlzlib PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED YES C_EXTENSIONS NO)
 target_compile_options(minlzlib PRIVATE -fPIC)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(minlzlib PRIVATE -fno-semantic-interposition)
+endif()
 
 if(MSVC)
     set(CMAKE_C_STANDARD_LIBRARIES "")
