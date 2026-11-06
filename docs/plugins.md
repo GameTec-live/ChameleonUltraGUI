@@ -27,11 +27,11 @@ expected API errors. Hardware operations require a connected device in normal
 those changes are part of the plugin's requested workflow.
 
 The API root is `chameleon`. Tables use Lua's **1-based indexing**. Device slot
-and block numbers retain the communicator's **0-based numbering** (slots 0–7).
+and block numbers retain the communicator's **0-based numbering** (slots 0-7).
 Byte buffers are tables of integers from 0 to 255. Enum arguments use exact Dart
 enum names as strings, e.g. `"mifare1K"`, `"hf"`, `"lf"`; enum results are names.
 `chameleon.device.enums()` returns accepted enum names and the firmware command
-name → numeric ID mapping. Card tables use the existing saved-card JSON schema
+name -> numeric ID mapping. Card tables use the existing saved-card JSON schema
 (including numeric `tag`, hex `uid`, `data`, `id`, `extra`, `color`, `atqa`, `ats`).
 
 Lua standard math, table, string, utf8, convert and crypto libraries remain
@@ -122,7 +122,7 @@ not every card has 256 blocks. Use dictionary keys with, for example,
 `chameleon.classic.checkKeys(chameleon.dictionaries.list()[1].keys)`.
 
 `send14ARaw` options retain communicator names and defaults: `respTimeoutMs=100`,
-`bitLen` (defaults to byte count × 8), `activateRfField=true`,
+`bitLen` (defaults to byte count * 8), `activateRfField=true`,
 `waitResponse=true`, `appendCrc=true`, `autoSelect=true`, `keepRfField=false`,
 `checkResponseCrc=true`.
 
@@ -161,7 +161,7 @@ A new card requires `name`, `uid` and numeric `tag`; `sak`, `atqa`, `ats` and
 dictionary requires `name`; `keys` is an array of uniform four-, six- or
 sixteen-byte tables. `keyLength` counts **hex characters** (8, 12 or 32), and is
 inferred from keys if omitted. New empty dictionaries default to 12; an explicit
-`keyLength = 0` preserves the GUI’s unspecified length for an empty dictionary. A folder has
+`keyLength = 0` preserves the GUI's unspecified length for an empty dictionary. A folder has
 `name`, optional `id`, `color` and `parentId`. Colors use `#RRGGBB`; omitted colors
 use the GUI default. Records can specify `folderId` or omit it for the root.
 
@@ -222,8 +222,8 @@ is retained.
 | `recovery.hardNested(bytes)` | Byte table: six-byte header (UID, target block, key type) followed by nine-byte nonce records, as used by the existing hardnested helper |
 
 32-bit fields accept unsigned integers or hexadecimal strings (optional `0x`
-prefix). Nested parity fields are 0–7. Darkside `ks1` and `par` accept 64-bit
-hexadecimal strings; use strings for values above 2^53−1 so they cannot lose
+prefix). Nested parity fields are 0-7. Darkside `ks1` and `par` accept 64-bit
+hexadecimal strings; use strings for values above 2^53-1 so they cannot lose
 precision in Lua. Other required fields cannot be omitted. Hardnested input
 must contain at least one complete nonce record. All searches use the existing
 shared native queue and cancellation mechanism. **Stop** cancels the search and
@@ -359,7 +359,7 @@ do not implicitly change the reader mode; set it explicitly when needed.
 | `ultralight.mf0NtagGetDetectionLog(int index)` | `List<String>` |
 | `classic.getMf1NTDistance(block, keyType, knownKey)` | `{uid, distance}` |
 | `classic.getMf1NestedNonces(block, keyType, knownKey, targetBlock, targetKeyType, options?)` | `{nonces = {{nt, ntEnc, parity}, ...}}`; options `level` (`weak`, `static`, `hard`), `slow` (false) |
-| `classic.mf1CheckKeysOfSectors(mask, keys)` | Keys indexed by firmware order `sector * 2 + keyType`; 10-byte skip mask, 1–83 six-byte keys |
+| `classic.mf1CheckKeysOfSectors(mask, keys)` | Keys indexed by firmware order `sector * 2 + keyType`; 10-byte skip mask, 1-83 six-byte keys |
 | `device.lfSniff(timeoutMs?)` | Bytes; default timeout 2000 ms |
 | `device.hf14aSniff(timeoutMs?)` | Bytes; default timeout 5000 ms |
 | `device.getFirmwareVersion()` | `FirmwareVersion` |

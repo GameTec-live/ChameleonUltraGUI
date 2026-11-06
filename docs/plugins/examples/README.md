@@ -1,6 +1,6 @@
 # Small plugin examples
 
-Import any `.plugin.json` file using **Plugins → Import**. All examples work
+Import any `.plugin.json` file using **Plugins -> Import**. All examples work
 without a connected device. Open **Edit** to inspect their Lua source and
 resources before running them.
 

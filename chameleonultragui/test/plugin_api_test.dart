@@ -82,7 +82,7 @@ void main() {
         {'type': 'number'},
       ]);
       await tester.pumpAndSettle();
-      expect(find.text('My tool — Input'), findsOneWidget);
+      expect(find.text('My tool - Input'), findsOneWidget);
       expect(
         tester
             .widget<TextButton>(find.widgetWithText(TextButton, 'OK'))
