@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chameleonultragui/plugins/plugin.dart';
@@ -26,6 +27,47 @@ void main() {
           isNot(plugin.id),
         );
       }
+    },
+  );
+
+  test(
+    'compressed imports must fit the uncompressed persisted envelope',
+    () async {
+      final description = String.fromCharCodes(
+        Uint8List(12 * 1024 * 1024)..fillRange(0, 12 * 1024 * 1024, 100),
+      );
+      final code = String.fromCharCodes(
+        Uint8List(6 * 1024 * 1024)..fillRange(0, 6 * 1024 * 1024, 97),
+      );
+      final envelope = Plugin(
+        name: 'Large metadata',
+        code: '',
+      ).toJson(compress: true);
+      envelope['description'] = description;
+      envelope['data'] = base64Encode(
+        gzip.encode(utf8.encode(jsonEncode({'code': code, 'resources': {}}))),
+      );
+      await expectLater(
+        Plugin.decode(jsonEncode(envelope)),
+        throwsFormatException,
+      );
+      expect(
+        () => Plugin(
+          name: 'Large metadata',
+          description: description,
+          code: code,
+        ),
+        throwsFormatException,
+      );
+      final accepted = Plugin(
+        name: 'Fits',
+        description: description,
+        code: 'return 42',
+      );
+      expect(
+        (await Plugin.decode(jsonEncode(accepted.toJson()))).description,
+        description,
+      );
     },
   );
 

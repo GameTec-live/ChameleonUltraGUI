@@ -141,6 +141,38 @@ void main() {
     },
   );
 
+  testWidgets(
+    'loading EV1 dumps initializes a 2K emulator and preserves all 72 blocks',
+    (tester) async {
+      final device = _SlotDevice();
+      app.connector = _PreferenceSerial();
+      app.communicator = device;
+      final card = CardSave(
+        name: 'EV1',
+        uid: '01020304',
+        tag: TagType.mifare1K,
+        data: List.generate(
+          72,
+          (index) => Uint8List(16)..fillRange(0, 16, index),
+        ),
+      );
+      final api = await host(tester, Plugin(name: 'Load EV1', code: ''));
+      await tester.runAsync(
+        () => api.call('slots.load', [0, jsonDecode(card.toJson())]),
+      );
+      expect(device.types, [TagType.mifare2K]);
+      expect(device.defaults, [TagType.mifare2K]);
+      for (var index = 0; index < 72; index++) {
+        expect(
+          device.blocks[index],
+          List.filled(16, index),
+          reason: 'block $index',
+        );
+      }
+      expect(card.tag, TagType.mifare1K);
+    },
+  );
+
   testWidgets('invalid folder bundle leaves saved data untouched', (
     tester,
   ) async {
@@ -358,4 +390,48 @@ class _UnprotectedTag extends ChameleonCommunicator {
     frames.add(data.toList());
     return Uint8List.fromList([0x0A]);
   }
+}
+
+class _SlotDevice extends ChameleonCommunicator {
+  _SlotDevice() : super(Logger(level: Level.off));
+  final types = <TagType>[];
+  final defaults = <TagType>[];
+  final blocks = <int, List<int>>{};
+  @override
+  Future<void> setReaderDeviceMode(bool readerMode) async {}
+  @override
+  Future<void> enableSlot(
+    int slot,
+    TagFrequency frequency,
+    bool status,
+  ) async {}
+  @override
+  Future<void> activateSlot(int slot) async {}
+  @override
+  Future<void> setSlotType(int slot, TagType type) async {
+    types.add(type);
+  }
+
+  @override
+  Future<void> setDefaultDataToSlot(int slot, TagType type) async {
+    defaults.add(type);
+  }
+
+  @override
+  Future<void> setMf1AntiCollision(CardData card) async {}
+  @override
+  Future<void> setMf1BlockData(int startBlock, Uint8List data) async {
+    for (var offset = 0; offset < data.length; offset += 16) {
+      blocks[startBlock + offset ~/ 16] = data.sublist(offset, offset + 16);
+    }
+  }
+
+  @override
+  Future<void> setSlotTagName(
+    int index,
+    String name,
+    TagFrequency frequency,
+  ) async {}
+  @override
+  Future<void> saveSlotData() async {}
 }

@@ -392,6 +392,7 @@ Structured results use tables with the fields of their communicator models: firm
 With `encoding: "gzip+base64"`, `data` is a base64 string containing the gzip
 encoding of the UTF-8 JSON payload `{code, resources}`. Metadata stays readable.
 Unknown formats, versions and encodings are rejected. Expanded code/resources
-are limited to 8 MiB; input JSON is limited to 16 MiB. Compressed imports use
+are limited to 8 MiB; input JSON and the complete uncompressed saved envelope
+(including metadata) are limited to 16 MiB. Compressed imports use
 streamed decompression with an expanded-size check. Plugins persist separately
 from cards and dictionaries under the `plugins_v1` preference key.

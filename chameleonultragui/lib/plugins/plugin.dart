@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 class Plugin {
   static const format = 'chameleon-ultra-gui-plugin';
   static const maxDataBytes = 8 * 1024 * 1024;
+  static const maxFileBytes = maxDataBytes * 2;
   final String id;
   final String name;
   final String description;
@@ -36,6 +37,10 @@ class Plugin {
         maxDataBytes) {
       throw FormatException(pluginLocalizations.plugin_error_data_size);
     }
+    // Persistence uses the uncompressed envelope, even after a compressed import.
+    if (utf8.encode(jsonEncode(toJson())).length > maxFileBytes) {
+      throw FormatException(pluginLocalizations.plugin_error_file_size);
+    }
   }
 
   Map<String, Object?> toJson({bool compress = false}) {
@@ -55,7 +60,7 @@ class Plugin {
   }
 
   static Future<Plugin> decode(String source, {bool freshId = false}) async {
-    if (utf8.encode(source).length > maxDataBytes * 2) {
+    if (utf8.encode(source).length > maxFileBytes) {
       throw FormatException(pluginLocalizations.plugin_error_file_size);
     }
     final envelope = jsonDecode(source) as Map<String, dynamic>;

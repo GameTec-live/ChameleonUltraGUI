@@ -25,6 +25,7 @@ class _PluginsPageState extends State<PluginsPage> {
   final _store = PluginStore();
   List<Plugin> _plugins = [];
   bool _loading = true;
+  bool _loadFailed = false;
 
   bool _loadStarted = false;
 
@@ -45,7 +46,10 @@ class _PluginsPageState extends State<PluginsPage> {
       );
       if (mounted) setState(() => _plugins = plugins);
     } catch (error) {
-      if (mounted) _error(error);
+      if (mounted) {
+        _loadFailed = true;
+        _error(error);
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -56,6 +60,7 @@ class _PluginsPageState extends State<PluginsPage> {
           .showSnackBar(SnackBar(content: Text(error.toString())));
 
   Future<void> _save(List<Plugin> plugins) async {
+    if (_loadFailed) throw StateError(_localizations.plugin_error_save);
     await withPluginLocalizations(_localizations, () => _store.save(plugins));
     if (mounted) setState(() => _plugins = plugins);
   }
@@ -104,7 +109,7 @@ class _PluginsPageState extends State<PluginsPage> {
       final file = await FilePicker.pickFile();
       if (file == null) return;
       final input = File(file.path!);
-      if (await input.length() > Plugin.maxDataBytes * 2) {
+      if (await input.length() > Plugin.maxFileBytes) {
         throw FormatException(_localizations.plugin_error_file_size);
       }
       final source = await input.readAsString();
@@ -174,18 +179,20 @@ class _PluginsPageState extends State<PluginsPage> {
       actions: [
         IconButton(
           tooltip: _localizations.plugin_import,
-          onPressed: _loading ? null : _import,
+          onPressed: _loading || _loadFailed ? null : _import,
           icon: const Icon(Icons.file_upload),
         ),
         IconButton(
           tooltip: _localizations.plugin_create,
-          onPressed: _loading ? null : _edit,
+          onPressed: _loading || _loadFailed ? null : _edit,
           icon: const Icon(Icons.add),
         ),
       ],
     ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
+        : _loadFailed
+        ? Center(child: Text(_localizations.plugin_load_failed))
         : _plugins.isEmpty
         ? Center(child: Text(_localizations.plugin_empty))
         : LayoutBuilder(

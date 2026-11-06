@@ -791,5 +791,6 @@
   "edit": "Edit",
   "description": "Description",
   "color": "Color",
-  "stop": "Stop"
+  "stop": "Stop",
+  "plugin_load_failed": "Plugins could not be loaded. Changes are disabled to protect saved plugins."
 }

@@ -1,6 +1,8 @@
 // Match the generated localization getter names in the test translations.
 // ignore_for_file: non_constant_identifier_names
 
+import 'dart:convert';
+
 import 'package:chameleonultragui/gui/page/plugins.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
@@ -144,6 +146,42 @@ void main() {
       }
     },
   );
+
+  testWidgets('failed plugin loads keep stored entries and disable mutations', (
+    tester,
+  ) async {
+    final saved = [
+      jsonEncode(Plugin(name: 'Preserved', code: '').toJson()),
+      '{broken',
+    ];
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList('plugins_v1', saved);
+    await tester.pumpWidget(const MaterialApp(home: PluginsPage()));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is IconButton && widget.tooltip == 'Create plugin',
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is IconButton && widget.tooltip == 'Import plugin',
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
+    expect(preferences.getStringList('plugins_v1'), saved);
+  });
 
   testWidgets('create editor persists metadata, code and resources', (
     tester,

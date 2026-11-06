@@ -172,6 +172,9 @@ class PluginApi {
   }
 
   Future<Object?> _loadSlot(int slot, CardSave card) async {
+    if (chameleonTagSaveCheckForMifareClassicEV1(card)) {
+      card.tag = TagType.mifare2K;
+    }
     final lfSetters = <TagType, Future<void> Function(Uint8List)>{
       TagType.hidProx: device.setHIDProxEmulatorID,
       TagType.viking: device.setVikingEmulatorID,
