@@ -327,3 +327,68 @@ With affinity restricted to one CPU, three samples per build/fixture:
 
 Single-CPU captured recovery time was unchanged; filtering recovery improved
 by approximately 41%. Both retained the memory reduction.
+
+## Recovery-time pass after snapshot `38498e99`
+
+This pass balances both register halves across every reduction worker. Each
+worker still retains one scratch domain and one scratch nonce map. The last
+map in each half already includes the preceding low-20-bit restrictions:
+projecting those worker endpoints gives exactly the same shared domain as
+projecting every map. Exhaustive snapshots verify this for both fixtures,
+the all-one-key input and empty input, with one/three/four workers and failed
+thread launches.
+
+Counts visit only nonzero domain words. Partial-sum a8 tables construct the
+low-20-bit region once and copy it into the other fifteen identical regions
+after all construction workers join. All table bits matched scalar construction
+for CPU counts 1, 3, 6 and 8, including launch failures.
+
+Runtime page hashing now uses independent weighted products and final mixing;
+full comparisons still determine page equality. GNU/glibc x86-64 builds select
+AVX2 versions of hot kernels when supported. Other compilers/platforms keep
+portable kernels. `-DHN_DISABLE_SIMD` explicitly tests the portable path;
+portable, Clang and LOWMEM recovery checks passed. CI checks the portable build.
+
+Five fresh-process samples per build/fixture on the same four-CPU Xeon host,
+sequentially with alternating build order; optimized timings use AVX2 dispatch:
+
+| Fixture | Snapshot median | Current median | Snapshot peak RSS¹ | Current peak RSS¹ |
+| --- | ---: | ---: | ---: | ---: |
+| Capture | 2.968 s | 1.670 s | 162.8 MiB | 168.2 MiB |
+| Filtering | 2.167 s | 1.315 s | 159.8 MiB | 163.7 MiB |
+
+¹ Median of process peaks, including the same Python harness. Recovery time
+fell by 39–44%; peak RSS increased by approximately 4–5 MiB, remaining around
+164–168 MiB (172–176 MB decimal). These are fixture-specific desktop results;
+mobile/ARM timing remains unmeasured. Native page/table/candidate checks, six
+complete recoveries, exact reduction comparisons and ASan/UBSan passed.
+Cancellation followed by successful recovery in the same process passed under
+ASan/UBSan; leak detection was disabled only for the Python-hosted calls.
+
+Three fresh-process samples per build/fixture with affinity restricted to one CPU:
+
+| Fixture | Snapshot median | Current median | Current peak RSS¹ |
+| --- | ---: | ---: | ---: |
+| Capture | 8.560 s | 4.305 s | 147.8 MiB |
+| Filtering | 4.571 s | 2.598 s | 146.0 MiB |
+
+Both single-CPU fixtures improved (43–50%), with essentially unchanged peak RSS.
+
+The eight-case corpus passed again with one fresh-process recovery per case.
+These are correctness runs, not repeated paired timing comparisons:
+
+| Case | Recovery time | Peak RSS |
+| --- | ---: | ---: |
+| reference | 1.297 s | 162.1 MiB |
+| sparse | 1.142 s | 167.2 MiB |
+| ones-sparse | 77.269 s | 161.4 MiB |
+| zero | 0.720 s | 156.9 MiB |
+| transport | 1.093 s | 160.5 MiB |
+| mixed | 1.557 s | 171.8 MiB |
+| new-seed | 1.182 s | 162.8 MiB |
+| ones-dense | 57.824 s | 159.3 MiB |
+
+The largest observed corpus peak was 171.8 MiB (about 180 MB decimal),
+approximately 8 MiB above the snapshot corpus maximum. The long all-one-key
+cases remain dominated by the unchanged brute-force search; the 1.3–1.7 s
+result applies to the two stored benchmark fixtures.

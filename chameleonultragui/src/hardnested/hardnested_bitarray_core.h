@@ -52,6 +52,14 @@ THE SOFTWARE.
 
 #include <stdint.h>
 
+// GNU IFUNC dispatch is limited to Linux/glibc x86-64. Other targets retain the
+// portable kernels, and tests can select them with HN_DISABLE_SIMD.
+#if defined(__GNUC__) && __GNUC__ >= 6 && !defined(__clang__) && defined(__linux__) && defined(__GLIBC__) && defined(__x86_64__) && !defined(HN_DISABLE_SIMD)
+#define HN_SIMD __attribute__((target_clones("avx2", "default")))
+#else
+#define HN_SIMD
+#endif
+
 uint32_t *malloc_bitarray(uint32_t x);
 void free_bitarray(uint32_t *x);
 uint32_t bitcount(uint32_t a);

@@ -98,6 +98,8 @@ static void check_low20_groups(void)
                     value |= ((a[i] >> (16 * half)) & 65535u) << (16 * half);
             expected[i] = value;
         }
+        bitarray_low20_AND(a, b);
+        assert(memcmp(a, expected, bytes) == 0);
         assert(count_bitarray_low20_AND(a, b) == count_states(expected));
         assert(memcmp(a, expected, bytes) == 0);
     }
@@ -415,8 +417,7 @@ static void check_compact_pages(void)
     uint32_t other[STATE_PAGE_WORDS];
     memcpy(other, page, sizeof(page));
     other[63] ^= 1;
-    uint64_t hash = UINT64_C(14695981039346656037);
-    for (unsigned i = 0; i < STATE_PAGE_WORDS; ++i) hash = (hash ^ other[i]) * UINT64_C(1099511628211);
+    uint64_t hash = state_page_hash(other);
     size_t slot = hash & (pool.capacity - 1);
     while (pool.slots[slot].page) slot = (slot + 1) & (pool.capacity - 1);
     pool.slots[slot] = (state_page_slot_t){hash, 4096};

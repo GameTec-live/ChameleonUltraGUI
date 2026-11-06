@@ -52,7 +52,7 @@ jobs:
             -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
             -lrecovery -pthread -lm -o build/native-recovery/check-tables
           build/native-recovery/check-tables
-          for cpus in 1 6 8; do
+          for cpus in 1 3 6 8; do
             cc -O3 -D_GNU_SOURCE -DRECOVERY_TEST_CPU_COUNT="$cpus" \
               chameleonultragui/test/native/hardnested_tables_check.c \
               -Lbuild/native-recovery -Wl,-rpath,"$PWD/build/native-recovery" \
@@ -117,3 +117,15 @@ jobs:
           build/native-lowmem/check-tables
           python3 chameleonultragui/test/native/hardnested_benchmark.py \
             build/native-lowmem/librecovery.so --worker capture
+      - name: Check the portable kernels without CPU dispatch
+        run: |
+          cmake -S chameleonultragui/src -B build/native-portable \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-DHN_DISABLE_SIMD
+          cmake --build build/native-portable -j2
+          cc -O3 -D_GNU_SOURCE -DHN_DISABLE_SIMD \
+            chameleonultragui/test/native/hardnested_memory_check.c \
+            -Lbuild/native-portable -Wl,-rpath,"$PWD/build/native-portable" \
+            -lrecovery -pthread -lm -o build/native-portable/check-memory
+          build/native-portable/check-memory
+          python3 chameleonultragui/test/native/hardnested_benchmark.py \
+            build/native-portable/librecovery.so --worker capture

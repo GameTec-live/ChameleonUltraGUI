@@ -106,17 +106,13 @@ void bitarray_AND(uint32_t *restrict A, uint32_t *restrict B)
     }
 }
 
+HN_SIMD
 void bitarray_low20_AND(uint32_t *restrict A, uint32_t *restrict B)
 {
-    uint16_t *a = (uint16_t *)__builtin_assume_aligned(A, __BIGGEST_ALIGNMENT__);
-    uint16_t *b = (uint16_t *)__builtin_assume_aligned(B, __BIGGEST_ALIGNMENT__);
-
-    for (uint32_t i = 0; i < (1 << 20); i++)
-    {
-        if (!b[i])
-        {
-            a[i] = 0;
-        }
+    for (uint32_t i = 0; i < (1 << 19); ++i) {
+        uint32_t mask = ((0u - ((B[i] & 0xffffu) != 0)) & 0xffffu)
+                      | ((0u - ((B[i] >> 16) != 0)) & 0xffff0000u);
+        A[i] &= mask;
     }
 }
 
@@ -144,6 +140,7 @@ void bitarray_low20_AND(uint32_t *restrict A, uint32_t *restrict B)
     } \
     return;
 
+HN_SIMD
 void bitarray_AND_many(uint32_t *restrict A, uint32_t *const *restrict filters, unsigned count, uint32_t words)
 {
 #if defined(__GNUC__) && defined(__x86_64__)
