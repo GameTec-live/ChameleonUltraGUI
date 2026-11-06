@@ -12,6 +12,14 @@ engine = Engine(sys.argv[1])
 engine.lib.recovery_set_cancelled.argtypes = [C.c_int]
 data = (Path(__file__).parent / 'fixtures/hardnested-filtering.bin').read_bytes()
 expected = 0x405044544951
+# Set cancellation before entry so completion cannot win this case. The timed
+# cases below also exercise cancellation during recovery, but can finish first.
+engine.lib.recovery_set_cancelled(1)
+hard = Hard(data, len(data))
+assert engine.lib.hardnested(C.byref(hard)) == 0
+engine.lib.recovery_set_cancelled(0)
+assert recover_hardnested_checked(engine, data) == expected
+
 for delay in list(map(float, sys.argv[2:])) or (0, 0.1, 0.5):
     engine.lib.recovery_set_cancelled(0)
     cancel = threading.Timer(delay, engine.lib.recovery_set_cancelled, args=[1])
