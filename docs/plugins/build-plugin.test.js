@@ -10,7 +10,6 @@ test('bundles a copied project with Git ignores, exact resource keys and compres
   const root = mkdtempSync(join(tmpdir(), 'gui-plugin-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   cpSync(join(__dirname, 'development'), root, { recursive: true });
-  cpSync(join(__dirname, 'build-plugin.js'), join(root, 'build-plugin.js'));
   execFileSync('git', ['init', '-q', root]);
   mkdirSync(join(root, 'assets'));
   writeFileSync(join(root, 'assets/.gitignore'), '*.txt\n!keep.txt\n.gitignore\n');

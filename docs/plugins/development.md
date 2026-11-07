@@ -10,8 +10,8 @@ check and bundle a plugin without connecting a device.
    [Lua by LuaLS](https://marketplace.visualstudio.com/items?itemName=sumneko.lua),
    Node.js 22 or newer and Git.
 2. Copy the contents of [development/](development/) (including hidden files)
-   into a new plugin folder. Copy [build-plugin.js](build-plugin.js) into that
-   same folder. Open this folder itself in VS Code with **File → Open Folder**.
+   into a new plugin folder. The bundler and VS Code build task are included.
+   Open this folder itself in VS Code with **File → Open Folder**.
 3. Run `git init` in its terminal (unnecessary if already inside a repository).
 4. Edit `plugin.config.json` to set your plugin name and description, then edit
    `main.lua`. Type `chameleon.` or `chameleon.device.` to see completions;
