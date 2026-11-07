@@ -11,6 +11,9 @@ identity and never runs code automatically.
 physical cards and emulator memory. They have the same hardware capabilities as
 the GUI. Review imported source and resources before running them.
 
+For VS Code autocomplete, Lua type declarations and a build task, see
+[Writing plugins in VS Code](plugins/development.md).
+
 ## Execution and values
 
 Each invocation creates a fresh LuaLike runtime in a separate Dart isolate.

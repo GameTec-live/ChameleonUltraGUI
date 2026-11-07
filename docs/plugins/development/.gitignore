@@ -1,0 +1,5 @@
+.gitignore
+.luarc.json
+.vscode/
+types/
+dist/
