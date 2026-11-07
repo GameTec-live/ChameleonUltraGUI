@@ -1,0 +1,6 @@
+{
+  "name": "My plugin",
+  "description": "A Chameleon Ultra GUI plugin",
+  "output": "dist/plugin.plugin.json",
+  "compress": false
+}
