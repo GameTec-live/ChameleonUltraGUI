@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/helpers/t55xx/keys.dart';
 import 'package:chameleonultragui/helpers/t55xx/write/base.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -117,30 +118,52 @@ void main() {
       writer.newKey = '55667788';
       expect(await writer.writeData(card, (_) {}), isTrue);
       expect(communicator.requests[4].$1.value, 3020);
+      // Older firmware: the new key, then the current key, the factory passwords and no
+      // password, with no flags byte.
       expect(communicator.requests[4].$2, [
         ...uid,
-        0x55,
-        0x66,
-        0x77,
-        0x88,
-        0x55,
-        0x66,
-        0x77,
-        0x88,
-        0x11,
-        0x22,
-        0x33,
-        0x44,
-        0,
-        0,
-        0,
-        0,
+        ...hexToBytes('55667788'),
+        ...hexToBytes('11223344'),
+        ...hexToBytes('51243648'),
+        ...hexToBytes('19920427'),
+        ...hexToBytes('00000000'),
       ]);
       expect(communicator.requests.last.$1.value, 3019);
       communicator.uid = hexToBytes('0099999999');
       expect(await writer.writeData(card, (_) {}), isFalse);
       communicator.uid = Uint8List(0);
       expect(await writer.writeData(card, (_) {}), isFalse);
+    },
+  );
+  test(
+    'Jablotron T55xx write sends the password flag on opt-in firmware',
+    () async {
+      final communicator = _JablotronCommunicator();
+      final uid = hexToBytes('0012345678');
+      communicator.uid = uid;
+      final writer = BaseT55XXCardHelper(communicator)
+        ..passwordOptIn = true
+        ..setPassword = false
+        ..currentKey = ''
+        ..newKey = '00000000';
+      final card = CardSave(
+        uid: '00 12 34 56 78',
+        name: 'Jablotron',
+        tag: TagType.jablotron,
+      );
+      expect(await writer.writeData(card, (_) {}), isTrue);
+      expect(communicator.requests.first.$1.value, 3020);
+      // The default password is tried too, and the request ends with the
+      // no-password flag.
+      expect(communicator.requests.first.$2, [
+        ...uid,
+        ...hexToBytes('00000000'),
+        ...hexToBytes('20206666'),
+        ...hexToBytes('51243648'),
+        ...hexToBytes('19920427'),
+        ...hexToBytes('00000000'),
+        t55xxWriteFlagNoPassword,
+      ]);
     },
   );
   test(
