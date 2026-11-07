@@ -33,12 +33,23 @@ test('bundles a copied project with Git ignores, exact resource keys and compres
       return original.call(this, path, ...args);
     };
   `);
+  const library = join(root, 'library');
+  mkdirSync(library);
+  execFileSync('git', ['init', '-q', library]);
+  writeFileSync(join(library, 'helper.lua'), 'return { value = 42 }');
+  writeFileSync(join(library, '.gitignore'), '.gitignore\nprivate.txt\n');
+  writeFileSync(join(library, 'private.txt'), 'not a resource');
+  execFileSync('git', ['add', 'helper.lua'], { cwd: library });
+  execFileSync('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-qm', 'helper'], { cwd: library });
+  // Exercise the gitlink entry that submodules use in the parent index.
+  execFileSync('git', ['-c', 'advice.addEmbeddedRepo=false', 'add', 'library'], { cwd: root });
   const plain = build();
   assert.equal(plain.format, 'chameleon-ultra-gui-plugin');
   assert.equal(plain.version, 1);
   assert.equal(plain.data.code, readFileSync(join(root, 'main.lua'), 'utf8'));
   assert.deepEqual(plain.data.resources, {
     'assets/image.bin': '/wCA', 'assets/keep.txt': 'héllo', 'helpers.lua': 'return { label = "Hello" }',
+    'library/helper.lua': 'return { value = 42 }',
   });
   assert.deepEqual(build().data, plain.data, 'rebuild must not include its own output');
   writeFileSync(join(root, 'plugin.config.json'), JSON.stringify({ name: 'Compressed', compress: true }));

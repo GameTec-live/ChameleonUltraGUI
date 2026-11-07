@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Run with Node.js 22+: node build-plugin.js [plugin-folder]
-const { readFileSync, lstatSync, writeFileSync, mkdirSync } = require('node:fs');
-const { resolve, dirname, join } = require('node:path');
+const { readFileSync, readdirSync, writeFileSync, mkdirSync } = require('node:fs');
+const { resolve, relative, dirname, join, sep } = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
 const { gzipSync } = require('node:zlib');
@@ -19,31 +19,34 @@ try {
   }
   const output = resolve(root, config.output || 'dist/plugin.plugin.json');
   const script = resolve(__filename);
-  // Let Git prune ignored trees before reading their contents.
-  const listed = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z', '--', '.'], {
-    cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024,
-  });
-  if (listed.error || listed.status !== 0) {
-    throw new Error('Git file lookup failed; install Git and run git init in the plugin folder. ' + (listed.error?.message || listed.stderr));
+  const files = [];
+  function walk(folder) {
+    const entries = readdirSync(folder, { withFileTypes: true }).filter(entry => entry.name !== '.git');
+    // Filter before descending. Running in each folder also applies a nested
+    // repository/submodule's own ignore rules without hiding its resources.
+    const ignored = spawnSync('git', ['check-ignore', '--no-index', '-z', '--stdin'], {
+      cwd: folder, input: entries.map(entry => entry.name + '\0').join(''),
+      encoding: 'utf8', maxBuffer: 16 * 1024 * 1024,
+    });
+    if (ignored.error || ![0, 1].includes(ignored.status)) {
+      throw new Error('Git ignore lookup failed; install Git and run git init in the plugin folder. ' + (ignored.error?.message || ignored.stderr));
+    }
+    const excluded = new Set(ignored.stdout.split('\0'));
+    for (const entry of entries) {
+      if (excluded.has(entry.name)) continue;
+      const path = join(folder, entry.name);
+      if (entry.isDirectory()) walk(path);
+      // Skip symlinks, and keep the build tools and output out of resources.
+      else if (entry.isFile() && ![script, configPath, output, join(root, 'main.lua')].includes(path)) {
+        files.push(relative(root, path).split(sep).join('/'));
+      }
+    }
   }
-  const files = [...new Set(listed.stdout.split('\0').filter(Boolean))];
-  // --no-index also respects ignores for files that happen to be tracked.
-  const ignored = spawnSync('git', ['check-ignore', '--no-index', '-z', '--stdin'], {
-    cwd: root, input: files.map(file => file + '\0').join(''), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024,
-  });
-  if (ignored.error || ![0, 1].includes(ignored.status)) {
-    throw new Error('Git ignore lookup failed; install Git and run git init in the plugin folder. ' + (ignored.error?.message || ignored.stderr));
-  }
-  const excluded = new Set(ignored.stdout.split('\0'));
+  walk(root);
   const resources = Object.create(null);
   const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
   for (const file of files.sort()) {
-    if (excluded.has(file)) continue;
-    const path = join(root, file);
-    if ([script, configPath, output, join(root, 'main.lua')].includes(path)) continue;
-    // Skip deleted tracked files, symlinks and submodule directories.
-    if (!lstatSync(path, { throwIfNoEntry: false })?.isFile()) continue;
-    const bytes = readFileSync(path);
+    const bytes = readFileSync(join(root, file));
     try { resources[file] = decoder.decode(bytes); }
     catch { resources[file] = bytes.toString('base64'); }
   }

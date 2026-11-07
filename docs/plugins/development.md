@@ -63,7 +63,8 @@ recursively, using a forward-slash path relative to the plugin folder as its
 exact key. The bundler excludes itself, `plugin.config.json`, the current output
 file and Git metadata. Symlinks are skipped. Git's ignore rules apply even to
 tracked files; nested `.gitignore` rules, negations and repository/global
-excludes are handled by Git itself.
+excludes are handled by Git itself. Nested repositories and checked-out submodules
+are included using their own ignore rules; their Git metadata is excluded.
 
 The template's `.gitignore` excludes editor configuration, declarations, itself
 and `dist/` from the bundle. **Git also hides those files from `git add`**: to
