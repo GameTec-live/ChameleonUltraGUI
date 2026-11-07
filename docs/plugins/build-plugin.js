@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Run with Node.js 22+: node build-plugin.js [plugin-folder]
-const { readFileSync, readdirSync, writeFileSync, mkdirSync } = require('node:fs');
-const { resolve, relative, dirname, join } = require('node:path');
+const { readFileSync, lstatSync, writeFileSync, mkdirSync } = require('node:fs');
+const { resolve, dirname, join } = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
 const { gzipSync } = require('node:zlib');
@@ -19,19 +19,14 @@ try {
   }
   const output = resolve(root, config.output || 'dist/plugin.plugin.json');
   const script = resolve(__filename);
-  const files = [];
-  function walk(folder) {
-    for (const entry of readdirSync(folder, { withFileTypes: true })) {
-      if (entry.name === '.git') continue;
-      const path = join(folder, entry.name);
-      if (entry.isDirectory()) walk(path);
-      // Do not follow symlinks outside the plugin folder.
-      else if (entry.isFile() && ![script, configPath, output, join(root, 'main.lua')].includes(path)) {
-        files.push(relative(root, path).split(require('node:path').sep).join('/'));
-      }
-    }
+  // Let Git prune ignored trees before reading their contents.
+  const listed = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z', '--', '.'], {
+    cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024,
+  });
+  if (listed.error || listed.status !== 0) {
+    throw new Error('Git file lookup failed; install Git and run git init in the plugin folder. ' + (listed.error?.message || listed.stderr));
   }
-  walk(root);
+  const files = [...new Set(listed.stdout.split('\0').filter(Boolean))];
   // --no-index also respects ignores for files that happen to be tracked.
   const ignored = spawnSync('git', ['check-ignore', '--no-index', '-z', '--stdin'], {
     cwd: root, input: files.map(file => file + '\0').join(''), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024,
@@ -44,7 +39,11 @@ try {
   const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
   for (const file of files.sort()) {
     if (excluded.has(file)) continue;
-    const bytes = readFileSync(join(root, file));
+    const path = join(root, file);
+    if ([script, configPath, output, join(root, 'main.lua')].includes(path)) continue;
+    // Skip deleted tracked files, symlinks and submodule directories.
+    if (!lstatSync(path, { throwIfNoEntry: false })?.isFile()) continue;
+    const bytes = readFileSync(path);
     try { resources[file] = decoder.decode(bytes); }
     catch { resources[file] = bytes.toString('base64'); }
   }
@@ -64,7 +63,7 @@ try {
   const result = JSON.stringify(envelope);
   if (Buffer.byteLength(result) > 16 * 1024 * 1024) throw new Error('Plugin file exceeds 16 MiB');
   mkdirSync(dirname(output), { recursive: true });
-  writeFileSync(output, result + '\n');
+  writeFileSync(output, result);
   console.log(`Built ${output} (${Object.keys(resources).length} resources)`);
 } catch (error) {
   console.error(`Plugin build failed: ${error.message}`);

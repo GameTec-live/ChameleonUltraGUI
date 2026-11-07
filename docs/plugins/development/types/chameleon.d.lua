@@ -88,6 +88,11 @@
 ---@field uid Bytes
 ---@field type TagType
 
+---@class CardExtra
+---@field ultralightSignature? Bytes
+---@field ultralightVersion? Bytes
+---@field ultralightCounters? integer[]
+
 ---@class SavedCard
 ---@field name string
 ---@field uid string
@@ -97,7 +102,7 @@
 ---@field atqa? Bytes
 ---@field ats? Bytes
 ---@field data? Bytes[]
----@field extra? table<string, unknown>
+---@field extra? CardExtra
 ---@field color? string
 ---@field folderId? string
 
