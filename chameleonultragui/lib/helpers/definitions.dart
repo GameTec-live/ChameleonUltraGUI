@@ -118,6 +118,8 @@ enum ChameleonCommand {
   adcGenericRead(3009),
   writeT55XX(3016),
   scanEM4X05Tag(3030),
+  // Provisional ID: matches the firmware PR that adds it.
+  getT55xxWriteFeatures(3029),
   scanJablotronTag(3019),
   writeJablotronToT5577(3020),
   lfSniff(3031),
