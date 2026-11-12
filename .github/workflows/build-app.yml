@@ -144,10 +144,13 @@ jobs:
       - run:
           apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y
           ninja-build libgtk-3-dev clang jq build-essential curl git cmake lld unzip
+      # Flutter 3.50's arm64 Dart SDK needs glibc 2.34, which Ubuntu 20.04 lacks.
+      # Only the host SDK is affected (the arm64 engine still needs glibc 2.18),
+      # so pin the last Flutter whose arm64 Dart SDK runs here.
       - uses: subosito/flutter-action@v2
         with:
           channel: ${{ matrix.arch == 'arm64' && 'master' || 'stable' }}
-          flutter-version: ${{ matrix.arch == 'arm64' && 'stable' || '' }}
+          flutter-version: ${{ matrix.arch == 'arm64' && '3.47.9' || '' }}
           architecture: ${{ matrix.arch }}
       - run: git config --global safe.directory '*'
       - run: flutter config --enable-linux-desktop
