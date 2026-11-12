@@ -181,6 +181,8 @@ class SyncEngine {
   /// the collections changed by remote data. Throws `epoch` when remote data
   /// needs a newer keychain.
   Future<Set<String>> sync() async {
+    // Timestamp local edits now, even if the server turns out unreachable.
+    scan();
     final changed = <String>{};
     for (var attempt = 0; ; attempt++) {
       changed.addAll(await _pull());

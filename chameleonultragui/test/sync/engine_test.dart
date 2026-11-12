@@ -150,4 +150,20 @@ void main() {
     expect(await engineB.sync(), {'cards'});
     expect(b.data['cards'], a.data['cards']);
   });
+
+  test('offline edits keep the time they were made', () async {
+    final a = MemorySource(), b = MemorySource();
+    final engineA = device('a', a), engineB = device('b', b);
+    a.write('cards', 'c1', card('c1', 'Office'));
+    await engineA.sync();
+    await engineB.sync();
+    a.write('cards', 'c1', card('c1', 'From A'));
+    backend.onPull = () => throw const SyncException('offline');
+    await expectLater(engineA.sync(), throwsA(isA<SyncException>()));
+    backend.onPull = null;
+    b.write('cards', 'c1', card('c1', 'From B'));
+    await engineB.sync();
+    await engineA.sync();
+    expect(a.data['cards']!['c1'], card('c1', 'From B'));
+  });
 }
