@@ -29,6 +29,9 @@ class MemoryBackend implements SyncBackend {
   final previous = <String, List<(int, Uint8List)>>{};
   var seq = 0;
 
+  /// Runs while a pull is "in flight", e.g. to simulate a concurrent edit.
+  void Function()? onPull;
+
   @override
   SyncCapabilities get capabilities => const SyncCapabilities(
     realtime: false,
@@ -38,6 +41,7 @@ class MemoryBackend implements SyncBackend {
 
   @override
   Future<PullResult> pull(String cursor) async {
+    onPull?.call();
     final since = int.tryParse(cursor) ?? 0;
     final changed = records.entries.where((e) => e.value.$1 > since).toList()
       ..sort((a, b) => a.value.$1.compareTo(b.value.$1));

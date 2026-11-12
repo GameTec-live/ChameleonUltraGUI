@@ -177,15 +177,15 @@ class SyncEngine {
     return [key.substring(0, slash), key.substring(slash + 1)];
   }
 
-  /// One full round: scan, pull, push (retrying after conflicts). Returns
-  /// the collections changed by remote data.
+  /// One full round: pull, then push (retrying after conflicts). Returns
+  /// the collections changed by remote data. Throws `epoch` when remote data
+  /// needs a newer keychain.
   Future<Set<String>> sync() async {
-    final snapshot = scan();
     final changed = <String>{};
     for (var attempt = 0; ; attempt++) {
       changed.addAll(await _pull());
       try {
-        await _push(snapshot);
+        await _push(scan());
         return changed;
       } on SyncException catch (error) {
         if (error.code != 'conflict' || attempt >= 3) rethrow;
@@ -198,8 +198,16 @@ class SyncEngine {
     PullResult page;
     do {
       page = await backend.pull(ledger.cursor);
-      for (final record in page.records) {
-        final collection = await _merge(record);
+      final payloads = [
+        for (final record in page.records)
+          (record, await _decrypt(record.key, record.blob)),
+      ];
+      // Rescan right before applying, with no await in between, so edits
+      // made while waiting for the server are timestamped and win.
+      scan();
+      for (final (record, payload) in payloads) {
+        if (payload == null) continue;
+        final collection = _merge(record, payload);
         if (collection != null) changed.add(collection);
       }
       ledger.cursor = page.cursor;
@@ -209,6 +217,11 @@ class SyncEngine {
 
   Future<Map<String, dynamic>?> _decrypt(String key, Uint8List blob) async {
     try {
+      // Written after a key rotation this device has not picked up yet: stop
+      // before the cursor moves past it.
+      if (Keychain.blobEpoch(blob) > keychain.current) {
+        throw const SyncException('epoch');
+      }
       final plain = await keychain.open(vaultId, key, blob);
       final payload = jsonDecode(
         utf8.decode(GZipDecoder().decodeBytes(plain)),
@@ -218,16 +231,16 @@ class SyncEngine {
         return null;
       }
       return payload;
+    } on SyncException {
+      rethrow;
     } catch (_) {
       return null; // Undecryptable or foreign data is ignored.
     }
   }
 
-  /// Applies a remote record if it is newer. Returns its collection if
-  /// local data changed.
-  Future<String?> _merge(RemoteRecord record) async {
-    final payload = await _decrypt(record.key, record.blob);
-    if (payload == null) return null;
+  /// Applies a decrypted remote record if it is newer. Returns its
+  /// collection if local data changed.
+  String? _merge(RemoteRecord record, Map<String, dynamic> payload) {
     final collection = payload['c'] as String;
     final id = payload['id'] as String;
     final time = payload['t'] as String;
@@ -266,6 +279,7 @@ class SyncEngine {
     final batch = <OutgoingRecord>[];
     final metas = <String, RecordMeta>{};
     var bytes = 0;
+    oversized.clear();
 
     Future<void> flush() async {
       if (batch.isEmpty) return;
@@ -292,8 +306,8 @@ class SyncEngine {
       );
       final blob = await keychain.seal(vaultId, key, plain);
       if (blob.length > maxBlobBytes) {
+        // Stays dirty: retried (and reported) every run until it shrinks.
         oversized.add(meta.label);
-        meta.dirty = false;
         continue;
       }
       if (batch.length >= _maxBatchRecords ||

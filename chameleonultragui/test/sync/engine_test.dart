@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:chameleonultragui/sync/backend.dart';
 import 'package:chameleonultragui/sync/crypto.dart';
 import 'package:chameleonultragui/sync/engine.dart';
 import 'package:chameleonultragui/sync/hlc.dart';
@@ -115,5 +116,38 @@ void main() {
     await engineA.sync();
     await engineB.sync();
     expect(b.data['_devices'], isEmpty);
+  });
+
+  test('local edits made while pulling win over the pulled value', () async {
+    final a = MemorySource(), b = MemorySource();
+    final engineA = device('a', a), engineB = device('b', b);
+    a.write('cards', 'c1', card('c1', 'Office'));
+    await engineA.sync();
+    await engineB.sync();
+    a.write('cards', 'c1', card('c1', 'From A'));
+    await engineA.sync();
+    backend.onPull = () {
+      backend.onPull = null;
+      b.write('cards', 'c1', card('c1', 'From B'));
+    };
+    await engineB.sync();
+    await engineA.sync();
+    expect(b.data['cards']!['c1'], card('c1', 'From B'));
+    expect(a.data['cards']!['c1'], card('c1', 'From B'));
+  });
+
+  test('records under a newer key wait for the new keychain', () async {
+    final a = MemorySource(), b = MemorySource();
+    final engineA = device('a', a), engineB = device('b', b);
+    engineA.keychain = keychain.rotated();
+    a.write('cards', 'c1', card('c1', 'Office'));
+    await engineA.sync();
+    await expectLater(
+      engineB.sync(),
+      throwsA(isA<SyncException>().having((e) => e.code, 'code', 'epoch')),
+    );
+    engineB.keychain = engineA.keychain;
+    expect(await engineB.sync(), {'cards'});
+    expect(b.data['cards'], a.data['cards']);
   });
 }

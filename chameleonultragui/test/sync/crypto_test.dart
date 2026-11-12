@@ -143,6 +143,17 @@ void main() {
     });
   });
 
+  test('pairing requests are sealed to the pairing secret', () async {
+    final secret = PairingSecret.random();
+    final sealed = await secret.seal('{"name":"Phone"}');
+    expect(
+      utf8.decode(unb64(sealed), allowMalformed: true),
+      isNot(contains('Phone')),
+    );
+    expect(await secret.open(sealed), '{"name":"Phone"}');
+    await expectLater(PairingSecret.random().open(sealed), throwsA(anything));
+  });
+
   test('hlc is monotonic and moves past observed timestamps', () {
     var wall = 1000;
     final clock = Hlc('a', now: () => wall);

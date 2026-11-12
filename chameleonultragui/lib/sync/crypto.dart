@@ -257,7 +257,7 @@ Future<Uint8List> _wrapKey(
 }
 
 /// The one-time secret behind a pairing code. The server only ever sees
-/// `hash(authToken)`; the MAC key stays between the two devices.
+/// `hash(authToken)` and sealed join requests.
 class PairingSecret {
   final Uint8List secret;
   PairingSecret(this.secret);
@@ -266,13 +266,39 @@ class PairingSecret {
   Future<String> authToken() async =>
       b64(await hkdf(secret, 'cu-sync/pair-auth/v1', 32));
 
-  /// Binds a join request to this secret so the server cannot swap keys.
-  Future<String> mac(List<String> fields) async => b64(
-    await hmacSha256(
-      await hkdf(secret, 'cu-sync/pair-mac/v1', 32),
-      utf8.encode(fields.join('\n')),
-    ),
-  );
+  Future<SecretKey> _boxKey() async =>
+      SecretKey(await hkdf(secret, 'cu-sync/pair-box/v1', 32));
+
+  /// Encrypts a join request. Besides hiding the device name, this keeps the
+  /// new device's public key from the server, which could otherwise wrap a
+  /// keychain of its own for it (device public keys only ever travel
+  /// encrypted, see `sync/PROTOCOL.md`).
+  Future<String> seal(String request) async {
+    final nonce = randomBytes(_nonceLength);
+    final box = await _aead.encrypt(
+      utf8.encode(request),
+      secretKey: await _boxKey(),
+      nonce: nonce,
+    );
+    return b64([...nonce, ...box.cipherText, ...box.mac.bytes]);
+  }
+
+  /// Opens a request from [seal]. Throws unless it was sealed with this secret.
+  Future<String> open(String sealed) async {
+    final bytes = unb64(sealed);
+    if (bytes.length < _nonceLength + _tagLength) {
+      throw const FormatException('Malformed pairing request');
+    }
+    final plaintext = await _aead.decrypt(
+      SecretBox(
+        bytes.sublist(_nonceLength, bytes.length - _tagLength),
+        nonce: bytes.sublist(0, _nonceLength),
+        mac: Mac(bytes.sublist(bytes.length - _tagLength)),
+      ),
+      secretKey: await _boxKey(),
+    );
+    return utf8.decode(plaintext);
+  }
 }
 
 /// Short human-comparable fingerprint of a public key.

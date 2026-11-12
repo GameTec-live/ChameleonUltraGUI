@@ -392,6 +392,12 @@ class SyncService extends ChangeNotifier {
       jsonEncode({'recoveryPub': b64(await recovery.identity.publicKey())}),
     );
     await _registerSelf(deviceId, deviceName, device);
+    // The creator's data defines the vault: it gets real timestamps, so it
+    // wins over the pre-sync data of devices joining later.
+    _prefs.setString(
+      _ledgerKey,
+      jsonEncode(SyncLedger({}, bootstrapped: true).toJson()),
+    );
     _activate(
       _Membership(config, recovery.vaultId, deviceId, token, device, keychain),
     );
@@ -497,19 +503,21 @@ class SyncService extends ChangeNotifier {
     while (!offer.cancelled && DateTime.now().isBefore(deadline)) {
       final raw = await _backend!.pairingRequest(offer.id);
       if (raw != null) {
-        final json = jsonDecode(raw) as Map<String, dynamic>;
-        final fields = [
-          json['id'] as String,
-          json['name'] as String,
-          json['pub'] as String,
-          json['tokenHash'] as String,
-        ];
-        // The MAC proves the request came from someone holding the code,
-        // not from the server substituting its own key.
-        if (await offer.secret.mac(fields) != json['mac']) {
+        // Only someone holding the code can seal a request, so the server
+        // cannot substitute its own key.
+        final String opened;
+        try {
+          opened = await offer.secret.open(raw);
+        } catch (_) {
           throw const SyncException('mac');
         }
-        return JoinRequest(fields[0], fields[1], unb64(fields[2]), fields[3]);
+        final {
+          'id': String id,
+          'name': String name,
+          'pub': String pub,
+          'tokenHash': String tokenHash,
+        } = jsonDecode(opened) as Map<String, dynamic>;
+        return JoinRequest(id, name, unb64(pub), tokenHash);
       }
       // Realtime backends announce the request; polling is the fallback.
       await _pairingRequests.stream
@@ -574,20 +582,20 @@ class SyncService extends ChangeNotifier {
     final deviceId = b64(randomBytes(16));
     final token = b64(randomBytes(32));
     final publicKey = await device.publicKey();
-    final fields = [deviceId, deviceName, b64(publicKey), hashToken(token)];
 
     final backend = config.connect(Credentials(vaultId, deviceId, token));
     try {
       await backend.joinPairing(
         json['p'] as String,
         await secret.authToken(),
-        jsonEncode({
-          'id': fields[0],
-          'name': fields[1],
-          'pub': fields[2],
-          'tokenHash': fields[3],
-          'mac': await secret.mac(fields),
-        }),
+        await secret.seal(
+          jsonEncode({
+            'id': deviceId,
+            'name': deviceName,
+            'pub': b64(publicKey),
+            'tokenHash': hashToken(token),
+          }),
+        ),
       );
       onWaiting?.call(fingerprint(publicKey));
 
@@ -640,11 +648,17 @@ class SyncService extends ChangeNotifier {
 
   /// Removes another device and rotates the vault keys so it cannot read
   /// anything written from now on.
+  /// The device stays listed until the rotation succeeded, so a failed
+  /// attempt can simply be repeated.
   Future<void> revoke(String memberId) async {
     await syncNow();
-    await _backend!.revoke(memberId);
-    _source.write('_devices', memberId, null);
+    try {
+      await _backend!.revoke(memberId);
+    } on SyncException catch (error) {
+      if (error.code != 'not_found') rethrow; // Removed by an earlier attempt.
+    }
     await _rotateKeys();
+    _source.write('_devices', memberId, null);
     await syncNow();
   }
 

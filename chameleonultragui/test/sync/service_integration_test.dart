@@ -80,6 +80,7 @@ void main() {
       final (a, prefsA) = await device();
       final card = jsonEncode({'id': 'card-1', 'name': 'Office'});
       await prefsA.setStringList('cards', [card]);
+      await prefsA.setInt('app_theme', 4);
       final phrase = await a.createVault(config, 'Laptop');
       expect(phrase.split(' '), hasLength(24));
       await a.syncNow();
@@ -101,6 +102,8 @@ void main() {
       expect(fingerprint(request.publicKey), shownOnB);
       await b.syncNow();
       expect(prefsB.getStringList('cards'), [card]);
+      // The vault's data beats the joining device's older local settings.
+      expect(prefsB.getInt('app_theme'), 4);
       expect(a.devices().map((d) => d.name), ['Laptop', 'Phone']);
       final capabilities = a.capabilities!;
       // Without realtime, devices only learn about changes when they sync.
@@ -114,12 +117,13 @@ void main() {
 
       // In the background nothing is connected; resuming catches up.
       setLifecycle(AppLifecycleState.hidden);
-      await prefsB.setInt('app_theme', 3);
+      // A different length: wsgidav's ETags only change per second or size.
+      await prefsB.setInt('app_theme', 30);
       await b.syncNow();
       await Future.delayed(const Duration(milliseconds: 500));
       expect(prefsA.getInt('app_theme'), 2);
       setLifecycle(AppLifecycleState.resumed);
-      await eventually(() => prefsA.getInt('app_theme') == 3);
+      await eventually(() => prefsA.getInt('app_theme') == 30);
 
       // Deletions propagate; with history they can be undone from any device.
       await prefsB.setStringList('cards', []);
@@ -135,22 +139,29 @@ void main() {
       await eventually(() => prefsB.getStringList('cards')!.length == 1, pollB);
 
       // Revoke B: it is cut off and the vault moves to a new key epoch.
-      await a.revoke(b.deviceId!);
+      // An earlier attempt removed B on the server but failed before
+      // rotating keys; repeating the removal still rotates.
+      final credentialsA = Credentials(
+        _vaultId(prefsA),
+        a.deviceId!,
+        _token(prefsA),
+      );
+      final deviceB = b.deviceId!;
+      await config.connect(credentialsA).revoke(deviceB);
+      await a.revoke(deviceB);
       await eventually(() => !b.enabled, pollB);
       expect(b.wasRevoked, isTrue);
       expect(a.devices().map((d) => d.name), ['Laptop']);
-      final (epoch, members) = await config
-          .connect(Credentials(_vaultId(prefsA), a.deviceId!, _token(prefsA)))
-          .members();
+      final (epoch, members) = await config.connect(credentialsA).members();
       expect(epoch, 2);
-      expect(members.map((m) => m.id), isNot(contains(b.deviceId)));
+      expect(members.map((m) => m.id), isNot(contains(deviceB)));
 
       // Recover on a third device with only the phrase.
       final (c, prefsC) = await device();
       await c.joinWithPhrase(config, phrase, 'Tablet');
       await c.syncNow();
       expect(prefsC.getStringList('cards'), [card]);
-      expect(prefsC.getInt('app_theme'), 3);
+      expect(prefsC.getInt('app_theme'), 30);
       await eventually(() => a.devices().length == 2, pollA);
 
       for (final service in [a, b, c]) {

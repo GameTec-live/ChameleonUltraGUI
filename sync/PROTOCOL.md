@@ -148,8 +148,12 @@ Lets an existing device add a new one by QR/code. Pairings expire after 10 minut
   `authHash`) `{"request": "<opaque string ≤ 4 KiB>"}` → `202` · `404` · `409 exists`
 - `GET /pairings/{id}` (member) → `200 {"request": "…" | null}` · `404`
 
-The request content is client defined (device id, name, public key, token
-hash and a MAC keyed by the pairing secret, which the server never sees).
+The request content is client defined: the app seals the device id, name,
+public key and token hash with XChaCha20-Poly1305 under
+`HKDF(pairingSecret, "cu-sync/pair-box/v1")`, a key the server never sees.
+Device public keys only ever travel encrypted (here and in `_devices`
+records); that is what stops a server from wrapping a keychain of its own for
+a member.
 
 ### `GET /ws?token=…` – realtime notifications
 

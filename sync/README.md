@@ -13,7 +13,10 @@ recovery phrase, devices by their own keys.
 | `../chameleonultragui/lib/sync/` | client: engine, crypto, backends |
 
 The app also syncs to any **WebDAV** folder (Nextcloud, ownCloud, rclone, …)
-without a sync server; see [Backends](#backends) for what that gives up.
+without a sync server; see [Backends](#backends) for what that gives up. It
+detects changes by ETag, so the server's ETags must change on every write
+(true for Nextcloud and Apache; servers deriving them from second-granularity
+mtime and size, like wsgidav, can miss same-size rewrites within a second).
 
 ## How it works
 
