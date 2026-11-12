@@ -30,6 +30,18 @@ class _PluginsPageState extends State<PluginsPage> {
   bool _loadStarted = false;
 
   @override
+  void initState() {
+    super.initState();
+    PluginStore.remoteChanges.addListener(_load);
+  }
+
+  @override
+  void dispose() {
+    PluginStore.remoteChanges.removeListener(_load);
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_loadStarted) {

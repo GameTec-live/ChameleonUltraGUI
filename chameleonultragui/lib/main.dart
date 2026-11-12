@@ -37,25 +37,35 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 // Logger
 import 'package:logger/logger.dart';
 
+import 'package:chameleonultragui/plugins/store.dart';
+import 'package:chameleonultragui/sync/sync_service.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferencesProvider = SharedPreferencesProvider();
   await sharedPreferencesProvider.load();
-  runApp(ChameleonGUI(sharedPreferencesProvider));
+  final sync = SyncService(sharedPreferencesProvider.preferences);
+  sharedPreferencesProvider.onLocalChange = sync.localChanged;
+  sync.start();
+  runApp(ChameleonGUI(sharedPreferencesProvider, sync));
 }
 
 class ChameleonGUI extends StatelessWidget {
   // Root Widget
   final SharedPreferencesProvider _sharedPreferencesProvider;
-  const ChameleonGUI(this._sharedPreferencesProvider, {super.key});
+  final SyncService _sync;
+  const ChameleonGUI(this._sharedPreferencesProvider, this._sync, {super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _sharedPreferencesProvider),
+        ChangeNotifierProvider.value(value: _sync),
         ChangeNotifierProvider(
-          create: (context) => ChameleonGUIState(_sharedPreferencesProvider),
+          create: (context) => ChameleonGUIState(_sharedPreferencesProvider)
+            // Remote data changed settings, cards, ...: rebuild everything.
+            ..watchSync(_sync),
         ),
       ],
       child: MainPage(sharedPreferencesProvider: _sharedPreferencesProvider),
@@ -87,6 +97,13 @@ class ChameleonGUIState extends ChangeNotifier {
 
   void changesMade() {
     notifyListeners();
+  }
+
+  void watchSync(SyncService sync) {
+    sync.onRemoteChange = (collections) {
+      if (collections.contains('plugins')) PluginStore.remoteChanges.value++;
+      changesMade();
+    };
   }
 
   void onConnectorStateChanged() {
