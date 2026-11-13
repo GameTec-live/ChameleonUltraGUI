@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cu-sync",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "durable_objects": {
+    "bindings": [{ "name": "VAULTS", "class_name": "Vault" }]
+  },
+  // SQLite-backed Durable Objects are available on the Workers free plan.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Vault"] }]
+}

@@ -18,6 +18,7 @@ import 'package:chameleonultragui/gui/component/qrcode_viewer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/qr/import.dart';
 import 'package:chameleonultragui/gui/menu/pages/changelog_view.dart';
+import 'package:chameleonultragui/gui/page/sync.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 // Localizations
@@ -269,6 +270,21 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     },
                   ),
                 ],
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const SyncPage())),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(localizations.sync),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.sync),
+                  ],
+                ),
               ),
               const SizedBox(height: 10),
               FittedBox(
