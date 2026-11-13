@@ -52,9 +52,9 @@ aad = utf8(vaultId + "/" + recordKey) ‖ u32be(epoch)
 plaintext = gzip(utf8(json {"c": collection, "id": id, "t": hlc, "v": value|null}))
 ```
 
-`v: null` is a tombstone. The gzip data is a single member without optional
-header fields (flags `0`); clients ignore records that are not, or that
-inflate past 16 MiB. Servers read **only** the 5 header bytes (to
+`v: null` is a tombstone. The gzip header has no optional fields (flags `0`).
+Clients inflate only the first member's deflate stream, ignore the trailer
+and anything after it, and drop records that inflate past 16 MiB. Servers read **only** the 5 header bytes (to
 enforce the current epoch); everything else is opaque.
 
 ## Authentication

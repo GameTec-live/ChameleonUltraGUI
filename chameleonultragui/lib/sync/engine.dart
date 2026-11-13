@@ -243,10 +243,11 @@ class SyncEngine {
     }
   }
 
-  /// Gunzips one member exactly as [GZipEncoder] writes it (no optional
-  /// header fields), inflating into an output that stops at
-  /// [maxPlainBytes]. The library decoders buffer unbounded output and fall
-  /// back to zlib for trailing data, so they are not used here.
+  /// Gunzips data as [GZipEncoder] writes it (no optional header fields),
+  /// inflating into an output that stops at [maxPlainBytes]. Only the first
+  /// member's deflate stream is read; the trailer and anything after it are
+  /// ignored. The library decoders buffer unbounded output and fall back to
+  /// zlib for trailing data, so they are not used here.
   static Uint8List _inflate(Uint8List gzipped) {
     const headerLength = 10;
     if (gzipped.length < headerLength ||
