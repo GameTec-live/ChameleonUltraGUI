@@ -671,5 +671,6 @@
   "plugin_dialog_error": "\u041e\u0448\u0438\u0431\u043a\u0430",
   "plugin_dialog_input": "\u0412\u0432\u043e\u0434",
   "continue_action": "\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c",
-  "description": "\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435"
+  "description": "\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435",
+  "stop": "\u0421\u0442\u043e\u043f"
 }
