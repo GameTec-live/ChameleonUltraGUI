@@ -83,7 +83,7 @@ class _SetupView extends StatefulWidget {
 }
 
 class _SetupViewState extends State<_SetupView> {
-  final _url = TextEditingController();
+  final _url = TextEditingController(text: defaultSyncServer);
   final _user = TextEditingController();
   final _password = TextEditingController();
   final _name = TextEditingController(text: _defaultDeviceName());
@@ -200,7 +200,15 @@ class _SetupViewState extends State<_SetupView> {
             ButtonSegment(value: true, label: Text(l.sync_backend_webdav)),
           ],
           selected: {_webdav},
-          onSelectionChanged: (value) => setState(() => _webdav = value.first),
+          onSelectionChanged: (value) => setState(() {
+            _webdav = value.first;
+            // The preset only applies to the sync server.
+            if (_webdav && _url.text == defaultSyncServer) {
+              _url.clear();
+            } else if (!_webdav && _url.text.isEmpty) {
+              _url.text = defaultSyncServer;
+            }
+          }),
         ),
         const SizedBox(height: 8),
         TextField(

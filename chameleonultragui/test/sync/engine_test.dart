@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:archive/archive.dart';
+
 import 'package:chameleonultragui/sync/backend.dart';
 import 'package:chameleonultragui/sync/crypto.dart';
 import 'package:chameleonultragui/sync/engine.dart';
@@ -165,5 +167,39 @@ void main() {
     await engineB.sync();
     await engineA.sync();
     expect(a.data['cards']!['c1'], card('c1', 'From B'));
+  });
+
+  test('a restore made while its record uploads is uploaded too', () async {
+    final a = MemorySource(), b = MemorySource();
+    final engineA = device('a', a), engineB = device('b', b);
+    a.write('cards', 'c1', card('c1', 'Office'));
+    await engineA.sync();
+    a.write('cards', 'c1', card('c1', 'Gym'));
+    backend.onPush = () {
+      backend.onPush = null;
+      engineA.restore('cards', 'c1', card('c1', 'Office'));
+    };
+    await engineA.sync();
+    await engineA.sync();
+    await engineB.sync();
+    expect(b.data['cards']!['c1'], card('c1', 'Office'));
+  });
+
+  test('records that inflate past the size limit are ignored', () async {
+    final b = MemorySource();
+    final engineB = device('b', b);
+    final key = await keychain.recordKey('cards', 'c1');
+    final huge = jsonEncode({
+      'c': 'cards',
+      'id': 'c1',
+      't': Hlc.zero,
+      'v': card('c1', 'x' * maxPlainBytes),
+    });
+    final plain = GZipEncoder().encodeBytes(utf8.encode(huge));
+    backend.records[key] = (1, await keychain.seal('vault', key, plain));
+    backend.seq = 1;
+    await engineB.sync();
+    expect(b.data['cards'], isEmpty);
+    expect(engineB.ledger.cursor, '1');
   });
 }

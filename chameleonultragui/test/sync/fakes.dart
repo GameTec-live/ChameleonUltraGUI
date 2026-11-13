@@ -29,8 +29,10 @@ class MemoryBackend implements SyncBackend {
   final previous = <String, List<(int, Uint8List)>>{};
   var seq = 0;
 
-  /// Runs while a pull is "in flight", e.g. to simulate a concurrent edit.
+  /// Run while a pull or push is "in flight", e.g. to simulate a
+  /// concurrent edit.
   void Function()? onPull;
+  void Function()? onPush;
 
   @override
   SyncCapabilities get capabilities => const SyncCapabilities(
@@ -57,6 +59,7 @@ class MemoryBackend implements SyncBackend {
 
   @override
   Future<Map<String, String>> push(List<OutgoingRecord> batch) async {
+    onPush?.call();
     final stale = batch.where(
       (r) => (records[r.key] == null ? '' : '${records[r.key]!.$1}') != r.base,
     );

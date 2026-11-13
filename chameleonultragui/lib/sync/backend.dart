@@ -20,6 +20,13 @@ sealed class BackendConfig {
   };
 }
 
+/// Sync server preset in the setup form. Builds can point it elsewhere with
+/// `--dart-define=SYNC_SERVER_URL=https://...` (empty: no preset).
+const defaultSyncServer = String.fromEnvironment(
+  'SYNC_SERVER_URL',
+  defaultValue: 'https://sync.gametec-live.com',
+);
+
 /// The sync server protocol (Cloudflare Worker or the Rust server).
 class ServerConfig extends BackendConfig {
   final Uri url;

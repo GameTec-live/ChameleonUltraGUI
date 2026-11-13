@@ -117,7 +117,8 @@ void main() {
 
       // In the background nothing is connected; resuming catches up.
       setLifecycle(AppLifecycleState.hidden);
-      // A different length: wsgidav's ETags only change per second or size.
+      // wsgidav's ETags only change with the mtime second or the size.
+      await Future.delayed(const Duration(milliseconds: 1100));
       await prefsB.setInt('app_theme', 30);
       await b.syncNow();
       await Future.delayed(const Duration(milliseconds: 500));

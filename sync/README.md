@@ -58,6 +58,14 @@ for little gain; revisit if the app ever encrypts its local data.
 
 ## Running a server
 
+The app presets `https://sync.gametec-live.com` as the sync server; users can
+enter any other one. To ship a build with a different preset (or none, with an
+empty value), pass it at build time:
+
+```sh
+flutter build <platform> --dart-define=SYNC_SERVER_URL=https://sync.example.com
+```
+
 ### Cloudflare Worker (free plan)
 
 ```sh

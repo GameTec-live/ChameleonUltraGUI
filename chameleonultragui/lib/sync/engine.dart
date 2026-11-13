@@ -92,6 +92,10 @@ class RecordVersion {
 
 /// Item too large to sync (gzip + encryption still above the blob limit).
 const maxBlobBytes = 1 << 20;
+
+/// Largest uncompressed record. Devices refuse to inflate anything bigger,
+/// so a vault member cannot crash others with a decompression bomb.
+const maxPlainBytes = 16 << 20;
 const _maxBatchBytes = 4 << 20;
 const _maxBatchRecords = 200;
 
@@ -225,9 +229,8 @@ class SyncEngine {
         throw const SyncException('epoch');
       }
       final plain = await keychain.open(vaultId, key, blob);
-      final payload = jsonDecode(
-        utf8.decode(GZipDecoder().decodeBytes(plain)),
-      ) as Map<String, dynamic>;
+      final payload =
+          jsonDecode(utf8.decode(_inflate(plain))) as Map<String, dynamic>;
       // A blob only counts for the record key it was encrypted for.
       if (await keychain.recordKey(payload['c'], payload['id']) != key) {
         return null;
@@ -238,6 +241,27 @@ class SyncEngine {
     } catch (_) {
       return null; // Undecryptable or foreign data is ignored.
     }
+  }
+
+  /// Gunzips one member exactly as [GZipEncoder] writes it (no optional
+  /// header fields), inflating into an output that stops at
+  /// [maxPlainBytes]. The library decoders buffer unbounded output and fall
+  /// back to zlib for trailing data, so they are not used here.
+  static Uint8List _inflate(Uint8List gzipped) {
+    const headerLength = 10;
+    if (gzipped.length < headerLength ||
+        gzipped[0] != 0x1f ||
+        gzipped[1] != 0x8b ||
+        gzipped[2] != 8 || // deflate
+        gzipped[3] != 0) {
+      throw const FormatException('Unexpected gzip header');
+    }
+    final output = _BoundedOutput();
+    Inflate.stream(
+      InputMemoryStream(Uint8List.sublistView(gzipped, headerLength)),
+      output: output,
+    );
+    return output.getBytes();
   }
 
   /// Applies a decrypted remote record if it is newer. Returns its
@@ -279,35 +303,39 @@ class SyncEngine {
 
   Future<void> _push(Map<String, Map<String, String>> snapshot) async {
     final batch = <OutgoingRecord>[];
-    final metas = <String, RecordMeta>{};
+    // What each queued record looked like when it was sent.
+    final metas = <String, (RecordMeta, String)>{};
     var bytes = 0;
     oversized.clear();
 
     Future<void> flush() async {
       if (batch.isEmpty) return;
       final versions = await backend.push(batch);
-      for (final MapEntry(:key, value: meta) in metas.entries) {
-        meta
-          ..version = versions[key] ?? meta.version
-          ..dirty = false;
+      for (final MapEntry(:key, value: (meta, time)) in metas.entries) {
+        meta.version = versions[key] ?? meta.version;
+        // Changed meanwhile (e.g. restored): that change still needs a push.
+        if (meta.time == time) meta.dirty = false;
       }
       batch.clear();
       metas.clear();
       bytes = 0;
     }
 
-    for (final MapEntry(key: name, value: meta) in ledger.records.entries) {
+    // A copy: restore() may add records while this awaits the server.
+    for (final MapEntry(key: name, value: meta)
+        in ledger.records.entries.toList()) {
       if (!meta.dirty) continue;
       final [collection, id] = _split(name);
       final value = meta.deleted ? null : snapshot[collection]?[id];
       final key = await keychain.recordKey(collection, id);
-      final plain = GZipEncoder().encodeBytes(
-        utf8.encode(
-          jsonEncode({'c': collection, 'id': id, 't': meta.time, 'v': value}),
-        ),
+      final time = meta.time;
+      final raw = utf8.encode(
+        jsonEncode({'c': collection, 'id': id, 't': time, 'v': value}),
       );
-      final blob = await keychain.seal(vaultId, key, plain);
-      if (blob.length > maxBlobBytes) {
+      final blob = raw.length > maxPlainBytes
+          ? null
+          : await keychain.seal(vaultId, key, GZipEncoder().encodeBytes(raw));
+      if (blob == null || blob.length > maxBlobBytes) {
         // Stays dirty: retried (and reported) every run until it shrinks.
         oversized.add(meta.label);
         continue;
@@ -317,7 +345,7 @@ class SyncEngine {
         await flush();
       }
       batch.add(OutgoingRecord(key, meta.version, blob));
-      metas[key] = meta;
+      metas[key] = (meta, time);
       bytes += blob.length;
     }
     await flush();
@@ -376,5 +404,39 @@ class SyncEngine {
           (_split(key).first, _split(key).last, meta),
     ]..sort((a, b) => b.$3.time.compareTo(a.$3.time));
     return entries.take(limit).toList();
+  }
+}
+
+/// Inflate output that throws once it would exceed [maxPlainBytes]. These
+/// are all the write paths `Inflate` uses.
+class _BoundedOutput extends OutputMemoryStream {
+  void _check(int count) {
+    if (length + count > maxPlainBytes) {
+      throw const FormatException('Record too large');
+    }
+  }
+
+  @override
+  void writeByte(int value) {
+    _check(1);
+    super.writeByte(value);
+  }
+
+  @override
+  void writeBytes(List<int> bytes, {int? length}) {
+    _check(length ?? bytes.length);
+    super.writeBytes(bytes, length: length);
+  }
+
+  @override
+  void writeStream(InputStream stream) {
+    _check(stream.length);
+    super.writeStream(stream);
+  }
+
+  @override
+  void writeBackReference(int distance, int count) {
+    _check(count);
+    super.writeBackReference(distance, count);
   }
 }
