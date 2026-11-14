@@ -1,23 +1,29 @@
 name: Update translations
 
+# Pulls translations from Crowdin, opens a PR with them, runs CI and merges it.
+# ChameleonHelper isn't a collaborator: it only pushes to its fork and opens the PR
+# (so github-actions can approve it). Everything else uses GITHUB_TOKEN.
 on:
   schedule:
     - cron: "0 */12 * * *"
   workflow_dispatch:
 
+concurrency: update-translations
+
 jobs:
   update-translations:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write # push the CI branch, merge
+      pull-requests: write # approve
+      actions: write # start workflows
     env:
-      CROWDIN_API: ${{ secrets.CROWDIN_API }}
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+      CI_BRANCH: translations-ci
     steps:
     - name: Checkout code
       uses: actions/checkout@v7
-      with:
-        token: ${{ secrets.BOT_HELPER_TOKEN }}
     - name: Set up Python
       uses: actions/setup-python@v7
       with:
@@ -25,35 +31,45 @@ jobs:
     - name: Run Python script
       run: python update.py
       working-directory: ./chameleonultragui/lib/l10n
-    - name: Check for changes
-      id: git-check
-      run: |
-        git config user.email "actions@github.com"
-        git config user.name "GitHub Actions"
-        git add chameleonultragui/lib/l10n/*
-        if [[ -z $(git status --untracked-files=no -s) ]]; then
-          echo "No changes"
-        else
-          echo "::set-output name=has_changes::true"
-        fi
-    - name: Remove old branch
-      if: steps.git-check.outputs.has_changes == 'true'
-      id: remove-branch
-      run: |
-        git remote set-url origin https://github.com/ChameleonHelper/ChameleonUltraGUI.git
-        git push origin :translations-branch || true
-        git remote set-url origin https://github.com/GameTec-live/ChameleonUltraGUI.git
+      env:
+        CROWDIN_API: ${{ secrets.CROWDIN_API }}
+    # Force-pushes the fork branch and opens (or updates) the PR when there are changes.
+    # Its PR number is also set for an unchanged open PR, so a failed run gets retried.
     - name: Create PR
-      if: steps.git-check.outputs.has_changes == 'true'
+      id: cpr
       uses: peter-evans/create-pull-request@v8
       with:
         token: ${{ secrets.BOT_HELPER_TOKEN }}
         base: main
         branch: translations-branch
         push-to-fork: ChameleonHelper/ChameleonUltraGUI
+        # Only translation files ever end up in the PR, which is what makes
+        # the auto-approval below safe.
+        add-paths: chameleonultragui/lib/l10n/app_*.arb
         body: "Update translations"
         commit-message: "feat: Update translations"
         title: "feat: Update translations"
-        author: "Chameleon Helper <147535828+ChameleonHelper@users.noreply.github.com>"
-        committer: "Chameleon Helper <147535828+ChameleonHelper@users.noreply.github.com>"
-        delete-branch: true
+    # CI on PRs from the fork waits for manual approval. Instead, run it on the same
+    # commit from a branch in this repo: dispatches made with GITHUB_TOKEN need no
+    # approval, and the checks show up on the PR because the commit is identical.
+    - name: Run CI
+      if: steps.cpr.outputs.pull-request-number != ''
+      env:
+        SHA: ${{ steps.cpr.outputs.pull-request-head-sha }}
+      run: |
+        git push --force origin "$SHA:refs/heads/$CI_BRANCH"
+        RUN=$(gh api "repos/$GH_REPO/actions/workflows/build-app.yml/dispatches" \
+          -f ref="$CI_BRANCH" -F return_run_details=true --jq .workflow_run_id)
+        gh run watch "$RUN" --exit-status --interval 60 > /dev/null
+    # Merging with GITHUB_TOKEN doesn't fire the push to main, so start those workflows by hand.
+    - name: Approve and merge PR
+      if: steps.cpr.outputs.pull-request-number != ''
+      env:
+        PR: ${{ steps.cpr.outputs.pull-request-number }}
+        SHA: ${{ steps.cpr.outputs.pull-request-head-sha }}
+      run: |
+        gh pr review "$PR" --approve
+        gh pr merge "$PR" --squash --match-head-commit "$SHA"
+        git push origin --delete "$CI_BRANCH"
+        gh workflow run build-app.yml --ref main
+        gh workflow run publish-app.yml --ref main
