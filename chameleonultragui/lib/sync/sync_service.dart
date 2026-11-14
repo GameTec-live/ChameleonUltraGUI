@@ -282,19 +282,19 @@ class SyncService extends ChangeNotifier {
     final engine = _engine!;
     status = SyncStatus.syncing;
     notifyListeners();
+    // Filled as remote data is applied, also when the round fails later.
+    final changed = <String>{};
     try {
       // Without server enforcement nothing rejects stale keys, so check first.
       if (!_backend!.capabilities.serverEnforced) await _refreshKeychain();
-      Set<String> changed;
       try {
-        changed = await engine.sync();
+        await engine.sync(changed);
       } on SyncException catch (error) {
         if (error.code != 'epoch') rethrow;
         await _refreshKeychain();
-        changed = await engine.sync();
+        await engine.sync(changed);
       }
       _saveLedger();
-      if (changed.isNotEmpty) onRemoteChange?.call(changed);
       status = SyncStatus.idle;
       lastSync = DateTime.now();
       lastError = null;
@@ -310,6 +310,8 @@ class SyncService extends ChangeNotifier {
       _saveLedger();
       status = SyncStatus.error;
       lastError = error;
+    } finally {
+      if (changed.isNotEmpty) onRemoteChange?.call(changed);
     }
     if (enabled) notifyListeners();
   }
@@ -320,11 +322,16 @@ class SyncService extends ChangeNotifier {
     }
   }
 
+  /// Switches to a newer key epoch. Membership records only count under the
+  /// newest key (see `SyncEngine._merge`), so every device re-uploads its
+  /// copies; that also covers a rotation whose own device never finished.
   void _setKeychain(Keychain keychain) {
     final membership = _membership!.withKeychain(keychain);
     _membership = membership;
     _engine!.keychain = keychain;
     _prefs.setString(_stateKey, jsonEncode(membership.toJson()));
+    _engine!.markInternalDirty();
+    _saveLedger();
   }
 
   /// Picks up a rotated keychain. Never goes back to an older epoch, so a
@@ -673,11 +680,7 @@ class SyncService extends ChangeNotifier {
   /// attempt can simply be repeated.
   Future<void> revoke(String memberId) async {
     await syncNow();
-    try {
-      await _backend!.revoke(memberId);
-    } on SyncException catch (error) {
-      if (error.code != 'not_found') rethrow; // Removed by an earlier attempt.
-    }
+    await _removeMember(memberId);
     await _rotateKeys();
     _source.write('_devices', memberId, null);
     await syncNow();
@@ -696,6 +699,12 @@ class SyncService extends ChangeNotifier {
         'recovery' => _field(records['_vault']?['meta'], 'recoveryPub'),
         _ => _field(records['_devices']?[member.id], 'pub'),
       };
+      if (pub == null &&
+          _engine!.ledger.records['_devices/${member.id}']?.deleted == true) {
+        // It left, but its own removal never reached the server (leave()).
+        await _removeMember(member.id);
+        continue;
+      }
       if (pub == null) throw const SyncException('members');
       entries[member.id] = await wrapKeychain(
         next,
@@ -706,7 +715,14 @@ class SyncService extends ChangeNotifier {
     }
     await _backend!.rotate(membership.keychain.current, next.current, entries);
     _setKeychain(next);
-    _engine!.markInternalDirty();
+  }
+
+  Future<void> _removeMember(String memberId) async {
+    try {
+      await _backend!.revoke(memberId);
+    } on SyncException catch (error) {
+      if (error.code != 'not_found') rethrow; // Removed by an earlier attempt.
+    }
   }
 
   static String? _field(String? json, String field) =>
@@ -719,7 +735,8 @@ class SyncService extends ChangeNotifier {
       await syncNow();
       await _backend!.revoke(deviceId!);
     } catch (_) {
-      // Leaving must work offline too; the entry can be revoked later.
+      // Leaving must work offline too. If only the record deletion got
+      // through, the next key rotation removes the leftover member.
     }
     _deactivate();
   }

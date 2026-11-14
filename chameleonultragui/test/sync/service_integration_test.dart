@@ -185,6 +185,16 @@ void main() {
       expect(prefsC.getInt('app_theme'), 30);
       await eventually(() => a.devices().length == 2, pollA);
 
+      // C left, but its own removal never reached the server: its record is
+      // deleted, so the next rotation removes the leftover member as well.
+      await a.restore('_devices', c.deviceId!, null);
+      await a.revoke(deviceB);
+      final (_, remaining) = await config.connect(credentialsA).members();
+      expect(
+        remaining.map((m) => m.id),
+        unorderedEquals(['recovery', a.deviceId]),
+      );
+
       for (final service in [a, b, c]) {
         service.dispose();
       }

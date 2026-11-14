@@ -210,6 +210,34 @@ void main() {
     expect(b.data['settings']!['app_theme'], '1');
   });
 
+  test('remote changes are reported even when the upload fails', () async {
+    final a = MemorySource(), b = MemorySource();
+    final engineA = device('a', a), engineB = device('b', b);
+    a.write('cards', 'c1', card('c1', 'Office'));
+    await engineA.sync();
+    b.write('settings', 'app_theme', '2');
+    backend.onPush = () => throw const SyncException('quota', 507);
+    final changed = <String>{};
+    await expectLater(engineB.sync(changed), throwsA(isA<SyncException>()));
+    expect(changed, {'cards'});
+  });
+
+  test('re-uploaded membership records do not undo newer changes', () async {
+    final a = MemorySource(), b = MemorySource();
+    final engineA = device('a', a), engineB = device('b', b);
+    a.write('_devices', 'x', '{"name":"X"}');
+    await engineA.sync();
+    await engineB.sync();
+    b.write('_devices', 'x', null);
+    await engineB.sync();
+    // A re-uploads (as after a rotation) before it saw the removal.
+    engineA.markInternalDirty();
+    await engineA.sync();
+    await engineB.sync();
+    expect(a.data['_devices'], isEmpty);
+    expect(b.data['_devices'], isEmpty);
+  });
+
   test('records that inflate past the size limit are ignored', () async {
     final b = MemorySource();
     final engineB = device('b', b);

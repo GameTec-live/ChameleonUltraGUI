@@ -181,15 +181,16 @@ class SyncEngine {
     return [key.substring(0, slash), key.substring(slash + 1)];
   }
 
-  /// One full round: pull, then push (retrying after conflicts). Returns
-  /// the collections changed by remote data. Throws `epoch` when remote data
-  /// needs a newer keychain.
-  Future<Set<String>> sync() async {
+  /// One full round: pull, then push (retrying after conflicts). Adds the
+  /// collections changed by remote data to [changed] as they are applied, so
+  /// they are known even if the round fails later, and returns them. Throws
+  /// `epoch` when remote data needs a newer keychain.
+  Future<Set<String>> sync([Set<String>? changed]) async {
+    changed ??= {};
     // Timestamp local edits now, even if the server turns out unreachable.
     scan();
-    final changed = <String>{};
     for (var attempt = 0; ; attempt++) {
-      changed.addAll(await _pull());
+      await _pull(changed);
       try {
         await _push(scan());
         return changed;
@@ -199,8 +200,7 @@ class SyncEngine {
     }
   }
 
-  Future<Set<String>> _pull() async {
-    final changed = <String>{};
+  Future<void> _pull(Set<String> changed) async {
     PullResult page;
     do {
       page = await backend.pull(ledger.cursor);
@@ -218,7 +218,6 @@ class SyncEngine {
       }
       ledger.cursor = page.cursor;
     } while (page.more);
-    return changed;
   }
 
   Future<Map<String, dynamic>?> _decrypt(String key, Uint8List blob) async {
@@ -355,13 +354,10 @@ class SyncEngine {
   }
 
   /// Re-uploads vault bookkeeping under the current key (after rotation).
+  /// Times stay, so a stale copy never beats a newer change.
   void markInternalDirty() {
     for (final MapEntry(:key, value: meta) in ledger.records.entries) {
-      if (internalCollections.contains(_split(key).first)) {
-        meta
-          ..dirty = true
-          ..time = hlc.next();
-      }
+      if (internalCollections.contains(_split(key).first)) meta.dirty = true;
     }
   }
 
