@@ -70,6 +70,6 @@ jobs:
       run: |
         gh pr review "$PR" --approve
         gh pr merge "$PR" --squash --match-head-commit "$SHA"
-        git push origin --delete "$CI_BRANCH"
         gh workflow run build-app.yml --ref main
         gh workflow run publish-app.yml --ref main
+        git push origin --delete "$CI_BRANCH"
