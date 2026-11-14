@@ -51,7 +51,7 @@ jobs:
         title: "feat: Update translations"
     # CI on PRs from the fork waits for manual approval. Instead, run it on the same
     # commit from a branch in this repo: dispatches made with GITHUB_TOKEN need no
-    # approval, and the checks show up on the PR because the commit is identical.
+    # approval. (Its checks land on the commit but don't show on the PR page.)
     - name: Run CI
       if: steps.cpr.outputs.pull-request-number != ''
       env:
