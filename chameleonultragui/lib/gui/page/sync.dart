@@ -77,6 +77,32 @@ Future<bool> _acceptNotice(BuildContext context, String notice) async {
 void _snack(BuildContext context, String text) =>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
 
+/// Copies [text] to the clipboard and confirms it in place.
+class _CopyButton extends StatefulWidget {
+  final String text;
+  const _CopyButton(this.text);
+
+  @override
+  State<_CopyButton> createState() => _CopyButtonState();
+}
+
+class _CopyButtonState extends State<_CopyButton> {
+  bool _copied = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return TextButton.icon(
+      onPressed: () async {
+        await Clipboard.setData(ClipboardData(text: widget.text));
+        if (mounted) setState(() => _copied = true);
+      },
+      icon: Icon(_copied ? Icons.check : Icons.copy),
+      label: Text(_copied ? l.sync_copied : l.sync_copy),
+    );
+  }
+}
+
 String _formatTime(BuildContext context, DateTime? time) => time == null
     ? ''
     : DateFormat.yMd(Localizations.localeOf(context).toLanguageTag())
@@ -118,6 +144,20 @@ class _SetupViewState extends State<_SetupView> {
     super.initState();
     for (final controller in [_url, _user, _password, _name]) {
       controller.addListener(() => setState(() {}));
+    }
+    // Shown once, when this view replaces the vault (or on the next visit).
+    if (widget.sync.wasRevoked) {
+      widget.sync.wasRevoked = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.sync_revoked),
+            showCloseIcon: true,
+            duration: const Duration(seconds: 10),
+          ),
+        );
+      });
     }
   }
 
@@ -205,14 +245,6 @@ class _SetupViewState extends State<_SetupView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.sync.wasRevoked)
-          Card(
-            color: Theme.of(context).colorScheme.errorContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(l.sync_revoked),
-            ),
-          ),
         Text(l.sync_description),
         const SizedBox(height: 16),
         TextField(
@@ -305,39 +337,96 @@ class _PhraseDialogState extends State<_PhraseDialog> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     final words = widget.phrase.split(' ');
+    // Row by row, numbered, so it can be copied onto paper in order.
+    final columns = switch (MediaQuery.sizeOf(context).width) {
+      >= 600 => 4,
+      >= 480 => 3,
+      _ => 2,
+    };
+    final number = theme.textTheme.bodyMedium!.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    final word = theme.textTheme.bodyLarge!.copyWith(
+      fontWeight: FontWeight.w600,
+    );
     return AlertDialog(
       title: Text(l.sync_recovery_phrase),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(l.sync_recovery_phrase_description),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final (index, word) in words.indexed)
-                  Chip(label: Text('${index + 1}. $word')),
-              ],
-            ),
-            TextButton.icon(
-              onPressed: () =>
-                  Clipboard.setData(ClipboardData(text: widget.phrase)),
-              icon: const Icon(Icons.copy),
-              label: Text(l.copy),
-            ),
-            CheckboxListTile(
-              value: _confirmed,
-              onChanged: (value) => setState(() => _confirmed = value!),
-              title: Text(l.sync_recovery_phrase_confirm),
-            ),
-          ],
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(l.sync_recovery_phrase_description),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    for (var row = 0; row * columns < words.length; row++)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          children: [
+                            for (
+                              var i = row * columns;
+                              i < (row + 1) * columns;
+                              i++
+                            )
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 24,
+                                      child: Text(
+                                        '${i + 1}',
+                                        textAlign: TextAlign.right,
+                                        style: number,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        i < words.length ? words[i] : '',
+                                        style: word,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                value: _confirmed,
+                onChanged: (value) => setState(() => _confirmed = value!),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                title: Text(l.sync_recovery_phrase_confirm),
+              ),
+            ],
+          ),
         ),
       ),
+      actionsAlignment: MainAxisAlignment.spaceBetween,
       actions: [
-        TextButton(
+        _CopyButton(widget.phrase),
+        FilledButton(
           onPressed: _confirmed ? () => Navigator.pop(context) : null,
           child: Text(l.done),
         ),
@@ -512,11 +601,7 @@ class _VaultView extends StatelessWidget {
       switch (sync.status) {
         SyncStatus.syncing => l.sync_status_syncing,
         SyncStatus.error => l.sync_status_error(_describe(l, sync.lastError)),
-        _ =>
-          sync.lastSync == null
-              ? l.sync_status_idle
-              : '${l.sync_status_idle} · '
-                    '${l.sync_last_sync(_formatTime(context, sync.lastSync))}',
+        _ => l.sync_status_idle,
       };
 
   String _backendLabel() => switch (sync.backendConfig) {
@@ -607,7 +692,14 @@ class _VaultView extends StatelessWidget {
               _ => Icons.cloud_done,
             }),
             title: Text(_status(context, l)),
-            subtitle: Text(_backendLabel()),
+            subtitle: Text(
+              [
+                if (sync.lastSync case final time?)
+                  l.sync_last_sync(_formatTime(context, time)),
+                _backendLabel(),
+              ].join('\n'),
+            ),
+            isThreeLine: sync.lastSync != null,
             trailing: IconButton(
               tooltip: l.sync_now,
               icon: const Icon(Icons.refresh),
@@ -650,7 +742,7 @@ class _VaultView extends StatelessWidget {
               [
                 if (device.isThisDevice) l.sync_this_device,
                 _formatTime(context, device.added?.toLocal()),
-              ].where((s) => s.isNotEmpty).join(' · '),
+              ].where((s) => s.isNotEmpty).join(' - '),
             ),
             trailing: device.isThisDevice
                 ? null
@@ -673,7 +765,7 @@ class _VaultView extends StatelessWidget {
                   _collectionName(l, collection),
                   _formatTime(context, Hlc.time(meta.time)),
                   if (meta.deleted) l.sync_deleted,
-                ].where((s) => s.isNotEmpty).join(' · '),
+                ].where((s) => s.isNotEmpty).join(' - '),
               ),
               onTap: () => showDialog(
                 context: context,
@@ -814,13 +906,9 @@ class _PairingDialogState extends State<_PairingDialog> {
                   backgroundColor: Colors.white,
                   padding: const EdgeInsets.all(12),
                 ),
-                TextButton.icon(
-                  onPressed: () =>
-                      Clipboard.setData(ClipboardData(text: offer.code)),
-                  icon: const Icon(Icons.copy),
-                  label: Text(l.copy),
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                _CopyButton(offer.code),
+                const SizedBox(height: 12),
                 Text(l.sync_waiting_device),
                 const SizedBox(height: 8),
                 const LinearProgressIndicator(),

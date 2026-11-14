@@ -744,6 +744,9 @@ class SyncService extends ChangeNotifier {
     try {
       _source.write('_devices', deviceId!, null);
       await syncNow();
+      // The server closes our socket as revoked; that is not news here.
+      await _events?.cancel();
+      _events = null;
       await _backend!.revoke(deviceId!);
     } catch (_) {
       // Leaving must work offline too. If only the record deletion got
