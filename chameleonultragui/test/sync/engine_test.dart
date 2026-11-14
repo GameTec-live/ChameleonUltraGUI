@@ -185,6 +185,31 @@ void main() {
     expect(b.data['cards']!['c1'], card('c1', 'Office'));
   });
 
+  test('a restore made while an earlier batch uploads is uploaded', () async {
+    final a = MemorySource(), b = MemorySource();
+    final engineA = device('a', a), engineB = device('b', b);
+    // Cards scan before settings: the card that overflows the first batch
+    // flushes it, then the theme is read from the snapshot.
+    void edit(String name, String theme) {
+      for (var i = 0; i <= 200; i++) {
+        a.write('cards', 'c$i', card('c$i', name));
+      }
+      a.write('settings', 'app_theme', theme);
+    }
+
+    edit('Office', '1');
+    await engineA.sync();
+    edit('Gym', '2');
+    backend.onPush = () {
+      backend.onPush = null;
+      engineA.restore('settings', 'app_theme', '1');
+    };
+    await engineA.sync();
+    await engineA.sync();
+    await engineB.sync();
+    expect(b.data['settings']!['app_theme'], '1');
+  });
+
   test('records that inflate past the size limit are ignored', () async {
     final b = MemorySource();
     final engineB = device('b', b);

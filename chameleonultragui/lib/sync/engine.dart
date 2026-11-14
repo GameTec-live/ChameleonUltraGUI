@@ -328,8 +328,10 @@ class SyncEngine {
       if (!meta.dirty) continue;
       final [collection, id] = _split(name);
       final value = meta.deleted ? null : snapshot[collection]?[id];
-      final key = await keychain.recordKey(collection, id);
+      // Restored after the snapshot: stays dirty for the next run.
+      if ((value == null ? '' : _hash(value)) != meta.hash) continue;
       final time = meta.time;
+      final key = await keychain.recordKey(collection, id);
       final raw = utf8.encode(
         jsonEncode({'c': collection, 'id': id, 't': time, 'v': value}),
       );
