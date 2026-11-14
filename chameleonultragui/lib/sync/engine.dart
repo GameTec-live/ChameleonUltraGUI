@@ -307,6 +307,9 @@ class SyncEngine {
     final metas = <String, (RecordMeta, String)>{};
     var bytes = 0;
     oversized.clear();
+    // Keys rotated while uploading: what was sent goes out again (see
+    // markInternalDirty).
+    final epoch = keychain.current;
 
     Future<void> flush() async {
       if (batch.isEmpty) return;
@@ -314,7 +317,7 @@ class SyncEngine {
       for (final MapEntry(:key, value: (meta, time)) in metas.entries) {
         meta.version = versions[key] ?? meta.version;
         // Changed meanwhile (e.g. restored): that change still needs a push.
-        if (meta.time == time) meta.dirty = false;
+        if (meta.time == time && keychain.current == epoch) meta.dirty = false;
       }
       batch.clear();
       metas.clear();

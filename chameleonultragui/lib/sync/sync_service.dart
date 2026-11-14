@@ -111,6 +111,9 @@ class SyncService extends ChangeNotifier {
   Future<void>? _running;
   bool _again = false;
 
+  /// Whether the keychain was checked since activation (see [_syncOnce]).
+  bool _keysChecked = false;
+
   SyncStatus status = SyncStatus.disabled;
   DateTime? lastSync;
   Object? lastError;
@@ -140,6 +143,7 @@ class SyncService extends ChangeNotifier {
 
   void _activate(_Membership membership) {
     _membership = membership;
+    _keysChecked = false;
     _prefs.setString(_stateKey, jsonEncode(membership.toJson()));
     final backend = membership.backend.connect(
       Credentials(membership.vaultId, membership.memberId, membership.token),
@@ -285,8 +289,13 @@ class SyncService extends ChangeNotifier {
     // Filled as remote data is applied, also when the round fails later.
     final changed = <String>{};
     try {
-      // Without server enforcement nothing rejects stale keys, so check first.
-      if (!_backend!.capabilities.serverEnforced) await _refreshKeychain();
+      // Without server enforcement nothing rejects stale keys, so check
+      // every time. Otherwise once per start: a rotation whose device died
+      // before saving the new keys is finished here.
+      if (!_backend!.capabilities.serverEnforced || !_keysChecked) {
+        await _refreshKeychain();
+        _keysChecked = true;
+      }
       try {
         await engine.sync(changed);
       } on SyncException catch (error) {

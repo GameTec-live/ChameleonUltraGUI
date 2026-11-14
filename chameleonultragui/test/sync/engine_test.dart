@@ -238,6 +238,25 @@ void main() {
     expect(b.data['_devices'], isEmpty);
   });
 
+  test('membership records sent while keys rotate are sent again', () async {
+    final a = MemorySource(), c = MemorySource();
+    final engineA = device('a', a);
+    a.write('_devices', 'x', '{"name":"X"}');
+    final rotated = keychain.rotated();
+    // The upload lands under the old key just as the keys change.
+    backend.onPush = () {
+      backend.onPush = null;
+      engineA
+        ..keychain = rotated
+        ..markInternalDirty();
+    };
+    await engineA.sync();
+    await engineA.sync();
+    keychain = rotated;
+    await device('c', c).sync();
+    expect(c.data['_devices'], {'x': '{"name":"X"}'});
+  });
+
   test('records that inflate past the size limit are ignored', () async {
     final b = MemorySource();
     final engineB = device('b', b);
