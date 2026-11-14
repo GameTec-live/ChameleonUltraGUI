@@ -289,6 +289,8 @@ class SyncService extends ChangeNotifier {
     // Filled as remote data is applied, also when the round fails later.
     final changed = <String>{};
     try {
+      // Timestamp local edits before any request can fail (see engine.sync).
+      engine.scan();
       // Without server enforcement nothing rejects stale keys, so check
       // every time. Otherwise once per start: a rotation whose device died
       // before saving the new keys is finished here.
