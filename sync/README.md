@@ -52,7 +52,7 @@ for little gain; revisit if the app ever encrypts its local data.
 | --- | --- | --- |
 | realtime updates | yes (WebSocket, foreground only) | polls every minute in the foreground |
 | version history | 5 per record | no |
-| revoked device locked out of storage | yes | no, change the WebDAV password |
+| revoked device locked out of storage | yes | no: change the WebDAV password, or it can still tamper with data and keys |
 | key rotation on revoke | yes | yes |
 | pairing code contains | server URL | WebDAV URL **and credentials** |
 
@@ -74,6 +74,9 @@ bun install
 bunx wrangler deploy
 ```
 
+Vaults unused (no authenticated request) for 30 days are deleted; a vault
+stays while a device is connected. `NOTICE` in `wrangler.jsonc` is shown in
+the app before setup: say who runs the instance and keep the expiry note.
 Set `MAX_VAULT_BYTES` as a variable to change the per-vault quota
 (default 64 MiB). Free plan limits that matter: 100k requests/day, 5 GB
 total storage. Clients batch writes and debounce edits by 2 seconds.
@@ -92,6 +95,7 @@ Or `cargo run --release` in `server/`. Configuration via environment:
 | `CU_SYNC_BIND` | `0.0.0.0:8787` |
 | `CU_SYNC_DB` | `sync.db` (`/data/sync.db` in Docker) |
 | `CU_SYNC_MAX_VAULT_BYTES` | `67108864` |
+| `CU_SYNC_NOTICE` | none; shown in the app before setup (who runs it, ...) |
 
 Put it behind a TLS reverse proxy (WebSockets must be passed through).
 
@@ -114,4 +118,5 @@ WEBDAV_URL=http://user:pass@127.0.0.1:8080/dav flutter test test/sync/service_in
 Anyone can create a vault, so a public instance is an anonymous blob store.
 Both servers cap blob size (1 MiB) and vault size. They do not rate limit;
 on Cloudflare add a [rate limiting rule](https://developers.cloudflare.com/waf/rate-limiting-rules/),
-for the Rust server use the reverse proxy. Neither expires idle vaults yet.
+for the Rust server use the reverse proxy. The Worker deletes vaults unused
+for 30 days; the Rust server keeps them.

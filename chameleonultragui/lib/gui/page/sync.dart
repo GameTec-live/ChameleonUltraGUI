@@ -51,6 +51,29 @@ String _describe(AppLocalizations l, Object? error, {String? invalidInput}) =>
       _ => error.toString(),
     };
 
+/// Shows a sync server's notice before setup; true if the user continues.
+Future<bool> _acceptNotice(BuildContext context, String notice) async {
+  final l = AppLocalizations.of(context)!;
+  final accepted = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(l.sync_notice_title),
+      content: SingleChildScrollView(child: SelectableText(notice)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(l.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(l.continue_action),
+        ),
+      ],
+    ),
+  );
+  return accepted ?? false;
+}
+
 void _snack(BuildContext context, String text) =>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
 
@@ -126,7 +149,9 @@ class _SetupViewState extends State<_SetupView> {
     try {
       await action();
     } catch (error) {
-      if (mounted) {
+      // `cancelled`: the user declined the server's notice.
+      final declined = error is SyncException && error.code == 'cancelled';
+      if (mounted && !declined) {
         _snack(context, _describe(l, error, invalidInput: invalidInput));
       }
     } finally {
@@ -135,7 +160,11 @@ class _SetupViewState extends State<_SetupView> {
   }
 
   Future<void> _create(BackendConfig config) => _run(() async {
-    final phrase = await widget.sync.createVault(config, _deviceName);
+    final phrase = await widget.sync.createVault(
+      config,
+      _deviceName,
+      acceptNotice: (notice) => _acceptNotice(context, notice),
+    );
     if (!mounted) return;
     await showDialog(
       context: context,
@@ -152,7 +181,12 @@ class _SetupViewState extends State<_SetupView> {
     );
     if (phrase == null) return;
     await _run(
-      () => widget.sync.joinWithPhrase(config, phrase, _deviceName),
+      () => widget.sync.joinWithPhrase(
+        config,
+        phrase,
+        _deviceName,
+        acceptNotice: (notice) => _acceptNotice(context, notice),
+      ),
       invalidInput: l.sync_error_phrase,
     );
   }
@@ -397,6 +431,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
       await widget.sync.joinWithCode(
         _code.text,
         widget.deviceName,
+        acceptNotice: (notice) => _acceptNotice(context, notice),
         onWaiting: (fingerprint) {
           if (mounted) setState(() => _fingerprint = fingerprint);
         },
@@ -409,7 +444,9 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
         _joining = false;
         _fingerprint = null;
       });
-      if (!_cancelled) {
+      // Also thrown when the dialog was closed.
+      final declined = error is SyncException && error.code == 'cancelled';
+      if (!_cancelled && !declined) {
         _snack(context, _describe(l, error, invalidInput: l.sync_error_code));
       }
     }

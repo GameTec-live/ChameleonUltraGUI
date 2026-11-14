@@ -250,6 +250,13 @@ describe("realtime", () => {
   });
 });
 
+test("info has an optional notice", async () => {
+  const response = await fetch(`${base}/v1/info`);
+  expect(response.status).toBe(200);
+  const { notice } = (await response.json()) as { notice?: unknown };
+  expect(notice === undefined || typeof notice === "string").toBe(true);
+});
+
 test("CORS preflight", async () => {
   const response = await fetch(`${base}/v1/vaults/${randomId()}/records`, {
     method: "OPTIONS",

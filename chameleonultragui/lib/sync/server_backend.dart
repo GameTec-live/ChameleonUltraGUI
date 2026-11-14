@@ -16,11 +16,25 @@ class ServerBackend implements SyncBackend {
   final http.Client _http = http.Client();
 
   ServerBackend(Uri url, this._credentials)
-    : _base = url.replace(
-        path:
-            '${url.path.replaceAll(RegExp(r'/+$'), '')}'
-            '/v1/vaults/${_credentials.vaultId}',
-      );
+    : _base = _api(url, 'vaults/${_credentials.vaultId}');
+
+  static Uri _api(Uri url, String path) =>
+      url.replace(path: '${url.path.replaceAll(RegExp(r'/+$'), '')}/v1/$path');
+
+  /// The server's notice from `GET /v1/info`; null if it has none (or is an
+  /// older server without the endpoint).
+  static Future<String?> notice(Uri url) async {
+    final response = await http.get(_api(url, 'info'));
+    if (response.statusCode != 200) return null;
+    try {
+      return switch (jsonDecode(response.body)) {
+        {'notice': final String notice} when notice.trim().isNotEmpty => notice,
+        _ => null,
+      };
+    } on FormatException {
+      return null;
+    }
+  }
 
   @override
   SyncCapabilities get capabilities => const SyncCapabilities(

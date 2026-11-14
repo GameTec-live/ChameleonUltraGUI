@@ -7,5 +7,8 @@
     "bindings": [{ "name": "VAULTS", "class_name": "Vault" }]
   },
   // SQLite-backed Durable Objects are available on the Workers free plan.
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Vault"] }]
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Vault"] }],
+  // Shown in the app before setup. Say who runs this instance; keep the
+  // expiry note, the Worker deletes vaults unused for 30 days.
+  "vars": { "NOTICE": "Vaults not used for 30 days are deleted automatically." }
 }

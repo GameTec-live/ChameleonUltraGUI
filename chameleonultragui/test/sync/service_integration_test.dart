@@ -81,7 +81,21 @@ void main() {
       final card = jsonEncode({'id': 'card-1', 'name': 'Office'});
       await prefsA.setStringList('cards', [card]);
       await prefsA.setInt('app_theme', 4);
-      final phrase = await a.createVault(config, 'Laptop');
+      // The server's notice comes first; declining it stops the setup.
+      final notice = await config.notice();
+      if (notice != null) {
+        await expectLater(
+          a.createVault(config, 'Laptop', acceptNotice: (_) async => false),
+          throwsA(
+            isA<SyncException>().having((e) => e.code, 'code', 'cancelled'),
+          ),
+        );
+      }
+      final phrase = await a.createVault(
+        config,
+        'Laptop',
+        acceptNotice: (shown) async => shown == notice,
+      );
       expect(phrase.split(' '), hasLength(24));
       await a.syncNow();
 
@@ -93,6 +107,7 @@ void main() {
       final joining = b.joinWithCode(
         offer.code,
         'Phone',
+        acceptNotice: (_) async => true,
         onWaiting: (fingerprint) => shownOnB = fingerprint,
       );
       final request = await a.waitForJoin(offer);
@@ -159,7 +174,12 @@ void main() {
 
       // Recover on a third device with only the phrase.
       final (c, prefsC) = await device();
-      await c.joinWithPhrase(config, phrase, 'Tablet');
+      await c.joinWithPhrase(
+        config,
+        phrase,
+        'Tablet',
+        acceptNotice: (_) async => true,
+      );
       await c.syncNow();
       expect(prefsC.getStringList('cards'), [card]);
       expect(prefsC.getInt('app_theme'), 30);

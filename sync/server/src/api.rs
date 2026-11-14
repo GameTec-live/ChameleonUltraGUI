@@ -28,6 +28,8 @@ use crate::store::{Member, NewMember, Store};
 pub struct AppState {
     pub store: Store,
     pub hub: Hub,
+    /// Shown by clients before setup (`GET /v1/info`).
+    pub notice: Option<String>,
 }
 
 type AppResult<T> = Result<T, ApiError>;
@@ -35,6 +37,7 @@ type St = State<Arc<AppState>>;
 
 pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
+        .route("/v1/info", get(info))
         .route("/v1/vaults/{vault}/init", post(init))
         .route("/v1/vaults/{vault}/keyring", get(keyring).put(rotate))
         .route("/v1/vaults/{vault}/members", get(members).post(add_member))
@@ -80,6 +83,13 @@ fn auth(state: &AppState, vault: &str, headers: &HeaderMap) -> AppResult<Member>
 
 fn publish(state: &AppState, vault: &str, message: Value) {
     state.hub.publish(vault, Event::Message(message.to_string()));
+}
+
+async fn info(State(s): St) -> Json<Value> {
+    Json(match &s.notice {
+        Some(notice) => json!({ "notice": notice }),
+        None => json!({}),
+    })
 }
 
 #[derive(Deserialize)]

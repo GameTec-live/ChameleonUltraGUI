@@ -9,12 +9,16 @@ const CORS = {
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
 };
 
-/** Routes `/v1/vaults/{vaultId}/…` to that vault's Durable Object and adds CORS. */
+/** Answers `/v1/info`, routes `/v1/vaults/{vaultId}/…` to that vault's Durable Object and adds CORS. */
 export default {
   async fetch(request, env): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
-    const [, version, vaults, vault] = new URL(request.url).pathname.split("/");
+    const { pathname } = new URL(request.url);
+    if (request.method === "GET" && pathname === "/v1/info") {
+      return withCors(json(env.NOTICE ? { notice: env.NOTICE } : {}));
+    }
+    const [, version, vaults, vault] = pathname.split("/");
     if (version !== "v1" || vaults !== "vaults" || !validId(vault)) {
       return withCors(json({ error: "not_found" }, 404));
     }

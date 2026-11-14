@@ -5,6 +5,8 @@
 //! - `CU_SYNC_BIND` (default `0.0.0.0:8787`)
 //! - `CU_SYNC_DB` (default `sync.db`)
 //! - `CU_SYNC_MAX_VAULT_BYTES` (default 64 MiB)
+//! - `CU_SYNC_NOTICE` (optional): shown in the app before setup, e.g. who runs
+//!   the server
 
 mod api;
 mod error;
@@ -49,7 +51,8 @@ async fn main() {
     };
 
     let store = store::Store::open(&db, limits).expect("failed to open database");
-    let state = Arc::new(api::AppState { store, hub: hub::Hub::default() });
+    let notice = std::env::var("CU_SYNC_NOTICE").ok().filter(|n| !n.trim().is_empty());
+    let state = Arc::new(api::AppState { store, hub: hub::Hub::default(), notice });
     let listener = tokio::net::TcpListener::bind(&bind).await.expect("failed to bind");
     eprintln!("cu-sync-server listening on {bind}, database {db}");
     axum::serve(listener, api::router(state))

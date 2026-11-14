@@ -12,6 +12,10 @@ sealed class BackendConfig {
 
   SyncBackend connect(Credentials credentials);
 
+  /// Text the operator wants users to read before setup (who runs the
+  /// service, data retention, ...), or null.
+  Future<String?> notice();
+
   static BackendConfig fromJson(Map<String, dynamic> json) => switch (json) {
     {'t': 'server', 'u': String url} => ServerConfig(Uri.parse(url)),
     {'t': 'webdav', 'u': String url, 'n': String user, 'w': String pass} =>
@@ -38,6 +42,9 @@ class ServerConfig extends BackendConfig {
   @override
   SyncBackend connect(Credentials credentials) =>
       ServerBackend(url, credentials);
+
+  @override
+  Future<String?> notice() => ServerBackend.notice(url);
 }
 
 /// Any WebDAV folder (Nextcloud, ownCloud, rclone, ...).
@@ -58,6 +65,9 @@ class WebDavConfig extends BackendConfig {
   @override
   SyncBackend connect(Credentials credentials) =>
       WebDavBackend(this, credentials);
+
+  @override
+  Future<String?> notice() async => null;
 }
 
 /// Who is talking to the backend: a vault member and its bearer token.

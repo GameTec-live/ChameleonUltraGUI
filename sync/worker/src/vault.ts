@@ -5,6 +5,8 @@ export interface Env {
   VAULTS: DurableObjectNamespace<Vault>;
   /** Optional override of the per-vault storage quota in bytes. */
   MAX_VAULT_BYTES?: string;
+  /** Shown by clients before setup (`GET /v1/info`). */
+  NOTICE?: string;
 }
 
 const LIMITS = {
@@ -14,7 +16,10 @@ const LIMITS = {
   pageBytes: 8 << 20,
   pairingMs: 10 * 60 * 1000,
   defaultVaultBytes: 64 << 20,
+  idleMs: 30 * 24 * 60 * 60 * 1000,
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS vault (id INTEGER PRIMARY KEY CHECK (id = 1), epoch INTEGER NOT NULL, seq INTEGER NOT NULL, bytes INTEGER NOT NULL);
@@ -83,7 +88,11 @@ export class Vault extends DurableObject<Env> {
     const path = rest.join("/");
     const method = request.method;
 
-    if (method === "POST" && path === "init") return this.init(await parseJson(request));
+    if (method === "POST" && path === "init") {
+      const response = this.init(await parseJson(request));
+      await this.touch();
+      return response;
+    }
 
     // Pairing join authenticates with the pairing token, not a member token.
     const join = path.match(/^pairings\/([^/]+)\/join$/);
@@ -92,6 +101,7 @@ export class Vault extends DurableObject<Env> {
     if (path === "ws") {
       const member = await this.authenticate(url.searchParams.get("token"));
       if (request.headers.get("Upgrade") !== "websocket") throw ApiError.badRequest();
+      await this.touch();
       const { 0: client, 1: server } = new WebSocketPair();
       this.ctx.acceptWebSocket(server, [member.id]);
       return new Response(null, { status: 101, webSocket: client });
@@ -99,6 +109,7 @@ export class Vault extends DurableObject<Env> {
 
     const auth = request.headers.get("Authorization");
     const member = await this.authenticate(auth?.startsWith("Bearer ") ? auth.slice(7) : null);
+    await this.touch();
 
     if (path === "keyring" && method === "GET") return this.keyring(member);
     if (path === "keyring" && method === "PUT") return this.rotate(await parseJson(request));
@@ -114,6 +125,23 @@ export class Vault extends DurableObject<Env> {
     const pairing = path.match(/^pairings\/([^/]+)$/);
     if (pairing && method === "GET") return this.pairing(pairing[1]!);
     throw ApiError.notFound();
+  }
+
+  /**
+   * Moves the idle deadline out. Re-armed with a day of slack so storage is
+   * written at most once a day: deletion comes 30 to 31 days after last use.
+   */
+  private async touch() {
+    const now = Date.now();
+    const alarm = await this.ctx.storage.getAlarm();
+    if (alarm === null || alarm < now + LIMITS.idleMs) await this.ctx.storage.setAlarm(now + LIMITS.idleMs + DAY_MS);
+  }
+
+  /** Idle deadline reached: deletes the vault unless a device is connected. */
+  async alarm() {
+    if (this.ctx.getWebSockets().length) return this.touch();
+    await this.ctx.storage.deleteAll();
+    this.sql.exec(SCHEMA);
   }
 
   private vault(): VaultRow {

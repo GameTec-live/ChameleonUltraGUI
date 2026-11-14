@@ -63,10 +63,18 @@ enforce the current epoch); everything else is opaque.
 `hash(token)` matches a member of the vault. WebSockets pass the token as
 `?token=` because browsers cannot set headers on WebSocket requests.
 
-All endpoints live under `/v1/vaults/{vaultId}`. Responses allow CORS from any
-origin (the web build needs it; data is encrypted anyway).
+All other endpoints live under `/v1/vaults/{vaultId}`. Responses allow CORS
+from any origin (the web build needs it; data is encrypted anyway).
 
 ## Endpoints
+
+### `GET /v1/info` – server notice (no auth)
+
+`{"notice": "…"}`, or `{}` without one. Operators use it for what users must
+know before trusting the server with a vault (who runs it, data retention).
+Clients show the notice and let the user cancel before the first request of
+any setup (create, pair, recover). A server may delete idle vaults per its
+notice; their members then get `401` like revoked devices.
 
 ### `POST /init` – create a vault (no auth)
 

@@ -345,10 +345,27 @@ class SyncService extends ChangeNotifier {
   }
 
   // --- vault setup ---------------------------------------------------------
+  // Every setup path shows the storage's notice (if any) through
+  // [acceptNotice] before contacting it; declining throws `cancelled`.
+
+  static Future<void> _confirmNotice(
+    BackendConfig config,
+    Future<bool> Function(String notice) acceptNotice,
+  ) async {
+    final notice = await config.notice();
+    if (notice != null && !await acceptNotice(notice)) {
+      throw const SyncException('cancelled');
+    }
+  }
 
   /// Creates a new vault with this device as the first member. Returns the
   /// recovery phrase, which is not stored anywhere.
-  Future<String> createVault(BackendConfig config, String deviceName) async {
+  Future<String> createVault(
+    BackendConfig config,
+    String deviceName, {
+    required Future<bool> Function(String notice) acceptNotice,
+  }) async {
+    await _confirmNotice(config, acceptNotice);
     final entropy = randomBytes(32);
     final recovery = await RecoveryKeys.derive(entropy);
     final device = Identity.random();
@@ -408,8 +425,10 @@ class SyncService extends ChangeNotifier {
   Future<void> joinWithPhrase(
     BackendConfig config,
     String phrase,
-    String deviceName,
-  ) async {
+    String deviceName, {
+    required Future<bool> Function(String notice) acceptNotice,
+  }) async {
+    await _confirmNotice(config, acceptNotice);
     final recovery = await RecoveryKeys.derive(mnemonicToEntropy(phrase));
     final backend = config.connect(
       Credentials(recovery.vaultId, 'recovery', recovery.token),
@@ -565,6 +584,7 @@ class SyncService extends ChangeNotifier {
   Future<void> joinWithCode(
     String code,
     String deviceName, {
+    required Future<bool> Function(String notice) acceptNotice,
     void Function(String fingerprint)? onWaiting,
     bool Function()? cancelled,
   }) async {
@@ -576,6 +596,7 @@ class SyncService extends ChangeNotifier {
       utf8.decode(unb64(trimmed.substring(_pairingPrefix.length))),
     ) as Map<String, dynamic>;
     final config = BackendConfig.fromJson(json['b'] as Map<String, dynamic>);
+    await _confirmNotice(config, acceptNotice);
     final vaultId = json['v'] as String;
     final secret = PairingSecret(unb64(json['s'] as String));
     final device = Identity.random();
