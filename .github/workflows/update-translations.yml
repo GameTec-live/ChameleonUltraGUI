@@ -9,6 +9,9 @@ on:
     - cron: "0 */12 * * *"
   workflow_dispatch:
 
+# A manual run overlapping a scheduled one could push older translations over newer ones.
+concurrency: update-translations
+
 jobs:
   update-translations:
     runs-on: ubuntu-latest
@@ -51,10 +54,11 @@ jobs:
         body: "Update translations"
         commit-message: "feat: Update translations"
         title: "feat: Update translations"
-    # A push dismisses earlier approvals, so approve on every update. Auto-merge is
-    # enabled with the App token so the merge triggers the push workflows on main.
+    # Runs for every open PR, not just changed ones: a push dismisses earlier approvals,
+    # and a failed attempt gets retried. Auto-merge is enabled with the App token so
+    # the merge triggers the push workflows on main.
     - name: Approve and enable auto-merge
-      if: steps.cpr.outputs.pull-request-operation == 'created' || steps.cpr.outputs.pull-request-operation == 'updated'
+      if: steps.cpr.outputs.pull-request-number != ''
       env:
         GH_REPO: ${{ github.repository }}
         PR: ${{ steps.cpr.outputs.pull-request-number }}
