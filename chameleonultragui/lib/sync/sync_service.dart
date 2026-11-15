@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
+import 'package:http/http.dart' show ClientException;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backend.dart';
@@ -107,7 +108,10 @@ class SyncService extends ChangeNotifier {
   Timer? _poll;
   AppLifecycleListener? _lifecycle;
   bool _foreground = false;
-  final _pairingRequests = StreamController<String>.broadcast();
+
+  /// Wakes [waitForJoin]: a join request was announced or the app returned
+  /// to the foreground.
+  final _pairingWake = StreamController<void>.broadcast();
   Future<void>? _running;
   bool _again = false;
 
@@ -188,6 +192,8 @@ class SyncService extends ChangeNotifier {
     // Catch up even if the socket never connects (e.g. a proxy blocking
     // WebSockets); a successful handshake costs at most one more pull.
     syncNow();
+    // The code may have been answered while the app was away sending it.
+    _pairingWake.add(null);
   }
 
   void _pause() {
@@ -234,8 +240,8 @@ class SyncService extends ChangeNotifier {
         syncNow();
       case KeyringChanged():
         _refreshKeychain().then((_) => syncNow(), onError: _fail);
-      case PairingRequested(:final id):
-        _pairingRequests.add(id);
+      case PairingRequested():
+        _pairingWake.add(null);
       case Revoked():
         _revoked();
     }
@@ -544,10 +550,17 @@ class SyncService extends ChangeNotifier {
   }
 
   /// Waits for a new device to answer [offer]. Throws `expired`/`mac`.
+  /// Network errors do not end the wait: switching apps to send the code
+  /// often drops the connection, and the offer stays valid on the server.
   Future<JoinRequest> waitForJoin(PairingOffer offer) async {
     final deadline = DateTime.now().add(_pairingLifetime);
     while (!offer.cancelled && DateTime.now().isBefore(deadline)) {
-      final raw = await _backend!.pairingRequest(offer.id);
+      String? raw;
+      try {
+        raw = await _backend!.pairingRequest(offer.id);
+      } on ClientException {
+        // Offline for now; asked again below.
+      }
       if (raw != null) {
         // Only someone holding the code can seal a request, so the server
         // cannot substitute its own key.
@@ -566,12 +579,10 @@ class SyncService extends ChangeNotifier {
         return JoinRequest(id, name, unb64(pub), tokenHash);
       }
       // Realtime backends announce the request; polling is the fallback.
-      await _pairingRequests.stream
-          .firstWhere((id) => id == offer.id)
-          .timeout(
-            Duration(seconds: _backend!.capabilities.realtime ? 10 : 2),
-            onTimeout: () => offer.id,
-          );
+      await _pairingWake.stream.first.timeout(
+        Duration(seconds: _backend!.capabilities.realtime ? 10 : 2),
+        onTimeout: () {},
+      );
     }
     throw const SyncException('expired');
   }
@@ -670,6 +681,8 @@ class SyncService extends ChangeNotifier {
           return;
         } on SyncException catch (error) {
           if (error.code != 'unauthorized') rethrow;
+        } on ClientException {
+          // Offline for now (e.g. the app is in the background): keep waiting.
         }
         await Future.delayed(const Duration(seconds: 2));
       }

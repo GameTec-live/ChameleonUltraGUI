@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Settings → Sync: set up a vault, pair devices, browse history.
 class SyncPage extends StatelessWidget {
@@ -107,6 +108,38 @@ class _CopyButtonState extends State<_CopyButton> {
       label: Text(_copied ? l.sync_copied : l.sync_copy),
     );
   }
+}
+
+/// Where the platform has a native share sheet (Linux would fall back to mailto).
+bool get _canShare =>
+    !kIsWeb &&
+    (Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isMacOS ||
+        Platform.isWindows);
+
+/// Opens the platform's share sheet for [text].
+class _ShareButton extends StatelessWidget {
+  final String text;
+  const _ShareButton(this.text);
+
+  @override
+  Widget build(BuildContext context) => TextButton.icon(
+    onPressed: () {
+      // iPad and macOS anchor the share popover to the button.
+      final box = context.findRenderObject() as RenderBox?;
+      SharePlus.instance.share(
+        ShareParams(
+          text: text,
+          sharePositionOrigin: box == null
+              ? null
+              : box.localToGlobal(Offset.zero) & box.size,
+        ),
+      );
+    },
+    icon: Icon(Icons.adaptive.share),
+    label: Text(AppLocalizations.of(context)!.sync_share),
+  );
 }
 
 String _formatTime(BuildContext context, DateTime? time) => time == null
@@ -927,7 +960,14 @@ class _PairingDialogState extends State<_PairingDialog> {
                   padding: const EdgeInsets.all(12),
                 ),
                 const SizedBox(height: 12),
-                _CopyButton(offer.code),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  children: [
+                    _CopyButton(offer.code),
+                    if (_canShare) _ShareButton(offer.code),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 Text(l.sync_waiting_device),
                 const SizedBox(height: 8),

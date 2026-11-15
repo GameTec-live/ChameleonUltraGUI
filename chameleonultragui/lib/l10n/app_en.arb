@@ -795,6 +795,7 @@
   "sync_description": "Sync settings, saved cards, dictionaries and plugins between your devices. Everything is end-to-end encrypted, so only your devices can read it.",
   "sync_copy": "Copy",
   "sync_copied": "Copied",
+  "sync_share": "Share",
   "sync_backend": "Storage",
   "sync_backend_server": "Sync server",
   "sync_backend_webdav": "WebDAV",
