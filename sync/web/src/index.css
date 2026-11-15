@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* Material 3 tones of the app's default theme color (deep orange). */
+@theme {
+  --color-bg: #fffbff;
+  --color-fg: #201a18;
+  --color-muted: #6b5f5b;
+  --color-surface: #f6eeeb;
+  --color-line: #e7dfdb;
+  --color-accent: #a33e0f;
+  --color-danger: #ba1a1a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1a1210;
+    --color-fg: #f1dfd9;
+    --color-muted: #ab9a95;
+    --color-surface: #261e1b;
+    --color-line: #3b322f;
+    --color-accent: #ffb598;
+    --color-danger: #ffb4ab;
+  }
+}
+
+body {
+  @apply bg-bg font-sans text-fg antialiased;
+  color-scheme: light dark;
+}
+
+@utility input {
+  @apply w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-accent;
+}
+
+@utility button {
+  @apply rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-surface disabled:opacity-50;
+}
+
+@utility button-small {
+  @apply rounded-md px-2 py-1 text-xs hover:bg-surface disabled:opacity-50;
+}
+
+@utility button-primary {
+  @apply rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-bg hover:opacity-90 disabled:opacity-50;
+}
