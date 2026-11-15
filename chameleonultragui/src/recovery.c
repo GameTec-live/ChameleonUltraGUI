@@ -425,81 +425,75 @@ FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *outputKeyCount)
   return keys;
 }
 
+// Gen-1 advances 160 clocks per authentication. Gen-2 variants can advance
+// 160 or 161: both the target authentication and the extra known-key
+// authentication before the second capture must be accounted for. Validate
+// each candidate against the second capture instead of ranking singletons.
 FFI_PLUGIN_EXPORT uint64_t *static_nested(StaticNested *data, uint32_t *outputKeyCount)
 {
-  NtpKs1 *pNK = NULL;
-  uint32_t i;
-  uint32_t j = 0;
-  uint32_t nt1, nt2, nttest, ks1, dist = 0;
+  *outputKeyCount = 0;
+  uint32_t max_step;
+  if (data->nt0 == 0x01200145) max_step = 160;
+  else if (data->nt0 == 0x009080A2) max_step = 161;
+  else return NULL;
+  if (data->nt1 != data->nt0 ||
+      (data->key_type != 0x60 && data->key_type != 0x61)) return NULL;
 
-  uint32_t authuid = data->uid;
-  uint8_t type = (uint8_t)data->key_type; // target key type
-  // process all args.
-  bool check_st_level_at_first_run = false;
-  for (i = 0; i < 2; i++)
+  uint64_t *keys = NULL;
+  uint32_t count = 0, capacity = 0;
+  for (uint32_t first = 160; first <= max_step; ++first)
   {
-    if (i == 0)
-    {
-      nt1 = data->nt0;
-      nt2 = data->nt0_enc;
-    }
-    else
-    {
-      nt1 = data->nt1;
-      nt2 = data->nt1_enc;
-    }
+    if (recovery_is_cancelled()) goto failed;
+    uint32_t nt0 = prng_successor(data->nt0, first);
+    uint32_t input = nt0 ^ data->uid;
+    struct Crypto1State *states = lfsr_recovery32(data->nt0_enc ^ nt0, input);
+    if (!states) goto failed;
 
-    if (!check_st_level_at_first_run)
+    uint32_t nt1[2];
+    for (uint32_t step = 160; step <= max_step; ++step)
+      nt1[step - 160] = prng_successor(data->nt1, first + step);
+
+    for (struct Crypto1State *state = states; state->odd | state->even; ++state)
     {
-      if (nt1 == 0x01200145)
+      if (recovery_is_cancelled()) { free(states); goto failed; }
+      uint64_t key = crypto1_rollback_key(state, input);
+      for (uint32_t step = 160; step <= max_step; ++step)
       {
-        // There is no loophole in this generation.
-        // This tag can be decrypted with the default parameter value 160!
-        dist = 160; // st gen1
-      }
-      else if (nt1 == 0x009080A2)
-      { // st gen2
-        // We found that the gen2 tag is vulnerable too but parameter must be adapted depending on the attacked key
-        if (type == 0x61)
+        struct Crypto1State probe;
+        crypto1_init(&probe, key);
+        uint32_t nonce = nt1[step - 160];
+        if ((nonce ^ crypto1_word(&probe, nonce ^ data->uid, 0)) != data->nt1_enc)
+          continue;
+
+        if (count == capacity)
         {
-          dist = 161;
+          uint32_t next = capacity ? capacity * 2 : 8;
+          void *tmp = realloc(keys, (size_t)next * sizeof(*keys));
+          if (!tmp) { free(states); goto failed; }
+          keys = tmp;
+          capacity = next;
         }
-        else if (type == 0x60)
-        {
-          dist = 160;
-        }
-        else
-        {
-          return NULL;
-        }
+        keys[count++] = key;
+        break;
       }
-      else
-      {
-        return NULL;
-      }
-      check_st_level_at_first_run = true;
     }
-
-    nttest = prng_successor(nt1, dist);
-    ks1 = nt2 ^ nttest;
-    ++j;
-    dist += 160;
-
-    void *tmp = realloc(pNK, sizeof(NtpKs1) * j);
-    if (tmp == NULL)
-    {
-      return NULL;
-    }
-
-    pNK = tmp;
-    pNK[j - 1].ntp = nttest;
-    pNK[j - 1].ks1 = ks1;
+    free(states);
   }
 
-  uint32_t keyCount = 0;
-  uint64_t *keys = nested_run(pNK, j, authuid, &keyCount, outputKeyCount);
-  free(pNK);
+  // A key may satisfy more than one timing hypothesis; authenticate it once.
+  if (count)
+  {
+    sort_keys(keys, count);
+    uint32_t unique = 1;
+    for (uint32_t i = 1; i < count; ++i)
+      if (keys[i] != keys[unique - 1]) keys[unique++] = keys[i];
+    *outputKeyCount = unique;
+  }
   return keys;
+
+failed:
+  free(keys);
+  return NULL;
 }
 
 FFI_PLUGIN_EXPORT uint64_t mfkey32(Mfkey32 *data)

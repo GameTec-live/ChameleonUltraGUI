@@ -574,7 +574,7 @@ class MifareClassicRecovery {
             } else if (prng == NTLevel.static) {
               var nested = StaticNestedDart(
                 uid: distance!.uid,
-                // Gen-2 nonce timing depends on the target key type.
+                // Native recovery checks both captures against supported timings.
                 keyType: 0x60 + keyType,
                 nt0: nonces!.nonces[0].nt,
                 nt0Enc: nonces.nonces[0].ntEnc,
@@ -667,6 +667,7 @@ class MifareClassicRecovery {
               appState.log!.e("Can't find keys, retrying...");
             }
           }
+          if (!found) setMissingSector(sector, keyType);
         }
       }
     }

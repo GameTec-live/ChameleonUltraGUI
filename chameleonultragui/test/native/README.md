@@ -18,6 +18,26 @@ recoveries passed with all and alternating launches failed; CI runs them on
 both architectures. This exercises candidate generation and brute force
 together, rather than stopping before the key search.
 
+## Static nested timing checks
+
+`static_nested_check.py` checks gen-1 160-clock captures and gen-2 captures
+with 160/161-clock intervals for both target key types, including the extra
+known-key authentication before the second capture. The solver tests the
+supported timings offline and retains only keys that explain both captures;
+the caller still authenticates those keys against the card. Unsupported or
+inconsistent captures return no candidates instead of a tied singleton list.
+The FFI structure and firmware commands are unchanged.
+
+```sh
+python3 chameleonultragui/test/native/static_nested_check.py build/native-recovery/librecovery.so
+```
+
+The deterministic cases include zero/all-one keys (which can have multiple
+genuine candidates), cancellation and a capture pair encrypted with different
+keys. These are synthetic captures, not a hardware reproduction of issue #1106.
+
+## Build and validate native recovery
+
 Build the library:
 
 ```sh
