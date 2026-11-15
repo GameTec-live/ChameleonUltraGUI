@@ -562,6 +562,8 @@ function Editor({
   const dialog = useRef<HTMLDialogElement>(null);
   const [text, setText] = useState(() => JSON.stringify(JSON.parse(item.value), null, 2));
   const [error, setError] = useState<string>();
+  // The dialog cannot close while saving: the result belongs to this editor.
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => dialog.current?.showModal(), []);
 
@@ -575,13 +577,18 @@ function Editor({
     }
     const invalid = editError(item, value);
     if (invalid) return setError(invalid);
-    void onSave(JSON.stringify(value)).then(setError);
+    setSaving(true);
+    void onSave(JSON.stringify(value)).then((failed) => {
+      setError(failed);
+      setSaving(false);
+    });
   };
 
   return (
     <dialog
       ref={dialog}
       onClose={onClose}
+      onCancel={(event) => saving && event.preventDefault()}
       className="m-auto w-[min(48rem,calc(100vw-2rem))] rounded-xl bg-bg p-0 text-fg backdrop:bg-black/40"
     >
       <form onSubmit={save} className="flex max-h-[85dvh] flex-col gap-3 p-5">
@@ -596,11 +603,11 @@ function Editor({
         />
         {error && <p className="text-sm text-danger">{error}</p>}
         <div className="flex justify-end gap-2">
-          <button type="button" className="button" onClick={() => dialog.current?.close()}>
+          <button type="button" className="button" disabled={saving} onClick={() => dialog.current?.close()}>
             Cancel
           </button>
-          <button type="submit" className="button-primary">
-            Save
+          <button type="submit" disabled={saving} className="button-primary">
+            {saving ? "Saving…" : "Save"}
           </button>
         </div>
       </form>
