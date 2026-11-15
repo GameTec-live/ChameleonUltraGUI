@@ -131,6 +131,8 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
   // Archive projections can omit masked trailers even when their keys are
   // known separately. Physical writes require the checked, key-filled image.
   List<Uint8List>? dataForWrite(CardSave card) {
+    // Native 72-block EV1 coverage is archival, not a supported write image.
+    if (card.nativeClassicCoverage != null) return null;
     if (card.sl1Profile == null) return card.data;
     try {
       card.validateProfileConsistency();
