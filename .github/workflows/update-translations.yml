@@ -8,6 +8,8 @@ on:
   schedule:
     - cron: "0 */12 * * *"
   workflow_dispatch:
+  push: # TEST ONLY
+    branches: [t3/translations-app-test]
 
 jobs:
   update-translations:
@@ -33,6 +35,7 @@ jobs:
       working-directory: ./chameleonultragui/lib/l10n
       env:
         CROWDIN_API: ${{ secrets.CROWDIN_API }}
+    - run: echo >> chameleonultragui/lib/l10n/app_th.arb && echo >> chameleonultragui/lib/l10n/app_en.arb # TEST ONLY: fake changes
     # Rebuilds the branch from main and force-pushes it when there are changes, or
     # deletes it once main already has them.
     - name: Create PR
@@ -40,7 +43,7 @@ jobs:
       uses: peter-evans/create-pull-request@v8
       with:
         token: ${{ steps.app.outputs.token }}
-        branch: translations
+        branch: translations-test # TEST ONLY
         delete-branch: true
         # Only translated files: never the English source, which Crowdin also exports.
         # This is what makes the auto-approval below safe.
@@ -59,6 +62,11 @@ jobs:
         PR: ${{ steps.cpr.outputs.pull-request-number }}
         ACTIONS_TOKEN: ${{ github.token }}
         APP_TOKEN: ${{ steps.app.outputs.token }}
+        GH_TOKEN: ${{ github.token }} # TEST ONLY: for gh pr view
       run: |
-        GH_TOKEN="$ACTIONS_TOKEN" gh pr review "$PR" --approve
+        # TEST ONLY: prove each call works without letting the PR merge
         GH_TOKEN="$APP_TOKEN" gh pr merge "$PR" --auto --squash
+        gh pr view "$PR" --json author,autoMergeRequest,files --jq '{author:.author.login,auto:(.autoMergeRequest!=null),files:[.files[].path]}'
+        GH_TOKEN="$APP_TOKEN" gh pr merge "$PR" --disable-auto
+        GH_TOKEN="$ACTIONS_TOKEN" gh pr review "$PR" --approve
+        gh pr view "$PR" --json reviewDecision,autoMergeRequest --jq '{reviewDecision,auto:(.autoMergeRequest!=null)}'
