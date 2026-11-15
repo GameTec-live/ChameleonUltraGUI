@@ -59,6 +59,10 @@ Key:
 You might need to add your user to the `dialout` or, on Arch Linux, to the `uucp` group for the app to talk to the device. If your user is not in this group, you may get serial or permission errors.
 It is also highly recommended to either uninstall or disable ModemManager (`sudo systemctl disable --now modemmanager`) as many distros ship ModemManager and it may interfere with communication.
 
+## Sync
+
+The app can sync settings, saved cards, dictionaries and plugins between devices, end-to-end encrypted. Besides the public server, you can [host your own sync server](sync/server) (Docker image and Compose file included, see the [sync docs](sync/README.md#self-hosted-rust--sqlite)).
+
 ## Buy a Chameleon Ultra
 - [Sneak Tech](https://sneaktechnology.com/product/chameleon-ultra/)
 - [KSEC](https://labs.ksec.co.uk/product/proxgrind-chameleon-ultra/)
