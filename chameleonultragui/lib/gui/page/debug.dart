@@ -219,7 +219,7 @@ class DebugPage extends StatelessWidget {
                                 [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
                             0,
                             0x61,
-                            level: NTLevel.weak);
+                            level: NTLevel.static);
                     var nested = StaticNestedDart(
                         uid: distance.uid,
                         keyType: 0x61,
