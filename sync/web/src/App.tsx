@@ -5,6 +5,7 @@ import {
   type Dictionary,
   dictionaryFile,
   download,
+  editError,
   type Folder,
   fileName,
   folderBundle,
@@ -64,15 +65,19 @@ const storage = {
 };
 
 export function App() {
-  const [notice, setNotice] = useState<string>();
+  // Read before anyone can sign in, so the notice is never skipped: undefined while loading, null if it failed.
+  const [info, setInfo] = useState<{ notice?: string } | null>();
   const [vault, setVault] = useState<Vault | null>(null);
   const [message, setMessage] = useState<string>();
   const [loading, setLoading] = useState(true);
 
+  const loadInfo = useCallback(() => {
+    setInfo(undefined);
+    Api.info(BASE).then(setInfo, () => setInfo(null));
+  }, []);
+
   useEffect(() => {
-    Api.info(BASE)
-      .then((info) => setNotice(info.notice?.trim() || undefined))
-      .catch(() => {});
+    loadInfo();
     const saved = storage.load();
     if (!saved) return setLoading(false);
     Vault.open(saved, BASE)
@@ -86,7 +91,7 @@ export function App() {
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [loadInfo]);
 
   const open = (next: Vault) => {
     // Paired browsers are devices and stay signed in; recovery phrase sessions end with the page.
@@ -115,12 +120,19 @@ export function App() {
           <Banner onClose={() => setMessage(undefined)}>{message}</Banner>
         </div>
       )}
-      {loading ? (
-        <p className="py-10 text-center text-muted">Loading…</p>
-      ) : vault ? (
+      {vault ? (
         <Browser vault={vault} onSignOut={signOut} />
+      ) : loading || info === undefined ? (
+        <p className="py-10 text-center text-muted">Loading…</p>
+      ) : info === null ? (
+        <div className="mx-auto max-w-lg space-y-3 pt-16 text-center">
+          <p>The sync server did not answer.</p>
+          <button type="button" className="button" onClick={loadInfo}>
+            Try again
+          </button>
+        </div>
       ) : (
-        <Login notice={notice} onOpen={open} />
+        <Login notice={info.notice?.trim() || undefined} onOpen={open} />
       )}
     </div>
   );
@@ -391,7 +403,7 @@ function Browser({ vault, onSignOut }: { vault: Vault; onSignOut: () => void }) 
   const count = (collections: string[]) => collections.reduce((n, c) => n + vault.items(c).length, 0);
 
   const remove = (row: Row) => {
-    if (confirm(`Delete “${row.title}” on all devices?`)) report(act(() => vault.write(row.item.collection, row.item.id, null)));
+    if (confirm(`Delete “${row.title}” on all devices?`)) report(act(() => vault.write(row.item.collection, row.item.id, null, row.item.version)));
   };
 
   return (
@@ -521,7 +533,8 @@ function Browser({ vault, onSignOut }: { vault: Vault; onSignOut: () => void }) 
           item={editing}
           onClose={() => setEditing(null)}
           onSave={async (value) => {
-            const failed = await act(() => vault.write(editing.collection, editing.id, value));
+            // Based on the version the editor opened, so a change made meanwhile is not overwritten.
+            const failed = await act(() => vault.write(editing.collection, editing.id, value, editing.version));
             if (!failed) setEditing(null);
             return failed;
           }}
@@ -531,7 +544,7 @@ function Browser({ vault, onSignOut }: { vault: Vault; onSignOut: () => void }) 
   );
 }
 
-/** Edits a record's JSON. Settings are plain values; list records must keep their `id`. */
+/** Edits a record's JSON; `editError` refuses what the app could not load. */
 function Editor({
   item,
   onClose,
@@ -556,13 +569,8 @@ function Editor({
     } catch (e) {
       return setError(`Not valid JSON: ${(e as Error).message}`);
     }
-    if (item.collection === "settings") {
-      if (!["boolean", "number", "string"].includes(typeof value)) return setError("A setting is a number, string or boolean.");
-    } else if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      return setError("This must be a JSON object.");
-    } else if ((value as { id?: unknown }).id !== item.id) {
-      return setError(`The id must stay "${item.id}".`);
-    }
+    const invalid = editError(item, value);
+    if (invalid) return setError(invalid);
     void onSave(JSON.stringify(value)).then(setError);
   };
 

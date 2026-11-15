@@ -24,7 +24,8 @@ export class Api {
 
   static async info(base = ""): Promise<Info> {
     const response = await fetch(`${base}/v1/info`);
-    return response.ok ? ((await response.json()) as Info) : {};
+    if (!response.ok) throw new SyncError("info", response.status);
+    return (await response.json()) as Info;
   }
 
   async call<T>(method: string, path: string, body?: unknown, token = this.token): Promise<T> {

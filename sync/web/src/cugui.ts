@@ -16,6 +16,42 @@ export type Dictionary = { id: string; name: string; color?: string; keys: numbe
 
 type Items = { items(collection: string): Item[] };
 
+/**
+ * What the app accepts for each synced setting (`sharedprefsprovider.dart`).
+ * Anything else can crash it on start, e.g. `ThemeMode.values[3]`.
+ */
+const SETTINGS: Record<string, (value: unknown) => boolean> = {
+  app_theme: (v) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 2,
+  app_theme_color: (v) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 7,
+  locale: (v) => typeof v === "string" && /^[a-z]{2,3}(-[A-Za-z0-9]{2,4})?$/.test(v),
+  sidebar_expanded_index: (v) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 2,
+  confirm_delete: (v) => typeof v === "boolean",
+  auto_scan_enabled: (v) => typeof v === "boolean",
+  auto_connect_first_found: (v) => typeof v === "boolean",
+  sidebar_auto_expanded: (v) => typeof v === "boolean",
+};
+
+const jsonType = (value: unknown) => (value === null ? "null" : Array.isArray(value) ? "array" : typeof value);
+
+/**
+ * Why an edited record would break the app, or undefined if it is fine.
+ * Settings must hold a value the app accepts; other records must keep their
+ * `id` and the JSON type of every field they had (fields can be added).
+ */
+export function editError(item: Item, edited: unknown): string | undefined {
+  if (item.collection === "settings") {
+    return SETTINGS[item.id]?.(edited) ? undefined : `The app does not accept ${JSON.stringify(edited)} for ${item.id}.`;
+  }
+  if (jsonType(edited) !== "object") return "This must be a JSON object.";
+  const original = parse<Record<string, unknown>>(item);
+  const value = edited as Record<string, unknown>;
+  if (value.id !== item.id) return `The id must stay "${item.id}".`;
+  for (const [field, before] of Object.entries(original)) {
+    if (jsonType(value[field]) !== jsonType(before)) return `"${field}" must stay a ${jsonType(before)}.`;
+  }
+  return undefined;
+}
+
 export const parse = <T>(item: Item) => JSON.parse(item.value) as T;
 
 /** `TagType` names from the app's `definitions.dart`. */

@@ -5,6 +5,7 @@ import {
   fingerprint,
   hashToken,
   type Keychain,
+  MAX_PLAIN_BYTES,
   openRecord,
   pairingSecret,
   type Payload,
@@ -14,6 +15,7 @@ import {
   recoveryKeys,
   sealRecord,
   unb64,
+  utf8,
   unwrapKeychain,
 } from "./crypto";
 import { Hlc } from "./hlc";
@@ -21,8 +23,11 @@ import { Hlc } from "./hlc";
 /** Who this page acts as: the recovery member or a paired device. */
 export type Session = { vaultId: string; memberId: string; token: string; seed: string };
 
-/** A live record: `value` is the exact JSON string the app stores. */
-export type Item = { collection: string; id: string; value: string; time: string };
+/**
+ * A live record: `value` is the exact JSON string the app stores, `version`
+ * the server version it was read at (the base for changing it).
+ */
+export type Item = { collection: string; id: string; value: string; time: string; version: string };
 
 /** Vault bookkeeping; it counts only under the current key, as in the app. */
 const INTERNAL = new Set(["_devices", "_vault"]);
@@ -81,13 +86,17 @@ export async function joinWithCode(
   throw new SyncError("expired");
 }
 
-/** The decrypted vault: pulls all records and writes single changes back. */
+/**
+ * The decrypted vault: pulls all records and writes single changes back.
+ * Public operations run one at a time, so a pull never lands over a newer write.
+ */
 export class Vault {
   private keychain!: Keychain;
   private readonly entries = new Map<string, Entry>();
   private cursor = "0";
   private readonly hlc: Hlc;
   private readonly api: Api;
+  private queue: Promise<unknown> = Promise.resolve();
 
   private constructor(
     readonly session: Session,
@@ -102,8 +111,14 @@ export class Vault {
   static async open(session: Session, base = ""): Promise<Vault> {
     const vault = new Vault(session, base);
     await vault.loadKeychain();
-    await vault.refresh();
+    await vault.pull();
     return vault;
+  }
+
+  private serial<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.queue.then(operation, operation);
+    this.queue = result.catch(() => {});
+    return result;
   }
 
   get isDevice() {
@@ -116,7 +131,9 @@ export class Vault {
   }
 
   /** Pulls everything that changed since the last call. */
-  async refresh() {
+  refresh = () => this.serial(() => this.pull());
+
+  private async pull() {
     let more = true;
     while (more) {
       const page = await this.api.changes(this.cursor);
@@ -140,26 +157,31 @@ export class Vault {
   /** Live records of a collection. */
   items(collection: string): Item[] {
     const items: Item[] = [];
-    for (const { epoch, payload } of this.entries.values()) {
+    for (const { version, epoch, payload } of this.entries.values()) {
       if (payload?.c !== collection || payload.v === null) continue;
       if (INTERNAL.has(collection) && epoch !== this.keychain.current) continue;
-      items.push({ collection, id: payload.id, value: payload.v, time: payload.t });
+      items.push({ collection, id: payload.id, value: payload.v, time: payload.t, version });
     }
     return items;
   }
 
   /**
-   * Writes one record (`null` deletes it). Throws SyncError "changed" when
-   * another device changed it meanwhile; the vault is refreshed then, so the
-   * user can review the newer value first.
+   * Writes one record (`null` deletes it) on top of [base], the version the
+   * change was made on. Throws SyncError "changed" when the record changed
+   * since; the vault is refreshed then, so the user can review the newer value.
    */
-  async write(collection: string, id: string, value: string | null) {
+  write = (collection: string, id: string, value: string | null, base: string) =>
+    this.serial(() => this.push(collection, id, value, base));
+
+  private async push(collection: string, id: string, value: string | null, base: string) {
     const key = recordKey(this.keychain, collection, id);
     for (let attempt = 0; ; attempt++) {
       const payload: Payload = { c: collection, id, t: this.hlc.next(), v: value };
+      // Devices drop records that inflate past this, so they must not replace the current one.
+      if (utf8(JSON.stringify(payload)).length > MAX_PLAIN_BYTES) throw new SyncError("too_large");
       const blob = await sealRecord(this.keychain, this.session.vaultId, key, payload);
       try {
-        const versions = await this.api.push([{ key, base: this.entries.get(key)?.version ?? "", blob }]);
+        const versions = await this.api.push([{ key, base, blob }]);
         this.entries.set(key, { version: versions[key] ?? "", epoch: this.keychain.current, payload });
         return;
       } catch (error) {
@@ -169,7 +191,7 @@ export class Vault {
           continue;
         }
         if (error.code === "conflict") {
-          await this.refresh();
+          await this.pull();
           throw new SyncError("changed");
         }
         throw error;
@@ -178,8 +200,10 @@ export class Vault {
   }
 
   /** Removes this browser from the vault (paired devices only). */
-  async leave() {
-    await this.write("_devices", this.session.memberId, null);
-    await this.api.revoke(this.session.memberId);
-  }
+  leave = () =>
+    this.serial(async () => {
+      const key = recordKey(this.keychain, "_devices", this.session.memberId);
+      await this.push("_devices", this.session.memberId, null, this.entries.get(key)?.version ?? "");
+      await this.api.revoke(this.session.memberId);
+    });
 }
