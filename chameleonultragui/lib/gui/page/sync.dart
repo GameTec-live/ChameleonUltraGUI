@@ -24,12 +24,15 @@ class SyncPage extends StatelessWidget {
     final sync = context.watch<SyncService>();
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context)!.sync)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: sync.enabled ? _VaultView(sync) : _SetupView(sync),
+      // Keeps the last buttons clear of Android's navigation bar (edge to edge).
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: sync.enabled ? _VaultView(sync) : _SetupView(sync),
+            ),
           ),
         ),
       ),
