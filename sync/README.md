@@ -105,6 +105,16 @@ total storage. Clients batch writes and debounce edits by 2 seconds.
 
 ### Self-hosted (Rust + SQLite)
 
+CI publishes the image for amd64 and arm64 as
+`ghcr.io/gametec-live/cu-sync-server` (`latest` follows `main`).
+[`server/compose.yaml`](server/compose.yaml) runs it with a persistent volume:
+
+```sh
+cd server && docker compose up -d
+```
+
+To build the image yourself:
+
 ```sh
 docker build -t cu-sync-server -f server/Dockerfile .
 docker run -d -p 8787:8787 -v cu-sync:/data cu-sync-server

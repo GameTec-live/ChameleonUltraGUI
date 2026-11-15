@@ -1,0 +1,19 @@
+# Self-hosted sync server: `docker compose up -d` in this folder.
+# Settings are documented in ../README.md (Self-hosted section).
+name: cu-sync
+
+services:
+  sync:
+    image: ghcr.io/gametec-live/cu-sync-server:latest
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    volumes:
+      - data:/data
+    # environment:
+    #   CU_SYNC_NOTICE: "Run by ... for ..."
+    #   CU_SYNC_SIGNUP_TOKEN: "change-me"
+    #   CU_SYNC_PROXY: forwarded
+
+volumes:
+  data:
