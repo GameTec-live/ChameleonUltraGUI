@@ -6,6 +6,7 @@ name: Sync server
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths: &paths
       - sync/server/**
       - sync/web/**
