@@ -1,27 +1,30 @@
 name: Update translations
 
-# Pulls translations from Crowdin, opens a PR with them, runs CI and merges it.
-# ChameleonHelper isn't a collaborator: it only pushes to its fork and opens the PR
-# (so github-actions can approve it). Everything else uses GITHUB_TOKEN.
+# Pulls translations from Crowdin into a PR that merges itself once the required checks pass.
+# The PR is opened by the repo's GitHub App rather than GITHUB_TOKEN: events from
+# GITHUB_TOKEN don't trigger workflows (CI on the PR, build/publish after the merge),
+# and github-actions can only approve a PR it didn't open itself.
 on:
   schedule:
     - cron: "0 */12 * * *"
   workflow_dispatch:
 
+# A manual run overlapping a scheduled one could push older translations over newer ones.
 concurrency: update-translations
 
 jobs:
   update-translations:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # push the CI branch, merge
-      pull-requests: write # approve
-      actions: write # start workflows
-    env:
-      GH_REPO: ${{ github.repository }}
-      GH_TOKEN: ${{ github.token }}
-      CI_BRANCH: translations-ci
+      contents: read
+      pull-requests: write # approve the PR
     steps:
+    - name: Get GitHub App token
+      id: app
+      uses: actions/create-github-app-token@v3
+      with:
+        app-id: ${{ secrets.BOT_APP_ID }}
+        private-key: ${{ secrets.BOT_APP_KEY }}
     - name: Checkout code
       uses: actions/checkout@v7
     - name: Set up Python
@@ -33,43 +36,34 @@ jobs:
       working-directory: ./chameleonultragui/lib/l10n
       env:
         CROWDIN_API: ${{ secrets.CROWDIN_API }}
-    # Force-pushes the fork branch and opens (or updates) the PR when there are changes.
-    # Its PR number is also set for an unchanged open PR, so a failed run gets retried.
+    # Rebuilds the branch from main and force-pushes it when there are changes, or
+    # deletes it once main already has them.
     - name: Create PR
       id: cpr
       uses: peter-evans/create-pull-request@v8
       with:
-        token: ${{ secrets.BOT_HELPER_TOKEN }}
+        token: ${{ steps.app.outputs.token }}
         base: main
-        branch: translations-branch
-        push-to-fork: ChameleonHelper/ChameleonUltraGUI
-        # Only translation files ever end up in the PR, which is what makes
-        # the auto-approval below safe.
-        add-paths: chameleonultragui/lib/l10n/app_*.arb
+        branch: translations
+        delete-branch: true
+        # Only translated files: never the English source, which Crowdin also exports.
+        # This is what makes the auto-approval below safe.
+        add-paths: |
+          chameleonultragui/lib/l10n/app_*.arb
+          :(exclude)chameleonultragui/lib/l10n/app_en.arb
         body: "Update translations"
         commit-message: "feat: Update translations"
         title: "feat: Update translations"
-    # CI on PRs from the fork waits for manual approval. Instead, run it on the same
-    # commit from a branch in this repo: dispatches made with GITHUB_TOKEN need no
-    # approval. (Its checks land on the commit but don't show on the PR page.)
-    - name: Run CI
+    # Runs for every open PR, not just changed ones: a push dismisses earlier approvals,
+    # and a failed attempt gets retried. Auto-merge is enabled with the App token so
+    # the merge triggers the push workflows on main.
+    - name: Approve and enable auto-merge
       if: steps.cpr.outputs.pull-request-number != ''
       env:
-        SHA: ${{ steps.cpr.outputs.pull-request-head-sha }}
-      run: |
-        git push --force origin "$SHA:refs/heads/$CI_BRANCH"
-        RUN=$(gh api "repos/$GH_REPO/actions/workflows/build-app.yml/dispatches" \
-          -f ref="$CI_BRANCH" -F return_run_details=true --jq .workflow_run_id)
-        gh run watch "$RUN" --exit-status --interval 60 > /dev/null
-    # Merging with GITHUB_TOKEN doesn't fire the push to main, so start those workflows by hand.
-    - name: Approve and merge PR
-      if: steps.cpr.outputs.pull-request-number != ''
-      env:
+        GH_REPO: ${{ github.repository }}
         PR: ${{ steps.cpr.outputs.pull-request-number }}
-        SHA: ${{ steps.cpr.outputs.pull-request-head-sha }}
+        ACTIONS_TOKEN: ${{ github.token }}
+        APP_TOKEN: ${{ steps.app.outputs.token }}
       run: |
-        gh pr review "$PR" --approve
-        gh pr merge "$PR" --squash --match-head-commit "$SHA"
-        gh workflow run build-app.yml --ref main
-        gh workflow run publish-app.yml --ref main
-        git push origin --delete "$CI_BRANCH"
+        GH_TOKEN="$ACTIONS_TOKEN" gh pr review "$PR" --approve
+        GH_TOKEN="$APP_TOKEN" gh pr merge "$PR" --auto --squash
