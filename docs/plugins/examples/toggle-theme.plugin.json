@@ -1,0 +1,13 @@
+{
+  "format": "chameleon-ultra-gui-plugin",
+  "version": 1,
+  "id": "3801a11e-7956-4a19-8333-000000000002",
+  "name": "Toggle light / dark theme",
+  "description": "Switches the GUI between light and dark mode.",
+  "color": 4280391411,
+  "encoding": "json",
+  "data": {
+    "code": "local current = chameleon.settings.get()\nlocal theme = \"dark\"\nif current.theme == \"dark\" then theme = \"light\" end\nchameleon.settings.update({theme = theme})\nchameleon.ui.snackbar(\"Theme: \" .. theme)",
+    "resources": {}
+  }
+}

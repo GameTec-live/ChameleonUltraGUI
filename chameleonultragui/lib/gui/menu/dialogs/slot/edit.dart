@@ -107,6 +107,12 @@ class SlotEditMenuState extends State<SlotEditMenu> {
             await appState.communicator!.getVikingEmulatorID();
         uidController.text = bytesToHexSpace(vikingCard.uid);
       } catch (_) {}
+    } else if (selectedType! == TagType.jablotron) {
+      try {
+        JablotronCard jablotronCard =
+            await appState.communicator!.getJablotronEmulatorID();
+        uidController.text = bytesToHexSpace(jablotronCard.uid);
+      } catch (_) {}
     } else if (selectedType! == TagType.pac) {
       try {
         PacCard pacCard = await appState.communicator!.getPacEmulatorID();
@@ -234,6 +240,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
         await appState.communicator!
             .setHIDProxEmulatorID(hexToBytes(hidCard.toString()));
       } catch (_) {}
+    } else if (selectedType! == TagType.jablotron) {
+      await appState.communicator!.setJablotronEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (selectedType! == TagType.pac) {
       await appState.communicator!
           .setPacEmulatorID(hexToBytes(uidController.text.replaceAll(' ', '')));
@@ -874,7 +883,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
                                 DropdownButton<int>(
                                   value:
                                       int.tryParse(hidTypeController.text) ?? 1,
-                                  items: List.generate(30, (index) => index + 1)
+                                  items: hidProxFormats.keys
                                       .map<DropdownMenuItem<int>>((int type) {
                                     return DropdownMenuItem<int>(
                                       value: type,

@@ -58,7 +58,7 @@ typedef struct _CONTAINER_STATE
     uint8_t ChecksumType;
     bool ChecksumError;
 } CONTAINER_STATE, * PCONTAINER_STATE;
-CONTAINER_STATE Container;
+static MINLZ_THREAD_LOCAL CONTAINER_STATE Container;
 #endif
 
 #ifdef MINLZ_META_CHECKS

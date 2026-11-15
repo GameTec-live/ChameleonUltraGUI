@@ -19,6 +19,7 @@ Binding for crapto1 key recovery library for Mifare Classic
   # `../src/*` so that the C sources can be shared among all target platforms.
   s.source           = { :path => '.' }
   s.source_files     = 'Classes/**/*'
+  s.compiler_flags   = '-O3'
   s.dependency 'FlutterMacOS'
 
   s.platform = :osx, '10.13'

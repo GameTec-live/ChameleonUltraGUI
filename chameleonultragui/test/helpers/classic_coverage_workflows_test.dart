@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -81,7 +82,59 @@ Future<void> expectDictionaryExport(
   );
 }
 
+class PausedAcquisitionDevice extends ProfileRouteDevice {
+  PausedAcquisitionDevice(this.pauseCommand);
+  final ChameleonCommand pauseCommand;
+  final started = Completer<void>();
+  final release = Completer<void>();
+  bool armed = false;
+
+  @override
+  Future<ChameleonMessage?> sendCmd(
+    ChameleonCommand cmd, {
+    Uint8List? data,
+    Duration timeout = const Duration(seconds: 5),
+    bool skipReceive = false,
+    bool firstRun = false,
+  }) async {
+    if (armed && cmd == pauseCommand && !started.isCompleted) {
+      started.complete();
+      await release.future;
+    }
+    return super.sendCmd(cmd, data: data);
+  }
+}
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  for (final command in [
+    ChameleonCommand.scan14ATag,
+    ChameleonCommand.mf1ReadBlock,
+  ]) {
+    test(
+      'cancelled acquisition stops after $command without a saved image',
+      () async {
+        final device = PausedAcquisitionDevice(command);
+        final (recovery, card) = await acquisition(device);
+        device.armed = true;
+        final work = recovery.dumpData();
+        await device.started.future;
+        final completedCommands = device.calls.length;
+        recovery.operation.cancel();
+        expect(recovery.operation.isRunning, isTrue);
+        device.release.complete();
+        await work;
+        expect(device.calls.length, completedCommands + 1);
+        expect(recovery.operation.wasCancelled, isTrue);
+        expect(recovery.operation.isRunning, isFalse);
+        expect(() => recovery.profileFor(card), throwsStateError);
+        expect(
+          recovery.readCoverage.where((b) => b['status'] == 'read'),
+          isEmpty,
+        );
+      },
+    );
+  }
   for (final ev1 in [false, true]) {
     testWidgets(
       'dictionary export keeps known B keys from a partial live save, EV1=$ev1',
@@ -130,8 +183,14 @@ void main() {
           ...blocks,
         ].join('\n');
         final card = importCardText(source, filename: 'synthetic.nfc');
-        expect(card.sl1Profile!.json['classic']['keys'][0]['a']['value'], isNull);
-        expect(card.sl1Profile!.json['classic']['keys'][0]['b']['value'], isNull);
+        expect(
+          card.sl1Profile!.json['classic']['keys'][0]['a']['value'],
+          isNull,
+        );
+        expect(
+          card.sl1Profile!.json['classic']['keys'][0]['b']['value'],
+          isNull,
+        );
         await expectDictionaryExport(tester, card, [
           for (var sector = 0; sector < 16; sector++) ...[
             if (!partial || sector != 0)

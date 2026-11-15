@@ -1,0 +1,15 @@
+{
+  "format": "chameleon-ultra-gui-plugin",
+  "version": 1,
+  "id": "3801a11e-7956-4a19-8333-000000000004",
+  "name": "Create a tiny dictionary",
+  "description": "Creates a saved dictionary from a text resource. Each run creates a new dictionary.",
+  "color": 4280391411,
+  "encoding": "json",
+  "data": {
+    "code": "local text = chameleon.resources.get(\"keys.txt\")\nlocal dictionary = chameleon.dictionaries.decode(text, \"Plugin example keys\")\nchameleon.dictionaries.save(dictionary)\nchameleon.ui.info(\"Saved \" .. #dictionary.keys .. \" example keys.\")",
+    "resources": {
+      "keys.txt": "FFFFFFFFFFFF\nA0A1A2A3A4A5\n"
+    }
+  }
+}

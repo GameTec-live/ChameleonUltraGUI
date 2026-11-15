@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/recovery_operation.dart';
 import 'package:dylib/dylib.dart';
 import 'bindings.dart';
 import 'package:ffi/ffi.dart';
@@ -125,77 +126,63 @@ class Mfkey64Dart {
       required this.atEnc});
 }
 
-Future<List<int>> darkside(DarksideDart darkside) async {
-  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
-  final int requestId = _nextSumRequestId++;
-  final DarksideRequest request = DarksideRequest(requestId, darkside);
-  final Completer<List<int>> completer = Completer<List<int>>();
-  requests[requestId] = completer;
-  helperIsolateSendPort.send(request);
-  return completer.future;
+final _setCancelled = ffi.DynamicLibrary.open(resolvePath())
+    .lookupFunction<ffi.Void Function(ffi.Int32), void Function(int)>(
+        'recovery_set_cancelled');
+
+// Submit one native search at a time. Only the active request owns the shared
+// native cancellation flag; cancelled queued requests never reach the worker.
+Future<void> _nativeQueue = Future.value();
+
+Future<List<int>> _request(
+    Object Function(int) createRequest, RecoveryOperation? operation) async {
+  final previous = _nativeQueue;
+  final finished = Completer<void>();
+  _nativeQueue = finished.future;
+  try {
+    await previous;
+    operation?.checkCancelled();
+    final port = await _helperIsolateSendPort;
+    operation?.checkCancelled();
+    _setCancelled(0);
+    final id = _nextSumRequestId++;
+    final completer = Completer<List<int>>();
+    requests[id] = completer;
+    port.send(createRequest(id));
+    if (operation != null) {
+      return await operation.wait(completer.future,
+          interrupt: () => _setCancelled(1));
+    }
+    return await completer.future;
+  } finally {
+    finished.complete();
+  }
 }
 
-Future<List<int>> nested(NestedDart nested) async {
-  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
-  final int requestId = _nextSumRequestId++;
-  final NestedRequest request = NestedRequest(requestId, nested);
-  final Completer<List<int>> completer = Completer<List<int>>();
-  requests[requestId] = completer;
-  helperIsolateSendPort.send(request);
-  return completer.future;
-}
+Future<List<int>> darkside(DarksideDart darkside,
+        {RecoveryOperation? operation}) =>
+    _request((id) => DarksideRequest(id, darkside), operation);
 
-Future<List<int>> hardNested(HardNestedDart nested) async {
-  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
-  final int requestId = _nextSumRequestId++;
-  final HardNestedRequest request = HardNestedRequest(requestId, nested);
-  final Completer<List<int>> completer = Completer<List<int>>();
-  requests[requestId] = completer;
-  helperIsolateSendPort.send(request);
-  return completer.future;
-}
+Future<List<int>> nested(NestedDart nested, {RecoveryOperation? operation}) =>
+    _request((id) => NestedRequest(id, nested), operation);
 
-Future<List<int>> staticNested(StaticNestedDart nested) async {
-  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
-  final int requestId = _nextSumRequestId++;
-  final StaticNestedRequest request = StaticNestedRequest(requestId, nested);
-  final Completer<List<int>> completer = Completer<List<int>>();
-  requests[requestId] = completer;
-  helperIsolateSendPort.send(request);
-  return completer.future;
-}
+Future<List<int>> hardNested(HardNestedDart nested,
+        {RecoveryOperation? operation}) =>
+    _request((id) => HardNestedRequest(id, nested), operation);
 
-Future<List<int>> staticEncryptedNested(
-    StaticEncryptedNestedDart nested) async {
-  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
-  final int requestId = _nextSumRequestId++;
-  final StaticEncryptedNestedRequest request =
-      StaticEncryptedNestedRequest(requestId, nested);
-  final Completer<List<int>> completer = Completer<List<int>>();
-  requests[requestId] = completer;
-  helperIsolateSendPort.send(request);
-  return completer.future;
-}
+Future<List<int>> staticNested(StaticNestedDart nested,
+        {RecoveryOperation? operation}) =>
+    _request((id) => StaticNestedRequest(id, nested), operation);
 
-Future<List<int>> mfkey32(Mfkey32Dart mfkey) async {
-  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
-  final int requestId = _nextSumRequestId++;
-  final Mfkey32Request request = Mfkey32Request(requestId, mfkey);
-  final Completer<List<int>> completer = Completer<List<int>>();
-  requests[requestId] = completer;
-  helperIsolateSendPort.send(request);
-  return completer.future;
-}
+Future<List<int>> staticEncryptedNested(StaticEncryptedNestedDart nested,
+        {RecoveryOperation? operation}) =>
+    _request((id) => StaticEncryptedNestedRequest(id, nested), operation);
 
-Future<List<int>> mfkey64(Mfkey64Dart mfkey) async {
-  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
-  final int requestId = _nextSumRequestId++;
-  final Mfkey64Request request = Mfkey64Request(requestId, mfkey);
-  final Completer<List<int>> completer = Completer<List<int>>();
-  requests[requestId] = completer;
-  helperIsolateSendPort.send(request);
-  return completer.future;
-}
+Future<List<int>> mfkey32(Mfkey32Dart mfkey, {RecoveryOperation? operation}) =>
+    _request((id) => Mfkey32Request(id, mfkey), operation);
+
+Future<List<int>> mfkey64(Mfkey64Dart mfkey, {RecoveryOperation? operation}) =>
+    _request((id) => Mfkey64Request(id, mfkey), operation);
 
 String resolvePath() {
   String path = resolveDylibPath(

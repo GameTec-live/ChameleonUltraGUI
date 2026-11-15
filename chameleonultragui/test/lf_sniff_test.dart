@@ -4,6 +4,21 @@ import 'package:chameleonultragui/helpers/lf_sniff.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('sample window clamps at the buffer end without changing raw data', () {
+    final samples = Uint8List.fromList([10, 20, 30, 40]);
+    expect(lfSampleWindow(samples, start: 1, length: 2), [20, 30]);
+    expect(lfSampleWindow(samples, start: 3, length: 100), [40]);
+    expect(lfSampleWindow(samples, start: 100, length: 2), isEmpty);
+    expect(samples, [10, 20, 30, 40]);
+  });
+
+  test('Manchester accepts non-preset clocks and inverted logic', () {
+    final samples = _buildManchesterSamples([0, 0, 0], halfClock: 48);
+    expect(decodeLfManchester(samples, clockDivisor: 96).bits, [0, 0, 0]);
+    expect(decodeLfManchester(samples, clockDivisor: 96, invert: true).bits,
+        [1, 1, 1]);
+  });
+
   test('summarizeLfSniff counts post-startup gaps', () {
     final samples = Uint8List.fromList([
       ...List<int>.filled(200, 0xB0),

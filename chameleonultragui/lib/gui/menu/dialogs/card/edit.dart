@@ -1,4 +1,5 @@
 import 'package:chameleonultragui/helpers/sl1_card_save.dart';
+import 'package:chameleonultragui/gui/component/ioprox_fields.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
@@ -44,6 +45,20 @@ class CardEditMenuState extends State<CardEditMenu> {
   TextEditingController facilityCodeController = TextEditingController();
   TextEditingController issueLevelController = TextEditingController();
   TextEditingController oemController = TextEditingController();
+
+  final ioProxVersionController = TextEditingController();
+  final ioProxFacilityCodeController = TextEditingController();
+  final ioProxCardNumberController = TextEditingController();
+  IoProxCard? originalIoProxCard;
+
+  @override
+  void dispose() {
+    cardAuthKeyController.dispose();
+    ioProxVersionController.dispose();
+    ioProxFacilityCodeController.dispose();
+    ioProxCardNumberController.dispose();
+    super.dispose();
+  }
 
   Color pickerColor = Colors.deepOrange;
   Color currentColor = Colors.deepOrange;
@@ -94,6 +109,15 @@ class CardEditMenuState extends State<CardEditMenu> {
       initHIDFields();
     }
 
+    if (selectedType == TagType.ioProx &&
+        hexToBytes(widget.tagSave.uid).length >= 4) {
+      final card = IoProxCard.fromUID(widget.tagSave.uid);
+      originalIoProxCard = card;
+      ioProxVersionController.text = card.version.toString();
+      ioProxFacilityCodeController.text = card.facilityCode.toString();
+      ioProxCardNumberController.text = card.cardNumber.toString();
+    }
+
     nameController.text = widget.tagSave.name;
     pickerColor = widget.tagSave.color;
     currentColor = widget.tagSave.color;
@@ -119,12 +143,6 @@ class CardEditMenuState extends State<CardEditMenu> {
         sakController.text != originalSak ||
         atqaController.text != originalAtqa ||
         (originalVanitySak != null && vanitySak != originalVanitySak);
-  }
-
-  @override
-  void dispose() {
-    cardAuthKeyController.dispose();
-    super.dispose();
   }
 
   Future<bool> showUpdateDataDialog(BuildContext context) async {
@@ -308,6 +326,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                 const SizedBox(height: 16),
               ],
               DropdownButton<TagType>(
+                isExpanded: true,
                 value: selectedType,
                 items: getTagTypes()
                     .map<DropdownMenuItem<TagType>>((TagType type) {
@@ -335,17 +354,18 @@ class CardEditMenuState extends State<CardEditMenu> {
               Visibility(
                 visible: selectedType != TagType.unknown,
                 child: Column(children: [
-                  TextFormField(
-                    controller: uidController,
-                    onChanged: (_) => refreshVanitySak(),
-                    decoration: InputDecoration(
-                        labelText: localizations.uid,
-                        hintText:
-                            localizations.enter_something(localizations.uid)),
-                    inputFormatters: hexFormatter,
-                    validator: (value) =>
-                        validateUid(value, localizations, selectedType),
-                  ),
+                  if (selectedType != TagType.ioProx)
+                    TextFormField(
+                      controller: uidController,
+                      onChanged: (_) => refreshVanitySak(),
+                      decoration: InputDecoration(
+                          labelText: localizations.uid,
+                          hintText:
+                              localizations.enter_something(localizations.uid)),
+                      inputFormatters: hexFormatter,
+                      validator: (value) =>
+                          validateUid(value, localizations, selectedType),
+                    ),
                   Visibility(
                       visible: chameleonTagToFrequency(selectedType) !=
                           TagFrequency.lf,
@@ -453,12 +473,18 @@ class CardEditMenuState extends State<CardEditMenu> {
                           ],
                         ]
                       ])),
+                  if (selectedType == TagType.ioProx)
+                    IoProxFields(
+                      versionController: ioProxVersionController,
+                      facilityCodeController: ioProxFacilityCodeController,
+                      cardNumberController: ioProxCardNumberController,
+                    ),
                   if (selectedType == TagType.hidProx)
                     Column(children: [
                       const SizedBox(height: 20),
                       DropdownButton<int>(
                         value: int.tryParse(hidTypeController.text) ?? 1,
-                        items: List.generate(30, (index) => index + 1)
+                        items: hidProxFormats.keys
                             .map<DropdownMenuItem<int>>((int type) {
                           return DropdownMenuItem<int>(
                             value: type,
@@ -587,7 +613,21 @@ class CardEditMenuState extends State<CardEditMenu> {
             }
 
             String finalUid;
-            if (selectedType == TagType.hidProx) {
+            if (selectedType == TagType.ioProx) {
+              final card = IoProxCard.fromFields(
+                version: int.parse(ioProxVersionController.text),
+                facilityCode: int.parse(ioProxFacilityCodeController.text),
+                cardNumber: int.parse(ioProxCardNumberController.text),
+              );
+              final original = originalIoProxCard;
+              // Preserve scanned raw bytes and reserved data when only metadata changes.
+              finalUid = original != null &&
+                      original.version == card.version &&
+                      original.facilityCode == card.facilityCode &&
+                      original.cardNumber == card.cardNumber
+                  ? widget.tagSave.uid
+                  : card.toString();
+            } else if (selectedType == TagType.hidProx) {
               try {
                 int hidType = int.parse(hidTypeController.text);
                 int facilityCode = int.parse(facilityCodeController.text);

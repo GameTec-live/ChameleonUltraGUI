@@ -32,6 +32,14 @@ Environment:
 #include <stdbool.h>
 #include <assert.h>
 
+// Decoder state belongs to the calling thread, allowing independent streams
+// to be decoded concurrently without locks or shared probability models.
+#if defined(_MSC_VER)
+#define MINLZ_THREAD_LOCAL __declspec(thread)
+#else
+#define MINLZ_THREAD_LOCAL _Thread_local
+#endif
+
 //
 // Input Buffer Management
 //

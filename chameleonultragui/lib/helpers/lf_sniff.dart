@@ -400,3 +400,12 @@ String _levelBar(Uint8List row) {
 int _minInt(int a, int b) => a < b ? a : b;
 
 int _maxInt(int a, int b) => a > b ? a : b;
+
+/// A bounded view of raw samples, preserving the original capture for export.
+Uint8List lfSampleWindow(Uint8List samples, {int start = 0, int? length}) {
+  RangeError.checkNotNegative(start, 'start');
+  if (length != null) RangeError.checkNotNegative(length, 'length');
+  final from = _minInt(start, samples.length);
+  final to = from + _minInt(length ?? samples.length, samples.length - from);
+  return Uint8List.sublistView(samples, from, to);
+}

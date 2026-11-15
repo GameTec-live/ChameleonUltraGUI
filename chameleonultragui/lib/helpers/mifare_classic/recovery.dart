@@ -2,6 +2,7 @@ import 'package:chameleonultragui/helpers/classic_coverage.dart';
 import 'package:chameleonultragui/helpers/sl1_profile.dart';
 import 'package:chameleonultragui/helpers/sl1_card_save.dart';
 
+import 'package:chameleonultragui/helpers/recovery_operation.dart';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -31,6 +32,8 @@ extension PartitionList<E> on List<E> {
 enum ChameleonKeyCheckmark { none, found, checking, disabled }
 
 class MifareClassicRecovery {
+  final operation = RecoveryOperation();
+
   late ChameleonGUIState appState;
   late AppLocalizations localizations;
   String error;
@@ -62,15 +65,16 @@ class MifareClassicRecovery {
   }
 
   Future<void> requireIdentity() async {
+    operation.checkCancelled();
     final expected = _acquisitionIdentity;
     if (expected == null) {
       throw StateError(
         'Read session has no bound card identity; scan the card again',
       );
     }
-    final current = expected.ats.isEmpty
-        ? await appState.communicator!.scan14443aTag()
-        : await appState.communicator!.scan14443aTagWithAts();
+    final current = await operation.wait(expected.ats.isEmpty
+        ? appState.communicator!.scan14443aTag()
+        : appState.communicator!.scan14443aTagWithAts());
     if (current == null || _identity(current) != _identity(expected)) {
       _acquisitionComplete = false;
       throw StateError(
@@ -232,16 +236,15 @@ class MifareClassicRecovery {
       int totalChunks = keys.partition(chunkSize).length;
 
       for (var chunk in keys.partition(chunkSize)) {
-        key = await appState.communicator!.mf1AuthMultipleKeys(
+        key = await operation.wait(appState.communicator!.mf1AuthMultipleKeys(
             mfClassicGetSectorTrailerBlockBySector(sector),
             0x60 + keyType,
-            chunk,
-        );
+            chunk));
         await requireIdentity();
         if (key != null) {
           setKeyAsFound(sector, keyType, key);
           keyCheckProgress = null;
-          await recheckKey(key, sector);
+          await operation.wait(recheckKey(key, sector));
           return true;
         } else if (totalChunks > 10) {
           keyCheckProgress = (keyCheckProgress ?? 0) + 1 / totalChunks;
@@ -259,13 +262,14 @@ class MifareClassicRecovery {
         getSectorState(sector, 1) != ChameleonKeyCheckmark.found &&
         getSectorState(sector, 1) != ChameleonKeyCheckmark.disabled &&
         key != null) {
-      Uint8List block = await appState.communicator!.mf1ReadBlock(
-          mfClassicGetSectorTrailerBlockBySector(sector), 0x60 + keyType, key);
+      Uint8List block = await operation.wait(appState.communicator!
+          .mf1ReadBlock(mfClassicGetSectorTrailerBlockBySector(sector),
+              0x60 + keyType, key));
       if (block.length == 16) {
         Uint8List bKey = block.sublist(10);
         if (bytesToHex(bKey) != bytesToHex(Uint8List(6))) {
           keyCheckProgress = null;
-          await recheckKey(key, sector);
+          await operation.wait(recheckKey(key, sector));
           return true;
         }
       }
@@ -277,32 +281,106 @@ class MifareClassicRecovery {
   }
 
   Future<void> initialize() async {
-    if (!await appState.communicator!.isReaderDeviceMode()) {
-      await appState.communicator!.setReaderDeviceMode(true);
+    if (!await operation.wait(appState.communicator!.isReaderDeviceMode())) {
+      await operation.wait(appState.communicator!.setReaderDeviceMode(true));
     }
 
     if (_acquisitionIdentity == null) {
-      final selected = await appState.communicator!.scan14443aTag();
+      final selected = await operation.wait(
+          appState.communicator!.scan14443aTag());
       if (selected == null) {
         throw StateError('Card disappeared during initialization');
       }
       bindIdentity(selected);
     }
     await requireIdentity();
-    var mifare = await appState.communicator!.detectMf1Support();
+    var mifare =
+        await operation.wait(appState.communicator!.detectMf1Support());
 
     if (mifare) {
-      mifareClassicType = await mfClassicGetType(appState.communicator!);
+      mifareClassicType =
+          await operation.wait(mfClassicGetType(appState.communicator!));
     } else {
       appState.log!.e("Not Mifare Classic tag!");
     }
 
-    isMifareClassicEV1 =
-        await appState.communicator!.mf1Auth(0x45, 0x61, gMifareClassicKeys[3]);
+    isMifareClassicEV1 = await operation.wait(
+        appState.communicator!.mf1Auth(0x45, 0x61, gMifareClassicKeys[3]));
     initializeEV1();
   }
 
+  bool? _batchKeyCheckSupported;
+
+  Future<bool> _supportsBatchKeyCheck() async => _batchKeyCheckSupported ??=
+      (await operation.wait(appState.communicator!.getDeviceCapabilities()))
+          .contains(ChameleonCommand.mf1CheckKeysOfSectors.value);
+
+  Future<void> _checkKeysInBatch(
+    List<Uint8List> keys, {
+    int startingSector = 0,
+  }) async {
+    final sectorCount = mfClassicGetSectorCount(
+      mifareClassicType,
+      isEV1: isMifareClassicEV1,
+    );
+    final chunkSize =
+        appState.connector!.connectionType == ConnectionType.ble ? 32 : 64;
+    state = localizations.checking_keys(keys.length);
+    keyCheckProgress = 0;
+    update();
+    try {
+      var checked = 0;
+      for (final chunk in keys.partition(chunkSize)) {
+        await requireIdentity();
+        final mask = Uint8List(10)..fillRange(0, 10, 0xff);
+        var pending = false;
+        for (var sector = startingSector; sector < sectorCount; sector++) {
+          for (var keyType = 0; keyType < 2; keyType++) {
+            final mark = getSectorState(sector, keyType);
+            if (mark == ChameleonKeyCheckmark.found ||
+                mark == ChameleonKeyCheckmark.disabled) {
+              continue;
+            }
+            final index = sector * 2 + keyType;
+            mask[index ~/ 8] &= ~(0x80 >> (index % 8));
+            setCheckingSector(sector, keyType);
+            pending = true;
+          }
+        }
+        if (!pending) break;
+        final found =
+            await operation.wait(appState.communicator!.mf1CheckKeysOfSectors(
+          mask,
+          chunk,
+        ));
+        await requireIdentity();
+        for (final entry in found.entries) {
+          final index = entry.key;
+          if (mask[index ~/ 8] & (0x80 >> (index % 8)) == 0) {
+            setKeyAsFound(index ~/ 2, index % 2, entry.value);
+          }
+        }
+        checked += chunk.length;
+        keyCheckProgress = checked / keys.length;
+        update();
+      }
+    } finally {
+      for (var sector = startingSector; sector < sectorCount; sector++) {
+        for (var keyType = 0; keyType < 2; keyType++) {
+          setMissingSector(sector, keyType);
+        }
+      }
+      keyCheckProgress = null;
+      update();
+    }
+  }
+
   Future<void> recheckKey(Uint8List key, int startingSector) async {
+    if (await operation.wait(_supportsBatchKeyCheck())) {
+      await operation
+          .wait(_checkKeysInBatch([key], startingSector: startingSector));
+      return;
+    }
     for (var sector = startingSector;
         sector <
             mfClassicGetSectorCount(mifareClassicType,
@@ -316,10 +394,10 @@ class MifareClassicRecovery {
               "Checking found key ${bytesToHex(key)} on sector $sector, key type $keyType");
           setCheckingSector(sector, keyType);
 
-          if (await appState.communicator!.mf1Auth(
+          if (await operation.wait(appState.communicator!.mf1Auth(
               mfClassicGetSectorTrailerBlockBySector(sector),
               0x60 + keyType,
-              key)) {
+              key))) {
             // Found valid key
             setKeyAsFound(sector, keyType, key);
           } else {
@@ -342,23 +420,44 @@ class MifareClassicRecovery {
     }
   }
 
-  Future<void> checkKeys({bool skipDefaultDictionary = false}) async {
+  void _clearCancelledProgress() {
+    state = '';
+    error = '';
+    dumpProgress = 0;
+    hardnestedProgress = null;
+    keyCheckProgress = null;
+    for (var i = 0; i < checkMarks.length; i++) {
+      if (checkMarks[i] == ChameleonKeyCheckmark.checking) {
+        checkMarks[i] = ChameleonKeyCheckmark.none;
+      }
+    }
+    update();
+  }
+
+  Future<void> checkKeys({bool skipDefaultDictionary = false}) => operation.run(
+      () => _checkKeys(skipDefaultDictionary: skipDefaultDictionary),
+      onCancelled: _clearCancelledProgress);
+
+  Future<void> _checkKeys({bool skipDefaultDictionary = false}) async {
     initializeEV1();
 
-    for (var sector = 0;
-        sector <
-            mfClassicGetSectorCount(mifareClassicType,
-                isEV1: isMifareClassicEV1);
-        sector++) {
-      List<Uint8List> keyList = [
-        ...selectedDictionary!.keys,
-        if (!skipDefaultDictionary)
-          ...gMifareClassicKeys
-              .where((key) => !selectedDictionary!.keys.contains(key))
-      ];
-
-      for (var keyType = 0; keyType < 2; keyType++) {
-        await checkKeysOnSector(keyList, keyType, sector);
+    final keyList = [
+      ...selectedDictionary!.keys,
+      if (!skipDefaultDictionary) ...gMifareClassicKeys,
+    ];
+    if (await operation.wait(_supportsBatchKeyCheck())) {
+      await operation.wait(_checkKeysInBatch(keyList));
+    } else {
+      for (var sector = 0;
+          sector <
+              mfClassicGetSectorCount(
+                mifareClassicType,
+                isEV1: isMifareClassicEV1,
+              );
+          sector++) {
+        for (var keyType = 0; keyType < 2; keyType++) {
+          await operation.wait(checkKeysOnSector(keyList, keyType, sector));
+        }
       }
     }
 
@@ -381,19 +480,23 @@ class MifareClassicRecovery {
     update();
   }
 
-  Future<void> recoverKeys() async {
+  Future<void> recoverKeys() =>
+      operation.run(() => _recoverKeys(), onCancelled: _clearCancelledProgress);
+
+  Future<void> _recoverKeys() async {
     state = localizations.checking_card_info;
     update();
 
     error = "";
     bool hasKey = false;
-    bool hasBackdoor = await mfClassicHasBackdoor(appState.communicator!);
+    bool hasBackdoor =
+        await operation.wait(mfClassicHasBackdoor(appState.communicator!));
     (int, NestedNonces, NestedNonces, Uint8List)? backdoorInfo;
     if (hasBackdoor) {
-      backdoorInfo = await appState.communicator!
+      backdoorInfo = await operation.wait(appState.communicator!
           .getMf1StaticEncryptedNestedAcquire(
               sectorCount: mfClassicGetSectorCount(mifareClassicType,
-                  isEV1: isMifareClassicEV1));
+                  isEV1: isMifareClassicEV1)));
     }
 
     DarksideResult darkside = DarksideResult.fixed;
@@ -416,11 +519,11 @@ class MifareClassicRecovery {
     bool isStaticEncrypted = false;
 
     if (hasBackdoor) {
-      isStaticEncrypted = await mfClassicIsStaticEncrypted(
-          appState.communicator!, 0, 4, backdoorInfo!.$4);
+      isStaticEncrypted = await operation.wait(mfClassicIsStaticEncrypted(
+          appState.communicator!, 0, 4, backdoorInfo!.$4));
     }
 
-    NTLevel prng = await appState.communicator!.getMf1NTLevel();
+    NTLevel prng = await operation.wait(appState.communicator!.getMf1NTLevel());
     update();
 
     if (!hasKey && !isStaticEncrypted && prng != NTLevel.static) {
@@ -429,15 +532,18 @@ class MifareClassicRecovery {
 
       try {
         setCheckingSector(0, 1);
-        darkside = await appState.communicator!.checkMf1Darkside();
+        darkside =
+            await operation.wait(appState.communicator!.checkMf1Darkside());
+      } on RecoveryCancelled {
+        rethrow;
       } catch (_) {
         setMissingSector(0, 1);
       }
 
       if (darkside == DarksideResult.vulnerable) {
         // recover with darkside
-        var data =
-            await appState.communicator!.getMf1Darkside(0x03, 0x61, true, 15);
+        var data = await operation
+            .wait(appState.communicator!.getMf1Darkside(0x03, 0x61, true, 15));
         var darkside = DarksideDart(uid: data.uid, items: []);
         bool found = false;
         update();
@@ -450,11 +556,13 @@ class MifareClassicRecovery {
               nr: data.nr,
               ar: data.ar));
 
-          var keys = await recovery.darkside(darkside);
+          var keys = await operation
+              .wait(recovery.darkside(darkside, operation: operation));
           if (keys.isNotEmpty) {
             appState.log!.d("Darkside: Found keys: $keys. Checking them...");
 
-            if (await checkKeysOnSector(mfClassicConvertKeys(keys), 1, 0)) {
+            if (await operation
+                .wait(checkKeysOnSector(mfClassicConvertKeys(keys), 1, 0))) {
               found = true;
               hasKey = true;
 
@@ -462,8 +570,8 @@ class MifareClassicRecovery {
             }
           } else {
             appState.log!.d("Can't find keys, retrying...");
-            data = await appState.communicator!
-                .getMf1Darkside(0x03, 0x61, false, 15);
+            data = await operation.wait(
+                appState.communicator!.getMf1Darkside(0x03, 0x61, false, 15));
           }
         }
 
@@ -480,11 +588,12 @@ class MifareClassicRecovery {
       setCheckingSector(0, 0);
 
       for (var i = 0; i < 3; i++) {
-        NTDistance distance = await appState.communicator!
-            .getMf1NTDistance(0, 0x64, backdoorInfo!.$4);
+        NTDistance distance = await operation.wait(
+            appState.communicator!.getMf1NTDistance(0, 0x64, backdoorInfo!.$4));
 
-        NestedNonces nonces = await appState.communicator!
-            .getMf1NestedNonces(0, 0x64, backdoorInfo.$4, 0, 0x60, level: prng);
+        NestedNonces nonces = await operation.wait(appState.communicator!
+            .getMf1NestedNonces(0, 0x64, backdoorInfo.$4, 0, 0x60,
+                level: prng));
 
         var nested = NestedDart(
             uid: distance.uid,
@@ -496,11 +605,13 @@ class MifareClassicRecovery {
             nt1Enc: nonces.nonces[1].ntEnc,
             par1: nonces.nonces[1].parity);
 
-        List<int> keys = await recovery.nested(nested);
+        List<int> keys =
+            await operation.wait(recovery.nested(nested, operation: operation));
 
         if (keys.isNotEmpty) {
           appState.log!.d("Found keys: $keys. Checking them...");
-          if (await checkKeysOnSector(mfClassicConvertKeys(keys), 0, 0)) {
+          if (await operation
+              .wait(checkKeysOnSector(mfClassicConvertKeys(keys), 0, 0))) {
             break;
           }
         }
@@ -521,9 +632,10 @@ class MifareClassicRecovery {
           validKey = getSectorKey(sector, keyType);
           validKeyBlock = mfClassicGetSectorTrailerBlockBySector(sector);
           validKeyType = keyType;
-          if (!isStaticEncrypted) {
-            isStaticEncrypted = await mfClassicIsStaticEncrypted(
-                appState.communicator!, validKeyBlock, validKeyType, validKey);
+          // This detection is only used when backdoor data can select that attack.
+          if (hasBackdoor && !isStaticEncrypted) {
+            isStaticEncrypted = await operation.wait(mfClassicIsStaticEncrypted(
+                appState.communicator!, validKeyBlock, validKeyType, validKey));
           }
           break;
         }
@@ -572,8 +684,9 @@ class MifareClassicRecovery {
           NestedNonces? nonces;
 
           if (prng != NTLevel.backdoor) {
-            distance = await appState.communicator!
-                .getMf1NTDistance(validKeyBlock, 0x60 + validKeyType, validKey);
+            distance = await operation.wait(appState.communicator!
+                .getMf1NTDistance(
+                    validKeyBlock, 0x60 + validKeyType, validKey));
           }
 
           bool found = false;
@@ -584,12 +697,12 @@ class MifareClassicRecovery {
               hardnestedProgress = 0;
               update();
 
-              var result = await collectHardnestedNonces(
+              var result = await operation.wait(collectHardnestedNonces(
                   validKeyBlock,
                   0x60 + validKeyType,
                   validKey,
                   mfClassicGetSectorTrailerBlockBySector(sector),
-                  0x60 + keyType);
+                  0x60 + keyType));
 
               if (result is String) {
                 setMissingSector(sector, keyType);
@@ -599,13 +712,14 @@ class MifareClassicRecovery {
                 nonces = result as NestedNonces;
               }
             } else if (prng != NTLevel.backdoor) {
-              nonces = await appState.communicator!.getMf1NestedNonces(
-                  validKeyBlock,
-                  0x60 + validKeyType,
-                  validKey,
-                  mfClassicGetSectorTrailerBlockBySector(sector),
-                  0x60 + keyType,
-                  level: prng);
+              nonces = await operation.wait(appState.communicator!
+                  .getMf1NestedNonces(
+                      validKeyBlock,
+                      0x60 + validKeyType,
+                      validKey,
+                      mfClassicGetSectorTrailerBlockBySector(sector),
+                      0x60 + keyType,
+                      level: prng));
             }
 
             state = localizations.recovering_key(attackType);
@@ -622,51 +736,60 @@ class MifareClassicRecovery {
                   nt1Enc: nonces.nonces[1].ntEnc,
                   par1: nonces.nonces[1].parity);
 
-              keys = await recovery.nested(nested);
+              keys = await operation
+                  .wait(recovery.nested(nested, operation: operation));
             } else if (prng == NTLevel.static) {
               var nested = StaticNestedDart(
                 uid: distance!.uid,
-                keyType: 0x60 + validKeyType,
+                // Gen-2 nonce timing depends on the target key type.
+                keyType: 0x60 + keyType,
                 nt0: nonces!.nonces[0].nt,
                 nt0Enc: nonces.nonces[0].ntEnc,
                 nt1: nonces.nonces[1].nt,
                 nt1Enc: nonces.nonces[1].ntEnc,
               );
 
-              keys = await recovery.staticNested(nested);
+              keys = await operation
+                  .wait(recovery.staticNested(nested, operation: operation));
             } else if (prng == NTLevel.hard) {
               var nested =
                   HardNestedDart(nonces: nonces!.getHardNested(distance!.uid));
-              keys = await recovery.hardNested(nested);
+              keys = await operation
+                  .wait(recovery.hardNested(nested, operation: operation));
             } else if (prng == NTLevel.backdoor) {
               setCheckingSector(sector, 1);
 
-              var possibleAKeys = await recovery.staticEncryptedNested(
-                  StaticEncryptedNestedDart(
-                      uid: backdoorInfo!.$1,
-                      nt: backdoorInfo.$2.nonces[sector].nt,
-                      ntEnc: backdoorInfo.$2.nonces[sector].ntEnc,
-                      ntParEnc: backdoorInfo.$2.nonces[sector].parity));
+              var possibleAKeys = await operation.wait(
+                  recovery.staticEncryptedNested(
+                      StaticEncryptedNestedDart(
+                          uid: backdoorInfo!.$1,
+                          nt: backdoorInfo.$2.nonces[sector].nt,
+                          ntEnc: backdoorInfo.$2.nonces[sector].ntEnc,
+                          ntParEnc: backdoorInfo.$2.nonces[sector].parity),
+                      operation: operation));
 
-              var possibleBKeys = await recovery.staticEncryptedNested(
-                  StaticEncryptedNestedDart(
-                      uid: backdoorInfo.$1,
-                      nt: backdoorInfo.$3.nonces[sector].nt,
-                      ntEnc: backdoorInfo.$3.nonces[sector].ntEnc,
-                      ntParEnc: backdoorInfo.$3.nonces[sector].parity));
+              var possibleBKeys = await operation.wait(
+                  recovery.staticEncryptedNested(
+                      StaticEncryptedNestedDart(
+                          uid: backdoorInfo.$1,
+                          nt: backdoorInfo.$3.nonces[sector].nt,
+                          ntEnc: backdoorInfo.$3.nonces[sector].ntEnc,
+                          ntParEnc: backdoorInfo.$3.nonces[sector].parity),
+                      operation: operation));
 
-              var filtered = await StaticEncryptedKeysFilterAsync.filterKeys(
-                  possibleAKeys,
-                  possibleBKeys,
-                  backdoorInfo.$2.nonces[sector].nt,
-                  backdoorInfo.$3.nonces[sector].nt);
+              var filtered = await operation.wait(
+                  StaticEncryptedKeysFilterAsync.filterKeys(
+                      possibleAKeys,
+                      possibleBKeys,
+                      backdoorInfo.$2.nonces[sector].nt,
+                      backdoorInfo.$3.nonces[sector].nt));
 
               if (checkMarks[sector + 40] != ChameleonKeyCheckmark.found &&
                   checkMarks[sector + 40] != ChameleonKeyCheckmark.disabled &&
-                  await checkKeysOnSector(
+                  await operation.wait(checkKeysOnSector(
                       mfClassicConvertKeys(filtered.$2.reversed.toList()),
                       1,
-                      sector)) {
+                      sector))) {
                 checkMarks[sector + 40] = ChameleonKeyCheckmark.found;
               }
 
@@ -674,22 +797,22 @@ class MifareClassicRecovery {
                   checkMarks[sector] == ChameleonKeyCheckmark.disabled) {
                 found = true;
                 break;
-              } else if (await checkKeysOnSector(
-                  mfClassicConvertKeys(
-                      await StaticEncryptedKeysFilterAsync.findMatchingKeys(
+              } else if (await operation.wait(checkKeysOnSector(
+                  mfClassicConvertKeys(await operation.wait(
+                      StaticEncryptedKeysFilterAsync.findMatchingKeys(
                           backdoorInfo.$3.nonces[sector].nt,
                           bytesToU64(Uint8List.fromList(
                               [0, 0, ...validKeys[sector + 40]])),
                           backdoorInfo.$2.nonces[sector].nt,
-                          possibleAKeys)),
+                          possibleAKeys))),
                   0,
-                  sector)) {
+                  sector))) {
                 found = true;
                 break;
-              } else if (await checkKeysOnSector(
+              } else if (await operation.wait(checkKeysOnSector(
                   mfClassicConvertKeys(filtered.$1.reversed.toList()),
                   0,
-                  sector)) {
+                  sector))) {
                 found = true;
                 break;
               }
@@ -701,8 +824,8 @@ class MifareClassicRecovery {
             if (keys.isNotEmpty) {
               appState.log!.d("Found keys: $keys. Checking them...");
 
-              if (await checkKeysOnSector(
-                  mfClassicConvertKeys(keys), keyType, sector)) {
+              if (await operation.wait(checkKeysOnSector(
+                  mfClassicConvertKeys(keys), keyType, sector))) {
                 found = true;
 
                 break;
@@ -732,7 +855,10 @@ class MifareClassicRecovery {
     update();
   }
 
-  Future<void> dumpData() async {
+  Future<void> dumpData() =>
+      operation.run(() => _dumpData(), onCancelled: _clearCancelledProgress);
+
+  Future<void> _dumpData() async {
     _acquisitionComplete = false;
     _acquiredCoverage = null;
     _readVerifiedKeys.clear();
@@ -771,10 +897,12 @@ class MifareClassicRecovery {
               readCoverage[block + mfClassicGetFirstBlockCountBySector(sector)];
           Uint8List blockData;
           try {
-            blockData = await appState.communicator!.mf1ReadBlock(
+            blockData = await operation.wait(appState.communicator!.mf1ReadBlock(
               block + mfClassicGetFirstBlockCountBySector(sector),
               0x60 + keyType,
-              getSectorKey(sector, keyType));
+              getSectorKey(sector, keyType)));
+          } on RecoveryCancelled {
+            rethrow;
           } catch (error) {
             coverage['status'] = 'error';
             coverage['errors'].add({
@@ -792,7 +920,7 @@ class MifareClassicRecovery {
               'reason': 'Read returned no complete block',
             });
             continue;
-            }
+          }
           _readVerifiedKeys.add('$sector/$keyType');
           coverage['status'] = 'read';
           coverage['key'] = keyType == 0 ? 'A' : 'B';
@@ -857,9 +985,10 @@ class MifareClassicRecovery {
       Uint8List knownKey, int targetBlock, int targetKeyType) async {
     NestedNonces nonces = NestedNonces(nonces: []);
     while (true) {
-      var collectedNonces = await appState.communicator!.getMf1NestedNonces(
-          block, keyType, knownKey, targetBlock, targetKeyType,
-          level: NTLevel.hard);
+      var collectedNonces = await operation.wait(appState.communicator!
+          .getMf1NestedNonces(
+              block, keyType, knownKey, targetBlock, targetKeyType,
+              level: NTLevel.hard));
       nonces.nonces.addAll(collectedNonces.nonces);
       List info = nonces.getNoncesInfo();
       appState.log!.d(

@@ -16,6 +16,9 @@
 // utilities
 //-----------------------------------------------------------------------------
 
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
 #include "util.h"
 
 // global client debug variable
@@ -28,6 +31,9 @@ uint8_t g_printAndLog = PRINTANDLOG_PRINT | PRINTANDLOG_LOG;
 #include <windows.h>
 #else
 #include <unistd.h>
+#if defined(__linux__)
+#include <sched.h>
+#endif
 #endif
 
 // determine number of logical CPU cores (use for multithreaded functions)
@@ -40,6 +46,12 @@ int num_CPUs(void)
     return sysinfo.dwNumberOfProcessors;
 #else
     int count = sysconf(_SC_NPROCESSORS_ONLN);
+#if defined(__linux__)
+    // Android cpusets and desktop affinity can expose fewer CPUs than sysconf.
+    cpu_set_t available;
+    if (sched_getaffinity(0, sizeof(available), &available) == 0)
+        count = CPU_COUNT(&available);
+#endif
     if (count <= 0)
         count = 1;
     return count;

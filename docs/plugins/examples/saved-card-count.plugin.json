@@ -1,0 +1,13 @@
+{
+  "format": "chameleon-ultra-gui-plugin",
+  "version": 1,
+  "id": "3801a11e-7956-4a19-8333-000000000001",
+  "name": "Count saved cards",
+  "description": "Shows how many cards are saved. No device required.",
+  "color": 4280391411,
+  "encoding": "json",
+  "data": {
+    "code": "local cards = chameleon.cards.list()\nchameleon.ui.info(\"You have \" .. #cards .. \" saved cards.\")",
+    "resources": {}
+  }
+}

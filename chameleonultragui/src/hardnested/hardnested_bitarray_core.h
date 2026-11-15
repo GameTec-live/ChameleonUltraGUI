@@ -52,12 +52,23 @@ THE SOFTWARE.
 
 #include <stdint.h>
 
+// GNU IFUNC dispatch is limited to Linux/glibc x86-64. Other targets retain the
+// portable kernels, and tests can select them with HN_DISABLE_SIMD.
+#if defined(__GNUC__) && __GNUC__ >= 6 && !defined(__clang__) && defined(__linux__) && defined(__GLIBC__) && defined(__x86_64__) && !defined(HN_DISABLE_SIMD)
+#define HN_SIMD __attribute__((target_clones("avx2", "default")))
+#else
+#define HN_SIMD
+#endif
+
 uint32_t *malloc_bitarray(uint32_t x);
 void free_bitarray(uint32_t *x);
 uint32_t bitcount(uint32_t a);
 uint32_t count_states(uint32_t *A);
 void bitarray_AND(uint32_t *A, uint32_t *B);
 void bitarray_low20_AND(uint32_t *A, uint32_t *B);
+#define BITARRAY_MAX_FILTERS 16
+// Apply immutable filters to a word slice; callers count after all batches finish.
+void bitarray_AND_many(uint32_t *A, uint32_t *const *filters, unsigned count, uint32_t words);
 uint32_t count_bitarray_AND(uint32_t *A, uint32_t *B);
 uint32_t count_bitarray_low20_AND(uint32_t *A, uint32_t *B);
 void bitarray_AND4(uint32_t *A, uint32_t *B, uint32_t *C, uint32_t *D);

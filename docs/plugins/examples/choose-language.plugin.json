@@ -1,0 +1,13 @@
+{
+  "format": "chameleon-ultra-gui-plugin",
+  "version": 1,
+  "id": "3801a11e-7956-4a19-8333-000000000003",
+  "name": "Choose GUI language",
+  "description": "Selects one of the GUI languages.",
+  "color": 4280391411,
+  "encoding": "json",
+  "data": {
+    "code": "local choices = chameleon.settings.options().language\nlocal language = chameleon.ui.input(\"Choose a language\", {\n  type = \"choice\", choices = choices\n})\nif language == nil then return end\nchameleon.settings.update({language = language})",
+    "resources": {}
+  }
+}

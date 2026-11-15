@@ -97,7 +97,7 @@ typedef struct _DECODER_STATE
         uint16_t RawProbabilities[LZMA_BIT_MODEL_SLOTS];
     } u;
 } DECODER_STATE, *PDECODER_STATE;
-DECODER_STATE Decoder;
+static MINLZ_THREAD_LOCAL DECODER_STATE Decoder;
 
 //
 // LZMA decoding uses 3 "properties" which determine how the probability

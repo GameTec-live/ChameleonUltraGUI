@@ -454,9 +454,17 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   late SharedPreferences _sharedPreferences;
 
+  /// Called after synced settings or data changed locally (see `lib/sync`).
+  VoidCallback? onLocalChange;
+
+  SharedPreferences get preferences => _sharedPreferences;
+
   Future<void> load() async {
     _sharedPreferences = await SharedPreferences.getInstance();
   }
+
+  /// Sync state holds device secrets; it never leaves via settings export.
+  static bool _isSyncKey(String key) => key.startsWith('sync_');
 
   ThemeMode getTheme() {
     final themeValue = _sharedPreferences.getInt('app_theme') ?? 0;
@@ -465,6 +473,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setTheme(ThemeMode theme) {
     _sharedPreferences.setInt('app_theme', theme.index);
+    onLocalChange?.call();
   }
 
   bool getSideBarAutoExpansion() {
@@ -481,6 +490,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setSideBarAutoExpansion(bool autoExpanded) {
     _sharedPreferences.setBool('sidebar_auto_expanded', autoExpanded);
+    onLocalChange?.call();
   }
 
   void setSideBarExpanded(bool expanded) {
@@ -489,6 +499,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setSideBarExpandedIndex(int index) {
     _sharedPreferences.setInt('sidebar_expanded_index', index);
+    onLocalChange?.call();
   }
 
   int getThemeColorIndex() {
@@ -506,6 +517,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setThemeColor(int color) {
     _sharedPreferences.setInt('app_theme_color', color);
+    onLocalChange?.call();
   }
 
   bool isDebugMode() {
@@ -545,6 +557,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
       }
     }
     _sharedPreferences.setStringList('dictionaries', output);
+    onLocalChange?.call();
   }
 
   List<DictionaryFolder> getDictionaryFolders() {
@@ -557,6 +570,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
       'dictionary_folders',
       folders.map((folder) => folder.toJson()).toList(),
     );
+    onLocalChange?.call();
   }
 
   List<CardSave> getCards() {
@@ -574,6 +588,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
       output.add(card.toJson());
     }
     _sharedPreferences.setStringList('cards', output);
+    onLocalChange?.call();
   }
 
   List<CardFolder> getCardFolders() {
@@ -586,6 +601,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
       'card_folders',
       folders.map((folder) => folder.toJson()).toList(),
     );
+    onLocalChange?.call();
   }
 
   void setLocale(Locale loc) {
@@ -594,6 +610,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
           loc.toLanguageTag().toLowerCase()) {
         _sharedPreferences.setString('locale', loc.toLanguageTag());
         notifyListeners();
+        onLocalChange?.call();
         return;
       }
     }
@@ -622,6 +639,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
   void clearLocale() {
     _sharedPreferences.setString('locale', "en");
     notifyListeners();
+    onLocalChange?.call();
   }
 
   bool isDebugLogging() {
@@ -656,7 +674,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
     Map<String, dynamic> settingsMap = {};
 
     for (var key in _sharedPreferences.getKeys()) {
-      if (key == "debug_logging_value") {
+      if (key == "debug_logging_value" || _isSyncKey(key)) {
         continue;
       }
       var value = _sharedPreferences.get(key) as dynamic;
@@ -678,6 +696,9 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
     for (var key in settingsMap.keys) {
       dynamic value = settingsMap[key];
+      if (_isSyncKey(key)) {
+        continue;
+      }
 
       if (value == null) {
         continue;
@@ -704,6 +725,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
           break;
       }
     }
+    onLocalChange?.call();
   }
 
   bool getConfirmDelete() {
@@ -712,6 +734,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setConfirmDelete(bool value) {
     _sharedPreferences.setBool('confirm_delete', value);
+    onLocalChange?.call();
   }
 
   bool getAutoScanEnabled() {
@@ -720,6 +743,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setAutoScanEnabled(bool value) {
     _sharedPreferences.setBool('auto_scan_enabled', value);
+    onLocalChange?.call();
   }
 
   bool getAutoConnectFirstFoundDevice() {
@@ -728,5 +752,6 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setAutoConnectFirstFoundDevice(bool value) {
     _sharedPreferences.setBool('auto_connect_first_found', value);
+    onLocalChange?.call();
   }
 }

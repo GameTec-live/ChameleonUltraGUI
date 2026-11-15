@@ -93,8 +93,7 @@ uint32_t nonce2key(uint32_t uid, uint32_t nt, uint32_t nr, uint32_t ar, uint64_t
 
     for (i = 0; unionstate.keylist[i]; i++)
     {
-        lfsr_rollback_word(unionstate.states + i, uid ^ nt, 0);
-        crypto1_get_lfsr(unionstate.states + i, &key_recovered);
+        key_recovered = crypto1_rollback_key(unionstate.states + i, uid ^ nt);
         unionstate.keylist[i] = key_recovered;
     }
     unionstate.keylist[i] = -1;

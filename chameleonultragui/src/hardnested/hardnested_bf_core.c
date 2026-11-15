@@ -1,3 +1,4 @@
+#include "../recovery_cancel.h"
 //-----------------------------------------------------------------------------
 // Copyright (C) 2016, 2017 by piwi
 //
@@ -66,7 +67,15 @@ THE SOFTWARE.
 // while AVX supports 256 bit vector floating point operations, we need integer operations for boolean logic
 // same for AVX2 and 512 bit vectors
 // using larger vectors works but seems to generate more register pressure
+// Use the baseline SIMD width guaranteed by each target; no runtime ISA
+// assumptions (AVX/optional ARMv7 NEON) are needed.
+#ifndef MAX_BITSLICES
+#if !defined(_MSC_VER) && (defined(__SSE2__) || defined(__aarch64__) || defined(__arm64__) || defined(__ARM_NEON))
+#define MAX_BITSLICES 128
+#else
 #define MAX_BITSLICES 64
+#endif
+#endif
 #define VECTOR_SIZE (MAX_BITSLICES / 8)
 
 #ifdef _MSC_VER
@@ -331,7 +340,7 @@ uint64_t CRACK_STATES_BITSLICED(uint32_t cuid, uint8_t *best_first_bytes, statel
     for (uint32_t const *restrict p_odd = p->states[ODD_STATE]; p_odd < p->states[ODD_STATE] + p->len[ODD_STATE]; ++p_odd)
     {
         // early abort
-        if (*keys_found)
+        if (*keys_found || recovery_is_cancelled())
         {
             goto out;
         }

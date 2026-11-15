@@ -1,3 +1,4 @@
+#include "../recovery_cancel.h"
 //-----------------------------------------------------------------------------
 // Copyright (C) 2016, 2017 by piwi
 //
@@ -203,7 +204,7 @@ static void *
     thread_arg = (struct arg *)x;
     const int thread_id = thread_arg->thread_ID;
     uint32_t current_bucket = thread_id;
-    while (current_bucket < bucket_count)
+    while (current_bucket < bucket_count && !recovery_is_cancelled())
     {
         statelist_t *bucket = buckets[current_bucket];
         if (bucket)
@@ -420,6 +421,7 @@ bool brute_force_bs(float *bf_rate, statelist_t *candidates, uint32_t cuid, uint
 #endif
 
     pthread_t threads[1024];
+    bool started[1024];
     struct args
     {
         bool silent;
@@ -440,11 +442,17 @@ bool brute_force_bs(float *bf_rate, statelist_t *candidates, uint32_t cuid, uint
         thread_args[i].maximum_states = maximum_states;
         thread_args[i].nonces = nonces;
         thread_args[i].best_first_bytes = best_first_bytes;
-        pthread_create(&threads[i], NULL, crack_states_thread, (void *)&thread_args[i]);
+        started[i] = pthread_create(&threads[i], NULL, crack_states_thread, &thread_args[i]) == 0;
+    }
+    // Each worker owns a bucket stride. Failed launches must still execute
+    // their partitions; successful workers can continue in parallel.
+    for (uint32_t i = 0; i < num_brute_force_threads; i++)
+    {
+        if (!started[i]) crack_states_thread(&thread_args[i]);
     }
     for (uint32_t i = 0; i < num_brute_force_threads; i++)
     {
-        pthread_join(threads[i], 0);
+        if (started[i]) pthread_join(threads[i], 0);
     }
 
     free(buckets);

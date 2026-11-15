@@ -9,6 +9,7 @@ enum ChameleonCommand {
   getDeviceMode(1002),
   getGitVersion(1017),
   getBatteryCharge(1025),
+  getBatteryChargeEx(1043),
 
   // slot
   setActiveSlot(1003),
@@ -74,7 +75,7 @@ enum ChameleonCommand {
   mf1ReadBlock(2008),
   mf1WriteBlock(2009),
   mf1ManipulateValueBlock(2011),
-  mf1CheckKeysOfSectors(2012), // not implemented
+  mf1CheckKeysOfSectors(2012),
   mf1HardNestedAcquire(2013),
   mf1StaticEncryptedNestedAcquire(2014),
   mf1CheckKeysOnBlock(2015),
@@ -117,6 +118,8 @@ enum ChameleonCommand {
   adcGenericRead(3009),
   writeT55XX(3016),
   scanEM4X05Tag(3030),
+  scanJablotronTag(3019),
+  writeJablotronToT5577(3020),
   lfSniff(3031),
 
   sl1Status(4045),
@@ -191,6 +194,9 @@ enum ChameleonCommand {
   setIoProxEmulatorID(5008),
   getIoProxEmulatorID(5009),
 
+  setJablotronEmulatorID(5010),
+  getJablotronEmulatorID(5011),
+
   setIdteckEmulatorID(5012),
   getIdteckEmulatorID(5013);
 
@@ -207,6 +213,7 @@ enum TagType {
   em410XElectra(104),
   pac(150),
   viking(170),
+  jablotron(180),
   hidProx(200),
   ioProx(201),
   idteck(310),
@@ -280,7 +287,8 @@ enum ButtonConfig {
   cycleForward(1),
   cycleBackward(2),
   cloneUID(3),
-  chargeStatus(4);
+  chargeStatus(4),
+  nfcFieldGenerator(5);
 
   const ButtonConfig(this.value);
   final int value;
@@ -460,11 +468,15 @@ class EnabledSlotInfo {
   EnabledSlotInfo({this.hf = false, this.lf = false});
 }
 
+// Firmware condition hint based on remaining capacity, not battery wear.
+enum BatteryCondition { critical, low, fair, good, excellent, unknown }
+
 class BatteryCharge {
   int voltage;
   int percent;
+  BatteryCondition? condition;
 
-  BatteryCharge({required this.voltage, required this.percent});
+  BatteryCharge({required this.voltage, required this.percent, this.condition});
 }
 
 class EmulatorSettings {
@@ -650,6 +662,26 @@ class VikingCard extends LFCard {
   });
 }
 
+class JablotronCard extends LFCard {
+  factory JablotronCard.fromBytes(Uint8List bytes) {
+    return JablotronCard(uid: bytes);
+  }
+
+  factory JablotronCard.fromUID(String uid) {
+    return JablotronCard.fromBytes(hexToBytes(uid));
+  }
+
+  @override
+  String toViewableString() {
+    return '${jablotronCardId(uid)} (${bytesToHexSpace(uid)})';
+  }
+
+  JablotronCard({
+    super.type = TagType.jablotron,
+    required super.uid,
+  });
+}
+
 class PacCard extends LFCard {
   factory PacCard.fromBytes(Uint8List bytes) {
     return PacCard(uid: bytes);
@@ -666,6 +698,45 @@ class PacCard extends LFCard {
 }
 
 class IoProxCard extends LFCard {
+  int get version => uid[0];
+  int get facilityCode => uid[1];
+  int get cardNumber => (uid[2] << 8) | uid[3];
+
+  /// Builds the firmware's 16-byte identity, including the raw XSF frame.
+  factory IoProxCard.fromFields({
+    required int version,
+    required int facilityCode,
+    required int cardNumber,
+  }) {
+    RangeError.checkValueInInterval(version, 0, 255, 'version');
+    RangeError.checkValueInInterval(facilityCode, 0, 255, 'facilityCode');
+    RangeError.checkValueInInterval(cardNumber, 0, 65535, 'cardNumber');
+    final high = cardNumber >> 8;
+    final low = cardNumber & 0xFF;
+    final checksum =
+        0xFF - ((0xF0 + facilityCode + version + high + low) & 0xFF);
+    final data = Uint8List(16);
+    data.setAll(0, [version, facilityCode, high, low]);
+
+    // Seven MSB-first bytes, each followed by a separator; the last bit is 1.
+    final groups = [0, 0xF0, facilityCode, version, high, low, checksum];
+    for (var group = 0; group < groups.length; group++) {
+      for (var bit = 0; bit < 9; bit++) {
+        final value =
+            bit == 8 ? (group == 0 ? 0 : 1) : (groups[group] >> (7 - bit)) & 1;
+        final position = group * 9 + bit;
+        data[4 + position ~/ 8] |= value << (7 - position % 8);
+      }
+    }
+    data[11] |= 1;
+    return IoProxCard(uid: data);
+  }
+
+  @override
+  String toViewableString() => uid.length < 4
+      ? toString()
+      : '$cardNumber (Version: $version, FC: $facilityCode, ${toString()})';
+
   factory IoProxCard.fromBytes(Uint8List bytes) {
     return IoProxCard(uid: bytes);
   }

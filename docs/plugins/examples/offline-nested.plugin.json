@@ -1,0 +1,13 @@
+{
+  "format": "chameleon-ultra-gui-plugin",
+  "version": 1,
+  "id": "3801a11e-7956-4a19-8333-000000000005",
+  "name": "Offline nested recovery example",
+  "description": "Runs nested recovery on a captured test fixture. No device required.",
+  "color": 4280391411,
+  "encoding": "json",
+  "data": {
+    "code": "local keys = chameleon.recovery.nested({\n  uid = 2374329723, distance = 613,\n  nt0 = 1999585272, nt0Enc = 3173333529, par0 = 3,\n  nt1 = 128306861, nt1Enc = 2363514210, par1 = 7\n})\nchameleon.ui.info(\"Recovered \" .. #keys .. \" candidate keys from the example capture.\")",
+    "resources": {}
+  }
+}

@@ -6,6 +6,7 @@ import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
 import 'package:chameleonultragui/connector/serial_macos.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
+import 'package:chameleonultragui/gui/page/plugins.dart';
 import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
@@ -36,25 +37,35 @@ import 'package:chameleonultragui/sharedprefsprovider.dart';
 // Logger
 import 'package:logger/logger.dart';
 
+import 'package:chameleonultragui/plugins/store.dart';
+import 'package:chameleonultragui/sync/sync_service.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferencesProvider = SharedPreferencesProvider();
   await sharedPreferencesProvider.load();
-  runApp(ChameleonGUI(sharedPreferencesProvider));
+  final sync = SyncService(sharedPreferencesProvider.preferences);
+  sharedPreferencesProvider.onLocalChange = sync.localChanged;
+  sync.start();
+  runApp(ChameleonGUI(sharedPreferencesProvider, sync));
 }
 
 class ChameleonGUI extends StatelessWidget {
   // Root Widget
   final SharedPreferencesProvider _sharedPreferencesProvider;
-  const ChameleonGUI(this._sharedPreferencesProvider, {super.key});
+  final SyncService _sync;
+  const ChameleonGUI(this._sharedPreferencesProvider, this._sync, {super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _sharedPreferencesProvider),
+        ChangeNotifierProvider.value(value: _sync),
         ChangeNotifierProvider(
-          create: (context) => ChameleonGUIState(_sharedPreferencesProvider),
+          create: (context) => ChameleonGUIState(_sharedPreferencesProvider)
+            // Remote data changed settings, cards, ...: rebuild everything.
+            ..watchSync(_sync),
         ),
       ],
       child: MainPage(sharedPreferencesProvider: _sharedPreferencesProvider),
@@ -86,6 +97,13 @@ class ChameleonGUIState extends ChangeNotifier {
 
   void changesMade() {
     notifyListeners();
+  }
+
+  void watchSync(SyncService sync) {
+    sync.onRemoteChange = (collections) {
+      if (collections.contains('plugins')) PluginStore.remoteChanges.value++;
+      changesMade();
+    };
   }
 
   void onConnectorStateChanged() {
@@ -226,8 +244,9 @@ class _MainPageState extends State<MainPage> {
         selectedIndex != 2 &&
         selectedIndex != 5 &&
         selectedIndex != 6 &&
-        selectedIndex != 7) {
-      // If not connected, and not on home, tools, settings or dev page, go to home page
+        selectedIndex != 7 &&
+        selectedIndex != 8) {
+      // Offline pages remain available without a device.
       selectedIndex = 0;
     }
 
@@ -264,9 +283,12 @@ class _MainPageState extends State<MainPage> {
         page = const ToolsPage();
         break;
       case 6:
-        page = const SettingsMainPage();
+        page = const PluginsPage();
         break;
       case 7:
+        page = const SettingsMainPage();
+        break;
+      case 8:
         page = const DebugPage();
         break;
       default:
@@ -365,6 +387,10 @@ class _MainPageState extends State<MainPage> {
                                 icon: const Icon(Icons.handyman),
                                 label:
                                     Text(AppLocalizations.of(context)!.tools),
+                              ),
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.extension),
+                                label: Text(AppLocalizations.of(context)!.plugins),
                               ),
                               NavigationRailDestination(
                                 icon: const Icon(Icons.settings),

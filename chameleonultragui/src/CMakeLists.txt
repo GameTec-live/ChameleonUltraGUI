@@ -8,6 +8,10 @@ endif()
 
 project(recovery_library VERSION 0.0.1 LANGUAGES C)
 
+if(NOT DEFINED SRC_DIR)
+  set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
 set(COMMON_FILES
     ${SRC_DIR}/crapto1.c
     ${SRC_DIR}/crypto1.c
@@ -46,9 +50,25 @@ add_library(recovery SHARED
   "hardnested/hardnested_bf_core.c"
 )
 
-add_compile_options(-O3 -Ofast)
+# Apply optimization to the recovery target itself, including Debug Flutter
+# builds. Avoid fast-math: hardnested uses floating-point work estimates.
+if(MSVC)
+  target_compile_options(recovery PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/O2>")
+else()
+  target_compile_options(recovery PRIVATE -O3)
+  if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    # These internal calls are never interposed by the app. Let GCC specialize
+    # rollback/forward operations with constant encryption flags.
+    target_compile_options(recovery PRIVATE -fno-semantic-interposition)
+  endif()
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID)
+    target_compile_definitions(recovery PRIVATE _GNU_SOURCE)
+  endif()
+endif()
 
 set_target_properties(recovery PROPERTIES
+  C_STANDARD 11
+  C_STANDARD_REQUIRED YES
   PUBLIC_HEADER recovery.h
   OUTPUT_NAME "recovery"
 )
@@ -58,6 +78,8 @@ target_compile_definitions(recovery PUBLIC DART_SHARED_LIB)
 if (WIN32)
   # Workaround Flutter bug for Windows
   set_target_properties(recovery PROPERTIES
+  C_STANDARD 11
+  C_STANDARD_REQUIRED YES
     WINDOWS_EXPORT_ALL_SYMBOLS ON
   )
 
@@ -96,5 +118,9 @@ endif()
 if (WIN32)
   target_link_libraries(recovery PUBLIC pthreads4w::pthreadVC3 minlzlib)
 else ()
-  target_link_libraries(recovery PUBLIC minlzlib)
+  find_package(Threads REQUIRED)
+  target_link_libraries(recovery PUBLIC minlzlib Threads::Threads)
+  if(NOT APPLE)
+    target_link_libraries(recovery PRIVATE m)
+  endif()
 endif(WIN32)

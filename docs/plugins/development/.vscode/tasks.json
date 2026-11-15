@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [{
+    "label": "Build GUI plugin",
+    "type": "process",
+    "command": "node",
+    "args": ["${workspaceFolder}/build-plugin.js", "${workspaceFolder}"],
+    "group": {"kind": "build", "isDefault": true},
+    "problemMatcher": []
+  }]
+}
