@@ -7,7 +7,8 @@ protocol and must stay feature-identical:
 - `worker/` – Cloudflare Worker + Durable Objects (free tier friendly)
 - `server/` – self-hostable Rust binary with SQLite
 
-`conformance/` runs the same test suite against either one.
+`conformance/` runs the same test suite against either one. Both also serve
+the web client in `web/` at `/`; API paths all start with `/v1/`.
 
 ## Encoding conventions
 
@@ -16,6 +17,8 @@ protocol and must stay feature-identical:
 - `hash(x)` = `b64(SHA-256(utf8(x)))`. Tokens are b64 strings; servers store
   only `hash(token)`.
 - Errors are `{"error": "<code>"}` with the HTTP status listed per endpoint.
+  Any request may also get `429 rate_limited` with a `Retry-After` header
+  (seconds); clients report it and try again later.
 
 ## Keys (client side, for reference)
 
@@ -70,10 +73,11 @@ from any origin (the web build needs it; data is encrypted anyway).
 
 ### `GET /v1/info` – server notice (no auth)
 
-`{"notice": "…"}`, or `{}` without one. Operators use it for what users must
-know before trusting the server with a vault (who runs it, data retention).
-Clients show the notice and let the user cancel before the first request of
-any setup (create, pair, recover). A server may delete idle vaults per its
+`{"notice": "…", "signup": "token" | "closed"}`, both optional. Operators use
+the notice for what users must know before trusting the server with a vault
+(who runs it, data retention). Clients show it and let the user cancel before
+the first request of any setup (create, pair, recover). `signup` says whether
+creating a vault needs a signup token or is not possible; absent means open. A server may delete idle vaults per its
 notice; their members then get `401` like revoked devices.
 
 ### `POST /init` – create a vault (no auth)
@@ -83,8 +87,10 @@ notice; their members then get `401` like revoked devices.
                           {"id": "<deviceId>", "kind": "device", "tokenHash": "…", "keychain": "…"}]}
 ```
 
-Exactly one member must be `{"id": "recovery", "kind": "recovery"}`.
-`201` · `409 exists` · `400 bad_request`
+Exactly one member must be `{"id": "recovery", "kind": "recovery"}`. Servers
+that require a signup token read it from an extra `"signupToken"` field.
+`201` · `409 exists` · `400 bad_request` · `403 signup_closed` ·
+`403 signup_token` (missing or wrong)
 
 ### `GET /keyring` – the caller's own wrapped keychain
 

@@ -12,9 +12,8 @@ sealed class BackendConfig {
 
   SyncBackend connect(Credentials credentials);
 
-  /// Text the operator wants users to read before setup (who runs the
-  /// service, data retention, ...), or null.
-  Future<String?> notice();
+  /// What the storage tells clients before setup.
+  Future<ServerInfo> info();
 
   static BackendConfig fromJson(Map<String, dynamic> json) => switch (json) {
     {'t': 'server', 'u': String url} => ServerConfig(Uri.parse(url)),
@@ -44,7 +43,7 @@ class ServerConfig extends BackendConfig {
       ServerBackend(url, credentials);
 
   @override
-  Future<String?> notice() => ServerBackend.notice(url);
+  Future<ServerInfo> info() => ServerBackend.info(url);
 }
 
 /// Any WebDAV folder (Nextcloud, ownCloud, rclone, ...).
@@ -67,7 +66,19 @@ class WebDavConfig extends BackendConfig {
       WebDavBackend(this, credentials);
 
   @override
-  Future<String?> notice() async => null;
+  Future<ServerInfo> info() async => const ServerInfo();
+}
+
+/// Who may create vaults on a storage.
+enum Signup { open, token, closed }
+
+/// `GET /v1/info` of a sync server.
+class ServerInfo {
+  /// Text the operator wants users to read before setup (who runs the
+  /// service, data retention, ...), or null.
+  final String? notice;
+  final Signup signup;
+  const ServerInfo({this.notice, this.signup = Signup.open});
 }
 
 /// Who is talking to the backend: a vault member and its bearer token.
@@ -189,7 +200,8 @@ class SyncException implements Exception {
 abstract interface class SyncBackend {
   SyncCapabilities get capabilities;
 
-  Future<void> init(int epoch, List<NewMember> members);
+  /// Creates the vault. [signupToken] is for servers that require one.
+  Future<void> init(int epoch, List<NewMember> members, {String? signupToken});
 
   /// The caller's own wrapped keychain.
   Future<KeyringEntry> keyring();

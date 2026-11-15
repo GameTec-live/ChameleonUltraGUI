@@ -7,6 +7,11 @@ export interface Env {
   MAX_VAULT_BYTES?: string;
   /** Shown by clients before setup (`GET /v1/info`). */
   NOTICE?: string;
+  /** Per-client limits (`ratelimits` in wrangler.jsonc): all requests, and vault creation. */
+  REQUESTS: RateLimit;
+  SIGNUPS: RateLimit;
+  /** `off` disables rate limiting (local tests). */
+  RATE_LIMIT?: string;
 }
 
 const LIMITS = {

@@ -45,6 +45,9 @@ String _describe(AppLocalizations l, Object? error, {String? invalidInput}) =>
       SyncException(code: 'expired') => l.sync_error_expired,
       SyncException(code: 'mac') => l.sync_error_mac,
       SyncException(code: 'members') => l.sync_error_members,
+      SyncException(code: 'rate_limited') => l.sync_error_rate_limited,
+      SyncException(code: 'signup_closed') => l.sync_error_signup_closed,
+      SyncException(code: 'signup_token') => l.sync_error_signup_token,
       SyncException(code: 'not_found' || 'unauthorized')
           when invalidInput != null =>
         l.sync_error_vault,
@@ -200,10 +203,15 @@ class _SetupViewState extends State<_SetupView> {
   }
 
   Future<void> _create(BackendConfig config) => _run(() async {
+    final l = AppLocalizations.of(context)!;
     final phrase = await widget.sync.createVault(
       config,
       _deviceName,
       acceptNotice: (notice) => _acceptNotice(context, notice),
+      askSignupToken: () => showDialog<String>(
+        context: context,
+        builder: (_) => _InputDialog(l.sync_signup_token, l.sync_signup_hint),
+      ),
     );
     if (!mounted) return;
     await showDialog(
@@ -217,7 +225,11 @@ class _SetupViewState extends State<_SetupView> {
     final l = AppLocalizations.of(context)!;
     final phrase = await showDialog<String>(
       context: context,
-      builder: (_) => const _PhraseInputDialog(),
+      builder: (_) => _InputDialog(
+        l.sync_recovery_phrase,
+        l.sync_enter_phrase,
+        multiline: true,
+      ),
     );
     if (phrase == null) return;
     await _run(
@@ -435,19 +447,23 @@ class _PhraseDialogState extends State<_PhraseDialog> {
   }
 }
 
-class _PhraseInputDialog extends StatefulWidget {
-  const _PhraseInputDialog();
+/// Asks for a secret (recovery phrase, signup token); pops the text or null.
+class _InputDialog extends StatefulWidget {
+  final String title;
+  final String hint;
+  final bool multiline;
+  const _InputDialog(this.title, this.hint, {this.multiline = false});
 
   @override
-  State<_PhraseInputDialog> createState() => _PhraseInputDialogState();
+  State<_InputDialog> createState() => _InputDialogState();
 }
 
-class _PhraseInputDialogState extends State<_PhraseInputDialog> {
-  final _phrase = TextEditingController();
+class _InputDialogState extends State<_InputDialog> {
+  final _text = TextEditingController();
 
   @override
   void dispose() {
-    _phrase.dispose();
+    _text.dispose();
     super.dispose();
   }
 
@@ -455,14 +471,15 @@ class _PhraseInputDialogState extends State<_PhraseInputDialog> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: Text(l.sync_recovery_phrase),
+      title: Text(widget.title),
       content: TextField(
-        controller: _phrase,
-        minLines: 3,
-        maxLines: 5,
+        controller: _text,
+        minLines: widget.multiline ? 3 : 1,
+        maxLines: widget.multiline ? 5 : 1,
+        autofocus: true,
         autocorrect: false,
         enableSuggestions: false,
-        decoration: InputDecoration(hintText: l.sync_enter_phrase),
+        decoration: InputDecoration(hintText: widget.hint),
       ),
       actions: [
         TextButton(
@@ -470,7 +487,7 @@ class _PhraseInputDialogState extends State<_PhraseInputDialog> {
           child: Text(l.cancel),
         ),
         TextButton(
-          onPressed: () => Navigator.pop(context, _phrase.text),
+          onPressed: () => Navigator.pop(context, _text.text.trim()),
           child: Text(l.continue_action),
         ),
       ],

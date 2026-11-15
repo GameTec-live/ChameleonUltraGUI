@@ -93,7 +93,11 @@ class WebDavBackend implements SyncBackend {
       keyring['members'] as Map<String, dynamic>;
 
   @override
-  Future<void> init(int epoch, List<NewMember> members) async {
+  Future<void> init(
+    int epoch,
+    List<NewMember> members, {
+    String? signupToken,
+  }) async {
     // The configured folder must exist; MKCOL on existing folders is 405, fine.
     for (final path in ['', 'records/', 'pairings/']) {
       await _send('MKCOL', path);

@@ -14,8 +14,8 @@ export class ApiError extends Error {
   static conflict = (error: string) => new ApiError(409, { error });
 }
 
-export const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+export const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
+  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...headers } });
 
 export async function parseJson<T = Record<string, unknown>>(request: Request): Promise<T> {
   try {

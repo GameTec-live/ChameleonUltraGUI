@@ -1,14 +1,16 @@
 //! HTTP + WebSocket handlers. See `../PROTOCOL.md` for the contract.
 
 use std::collections::HashMap;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 
 use axum::Router;
 use axum::body::Bytes;
 use axum::extract::ws::rejection::WebSocketUpgradeRejection;
 use axum::extract::ws::{CloseFrame, Message, WebSocket, WebSocketUpgrade};
-use axum::extract::{DefaultBodyLimit, Path, Query, State};
+use axum::extract::{ConnectInfo, DefaultBodyLimit, Extension, Path, Query, Request, State};
 use axum::http::{HeaderMap, StatusCode};
+use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post};
 use axum::Json;
@@ -22,7 +24,9 @@ use tokio::sync::broadcast::error::RecvError;
 use tower_http::cors::CorsLayer;
 
 use crate::error::ApiError;
+use crate::hash_token;
 use crate::hub::{Event, Hub};
+use crate::limit::{Limiter, Proxy, Scope, Signup};
 use crate::store::{Member, NewMember, Store};
 
 pub struct AppState {
@@ -30,7 +34,14 @@ pub struct AppState {
     pub hub: Hub,
     /// Shown by clients before setup (`GET /v1/info`).
     pub notice: Option<String>,
+    pub limiter: Limiter,
+    pub proxy: Proxy,
+    pub signup: Signup,
 }
+
+/// The rate-limited client address of a request (set by [`limit`]).
+#[derive(Clone, Copy)]
+struct Client(IpAddr);
 
 type AppResult<T> = Result<T, ApiError>;
 type St = State<Arc<AppState>>;
@@ -49,6 +60,8 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/v1/vaults/{vault}/pairings/{id}", get(pairing))
         .route("/v1/vaults/{vault}/pairings/{id}/join", post(join_pairing))
         .route("/v1/vaults/{vault}/ws", get(socket))
+        .fallback_service(get(crate::web::serve))
+        .layer(middleware::from_fn_with_state(state.clone(), limit))
         .layer(DefaultBodyLimit::max(16 << 20))
         .layer(CorsLayer::permissive())
         .with_state(state)
@@ -85,11 +98,25 @@ fn publish(state: &AppState, vault: &str, message: Value) {
     state.hub.publish(vault, Event::Message(message.to_string()));
 }
 
+/// Counts every request against its client's limit.
+async fn limit(State(s): St, ConnectInfo(peer): ConnectInfo<SocketAddr>, mut request: Request, next: Next) -> Response {
+    let client = s.proxy.client(peer.ip(), request.headers());
+    if let Err(wait) = s.limiter.check(Scope::Request, client) {
+        return ApiError::rate_limited(wait).into_response();
+    }
+    request.extensions_mut().insert(Client(client));
+    next.run(request).await
+}
+
 async fn info(State(s): St) -> Json<Value> {
-    Json(match &s.notice {
-        Some(notice) => json!({ "notice": notice }),
-        None => json!({}),
-    })
+    let mut info = json!({});
+    if let Some(notice) = &s.notice {
+        info["notice"] = json!(notice);
+    }
+    if let Some(signup) = s.signup.describe() {
+        info["signup"] = json!(signup);
+    }
+    Json(info)
 }
 
 #[derive(Deserialize)]
@@ -121,14 +148,31 @@ impl MemberBody {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct InitBody {
     epoch: u32,
     members: Vec<MemberBody>,
+    signup_token: Option<String>,
 }
 
-async fn init(State(s): St, Path(vault): Path<String>, body: Bytes) -> AppResult<StatusCode> {
+async fn init(
+    State(s): St,
+    Extension(Client(client)): Extension<Client>,
+    Path(vault): Path<String>,
+    body: Bytes,
+) -> AppResult<StatusCode> {
     ids([vault.as_str()])?;
+    if let Signup::Closed = s.signup {
+        return Err(ApiError::signup("signup_closed"));
+    }
+    // Counted before the token check, so tokens cannot be guessed quickly.
+    s.limiter.check(Scope::Signup, client).map_err(ApiError::rate_limited)?;
     let body: InitBody = parse(&body)?;
+    if let Signup::Token(hash) = &s.signup
+        && body.signup_token.as_deref().map(hash_token).as_ref() != Some(hash)
+    {
+        return Err(ApiError::signup("signup_token"));
+    }
     let members = body.members.into_iter().map(MemberBody::validate).collect::<AppResult<Vec<_>>>()?;
     if members.iter().filter(|m| m.kind == "recovery").count() != 1 || body.epoch == 0 {
         return Err(ApiError::bad_request());

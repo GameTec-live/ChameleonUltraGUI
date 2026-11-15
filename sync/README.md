@@ -9,6 +9,7 @@ recovery phrase, devices by their own keys.
 | [`PROTOCOL.md`](PROTOCOL.md) | wire protocol + crypto formats (the contract) |
 | `worker/` | Cloudflare Worker + SQLite Durable Objects, runs on the free plan |
 | `server/` | self-hostable Rust server, single SQLite file |
+| `web/` | web app both servers serve at `/` (React + Vite) |
 | `conformance/` | protocol test suite, runs against either server |
 | `../chameleonultragui/lib/sync/` | client: engine, crypto, backends |
 
@@ -46,6 +47,24 @@ there anyway. Platform keystores (`flutter_secure_storage`) would add
 packaging dependencies (libsecret on Linux, keychain entitlements on macOS)
 for little gain; revisit if the app ever encrypts its local data.
 
+## Web app
+
+Both servers serve a web app at `/` for looking into a vault from any
+browser. It signs in like the app: with the recovery phrase (kept only until
+the page closes), or with a pairing code, which makes the browser a device
+until "Sign out" removes it again. Records are decrypted in the page; the
+server still only sees ciphertext. It can:
+
+- browse cards, dictionaries, folders, settings, plugins and devices
+- edit any record as JSON, or delete it (synced to all devices)
+- export everything as the app's settings file (Settings → Import settings),
+  a card as `.json`, a dictionary as `.dic` and a folder in the app's folder
+  format
+
+The page loads no third-party code and sends a strict Content Security
+Policy. `cd web && bun run dev` serves it with hot reload against a server
+on port 8787.
+
 ## Backends
 
 | | Sync server | WebDAV |
@@ -74,21 +93,26 @@ bun install
 bunx wrangler deploy
 ```
 
+`wrangler deploy` (and `wrangler dev`) build the web app first and upload it
+as static assets, which do not count against the Worker's request limits.
 Vaults unused (no authenticated request) for 30 days are deleted; a vault
 stays while a device is connected. `NOTICE` in `wrangler.jsonc` is shown in
 the app before setup: say who runs the instance and keep the expiry note.
 Set `MAX_VAULT_BYTES` as a variable to change the per-vault quota
-(default 64 MiB). Free plan limits that matter: 100k requests/day, 5 GB
+(default 64 MiB). Each client address gets 300 requests and 3 new vaults per
+minute (`ratelimits` in `wrangler.jsonc`). Free plan limits that matter: 100k requests/day, 5 GB
 total storage. Clients batch writes and debounce edits by 2 seconds.
 
 ### Self-hosted (Rust + SQLite)
 
 ```sh
-docker build -t cu-sync-server server
+docker build -t cu-sync-server -f server/Dockerfile .
 docker run -d -p 8787:8787 -v cu-sync:/data cu-sync-server
 ```
 
-Or `cargo run --release` in `server/`. Configuration via environment:
+Or build the web app first (`bun install && bun run build` in `web/`; the
+binary embeds it), then `cargo run --release` in `server/`. Configuration via
+environment:
 
 | variable | default |
 | --- | --- |
@@ -96,14 +120,25 @@ Or `cargo run --release` in `server/`. Configuration via environment:
 | `CU_SYNC_DB` | `sync.db` (`/data/sync.db` in Docker) |
 | `CU_SYNC_MAX_VAULT_BYTES` | `67108864` |
 | `CU_SYNC_NOTICE` | none; shown in the app before setup (who runs it, ...) |
+| `CU_SYNC_RATE_LIMIT` | `on`: 300 requests per minute and 5 new vaults per hour per client; `double` or `off` |
+| `CU_SYNC_PROXY` | `none`; `forwarded` trusts the last `X-Forwarded-For` entry, `cloudflare` trusts `CF-Connecting-IP` (proxied DNS or Cloudflare Tunnel) |
+| `CU_SYNC_SIGNUP_TOKEN` | none; when set, creating a vault needs this token (the app asks for it) |
+| `CU_SYNC_SIGNUP` | `open`; `closed` stops new vaults (existing ones keep working, devices can still join) |
 
-Put it behind a TLS reverse proxy (WebSockets must be passed through).
+Put it behind a TLS reverse proxy (WebSockets must be passed through) and set
+`CU_SYNC_PROXY` to match, or every client shares the proxy's limit. Only set
+it when the server is unreachable except through that proxy: anyone talking
+to it directly could forge the header. IPv6 clients are limited per /64.
 
 ## Testing
 
 ```sh
-# protocol conformance, against either server
+# protocol conformance, against either server, with rate limits off
+# (CU_SYNC_RATE_LIMIT=off cargo run, or wrangler dev --var RATE_LIMIT:off)
 SYNC_URL=http://127.0.0.1:8787 bun test ./conformance
+
+# web app: crypto against fixtures written by the app's crypto, export formats
+cd web && bun test src
 
 # client unit tests
 cd ../chameleonultragui && flutter test test/sync
@@ -115,8 +150,9 @@ WEBDAV_URL=http://user:pass@127.0.0.1:8080/dav flutter test test/sync/service_in
 
 ## Abuse limits
 
-Anyone can create a vault, so a public instance is an anonymous blob store.
-Both servers cap blob size (1 MiB) and vault size. They do not rate limit;
-on Cloudflare add a [rate limiting rule](https://developers.cloudflare.com/waf/rate-limiting-rules/),
-for the Rust server use the reverse proxy. The Worker deletes vaults unused
-for 30 days; the Rust server keeps them.
+Anyone can create a vault on an open instance, so it is an anonymous blob
+store. Both servers cap blob size (1 MiB) and vault size and rate limit per
+client address. The Worker deletes vaults unused for 30 days; the Rust server
+keeps them, but private instances can require a signup token or close signup
+once their vaults exist. The Worker's limits are per Cloudflare location and
+only for a minute at most, so treat them as a coarse filter.

@@ -21,19 +21,30 @@ class ServerBackend implements SyncBackend {
   static Uri _api(Uri url, String path) =>
       url.replace(path: '${url.path.replaceAll(RegExp(r'/+$'), '')}/v1/$path');
 
-  /// The server's notice from `GET /v1/info`; null if it has none (or is an
-  /// older server without the endpoint).
-  static Future<String?> notice(Uri url) async {
+  /// `GET /v1/info`; empty for older servers without the endpoint. Fails
+  /// when rate limited, so a closed signup is never mistaken for an open one.
+  static Future<ServerInfo> info(Uri url) async {
     final response = await http.get(_api(url, 'info'));
-    if (response.statusCode != 200) return null;
+    if (response.statusCode == 429) throw const SyncException('rate_limited');
+    if (response.statusCode != 200) return const ServerInfo();
+    final Object? json;
     try {
-      return switch (jsonDecode(response.body)) {
-        {'notice': final String notice} when notice.trim().isNotEmpty => notice,
-        _ => null,
-      };
+      json = jsonDecode(response.body);
     } on FormatException {
-      return null;
+      return const ServerInfo();
     }
+    if (json is! Map<String, dynamic>) return const ServerInfo();
+    return ServerInfo(
+      notice: switch (json['notice']) {
+        final String notice when notice.trim().isNotEmpty => notice,
+        _ => null,
+      },
+      signup: switch (json['signup']) {
+        'token' => Signup.token,
+        'closed' => Signup.closed,
+        _ => Signup.open,
+      },
+    );
   }
 
   @override
@@ -73,13 +84,18 @@ class ServerBackend implements SyncBackend {
   }
 
   @override
-  Future<void> init(int epoch, List<NewMember> members) async {
+  Future<void> init(
+    int epoch,
+    List<NewMember> members, {
+    String? signupToken,
+  }) async {
     await _call(
       'POST',
       'init',
       body: {
         'epoch': epoch,
         'members': [for (final m in members) m.toJson()],
+        'signupToken': ?signupToken,
       },
     );
   }

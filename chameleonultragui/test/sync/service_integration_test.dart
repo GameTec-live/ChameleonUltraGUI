@@ -1,7 +1,7 @@
 // End-to-end test of SyncService against a running backend:
 //   SYNC_URL=http://127.0.0.1:8787 flutter test test/sync/service_integration_test.dart
 //   WEBDAV_URL=http://user:pass@127.0.0.1:8080/dav flutter test test/sync/...
-// Skipped when neither is set.
+// Skipped when neither is set. SIGNUP_TOKEN is the server's signup token.
 import 'dart:convert';
 import 'dart:io';
 
@@ -82,20 +82,25 @@ void main() {
       await prefsA.setStringList('cards', [card]);
       await prefsA.setInt('app_theme', 4);
       // The server's notice comes first; declining it stops the setup.
-      final notice = await config.notice();
+      final info = await config.info();
+      final notice = info.notice;
+      final signupToken = Platform.environment['SIGNUP_TOKEN'];
+      Future<String> create({bool accept = true, String? token}) =>
+          a.createVault(
+            config,
+            'Laptop',
+            acceptNotice: (shown) async => accept && shown == notice,
+            askSignupToken: () async => token,
+          );
+      Matcher fails(String code) =>
+          throwsA(isA<SyncException>().having((e) => e.code, 'code', code));
       if (notice != null) {
-        await expectLater(
-          a.createVault(config, 'Laptop', acceptNotice: (_) async => false),
-          throwsA(
-            isA<SyncException>().having((e) => e.code, 'code', 'cancelled'),
-          ),
-        );
+        await expectLater(create(accept: false), fails('cancelled'));
       }
-      final phrase = await a.createVault(
-        config,
-        'Laptop',
-        acceptNotice: (shown) async => shown == notice,
-      );
+      if (info.signup == Signup.token) {
+        await expectLater(create(token: 'wrong'), fails('signup_token'));
+      }
+      final phrase = await create(token: signupToken);
       expect(phrase.split(' '), hasLength(24));
       await a.syncNow();
 

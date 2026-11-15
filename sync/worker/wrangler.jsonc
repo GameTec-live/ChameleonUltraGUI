@@ -3,11 +3,21 @@
   "name": "cu-sync",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
+  // The web app at `/`. Matching files are served without running the Worker
+  // (and without counting against its limits); `_headers` sets their CSP.
+  "assets": { "directory": "../web/dist" },
+  "build": { "command": "cd ../web && bun install --frozen-lockfile && bun run build", "watch_dir": "../web/src" },
   "durable_objects": {
     "bindings": [{ "name": "VAULTS", "class_name": "Vault" }]
   },
   // SQLite-backed Durable Objects are available on the Workers free plan.
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Vault"] }],
+  // Per client address (IPv6: per /64) and Cloudflare location. 60 seconds is
+  // the longest period the binding supports. `RATE_LIMIT: "off"` disables both.
+  "ratelimits": [
+    { "name": "REQUESTS", "namespace_id": "1001", "simple": { "limit": 300, "period": 60 } },
+    { "name": "SIGNUPS", "namespace_id": "1002", "simple": { "limit": 3, "period": 60 } }
+  ],
   // Shown in the app before setup. Say who runs this instance; keep the
   // expiry note, the Worker deletes vaults unused for 30 days.
   "vars": { "NOTICE": "Vaults not used for 30 days are deleted automatically." }

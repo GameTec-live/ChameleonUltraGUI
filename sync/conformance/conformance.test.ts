@@ -1,8 +1,10 @@
 // Protocol conformance suite for sync servers (see ../PROTOCOL.md).
 // Usage: SYNC_URL=http://localhost:8787 bun test ./conformance
+// Run servers with rate limits off; SIGNUP_TOKEN is the server's signup token.
 import { describe, expect, test } from "bun:test";
 
 const base = process.env.SYNC_URL ?? "http://localhost:8787";
+const signupToken = process.env.SIGNUP_TOKEN;
 
 const b64 = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64url");
 const randomId = () => b64(crypto.getRandomValues(new Uint8Array(16)));
@@ -30,7 +32,7 @@ async function createVault() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(body ? { "Content-Type": "application/json" } : {}),
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? JSON.stringify(path === "init" ? { ...body, signupToken } : body) : undefined,
     });
     const text = await response.text();
     return { status: response.status, body: text ? JSON.parse(text) : null };
@@ -69,6 +71,18 @@ describe("vault setup and auth", () => {
       epoch: 1, members: [{ id: "recovery", kind: "recovery", tokenHash: "x", keychain: "k" }],
     });
     expect(dup).toEqual({ status: 409, body: { error: "exists" } });
+  });
+
+  test("a required signup token is checked", async () => {
+    const { signup } = (await (await fetch(`${base}/v1/info`)).json()) as { signup?: string };
+    if (signup !== "token") return;
+    const response = await fetch(`${base}/v1/vaults/${randomId()}/init`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ epoch: 1, members: [], signupToken: "wrong" }),
+    });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: "signup_token" });
   });
 
   test("keyring returns the caller's own entry", async () => {
@@ -250,11 +264,12 @@ describe("realtime", () => {
   });
 });
 
-test("info has an optional notice", async () => {
+test("info has an optional notice and signup mode", async () => {
   const response = await fetch(`${base}/v1/info`);
   expect(response.status).toBe(200);
-  const { notice } = (await response.json()) as { notice?: unknown };
+  const { notice, signup } = (await response.json()) as { notice?: unknown; signup?: unknown };
   expect(notice === undefined || typeof notice === "string").toBe(true);
+  expect([undefined, "token", "closed"]).toContain(signup);
 });
 
 test("CORS preflight", async () => {

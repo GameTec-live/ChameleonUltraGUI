@@ -366,24 +366,33 @@ class SyncService extends ChangeNotifier {
   // Every setup path shows the storage's notice (if any) through
   // [acceptNotice] before contacting it; declining throws `cancelled`.
 
-  static Future<void> _confirmNotice(
+  static Future<ServerInfo> _confirmNotice(
     BackendConfig config,
     Future<bool> Function(String notice) acceptNotice,
   ) async {
-    final notice = await config.notice();
-    if (notice != null && !await acceptNotice(notice)) {
+    final info = await config.info();
+    if (info.notice case final notice? when !await acceptNotice(notice)) {
       throw const SyncException('cancelled');
     }
+    return info;
   }
 
   /// Creates a new vault with this device as the first member. Returns the
-  /// recovery phrase, which is not stored anywhere.
+  /// recovery phrase, which is not stored anywhere. [askSignupToken] is
+  /// called when the server requires a token; null cancels.
   Future<String> createVault(
     BackendConfig config,
     String deviceName, {
     required Future<bool> Function(String notice) acceptNotice,
+    required Future<String?> Function() askSignupToken,
   }) async {
-    await _confirmNotice(config, acceptNotice);
+    final info = await _confirmNotice(config, acceptNotice);
+    final signupToken = switch (info.signup) {
+      Signup.open => null,
+      Signup.closed => throw const SyncException('signup_closed'),
+      Signup.token =>
+        await askSignupToken() ?? (throw const SyncException('cancelled')),
+    };
     final entropy = randomBytes(32);
     final recovery = await RecoveryKeys.derive(entropy);
     final device = Identity.random();
@@ -394,7 +403,7 @@ class SyncService extends ChangeNotifier {
       Credentials(recovery.vaultId, deviceId, token),
     );
     try {
-      await backend.init(keychain.current, [
+      await backend.init(keychain.current, signupToken: signupToken, [
         NewMember(
           'recovery',
           'recovery',
