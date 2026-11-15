@@ -536,6 +536,10 @@ function Browser({ vault, onSignOut }: { vault: Vault; onSignOut: () => void }) 
             // Based on the version the editor opened, so a change made meanwhile is not overwritten.
             const failed = await act(() => vault.write(editing.collection, editing.id, value, editing.version));
             if (!failed) setEditing(null);
+            // After a conflict the vault holds the newer version: the typed text stays, and saving
+            // again replaces that version on purpose.
+            const fresh = vault.items(editing.collection).find((i) => i.id === editing.id);
+            if (failed && fresh) setEditing(fresh);
             return failed;
           }}
         />
