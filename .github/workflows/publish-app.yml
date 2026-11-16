@@ -107,11 +107,23 @@ jobs:
           keychain initialize
           keychain add-certificates
           xcode-project use-profiles
+      - name: Pick macOS version
+        working-directory: "./chameleonultragui"
+        shell: bash
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY="$(cat AuthKey.p8)"
+          APP_ID=$(app-store-connect apps list --bundle-id-identifier run.chameleon.gui --strict-match-identifier --json \
+            | jq -er 'if length == 1 then .[0].id else error("Expected exactly one matching app") end')
+          PUBSPEC_VERSION=$(sed -nE 's/^version: *([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' pubspec.yaml)
+          VERSION=$(app-store-connect apps app-store-versions "$APP_ID" --platform MAC_OS --json \
+            | jq -er --arg floor "$PUBSPEC_VERSION" -f "$GITHUB_WORKSPACE/.github/scripts/app-store-version.jq")
+          echo "APP_ID=$APP_ID" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
       - name: Build app
         working-directory: "./chameleonultragui"
         run: |
           sudo chown -R $USER . && sudo chmod -R a+rwx .
-          flutter build macos --release --build-number ${{ github.run_number }} --build-name "1.4.${{ github.run_number }}"
+          flutter build macos --release --build-number ${{ github.run_number }} --build-name "$VERSION"
           sudo chown -R $USER . && sudo chmod -R a+rwx .
       - name: Sign package
         working-directory: "./chameleonultragui"
@@ -134,13 +146,12 @@ jobs:
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
           app-store-connect publish --path "$PACKAGE_NAME"
       - name: Wait for processed macOS build
+        id: processed
         timeout-minutes: 30
         working-directory: "./chameleonultragui"
         shell: bash
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY="$(cat AuthKey.p8)"
-          APP_ID=$(app-store-connect apps list --bundle-id-identifier run.chameleon.gui --strict-match-identifier --json \
-            | jq -er 'if length == 1 then .[0].id else error("Expected exactly one matching app") end')
           BUILD_ID=""
           while [[ -z "$BUILD_ID" ]]; do
               BUILD_ID=$(app-store-connect builds list --app-id "$APP_ID" --platform MAC_OS \
@@ -152,17 +163,20 @@ jobs:
               fi
           done
           echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
-      - name: Submit to App Store
-        working-directory: "./chameleonultragui"
-        run: |
-          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="1.4.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.4.${{ github.run_number }}" $BUILD_ID
+      # TestFlight goes first and App Store runs regardless, so a stuck App
+      # Store submission never holds back the open beta (or vice versa).
       - name: Submit to TestFlight
         working-directory: "./chameleonultragui"
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          app-store-connect builds submit-to-testflight $BUILD_ID || true
-          app-store-connect beta-groups add-build $BUILD_ID --beta-group="Open beta testing" || true
+          app-store-connect builds submit-to-testflight "$BUILD_ID"
+          app-store-connect beta-groups add-build "$BUILD_ID" --beta-group "Open beta testing"
+      - name: Submit to App Store
+        if: ${{ !cancelled() && steps.processed.outcome == 'success' }}
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=MAC_OS --version-string="$VERSION" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" "$BUILD_ID"
   build-ios:
     runs-on: macos-latest
     env:
@@ -203,23 +217,39 @@ jobs:
           keychain initialize
           keychain add-certificates
           xcode-project use-profiles
-      - name: Build app
-        working-directory: "./chameleonultragui"
-        run: |
-          flutter build ipa --release --export-options-plist=$HOME/export_options.plist --build-number ${{ github.run_number }} --build-name "1.4.${{ github.run_number }}"
-      - name: Upload app to App Store
-        working-directory: "./chameleonultragui"
-        run: |
-          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          app-store-connect publish --path $(find $(pwd) -name "*.ipa")
-      - name: Wait for processed iOS build
-        timeout-minutes: 30
+      - name: Pick iOS version
         working-directory: "./chameleonultragui"
         shell: bash
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY="$(cat AuthKey.p8)"
           APP_ID=$(app-store-connect apps list --bundle-id-identifier run.chameleon.gui --strict-match-identifier --json \
             | jq -er 'if length == 1 then .[0].id else error("Expected exactly one matching app") end')
+          PUBSPEC_VERSION=$(sed -nE 's/^version: *([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' pubspec.yaml)
+          VERSION=$(app-store-connect apps app-store-versions "$APP_ID" --platform IOS --json \
+            | jq -er --arg floor "$PUBSPEC_VERSION" -f "$GITHUB_WORKSPACE/.github/scripts/app-store-version.jq")
+          echo "APP_ID=$APP_ID" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+      - name: Build app
+        working-directory: "./chameleonultragui"
+        run: |
+          flutter build ipa --release --export-options-plist=$HOME/export_options.plist --build-number ${{ github.run_number }} --build-name "$VERSION"
+      # App Store signed; sideloading tools (AltStore, Sideloadly, ...) re-sign it.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ipa
+          path: chameleonultragui/build/ios/ipa/*.ipa
+      - name: Upload app to App Store
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect publish --path $(find $(pwd) -name "*.ipa")
+      - name: Wait for processed iOS build
+        id: processed
+        timeout-minutes: 30
+        working-directory: "./chameleonultragui"
+        shell: bash
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY="$(cat AuthKey.p8)"
           BUILD_ID=""
           while [[ -z "$BUILD_ID" ]]; do
               BUILD_ID=$(app-store-connect builds list --app-id "$APP_ID" --platform IOS \
@@ -231,14 +261,17 @@ jobs:
               fi
           done
           echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
-      - name: Submit to App Store
-        working-directory: "./chameleonultragui"
-        run: |
-          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=IOS --version-string="1.4.${{ github.run_number }}" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" --version-string="1.4.${{ github.run_number }}" $BUILD_ID
+      # TestFlight goes first and App Store runs regardless, so a stuck App
+      # Store submission never holds back the open beta (or vice versa).
       - name: Submit to TestFlight
         working-directory: "./chameleonultragui"
         run: |
           export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          app-store-connect builds submit-to-testflight $BUILD_ID || true
-          app-store-connect beta-groups add-build $BUILD_ID --beta-group="Open beta testing" || true
+          app-store-connect builds submit-to-testflight "$BUILD_ID"
+          app-store-connect beta-groups add-build "$BUILD_ID" --beta-group "Open beta testing"
+      - name: Submit to App Store
+        if: ${{ !cancelled() && steps.processed.outcome == 'success' }}
+        working-directory: "./chameleonultragui"
+        run: |
+          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
+          app-store-connect builds submit-to-app-store --cancel-previous-submissions --platform=IOS --version-string="$VERSION" --whats-new="Compiled from `git log --pretty=format:%s --oneline --ancestry-path HEAD~1..HEAD`" "$BUILD_ID"
