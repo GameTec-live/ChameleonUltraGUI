@@ -167,9 +167,18 @@ jobs:
       # Store submission never holds back the open beta (or vice versa).
       - name: Submit to TestFlight
         working-directory: "./chameleonultragui"
+        shell: bash
         run: |
-          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          app-store-connect builds submit-to-testflight "$BUILD_ID"
+          export APP_STORE_CONNECT_PRIVATE_KEY="$(cat AuthKey.p8)"
+          if ! OUTPUT=$(app-store-connect builds submit-to-testflight "$BUILD_ID" 2>&1); then
+              echo "$OUTPUT"
+              # Apple reviews one build per version at a time. The build already in
+              # review carries this version; once it is approved, the next push clears.
+              grep -q "Another build is in review" <<< "$OUTPUT" || exit 1
+              echo "::notice::Skipped TestFlight: another $VERSION build is still in beta review."
+              exit 0
+          fi
+          echo "$OUTPUT"
           app-store-connect beta-groups add-build "$BUILD_ID" --beta-group "Open beta testing"
       - name: Submit to App Store
         if: ${{ !cancelled() && steps.processed.outcome == 'success' }}
@@ -265,9 +274,18 @@ jobs:
       # Store submission never holds back the open beta (or vice versa).
       - name: Submit to TestFlight
         working-directory: "./chameleonultragui"
+        shell: bash
         run: |
-          export APP_STORE_CONNECT_PRIVATE_KEY=`cat AuthKey.p8`
-          app-store-connect builds submit-to-testflight "$BUILD_ID"
+          export APP_STORE_CONNECT_PRIVATE_KEY="$(cat AuthKey.p8)"
+          if ! OUTPUT=$(app-store-connect builds submit-to-testflight "$BUILD_ID" 2>&1); then
+              echo "$OUTPUT"
+              # Apple reviews one build per version at a time. The build already in
+              # review carries this version; once it is approved, the next push clears.
+              grep -q "Another build is in review" <<< "$OUTPUT" || exit 1
+              echo "::notice::Skipped TestFlight: another $VERSION build is still in beta review."
+              exit 0
+          fi
+          echo "$OUTPUT"
           app-store-connect beta-groups add-build "$BUILD_ID" --beta-group "Open beta testing"
       - name: Submit to App Store
         if: ${{ !cancelled() && steps.processed.outcome == 'success' }}

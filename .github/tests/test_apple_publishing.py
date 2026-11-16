@@ -45,6 +45,14 @@ app-store-connect() {
         fi
         # Even valid-looking stdout must not hide a failed API call.
         if [[ "$TEST_CASE" == api_error ]]; then return 7; fi
+    elif [[ "$1 $2 $3" == "builds submit-to-testflight build-694" ]]; then
+        case "$TEST_CASE" in
+            submitted) echo "Beta review state: WAITING_FOR_REVIEW" ;;
+            in_review) echo "returned 422: Another build is in review." >&2; return 1 ;;
+            *) echo "returned 500: Internal error" >&2; return 1 ;;
+        esac
+    elif [[ "$*" == "beta-groups add-build build-694 --beta-group Open beta testing" ]]; then
+        touch added
     else
         return 92
     fi
@@ -70,7 +78,7 @@ class ApplePublishingTest(unittest.TestCase):
             if step.get("name", "").startswith(prefix)
         )
 
-    def run_step(self, work, step, platform, case, files):
+    def run_step(self, work, step, platform, case, files, env=None):
         """Runs a workflow step's script in `work` and returns (result, $GITHUB_ENV)."""
         self.assertEqual(step["shell"], "bash")
         script = step["run"].replace("${{ github.run_number }}", "694")
@@ -89,6 +97,7 @@ class ApplePublishingTest(unittest.TestCase):
                 APP_ID="123456",
                 GITHUB_ENV=(work / "github-env").as_posix(),
                 GITHUB_WORKSPACE=REPO.as_posix(),
+                **(env or {}),
             ),
             capture_output=True, text=True, timeout=10,
         )
@@ -155,6 +164,22 @@ class ApplePublishingTest(unittest.TestCase):
                     else:
                         self.assertNotEqual(result.returncode, 0, result.stdout)
                         self.assertEqual(output, "")
+
+    def test_testflight(self):
+        for platform, job in JOBS:
+            step = self.step(job, "Submit to TestFlight")
+            for case in ("submitted", "in_review", "api_error"):
+                with self.subTest(platform=platform, case=case), \
+                        tempfile.TemporaryDirectory() as directory:
+                    work = Path(directory)
+                    result, _ = self.run_step(work, step, platform, case, {}, env={
+                        "BUILD_ID": "build-694", "VERSION": "1.4.757",
+                    })
+                    self.assertEqual(result.returncode, 1 if case == "api_error" else 0, result.stdout)
+                    # Only a build that was actually submitted joins the open beta group.
+                    self.assertEqual((work / "added").exists(), case == "submitted")
+                    if case == "in_review":
+                        self.assertIn("another 1.4.757 build is still in beta review", result.stdout)
 
     def test_testflight_does_not_wait_for_app_store(self):
         for _, job in JOBS:
