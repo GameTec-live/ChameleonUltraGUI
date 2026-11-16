@@ -46,6 +46,9 @@ jobs:
         base: main
         branch: translations
         delete-branch: true
+        # Commits through the API as the App. Otherwise the author defaults to
+        # github.actor, which on scheduled runs is whoever last edited the cron line.
+        sign-commits: true
         # Only translated files: never the English source, which Crowdin also exports.
         # This is what makes the auto-approval below safe.
         add-paths: |
