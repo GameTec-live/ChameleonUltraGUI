@@ -348,18 +348,7 @@ failed:
   rp->keyCount = 0;
 }
 
-uint64_t *nested_run(NtpKs1 *pNK, uint32_t sizePNK, uint32_t authuid, uint32_t *keyCount, uint32_t *outputKeyCount)
-{
-  *outputKeyCount = 0;
-  RecPar rp = {.pNK = pNK, .authuid = authuid, .startPos = 0, .endPos = sizePNK};
-  nested_recover(&rp);
-  *keyCount = rp.keyCount;
-  uint64_t *keys = rp.keyCount ? most_frequent_uint64(rp.keys, rp.keyCount, outputKeyCount) : NULL;
-  free(rp.keys);
-  return keys;
-}
-
-// Return 1 if the nonce is invalid else return 0
+// Check the three captured parity relations for a nonce hypothesis.
 static uint8_t valid_nonce(uint32_t Nt, uint32_t NtEnc, uint32_t Ks1, uint8_t *parity)
 {
   return (
@@ -372,14 +361,20 @@ static uint8_t valid_nonce(uint32_t Nt, uint32_t NtEnc, uint32_t Ks1, uint8_t *p
 
 FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *outputKeyCount)
 {
-  NtpKs1 *pNK = NULL;
-  uint32_t i, j = 0, m;
+  *outputKeyCount = 0;
+  // Repeated ciphertext provides no independent constraint on the key.
+  if (data->nt0_enc == data->nt1_enc) return NULL;
+
+  NtpKs1 pNK[2][29];
+  uint32_t counts[2] = {0};
+  uint32_t i, m;
   uint32_t nt1, nt2, nttest, ks1;
   uint8_t par_int;
   uint8_t par_arr[3] = {0x00};
 
   uint32_t authuid = data->uid;
-  uint32_t dist = data->dist;
+  // Weak nonces repeat every 65535 clocks; wrap the window at either end.
+  uint32_t start = (data->dist % 65535 + 65535 - 14) % 65535;
 
   // process all args.
   for (i = 0; i < 2; i++)
@@ -402,27 +397,57 @@ FFI_PLUGIN_EXPORT uint64_t *nested(Nested *data, uint32_t *outputKeyCount)
       par_arr[m] = (par_int >> m) & 0x01;
     }
     // Try to recover the keystream1
-    nttest = prng_successor(nt1, dist - 14);
-    for (m = dist - 14; m <= dist + 14; m += 1)
+    nttest = prng_successor(nt1, start);
+    for (m = 0; m < 29; m++)
     {
       ks1 = nt2 ^ nttest;
       if (valid_nonce(nttest, nt2, ks1, par_arr))
       {
-        ++j;
-        // append to list
-        void *tmp = realloc(pNK, sizeof(NtpKs1) * j);
-        pNK = tmp;
-        pNK[j - 1].ntp = nttest;
-        pNK[j - 1].ks1 = ks1;
+        pNK[i][counts[i]++] = (NtpKs1){.ntp = nttest, .ks1 = ks1};
       }
       nttest = prng_successor(nttest, 1);
     }
   }
 
-  uint32_t keyCount = 0;
-  uint64_t *keys = nested_run(pNK, j, authuid, &keyCount, outputKeyCount);
-  free(pNK);
+  if (!counts[0] || !counts[1]) return NULL;
+
+  RecPar captures[2] = {
+      {.pNK = pNK[0], .authuid = authuid, .endPos = counts[0]},
+      {.pNK = pNK[1], .authuid = authuid, .endPos = counts[1]},
+  };
+  for (i = 0; i < 2; ++i)
+  {
+    nested_recover(&captures[i]);
+    if (!captures[i].keyCount || recovery_is_cancelled()) goto failed;
+    sort_keys(captures[i].keys, captures[i].keyCount);
+  }
+
+  // A key must explain BOTH captures. Frequency ranking can return hundreds
+  // of thousands of singletons, or duplicates from just one capture, when
+  // the measured nonce distance does not match the card's actual timing.
+  uint32_t a = 0, b = 0, count = 0;
+  uint64_t *keys = captures[0].keys;
+  while (a < captures[0].keyCount && b < captures[1].keyCount)
+  {
+    uint64_t left = keys[a], right = captures[1].keys[b];
+    if (left < right) ++a;
+    else if (left > right) ++b;
+    else
+    {
+      if (!count || keys[count - 1] != left) keys[count++] = left;
+      ++a;
+      ++b;
+    }
+  }
+  free(captures[1].keys);
+  if (!count) { free(keys); return NULL; }
+  *outputKeyCount = count;
   return keys;
+
+failed:
+  free(captures[0].keys);
+  free(captures[1].keys);
+  return NULL;
 }
 
 // Gen-1 advances 160 clocks per authentication. Gen-2 variants can advance
