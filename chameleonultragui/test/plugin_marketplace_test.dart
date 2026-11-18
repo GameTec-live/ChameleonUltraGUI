@@ -127,7 +127,9 @@ void main() {
         file.copySync('${work.path}/${file.uri.pathSegments.last}');
       }
     }
-    _git(work, ['init', '-q', '-b', 'main']);
+    // Old Git (CI's Ubuntu 20.04 container) lacks `git init -b`.
+    _git(work, ['init', '-q']);
+    _git(work, ['symbolic-ref', 'HEAD', 'refs/heads/main']);
   });
 
   tearDown(() => root.deleteSync(recursive: true));
