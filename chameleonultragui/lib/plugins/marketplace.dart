@@ -128,7 +128,9 @@ abstract final class Marketplace {
                   ));
               plugin = await Plugin.decode(utf8.decode(bytes));
               final size = plugin.resources.entries.fold(
-                plugin.code.length,
+                plugin.name.length +
+                    plugin.description.length +
+                    plugin.code.length,
                 (total, resource) =>
                     total + resource.key.length + resource.value.length,
               );

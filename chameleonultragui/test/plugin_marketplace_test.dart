@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chameleonultragui/plugins/git.dart';
 import 'package:chameleonultragui/plugins/marketplace.dart';
@@ -191,6 +193,57 @@ void main() {
       expect(utf8.decode(files['a.txt']!), text);
       expect(files, contains('marketplace.json'));
     }
+  });
+
+  test('resolves deltas that arrive before their bases', () {
+    List<int> header(String type, List<int> data) =>
+        ascii.encode('$type ${data.length}\x00') + data;
+    String id(String type, List<int> data) =>
+        sha1.convert(header(type, data)).toString();
+    List<int> object(int type, int size, List<int> prefix, List<int> data) => [
+      (type << 4) | (size & 15) | (size > 15 ? 0x80 : 0),
+      if (size > 15) size >> 4,
+      ...prefix,
+      ...zlib.encode(data),
+    ];
+    // Delta copying the whole base, then inserting [suffix].
+    List<int> delta(List<int> base, String suffix) => [
+      base.length,
+      base.length + suffix.length,
+      0x90, base.length, // copy offset 0, one size byte
+      suffix.length,
+      ...ascii.encode(suffix),
+    ];
+
+    final a = ascii.encode('base text');
+    final b = ascii.encode('base text!');
+    final c = ascii.encode('base text!?');
+    final tree = [
+      for (final (name, data) in [('a', a), ('b', b), ('c', c)]) ...[
+        ...ascii.encode('100644 $name\x00'),
+        ...hex.decode(id('blob', data)),
+      ],
+    ];
+    final commit = ascii.encode('tree ${id('tree', tree)}\n\nmessage\n');
+    // B is a REF_DELTA on A, C an OFS_DELTA on B; both precede A.
+    final bDelta = delta(a, '!');
+    final objectB = object(7, bDelta.length, hex.decode(id('blob', a)), bDelta);
+    final cDelta = delta(b, '?');
+    final objectC = object(6, cDelta.length, [objectB.length], cDelta);
+    final pack = Uint8List.fromList([
+      ...ascii.encode('PACK'), 0, 0, 0, 2, 0, 0, 0, 5, //
+      ...object(1, commit.length, [], commit),
+      ...object(2, tree.length, [], tree),
+      ...objectB,
+      ...objectC,
+      ...object(3, a.length, [], a),
+    ]);
+    final files = checkout(pack, id('commit', commit));
+    expect(files.map((path, data) => MapEntry(path, ascii.decode(data))), {
+      'a': 'base text',
+      'b': 'base text!',
+      'c': 'base text!?',
+    });
   });
 
   test('rejects packs that expand beyond the size budget', () {

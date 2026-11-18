@@ -304,6 +304,11 @@ Map<String, (int, Uint8List)> _unpack(Uint8List pack) {
   final objects = <String, (int, Uint8List)>{};
   final resolved = <int, (int, Uint8List)>{};
   final offsets = <String, int>{};
+  // Deltas whose base is not resolved yet, keyed by the base's id (REF_DELTA)
+  // or offset. They are queued once the base resolves, so any pack order
+  // resolves in linear time.
+  final waiting = <Object, List<int>>{};
+  final work = entries.keys.toList();
   // Returns null while a REF_DELTA base has not been resolved yet.
   (int, Uint8List)? resolve(int offset) {
     if (resolved[offset] case final done?) return done;
@@ -318,10 +323,12 @@ Map<String, (int, Uint8List)> _unpack(Uint8List pack) {
     if (entry.base == null) {
       result = (entry.type, entry.data);
     } else if (baseOffset == null) {
+      (waiting[entry.base!] ??= []).add(offset);
       return null;
     } else if (resolve(baseOffset) case (final type, final data)) {
       result = (type, _applyDelta(data, entry.data, reserve));
     } else {
+      (waiting[baseOffset] ??= []).add(offset);
       return null;
     }
     final (type, data) = result;
@@ -337,16 +344,18 @@ Map<String, (int, Uint8List)> _unpack(Uint8List pack) {
     );
     offsets[id] = offset;
     objects[id] = result;
+    for (final key in [id, offset]) {
+      if (waiting.remove(key) case final waiters?) work.addAll(waiters);
+    }
     return resolved[offset] = result;
   }
 
-  var pending = entries.keys.toList();
-  while (pending.isNotEmpty) {
-    final next = pending.where((offset) => resolve(offset) == null).toList();
-    if (next.length == pending.length) {
-      throw GitException('Pack references missing objects');
-    }
-    pending = next;
+  // Pack order; resolving a base appends its waiters.
+  for (var i = 0; i < work.length; i++) {
+    resolve(work[i]);
+  }
+  if (resolved.length != entries.length) {
+    throw GitException('Pack references missing objects');
   }
   return objects;
 }
