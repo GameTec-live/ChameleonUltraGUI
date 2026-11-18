@@ -23,6 +23,7 @@ const syncedSettings = {
   'auto_connect_first_found',
   'sidebar_auto_expanded',
   'sidebar_expanded_index',
+  'plugin_repositories',
 };
 
 /// Collections stored as SharedPreferences string lists of JSON objects with

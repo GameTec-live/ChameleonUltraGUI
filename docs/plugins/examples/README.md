@@ -12,6 +12,10 @@ resources before running them.
 | [Create dictionary](create-dictionary.plugin.json) | Text resources, dictionary decoding and saving | Creates a new two-key dictionary on every run |
 | [Offline nested recovery](offline-nested.plugin.json) | Standalone native recovery | Calculates keys from a fixed test capture |
 
+This folder is also a complete marketplace repository: [marketplace.json](marketplace.json)
+lists these files, so pushing the folder to a Git repository makes them
+installable from the marketplace.
+
 The recovery example requires the native recovery library included in normal
 app builds. Changes to language and theme persist and can also be reversed in
 Settings. The dictionary can be deleted from Saved Cards.

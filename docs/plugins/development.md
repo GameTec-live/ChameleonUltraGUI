@@ -96,3 +96,14 @@ are stored as base64; read them with
 `chameleon.codec.base64DecodeBytes(chameleon.resources.get("assets/image.png"))`.
 For binary data that happens to be valid UTF-8, store a base64 text file yourself
 and decode it the same way. No decoding happens automatically in the GUI.
+
+## Publish to a marketplace
+
+Any Git repository reachable over HTTPS can serve plugins. Set a fixed `id` in
+`plugin.config.json` so rebuilds keep the same identity, build the plugin and
+commit its `.plugin.json` output to the repository. List it in a root
+`marketplace.json` (format in the [API reference](../plugins.md#marketplace)) and
+bump its `version` with each release so installed copies show an update. The
+plugin's source can live in the same repository. Users add your repository
+URL in the marketplace settings; pushing to the default branch publishes.
+
