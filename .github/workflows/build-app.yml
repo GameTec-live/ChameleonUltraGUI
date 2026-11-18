@@ -191,9 +191,17 @@ jobs:
           channel: "stable"
       - name: Install tools
         run: brew install automake libtool create-dmg
-      - run:
-          flutter build ios --release 2>&1 | tee /dev/tty | grep -q "Xcode build
-          done" && exit 0 || exit 1
+      - run: flutter build ios --release --no-codesign --build-number ${{ github.run_number }}
+      # Unsigned IPA for sideloading; AltStore, Sideloadly, etc. sign it on install.
+      - name: Package IPA
+        run: |
+          mkdir -p build/ios/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+          cd build/ios/ipa && zip -qry chameleonultragui-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios
+          path: chameleonultragui/build/ios/ipa/chameleonultragui-unsigned.ipa
 
   create_dev_release:
     permissions:
@@ -206,13 +214,14 @@ jobs:
       - build-windows
       - build-linux
       - build-linux-legacy
+      - build-ios
     steps:
       - name: Check out the repo
         uses: actions/checkout@v7
       - name: Download release artifacts
         uses: actions/download-artifact@v8
         with:
-          pattern: "{apk,windows,windows-installer,linux,linux-debian,linux-legacy,linux-arm64,linux-debian-arm64,linux-legacy-arm64}"
+          pattern: "{apk,windows,windows-installer,linux,linux-debian,linux-legacy,linux-arm64,linux-debian-arm64,linux-legacy-arm64,ios}"
           path: release-artifacts
       - name: Create zip files from artifacts
         run: |
@@ -250,13 +259,14 @@ jobs:
       - build-windows
       - build-linux
       - build-linux-legacy
+      - build-ios
     steps:
       - name: Check out the repo
         uses: actions/checkout@v7
       - name: Download release artifacts
         uses: actions/download-artifact@v8
         with:
-          pattern: "{apk,windows,windows-installer,linux,linux-debian,linux-legacy,linux-arm64,linux-debian-arm64,linux-legacy-arm64}"
+          pattern: "{apk,windows,windows-installer,linux,linux-debian,linux-legacy,linux-arm64,linux-debian-arm64,linux-legacy-arm64,ios}"
           path: release-artifacts
       - name: Create zip files from artifacts
         run: |
