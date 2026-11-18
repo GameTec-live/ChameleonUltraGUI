@@ -24,22 +24,56 @@ String _git(Directory directory, List<String> arguments) {
   return (result.stdout as String).trim();
 }
 
-/// Runs git in [directory] with [input] on stdin and returns trimmed stdout.
-Future<String> _gitInput(
-  Directory directory,
-  List<String> arguments,
-  String input,
-) async {
-  final process = await Process.start(
-    'git',
-    arguments,
-    workingDirectory: directory.path,
-  );
-  process.stdin.write(input);
-  await process.stdin.close();
-  final output = await process.stdout.transform(utf8.decoder).join();
-  if (await process.exitCode != 0) throw StateError('git $arguments failed');
-  return output.trim();
+/// Object id, as git hashes it.
+String _id(String type, List<int> data) =>
+    sha1.convert(ascii.encode('$type ${data.length}\x00') + data).toString();
+
+/// One hand-built pack object of numeric [type]. [prefix] is a delta's base
+/// reference. Used for packs that git itself would never send.
+List<int> _object(int type, List<int> data, [List<int> prefix = const []]) {
+  var size = data.length >> 4;
+  final header = [(type << 4) | (data.length & 15)];
+  while (size > 0) {
+    header.last |= 0x80;
+    header.add(size & 0x7f);
+    size >>= 7;
+  }
+  return [...header, ...prefix, ...zlib.encode(data)];
+}
+
+Uint8List _packOf(List<List<int>> objects) => Uint8List.fromList([
+  ...ascii.encode('PACK'),
+  ...[0, 0, 0, 2],
+  ...(ByteData(4)..setUint32(0, objects.length)).buffer.asUint8List(),
+  for (final object in objects) ...object,
+]);
+
+/// Tree object from (mode, name, id) entries.
+List<int> _tree(List<(String, String, String)> entries) => [
+  for (final (mode, name, id) in entries) ...[
+    ...utf8.encode('$mode $name\x00'),
+    ...hex.decode(id),
+  ],
+];
+
+/// Packs a commit whose tree nests [levels] trees above a single blob. Each
+/// level's entries are built from the child's mode and id. Returns the pack
+/// and the commit id.
+(Uint8List, String) _nested(
+  int levels,
+  List<(String, String, String)> Function(String mode, String id) entries,
+) {
+  final blob = ascii.encode('x');
+  final objects = [_object(3, blob)];
+  var (mode, id) = ('100644', _id('blob', blob));
+  for (var level = 0; level < levels; level++) {
+    final tree = _tree(entries(mode, id));
+    objects.add(_object(2, tree));
+    (mode, id) = ('40000', _id('tree', tree));
+  }
+  final commit = ascii.encode('tree $id\n\nnested\n');
+  objects.add(_object(1, commit));
+  return (_packOf(objects), _id('commit', commit));
 }
 
 /// Packs everything reachable from [revision], as a server would send it.
@@ -198,16 +232,6 @@ void main() {
   });
 
   test('resolves deltas that arrive before their bases', () {
-    List<int> header(String type, List<int> data) =>
-        ascii.encode('$type ${data.length}\x00') + data;
-    String id(String type, List<int> data) =>
-        sha1.convert(header(type, data)).toString();
-    List<int> object(int type, int size, List<int> prefix, List<int> data) => [
-      (type << 4) | (size & 15) | (size > 15 ? 0x80 : 0),
-      if (size > 15) size >> 4,
-      ...prefix,
-      ...zlib.encode(data),
-    ];
     // Delta copying the whole base, then inserting [suffix].
     List<int> delta(List<int> base, String suffix) => [
       base.length,
@@ -220,27 +244,22 @@ void main() {
     final a = ascii.encode('base text');
     final b = ascii.encode('base text!');
     final c = ascii.encode('base text!?');
-    final tree = [
-      for (final (name, data) in [('a', a), ('b', b), ('c', c)]) ...[
-        ...ascii.encode('100644 $name\x00'),
-        ...hex.decode(id('blob', data)),
-      ],
-    ];
-    final commit = ascii.encode('tree ${id('tree', tree)}\n\nmessage\n');
-    // B is a REF_DELTA on A, C an OFS_DELTA on B; both precede A.
-    final bDelta = delta(a, '!');
-    final objectB = object(7, bDelta.length, hex.decode(id('blob', a)), bDelta);
-    final cDelta = delta(b, '?');
-    final objectC = object(6, cDelta.length, [objectB.length], cDelta);
-    final pack = Uint8List.fromList([
-      ...ascii.encode('PACK'), 0, 0, 0, 2, 0, 0, 0, 5, //
-      ...object(1, commit.length, [], commit),
-      ...object(2, tree.length, [], tree),
-      ...objectB,
-      ...objectC,
-      ...object(3, a.length, [], a),
+    final tree = _tree([
+      for (final (name, data) in [('a', a), ('b', b), ('c', c)])
+        ('100644', name, _id('blob', data)),
     ]);
-    final files = checkout(pack, id('commit', commit));
+    final commit = ascii.encode('tree ${_id('tree', tree)}\n\nmessage\n');
+    // B is a REF_DELTA on A, C an OFS_DELTA on B; both precede A.
+    final objectB = _object(7, delta(a, '!'), hex.decode(_id('blob', a)));
+    final objectC = _object(6, delta(b, '?'), [objectB.length]);
+    final pack = _packOf([
+      _object(1, commit),
+      _object(2, tree),
+      objectB,
+      objectC,
+      _object(3, a),
+    ]);
+    final files = checkout(pack, _id('commit', commit));
     expect(files.map((path, data) => MapEntry(path, ascii.decode(data))), {
       'a': 'base text',
       'b': 'base text!',
@@ -257,33 +276,18 @@ void main() {
     expect(() => checkout(pack, '0' * 40), throwsA(isA<GitException>()));
   });
 
-  test('rejects trees that reuse subtrees to explode the checkout', () async {
+  test('rejects trees that reuse subtrees to explode the checkout', () {
     // Each level references the level below twice: 2^20 paths from 21 trees.
-    File('${work.path}/leaf').writeAsStringSync('x');
-    var entry = '100644 blob ${_git(work, ['hash-object', '-w', 'leaf'])}';
-    var tree = '';
-    for (var level = 0; level < 20; level++) {
-      tree = await _gitInput(work, ['mktree'], '$entry\ta\n$entry\tb\n');
-      entry = '040000 tree $tree';
-    }
-    final commit = _git(work, ['commit-tree', tree, '-m', 'bomb']);
-    final pack = await _pack(work, commit);
+    final (pack, commit) = _nested(
+      20,
+      (mode, id) => [(mode, 'a', id), (mode, 'b', id)],
+    );
     expect(() => checkout(pack, commit), throwsA(isA<GitException>()));
   });
 
-  test('rejects paths beyond the length bound', () async {
-    File('${work.path}/leaf').writeAsStringSync('x');
-    var tree = await _gitInput(work, [
-      'mktree',
-    ], '100644 blob ${_git(work, ['hash-object', '-w', 'leaf'])}\tleaf\n');
+  test('rejects paths beyond the length bound', () {
     // 20 levels of 60-character directory names: a path over 1024 chars.
-    for (var level = 0; level < 20; level++) {
-      tree = await _gitInput(work, [
-        'mktree',
-      ], '040000 tree $tree\t${'d' * 60}\n');
-    }
-    final commit = _git(work, ['commit-tree', tree, '-m', 'deep']);
-    final pack = await _pack(work, commit);
+    final (pack, commit) = _nested(20, (mode, id) => [(mode, 'd' * 60, id)]);
     expect(() => checkout(pack, commit), throwsA(isA<GitException>()));
   });
 
