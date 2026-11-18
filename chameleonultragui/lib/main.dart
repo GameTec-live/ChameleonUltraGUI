@@ -392,6 +392,454 @@ class _MainPageState extends State<MainPage> {
                                 icon: const Icon(Icons.extension),
                                 label: Text(AppLocalizations.of(context)!.plugins),
                               ),
+import 'dart:io';
+import 'package:chameleonultragui/bridge/chameleon.dart';
+import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/connector/serial_android.dart';
+import 'package:chameleonultragui/connector/serial_ble.dart';
+import 'package:chameleonultragui/connector/serial_emulator.dart';
+import 'package:chameleonultragui/connector/serial_macos.dart';
+import 'package:chameleonultragui/gui/page/tools.dart';
+import 'package:chameleonultragui/gui/page/plugins.dart';
+import 'package:chameleonultragui/helpers/font.dart';
+import 'package:chameleonultragui/helpers/general.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:app_links/app_links.dart';
+import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+
+import 'connector/serial_native.dart';
+
+// Page imports
+import 'package:chameleonultragui/gui/page/home.dart';
+import 'package:chameleonultragui/gui/page/saved_cards.dart';
+import 'package:chameleonultragui/gui/page/settings.dart';
+import 'package:chameleonultragui/gui/page/connect.dart';
+import 'package:chameleonultragui/gui/page/debug.dart';
+import 'package:chameleonultragui/gui/page/slot_manager.dart';
+import 'package:chameleonultragui/gui/page/flashing.dart';
+import 'package:chameleonultragui/gui/page/read_card.dart';
+import 'package:chameleonultragui/gui/page/write_card.dart';
+import 'package:chameleonultragui/gui/page/pending_connection.dart';
+
+// Localizations
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
+
+// Shared Preferences Provider
+import 'package:chameleonultragui/sharedprefsprovider.dart';
+
+// Logger
+import 'package:logger/logger.dart';
+
+import 'package:chameleonultragui/plugins/store.dart';
+import 'package:chameleonultragui/sync/sync_service.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final sharedPreferencesProvider = SharedPreferencesProvider();
+  await sharedPreferencesProvider.load();
+  final sync = SyncService(sharedPreferencesProvider.preferences);
+  sharedPreferencesProvider.onLocalChange = sync.localChanged;
+  sync.start();
+  runApp(ChameleonGUI(sharedPreferencesProvider, sync));
+}
+
+class ChameleonGUI extends StatelessWidget {
+  // Root Widget
+  final SharedPreferencesProvider _sharedPreferencesProvider;
+  final SyncService _sync;
+  const ChameleonGUI(this._sharedPreferencesProvider, this._sync, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _sharedPreferencesProvider),
+        ChangeNotifierProvider.value(value: _sync),
+        ChangeNotifierProvider(
+          create: (context) => ChameleonGUIState(_sharedPreferencesProvider)
+            // Remote data changed settings, cards, ...: rebuild everything.
+            ..watchSync(_sync),
+        ),
+      ],
+      child: MainPage(sharedPreferencesProvider: _sharedPreferencesProvider),
+    );
+  }
+}
+
+class ChameleonGUIState extends ChangeNotifier {
+  final SharedPreferencesProvider sharedPreferencesProvider;
+  ChameleonGUIState(this.sharedPreferencesProvider);
+
+  SharedPreferencesProvider? _sharedPreferencesProvider;
+  Logger? log; // Logger
+
+  // Android uses AndroidSerial, iOS can only use BLESerial
+  // The rest (desktops?) can use NativeSerial
+  AbstractSerial? connector;
+  ChameleonCommunicator? communicator;
+
+  bool devMode = false;
+  double? progress; // DFU
+
+  // Flashing easter egg
+  bool easterEgg = false;
+  dynamic _suppressedAutoReconnectPort;
+
+  GlobalKey navigationRailKey = GlobalKey();
+  Size? navigationRailSize;
+
+  void changesMade() {
+    notifyListeners();
+  }
+
+  void watchSync(SyncService sync) {
+    sync.onRemoteChange = (collections) {
+      if (collections.contains('plugins')) PluginStore.remoteChanges.value++;
+      changesMade();
+    };
+  }
+
+  void onConnectorStateChanged() {
+    if (connector == null || !connector!.connected) {
+      communicator = null;
+      progress = null;
+    }
+    notifyListeners();
+  }
+
+  bool isAutoReconnectSuppressed(dynamic devicePort) {
+    return _suppressedAutoReconnectPort == devicePort;
+  }
+
+  void clearAutoReconnectSuppression([dynamic devicePort]) {
+    if (devicePort == null || _suppressedAutoReconnectPort == devicePort) {
+      _suppressedAutoReconnectPort = null;
+    }
+  }
+
+  void syncAutoReconnectSuppression(Iterable<dynamic> visiblePorts) {
+    if (_suppressedAutoReconnectPort == null) {
+      return;
+    }
+
+    for (final port in visiblePorts) {
+      if (port == _suppressedAutoReconnectPort) {
+        return;
+      }
+    }
+
+    _suppressedAutoReconnectPort = null;
+  }
+
+  Future<void> disconnect({bool manual = false}) async {
+    final suppressedPort = manual ? connector?.activeDevicePort : null;
+    await connector?.performDisconnect();
+    if (manual && suppressedPort != null) {
+      _suppressedAutoReconnectPort = suppressedPort;
+    }
+    communicator = null;
+    progress = null;
+    notifyListeners();
+  }
+
+  void setProgressBar(dynamic value) {
+    progress = value;
+    notifyListeners();
+  }
+}
+
+class MainPage extends StatefulWidget {
+  const MainPage({super.key, required this.sharedPreferencesProvider});
+
+  final SharedPreferencesProvider sharedPreferencesProvider;
+
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  var selectedIndex = 0;
+
+  final AppLinks _appLinks = AppLinks();
+  StreamSubscription<Uri>? _linkSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => updateNavigationRailWidth(context));
+    _initDeepLinks();
+  }
+
+  Future<void> _initDeepLinks() async {
+    // Handle the URL that launched the app (cold start).
+    try {
+      final initialLink = await _appLinks.getInitialLink();
+      if (initialLink != null) {
+        _handleDeepLink(initialLink);
+      }
+    } catch (_) {}
+    // Handle URLs while the app is running or in the background.
+    _linkSubscription = _appLinks.uriLinkStream.listen(
+      _handleDeepLink,
+      onError: (_) {},
+    );
+  }
+
+  void _handleDeepLink(Uri uri) {
+    if (uri.scheme != 'chameleonultra') {
+      return;
+    }
+    // chameleonultra://<action>[?param=value]
+    final target = switch (uri.host.toLowerCase()) {
+      'home' || 'connect' => 0,
+      'slots' || 'slot-manager' => 1,
+      'cards' || 'saved-cards' => 2,
+      'read' => 3,
+      'write' => 4,
+      'tools' => 5,
+      'plugins' => 6,
+      'settings' => 7,
+      _ => -1,
+    };
+    if (target < 0) {
+      return;
+    }
+    // Pages 1, 3 and 4 need a connected device; build() already falls back
+    // to the connect page when the device is offline.
+    if (mounted && selectedIndex != target) {
+      setState(() {
+        selectedIndex = target;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void reassemble() async {
+    // Disconnect on reload
+    var appState = Provider.of<ChameleonGUIState>(context, listen: false);
+    await appState.disconnect();
+
+    super.reassemble();
+  }
+
+  AbstractSerial getConnector(ChameleonGUIState appState) {
+    if (appState._sharedPreferencesProvider!.isEmulatedChameleon()) {
+      return EmulatorSerial(log: appState.log!);
+    }
+
+    if (Platform.isMacOS) {
+      return MacOSSerial(log: appState.log!);
+    }
+
+    if (Platform.isAndroid) {
+      return AndroidSerial(log: appState.log!);
+    }
+
+    if (Platform.isIOS) {
+      return BLESerial(log: appState.log!);
+    }
+
+    return NativeSerial(log: appState.log!);
+  }
+
+  Logger getLogger(ChameleonGUIState appState) {
+    if (appState._sharedPreferencesProvider!.isDebugLogging() &&
+        appState._sharedPreferencesProvider!.isDebugMode()) {
+      return Logger(
+        output: SharedPreferencesLogger(appState._sharedPreferencesProvider!),
+        printer: PrettyPrinter(
+          noBoxingByDefault: true,
+        ),
+        filter: ChameleonLogFilter(),
+      );
+    } else {
+      return Logger();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<ChameleonGUIState>();
+    appState._sharedPreferencesProvider = widget.sharedPreferencesProvider;
+    appState.log ??= getLogger(appState);
+    appState.connector ??= getConnector(appState);
+    appState.connector!.connectionStateCallback =
+        appState.onConnectorStateChanged;
+
+    if (appState.sharedPreferencesProvider.getSideBarAutoExpansion()) {
+      double width = MediaQuery.of(context).size.width;
+      if (width >= 600) {
+        appState.sharedPreferencesProvider.setSideBarExpanded(true);
+      } else {
+        appState.sharedPreferencesProvider.setSideBarExpanded(false);
+      }
+    }
+
+    appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
+
+    Widget page; // Set Page
+    if (!appState.connector!.connected &&
+        selectedIndex != 0 &&
+        selectedIndex != 2 &&
+        selectedIndex != 5 &&
+        selectedIndex != 6 &&
+        selectedIndex != 7 &&
+        selectedIndex != 8) {
+      // Offline pages remain available without a device.
+      selectedIndex = 0;
+    }
+
+    switch (selectedIndex) {
+      // Sidebar Navigation
+      case 0:
+        if (appState.connector!.pendingConnection) {
+          page = const PendingConnectionPage();
+        } else {
+          if (appState.connector!.connected) {
+            if (appState.connector!.isDFU) {
+              page = const FlashingPage();
+            } else {
+              page = const HomePage();
+            }
+          } else {
+            page = const ConnectPage();
+          }
+        }
+        break;
+      case 1:
+        page = const SlotManagerPage();
+        break;
+      case 2:
+        page = const SavedCardsPage();
+        break;
+      case 3:
+        page = const ReadCardPage();
+        break;
+      case 4:
+        page = const WriteCardPage();
+        break;
+      case 5:
+        page = const ToolsPage();
+        break;
+      case 6:
+        page = const PluginsPage();
+        break;
+      case 7:
+        page = const SettingsMainPage();
+        break;
+      case 8:
+        page = const DebugPage();
+        break;
+      default:
+        throw UnimplementedError('no widget for $selectedIndex');
+    }
+
+    try {
+      WakelockPlus.toggle(enable: page is FlashingPage);
+    } catch (_) {}
+
+    return MaterialApp(
+      title: 'Chameleon Ultra GUI', // App Name
+      locale: widget.sharedPreferencesProvider.getLocale(),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: widget.sharedPreferencesProvider.getThemeColor()),
+        brightness: Brightness.light,
+        appBarTheme: AppBarTheme(
+            systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: ColorScheme.fromSeed(
+                        seedColor:
+                            widget.sharedPreferencesProvider.getThemeColor(),
+                        brightness: Brightness.light)
+                    .surface,
+                statusBarBrightness: Brightness.light,
+                statusBarIconBrightness: Brightness.dark)),
+      ).useCustomSystemFont(Brightness.light),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: widget.sharedPreferencesProvider.getThemeColor(),
+            brightness: Brightness.dark),
+        brightness: Brightness.dark,
+        appBarTheme: AppBarTheme(
+            systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: ColorScheme.fromSeed(
+                        seedColor:
+                            widget.sharedPreferencesProvider.getThemeColor(),
+                        brightness: Brightness.dark)
+                    .surface,
+                statusBarBrightness: Brightness.dark,
+                statusBarIconBrightness: Brightness.light)),
+      ).useCustomSystemFont(Brightness.dark),
+      themeMode: widget.sharedPreferencesProvider.getTheme(), // Dark Theme
+      home: LayoutBuilder(// Build Page
+          builder: (context, constraints) {
+        return SafeArea(
+          left: false,
+          right: false,
+          top: false,
+          bottom: true,
+          child: Scaffold(
+              body: Row(
+                children: [
+                  (!appState.connector!.isDFU || !appState.connector!.connected)
+                      ? SafeArea(
+                          child: NavigationRail(
+                            key: appState.navigationRailKey,
+                            // Sidebar
+                            extended: appState.sharedPreferencesProvider
+                                .getSideBarExpanded(),
+                            destinations: [
+                              // Sidebar Items
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.home),
+                                label: Text(
+                                    AppLocalizations.of(context)!.home), // Home
+                              ),
+                              NavigationRailDestination(
+                                disabled: !appState.connector!.connected,
+                                icon: const Icon(Icons.widgets),
+                                label: Text(
+                                    AppLocalizations.of(context)!.slot_manager),
+                              ),
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.auto_awesome_motion),
+                                label: Text(
+                                    AppLocalizations.of(context)!.saved_cards),
+                              ),
+                              NavigationRailDestination(
+                                disabled: !appState.connector!.connected,
+                                icon: const Icon(Icons.sensors),
+                                label: Text(
+                                    AppLocalizations.of(context)!.read_card),
+                              ),
+                              NavigationRailDestination(
+                                disabled: !appState.connector!.connected,
+                                icon: const Icon(Icons.system_update_alt),
+                                label: Text(
+                                    AppLocalizations.of(context)!.write_card),
+                              ),
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.handyman),
+                                label:
+                                    Text(AppLocalizations.of(context)!.tools),
+                              ),
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.extension),
+                                label: Text(AppLocalizations.of(context)!.plugins),
+                              ),
                               NavigationRailDestination(
                                 icon: const Icon(Icons.settings),
                                 label: Text(
