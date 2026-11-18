@@ -169,6 +169,9 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   var selectedIndex = 0;
 
+  // Both URL schemes share the same host-to-page mapping.
+  static const _deepLinkSchemes = {'chameleonultra', 'cugui'};
+
   final AppLinks _appLinks = AppLinks();
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription<Uri>? _linkSubscription;
@@ -198,10 +201,10 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _handleDeepLink(Uri uri) {
-    if (!mounted || uri.scheme != 'chameleonultra') {
+    if (!mounted || !_deepLinkSchemes.contains(uri.scheme)) {
       return;
     }
-    // chameleonultra://<action>[?param=value]
+    // chameleonultra://<action>[?param=value] or cugui://<action>[?param=value]
     final target = switch (uri.host.toLowerCase()) {
       'home' || 'connect' => 0,
       'slots' || 'slot-manager' => 1,
