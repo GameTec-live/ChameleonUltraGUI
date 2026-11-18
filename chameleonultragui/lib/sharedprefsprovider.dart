@@ -1,3 +1,8 @@
+import 'package:chameleonultragui/helpers/classic_coverage.dart';
+import 'package:chameleonultragui/helpers/sl1_profile_json.dart';
+import 'package:chameleonultragui/helpers/sl1_native_projection.dart';
+import 'package:chameleonultragui/helpers/sl1_profile.dart';
+
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:chameleonultragui/helpers/colors.dart' as colors;
@@ -204,9 +209,11 @@ class CardSave {
   CardSaveExtra extraData;
   Color color;
   String? folderId;
+  Sl1Profile? sl1Profile;
+  ClassicCoverage? nativeClassicCoverage;
 
   factory CardSave.fromJson(String json) {
-    Map<String, dynamic> data = jsonDecode(json);
+    Map<String, dynamic> data = decodeProfileContainerJson(json);
     final id = data['id'] as String;
     final uid = data['uid'] as String;
     final sak = data['sak'] as int;
@@ -222,8 +229,14 @@ class CardSave {
         .map((e) => Uint8List.fromList(List<int>.from(e)))
         .toList();
 
-    return CardSave(
+    final card = CardSave(
         id: id,
+      nativeClassicCoverage: data['nativeClassicCoverage'] == null
+          ? null
+          : ClassicCoverage.fromNativeJson(data['nativeClassicCoverage']),
+      sl1Profile: data['sl1Profile'] == null
+          ? null
+          : Sl1Profile.fromJson(data['sl1Profile']),
         uid: uid,
         sak: sak,
         name: name,
@@ -234,11 +247,41 @@ class CardSave {
         extraData: extraData,
         ats: Uint8List.fromList(ats),
         atqa: Uint8List.fromList(atqa));
+    card.validateProfileConsistency();
+    return card;
+  }
+
+  void validateProfileConsistency() {
+    if (nativeClassicCoverage != null) {
+      if (sl1Profile != null) {
+        throw const FormatException(
+          'Native EV1 archive cannot also contain a common-v1 profile',
+        );
+      }
+      Sl1NativeProjection.validateNativeCoverage(
+        nativeClassicCoverage!,
+        tag: tag.value,
+        data: data,
+      );
+    }
+    if (sl1Profile == null) return;
+    Sl1NativeProjection.validate(
+      sl1Profile!,
+      uid: uid,
+      sak: sak,
+      atqa: atqa,
+      ats: ats,
+      tag: tag.value,
+      data: data,
+    );
   }
 
   String toJson() {
     return jsonEncode({
       'id': id,
+      if (sl1Profile != null) 'sl1Profile': sl1Profile!.json,
+      if (nativeClassicCoverage != null)
+        'nativeClassicCoverage': nativeClassicCoverage!.toNativeJson(),
       'uid': uid,
       'sak': sak,
       'atqa': atqa.toList(),
@@ -263,6 +306,8 @@ class CardSave {
     CardSaveExtra? extraData,
     this.color = Colors.deepOrange,
     this.folderId,
+    this.sl1Profile,
+    this.nativeClassicCoverage,
     this.data = const [],
   })  : id = id ?? const Uuid().v4(),
         sak = sak ?? 0,
@@ -317,7 +362,7 @@ class CardFolderBundle {
   });
 
   factory CardFolderBundle.fromJson(String source) {
-    final data = jsonDecode(source) as Map<String, dynamic>;
+    final data = decodeProfileContainerJson(source) as Map<String, dynamic>;
     if (data['format'] != 'chameleon-ultra-gui-folder' ||
         data['version'] != 1) {
       throw const FormatException('Unsupported folder file');
@@ -347,6 +392,7 @@ class CardSaveExtra {
   Uint8List ultralightSignature;
   Uint8List ultralightVersion;
   List<int> ultralightCounters;
+  bool sl1CardAuthDetected;
 
   factory CardSaveExtra.import(Map<String, dynamic> data) {
     List<int> readBytes(Map<String, dynamic> data, String key) {
@@ -361,6 +407,7 @@ class CardSaveExtra {
         : <int>[];
 
     return CardSaveExtra(
+        sl1CardAuthDetected: data['sl1CardAuthDetected'] == true,
         ultralightSignature: Uint8List.fromList(ultralightSignature),
         ultralightVersion: Uint8List.fromList(ultralightVersion),
         ultralightCounters: ultralightCounters);
@@ -368,6 +415,7 @@ class CardSaveExtra {
 
   Map<String, dynamic> export() {
     Map<String, dynamic> json = {};
+    if (sl1CardAuthDetected) json['sl1CardAuthDetected'] = true;
 
     if (ultralightSignature.isNotEmpty) {
       json['ultralightSignature'] = ultralightSignature;
@@ -385,7 +433,8 @@ class CardSaveExtra {
   }
 
   CardSaveExtra(
-      {Uint8List? ultralightSignature,
+      {this.sl1CardAuthDetected = false,
+      Uint8List? ultralightSignature,
       Uint8List? ultralightVersion,
       List<int>? ultralightCounters})
       : ultralightSignature = ultralightSignature ?? Uint8List(0),

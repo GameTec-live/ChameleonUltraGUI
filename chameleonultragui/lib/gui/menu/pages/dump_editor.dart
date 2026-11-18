@@ -91,7 +91,9 @@ class DumpEditorState extends State<DumpEditor> {
   void _initClassicEditor() {
     MifareClassicType cardType =
         chameleonTagTypeGetMfClassicType(widget.cardSave.tag);
-    int sectorCount = mfClassicGetSectorCount(cardType);
+    int sectorCount = mfClassicGetSectorCount(cardType,
+      isEV1: chameleonTagSaveCheckForMifareClassicEV1(widget.cardSave),
+    );
 
     for (int sector = 0; sector < sectorCount; sector++) {
       int blocksPerSector = mfClassicGetBlockCountBySector(sector);
@@ -100,9 +102,13 @@ class DumpEditorState extends State<DumpEditor> {
       String sectorText = '';
       for (int block = 0; block < blocksPerSector; block++) {
         int blockIndex = firstBlock + block;
+        if (block > 0) sectorText += '\n';
         if (blockIndex < dumpData.length && dumpData[blockIndex].isNotEmpty) {
-          if (block > 0) sectorText += '\n';
           sectorText += _formatHexData(dumpData[blockIndex]);
+        } else {
+          // Preserve absolute block positions. Unchanged placeholders retain
+          // their empty projection and canonical per-byte profile coverage.
+          sectorText += List.filled(16, '--').join(' ');
         }
       }
 
@@ -442,7 +448,8 @@ class DumpEditorState extends State<DumpEditor> {
 
       for (String line in lines) {
         String cleanLine = line.replaceAll(' ', '').trim();
-        if (!RegExp(r'^[0-9A-Fa-f-]{32}$').hasMatch(cleanLine)) {
+        if (!RegExp(r'^[0-9A-Fa-f]{32}$').hasMatch(cleanLine) &&
+            cleanLine != '-' * 32) {
           return false;
         }
       }
@@ -497,6 +504,9 @@ class DumpEditorState extends State<DumpEditor> {
 
         for (int block = 0; block < lines.length; block++) {
           int blockIndex = firstBlock + block;
+          while (updatedDump.length <= blockIndex) {
+            updatedDump.add(Uint8List(0));
+          }
           if (blockIndex < updatedDump.length) {
             String hexData =
                 lines[block].replaceAll(' ', '').trim().toUpperCase();

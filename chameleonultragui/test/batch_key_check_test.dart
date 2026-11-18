@@ -22,8 +22,17 @@ class TestSerial extends AbstractSerial {
 
 class TestCommunicator extends ChameleonCommunicator {
   TestCommunicator(this.respond) : super(Logger());
+  CardData identity = CardData(
+    uid: Uint8List.fromList([1, 2, 3, 4]),
+    atqa: Uint8List.fromList([4, 0]),
+    sak: 8,
+    ats: Uint8List(0),
+  );
+
+  @override
+  Future<CardData?> scan14443aTag() async => identity;
   final ChameleonMessage Function(ChameleonCommand, Uint8List?, Duration)
-      respond;
+  respond;
 
   @override
   Future<ChameleonMessage?> sendCmd(
@@ -32,20 +41,18 @@ class TestCommunicator extends ChameleonCommunicator {
     Duration timeout = const Duration(seconds: 5),
     bool skipReceive = false,
     bool firstRun = false,
-  }) async =>
-      respond(cmd, data, timeout);
+  }) async => respond(cmd, data, timeout);
 }
 
 ChameleonMessage reply(
   ChameleonCommand cmd,
   List<int> data, {
   int status = 0,
-}) =>
-    ChameleonMessage(
-      command: cmd.value,
-      status: status,
-      data: Uint8List.fromList(data),
-    );
+}) => ChameleonMessage(
+  command: cmd.value,
+  status: status,
+  data: Uint8List.fromList(data),
+);
 
 Uint8List result(Map<int, List<int>> keys) {
   final data = Uint8List(490);
@@ -101,35 +108,65 @@ void main() {
       update: () {},
       localizations: await AppLocalizations.delegate.load(const Locale('en')),
       mifareClassicType: MifareClassicType.m1k,
-    );
+    )..bindIdentity(communicator.identity);
   }
 
-  test(
-      'cancelling a dictionary stops after the active batch and preserves keys',
-      () async {
-    late MifareClassicRecovery subject;
-    var batches = 0;
-    final communicator = TestCommunicator((cmd, data, timeout) {
+  test('batch results from a replaced card are not retained', () async {
+    late TestCommunicator communicator;
+    communicator = TestCommunicator((cmd, data, timeout) {
       if (cmd == ChameleonCommand.getDeviceCapabilities) {
         return reply(cmd, [7, 220]);
       }
-      batches++;
-      subject.operation.cancel();
+      expect(cmd, ChameleonCommand.mf1CheckKeysOfSectors);
+      communicator.identity = CardData(
+        uid: Uint8List.fromList([5, 6, 7, 8]),
+        atqa: communicator.identity.atqa,
+        sak: 8,
+        ats: Uint8List(0),
+      );
       return reply(cmd, result({3: key}));
     });
-    subject = await recovery(communicator);
-    subject.setKeyAsFound(0, 0, key);
-    subject.selectedDictionary =
-        Dictionary(keys: List.generate(130, (_) => key));
-    await subject.checkKeys(skipDefaultDictionary: true);
-    expect(batches, 1);
-    expect(subject.operation.wasCancelled, isTrue);
-    expect(subject.getSectorKey(0, 0), key);
+    final subject = await recovery(communicator);
+    subject.selectedDictionary = Dictionary(keys: [key]);
+    await expectLater(
+      subject.checkKeys(skipDefaultDictionary: true),
+      throwsStateError,
+    );
+    expect(subject.getSectorKey(1, 1), isEmpty);
     expect(subject.checkMarks, isNot(contains(ChameleonKeyCheckmark.checking)));
-    expect(subject.state, isEmpty);
-    expect(subject.error, isEmpty);
-    expect(subject.keyCheckProgress, isNull);
   });
+
+  test(
+    'cancelling a dictionary stops after the active batch and preserves keys',
+    () async {
+      late MifareClassicRecovery subject;
+      var batches = 0;
+      final communicator = TestCommunicator((cmd, data, timeout) {
+        if (cmd == ChameleonCommand.getDeviceCapabilities) {
+          return reply(cmd, [7, 220]);
+        }
+        batches++;
+        subject.operation.cancel();
+        return reply(cmd, result({3: key}));
+      });
+      subject = await recovery(communicator);
+      subject.setKeyAsFound(0, 0, key);
+      subject.selectedDictionary = Dictionary(
+        keys: List.generate(130, (_) => key),
+      );
+      await subject.checkKeys(skipDefaultDictionary: true);
+      expect(batches, 1);
+      expect(subject.operation.wasCancelled, isTrue);
+      expect(subject.getSectorKey(0, 0), key);
+      expect(
+        subject.checkMarks,
+        isNot(contains(ChameleonKeyCheckmark.checking)),
+      );
+      expect(subject.state, isEmpty);
+      expect(subject.error, isEmpty);
+      expect(subject.keyCheckProgress, isNull);
+    },
+  );
 
   for (final type in [ConnectionType.usb, ConnectionType.ble]) {
     test(

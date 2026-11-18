@@ -1,3 +1,6 @@
+import 'package:chameleonultragui/helpers/sl1_card_save.dart';
+import 'package:chameleonultragui/helpers/sl1_profile.dart';
+
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chameleonultragui/helpers/definitions.dart';
@@ -75,7 +78,7 @@ CardSave flipperNfcToCardSave(String data) {
   List<String> blocks = [];
   for (var block in data.split("\n")) {
     if (block.startsWith("Block")) {
-      blocks.add(block.split(":")[1].trim().replaceAll('?', '0'));
+      blocks.add(block.split(":")[1].trim().replaceAll(' ', '').toUpperCase());
     }
   }
 
@@ -87,11 +90,17 @@ CardSave flipperNfcToCardSave(String data) {
         mfClassicGetCardTypeByBlockCount(blocks.length));
   }
 
-  for (var block in blocks) {
-    tagData.add(hexToBytes(block));
+  if (!isMifareClassic(tag) && blocks.any((block) => block.contains('?'))) {
+    throw const FormatException(
+      'Masked non-Classic blocks cannot be represented losslessly; retain the original source file.',
+    );
   }
 
-  return CardSave(
+  for (var block in blocks) {
+    tagData.add(block.contains('?') ? Uint8List(0) : hexToBytes(block));
+  }
+
+  final card = CardSave(
       id: id,
       uid: uid,
       sak: sak,
@@ -101,6 +110,28 @@ CardSave flipperNfcToCardSave(String data) {
       color: color,
       ats: Uint8List.fromList(ats),
       atqa: Uint8List.fromList(atqa));
+  if (blocks.length == 72 && tag == TagType.mifare1K) {
+    if (blocks.any((block) => block.contains('?'))) {
+      throw const FormatException(
+        'Partial EV1 composite coverage cannot be represented by common profile v1; retain the original source file.',
+      );
+    }
+    return card;
+  }
+  if (isMifareClassic(tag)) {
+    final p = legacySl1(card).json;
+    p['classic']['provenance'] = 'imported';
+    for (var i = 0; i < blocks.length; i++) {
+      p['classic']['blocks'][i] = {
+        'data': blocks[i],
+        'status': 'imported',
+        'key': null,
+        'errors': [],
+      };
+    }
+    card.sl1Profile = Sl1Profile.fromJson(p);
+  }
+  return card;
 }
 
 CardSave mctToCardSave(String data) {
