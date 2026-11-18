@@ -24,6 +24,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>chameleonultra</string>
+				<string>cugui</string>
 			</array>
 		</dict>
 	</array>
