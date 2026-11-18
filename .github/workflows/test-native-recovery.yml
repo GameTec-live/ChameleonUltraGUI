@@ -48,6 +48,8 @@ jobs:
             --reference build/native-reference/librecovery.so --cases 4 --repeats 1 --hardnested --hardnested-generated 2
       - name: Check static nested timing variants
         run: python3 chameleonultragui/test/native/static_nested_check.py build/native-recovery/librecovery.so
+      - name: Check weak nested capture agreement and timing windows
+        run: python3 chameleonultragui/test/native/nested_check.py build/native-recovery/librecovery.so
       - name: Check every partial-sum table bit
         run: |
           cc -O3 -D_GNU_SOURCE chameleonultragui/test/native/hardnested_tables_check.c \
