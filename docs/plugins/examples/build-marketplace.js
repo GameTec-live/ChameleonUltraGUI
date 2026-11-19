@@ -34,8 +34,9 @@ try {
       throw new Error(`${path} is not a plugin file; export plugins from the GUI or build them with build-plugin.js`);
     }
     const override = overrides[id] ?? {};
-    if (!optionalString(override.version) || !optionalString(override.author)) {
-      throw new Error(`marketplace.config.json: plugins.${id} version and author must be strings`);
+    // The GUI rejects listings with an empty version.
+    if (!optionalString(override.version) || override.version === '' || !optionalString(override.author)) {
+      throw new Error(`marketplace.config.json: plugins.${id} version must be a nonempty string, author a string`);
     }
     const version = override.version ?? createHash('sha256').update(JSON.stringify(envelope)).digest('hex').slice(0, 8);
     const listingAuthor = override.author ?? author;
