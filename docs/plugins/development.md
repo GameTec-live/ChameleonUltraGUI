@@ -96,3 +96,34 @@ are stored as base64; read them with
 `chameleon.codec.base64DecodeBytes(chameleon.resources.get("assets/image.png"))`.
 For binary data that happens to be valid UTF-8, store a base64 text file yourself
 and decode it the same way. No decoding happens automatically in the GUI.
+
+## Publish to a marketplace
+
+Any Git repository reachable over HTTPS can serve plugins. Start from
+[examples/](examples/) (including hidden files): put each plugin file at
+`plugins/<id>.plugin.json`, where the file name is the plugin's stable
+marketplace ID, and set the repository name and default author in
+`marketplace.config.json`. Running `node build-marketplace.js` regenerates
+`marketplace.json` (format in the [API reference](../plugins.md#marketplace)).
+On GitHub, the included workflow runs it on every push, commits the result to
+the default branch and checks pull requests, so adding, changing or deleting a
+plugin file is all it takes to publish. On other forges, run the script before
+committing. Users add your repository URL in the marketplace settings.
+
+Each listing's version is a hash of the plugin's content, so any change is
+offered as an update. To show readable versions or credit other authors, add
+overrides by ID; a pinned version must then be bumped by hand:
+
+```json
+{
+  "name": "My plugins",
+  "author": "Me",
+  "plugins": {
+    "card-count": {"version": "1.2.0", "author": "Someone else"}
+  }
+}
+```
+
+Set a fixed `id` in `plugin.config.json` so rebuilt plugins keep the same
+identity when imported directly. The plugin's source can live in the same
+repository outside `plugins/`.
