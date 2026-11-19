@@ -3,10 +3,35 @@
   "version": 1,
   "name": "ChameleonUltraGUI plugins",
   "plugins": [
-    {"id": "saved-card-count", "path": "saved-card-count.plugin.json", "version": "1.0.0", "author": "ChameleonUltraGUI"},
-    {"id": "toggle-theme", "path": "toggle-theme.plugin.json", "version": "1.0.0", "author": "ChameleonUltraGUI"},
-    {"id": "choose-language", "path": "choose-language.plugin.json", "version": "1.0.0", "author": "ChameleonUltraGUI"},
-    {"id": "create-dictionary", "path": "create-dictionary.plugin.json", "version": "1.0.0", "author": "ChameleonUltraGUI"},
-    {"id": "offline-nested", "path": "offline-nested.plugin.json", "version": "1.0.0", "author": "ChameleonUltraGUI"}
+    {
+      "id": "choose-language",
+      "path": "plugins/choose-language.plugin.json",
+      "version": "6dbf8f54",
+      "author": "ChameleonUltraGUI"
+    },
+    {
+      "id": "create-dictionary",
+      "path": "plugins/create-dictionary.plugin.json",
+      "version": "6093b07a",
+      "author": "ChameleonUltraGUI"
+    },
+    {
+      "id": "offline-nested",
+      "path": "plugins/offline-nested.plugin.json",
+      "version": "93e757e4",
+      "author": "ChameleonUltraGUI"
+    },
+    {
+      "id": "saved-card-count",
+      "path": "plugins/saved-card-count.plugin.json",
+      "version": "81e22c66",
+      "author": "ChameleonUltraGUI"
+    },
+    {
+      "id": "toggle-theme",
+      "path": "plugins/toggle-theme.plugin.json",
+      "version": "b9cd26d4",
+      "author": "ChameleonUltraGUI"
+    }
   ]
 }

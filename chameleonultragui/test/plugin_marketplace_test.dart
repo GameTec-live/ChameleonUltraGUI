@@ -156,9 +156,12 @@ void main() {
     root = Directory.systemTemp.createTempSync('marketplace_test');
     work = Directory('${root.path}/work')..createSync();
     // The bundled examples double as the default repository's content.
-    for (final file in Directory('../docs/plugins/examples').listSync()) {
+    const examples = '../docs/plugins/examples';
+    for (final file in Directory(examples).listSync(recursive: true)) {
       if (file is File) {
-        file.copySync('${work.path}/${file.uri.pathSegments.last}');
+        final path = '${work.path}/${file.path.substring(examples.length)}';
+        Directory(path).parent.createSync(recursive: true);
+        file.copySync(path);
       }
     }
     // Old Git (CI's Ubuntu 20.04 container) lacks `git init -b`.
@@ -180,19 +183,19 @@ void main() {
     expect(repository.name, 'ChameleonUltraGUI plugins');
     expect(repository.problems, isEmpty);
     expect(repository.listings.map((listing) => listing.id), [
-      'saved-card-count',
-      'toggle-theme',
       'choose-language',
       'create-dictionary',
       'offline-nested',
+      'saved-card-count',
+      'toggle-theme',
     ]);
     final listing = repository.listings.first;
-    expect(listing.plugin.name, 'Count saved cards');
+    expect(listing.plugin.name, 'Choose GUI language');
     final installed = listing.install();
     expect(installed.source, (
       repository: url,
-      id: 'saved-card-count',
-      version: '1.0.0',
+      id: 'choose-language',
+      version: listing.version,
     ));
     expect(listing.isSourceOf(installed), isTrue);
     // Independent installs (e.g. on two synced devices) share one identity.
@@ -201,7 +204,7 @@ void main() {
     // A new commit with a bumped version shows up as an update in place.
     final index = File('${work.path}/marketplace.json');
     index.writeAsStringSync(
-      index.readAsStringSync().replaceFirst('"1.0.0"', '"1.1.0"'),
+      index.readAsStringSync().replaceFirst('"${listing.version}"', '"1.1.0"'),
     );
     _git(work, ['commit', '-qam', 'two']);
     _git(work, ['push', '-q', '../repo.git', 'main']);

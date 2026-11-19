@@ -51,7 +51,8 @@ relative to the repository root; `version` is any string, and a change means
 code and resources come from the plugin file. Invalid listings are reported in
 the marketplace while the repository's valid listings stay available. Responses
 are limited to 64 MiB per repository. [plugins/examples](plugins/examples/) is a
-complete repository layout; see [Publishing](plugins/development.md#publish-to-a-marketplace).
+repository template that generates this file; see
+[Publishing](plugins/development.md#publish-to-a-marketplace).
 
 ## Execution and values
 
