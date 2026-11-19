@@ -57,6 +57,280 @@ void main() {
     expect(capture.summary.authRequests.single.block, 0x04);
   });
 
+  test('ISO-DEP I-blocks expose APDUs to annotations and summary', () {
+    final raw = Uint8List.fromList([
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(
+          Uint8List.fromList([
+            0x02,
+            0x00,
+            0xA4,
+            0x04,
+            0x00,
+            0x07,
+            0xA0,
+            0x00,
+            0x00,
+            0x00,
+            0x04,
+            0x10,
+            0x10,
+          ]),
+          isTx: false),
+      ..._packCrcFrame(
+          Uint8List.fromList([
+            0x0F,
+            0x01,
+            0x02,
+            0x80,
+            0xAE,
+            0x80,
+            0x00,
+            0x00,
+          ]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.aids.single, contains('Mastercard'));
+    expect(capture.summary.arqcSeen, isTrue);
+    expect(capture.annotatedFrames[1].label, contains('SELECT AID'));
+    expect(capture.annotatedFrames[2].label, contains('GENERATE AC'));
+  });
+
+  test('ISO-DEP chained I-blocks reassemble a split SELECT AID', () {
+    final raw = Uint8List.fromList([
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(
+          Uint8List.fromList([
+            0x12,
+            0x00,
+            0xA4,
+            0x04,
+            0x00,
+            0x07,
+            0xA0,
+            0x00,
+          ]),
+          isTx: false),
+      ..._packCrcFrame(
+          Uint8List.fromList([
+            0x03,
+            0x00,
+            0x00,
+            0x04,
+            0x10,
+            0x10,
+          ]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.aids.single, contains('Mastercard'));
+    expect(capture.annotatedFrames[1].label, contains('chained'));
+    expect(capture.annotatedFrames[2].label, contains('SELECT AID'));
+  });
+
+  test('ISO-DEP chained I-blocks strip CRC-A from each fragment', () {
+    final rats = _withCrcA(Uint8List.fromList([0xE0, 0x80]));
+    final firstChunk = _withCrcA(Uint8List.fromList([
+      0x12,
+      0x00,
+      0xA4,
+      0x04,
+      0x00,
+      0x07,
+      0xA0,
+      0x00,
+    ]));
+    final finalChunk = _withCrcA(Uint8List.fromList([
+      0x03,
+      0x00,
+      0x00,
+      0x04,
+      0x10,
+      0x10,
+    ]));
+
+    final raw = Uint8List.fromList([
+      ..._packFrame(rats, isTx: false),
+      ..._packFrame(firstChunk, isTx: false),
+      ..._packFrame(finalChunk, isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.aids, hasLength(1));
+    expect(capture.summary.aids.single, contains('A0000000041010'));
+    expect(capture.summary.aids.single, contains('Mastercard'));
+    expect(capture.summary.aids.single, isNot(contains('A000A99B000004')));
+    expect(capture.annotatedFrames[1].label, contains('chained'));
+    expect(capture.annotatedFrames[2].label, contains('SELECT AID'));
+    expect(capture.annotatedFrames[2].label, contains('Mastercard'));
+  });
+
+  test('ISO-DEP eight-byte GPO is not mislabeled as an encrypted nonce', () {
+    final raw = Uint8List.fromList([
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(
+          Uint8List.fromList([
+            0x02,
+            0x80,
+            0xA8,
+            0x00,
+            0x00,
+            0x03,
+            0x83,
+            0x01,
+            0x00,
+          ]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.annotatedFrames[1].label, contains('GPO'));
+    expect(capture.annotatedFrames[1].label, isNot(contains('nonce')));
+  });
+
+  test('PCB-looking Type A traffic is not treated as ISO-DEP before RATS', () {
+    final raw = Uint8List.fromList([
+      ..._packFrame(
+          Uint8List.fromList([0x02, 0x80, 0xAE, 0x80]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.arqcSeen, isFalse);
+    expect(capture.annotatedFrames.single.label, isNot(contains('GENERATE AC')));
+  });
+
+  test('ISO-DEP retries do not duplicate chained INF bytes', () {
+    final firstChunk = Uint8List.fromList([
+      0x12,
+      0x00,
+      0xA4,
+      0x04,
+      0x00,
+      0x07,
+      0xA0,
+      0x00,
+    ]);
+
+    final raw = Uint8List.fromList([
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(firstChunk, isTx: false),
+      ..._packCrcFrame(Uint8List.fromList([0xB2]), isTx: true),
+      ..._packCrcFrame(firstChunk, isTx: false),
+      ..._packCrcFrame(
+          Uint8List.fromList([
+            0x03,
+            0x00,
+            0x00,
+            0x04,
+            0x10,
+            0x10,
+          ]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.aids.single, contains('Mastercard'));
+    expect(capture.annotatedFrames[3].label, contains('retry'));
+    expect(capture.annotatedFrames[4].label, contains('SELECT AID'));
+  });
+
+  test('new Type A polling resets ISO-DEP parsing state', () {
+    final raw = Uint8List.fromList([
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(
+          Uint8List.fromList([0x02, 0x80, 0xA8, 0x00, 0x00]),
+          isTx: false),
+      ..._packFrame(Uint8List.fromList([0x26]),
+          isTx: false, rawBitLength: 7),
+      ..._packFrame(
+          Uint8List.fromList([0x02, 0x80, 0xAE, 0x80]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.arqcSeen, isFalse);
+    expect(capture.annotatedFrames[2].label, 'REQA');
+    expect(capture.annotatedFrames[3].label, isNot(contains('GENERATE AC')));
+  });
+
+  test('same block number with different contents is not treated as retry', () {
+    final raw = Uint8List.fromList([
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(
+          Uint8List.fromList([
+            0x02,
+            0x00,
+            0xA4,
+            0x04,
+            0x00,
+            0x07,
+            0xA0,
+            0x00,
+            0x00,
+            0x00,
+            0x04,
+            0x10,
+            0x10,
+          ]),
+          isTx: false),
+      // Simulate a missed intervening reader block. The next captured I-block
+      // reuses block number 0 but carries a different APDU.
+      ..._packCrcFrame(
+          Uint8List.fromList([
+            0x02,
+            0x80,
+            0xAE,
+            0x80,
+            0x00,
+          ]),
+          isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.aids.single, contains('Mastercard'));
+    expect(capture.summary.arqcSeen, isTrue);
+    expect(capture.annotatedFrames[2].label, contains('GENERATE AC'));
+    expect(capture.annotatedFrames[2].label, isNot(contains('retry')));
+  });
+
+  test('identical captured I-block without R-NAK is not discarded', () {
+    final command = Uint8List.fromList([
+      0x02,
+      0x80,
+      0xAE,
+      0x80,
+      0x00,
+    ]);
+
+    final raw = Uint8List.fromList([
+      ..._packCrcFrame(Uint8List.fromList([0xE0, 0x80]), isTx: false),
+      ..._packCrcFrame(command, isTx: false),
+      // This can represent the same block number/content appearing again after
+      // an intervening frame was missed by the capture. Without an observed
+      // card R-NAK it must remain visible rather than being assumed a retry.
+      ..._packCrcFrame(command, isTx: false),
+    ]);
+
+    final capture = HfSniffCapture.fromChameleonBytes(raw);
+
+    expect(capture.summary.arqcSeen, isTrue);
+    expect(capture.annotatedFrames[1].label, contains('GENERATE AC'));
+    expect(capture.annotatedFrames[2].label, contains('GENERATE AC'));
+    expect(capture.annotatedFrames[2].label, isNot(contains('retry')));
+  });
+
   test('extractHf14aSniffNonces groups paired exchanges for recovery', () {
     final raw = Uint8List.fromList([
       ..._packFrame(Uint8List.fromList([0x93, 0x70, 0x11, 0x22, 0x33, 0x44]),
@@ -113,6 +387,30 @@ void main() {
     expect(roundTripped.frames.first.isShortFrame, isTrue);
     expect(roundTripped.frames.first.bitLength, 7);
   });
+}
+
+Uint8List _withCrcA(Uint8List data) {
+  int crc = 0x6363;
+
+  for (final byte in data) {
+    int value = (byte ^ (crc & 0xFF)) & 0xFF;
+    value ^= (value << 4) & 0xFF;
+    crc = ((crc >> 8) ^
+            (value << 8) ^
+            (value << 3) ^
+            (value >> 4)) &
+        0xFFFF;
+  }
+
+  return Uint8List.fromList([
+    ...data,
+    crc & 0xFF,
+    (crc >> 8) & 0xFF,
+  ]);
+}
+
+List<int> _packCrcFrame(Uint8List data, {required bool isTx}) {
+  return _packFrame(_withCrcA(data), isTx: isTx);
 }
 
 List<int> _packFrame(Uint8List data, {required bool isTx, int? rawBitLength}) {
