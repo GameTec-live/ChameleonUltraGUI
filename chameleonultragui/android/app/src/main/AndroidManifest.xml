@@ -38,6 +38,20 @@
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>
 
+            <!-- Deep links (chameleonultra://<page>, cugui://<page>) are handled
+                 by app_links in main.dart, so Flutter's own deep-link routing
+                 is turned off, matching FlutterDeepLinkingEnabled on iOS. -->
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false" />
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="chameleonultra" />
+                <data android:scheme="cugui" />
+            </intent-filter>
+
             <meta-data android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
                 android:resource="@xml/device_filter" />
         </activity>

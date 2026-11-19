@@ -56,6 +56,14 @@ Section "Chameleon Ultra GUI (required)"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\chameleonultragui" "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\chameleonultragui" "NoRepair" 1
   WriteUninstaller "$INSTDIR\uninstall.exe"
+
+  ; Register the chameleonultra:// and cugui:// URL schemes
+  WriteRegStr HKLM "Software\Classes\chameleonultra" "" "URL:Chameleon Ultra GUI"
+  WriteRegStr HKLM "Software\Classes\chameleonultra" "URL Protocol" ""
+  WriteRegStr HKLM "Software\Classes\chameleonultra\shell\open\command" "" '"$INSTDIR\chameleonultragui.exe" "%1"'
+  WriteRegStr HKLM "Software\Classes\cugui" "" "URL:Chameleon Ultra GUI"
+  WriteRegStr HKLM "Software\Classes\cugui" "URL Protocol" ""
+  WriteRegStr HKLM "Software\Classes\cugui\shell\open\command" "" '"$INSTDIR\chameleonultragui.exe" "%1"'
   
 SectionEnd
 
@@ -78,6 +86,8 @@ Section "Uninstall"
   ; Remove registry keys
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\chameleonultragui"
   DeleteRegKey HKLM SOFTWARE\chameleonultragui
+  DeleteRegKey HKLM "Software\Classes\chameleonultra"
+  DeleteRegKey HKLM "Software\Classes\cugui"
 
   ; Remove shortcuts, if any
   Delete "$SMPROGRAMS\Chameleon Ultra GUI.lnk"

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -11,6 +12,7 @@ import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:app_links/app_links.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -167,11 +169,80 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   var selectedIndex = 0;
 
+  // Both URL schemes share the same host-to-page mapping.
+  static const _deepLinkSchemes = {'chameleonultra', 'cugui'};
+
+  final AppLinks _appLinks = AppLinks();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  StreamSubscription<Uri>? _linkSubscription;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance
         .addPostFrameCallback((_) => updateNavigationRailWidth(context));
+    // uriLinkStream also replays the link that launched the app (cold start),
+    // so getInitialLink() is not needed and would deliver that link twice.
+    _linkSubscription = _appLinks.uriLinkStream.listen(
+      _handleDeepLink,
+      onError: _onDeepLinkError,
+    );
+  }
+
+  void _onDeepLinkError(Object error, StackTrace stackTrace) {
+    final log = mounted
+        ? Provider.of<ChameleonGUIState>(context, listen: false).log
+        : null;
+    if (log != null) {
+      log.e('Deep link error', error: error, stackTrace: stackTrace);
+    } else {
+      debugPrint('Deep link error: $error');
+    }
+  }
+
+  void _handleDeepLink(Uri uri) {
+    if (!mounted || !_deepLinkSchemes.contains(uri.scheme)) {
+      return;
+    }
+    // chameleonultra://<action>[?param=value] or cugui://<action>[?param=value]
+    final target = switch (uri.host.toLowerCase()) {
+      'home' || 'connect' => 0,
+      'slots' || 'slot-manager' => 1,
+      'cards' || 'saved-cards' => 2,
+      'read' => 3,
+      'write' => 4,
+      'tools' => 5,
+      'plugins' => 6,
+      'settings' => 7,
+      _ => -1,
+    };
+    if (target < 0) {
+      return;
+    }
+    // A sub-page or dialog is open on top of the main page: switching the page
+    // underneath would dispose the page that opened it, so ignore the link.
+    if (_navigatorKey.currentState?.canPop() ?? false) {
+      final log = Provider.of<ChameleonGUIState>(context, listen: false).log;
+      if (log != null) {
+        log.i('Deep link ignored, a sub-page or dialog is open: $uri');
+      } else {
+        debugPrint('Deep link ignored, a sub-page or dialog is open: $uri');
+      }
+      return;
+    }
+    // Pages 1, 3 and 4 need a connected device; build() already falls back
+    // to the connect page when the device is offline.
+    if (selectedIndex != target) {
+      setState(() {
+        selectedIndex = target;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -249,6 +320,11 @@ class _MainPageState extends State<MainPage> {
       // Offline pages remain available without a device.
       selectedIndex = 0;
     }
+    if (appState.connector!.connected && appState.connector!.isDFU) {
+      // The rail is hidden in DFU mode and the wakelock is tied to the
+      // flashing page, so always show it while flashing firmware.
+      selectedIndex = 0;
+    }
 
     switch (selectedIndex) {
       // Sidebar Navigation
@@ -300,6 +376,7 @@ class _MainPageState extends State<MainPage> {
     } catch (_) {}
 
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'Chameleon Ultra GUI', // App Name
       locale: widget.sharedPreferencesProvider.getLocale(),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
