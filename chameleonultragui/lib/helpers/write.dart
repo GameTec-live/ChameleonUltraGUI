@@ -44,6 +44,8 @@ abstract class AbstractWriteHelper {
 
   Future<void> reset() async {} // delete data from helper
 
+  void clearInputs() {} // clear what the user typed; called by Reset, not by Back or Continue
+
   static AbstractWriteHelper? getClassByCardType(
       TagType type,
       ChameleonGUIState appState,
