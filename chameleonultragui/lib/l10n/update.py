@@ -34,9 +34,9 @@ def request(method, url, data=None):
                                                'Content-Type': 'application/json'})).read().decode())
 
 
-def get_language_mappings():
+def get_project_settings():
     project = request('GET', f'{API_URL}/projects/{PROJECT_ID}')['data']
-    return project.get('languageMapping') or {}
+    return project.get('languageMapping') or {}, project['sourceLanguageId']
 
 
 def resolve_locale(language_id, translations, language_mappings):
@@ -56,7 +56,7 @@ def resolve_locale(language_id, translations, language_mappings):
 
 
 def main():
-    language_mappings = get_language_mappings()
+    language_mappings, source_language_id = get_project_settings()
     languages = request(
         'GET',
         f'{API_URL}/projects/{PROJECT_ID}/files/{FILE_ID}/languages/progress?limit=500',
@@ -64,6 +64,13 @@ def main():
 
     for language in progressbar(languages):
         language_id = language['data']['languageId']
+        # The source language is also listed as a target language in this project, so it shows
+        # up here. Never export it: app_en.arb is the source of truth that add-crowdin-keys.yml
+        # uploads *to* Crowdin, and overwriting it with an export silently reverts source edits
+        # (for example, strings deleted from app_en.arb reappear on the next sync).
+        if language_id == source_language_id:
+            continue
+
         try:
             progress = request(
                 'GET',
