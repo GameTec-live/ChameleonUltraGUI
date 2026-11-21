@@ -98,6 +98,8 @@ class ReadCardPageState extends State<ReadCardPage> {
   bool isContinuousHFScan = false;
   bool isContinuousLFScan = false;
   bool scanInProgress = false;
+  bool lfScanBusy = false;
+  bool hfScanBusy = false;
   Timer? hfScanTimer;
   Timer? lfScanTimer;
 
@@ -114,34 +116,47 @@ class ReadCardPageState extends State<ReadCardPage> {
   }
 
   Future<void> readLFInfo() async {
+    if (lfScanBusy) return;
+    lfScanBusy = true;
+
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
-    setState(() {
-      lfInfo = LFCardInfo();
-    });
-
-    if (!await appState.communicator!.isReaderDeviceMode()) {
-      await appState.communicator!.setReaderDeviceMode(true);
-    }
-
-    LFCard? card = await appState.communicator!.readEM410X();
-    card ??= await appState.communicator!.readHIDProx();
-    card ??= await appState.communicator!.readViking();
-    card ??= await appState.communicator!.readPac();
-    card ??= await appState.communicator!.readIoProx();
-    card ??= await appState.communicator!.readJablotron();
-
-
-    if (card != null) {
+    try {
       setState(() {
-        lfInfo.card = card;
-        scanInProgress = false;
+        lfInfo = LFCardInfo();
       });
-    } else {
-      setState(() {
-        lfInfo.cardExist = false;
-        scanInProgress = false;
-      });
+
+      if (!await appState.communicator!.isReaderDeviceMode()) {
+        await appState.communicator!.setReaderDeviceMode(true);
+      }
+
+      LFCard? card = await appState.communicator!.readEM410X();
+      card ??= await appState.communicator!.readHIDProx();
+      card ??= await appState.communicator!.readViking();
+      card ??= await appState.communicator!.readPac();
+      card ??= await appState.communicator!.readIoProx();
+      card ??= await appState.communicator!.readJablotron();
+
+      if (card != null) {
+        setState(() {
+          lfInfo.card = card;
+          scanInProgress = false;
+        });
+      } else {
+        setState(() {
+          lfInfo.cardExist = false;
+          scanInProgress = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          lfInfo.cardExist = false;
+          scanInProgress = false;
+        });
+      }
+    } finally {
+      lfScanBusy = false;
     }
   }
 
@@ -157,34 +172,41 @@ class ReadCardPageState extends State<ReadCardPage> {
 
     DateTime startTime = DateTime.now();
 
+    Future<void> scanRound() async {
+      if (hfScanBusy) return;
+      hfScanBusy = true;
+      try {
+        var info = await readHFInfo(context, updateMifareClassicRecovery);
+        setState(() {
+          hfInfo = info.$1;
+          mfcInfo = info.$2;
+          mfuInfo = info.$3;
+        });
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            hfInfo.cardExist = false;
+          });
+        }
+      } finally {
+        hfScanBusy = false;
+      }
+
+      if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
+        stopContinuousHFScan();
+      }
+    }
+
     hfScanTimer = Timer.periodic(scanInterval, (timer) async {
       if (DateTime.now().difference(startTime) > maxDuration || !mounted) {
         stopContinuousHFScan();
         return;
       }
 
-      var info = await readHFInfo(context, updateMifareClassicRecovery);
-      setState(() {
-        hfInfo = info.$1;
-        mfcInfo = info.$2;
-        mfuInfo = info.$3;
-      });
-
-      if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
-        stopContinuousHFScan();
-      }
+      await scanRound();
     });
 
-    var info = await readHFInfo(context, updateMifareClassicRecovery);
-    setState(() {
-      hfInfo = info.$1;
-      mfcInfo = info.$2;
-      mfuInfo = info.$3;
-    });
-
-    if (hfInfo.cardExist && hfInfo.uid.isNotEmpty) {
-      stopContinuousHFScan();
-    }
+    await scanRound();
   }
 
   void stopContinuousHFScan() {
