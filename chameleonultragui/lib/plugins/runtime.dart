@@ -232,6 +232,8 @@ Value _luaValue(Object? value) => switch (value) {
   Map values => Value(
     values.map((key, value) => MapEntry(key, _luaValue(value))),
   ),
+  // On a plain Dart string LuaLike's find counts bytes but sub and # count UTF-16 units.
+  String value => Value(LuaString.fromDartString(value)),
   _ => Value(value),
 };
 
