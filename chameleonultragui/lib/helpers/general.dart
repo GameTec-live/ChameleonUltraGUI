@@ -32,13 +32,69 @@ String bytesToHexSpace(Uint8List bytes) {
 }
 
 Uint8List hexToBytes(String hex) {
-  hex = hex.replaceAll(" ", "");
+  // Strip spaces, colons, and any other non-hex separators users may enter.
+  hex = hex.replaceAll(RegExp(r'[^0-9A-Fa-f]'), '');
   List<int> bytes = [];
-  for (int i = 0; i < hex.length; i += 2) {
+  for (int i = 0; i + 1 < hex.length; i += 2) {
     int byte = int.parse(hex.substring(i, i + 2), radix: 16);
     bytes.add(byte);
   }
   return Uint8List.fromList(bytes);
+}
+
+/// Normalize EM410x UID bytes for firmware set/get.
+///
+/// New firmware returns `type(u16 BE) + uid` on scan/get. Older GUI builds
+/// sometimes saved that full payload as the card UID, so load-to-slot would
+/// send 7 bytes and firmware rejects with PAR_ERR (expects exactly 5 or 13).
+/// Manual 5-byte entry worked; load from saved card did not.
+Uint8List normalizeEm410xUid(Uint8List data, {TagType? type}) {
+  final bool electra = type == TagType.em410XElectra;
+  final int expected = electra ? 13 : 5;
+
+  if (data.isEmpty) {
+    return data;
+  }
+
+  // Already a clean firmware-ready UID.
+  if (data.length == 5 || data.length == 13) {
+    return data;
+  }
+
+  // Prefer type-prefixed payload: [type_hi, type_lo, ...uid]
+  if (data.length >= 2) {
+    final TagType prefixType =
+        numberToChameleonTag(bytesToU16(data.sublist(0, 2)));
+    if (isEM410X(prefixType)) {
+      final int uidLength = uidSizeForLfTag(prefixType);
+      if (uidLength > 0 && data.length >= 2 + uidLength) {
+        return data.sublist(2, 2 + uidLength);
+      }
+    }
+
+    // Unknown/legacy prefix with classic EM410x size (2 + 5) or Electra (2 + 13)
+    if (data.length == 7) {
+      return data.sublist(2, 7);
+    }
+    if (data.length == 15) {
+      return data.sublist(2, 15);
+    }
+  }
+
+  if (data.length > expected) {
+    return data.sublist(0, expected);
+  }
+
+  return data;
+}
+
+/// EM410x variants 16/32/64 are reader clock modes only; firmware emulates
+/// only [TagType.em410X] and [TagType.em410XElectra].
+TagType em410xSlotTagType(TagType type) {
+  if (type == TagType.em410XElectra) {
+    return TagType.em410XElectra;
+  }
+  return TagType.em410X;
 }
 
 int bytesToU8(Uint8List byteArray) {
