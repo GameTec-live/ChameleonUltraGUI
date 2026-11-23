@@ -47,7 +47,7 @@ class SlotEditMenuState extends State<SlotEditMenu> {
   TextEditingController ultralightSignatureController = TextEditingController();
   List<TextEditingController> ultralightCounterControllers = [];
 
-  TextEditingController hidTypeController = TextEditingController();
+  TextEditingController hidTypeController = TextEditingController(text: '1');
   TextEditingController facilityCodeController = TextEditingController();
   TextEditingController issueLevelController = TextEditingController();
   TextEditingController oemController = TextEditingController();
@@ -231,6 +231,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
         await appState.communicator!
             .setHIDProxEmulatorID(hexToBytes(hidCard.toString()));
       } catch (_) {}
+    } else if (selectedType! == TagType.viking) {
+      await appState.communicator!.setVikingEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (selectedType! == TagType.jablotron) {
       await appState.communicator!.setJablotronEmulatorID(
           hexToBytes(uidController.text.replaceAll(' ', '')));
