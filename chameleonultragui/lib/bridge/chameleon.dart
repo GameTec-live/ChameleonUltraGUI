@@ -846,9 +846,18 @@ class ChameleonCommunicator {
 
   Future<void> setSlotTagName(
       int index, String name, TagFrequency frequency) async {
+    // The firmware rejects nicknames over 32 bytes and keeps the old one, so
+    // cut longer names without splitting a UTF-8 character.
+    var bytes = utf8.encode(name);
+    if (bytes.length > 32) {
+      var end = 32;
+      while (end > 0 && (bytes[end] & 0xC0) == 0x80) {
+        end--;
+      }
+      bytes = bytes.sublist(0, end);
+    }
     await sendCmd(ChameleonCommand.setSlotTagNick,
-        data:
-            Uint8List.fromList([index, frequency.value, ...utf8.encode(name)]));
+        data: Uint8List.fromList([index, frequency.value, ...bytes]));
   }
 
   Future<String> getSlotTagName(int index, TagFrequency frequency) async {
