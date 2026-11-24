@@ -148,6 +148,7 @@ class WriteCardPageState extends State<WriteCardPage> {
       // The card may not have been on the reader when the dump was picked, and
       // a method picked from the dropdown hasn't read it at all
       await helper!.getCardType();
+      if (!mounted) return; // left the page, don't start writing
       success = await helper!.writeData(card!, updateProgress);
     } catch (_) {
       // e.g. the reader timed out, report it as a failed write

@@ -42,9 +42,18 @@ class _Reader extends ChameleonCommunicator {
   /// doesn't answer (sendCmd throws a TimeoutException).
   String? timeoutOnce;
 
-  /// While set, the type read waits for it, like a slow reader.
+  /// While set, the reader waits for it at [holdAt]: 'detect' (the type
+  /// read) or 'write' (block 10's write), like a slow reader.
   Completer<void>? hold;
+  String? holdAt;
   bool waiting = false;
+
+  Future<void> _maybeHold(String at) async {
+    if (hold != null && holdAt == at) {
+      waiting = true;
+      await hold!.future;
+    }
+  }
 
   void _maybeTimeout(String call) {
     if (timeoutOnce == call) {
@@ -63,10 +72,7 @@ class _Reader extends ChameleonCommunicator {
 
   @override
   Future<bool> detectMf1Support() async {
-    if (hold != null) {
-      waiting = true;
-      await hold!.future;
-    }
+    await _maybeHold('detect');
     _maybeTimeout('detect');
     return reader && card != null && card!.blocks > 0;
   }
@@ -114,6 +120,7 @@ class _Reader extends ChameleonCommunicator {
       return ack;
     }
     if (data.length == 16 && pendingBlock != null) {
+      if (pendingBlock == 10) await _maybeHold('write');
       written.add(pendingBlock!);
       pendingBlock = null;
       return ack;
@@ -286,15 +293,23 @@ void main() {
     });
   }
 
-  for (final timesOut in [false, true]) {
-    testWidgets('leaving the page mid-write (timeout: $timesOut) is safe', (
-      tester,
-    ) async {
+  for (final (name, holdAt, timesOut, blocks) in [
+    ('during the type read, nothing is written', 'detect', false, 0),
+    (
+      'during a type read that times out, nothing is written',
+      'detect',
+      true,
+      0,
+    ),
+    ('mid-write, the write finishes', 'write', false, 64),
+  ]) {
+    testWidgets('leaving the page $name', (tester) async {
       final reader = await _openWriteCard(tester, _dump(TagType.mifare1K, 64));
       reader.card = _gen1a1k;
       await _pickCardAndGen1(tester);
 
       reader.hold = Completer();
+      reader.holdAt = holdAt;
       if (timesOut) reader.timeoutOnce = 'detect';
       await tester.tap(_button('Write data').hitTestable().first);
       await tester.pump();
@@ -305,7 +320,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(reader.written, timesOut ? isEmpty : List.generate(64, (i) => i));
+      expect(reader.written, List.generate(blocks, (i) => i));
     });
   }
 
