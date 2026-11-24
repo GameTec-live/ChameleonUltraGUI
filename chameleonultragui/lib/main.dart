@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:chameleonultragui/ble_stress.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
@@ -45,6 +46,14 @@ import 'package:chameleonultragui/sync/sync_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.environment['CHAMELEON_BLE_STRESS'] == '1') {
+    runApp(const _BleStressApp());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      hideApplicationWindow();
+      await runBleStress();
+    });
+    return;
+  }
   final sharedPreferencesProvider = SharedPreferencesProvider();
   await sharedPreferencesProvider.load();
   await WindowStateKeeper.instance.restore();
@@ -53,6 +62,20 @@ Future<void> main() async {
   sync.start();
   runApp(ChameleonGUI(sharedPreferencesProvider, sync));
   WindowStateKeeper.instance.start();
+}
+
+class _BleStressApp extends StatelessWidget {
+  const _BleStressApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        body: SizedBox.expand(),
+      ),
+    );
+  }
 }
 
 class ChameleonGUI extends StatelessWidget {

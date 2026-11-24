@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:chameleonultragui/connector/ble_trace.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -14,21 +16,41 @@ const List<int> _uartHandshake = [
 ];
 
 /// Windows BLE connector using the WinRT implementation of flutter_blue_plus.
+///
+/// `CHAMELEON_BLE_MODE=legacy` keeps the previous connection flow for A/B
+/// measurements; the default (`robust`) adds scan cancellation, connection
+/// mutex, retries with backoff and a fresh GATT discovery per attempt.
 class WindowsBLESerial extends AbstractSerial {
   final Map<String, Chameleon> chameleonMap = {};
 
   BluetoothDevice? _device;
   BluetoothCharacteristic? _rx;
-  BluetoothCharacteristic? _tx;
   StreamSubscription<List<int>>? _valueSubscription;
   StreamSubscription<BluetoothConnectionState>? _stateSubscription;
 
   bool inSearch = false;
+  bool _connecting = false;
   bool _reconnecting = false;
   DateTime? _lastScanAt;
   List<Chameleon> _lastScanResult = [];
+  String? _activePort;
+  Chameleon? _activeInfo;
 
-  WindowsBLESerial({required super.log});
+  WindowsBLESerial({required super.log}) {
+    BleTrace.setMode(mode);
+  }
+
+  String get mode => Platform.environment['CHAMELEON_BLE_MODE'] ?? 'robust';
+
+  Duration get _scanWindow => mode == 'legacy'
+      ? const Duration(milliseconds: 2000)
+      : const Duration(milliseconds: 1500);
+
+  int get _scanCacheSeconds => mode == 'legacy' ? 8 : 4;
+
+  void _trace(String stage, String message) {
+    BleTrace.instance.log(stage, message);
+  }
 
   bool _isChameleonName(String name) {
     return name.startsWith('ChameleonUltra') ||
@@ -49,12 +71,16 @@ class WindowsBLESerial extends AbstractSerial {
 
     final now = DateTime.now();
     if (_lastScanAt != null &&
-        now.difference(_lastScanAt!) < const Duration(seconds: 8)) {
+        now.difference(_lastScanAt!).inSeconds < _scanCacheSeconds) {
+      _trace('scan.cached', 'count=${_lastScanResult.length}');
       return List<Chameleon>.from(_lastScanResult);
     }
 
     inSearch = true;
+    final stopwatch = Stopwatch()..start();
     final found = <String, Chameleon>{};
+    _trace('scan.start', 'window_ms=${_scanWindow.inMilliseconds}');
+
     final subscription = FlutterBluePlus.onScanResults.listen((results) {
       for (final result in results) {
         var name = result.advertisementData.advName;
@@ -77,13 +103,14 @@ class WindowsBLESerial extends AbstractSerial {
     });
 
     try {
-      await FlutterBluePlus.startScan(
-        timeout: const Duration(seconds: 2),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 2300));
+      await _stopScan();
+      await FlutterBluePlus.startScan(timeout: _scanWindow);
+      await Future<void>.delayed(
+          _scanWindow + const Duration(milliseconds: 200));
       await FlutterBluePlus.stopScan();
     } catch (e) {
-      log.e("Windows BLE scan failed: $e");
+      _trace('scan.error',
+          'ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
     } finally {
       await subscription.cancel();
       inSearch = false;
@@ -94,120 +121,370 @@ class WindowsBLESerial extends AbstractSerial {
     for (final entry in found.entries) {
       chameleonMap[entry.key] = entry.value;
     }
-    log.d('Found BLE devices: ${_lastScanResult.length}');
+    _trace('scan.done',
+        'ms=${stopwatch.elapsedMilliseconds} count=${_lastScanResult.length} ports=${_lastScanResult.map((d) => d.port).join(",")}');
     return _lastScanResult;
+  }
+
+  Future<List<Chameleon>> scanNow() async {
+    _lastScanAt = null;
+    return availableChameleons(false);
+  }
+
+  Future<void> _stopScan() async {
+    try {
+      if (FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.stopScan()
+            .timeout(const Duration(seconds: 2));
+        _trace('scan.stop', 'ok');
+      }
+    } catch (e) {
+      _trace('scan.stop', 'error=${e.runtimeType}: $e');
+    }
   }
 
   @override
   Future<bool> connectSpecificDevice(dynamic devicePort) async {
-    final info = chameleonMap[devicePort];
+    final info = chameleonMap[devicePort] ?? _activeInfo;
     if (info == null) {
+      _trace('connect.no_info', 'port=$devicePort');
       return false;
     }
+    if (mode == 'legacy') {
+      return _connectLegacy(devicePort, info);
+    }
+    return _connectRobust(devicePort, info);
+  }
 
+  Future<bool> _connectLegacy(dynamic devicePort, Chameleon info) async {
+    final stopwatch = Stopwatch()..start();
+    var stage = 'disconnect';
+    _trace('legacy.start', 'port=$devicePort');
     await performDisconnect();
     pendingConnection = true;
 
     try {
       final bluetoothDevice = BluetoothDevice.fromId(devicePort.toString());
       _device = bluetoothDevice;
+      _listenState(bluetoothDevice, legacy: true);
 
-      _stateSubscription = bluetoothDevice.connectionState.listen((state) async {
-        if (state == BluetoothConnectionState.disconnected && connected) {
-          _reconnect(bluetoothDevice);
-        }
-      });
-
+      stage = 'connect';
       await bluetoothDevice.connect(
         license: License.nonprofit,
         timeout: const Duration(seconds: 15),
       );
 
-      await _subscribe(bluetoothDevice);
+      stage = 'discover';
+      final uart = await _discover(bluetoothDevice, retries: 1);
 
+      stage = 'subscribe';
+      await _subscribeService(uart, retries: 1);
+
+      stage = 'handshake';
       await Future<void>.delayed(const Duration(milliseconds: 100));
-      await _rx!.write(_uartHandshake, withoutResponse: false);
+      await _handshake(_rx!, retries: 1);
 
-      connected = true;
-      pendingConnection = false;
-      portName = devicePort.toString();
-      device = info.device;
-      activeDevicePort = devicePort;
-      connectionType = ConnectionType.ble;
-      isDFU = false;
-      log.d("Connected to BLE device $devicePort");
-      notifyConnectionStateChanged();
+      _setConnected(devicePort, info, notify: true);
+      _trace('legacy.ok', 'ms=${stopwatch.elapsedMilliseconds}');
       return true;
     } catch (e) {
-      log.e("BLE connection failed: $e");
+      _trace('legacy.fail',
+          'stage=$stage ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
       await performDisconnect();
       return false;
     }
   }
 
-  Future<void> _subscribe(BluetoothDevice bluetoothDevice) async {
+  Future<bool> _connectRobust(dynamic devicePort, Chameleon info) async {
+    if (_connecting || _reconnecting) {
+      _trace('connect.busy', 'connecting=$_connecting reconnecting=$_reconnecting');
+      return false;
+    }
+    _connecting = true;
+    pendingConnection = true;
+    final stopwatch = Stopwatch()..start();
+    try {
+      final ok = await _robustAttempts(devicePort.toString(), info,
+          reconnect: false);
+      if (!ok) {
+        pendingConnection = false;
+        await performDisconnect();
+      }
+      _trace('robust.done', 'ok=$ok total_ms=${stopwatch.elapsedMilliseconds}');
+      return ok;
+    } finally {
+      _connecting = false;
+    }
+  }
+
+  Future<bool> _robustAttempts(String port, Chameleon info,
+      {required bool reconnect}) async {
+    const backoff = [0, 250, 600, 1200];
+    final total = Stopwatch()..start();
+
+    for (var i = 0; i < backoff.length; i++) {
+      if (backoff[i] > 0) {
+        await Future<void>.delayed(Duration(milliseconds: backoff[i]));
+      }
+      final attempt = i + 1;
+      var stage = 'cleanup';
+      final stopwatch = Stopwatch()..start();
+      _trace('attempt.start',
+          'attempt=$attempt port=$port reconnect=$reconnect');
+
+      try {
+        await _cleanupForConnect();
+        stage = 'stop_scan';
+        await _stopScan();
+
+        stage = 'connect';
+        final bluetoothDevice = BluetoothDevice.fromId(port);
+        _device = bluetoothDevice;
+        _listenState(bluetoothDevice, legacy: false);
+        final connectWatch = Stopwatch()..start();
+        await bluetoothDevice
+            .connect(
+              license: License.nonprofit,
+              timeout: const Duration(seconds: 8),
+            )
+            .timeout(const Duration(seconds: 10));
+        _trace('connect.ok',
+            'attempt=$attempt ms=${connectWatch.elapsedMilliseconds}');
+
+        stage = 'discover';
+        final uart = await _discover(bluetoothDevice, retries: 2);
+
+        stage = 'subscribe';
+        await _subscribeService(uart, retries: 2);
+
+        stage = 'handshake';
+        await _handshake(_rx!, retries: 2);
+
+        _setConnected(port, info, notify: !reconnect);
+        _trace('attempt.ok',
+            'attempt=$attempt total_ms=${stopwatch.elapsedMilliseconds}');
+        _trace('robust.ok',
+            'attempts=$attempt total_ms=${total.elapsedMilliseconds}');
+        return true;
+      } catch (e) {
+        _trace('attempt.fail',
+            'attempt=$attempt stage=$stage ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
+        await _cleanupForConnect();
+      }
+    }
+
+    _trace('robust.failed',
+        'attempts=${backoff.length} total_ms=${total.elapsedMilliseconds}');
+    return false;
+  }
+
+  Future<void> _cleanupForConnect() async {
     await _valueSubscription?.cancel();
     _valueSubscription = null;
+    await _stateSubscription?.cancel();
+    _stateSubscription = null;
+    final device = _device;
+    _device = null;
     _rx = null;
-    _tx = null;
+    if (device != null) {
+      try {
+        await device.disconnect().timeout(const Duration(seconds: 2));
+      } catch (_) {}
+    }
+    await _stopScan();
+  }
 
-    final services = await bluetoothDevice.discoverServices();
-    BluetoothService? uart;
-    for (final service in services) {
-      if (service.uuid == _nrfService) {
-        uart = service;
-        break;
+  Future<BluetoothService> _discover(BluetoothDevice device,
+      {required int retries}) async {
+    Object? lastError;
+    for (var i = 0; i < retries; i++) {
+      final stopwatch = Stopwatch()..start();
+      try {
+        final services = await device
+            .discoverServices()
+            .timeout(const Duration(seconds: 6));
+        for (final service in services) {
+          if (service.uuid == _nrfService) {
+            _trace('discover.ok',
+                'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} services=${services.length}');
+            return service;
+          }
+        }
+        lastError = 'UART service missing (services=${services.length})';
+        _trace('discover.miss',
+            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} services=${services.length}');
+      } catch (e) {
+        lastError = e;
+        _trace('discover.error',
+            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
       }
+      await Future<void>.delayed(const Duration(milliseconds: 250));
     }
-    if (uart == null) {
-      throw "Nordic UART service not found";
-    }
+    throw 'discover failed: $lastError';
+  }
 
+  Future<void> _subscribeService(BluetoothService uart,
+      {required int retries}) async {
+    BluetoothCharacteristic? rx;
+    BluetoothCharacteristic? tx;
     for (final characteristic in uart.characteristics) {
       if (characteristic.uuid == _uartRx) {
-        _rx = characteristic;
+        rx = characteristic;
       } else if (characteristic.uuid == _uartTx) {
-        _tx = characteristic;
+        tx = characteristic;
       }
     }
-    if (_rx == null || _tx == null) {
+    if (rx == null || tx == null) {
       throw "Nordic UART characteristics not found";
     }
 
-    await _tx!.setNotifyValue(true);
-    _valueSubscription = _tx!.onValueReceived.listen((data) {
-      if (messageCallback != null) {
-        try {
-          messageCallback(Uint8List.fromList(data));
-        } catch (_) {
-          log.w("Received unexpected data: ${bytesToHex(Uint8List.fromList(data))}");
+    await _valueSubscription?.cancel();
+    _valueSubscription = null;
+
+    Object? lastError;
+    for (var i = 0; i < retries; i++) {
+      final stopwatch = Stopwatch()..start();
+      try {
+        await tx
+            .setNotifyValue(true)
+            .timeout(const Duration(seconds: 4));
+        _valueSubscription = tx.onValueReceived.listen((data) {
+          if (messageCallback != null) {
+            try {
+              messageCallback(Uint8List.fromList(data));
+            } catch (_) {
+              log.w(
+                  "Received unexpected data: ${bytesToHex(Uint8List.fromList(data))}");
+            }
+          }
+        }, onError: (Object error) {
+          _trace('notify.error', '${error.runtimeType}: $error');
+        });
+        _rx = rx;
+        _trace('subscribe.ok',
+            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds}');
+        return;
+      } catch (e) {
+        lastError = e;
+        _trace('subscribe.error',
+            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+    }
+    throw 'subscribe failed: $lastError';
+  }
+
+  Future<void> _handshake(BluetoothCharacteristic rx,
+      {required int retries}) async {
+    Object? lastError;
+    for (var i = 0; i < retries; i++) {
+      final stopwatch = Stopwatch()..start();
+      try {
+        await rx
+            .write(_uartHandshake, withoutResponse: false)
+            .timeout(const Duration(seconds: 4));
+        _trace('handshake.ok',
+            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds}');
+        return;
+      } catch (e) {
+        lastError = e;
+        _trace('handshake.error',
+            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+    }
+    throw 'handshake failed: $lastError';
+  }
+
+  void _setConnected(dynamic port, Chameleon info, {required bool notify}) {
+    connected = true;
+    pendingConnection = false;
+    portName = port.toString();
+    device = info.device;
+    activeDevicePort = port;
+    connectionType = ConnectionType.ble;
+    isDFU = false;
+    _activePort = port.toString();
+    _activeInfo = info;
+    if (notify) {
+      notifyConnectionStateChanged();
+    }
+  }
+
+  void _listenState(BluetoothDevice bluetoothDevice, {required bool legacy}) {
+    unawaited(_stateSubscription?.cancel());
+    _stateSubscription =
+        bluetoothDevice.connectionState.listen((state) {
+      _trace('state', '${state.name} connected=$connected');
+      if (state == BluetoothConnectionState.disconnected &&
+          connected &&
+          !_connecting &&
+          !_reconnecting) {
+        if (legacy) {
+          unawaited(_reconnectLegacy());
+        } else {
+          unawaited(_reconnectRobust());
         }
       }
-    }, onError: (Object error) {
-      log.e(error);
     });
   }
 
-  Future<void> _reconnect(BluetoothDevice bluetoothDevice) async {
-    if (_reconnecting) {
+  Future<void> _reconnectLegacy() async {
+    final port = _activePort;
+    final info = _activeInfo;
+    if (_reconnecting || _connecting || port == null || info == null) {
       return;
     }
     _reconnecting = true;
+    final stopwatch = Stopwatch()..start();
+    _trace('reconnect.start', 'port=$port mode=legacy');
     try {
-      for (var attempt = 0; attempt < 5; attempt++) {
+      for (var i = 0; i < 5; i++) {
         try {
+          final bluetoothDevice = _device;
+          if (bluetoothDevice == null) {
+            throw 'no device object';
+          }
           await bluetoothDevice.connect(
             license: License.nonprofit,
             timeout: const Duration(seconds: 2),
           );
-          await _subscribe(bluetoothDevice);
-          await _rx!.write(_uartHandshake, withoutResponse: false);
+          final uart = await _discover(bluetoothDevice, retries: 1);
+          await _subscribeService(uart, retries: 1);
+          await _handshake(_rx!, retries: 1);
+          _trace('reconnect.ok',
+              'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds}');
           return;
-        } catch (error) {
+        } catch (e) {
+          _trace('reconnect.retry',
+              'attempt=${i + 1} error=${e.runtimeType}: $e');
           await Future<void>.delayed(const Duration(milliseconds: 300));
         }
       }
+      _trace('reconnect.failed', 'ms=${stopwatch.elapsedMilliseconds}');
       await performDisconnect();
+    } finally {
+      _reconnecting = false;
+    }
+  }
+
+  Future<void> _reconnectRobust() async {
+    final port = _activePort;
+    final info = _activeInfo;
+    if (_reconnecting || _connecting || port == null || info == null) {
+      return;
+    }
+    _reconnecting = true;
+    final stopwatch = Stopwatch()..start();
+    _trace('reconnect.start', 'port=$port mode=robust');
+    try {
+      final ok = await _robustAttempts(port, info, reconnect: true);
+      if (!ok) {
+        _trace('reconnect.failed', 'ms=${stopwatch.elapsedMilliseconds}');
+        await performDisconnect();
+      } else {
+        _trace('reconnect.ok', 'ms=${stopwatch.elapsedMilliseconds}');
+      }
     } finally {
       _reconnecting = false;
     }
@@ -216,6 +493,7 @@ class WindowsBLESerial extends AbstractSerial {
   @override
   Future<bool> performDisconnect() async {
     final hadState = hasConnectionState || _device != null;
+    _trace('disconnect', 'had=$hadState port=$_activePort');
     final device = _device;
     await _valueSubscription?.cancel();
     _valueSubscription = null;
@@ -223,10 +501,11 @@ class WindowsBLESerial extends AbstractSerial {
     _stateSubscription = null;
     _device = null;
     _rx = null;
-    _tx = null;
+    _activePort = null;
+    _activeInfo = null;
     resetConnectionState();
     try {
-      await device?.disconnect();
+      await device?.disconnect().timeout(const Duration(seconds: 2));
     } catch (_) {}
     if (hadState) {
       notifyConnectionStateChanged();
@@ -240,7 +519,12 @@ class WindowsBLESerial extends AbstractSerial {
     if (rx == null) {
       throw "BLE not connected";
     }
-    await rx.write(command, withoutResponse: firmware);
-    return true;
+    try {
+      await rx.write(command, withoutResponse: firmware);
+      return true;
+    } catch (e) {
+      _trace('write.error', '${e.runtimeType}: $e');
+      rethrow;
+    }
   }
 }

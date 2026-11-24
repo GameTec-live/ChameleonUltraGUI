@@ -12,7 +12,9 @@
 
 ## 预编译免安装包
 
-请到 [Releases](https://github.com/lyx7725/ChameleonUltraGUI/releases) 页面下载 `ChameleonUltraGUI-1.4.0-ble-portable.zip`。
+请到 [Releases](https://github.com/lyx7725/ChameleonUltraGUI/releases) 页面下载 `ChameleonUltraGUI-1.4.0-ble2-portable.zip`。
+
+仓库内也提供同一文件：[`prebuilt/ChameleonUltraGUI-1.4.0-ble2-portable.zip`](prebuilt/ChameleonUltraGUI-1.4.0-ble2-portable.zip)，SHA-256：`d5b2531e33ea3a36c74238e19644e368e575c2fcb509f52000c17adbbd61b0ff`。
 
 - 内容：包内含全部运行文件（`chameleonultragui.exe`、Flutter 引擎、插件 DLL、`data/` 资源），**无需安装原版**。
 - 用法：解压后运行 `chameleonultragui.exe`。若已安装 1.4 版，请先完全退出；便携版与原版共用配置与卡片数据，不会覆盖原安装目录。
@@ -22,13 +24,17 @@
 1. **修复连接页 UI 卡顿**：自动扫描改为先读取串口元数据，跳过蓝牙和非 USB 串口，避免打开这些端口时阻塞界面。
 2. **Windows 蓝牙（BLE）连接**：连接页可发现 `ChameleonUltra-*` / `ChameleonLite-*`，可通过 BLE（Nordic UART 服务）连接；插着 USB 时优先使用 USB。
 3. **记住窗口位置 / 大小 / 最大化**：通过 Win32 API 保存并在下次启动时恢复；窗口位置不在任何显示器内时自动回退到默认位置。
-4. **连接稳定 / 保活**：Windows 侧改用固件可接受的 Balanced BLE 连接参数；连接期间定时发送轻量指令并保持系统唤醒，断链后自动重连。
+4. **连接稳定 / 保活**：Windows 侧使用固件可接受的 Balanced BLE 连接参数；连接前停止扫描并清理旧状态，连接/发现服务/订阅/握手失败会自动退避重试，手动连接与自动重连串行执行；连接期间每秒发送轻量保活指令并保持系统唤醒，断链后立即重连。每个阶段（扫描/连接/发现服务/订阅/握手）都会写入 `%TEMP%\chameleon_ble.log`（带时间戳、异步写盘，不影响 UI）。
 
 ## 限制
 
 - BLE 暂不支持 DFU 固件升级；刷机请使用 USB。
 - BLE 需要设备开机且蓝牙广播已启用（固件设置中的 BLE 配对开关）。
 - 预编译包基于 1.4.0；直接构建 `main` 会包含 1.4 之后的上游新功能，需要自行重新构建。
+
+## 日志
+
+遇到连接问题时，请把 `%TEMP%\chameleon_ble.log`（一般在 `C:\Users\<用户名>\AppData\Local\Temp\chameleon_ble.log`）发给我。日志包含每次扫描、连接、发现服务、订阅和握手的耗时与错误信息，不包含卡片数据。
 
 ## 从源码构建（Windows）
 

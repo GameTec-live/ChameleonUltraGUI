@@ -277,3 +277,18 @@ class WindowStateKeeper {
     }
   }
 }
+
+/// Hides the runner window. Used by the headless BLE stress harness.
+void hideApplicationWindow() {
+  if (!Platform.isWindows) {
+    return;
+  }
+  final hwnd = _findOwnWindow();
+  if (hwnd == 0) {
+    return;
+  }
+  try {
+    _user32.lookupFunction<_ShowWindowNative, _ShowWindowDart>(
+        'ShowWindow')(hwnd, 0);
+  } catch (_) {}
+}
