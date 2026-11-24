@@ -12,6 +12,63 @@ class NativeSerial extends AbstractSerial {
 
   NativeSerial({required super.log});
 
+  // Opening a foreign port (especially a paired Bluetooth one) can block for
+  // seconds inside the OS, so auto-scan must never do that blindly: it runs on
+  // the UI isolate and would freeze the whole app on every scan tick.
+  bool isBluetoothPort(SerialPort candidate) {
+    try {
+      if (candidate.transport == SerialPortTransport.bluetooth) {
+        return true;
+      }
+    } catch (_) {}
+    try {
+      if (candidate.macAddress != null) {
+        return true;
+      }
+    } catch (_) {}
+    try {
+      if ((candidate.description ?? '').toLowerCase().contains('bluetooth')) {
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  // Chameleon Ultra/Lite (and its Nordic DFU mode) are USB devices. Everything
+  // else -- legacy COM ports and Bluetooth SPP ports, which libserialport may
+  // report as "native" with no USB metadata -- must be skipped without opening.
+  bool mayBeChameleon(SerialPort candidate) {
+    if (isBluetoothPort(candidate)) {
+      return false;
+    }
+
+    int? transport;
+    try {
+      transport = candidate.transport;
+    } catch (_) {}
+
+    int? vendorId;
+    try {
+      vendorId = candidate.vendorId;
+    } catch (_) {}
+
+    // USB serial ports open quickly, so probing them is safe.
+    if (transport == SerialPortTransport.usb || vendorId != null) {
+      return true;
+    }
+
+    String metadata = '';
+    try {
+      metadata =
+          '${candidate.manufacturer ?? ''} ${candidate.productName ?? ''} ${candidate.description ?? ''}'
+              .toLowerCase();
+    } catch (_) {}
+
+    return metadata.contains('chameleon') ||
+        metadata.contains('proxgrind') ||
+        metadata.contains('usb');
+  }
+
   @override
   bool isManualConnectionSupported() {
     return true;
@@ -95,6 +152,12 @@ class NativeSerial extends AbstractSerial {
     log.d("Connecting to $address");
     try {
       checkPort = SerialPort(address);
+      if (!setPort && !mayBeChameleon(checkPort!)) {
+        // Probing only: never open a port that cannot be a Chameleon.
+        checkPort!.dispose();
+        checkPort = null;
+        return false;
+      }
       checkPort!.openReadWrite();
       checkPort!.config = SerialPortConfig()
         ..baudRate = 115200

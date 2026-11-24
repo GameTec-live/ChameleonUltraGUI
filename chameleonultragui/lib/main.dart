@@ -5,10 +5,12 @@ import 'package:chameleonultragui/connector/serial_android.dart';
 import 'package:chameleonultragui/connector/serial_ble.dart';
 import 'package:chameleonultragui/connector/serial_emulator.dart';
 import 'package:chameleonultragui/connector/serial_macos.dart';
+import 'package:chameleonultragui/connector/serial_windows.dart';
 import 'package:chameleonultragui/gui/page/tools.dart';
 import 'package:chameleonultragui/gui/page/plugins.dart';
 import 'package:chameleonultragui/helpers/font.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/window_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -44,10 +46,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferencesProvider = SharedPreferencesProvider();
   await sharedPreferencesProvider.load();
+  await WindowStateKeeper.instance.restore();
   final sync = SyncService(sharedPreferencesProvider.preferences);
   sharedPreferencesProvider.onLocalChange = sync.localChanged;
   sync.start();
   runApp(ChameleonGUI(sharedPreferencesProvider, sync));
+  WindowStateKeeper.instance.start();
 }
 
 class ChameleonGUI extends StatelessWidget {
@@ -198,6 +202,10 @@ class _MainPageState extends State<MainPage> {
 
     if (Platform.isIOS) {
       return BLESerial(log: appState.log!);
+    }
+
+    if (Platform.isWindows) {
+      return WindowsSerial(log: appState.log!);
     }
 
     return NativeSerial(log: appState.log!);
