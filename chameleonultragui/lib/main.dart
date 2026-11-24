@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -170,12 +171,59 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   var selectedIndex = 0;
+  Timer? _keepAliveTimer;
+  bool _keepAliveInFlight = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance
         .addPostFrameCallback((_) => updateNavigationRailWidth(context));
+    // The firmware keeps running while BLE is connected, but powers off a few
+    // seconds after the link drops. A lightweight periodic command keeps both
+    // the BLE link and the device awake while the app is open.
+    _keepAliveTimer = Timer.periodic(
+        const Duration(seconds: 12), (_) => sendKeepAlive());
+  }
+
+  @override
+  void dispose() {
+    _keepAliveTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> sendKeepAlive() async {
+    if (_keepAliveInFlight || !mounted) {
+      return;
+    }
+
+    final appState = Provider.of<ChameleonGUIState>(context, listen: false);
+    final communicator = appState.communicator;
+    final connector = appState.connector;
+    if (communicator == null ||
+        connector == null ||
+        !connector.connected ||
+        connector.isDFU ||
+        communicator.commandQueue.isNotEmpty) {
+      return;
+    }
+
+    _keepAliveInFlight = true;
+    try {
+      for (var attempt = 0; attempt < 3; attempt++) {
+        try {
+          await communicator.getBatteryCharge();
+          return;
+        } catch (error) {
+          if (attempt == 2) {
+            appState.log?.w('Keep-alive ping failed: $error');
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 800));
+        }
+      }
+    } finally {
+      _keepAliveInFlight = false;
+    }
   }
 
   @override
@@ -304,7 +352,8 @@ class _MainPageState extends State<MainPage> {
     }
 
     try {
-      WakelockPlus.toggle(enable: page is FlashingPage);
+      WakelockPlus.toggle(
+          enable: page is FlashingPage || appState.connector!.connected);
     } catch (_) {}
 
     return MaterialApp(
