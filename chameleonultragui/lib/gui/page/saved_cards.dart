@@ -74,7 +74,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
           return ElevatedButton(
             onPressed: toggleMenu,
             style: customCardButtonStyle(appState),
-            child: const Icon(Icons.add),
+            child: Tooltip(
+              message: localizations.create,
+              child: const Icon(Icons.add),
+            ),
           );
         }
         return IconButton(
@@ -654,7 +657,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
           return ElevatedButton(
             onPressed: toggleMenu,
             style: customCardButtonStyle(appState),
-            child: const Icon(Icons.add),
+            child: Tooltip(
+              message: localizations.create,
+              child: const Icon(Icons.add),
+            ),
           );
         }
         return IconButton(
@@ -1253,7 +1259,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   }
                                 },
                                 style: customCardButtonStyle(appState),
-                                child: const Icon(Icons.file_upload),
+                                child: Tooltip(
+                                  message: localizations.import_card,
+                                  child: const Icon(Icons.file_upload),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -1479,7 +1488,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                     currentDictionaryFolderId =
                                         currentDictionaryFolder.parentId),
                                 style: customCardButtonStyle(appState),
-                                child: const Icon(Icons.arrow_back),
+                                child: Tooltip(
+                                  message: localizations.parent_folder,
+                                  child: const Icon(Icons.arrow_back),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -1536,7 +1548,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 }
                               },
                               style: customCardButtonStyle(appState),
-                              child: const Icon(Icons.upload),
+                              child: Tooltip(
+                                message: localizations.import_dictionary,
+                                child: const Icon(Icons.upload),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 10),

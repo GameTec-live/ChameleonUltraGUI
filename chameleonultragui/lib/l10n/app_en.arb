@@ -899,5 +899,5 @@
   "toggle_flashlight": "Toggle flashlight",
   "previous_slot": "Previous slot",
   "next_slot": "Next slot",
-  "copy_to_clipboard": "Copy to clipboard"
+  "copy_field": "Copy {field}"
 }

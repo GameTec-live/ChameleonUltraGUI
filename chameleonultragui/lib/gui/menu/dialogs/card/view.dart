@@ -93,7 +93,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 ),
               ),
               IconButton(
-                tooltip: localizations.copy_to_clipboard,
+                tooltip: localizations.copy_field(localizations.uid),
                 onPressed: () async {
                   ClipboardData data =
                       ClipboardData(text: currentSavedCard.uid);
@@ -113,7 +113,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 ),
               ),
               IconButton(
-                tooltip: localizations.copy_to_clipboard,
+                tooltip: localizations.copy_field(localizations.tag_type),
                 onPressed: () async {
                   ClipboardData data = ClipboardData(
                       text: chameleonTagToString(
@@ -133,7 +133,7 @@ class CardViewMenuState extends State<CardViewMenu> {
               Row(children: [
                 Expanded(child: Text('${field.$1}: ${field.$2}')),
                 IconButton(
-                  tooltip: localizations.copy_to_clipboard,
+                  tooltip: localizations.copy_field(field.$1),
                   onPressed: () => Clipboard.setData(
                       ClipboardData(text: field.$2.toString())),
                   icon: const Icon(Icons.copy),
@@ -151,7 +151,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                   ),
                 ),
                 IconButton(
-                  tooltip: localizations.copy_to_clipboard,
+                  tooltip: localizations.copy_field(localizations.sak),
                   onPressed: () async {
                     ClipboardData data = ClipboardData(
                         text: currentSavedCard.sak == 0
@@ -173,7 +173,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                   ),
                 ),
                 IconButton(
-                  tooltip: localizations.copy_to_clipboard,
+                  tooltip: localizations.copy_field(localizations.atqa),
                   onPressed: () async {
                     ClipboardData data = ClipboardData(
                         text: currentSavedCard.atqa.isNotEmpty
@@ -221,7 +221,8 @@ class CardViewMenuState extends State<CardViewMenu> {
                       ),
                     ),
                     IconButton(
-                      tooltip: localizations.copy_to_clipboard,
+                      tooltip: localizations.copy_field(
+                          localizations.ultralight_version),
                       onPressed: () async {
                         ClipboardData data = ClipboardData(
                             text: currentSavedCard
@@ -245,7 +246,8 @@ class CardViewMenuState extends State<CardViewMenu> {
                       ),
                     ),
                     IconButton(
-                      tooltip: localizations.copy_to_clipboard,
+                      tooltip: localizations.copy_field(
+                          localizations.ultralight_signature),
                       onPressed: () async {
                         ClipboardData data = ClipboardData(
                             text: currentSavedCard

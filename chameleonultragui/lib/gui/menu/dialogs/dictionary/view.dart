@@ -83,7 +83,8 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
                       ),
                     ),
                     IconButton(
-                      tooltip: localizations.copy_to_clipboard,
+                      tooltip: localizations.copy_field(
+                          localizations.key_count),
                       onPressed: () async {
                         await Clipboard.setData(
                           ClipboardData(
