@@ -24,6 +24,7 @@ class WindowsBLESerial extends AbstractSerial {
   StreamSubscription<BluetoothConnectionState>? _stateSubscription;
 
   bool inSearch = false;
+  bool _reconnecting = false;
   DateTime? _lastScanAt;
   List<Chameleon> _lastScanResult = [];
 
@@ -113,7 +114,7 @@ class WindowsBLESerial extends AbstractSerial {
 
       _stateSubscription = bluetoothDevice.connectionState.listen((state) async {
         if (state == BluetoothConnectionState.disconnected && connected) {
-          await performDisconnect();
+          _reconnect(bluetoothDevice);
         }
       });
 
@@ -122,42 +123,7 @@ class WindowsBLESerial extends AbstractSerial {
         timeout: const Duration(seconds: 15),
       );
 
-      final services = await bluetoothDevice.discoverServices();
-      BluetoothService? uart;
-      for (final service in services) {
-        if (service.uuid == _nrfService) {
-          uart = service;
-          break;
-        }
-      }
-      if (uart == null) {
-        throw "Nordic UART service not found";
-      }
-
-      for (final characteristic in uart.characteristics) {
-        if (characteristic.uuid == _uartRx) {
-          _rx = characteristic;
-        } else if (characteristic.uuid == _uartTx) {
-          _tx = characteristic;
-        }
-      }
-      if (_rx == null || _tx == null) {
-        throw "Nordic UART characteristics not found";
-      }
-
-      await _tx!.setNotifyValue(true);
-      _valueSubscription = _tx!.onValueReceived.listen((data) {
-        if (messageCallback != null) {
-          try {
-            messageCallback(Uint8List.fromList(data));
-          } catch (_) {
-            log.w("Received unexpected data: ${bytesToHex(Uint8List.fromList(data))}");
-          }
-        }
-      }, onError: (Object error) async {
-        log.e(error);
-        await performDisconnect();
-      });
+      await _subscribe(bluetoothDevice);
 
       await Future<void>.delayed(const Duration(milliseconds: 100));
       await _rx!.write(_uartHandshake, withoutResponse: false);
@@ -176,6 +142,74 @@ class WindowsBLESerial extends AbstractSerial {
       log.e("BLE connection failed: $e");
       await performDisconnect();
       return false;
+    }
+  }
+
+  Future<void> _subscribe(BluetoothDevice bluetoothDevice) async {
+    await _valueSubscription?.cancel();
+    _valueSubscription = null;
+    _rx = null;
+    _tx = null;
+
+    final services = await bluetoothDevice.discoverServices();
+    BluetoothService? uart;
+    for (final service in services) {
+      if (service.uuid == _nrfService) {
+        uart = service;
+        break;
+      }
+    }
+    if (uart == null) {
+      throw "Nordic UART service not found";
+    }
+
+    for (final characteristic in uart.characteristics) {
+      if (characteristic.uuid == _uartRx) {
+        _rx = characteristic;
+      } else if (characteristic.uuid == _uartTx) {
+        _tx = characteristic;
+      }
+    }
+    if (_rx == null || _tx == null) {
+      throw "Nordic UART characteristics not found";
+    }
+
+    await _tx!.setNotifyValue(true);
+    _valueSubscription = _tx!.onValueReceived.listen((data) {
+      if (messageCallback != null) {
+        try {
+          messageCallback(Uint8List.fromList(data));
+        } catch (_) {
+          log.w("Received unexpected data: ${bytesToHex(Uint8List.fromList(data))}");
+        }
+      }
+    }, onError: (Object error) {
+      log.e(error);
+    });
+  }
+
+  Future<void> _reconnect(BluetoothDevice bluetoothDevice) async {
+    if (_reconnecting) {
+      return;
+    }
+    _reconnecting = true;
+    try {
+      for (var attempt = 0; attempt < 5; attempt++) {
+        try {
+          await bluetoothDevice.connect(
+            license: License.nonprofit,
+            timeout: const Duration(seconds: 2),
+          );
+          await _subscribe(bluetoothDevice);
+          await _rx!.write(_uartHandshake, withoutResponse: false);
+          return;
+        } catch (error) {
+          await Future<void>.delayed(const Duration(milliseconds: 300));
+        }
+      }
+      await performDisconnect();
+    } finally {
+      _reconnecting = false;
     }
   }
 

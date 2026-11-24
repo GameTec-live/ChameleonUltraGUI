@@ -423,12 +423,11 @@ packages:
     source: hosted
     version: "9.0.4"
   flutter_blue_plus_winrt:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: flutter_blue_plus_winrt
-      sha256: "3c1b790ba95808b5e2b1f756367e1e8078266488635032976e187823e3b3d8cb"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
+      path: "third_party/flutter_blue_plus_winrt"
+      relative: true
+    source: path
     version: "0.0.23"
   flutter_colorpicker:
     dependency: "direct main"

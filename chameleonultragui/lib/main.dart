@@ -183,7 +183,7 @@ class _MainPageState extends State<MainPage> {
     // seconds after the link drops. A lightweight periodic command keeps both
     // the BLE link and the device awake while the app is open.
     _keepAliveTimer = Timer.periodic(
-        const Duration(seconds: 5), (_) => sendKeepAlive());
+        const Duration(milliseconds: 1000), (_) => sendKeepAlive());
   }
 
   @override
