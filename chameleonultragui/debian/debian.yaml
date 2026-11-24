@@ -2,6 +2,7 @@ flutter_app:
   command: chameleonultragui
   arch: x64
   parent: /usr/local/lib
+  execFieldCodes: u
 
 control:
   Package: chameleonultragui
