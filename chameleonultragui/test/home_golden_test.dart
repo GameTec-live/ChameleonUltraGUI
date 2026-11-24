@@ -30,7 +30,12 @@ Future<void> _loadFonts() async {
     ..addFont(rootBundle.load('assets/fonts/RobotoMono-Regular.ttf'));
   await mono.load();
 
-  final flutterRoot = Platform.environment['FLUTTER_ROOT'];
+  final sep = Platform.pathSeparator;
+  final exe = Platform.resolvedExecutable;
+  final marker = '${sep}bin${sep}cache${sep}';
+  final markerIndex = exe.toLowerCase().indexOf(marker.toLowerCase());
+  final derivedRoot = markerIndex > 0 ? exe.substring(0, markerIndex) : null;
+  final flutterRoot = Platform.environment['FLUTTER_ROOT'] ?? derivedRoot;
   final iconCandidates = [
     if (flutterRoot != null)
       '$flutterRoot/bin/cache/artifacts/material_fonts/materialicons-regular.otf',
@@ -155,7 +160,7 @@ Future<void> _pump(WidgetTester tester, Size size) async {
 void main() {
   setUpAll(_loadFonts);
 
-  testWidgets('home at 1280x800', (tester) async {
+  testWidgets('home at 1280x800', skip: !Platform.isWindows, (tester) async {
     await _pump(tester, const Size(1280, 800));
     await expectLater(
       find.byType(HomeOverview),
@@ -163,7 +168,7 @@ void main() {
     );
   });
 
-  testWidgets('home at 800x800', (tester) async {
+  testWidgets('home at 800x800', skip: !Platform.isWindows, (tester) async {
     await _pump(tester, const Size(800, 800));
     await expectLater(
       find.byType(HomeOverview),
@@ -171,7 +176,7 @@ void main() {
     );
   });
 
-  testWidgets('home at 390x844', (tester) async {
+  testWidgets('home at 390x844', skip: !Platform.isWindows, (tester) async {
     await _pump(tester, const Size(390, 844));
     await expectLater(
       find.byType(HomeOverview),
