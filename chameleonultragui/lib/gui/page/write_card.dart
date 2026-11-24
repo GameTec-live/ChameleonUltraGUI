@@ -133,19 +133,26 @@ class WriteCardPageState extends State<WriteCardPage> {
     var scaffoldMessenger = ScaffoldMessenger.of(context);
     var localizations = AppLocalizations.of(context)!;
     SnackBar snackBar;
+    bool success = false;
     updateProgress(0);
 
-    if (!await appState.communicator!.isReaderDeviceMode()) {
-      await appState.communicator!.setReaderDeviceMode(true);
+    try {
+      if (!await appState.communicator!.isReaderDeviceMode()) {
+        await appState.communicator!.setReaderDeviceMode(true);
+      }
+
+      if (helper is BaseMifareClassicWriteHelper) {
+        (helper as BaseMifareClassicWriteHelper).vanitySak = vanitySak;
+      }
+      // The card may not have been on the reader when the dump was picked, and
+      // a method picked from the dropdown hasn't read it at all
+      await helper!.getCardType();
+      success = await helper!.writeData(card!, updateProgress);
+    } catch (_) {
+      // e.g. the reader timed out, report it as a failed write
     }
 
-    if (helper is BaseMifareClassicWriteHelper) {
-      (helper as BaseMifareClassicWriteHelper).vanitySak = vanitySak;
-    }
-    // The card may not have been on the reader when the dump was picked, and
-    // a method picked from the dropdown hasn't read it at all
-    await helper!.getCardType();
-    if (await helper!.writeData(card!, updateProgress)) {
+    if (success) {
       snackBar = SnackBar(
         content: Text(localizations.magic_success_write),
         action: SnackBarAction(
@@ -208,11 +215,40 @@ class WriteCardPageState extends State<WriteCardPage> {
       SnackBar snackBar;
       updateProgress(0);
 
-      // isCompatible is also false when there's no card, so say that instead
-      if (helper is BaseMifareClassicWriteHelper &&
-          await appState.communicator!.scan14443aTag() == null) {
+      try {
+        // isCompatible is also false when there's no card, so say that instead
+        if (helper is BaseMifareClassicWriteHelper &&
+            await appState.communicator!.scan14443aTag() == null) {
+          snackBar = SnackBar(
+            content: Text(localizations.no_card_found),
+            action: SnackBarAction(
+              label: localizations.close,
+              onPressed: () {},
+            ),
+          );
+
+          scaffoldMessenger.hideCurrentSnackBar();
+          scaffoldMessenger.showSnackBar(snackBar);
+        } else if (!await helper!.isCompatible(card!)) {
+          snackBar = SnackBar(
+            content: Text(localizations.magic_incompatible_card),
+            action: SnackBarAction(
+              label: localizations.continue_anyway,
+              onPressed: () async {
+                await writeCard();
+              },
+            ),
+          );
+
+          scaffoldMessenger.hideCurrentSnackBar();
+          scaffoldMessenger.showSnackBar(snackBar);
+        } else {
+          await writeCard();
+        }
+      } catch (_) {
+        // e.g. the reader timed out
         snackBar = SnackBar(
-          content: Text(localizations.no_card_found),
+          content: Text(localizations.magic_failed_write),
           action: SnackBarAction(
             label: localizations.close,
             onPressed: () {},
@@ -221,21 +257,6 @@ class WriteCardPageState extends State<WriteCardPage> {
 
         scaffoldMessenger.hideCurrentSnackBar();
         scaffoldMessenger.showSnackBar(snackBar);
-      } else if (!await helper!.isCompatible(card!)) {
-        snackBar = SnackBar(
-          content: Text(localizations.magic_incompatible_card),
-          action: SnackBarAction(
-            label: localizations.continue_anyway,
-            onPressed: () async {
-              await writeCard();
-            },
-          ),
-        );
-
-        scaffoldMessenger.hideCurrentSnackBar();
-        scaffoldMessenger.showSnackBar(snackBar);
-      } else {
-        await writeCard();
       }
 
       updateProgress(-1);

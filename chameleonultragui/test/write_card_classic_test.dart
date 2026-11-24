@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/bridge/chameleon.dart';
@@ -37,6 +38,17 @@ class _Reader extends ChameleonCommunicator {
   int? pendingBlock;
   final written = <int>[];
 
+  /// 'scan' or 'detect': that call times out once, like a reader that
+  /// doesn't answer (sendCmd throws a TimeoutException).
+  String? timeoutOnce;
+
+  void _maybeTimeout(String call) {
+    if (timeoutOnce == call) {
+      timeoutOnce = null;
+      throw TimeoutException('Waiting for response');
+    }
+  }
+
   @override
   Future<bool> isReaderDeviceMode() async => reader;
 
@@ -46,18 +58,23 @@ class _Reader extends ChameleonCommunicator {
   }
 
   @override
-  Future<bool> detectMf1Support() async =>
-      reader && card != null && card!.blocks > 0;
+  Future<bool> detectMf1Support() async {
+    _maybeTimeout('detect');
+    return reader && card != null && card!.blocks > 0;
+  }
 
   @override
-  Future<CardData?> scan14443aTag() async => reader && card != null
-      ? CardData(
-          uid: Uint8List.fromList(card!.uid),
-          atqa: Uint8List.fromList([0x00, 0x04]),
-          sak: 0x08,
-          ats: Uint8List(0),
-        )
-      : null;
+  Future<CardData?> scan14443aTag() async {
+    _maybeTimeout('scan');
+    return reader && card != null
+        ? CardData(
+            uid: Uint8List.fromList(card!.uid),
+            atqa: Uint8List.fromList([0x00, 0x04]),
+            sak: 0x08,
+            ats: Uint8List(0),
+          )
+        : null;
+  }
 
   @override
   Future<Uint8List> send14ARaw(
@@ -236,6 +253,30 @@ void main() {
     expect(reader.written, List.generate(64, (i) => i));
     expect(find.text('Card written successfully'), findsOneWidget);
   });
+
+  for (final (call, retry) in [
+    ('scan', 'Write data'),
+    ('detect', 'Write again'),
+  ]) {
+    testWidgets('a reader timeout at the $call fails and can be retried', (
+      tester,
+    ) async {
+      final reader = await _openWriteCard(tester, _dump(TagType.mifare1K, 64));
+      reader.card = _gen1a1k;
+      await _pickCardAndGen1(tester);
+
+      reader.timeoutOnce = call;
+      await _tap(tester, _button('Write data'));
+
+      expect(reader.written, isEmpty);
+      expect(find.text('Something went wrong in card writing'), findsOneWidget);
+
+      await _tap(tester, _button(retry));
+
+      expect(reader.written, List.generate(64, (i) => i));
+      expect(find.text('Card written successfully'), findsOneWidget);
+    });
+  }
 
   testWidgets('a card on the reader the whole time is written', (tester) async {
     final reader = await _openWriteCard(tester, _dump(TagType.mifare1K, 64));
