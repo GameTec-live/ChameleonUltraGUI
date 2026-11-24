@@ -1,6 +1,7 @@
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/gui/menu/tools/dictionary_download.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/t55xx/keys.dart';
 import 'package:chameleonultragui/helpers/validators.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
@@ -26,10 +27,29 @@ class T55XXPasswordCleanerMenuState extends State<T55XXPasswordCleanerMenu> {
   String? foundPassword;
   String? currentKey;
 
+  /// Whether the firmware leaves tags without a password unless asked; null until known.
+  /// When true, the tag is left without a password and no new one is needed.
+  bool? passwordOptIn;
+  bool passwordOptInFailed = false;
+
   @override
   void initState() {
     super.initState();
-    newKeyController.text = "20206666";
+    newKeyController.text = t55xxDefaultPassword;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPasswordOptIn());
+  }
+
+  Future<void> _loadPasswordOptIn() async {
+    var communicator = context.read<ChameleonGUIState>().communicator;
+    if (communicator == null) return;
+    // A failed check must not fall back to old firmware's behaviour: show it and offer a retry.
+    setState(() => passwordOptInFailed = false);
+    try {
+      var value = await communicator.isT55xxPasswordOptIn();
+      if (mounted) setState(() => passwordOptIn = value);
+    } catch (_) {
+      if (mounted) setState(() => passwordOptInFailed = true);
+    }
   }
 
   @override
@@ -69,8 +89,13 @@ class T55XXPasswordCleanerMenuState extends State<T55XXPasswordCleanerMenu> {
         });
 
         try {
-          await appState.communicator!.writeEM410XtoT55XX(hexToBytes(targetUID),
-              hexToBytes(newKeyController.text), [selectedDictionary.keys[i]]);
+          await appState.communicator!.writeEM410XtoT55XX(
+              hexToBytes(targetUID),
+              hexToBytes(passwordOptIn == true
+                  ? t55xxNoPasswordKey
+                  : newKeyController.text),
+              [selectedDictionary.keys[i]],
+              setPassword: passwordOptIn == true ? false : null);
 
           var newCard = await appState.communicator!.readEM410X();
 
@@ -244,26 +269,41 @@ class T55XXPasswordCleanerMenuState extends State<T55XXPasswordCleanerMenu> {
               ),
             ],
             const SizedBox(height: 16),
-            Text(
-              localizations.enter_new_password,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: newKeyController,
-              enabled: !isProcessing,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            if (passwordOptInFailed)
+              Row(
+                children: [
+                  Expanded(
+                      child: Text(localizations.t55xx_feature_check_failed)),
+                  TextButton(
+                    onPressed: _loadPasswordOptIn,
+                    child: Text(localizations.retry),
+                  ),
+                ],
+              )
+            else if (passwordOptIn == true)
+              Text(localizations.t55xx_password_cleaner_no_password)
+            else ...[
+              Text(
+                localizations.enter_new_password,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              inputFormatters: hexFormatter,
-              validator: (value) => validateHex(value, localizations,
-                  exactBytes: 4, fieldName: localizations.key, required: true),
-              onChanged: (value) {
-                setState(() {});
-              },
-            ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: newKeyController,
+                enabled: !isProcessing,
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                inputFormatters: hexFormatter,
+                validator: (value) => validateHex(value, localizations,
+                    exactBytes: 4, fieldName: localizations.key, required: true),
+                onChanged: (value) {
+                  setState(() {});
+                },
+              ),
+            ],
             if (isProcessing) ...[
               const SizedBox(height: 16),
               Text(
@@ -301,8 +341,9 @@ class T55XXPasswordCleanerMenuState extends State<T55XXPasswordCleanerMenu> {
           ),
           ElevatedButton(
             onPressed: (selectedDictionaryId != null &&
-                    newKeyController.text.isNotEmpty &&
-                    newKeyController.text.length == 8)
+                    passwordOptIn != null &&
+                    (passwordOptIn == true ||
+                        newKeyController.text.length == 8))
                 ? _startPasswordReset
                 : null,
             child: Text(localizations.start_password_reset),

@@ -238,6 +238,7 @@ class WriteCardPageState extends State<WriteCardPage> {
   }
 
   void onStepReset() async {
+    helper?.clearInputs();
     setState(() {
       written = false;
       step = 0;
