@@ -71,11 +71,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
         }
 
         if (elevated) {
-          return ElevatedButton(
-            onPressed: toggleMenu,
-            style: customCardButtonStyle(appState),
-            child: Tooltip(
-              message: localizations.create,
+          return Tooltip(
+            message: localizations.create,
+            child: ElevatedButton(
+              onPressed: toggleMenu,
+              style: customCardButtonStyle(appState),
               child: const Icon(Icons.add),
             ),
           );
@@ -654,11 +654,11 @@ class SavedCardsPageState extends State<SavedCardsPage> {
         }
 
         if (elevated) {
-          return ElevatedButton(
-            onPressed: toggleMenu,
-            style: customCardButtonStyle(appState),
-            child: Tooltip(
-              message: localizations.create,
+          return Tooltip(
+            message: localizations.create,
+            child: ElevatedButton(
+              onPressed: toggleMenu,
+              style: customCardButtonStyle(appState),
               child: const Icon(Icons.add),
             ),
           );
@@ -1483,13 +1483,13 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                         child: Row(children: [
                           if (currentDictionaryFolder != null) ...[
                             Expanded(
-                              child: ElevatedButton(
-                                onPressed: () => setState(() =>
-                                    currentDictionaryFolderId =
-                                        currentDictionaryFolder.parentId),
-                                style: customCardButtonStyle(appState),
-                                child: Tooltip(
-                                  message: localizations.parent_folder,
+                              child: Tooltip(
+                                message: localizations.parent_folder,
+                                child: ElevatedButton(
+                                  onPressed: () => setState(() =>
+                                      currentDictionaryFolderId =
+                                          currentDictionaryFolder.parentId),
+                                  style: customCardButtonStyle(appState),
                                   child: const Icon(Icons.arrow_back),
                                 ),
                               ),
