@@ -205,6 +205,21 @@ class ChameleonCommunicator {
     }
   }
 
+  /// Sends a lightweight read without waiting for its reply.
+  ///
+  /// Used to keep the BLE link (and therefore the device) awake while the app
+  /// is open. Ignoring the reply avoids the timed-out-command lockup that a
+  /// normal command would leave behind after one missed response.
+  Future<void> keepAlive() async {
+    if (commandQueue.isNotEmpty) {
+      return;
+    }
+    final command = ChameleonCommand.getBatteryCharge.value;
+    _timedOutCommands.remove(command);
+    messageQueue.removeWhere((message) => message.command == command);
+    await sendCmd(ChameleonCommand.getBatteryCharge, skipReceive: true);
+  }
+
   Uint8List _fromInt16BE(int value) {
     return Uint8List(2)..buffer.asByteData().setInt16(0, value, Endian.big);
   }

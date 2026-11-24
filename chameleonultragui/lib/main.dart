@@ -183,7 +183,7 @@ class _MainPageState extends State<MainPage> {
     // seconds after the link drops. A lightweight periodic command keeps both
     // the BLE link and the device awake while the app is open.
     _keepAliveTimer = Timer.periodic(
-        const Duration(seconds: 12), (_) => sendKeepAlive());
+        const Duration(seconds: 5), (_) => sendKeepAlive());
   }
 
   @override
@@ -210,17 +210,9 @@ class _MainPageState extends State<MainPage> {
 
     _keepAliveInFlight = true;
     try {
-      for (var attempt = 0; attempt < 3; attempt++) {
-        try {
-          await communicator.getBatteryCharge();
-          return;
-        } catch (error) {
-          if (attempt == 2) {
-            appState.log?.w('Keep-alive ping failed: $error');
-          }
-          await Future<void>.delayed(const Duration(milliseconds: 800));
-        }
-      }
+      await communicator.keepAlive();
+    } catch (error) {
+      appState.log?.w('Keep-alive ping failed: $error');
     } finally {
       _keepAliveInFlight = false;
     }
