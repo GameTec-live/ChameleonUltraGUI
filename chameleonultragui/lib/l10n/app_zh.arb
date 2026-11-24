@@ -177,6 +177,7 @@
   "all": "\u5168\u90e8",
   "no_name": "\u65e0\u540d\u79f0",
   "connecting_to_ble": "\u6b63\u5728\u8fde\u63a5\u5230 BLE \u8bbe\u5907...",
+  "copied": "已复制",
   "current_slot": "当前卡槽",
   "recent_cards": "最近的卡片",
   "disconnect": "断开连接",

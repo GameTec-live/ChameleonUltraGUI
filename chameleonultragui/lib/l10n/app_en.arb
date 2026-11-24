@@ -177,6 +177,7 @@
   "all": "All",
   "no_name": "No name",
   "connecting_to_ble": "Connecting to BLE device...",
+  "copied": "Copied",
   "current_slot": "Current slot",
   "recent_cards": "Recent cards",
   "disconnect": "Disconnect",

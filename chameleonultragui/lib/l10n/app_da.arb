@@ -152,6 +152,7 @@
   "all": "Alle",
   "no_name": "Intet navn",
   "connecting_to_ble": "Tilslutter til BLE-enhed...",
+  "copied": "Kopieret",
   "current_slot": "Aktuel slot",
   "recent_cards": "Seneste kort",
   "disconnect": "Afbryd",

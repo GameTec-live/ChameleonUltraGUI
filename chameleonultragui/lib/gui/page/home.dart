@@ -370,7 +370,7 @@ class HomePageState extends State<HomePage> {
     final l = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(l.sync_copied)));
+      ..showSnackBar(SnackBar(content: Text(l.copied)));
   }
 
   @override

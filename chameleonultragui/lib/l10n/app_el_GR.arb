@@ -178,6 +178,7 @@
   "all": "\u038c\u03bb\u03b1",
   "no_name": "\u03a7\u03c9\u03c1\u03af\u03c2 \u03cc\u03bd\u03bf\u03bc\u03b1",
   "connecting_to_ble": "\u03a3\u03cd\u03bd\u03b4\u03b5\u03c3\u03b7 \u03bc\u03b5 \u03c4\u03b7 \u03c3\u03c5\u03c3\u03ba\u03b5\u03c5\u03ae BLE...",
+  "copied": "Αντιγράφηκε",
   "current_slot": "Τρέχουσα υποδοχή",
   "recent_cards": "Πρόσφατες κάρτες",
   "disconnect": "Αποσύνδεση",

@@ -176,6 +176,7 @@
   "all": "Alles",
   "no_name": "Geen naam",
   "connecting_to_ble": "Verbinding maken met BLE apparaat...",
+  "copied": "Gekopieerd",
   "current_slot": "Huidige slot",
   "recent_cards": "Recente kaarten",
   "disconnect": "Verbinding verbreken",

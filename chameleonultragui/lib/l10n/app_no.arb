@@ -177,6 +177,7 @@
   "all": "Alle",
   "no_name": "Ingen navn",
   "connecting_to_ble": "Kobler til Bluetooth enhet...",
+  "copied": "Kopiert",
   "current_slot": "Gjeldende spor",
   "recent_cards": "Nylige kort",
   "disconnect": "Koble fra",

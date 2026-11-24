@@ -177,6 +177,7 @@
   "all": "\uc804\uccb4",
   "no_name": "\uc774\ub984 \uc5c6\uc74c",
   "connecting_to_ble": "\ube14\ub8e8\ud22c\uc2a4 \uae30\uae30\uc5d0 \uc5f0\uacb0\ud558\ub294 \uc911...",
+  "copied": "복사됨",
   "current_slot": "현재 슬롯",
   "recent_cards": "최근 카드",
   "disconnect": "연결 해제",

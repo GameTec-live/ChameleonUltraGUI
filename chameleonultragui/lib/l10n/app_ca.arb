@@ -177,6 +177,7 @@
   "all": "Tot",
   "no_name": "Sense nom",
   "connecting_to_ble": "S'est\u00e0 connectant al dispositiu BLE...",
+  "copied": "Copiat",
   "current_slot": "Ranura actual",
   "recent_cards": "Targetes recents",
   "disconnect": "Desconnecta",
