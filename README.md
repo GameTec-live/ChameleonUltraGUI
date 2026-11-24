@@ -2,7 +2,7 @@
 A GUI for the Chameleon Ultra/Chameleon Lite written in Flutter for cross platform operation
 
 > **中文说明 / 本 Fork 的改动与预编译包**：见 [README.zh-CN.md](README.zh-CN.md)。
-> Windows 免安装版（1.4.0 + BLE / 窗口记忆 / 串口卡顿修复）请到 [Releases](https://github.com/lyx7725/ChameleonUltraGUI/releases) 页面下载。
+> Windows 免安装版与 Android APK（1.4.0 + BLE 自动连接 / PIN 配对 / 窗口记忆 / 串口卡顿修复）请到 [Releases](https://github.com/lyx7725/ChameleonUltraGUI/releases) 页面下载。
 
 [![Auto build](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml/badge.svg)](https://github.com/GameTec-live/ChameleonUltraGUI/actions/workflows/build-app.yml) 
 [![Open collective](https://opencollective.com/chameleon-ultra-gui/tiers/badge.svg)](https://opencollective.com/chameleon-ultra-gui#support)

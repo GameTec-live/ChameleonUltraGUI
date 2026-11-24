@@ -871,6 +871,65 @@ winrt::fire_and_forget FlutterBluePlusWinrtPlugin::CreateBondAsync(std::string r
     }
 }
 
+winrt::fire_and_forget FlutterBluePlusWinrtPlugin::CreateBondWithPinAsync(
+    std::string remote_id, std::string pin,
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+    std::string error_msg;
+    try {
+        auto bleDevice = co_await BluetoothLEDevice::FromBluetoothAddressAsync(utils::mac_to_uint64(remote_id));
+        if (!bleDevice) {
+            error_msg = "Device not found";
+        } else {
+            auto deviceInfo = bleDevice.DeviceInformation();
+            if (!deviceInfo) {
+                error_msg = "Device information unavailable";
+            } else {
+                auto pairing = deviceInfo.Pairing();
+                if (pairing.IsPaired()) {
+                    co_await ui_thread_;
+                    result->Success(flutter::EncodableValue(true));
+                    co_return;
+                }
+
+                auto custom = pairing.Custom();
+                auto pin_hstring = winrt::to_hstring(pin);
+                auto token = custom.PairingRequested(
+                    [pin_hstring](
+                        const winrt::Windows::Devices::Enumeration::DeviceInformationCustomPairing&,
+                        const winrt::Windows::Devices::Enumeration::DevicePairingRequestedEventArgs& args) {
+                        if (args.PairingKind() ==
+                            winrt::Windows::Devices::Enumeration::DevicePairingKinds::ProvidePin) {
+                            args.Accept(pin_hstring);
+                        } else {
+                            args.Accept();
+                        }
+                    });
+
+                using winrt::Windows::Devices::Enumeration::DevicePairingKinds;
+                auto kinds = static_cast<DevicePairingKinds>(
+                    static_cast<uint32_t>(DevicePairingKinds::ProvidePin) |
+                    static_cast<uint32_t>(DevicePairingKinds::ConfirmOnly));
+                auto result_val = co_await custom.PairAsync(kinds);
+                custom.PairingRequested(token);
+
+                co_await ui_thread_;
+                bool paired = result_val.Status() ==
+                                  winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::Paired ||
+                              result_val.Status() ==
+                                  winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::AlreadyPaired;
+                result->Success(flutter::EncodableValue(paired));
+                co_return;
+            }
+        }
+    } catch (const std::exception& e) { error_msg = e.what(); }
+      catch (...) { error_msg = "Unknown error"; }
+
+    if (!error_msg.empty()) {
+        co_await ui_thread_;
+        result->Error("createBondWithPin", error_msg);
+    }
+}
+
 winrt::fire_and_forget FlutterBluePlusWinrtPlugin::RemoveBondAsync(std::string remote_id, std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
     std::string error_msg;
     try {
@@ -1989,6 +2048,23 @@ void FlutterBluePlusWinrtPlugin::HandleMethodCall(const flutter::MethodCall<flut
         const auto* args = std::get_if<flutter::EncodableMap>(method_call.arguments());
         std::string remote_id = ""; if (args) { auto it = args->find(flutter::EncodableValue("remote_id")); if (it != args->end()) remote_id = utils::from_value<std::string>(&it->second); }
         CreateBondAsync(remote_id, std::move(result)); return;
+    }
+    if (method == "createBondWithPin") {
+        const auto* args = std::get_if<flutter::EncodableMap>(method_call.arguments());
+        std::string remote_id = "";
+        std::string pin = "";
+        if (args) {
+            auto it = args->find(flutter::EncodableValue("remote_id"));
+            if (it != args->end()) remote_id = utils::from_value<std::string>(&it->second);
+            auto pin_it = args->find(flutter::EncodableValue("pin"));
+            if (pin_it != args->end()) pin = utils::from_value<std::string>(&pin_it->second);
+        }
+        if (remote_id.empty() || pin.empty()) {
+            result->Error("createBondWithPin", "Invalid arguments");
+        } else {
+            CreateBondWithPinAsync(remote_id, pin, std::move(result));
+        }
+        return;
     }
     if (method == "removeBond") {
         const auto* remote_id_val = std::get_if<std::string>(method_call.arguments());

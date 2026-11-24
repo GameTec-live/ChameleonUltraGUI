@@ -3,10 +3,8 @@ import 'dart:async';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/connector/serial_android.dart';
+import 'package:chameleonultragui/gui/component/connection_status.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
-import 'package:chameleonultragui/gui/menu/dialogs/manual_connect.dart';
-import 'package:chameleonultragui/helpers/flash.dart';
-import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -27,11 +25,8 @@ class ConnectPage extends StatefulWidget {
 }
 
 class _ConnectPageState extends State<ConnectPage> {
-  List<Chameleon> _devices = [];
   Timer? _scanTimer;
   Object? _error;
-  bool _isLoading = true;
-  bool _initialScanCompleted = false;
   bool _scanInProgress = false;
   bool _connectionInProgress = false;
   bool _showedPermissionsSnackbar = false;
@@ -121,10 +116,7 @@ class _ConnectPageState extends State<ConnectPage> {
       final localizations = AppLocalizations.of(context)!;
       final snackBar = SnackBar(
         content: Text(localizations.android_ble_permissions_missing),
-        action: SnackBarAction(
-          label: localizations.close,
-          onPressed: () {},
-        ),
+        action: SnackBarAction(label: localizations.close, onPressed: () {}),
       );
 
       scaffoldMessenger.hideCurrentSnackBar();
@@ -132,7 +124,7 @@ class _ConnectPageState extends State<ConnectPage> {
     });
   }
 
-  Future<void> _scanNow({bool manual = false}) async {
+  Future<void> _scanNow() async {
     final appState = _appState;
     if (_scanInProgress || !_shouldScan(appState)) {
       return;
@@ -143,14 +135,12 @@ class _ConnectPageState extends State<ConnectPage> {
     setState(() {
       _scanInProgress = true;
       _error = null;
-      if (!_initialScanCompleted || manual) {
-        _isLoading = true;
-      }
     });
 
     try {
       final devices = _normalizeDevices(
-          await appState.connector!.availableChameleons(false));
+        await appState.connector!.availableChameleons(false),
+      );
       if (!mounted) {
         return;
       }
@@ -164,12 +154,6 @@ class _ConnectPageState extends State<ConnectPage> {
         _lastAutoConnectAttemptPort = null;
       }
 
-      setState(() {
-        _devices = devices;
-        _isLoading = false;
-        _initialScanCompleted = true;
-      });
-
       _showPermissionsWarningIfNeeded(devices);
       await _maybeAutoConnect(devices);
     } catch (error) {
@@ -180,8 +164,6 @@ class _ConnectPageState extends State<ConnectPage> {
 
       setState(() {
         _error = error;
-        _isLoading = false;
-        _initialScanCompleted = true;
       });
     } finally {
       if (mounted) {
@@ -195,8 +177,15 @@ class _ConnectPageState extends State<ConnectPage> {
 
   Future<void> _maybeAutoConnect(List<Chameleon> devices) async {
     final appState = _appState;
-    if (!_shouldScan(appState) ||
-        !appState.sharedPreferencesProvider.getAutoConnectFirstFoundDevice()) {
+    if (!_shouldScan(appState)) {
+      return;
+    }
+    // BLE has no manual device picker any more, so a found Chameleon is
+    // always connected. USB keeps honouring the auto-connect preference.
+    final autoConnect =
+        appState.sharedPreferencesProvider.getAutoConnectFirstFoundDevice() ||
+        devices.any((device) => device.type == ConnectionType.ble);
+    if (!autoConnect) {
       return;
     }
 
@@ -218,23 +207,13 @@ class _ConnectPageState extends State<ConnectPage> {
     }
 
     _lastAutoConnectAttemptPort = connectableDevice.port;
-    await _connectToDevice(connectableDevice, fromAutoConnect: true);
+    await _connectToDevice(connectableDevice);
   }
 
-  Future<void> _connectToDevice(
-    Chameleon chameleonDevice, {
-    bool fromAutoConnect = false,
-  }) async {
+  Future<void> _connectToDevice(Chameleon chameleonDevice) async {
     final appState = _appState;
 
-    if (_connectionInProgress) {
-      return;
-    }
-
-    if (chameleonDevice.dfu) {
-      if (!fromAutoConnect) {
-        _showDfuDialog(chameleonDevice);
-      }
+    if (_connectionInProgress || chameleonDevice.dfu) {
       return;
     }
 
@@ -251,15 +230,19 @@ class _ConnectPageState extends State<ConnectPage> {
         appState.changesMade();
       }
 
-      final connected =
-          await appState.connector!.connectSpecificDevice(chameleonDevice.port);
+      final connected = await appState.connector!.connectSpecificDevice(
+        chameleonDevice.port,
+      );
       if (connected) {
         appState.connector!.pendingConnection = false;
         appState.clearAutoReconnectSuppression(chameleonDevice.port);
-        appState.communicator =
-            ChameleonCommunicator(appState.log!, port: appState.connector);
+        appState.communicator = ChameleonCommunicator(
+          appState.log!,
+          port: appState.connector,
+        );
       } else {
         appState.connector!.pendingConnection = false;
+        _lastAutoConnectAttemptPort = null;
       }
 
       appState.changesMade();
@@ -284,140 +267,6 @@ class _ConnectPageState extends State<ConnectPage> {
     }
   }
 
-  void _showDfuDialog(Chameleon chameleonDevice) {
-    final appState = _appState;
-    final localizations = AppLocalizations.of(context)!;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    showDialog<String>(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: Text(localizations.chameleon_is_dfu),
-        content: Text(localizations.firmware_is_corrupted),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, localizations.cancel),
-            child: Text(localizations.cancel),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext, localizations.flash);
-              appState.changesMade();
-
-              scaffoldMessenger.hideCurrentSnackBar();
-              scaffoldMessenger.showSnackBar(
-                SnackBar(
-                  content: Text(
-                    localizations.downloading_fw(
-                      chameleonDeviceName(chameleonDevice.device),
-                    ),
-                  ),
-                  action: SnackBarAction(
-                    label: localizations.close,
-                    onPressed: scaffoldMessenger.hideCurrentSnackBar,
-                  ),
-                ),
-              );
-
-              await flashFirmware(
-                appState,
-                scaffoldMessenger: scaffoldMessenger,
-                device: chameleonDevice.device,
-                enterDFU: false,
-              );
-
-              appState.changesMade();
-              if (mounted) {
-                _scanNow();
-              }
-            },
-            child: Text(localizations.flash),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeviceGrid(AppLocalizations localizations) {
-    return GridView(
-      padding: const EdgeInsets.all(20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 1,
-      ),
-      scrollDirection: Axis.vertical,
-      children: [
-        ..._devices.map<Widget>((chameleonDevice) {
-          return ElevatedButton(
-            onPressed: () => _connectToDevice(chameleonDevice),
-            style: ButtonStyle(
-              shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18.0),
-                ),
-              ),
-            ),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: FittedBox(
-                    alignment: Alignment.centerRight,
-                    fit: BoxFit.scaleDown,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            chameleonDevice.type == ConnectionType.ble
-                                ? const Icon(Icons.bluetooth)
-                                : const Icon(Icons.usb),
-                            Text(chameleonDevice.port ?? ""),
-                            if (chameleonDevice.dfu) Text(localizations.dfu),
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-                FittedBox(
-                  alignment: Alignment.topRight,
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Chameleon ${chameleonDeviceName(chameleonDevice.device)}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Image.asset(
-                    chameleonDevice.device == ChameleonDevice.ultra
-                        ? 'assets/black-ultra-standing-front.webp'
-                        : 'assets/black-lite-standing-front.webp',
-                    fit: BoxFit.fitHeight,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<ChameleonGUIState>();
@@ -425,60 +274,17 @@ class _ConnectPageState extends State<ConnectPage> {
 
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(localizations.connect),
-        ),
+        appBar: AppBar(title: Text(localizations.connect)),
         body: ErrorPage(errorMessage: _error.toString()),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations.connect),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(
-                appState.connector!.connected
-                    ? '已连接'
-                    : (appState.connector!.pendingConnection ||
-                            _connectionInProgress)
-                        ? '正在连接…'
-                        : '正在等待设备…',
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-            Expanded(
-              child: (_isLoading && !_initialScanCompleted)
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildDeviceGrid(localizations),
-            ),
-            if (appState.connector!.isManualConnectionSupported())
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Row(
-                  children: [
-                    const Spacer(),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: IconButton(
-                        onPressed: () => showDialog<String>(
-                          context: context,
-                          builder: (BuildContext dialogContext) =>
-                              const ManualConnect(),
-                        ),
-                        icon: const Icon(Icons.add),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
+      appBar: AppBar(title: Text(localizations.connect)),
+      body: ConnectionStatus(
+        connected: appState.connector!.connected,
+        connecting:
+            appState.connector!.pendingConnection || _connectionInProgress,
       ),
     );
   }

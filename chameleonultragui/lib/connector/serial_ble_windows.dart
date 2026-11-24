@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/ble_trace.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
-import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,7 +13,16 @@ final Guid _uartRx = Guid("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
 final Guid _uartTx = Guid("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
 
 const List<int> _uartHandshake = [
-  0x11, 0xef, 0x03, 0xfb, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00
+  0x11,
+  0xef,
+  0x03,
+  0xfb,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x02,
+  0x00,
 ];
 
 /// Windows BLE connector using the WinRT implementation of flutter_blue_plus.
@@ -125,11 +133,14 @@ class WindowsBLESerial extends AbstractSerial {
       await _stopScan();
       await FlutterBluePlus.startScan(timeout: _scanWindow);
       await Future<void>.delayed(
-          _scanWindow + const Duration(milliseconds: 200));
+        _scanWindow + const Duration(milliseconds: 200),
+      );
       await FlutterBluePlus.stopScan();
     } catch (e) {
-      _trace('scan.error',
-          'ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
+      _trace(
+        'scan.error',
+        'ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e',
+      );
     } finally {
       await subscription.cancel();
       inSearch = false;
@@ -140,8 +151,10 @@ class WindowsBLESerial extends AbstractSerial {
     for (final entry in found.entries) {
       chameleonMap[entry.key] = entry.value;
     }
-    _trace('scan.done',
-        'ms=${stopwatch.elapsedMilliseconds} count=${_lastScanResult.length} ports=${_lastScanResult.map((d) => d.port).join(",")}');
+    _trace(
+      'scan.done',
+      'ms=${stopwatch.elapsedMilliseconds} count=${_lastScanResult.length} ports=${_lastScanResult.map((d) => d.port).join(",")}',
+    );
     return _lastScanResult;
   }
 
@@ -171,10 +184,7 @@ class WindowsBLESerial extends AbstractSerial {
     _watching = true;
     _trace('watch.loop', 'started');
     while (_watchEnabled) {
-      if (connected ||
-          _connecting ||
-          _reconnecting ||
-          (isOtherBusy?.call() ?? false)) {
+      if (connected || _reconnecting || (isOtherBusy?.call() ?? false)) {
         await Future<void>.delayed(const Duration(milliseconds: 500));
         continue;
       }
@@ -201,13 +211,18 @@ class WindowsBLESerial extends AbstractSerial {
           if (!_isChameleonResult(result)) {
             continue;
           }
-          if (connected || _connecting || _reconnecting) {
+          if (connected) {
             handled = true;
             unawaited(FlutterBluePlus.stopScan());
             if (!completer.isCompleted) {
               completer.complete();
             }
             return;
+          }
+          // A direct attempt already owns the radio; keep scanning so the
+          // advertisement that just arrived is still available if it fails.
+          if (_connecting || _reconnecting) {
+            continue;
           }
           handled = true;
           firstAdvertisement ??= DateTime.now();
@@ -239,12 +254,16 @@ class WindowsBLESerial extends AbstractSerial {
                 .difference(firstAdvertisement!)
                 .inMilliseconds;
             if (ok) {
-              _trace('watch.timing',
-                  'first_adv_to_handshake_ms=$elapsed stop_scan_ms=$stopScanMs port=$port');
+              _trace(
+                'watch.timing',
+                'first_adv_to_handshake_ms=$elapsed stop_scan_ms=$stopScanMs port=$port',
+              );
               _trace('watch.connected', 'port=$port');
             } else {
-              _trace('watch.failed',
-                  'ms=$elapsed stop_scan_ms=$stopScanMs port=$port');
+              _trace(
+                'watch.failed',
+                'ms=$elapsed stop_scan_ms=$stopScanMs port=$port',
+              );
             }
             if (!completer.isCompleted) {
               completer.complete();
@@ -256,10 +275,14 @@ class WindowsBLESerial extends AbstractSerial {
 
       _trace('watch.scan.start', '');
       await FlutterBluePlus.startScan(timeout: const Duration(minutes: 5));
-      _trace('watch.scan.started',
-          'isScanning=${FlutterBluePlus.isScanningNow}');
-      await completer.future
-          .timeout(const Duration(minutes: 5), onTimeout: () {});
+      _trace(
+        'watch.scan.started',
+        'isScanning=${FlutterBluePlus.isScanningNow}',
+      );
+      await completer.future.timeout(
+        const Duration(minutes: 5),
+        onTimeout: () {},
+      );
     } catch (e) {
       _trace('watch.error', '${e.runtimeType}: $e');
       await Future<void>.delayed(const Duration(seconds: 2));
@@ -316,8 +339,6 @@ class WindowsBLESerial extends AbstractSerial {
       }
 
       _connecting = true;
-      pendingConnection = true;
-      notifyConnectionStateChanged();
       var stage = 'cleanup';
       final total = Stopwatch()..start();
       try {
@@ -336,24 +357,31 @@ class WindowsBLESerial extends AbstractSerial {
             )
             .timeout(const Duration(seconds: 4));
         _trace('direct.connect.ok', 'ms=${connectWatch.elapsedMilliseconds}');
+        // Only a real link turns the page into "connecting"; retrying an
+        // absent remembered address must keep showing "waiting".
+        pendingConnection = true;
+        notifyConnectionStateChanged();
 
         stage = 'discover';
         final discoverWatch = Stopwatch()..start();
         final uart = await _discover(device, retries: 1);
-        _trace('direct.discover.ok',
-            'ms=${discoverWatch.elapsedMilliseconds}');
+        _trace('direct.discover.ok', 'ms=${discoverWatch.elapsedMilliseconds}');
 
         stage = 'subscribe';
         final subscribeWatch = Stopwatch()..start();
         await _subscribeService(uart, retries: 1);
-        _trace('direct.subscribe.ok',
-            'ms=${subscribeWatch.elapsedMilliseconds}');
+        _trace(
+          'direct.subscribe.ok',
+          'ms=${subscribeWatch.elapsedMilliseconds}',
+        );
 
         stage = 'handshake';
         final handshakeWatch = Stopwatch()..start();
         await _handshake(_rx!, retries: 1);
-        _trace('direct.handshake.ok',
-            'ms=${handshakeWatch.elapsedMilliseconds}');
+        _trace(
+          'direct.handshake.ok',
+          'ms=${handshakeWatch.elapsedMilliseconds}',
+        );
 
         _setConnected(address, info, notify: true);
         _trace('direct.ok', 'total_ms=${total.elapsedMilliseconds}');
@@ -366,8 +394,10 @@ class WindowsBLESerial extends AbstractSerial {
         }
         break;
       } catch (e) {
-        _trace('direct.fail',
-            'stage=$stage ms=${total.elapsedMilliseconds} error=${e.runtimeType}: $e');
+        _trace(
+          'direct.fail',
+          'stage=$stage ms=${total.elapsedMilliseconds} error=${e.runtimeType}: $e',
+        );
         await _cleanupDirect();
         pendingConnection = false;
         notifyConnectionStateChanged();
@@ -399,19 +429,19 @@ class WindowsBLESerial extends AbstractSerial {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
-          'ble_last_device',
-          jsonEncode({
-            'address': address,
-            'device': info.device == ChameleonDevice.lite ? 'lite' : 'ultra',
-          }));
+        'ble_last_device',
+        jsonEncode({
+          'address': address,
+          'device': info.device == ChameleonDevice.lite ? 'lite' : 'ultra',
+        }),
+      );
     } catch (_) {}
   }
 
   Future<void> _stopScan() async {
     try {
       if (FlutterBluePlus.isScanningNow) {
-        await FlutterBluePlus.stopScan()
-            .timeout(const Duration(seconds: 2));
+        await FlutterBluePlus.stopScan().timeout(const Duration(seconds: 2));
         _trace('scan.stop', 'ok');
       }
     } catch (e) {
@@ -464,8 +494,10 @@ class WindowsBLESerial extends AbstractSerial {
       _trace('legacy.ok', 'ms=${stopwatch.elapsedMilliseconds}');
       return true;
     } catch (e) {
-      _trace('legacy.fail',
-          'stage=$stage ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
+      _trace(
+        'legacy.fail',
+        'stage=$stage ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e',
+      );
       await performDisconnect();
       return false;
     }
@@ -473,7 +505,10 @@ class WindowsBLESerial extends AbstractSerial {
 
   Future<bool> _connectRobust(dynamic devicePort, Chameleon info) async {
     if (_connecting || _reconnecting) {
-      _trace('connect.busy', 'connecting=$_connecting reconnecting=$_reconnecting');
+      _trace(
+        'connect.busy',
+        'connecting=$_connecting reconnecting=$_reconnecting',
+      );
       return false;
     }
     _connecting = true;
@@ -481,8 +516,11 @@ class WindowsBLESerial extends AbstractSerial {
     notifyConnectionStateChanged();
     final stopwatch = Stopwatch()..start();
     try {
-      final ok = await _robustAttempts(devicePort.toString(), info,
-          reconnect: false);
+      final ok = await _robustAttempts(
+        devicePort.toString(),
+        info,
+        reconnect: false,
+      );
       if (!ok) {
         pendingConnection = false;
         await performDisconnect();
@@ -494,8 +532,11 @@ class WindowsBLESerial extends AbstractSerial {
     }
   }
 
-  Future<bool> _robustAttempts(String port, Chameleon info,
-      {required bool reconnect}) async {
+  Future<bool> _robustAttempts(
+    String port,
+    Chameleon info, {
+    required bool reconnect,
+  }) async {
     const backoff = [0, 250, 600, 1200];
     final total = Stopwatch()..start();
 
@@ -506,8 +547,10 @@ class WindowsBLESerial extends AbstractSerial {
       final attempt = i + 1;
       var stage = 'cleanup';
       final stopwatch = Stopwatch()..start();
-      _trace('attempt.start',
-          'attempt=$attempt port=$port reconnect=$reconnect');
+      _trace(
+        'attempt.start',
+        'attempt=$attempt port=$port reconnect=$reconnect',
+      );
 
       try {
         await _cleanupForConnect();
@@ -525,8 +568,10 @@ class WindowsBLESerial extends AbstractSerial {
               timeout: const Duration(seconds: 8),
             )
             .timeout(const Duration(seconds: 10));
-        _trace('connect.ok',
-            'attempt=$attempt ms=${connectWatch.elapsedMilliseconds}');
+        _trace(
+          'connect.ok',
+          'attempt=$attempt ms=${connectWatch.elapsedMilliseconds}',
+        );
 
         stage = 'discover';
         final uart = await _discover(bluetoothDevice, retries: 2);
@@ -538,20 +583,28 @@ class WindowsBLESerial extends AbstractSerial {
         await _handshake(_rx!, retries: 2);
 
         _setConnected(port, info, notify: !reconnect);
-        _trace('attempt.ok',
-            'attempt=$attempt total_ms=${stopwatch.elapsedMilliseconds}');
-        _trace('robust.ok',
-            'attempts=$attempt total_ms=${total.elapsedMilliseconds}');
+        _trace(
+          'attempt.ok',
+          'attempt=$attempt total_ms=${stopwatch.elapsedMilliseconds}',
+        );
+        _trace(
+          'robust.ok',
+          'attempts=$attempt total_ms=${total.elapsedMilliseconds}',
+        );
         return true;
       } catch (e) {
-        _trace('attempt.fail',
-            'attempt=$attempt stage=$stage ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
+        _trace(
+          'attempt.fail',
+          'attempt=$attempt stage=$stage ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e',
+        );
         await _cleanupForConnect();
       }
     }
 
-    _trace('robust.failed',
-        'attempts=${backoff.length} total_ms=${total.elapsedMilliseconds}');
+    _trace(
+      'robust.failed',
+      'attempts=${backoff.length} total_ms=${total.elapsedMilliseconds}',
+    );
     return false;
   }
 
@@ -571,37 +624,47 @@ class WindowsBLESerial extends AbstractSerial {
     await _stopScan();
   }
 
-  Future<BluetoothService> _discover(BluetoothDevice device,
-      {required int retries}) async {
+  Future<BluetoothService> _discover(
+    BluetoothDevice device, {
+    required int retries,
+  }) async {
     Object? lastError;
     for (var i = 0; i < retries; i++) {
       final stopwatch = Stopwatch()..start();
       try {
-        final services = await device
-            .discoverServices()
-            .timeout(const Duration(seconds: 6));
+        final services = await device.discoverServices().timeout(
+          const Duration(seconds: 6),
+        );
         for (final service in services) {
           if (service.uuid == _nrfService) {
-            _trace('discover.ok',
-                'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} services=${services.length}');
+            _trace(
+              'discover.ok',
+              'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} services=${services.length}',
+            );
             return service;
           }
         }
         lastError = 'UART service missing (services=${services.length})';
-        _trace('discover.miss',
-            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} services=${services.length}');
+        _trace(
+          'discover.miss',
+          'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} services=${services.length}',
+        );
       } catch (e) {
         lastError = e;
-        _trace('discover.error',
-            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
+        _trace(
+          'discover.error',
+          'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e',
+        );
       }
       await Future<void>.delayed(const Duration(milliseconds: 250));
     }
     throw 'discover failed: $lastError';
   }
 
-  Future<void> _subscribeService(BluetoothService uart,
-      {required int retries}) async {
+  Future<void> _subscribeService(
+    BluetoothService uart, {
+    required int retries,
+  }) async {
     BluetoothCharacteristic? rx;
     BluetoothCharacteristic? tx;
     for (final characteristic in uart.characteristics) {
@@ -622,37 +685,45 @@ class WindowsBLESerial extends AbstractSerial {
     for (var i = 0; i < retries; i++) {
       final stopwatch = Stopwatch()..start();
       try {
-        await tx
-            .setNotifyValue(true)
-            .timeout(const Duration(seconds: 4));
-        _valueSubscription = tx.onValueReceived.listen((data) {
-          if (messageCallback != null) {
-            try {
-              messageCallback(Uint8List.fromList(data));
-            } catch (_) {
-              log.w(
-                  "Received unexpected data: ${bytesToHex(Uint8List.fromList(data))}");
+        await tx.setNotifyValue(true).timeout(const Duration(seconds: 4));
+        _valueSubscription = tx.onValueReceived.listen(
+          (data) {
+            if (messageCallback != null) {
+              try {
+                messageCallback(Uint8List.fromList(data));
+              } catch (_) {
+                log.w(
+                  "Received unexpected data: ${data.length} bytes",
+                );
+              }
             }
-          }
-        }, onError: (Object error) {
-          _trace('notify.error', '${error.runtimeType}: $error');
-        });
+          },
+          onError: (Object error) {
+            _trace('notify.error', '${error.runtimeType}: $error');
+          },
+        );
         _rx = rx;
-        _trace('subscribe.ok',
-            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds}');
+        _trace(
+          'subscribe.ok',
+          'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds}',
+        );
         return;
       } catch (e) {
         lastError = e;
-        _trace('subscribe.error',
-            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
+        _trace(
+          'subscribe.error',
+          'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e',
+        );
         await Future<void>.delayed(const Duration(milliseconds: 200));
       }
     }
     throw 'subscribe failed: $lastError';
   }
 
-  Future<void> _handshake(BluetoothCharacteristic rx,
-      {required int retries}) async {
+  Future<void> _handshake(
+    BluetoothCharacteristic rx, {
+    required int retries,
+  }) async {
     Object? lastError;
     for (var i = 0; i < retries; i++) {
       final stopwatch = Stopwatch()..start();
@@ -660,13 +731,17 @@ class WindowsBLESerial extends AbstractSerial {
         await rx
             .write(_uartHandshake, withoutResponse: false)
             .timeout(const Duration(seconds: 4));
-        _trace('handshake.ok',
-            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds}');
+        _trace(
+          'handshake.ok',
+          'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds}',
+        );
         return;
       } catch (e) {
         lastError = e;
-        _trace('handshake.error',
-            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e');
+        _trace(
+          'handshake.error',
+          'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e',
+        );
         await Future<void>.delayed(const Duration(milliseconds: 200));
       }
     }
@@ -696,8 +771,7 @@ class WindowsBLESerial extends AbstractSerial {
 
   void _listenState(BluetoothDevice bluetoothDevice, {required bool legacy}) {
     unawaited(_stateSubscription?.cancel());
-    _stateSubscription =
-        bluetoothDevice.connectionState.listen((state) {
+    _stateSubscription = bluetoothDevice.connectionState.listen((state) {
       _trace('state', '${state.name} connected=$connected');
       if (state == BluetoothConnectionState.disconnected &&
           connected &&
@@ -735,12 +809,16 @@ class WindowsBLESerial extends AbstractSerial {
           final uart = await _discover(bluetoothDevice, retries: 1);
           await _subscribeService(uart, retries: 1);
           await _handshake(_rx!, retries: 1);
-          _trace('reconnect.ok',
-              'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds}');
+          _trace(
+            'reconnect.ok',
+            'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds}',
+          );
           return;
         } catch (e) {
-          _trace('reconnect.retry',
-              'attempt=${i + 1} error=${e.runtimeType}: $e');
+          _trace(
+            'reconnect.retry',
+            'attempt=${i + 1} error=${e.runtimeType}: $e',
+          );
           await Future<void>.delayed(const Duration(milliseconds: 300));
         }
       }

@@ -586,7 +586,6 @@ class PluginApi {
       'aLongPress': normalize(v.aLongPress),
       'bLongPress': normalize(v.bLongPress),
       'pairingEnabled': normalize(v.pairingEnabled),
-      'key': normalize(v.key),
       'wakeTimeSeconds': normalize(v.wakeTimeSeconds),
       'longPressThreshold': normalize(v.longPressThreshold),
     },

@@ -292,11 +292,12 @@ class CardData {
   Uint8List atqa;
   Uint8List ats;
 
-  CardData(
-      {required this.uid,
-      required this.sak,
-      required this.atqa,
-      required this.ats});
+  CardData({
+    required this.uid,
+    required this.sak,
+    required this.atqa,
+    required this.ats,
+  });
 }
 
 class ChameleonMessage {
@@ -304,8 +305,11 @@ class ChameleonMessage {
   int status;
   Uint8List data;
 
-  ChameleonMessage(
-      {required this.command, required this.status, required this.data});
+  ChameleonMessage({
+    required this.command,
+    required this.status,
+    required this.data,
+  });
 }
 
 enum NTLevel { static, weak, hard, backdoor, unknown }
@@ -399,13 +403,14 @@ class Darkside {
   int nr;
   int ar;
 
-  Darkside(
-      {required this.uid,
-      required this.nt1,
-      required this.par,
-      required this.ks1,
-      required this.nr,
-      required this.ar});
+  Darkside({
+    required this.uid,
+    required this.nt1,
+    required this.par,
+    required this.ks1,
+    required this.nr,
+    required this.ar,
+  });
 }
 
 class DetectionResult {
@@ -417,14 +422,15 @@ class DetectionResult {
   int nr;
   int ar;
 
-  DetectionResult(
-      {required this.block,
-      required this.type,
-      required this.isNested,
-      required this.uid,
-      required this.nt,
-      required this.nr,
-      required this.ar});
+  DetectionResult({
+    required this.block,
+    required this.type,
+    required this.isNested,
+    required this.uid,
+    required this.nt,
+    required this.nr,
+    required this.ar,
+  });
 }
 
 class FirmwareVersion {
@@ -478,12 +484,13 @@ class EmulatorSettings {
   bool isAntiColl;
   MifareWriteMode writeMode;
 
-  EmulatorSettings(
-      {required this.isDetectionEnabled,
-      required this.isGen1a,
-      required this.isGen2,
-      required this.isAntiColl,
-      required this.writeMode});
+  EmulatorSettings({
+    required this.isDetectionEnabled,
+    required this.isGen1a,
+    required this.isGen2,
+    required this.isAntiColl,
+    required this.writeMode,
+  });
 }
 
 class DeviceSettings {
@@ -493,20 +500,19 @@ class DeviceSettings {
   ButtonConfig aLongPress;
   ButtonConfig bLongPress;
   bool pairingEnabled;
-  String key;
   int? wakeTimeSeconds;
   int? longPressThreshold;
 
-  DeviceSettings(
-      {this.animation = AnimationSetting.none,
-      this.aPress = ButtonConfig.disable,
-      this.bPress = ButtonConfig.disable,
-      this.aLongPress = ButtonConfig.disable,
-      this.bLongPress = ButtonConfig.disable,
-      this.pairingEnabled = false,
-      this.key = "",
-      this.wakeTimeSeconds,
-      this.longPressThreshold});
+  DeviceSettings({
+    this.animation = AnimationSetting.none,
+    this.aPress = ButtonConfig.disable,
+    this.bPress = ButtonConfig.disable,
+    this.aLongPress = ButtonConfig.disable,
+    this.bLongPress = ButtonConfig.disable,
+    this.pairingEnabled = false,
+    this.wakeTimeSeconds,
+    this.longPressThreshold,
+  });
 }
 
 enum MifareClassicValueBlockOperator {
@@ -542,8 +548,9 @@ class EM410XCard extends LFCard {
 
     if (bytes.length == 5 || bytes.length == 13) {
       return EM410XCard(
-          type: bytes.length == 13 ? TagType.em410XElectra : TagType.em410X,
-          uid: bytes);
+        type: bytes.length == 13 ? TagType.em410XElectra : TagType.em410X,
+        uid: bytes,
+      );
     }
 
     TagType type = TagType.em410X;
@@ -560,10 +567,7 @@ class EM410XCard extends LFCard {
       }
     }
 
-    return EM410XCard(
-      type: type,
-      uid: uid,
-    );
+    return EM410XCard(type: type, uid: uid);
   }
 
   factory EM410XCard.fromUID(String uid, {TagType type = TagType.em410X}) {
@@ -581,11 +585,12 @@ class HIDCard extends LFCard {
 
   factory HIDCard.fromBytes(Uint8List bytes) {
     return HIDCard(
-        hidType: bytesToU8(bytes.sublist(0, 1)),
-        facilityCode: bytesToU32(bytes.sublist(1, 5)),
-        uid: bytes.sublist(5, 10),
-        issueLevel: bytesToU8(bytes.sublist(10, 11)),
-        oem: bytesToU16(bytes.sublist(11, 13)));
+      hidType: bytesToU8(bytes.sublist(0, 1)),
+      facilityCode: bytesToU32(bytes.sublist(1, 5)),
+      uid: bytes.sublist(5, 10),
+      issueLevel: bytesToU8(bytes.sublist(10, 11)),
+      oem: bytesToU16(bytes.sublist(11, 13)),
+    );
   }
 
   factory HIDCard.fromUID(String uid) {
@@ -594,13 +599,15 @@ class HIDCard extends LFCard {
 
   @override
   String toString() {
-    return bytesToHexSpace(Uint8List.fromList([
-      hidType,
-      ...u32ToBytes(facilityCode),
-      ...uid,
-      issueLevel,
-      ...u16ToBytes(oem)
-    ]));
+    return bytesToHexSpace(
+      Uint8List.fromList([
+        hidType,
+        ...u32ToBytes(facilityCode),
+        ...uid,
+        issueLevel,
+        ...u16ToBytes(oem),
+      ]),
+    );
   }
 
   @override
@@ -630,13 +637,14 @@ class HIDCard extends LFCard {
     return out;
   }
 
-  HIDCard(
-      {super.type = TagType.hidProx,
-      required this.hidType,
-      required this.facilityCode,
-      required super.uid,
-      required this.issueLevel,
-      required this.oem});
+  HIDCard({
+    super.type = TagType.hidProx,
+    required this.hidType,
+    required this.facilityCode,
+    required super.uid,
+    required this.issueLevel,
+    required this.oem,
+  });
 }
 
 class VikingCard extends LFCard {
@@ -648,10 +656,7 @@ class VikingCard extends LFCard {
     return VikingCard.fromBytes(hexToBytes(uid));
   }
 
-  VikingCard({
-    super.type = TagType.viking,
-    required super.uid,
-  });
+  VikingCard({super.type = TagType.viking, required super.uid});
 }
 
 class JablotronCard extends LFCard {
@@ -668,10 +673,7 @@ class JablotronCard extends LFCard {
     return '${jablotronCardId(uid)} (${bytesToHexSpace(uid)})';
   }
 
-  JablotronCard({
-    super.type = TagType.jablotron,
-    required super.uid,
-  });
+  JablotronCard({super.type = TagType.jablotron, required super.uid});
 }
 
 class PacCard extends LFCard {
@@ -683,10 +685,7 @@ class PacCard extends LFCard {
     return PacCard.fromBytes(hexToBytes(uid));
   }
 
-  PacCard({
-    super.type = TagType.pac,
-    required super.uid,
-  });
+  PacCard({super.type = TagType.pac, required super.uid});
 }
 
 class IoProxCard extends LFCard {
@@ -714,8 +713,9 @@ class IoProxCard extends LFCard {
     final groups = [0, 0xF0, facilityCode, version, high, low, checksum];
     for (var group = 0; group < groups.length; group++) {
       for (var bit = 0; bit < 9; bit++) {
-        final value =
-            bit == 8 ? (group == 0 ? 0 : 1) : (groups[group] >> (7 - bit)) & 1;
+        final value = bit == 8
+            ? (group == 0 ? 0 : 1)
+            : (groups[group] >> (7 - bit)) & 1;
         final position = group * 9 + bit;
         data[4 + position ~/ 8] |= value << (7 - position % 8);
       }
@@ -737,10 +737,7 @@ class IoProxCard extends LFCard {
     return IoProxCard.fromBytes(hexToBytes(uid));
   }
 
-  IoProxCard({
-    super.type = TagType.ioProx,
-    required super.uid,
-  });
+  IoProxCard({super.type = TagType.ioProx, required super.uid});
 }
 
 class IdteckCard extends LFCard {
@@ -752,8 +749,5 @@ class IdteckCard extends LFCard {
     return IdteckCard.fromBytes(hexToBytes(uid));
   }
 
-  IdteckCard({
-    super.type = TagType.idteck,
-    required super.uid,
-  });
+  IdteckCard({super.type = TagType.idteck, required super.uid});
 }
