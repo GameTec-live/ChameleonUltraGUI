@@ -16,7 +16,8 @@
 
 - 文件：[`prebuilt/ChameleonUltraGUI-1.4.0-ble-portable.zip`](prebuilt/ChameleonUltraGUI-1.4.0-ble-portable.zip)
 - SHA-256：`e20601bdb2a6504928497517b67c08b44909252a34ab053f21d68c4ed2d66c49`
-- 用法：**先完全退出已安装的 1.4 版**，解压后运行 `chameleonultragui.exe`。便携版与原版共用配置与卡片数据，不会覆盖原安装目录。
+- 内容：包内含全部运行文件（`chameleonultragui.exe`、Flutter 引擎、插件 DLL、`data/` 资源），**无需安装原版**。
+- 用法：解压后运行 `chameleonultragui.exe`。若已安装 1.4 版，请先完全退出；便携版与原版共用配置与卡片数据，不会覆盖原安装目录。
 
 ## 本次改动
 
