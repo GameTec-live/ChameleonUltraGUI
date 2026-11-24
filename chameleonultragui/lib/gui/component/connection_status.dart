@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/helpers/ble_status.dart';
 import 'package:flutter/material.dart';
 
@@ -11,23 +12,25 @@ class ConnectionStatus extends StatelessWidget {
   final bool connected;
   final bool connecting;
 
-  String _label(BlePhase phase) {
+  String _label(AppLocalizations localizations, BlePhase phase) {
     if (connected) {
-      return '已连接';
+      return localizations.status_connected;
     }
     switch (phase) {
       case BlePhase.pinRequired:
-        return '需要输入 PIN';
+        return localizations.status_pin_required;
       case BlePhase.pinError:
-        return 'PIN 错误';
+        return localizations.status_pin_error;
       case BlePhase.failedRetrying:
-        return '连接失败，重试中…';
+        return localizations.status_failed_retrying;
       case BlePhase.connecting:
-        return '正在连接…';
+        return localizations.status_connecting;
       case BlePhase.waiting:
         break;
     }
-    return connecting ? '正在连接…' : '等待设备…';
+    return connecting
+        ? localizations.status_connecting
+        : localizations.status_waiting_for_device;
   }
 
   @override
@@ -35,6 +38,7 @@ class ConnectionStatus extends StatelessWidget {
     return ValueListenableBuilder<BlePhase>(
       valueListenable: BleStatus.phase,
       builder: (context, phase, _) {
+        final localizations = AppLocalizations.of(context)!;
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -45,7 +49,10 @@ class ConnectionStatus extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 3),
               ),
               const SizedBox(height: 18),
-              Text(_label(phase), style: const TextStyle(fontSize: 16)),
+              Text(
+                _label(localizations, phase),
+                style: const TextStyle(fontSize: 16),
+              ),
             ],
           ),
         );
