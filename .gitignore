@@ -14,3 +14,8 @@
 *.log
 .DS_Store
 Thumbs.db
+
+# Prebuilt packages are published outside the repository
+prebuilt/
+*.zip
+*.apk

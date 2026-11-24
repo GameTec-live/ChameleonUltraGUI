@@ -41,7 +41,7 @@ The installation process is designed to be intuitive and straightforward. We'll 
 
 #### Windows
 
-Download the Windows portable build from this fork's [Releases](https://github.com/lyx7725/ChameleonUltraGUI/releases) page.
+Download the Windows portable build from this fork's Releases page.
 
 #### Linux
 

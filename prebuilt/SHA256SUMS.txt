@@ -1,2 +1,0 @@
-7e95b828b62ae0ff1619051817384ef914d3c958b709a3d5dd8cef4f35e8ce16 *ChameleonUltraGUI-20261124-02-windows.zip
-257003ef6e2a27e4dd6e800eefbba56b5ae9afe1b5c923b04c29ecf2393659c1 *ChameleonUltraGUI-20261124-02-android-arm64.apk
