@@ -14,20 +14,11 @@ A GUI for the Chameleon Ultra/Chameleon Lite written in Flutter for cross platfo
 
 #### Windows
 
-Download the installer [here](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/windows-installer.zip)
-
-Or, [portable version](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/windows.zip)
-
+Download the Windows portable build from this fork's [Releases](https://github.com/lyx7725/ChameleonUltraGUI/releases) page.
 
 #### Linux
 
-Download the build matching your Linux system architecture (`uname -m`: `x86_64` = x64, `aarch64` = ARM64).
-
-| Package | x64 (Intel / AMD) | ARM64 (AArch64) |
-| --- | --- | --- |
-| Debian-based (.deb) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-debian.zip) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-debian-arm64.zip) |
-| Portable | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux.zip) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-arm64.zip) |
-| Portable legacy (built on Ubuntu 20.04 LTS) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-legacy.zip) | [Download](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-legacy-arm64.zip) |
+Download the build matching your Linux system architecture (`uname -m`: `x86_64` = x64, `aarch64` = ARM64) from the upstream [Releases](https://github.com/GameTec-live/ChameleonUltraGUI/releases) page.
 
 - [Arch-based](https://aur.archlinux.org/packages/chameleonultragui-git)
 - [Flathub (Not built in our CI, updates may be slower)](https://flathub.org/apps/run.chameleon.chameleonultragui)
@@ -42,7 +33,7 @@ Or, you can join TestFlight to get builds earlier: [Chameleon Ultra GUI - TestFl
 
 Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra)
 
-Or, plain [APK](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/apk.zip) (not signed, incompatible with Google Play version)
+Or, get the plain APK from the upstream [Releases](https://github.com/GameTec-live/ChameleonUltraGUI/releases) page (not signed, incompatible with Google Play version)
 
 #### Pending stores:
 - F-Store: not yet

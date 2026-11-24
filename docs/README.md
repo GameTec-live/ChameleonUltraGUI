@@ -41,19 +41,13 @@ The installation process is designed to be intuitive and straightforward. We'll 
 
 #### Windows
 
-Download the installer [here](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/windows-installer.zip)
-
-Or, [portable version](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/windows.zip)
-
+Download the Windows portable build from this fork's [Releases](https://github.com/lyx7725/ChameleonUltraGUI/releases) page.
 
 #### Linux
 
-Download the Linux build
+Download the Linux build from the upstream [Releases](https://github.com/GameTec-live/ChameleonUltraGUI/releases) page.
 
-- [Debian-based (.deb)](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-debian.zip)
 - [Arch-based](https://aur.archlinux.org/packages/chameleonultragui-git)
-- [Other](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux.zip)
-- [Other (legacy, built on Ubuntu 20.04 LTS)](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/linux-legacy.zip)
 
 #### macOS / iOS / iPadOS
 
@@ -65,7 +59,7 @@ Or, you can join TestFlight to get builds earlier: [Chameleon Ultra GUI - TestFl
 
 Download it from Google Play Store: [Chameleon Ultra GUI](https://play.google.com/store/apps/details?id=io.chameleon.ultra)
 
-Or, plain [APK](https://github.com/GameTec-live/ChameleonUltraGUI/releases/download/dev/apk.zip) (not signed, incompatible with Google Play version)
+Or, get the plain APK from the upstream [Releases](https://github.com/GameTec-live/ChameleonUltraGUI/releases) page (not signed, incompatible with Google Play version)
 
 ## Usage
 
