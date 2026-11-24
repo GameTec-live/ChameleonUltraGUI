@@ -42,6 +42,10 @@ class _Reader extends ChameleonCommunicator {
   /// doesn't answer (sendCmd throws a TimeoutException).
   String? timeoutOnce;
 
+  /// While set, the type read waits for it, like a slow reader.
+  Completer<void>? hold;
+  bool waiting = false;
+
   void _maybeTimeout(String call) {
     if (timeoutOnce == call) {
       timeoutOnce = null;
@@ -59,6 +63,10 @@ class _Reader extends ChameleonCommunicator {
 
   @override
   Future<bool> detectMf1Support() async {
+    if (hold != null) {
+      waiting = true;
+      await hold!.future;
+    }
     _maybeTimeout('detect');
     return reader && card != null && card!.blocks > 0;
   }
@@ -275,6 +283,29 @@ void main() {
 
       expect(reader.written, List.generate(64, (i) => i));
       expect(find.text('Card written successfully'), findsOneWidget);
+    });
+  }
+
+  for (final timesOut in [false, true]) {
+    testWidgets('leaving the page mid-write (timeout: $timesOut) is safe', (
+      tester,
+    ) async {
+      final reader = await _openWriteCard(tester, _dump(TagType.mifare1K, 64));
+      reader.card = _gen1a1k;
+      await _pickCardAndGen1(tester);
+
+      reader.hold = Completer();
+      if (timesOut) reader.timeoutOnce = 'detect';
+      await tester.tap(_button('Write data').hitTestable().first);
+      await tester.pump();
+      expect(reader.waiting, isTrue);
+
+      await tester.pumpWidget(const SizedBox());
+      reader.hold!.complete();
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(reader.written, timesOut ? isEmpty : List.generate(64, (i) => i));
     });
   }
 

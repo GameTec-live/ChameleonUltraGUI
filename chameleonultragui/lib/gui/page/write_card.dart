@@ -123,6 +123,7 @@ class WriteCardPageState extends State<WriteCardPage> {
   }
 
   void updateProgress(int writeProgress) {
+    if (!mounted) return;
     setState(() {
       progress = writeProgress;
     });
@@ -152,6 +153,7 @@ class WriteCardPageState extends State<WriteCardPage> {
       // e.g. the reader timed out, report it as a failed write
     }
 
+    if (!mounted) return;
     if (success) {
       snackBar = SnackBar(
         content: Text(localizations.magic_success_write),
@@ -247,6 +249,7 @@ class WriteCardPageState extends State<WriteCardPage> {
         }
       } catch (_) {
         // e.g. the reader timed out
+        if (!mounted) return;
         snackBar = SnackBar(
           content: Text(localizations.magic_failed_write),
           action: SnackBarAction(
