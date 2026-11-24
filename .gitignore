@@ -1,0 +1,16 @@
+# Local secrets, logs and machine-specific files
+**/key.properties
+**/local.properties
+**/upload-keystore.jks
+**/*.jks
+**/*.keystore
+**/.env
+**/.env.*
+**/secrets.json
+**/tokens.json
+**/*.token
+**/chameleon_ble.log
+**/*.log
+*.log
+.DS_Store
+Thumbs.db

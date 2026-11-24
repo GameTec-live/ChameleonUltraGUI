@@ -14,15 +14,17 @@
 
 - Windows 免安装包：`ChameleonUltraGUI-20261124-02-windows.zip`，SHA-256：`7E95B828B62AE0FF1619051817384EF914D3C958B709A3D5DD8CEF4F35E8CE16`
 - Android APK（arm64）：`ChameleonUltraGUI-20261124-02-android-arm64.apk`，SHA-256：`257003ef6e2a27e4dd6e800eefbba56b5ae9afe1b5c923b04c29ecf2393659c1`
-- 仓库内同一份文件位于 [`prebuilt/`](prebuilt/)。旧版 ble/ble2/ble3/ble4 已归档到 `Downloads\ChameleonUltraGUI-旧版本\`，pin 版暂留原处。
+- Windows 下载：[`prebuilt/ChameleonUltraGUI-20261124-02-windows.zip`](prebuilt/ChameleonUltraGUI-20261124-02-windows.zip) 或 Releases 页面。
+- Android 下载：[`prebuilt/ChameleonUltraGUI-20261124-02-android-arm64.apk`](prebuilt/ChameleonUltraGUI-20261124-02-android-arm64.apk) 或 Releases 页面。
+- `prebuilt/` 仅保留最新版，旧版包已移除。
 
 Windows 包解压后直接运行 `chameleonultragui.exe`，不会覆盖已安装的 1.4 版；便携版与原版共用配置和卡片数据。Android APK 使用调试证书签名，可直接侧载。
 
 ## 本次改动
 
-1. **连接页精简**：删除“默认 BLE 密码 123456”“首次连接可能较慢”“需在系统蓝牙设置里删除设备”等提示；页面只保留一个圆圈和一行状态——未发现设备为“等待设备…”，收到广播并开始连接为“正在连接…”，连接后为“已连接”。设备未开机时不会显示“正在连接”。
+1. **连接页精简**：删除“默认 BLE 密码”“首次连接可能较慢”“需在系统蓝牙设置里删除设备”等提示；页面只保留一个圆圈和一行状态——未发现设备为“等待设备…”，收到广播并开始连接为“正在连接…”，连接后为“已连接”。设备未开机时不会显示“正在连接”。
 2. **PIN 不回显**：设置页的 PIN 输入框改为密码样式且始终为空，只写不读；设备设置解析不再保留 PIN，插件 API 也不再返回；调试日志对 PIN 相关命令整帧脱敏。应用**不把 PIN 写入任何配置文件**，配对凭据由操作系统（Windows 配对库 / Android 蓝牙栈）保存。
-3. **在 CCCD 失败时立即配对**：真机日志显示连接（约 380 ms）和发现服务（约 570 ms）都成功，卡在 `setNotifyValue | Write CCCD failed: 2`。现在订阅失败会立刻触发配对，Windows 用自定义 `DeviceInformationCustomPairing` 的 `ProvidePin` 弹窗（失败后 22 ms 内弹出），Android 走系统 `createBond`；不会自动填入 `123456`。成功后将 PIN 写入系统安全存储（Windows DPAPI / Android Keystore），下次直接复用；输错、取消或超时会回到可见状态。
+3. **在 CCCD 失败时立即配对**：真机日志显示连接（约 380 ms）和发现服务（约 570 ms）都成功，卡在 `setNotifyValue | Write CCCD failed: 2`。现在订阅失败会立刻触发配对，Windows 用自定义 `DeviceInformationCustomPairing` 的 `ProvidePin` 弹窗（失败后 22 ms 内弹出），Android 走系统 `createBond`；不会自动填入默认密码。成功后将 PIN 写入系统安全存储（Windows DPAPI / Android Keystore），下次直接复用；输错、取消或超时会回到可见状态。
 4. **自动连接修复**：后台扫描与“记住的上次地址直连”真正并行，直连重试不再阻塞扫描；未开机时直连重试不改变界面状态。Android 发现 BLE 设备后始终自动连接，不再依赖“自动连接第一个设备”开关。
 5. **保留原有能力**：Balanced 连接参数、1 秒保活、窗口位置/大小记忆、USB 自动识别均未回退；串口、COM 口和设备地址均未写死。
 6. **状态与超时**：连接页只显示 `等待设备… / 正在连接… / 需要输入 PIN / PIN 错误 / 连接失败，重试中…`；每次连接 4–10 秒超时、配对 30 秒超时、PIN 弹窗 30 秒自动关闭，失败会明显回到“连接失败，重试中…”再回到“等待设备…”。PIN 弹窗会先把主窗口置前并置顶，取消后 60 秒内不再反复弹窗。
@@ -82,6 +84,6 @@ Android：安装 JDK 17、Android SDK Platform 37、NDK 28.2，然后：
 flutter build apk --release
 ```
 
-## 许可
+## Fork 与许可
 
-GPL-3.0，与原项目一致。上游项目：https://github.com/GameTec-live/ChameleonUltraGUI
+本项目从 [GameTec-live/ChameleonUltraGUI](https://github.com/GameTec-live/ChameleonUltraGUI) fork，遵循上游 **GPL-3.0** 许可证；原始 `LICENSE` 与版权声明保留在仓库根目录。修改内容仅涉及 Windows/Android 连接、PIN 配对、窗口状态和界面状态，未改变上游许可条款。
