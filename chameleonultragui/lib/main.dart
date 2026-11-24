@@ -199,7 +199,7 @@ class _MainPageState extends State<MainPage> {
   var selectedIndex = 0;
   Timer? _keepAliveTimer;
   bool _keepAliveInFlight = false;
-  dynamic _pairingCheckedPort;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -214,6 +214,10 @@ class _MainPageState extends State<MainPage> {
       const Duration(milliseconds: 1000),
       (_) => sendKeepAlive(),
     );
+    BlePairingService.instance.bringToFront = () async {
+      bringApplicationWindowToFront();
+    };
+    BlePairingService.instance.promptPin = _showBlePinDialog;
   }
 
   @override
@@ -294,6 +298,94 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  Future<String?> _showBlePinDialog(String? error) async {
+    final navigator = _navigatorKey.currentState;
+    if (navigator == null) {
+      return null;
+    }
+    final localizations = AppLocalizations.of(navigator.context)!;
+    final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    var dialogOpen = true;
+    final timeout = Timer(const Duration(seconds: 30), () {
+      if (dialogOpen && navigator.canPop()) {
+        navigator.pop(null);
+      }
+    });
+
+    try {
+      return await showDialog<String>(
+        context: navigator.context,
+        useRootNavigator: true,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          void submit() {
+            if (formKey.currentState?.validate() ?? false) {
+              Navigator.pop(dialogContext, controller.text);
+            }
+          }
+
+          return AlertDialog(
+            title: Text(localizations.ble_pin),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (error != null) ...[
+                    Text(
+                      localizations.invalid_password,
+                      style: TextStyle(
+                        color: Theme.of(dialogContext).colorScheme.error,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  TextFormField(
+                    controller: controller,
+                    autofocus: true,
+                    obscureText: true,
+                    enableSuggestions: false,
+                    autocorrect: false,
+                    maxLength: 6,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onFieldSubmitted: (_) => submit(),
+                    decoration: InputDecoration(
+                      hintText: localizations.enter_pin,
+                      counterText: '',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.length != 6) {
+                        return localizations.pin_must_be_6_digits;
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(localizations.cancel),
+              ),
+              FilledButton(
+                onPressed: submit,
+                child: Text(localizations.connect),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      dialogOpen = false;
+      timeout.cancel();
+      controller.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
@@ -313,25 +405,6 @@ class _MainPageState extends State<MainPage> {
     }
 
     appState.devMode = appState.sharedPreferencesProvider.isDebugMode();
-
-    // Ask for the BLE PIN once per connection only when the device itself
-    // reports that pairing is required and no bond exists yet.
-    if (appState.connector!.connected &&
-        !appState.connector!.isDFU &&
-        appState.connector!.connectionType == ConnectionType.ble) {
-      final port = appState.connector!.activeDevicePort;
-      if (port != null && port != _pairingCheckedPort) {
-        _pairingCheckedPort = port;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            ensureBlePairing(context, appState);
-          }
-        });
-      }
-    } else if (!appState.connector!.connected) {
-      _pairingCheckedPort = null;
-      forgetBlePairingPort();
-    }
 
     Widget page; // Set Page
     if (!appState.connector!.connected &&
@@ -397,6 +470,7 @@ class _MainPageState extends State<MainPage> {
     } catch (_) {}
 
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'Chameleon Ultra GUI', // App Name
       locale: widget.sharedPreferencesProvider.getLocale(),
       localizationsDelegates: AppLocalizations.localizationsDelegates,

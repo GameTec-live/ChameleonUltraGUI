@@ -38,39 +38,57 @@ final class _WindowPlacement extends Struct {
 }
 
 typedef _EnumWindowsNative = Int32 Function(
-    Pointer<NativeFunction<Int32 Function(IntPtr, IntPtr)>>, IntPtr);
+  Pointer<NativeFunction<Int32 Function(IntPtr, IntPtr)>>,
+  IntPtr,
+);
 typedef _EnumWindowsDart = int Function(
-    Pointer<NativeFunction<Int32 Function(IntPtr, IntPtr)>>, int);
+  Pointer<NativeFunction<Int32 Function(IntPtr, IntPtr)>>,
+  int,
+);
 typedef _EnumProcNative = Int32 Function(IntPtr, IntPtr);
 typedef _GetWindowThreadProcessIdNative = Uint32 Function(
-    IntPtr, Pointer<Uint32>);
+  IntPtr,
+  Pointer<Uint32>,
+);
 typedef _GetWindowThreadProcessIdDart = int Function(int, Pointer<Uint32>);
 typedef _GetClassNameNative = Int32 Function(IntPtr, Pointer<Utf16>, Int32);
 typedef _GetClassNameDart = int Function(int, Pointer<Utf16>, int);
 typedef _GetWindowPlacementNative = Int32 Function(
-    IntPtr, Pointer<_WindowPlacement>);
-typedef _GetWindowPlacementDart = int Function(
-    int, Pointer<_WindowPlacement>);
+  IntPtr,
+  Pointer<_WindowPlacement>,
+);
+typedef _GetWindowPlacementDart = int Function(int, Pointer<_WindowPlacement>);
 typedef _SetWindowPosNative = Int32 Function(
-    IntPtr, IntPtr, Int32, Int32, Int32, Int32, Uint32);
+  IntPtr,
+  IntPtr,
+  Int32,
+  Int32,
+  Int32,
+  Int32,
+  Uint32,
+);
 typedef _SetWindowPosDart = int Function(int, int, int, int, int, int, int);
 typedef _ShowWindowNative = Int32 Function(IntPtr, Int32);
 typedef _ShowWindowDart = int Function(int, int);
+typedef _SetForegroundWindowNative = Int32 Function(IntPtr);
+typedef _SetForegroundWindowDart = int Function(int);
 typedef _MonitorFromRectNative = IntPtr Function(Pointer<_Rect>, Uint32);
 typedef _MonitorFromRectDart = int Function(Pointer<_Rect>, int);
 typedef _GetCurrentProcessIdNative = Uint32 Function();
 typedef _GetCurrentProcessIdDart = int Function();
 
+const int _swpNoSize = 0x0001;
+const int _swpNoMove = 0x0002;
 const int _swpNoZOrder = 0x0004;
 const int _swpNoActivate = 0x0010;
+const int _swpShowWindow = 0x0040;
 const int _monitorDefaultToNull = 0;
 const int _swShowMaximized = 3;
 
 DynamicLibrary? _user32Lib;
 DynamicLibrary? _kernel32Lib;
 
-DynamicLibrary get _user32 =>
-    _user32Lib ??= DynamicLibrary.open('user32.dll');
+DynamicLibrary get _user32 => _user32Lib ??= DynamicLibrary.open('user32.dll');
 DynamicLibrary get _kernel32 =>
     _kernel32Lib ??= DynamicLibrary.open('kernel32.dll');
 
@@ -80,10 +98,10 @@ int _foundWindow = 0;
 int _enumWindowsCallback(int hwnd, int lParam) {
   final pidPtr = calloc<Uint32>();
   try {
-    _user32
-        .lookupFunction<_GetWindowThreadProcessIdNative,
-            _GetWindowThreadProcessIdDart>('GetWindowThreadProcessId')(
-        hwnd, pidPtr);
+    _user32.lookupFunction<
+      _GetWindowThreadProcessIdNative,
+      _GetWindowThreadProcessIdDart
+    >('GetWindowThreadProcessId')(hwnd, pidPtr);
     if (pidPtr.value != _targetProcessId) {
       return 1;
     }
@@ -94,9 +112,9 @@ int _enumWindowsCallback(int hwnd, int lParam) {
   final namePtr = calloc<Uint16>(128);
   try {
     _user32.lookupFunction<_GetClassNameNative, _GetClassNameDart>(
-        'GetClassNameW')(hwnd, namePtr.cast<Utf16>(), 128);
-    if (namePtr.cast<Utf16>().toDartString() ==
-        'FLUTTER_RUNNER_WIN32_WINDOW') {
+      'GetClassNameW',
+    )(hwnd, namePtr.cast<Utf16>(), 128);
+    if (namePtr.cast<Utf16>().toDartString() == 'FLUTTER_RUNNER_WIN32_WINDOW') {
       _foundWindow = hwnd;
       return 0;
     }
@@ -107,13 +125,19 @@ int _enumWindowsCallback(int hwnd, int lParam) {
 }
 
 int _findOwnWindow() {
-  _targetProcessId = _kernel32.lookupFunction<_GetCurrentProcessIdNative,
-      _GetCurrentProcessIdDart>('GetCurrentProcessId')();
+  _targetProcessId = _kernel32
+      .lookupFunction<_GetCurrentProcessIdNative, _GetCurrentProcessIdDart>(
+        'GetCurrentProcessId',
+      )();
   _foundWindow = 0;
-  final callback =
-      Pointer.fromFunction<_EnumProcNative>(_enumWindowsCallback, 1);
-  _user32.lookupFunction<_EnumWindowsNative, _EnumWindowsDart>(
-      'EnumWindows')(callback, 0);
+  final callback = Pointer.fromFunction<_EnumProcNative>(
+    _enumWindowsCallback,
+    1,
+  );
+  _user32.lookupFunction<_EnumWindowsNative, _EnumWindowsDart>('EnumWindows')(
+    callback,
+    0,
+  );
   return _foundWindow;
 }
 
@@ -173,9 +197,10 @@ class WindowStateKeeper {
       ..top = y
       ..right = x + restoredWidth
       ..bottom = y + restoredHeight;
-    final monitor = _user32.lookupFunction<_MonitorFromRectNative,
-            _MonitorFromRectDart>('MonitorFromRect')(
-        rect, _monitorDefaultToNull);
+    final monitor = _user32
+        .lookupFunction<_MonitorFromRectNative, _MonitorFromRectDart>(
+          'MonitorFromRect',
+        )(rect, _monitorDefaultToNull);
     calloc.free(rect);
     if (monitor == 0) {
       // The saved position no longer intersects any monitor.
@@ -183,12 +208,22 @@ class WindowStateKeeper {
     }
 
     _user32.lookupFunction<_SetWindowPosNative, _SetWindowPosDart>(
-        'SetWindowPos')(_hwnd, 0, x, y, restoredWidth, restoredHeight,
-        _swpNoZOrder | _swpNoActivate);
+      'SetWindowPos',
+    )(
+      _hwnd,
+      0,
+      x,
+      y,
+      restoredWidth,
+      restoredHeight,
+      _swpNoZOrder | _swpNoActivate,
+    );
 
     if (prefs.getBool(_kMaximized) ?? false) {
-      _user32.lookupFunction<_ShowWindowNative, _ShowWindowDart>(
-          'ShowWindow')(_hwnd, _swShowMaximized);
+      _user32.lookupFunction<_ShowWindowNative, _ShowWindowDart>('ShowWindow')(
+        _hwnd,
+        _swShowMaximized,
+      );
     }
 
     _savedX = x;
@@ -204,16 +239,19 @@ class WindowStateKeeper {
     }
     _timer?.cancel();
     _timer = Timer.periodic(
-        const Duration(milliseconds: 500), (_) => _captureWindowState());
+      const Duration(milliseconds: 500),
+      (_) => _captureWindowState(),
+    );
   }
 
   void _captureWindowState() {
     final placement = calloc<_WindowPlacement>();
     try {
       placement.ref.length = sizeOf<_WindowPlacement>();
-      final ok = _user32.lookupFunction<_GetWindowPlacementNative,
-              _GetWindowPlacementDart>('GetWindowPlacement')(
-          _hwnd, placement);
+      final ok = _user32
+          .lookupFunction<_GetWindowPlacementNative, _GetWindowPlacementDart>(
+            'GetWindowPlacement',
+          )(_hwnd, placement);
       if (ok == 0) {
         return;
       }
@@ -226,7 +264,8 @@ class WindowStateKeeper {
       }
 
       final maximized = placement.ref.showCmd == _swShowMaximized;
-      final sameAsPending = rect.left == _pendingX &&
+      final sameAsPending =
+          rect.left == _pendingX &&
           rect.top == _pendingY &&
           width == _pendingWidth &&
           height == _pendingHeight &&
@@ -278,6 +317,53 @@ class WindowStateKeeper {
   }
 }
 
+/// Raises the app window above other windows before a pairing prompt.
+void bringApplicationWindowToFront() {
+  if (!Platform.isWindows) {
+    return;
+  }
+  final hwnd = WindowStateKeeper.instance._hwnd != 0
+      ? WindowStateKeeper.instance._hwnd
+      : _findOwnWindow();
+  if (hwnd == 0) {
+    return;
+  }
+  try {
+    _user32.lookupFunction<_ShowWindowNative, _ShowWindowDart>('ShowWindow')(
+      hwnd,
+      9,
+    );
+    // A topmost round-trip makes SetForegroundWindow reliable even when
+    // another application currently owns the foreground.
+    _user32.lookupFunction<_SetWindowPosNative, _SetWindowPosDart>(
+      'SetWindowPos',
+    )(
+      hwnd,
+      -1,
+      0,
+      0,
+      0,
+      0,
+      _swpNoMove | _swpNoSize | _swpNoActivate | _swpShowWindow,
+    );
+    _user32.lookupFunction<_SetWindowPosNative, _SetWindowPosDart>(
+      'SetWindowPos',
+    )(
+      hwnd,
+      -2,
+      0,
+      0,
+      0,
+      0,
+      _swpNoMove | _swpNoSize | _swpNoActivate | _swpShowWindow,
+    );
+    _user32
+        .lookupFunction<_SetForegroundWindowNative, _SetForegroundWindowDart>(
+          'SetForegroundWindow',
+        )(hwnd);
+  } catch (_) {}
+}
+
 /// Hides the runner window. Used by the headless BLE stress harness.
 void hideApplicationWindow() {
   if (!Platform.isWindows) {
@@ -288,7 +374,9 @@ void hideApplicationWindow() {
     return;
   }
   try {
-    _user32.lookupFunction<_ShowWindowNative, _ShowWindowDart>(
-        'ShowWindow')(hwnd, 0);
+    _user32.lookupFunction<_ShowWindowNative, _ShowWindowDart>('ShowWindow')(
+      hwnd,
+      0,
+    );
   } catch (_) {}
 }

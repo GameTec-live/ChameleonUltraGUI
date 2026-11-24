@@ -1,4 +1,3 @@
 107c21d017c49009b5d5cc9b0410546df64d9534fea58962d41c9ad8fa80ad2b *ChameleonUltraGUI-1.4.0-ble4-portable.zip
-169eb849f667bb5df7c2a2e19c03c0a9bd383106ff5137722b679c85eb9f7d5f *ChameleonUltraGUI-1.4.0-pin-portable.zip
-a4a850977957f0751b93f75418d39aa97ecfaf30e1b0525cc2fe0af8a71e8d61 *ChameleonUltraGUI-1.4.0-pin-arm64-v8a.apk
-f4f5ed65fc098247c627d485037e673dadc883b7e3e95e4bce174e049fad5ba9 *ChameleonUltraGUI-1.4.0-pin-armeabi-v7a.apk
+7e95b828b62ae0ff1619051817384ef914d3c958b709a3d5dd8cef4f35e8ce16 *ChameleonUltraGUI-20261124-02-windows.zip
+d1138a9e67fa2a6a705293a85f9602d534bb150326828eeb8e9b2b5d78cf03c6 *ChameleonUltraGUI-20261124-02-android-arm64.apk

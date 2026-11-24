@@ -12,10 +12,9 @@
 
 ## 预编译包
 
-- Windows 免安装包：`ChameleonUltraGUI-1.4.0-pin-portable.zip`，SHA-256：`169EB849F667BB5DF7C2A2E19C03C0A9BD383106FF5137722B679C85EB9F7D5F`
-- Android APK（arm64，绝大多数手机）：`ChameleonUltraGUI-1.4.0-pin-arm64-v8a.apk`，SHA-256：`a4a850977957f0751b93f75418d39aa97ecfaf30e1b0525cc2fe0af8a71e8d61`
-- Android APK（armeabi-v7a，旧设备）：`ChameleonUltraGUI-1.4.0-pin-armeabi-v7a.apk`，SHA-256：`f4f5ed65fc098247c627d485037e673dadc883b7e3e95e4bce174e049fad5ba9`
-- 仓库内同一份文件位于 [`prebuilt/`](prebuilt/)，旧版 `ble4` 包保留不删。
+- Windows 免安装包：`ChameleonUltraGUI-20261124-02-windows.zip`，SHA-256：`7E95B828B62AE0FF1619051817384EF914D3C958B709A3D5DD8CEF4F35E8CE16`
+- Android APK（arm64）：`ChameleonUltraGUI-20261124-02-android-arm64.apk`，SHA-256：`d1138a9e67fa2a6a705293a85f9602d534bb150326828eeb8e9b2b5d78cf03c6`
+- 仓库内同一份文件位于 [`prebuilt/`](prebuilt/)。旧版 ble/ble2/ble3/ble4 已归档到 `Downloads\ChameleonUltraGUI-旧版本\`，pin 版暂留原处。
 
 Windows 包解压后直接运行 `chameleonultragui.exe`，不会覆盖已安装的 1.4 版；便携版与原版共用配置和卡片数据。Android APK 使用调试证书签名，可直接侧载。
 
@@ -23,9 +22,18 @@ Windows 包解压后直接运行 `chameleonultragui.exe`，不会覆盖已安装
 
 1. **连接页精简**：删除“默认 BLE 密码 123456”“首次连接可能较慢”“需在系统蓝牙设置里删除设备”等提示；页面只保留一个圆圈和一行状态——未发现设备为“等待设备…”，收到广播并开始连接为“正在连接…”，连接后为“已连接”。设备未开机时不会显示“正在连接”。
 2. **PIN 不回显**：设置页的 PIN 输入框改为密码样式且始终为空，只写不读；设备设置解析不再保留 PIN，插件 API 也不再返回；调试日志对 PIN 相关命令整帧脱敏。应用**不把 PIN 写入任何配置文件**，配对凭据由操作系统（Windows 配对库 / Android 蓝牙栈）保存。
-3. **首次配对**：当设备报告已开启 BLE 配对且本机尚无绑定，连接后由软件发起配对。Windows 使用自定义 `DeviceInformationCustomPairing` 的 `ProvidePin` 回调弹出密码框；Android 调用系统 `createBond` 由系统弹出 PIN 请求。不会自动填入 `123456`；取消或 PIN 错误会断开连接。
+3. **在 CCCD 失败时立即配对**：真机日志显示连接（约 380 ms）和发现服务（约 570 ms）都成功，卡在 `setNotifyValue | Write CCCD failed: 2`。现在订阅失败会立刻触发配对，Windows 用自定义 `DeviceInformationCustomPairing` 的 `ProvidePin` 弹窗（失败后 22 ms 内弹出），Android 走系统 `createBond`；不会自动填入 `123456`。成功后将 PIN 写入系统安全存储（Windows DPAPI / Android Keystore），下次直接复用；输错、取消或超时会回到可见状态。
 4. **自动连接修复**：后台扫描与“记住的上次地址直连”真正并行，直连重试不再阻塞扫描；未开机时直连重试不改变界面状态。Android 发现 BLE 设备后始终自动连接，不再依赖“自动连接第一个设备”开关。
 5. **保留原有能力**：Balanced 连接参数、1 秒保活、窗口位置/大小记忆、USB 自动识别均未回退；串口、COM 口和设备地址均未写死。
+6. **状态与超时**：连接页只显示 `等待设备… / 正在连接… / 需要输入 PIN / PIN 错误 / 连接失败，重试中…`；每次连接 4–10 秒超时、配对 30 秒超时、PIN 弹窗 30 秒自动关闭，失败会明显回到“连接失败，重试中…”再回到“等待设备…”。PIN 弹窗会先把主窗口置前并置顶，取消后 60 秒内不再反复弹窗。
+
+## 这次真机卡在“正在连接…”的原因
+
+- `19:44:04.311` 连接成功（380 ms），`19:44:04.880` 发现服务成功（569 ms），`19:44:05.125` 订阅失败：`setNotifyValue | Write CCCD failed: 2`。
+- 之后每 1.3–1.5 秒重复“连接→发现→订阅失败”，界面一直停在连接中；PIN 框从未出现。
+- 原因是 CCCD 需要配对后的加密链路，而旧代码把“检查并请求 PIN”放在握手之后；CCCD 失败使握手永远无法开始，形成死锁。
+- 修复后在 `20:15:26.740` 订阅失败，`20:15:26.762` 即弹出 PIN 框（本机日志可见 `pin.pair.start` → `pin.prompt.show`），不再依赖握手。
+- 本机 `Get-PnpDevice` 中没有名称含 Chameleon 的配对记录，因此没有删除任何系统蓝牙项。
 
 ## 为什么原来的 PIN 设置没起作用
 

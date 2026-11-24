@@ -5,6 +5,8 @@ import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/ble_trace.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
+import 'package:chameleonultragui/helpers/ble_pairing.dart';
+import 'package:chameleonultragui/helpers/ble_status.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -240,6 +242,7 @@ class WindowsBLESerial extends AbstractSerial {
             dfu: false,
           );
           chameleonMap[port] = info;
+          BleStatus.set(BlePhase.connecting);
           _trace('watch.found', 'port=$port name=$name');
 
           unawaited(() async {
@@ -263,6 +266,14 @@ class WindowsBLESerial extends AbstractSerial {
               _trace(
                 'watch.failed',
                 'ms=$elapsed stop_scan_ms=$stopScanMs port=$port',
+              );
+              BleStatus.set(BlePhase.failedRetrying);
+              unawaited(
+                Future<void>.delayed(const Duration(milliseconds: 1200), () {
+                  if (!connected) {
+                    BleStatus.set(BlePhase.waiting);
+                  }
+                }),
               );
             }
             if (!completer.isCompleted) {
@@ -360,6 +371,7 @@ class WindowsBLESerial extends AbstractSerial {
         // Only a real link turns the page into "connecting"; retrying an
         // absent remembered address must keep showing "waiting".
         pendingConnection = true;
+        BleStatus.set(BlePhase.connecting);
         notifyConnectionStateChanged();
 
         stage = 'discover';
@@ -400,11 +412,15 @@ class WindowsBLESerial extends AbstractSerial {
         );
         await _cleanupDirect();
         pendingConnection = false;
+        BleStatus.set(BlePhase.failedRetrying);
         notifyConnectionStateChanged();
       } finally {
         _connecting = false;
       }
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      if (!connected) {
+        BleStatus.set(BlePhase.waiting);
+      }
     }
     _directRunning = false;
     _trace('direct.loop', 'stopped');
@@ -682,7 +698,9 @@ class WindowsBLESerial extends AbstractSerial {
     _valueSubscription = null;
 
     Object? lastError;
-    for (var i = 0; i < retries; i++) {
+    var attempt = 0;
+    var pairingTried = false;
+    while (attempt < retries) {
       final stopwatch = Stopwatch()..start();
       try {
         await tx.setNotifyValue(true).timeout(const Duration(seconds: 4));
@@ -692,9 +710,7 @@ class WindowsBLESerial extends AbstractSerial {
               try {
                 messageCallback(Uint8List.fromList(data));
               } catch (_) {
-                log.w(
-                  "Received unexpected data: ${data.length} bytes",
-                );
+                log.w("Received unexpected data: ${data.length} bytes");
               }
             }
           },
@@ -705,15 +721,31 @@ class WindowsBLESerial extends AbstractSerial {
         _rx = rx;
         _trace(
           'subscribe.ok',
-          'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds}',
+          'attempt=${attempt + 1} ms=${stopwatch.elapsedMilliseconds}',
         );
         return;
       } catch (e) {
         lastError = e;
         _trace(
           'subscribe.error',
-          'attempt=${i + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e',
+          'attempt=${attempt + 1} ms=${stopwatch.elapsedMilliseconds} error=${e.runtimeType}: $e',
         );
+
+        // The CCCD is protected by the device's pairing setting. Pair here,
+        // before giving up, otherwise the PIN dialog would only appear after
+        // a handshake that can never happen.
+        final port = _device?.remoteId.str;
+        if (!pairingTried &&
+            port != null &&
+            BlePairingService.instance.isAuthFailure(e)) {
+          pairingTried = true;
+          final paired = await BlePairingService.instance.ensurePair(port);
+          if (paired) {
+            continue;
+          }
+        }
+
+        attempt++;
         await Future<void>.delayed(const Duration(milliseconds: 200));
       }
     }
@@ -758,6 +790,7 @@ class WindowsBLESerial extends AbstractSerial {
     isDFU = false;
     _activePort = port.toString();
     _activeInfo = info;
+    BleStatus.set(BlePhase.waiting);
     unawaited(() async {
       await _saveLastDevice(port.toString(), info);
       if (!_directRunning && _watchEnabled) {
@@ -865,6 +898,7 @@ class WindowsBLESerial extends AbstractSerial {
     _activePort = null;
     _activeInfo = null;
     resetConnectionState();
+    BleStatus.set(BlePhase.waiting);
     try {
       await device?.disconnect().timeout(const Duration(seconds: 2));
     } catch (_) {}
