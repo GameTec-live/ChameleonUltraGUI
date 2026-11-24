@@ -13,7 +13,7 @@
 ## 预编译包
 
 - Windows 免安装包：`ChameleonUltraGUI-20261124-02-windows.zip`，SHA-256：`7E95B828B62AE0FF1619051817384EF914D3C958B709A3D5DD8CEF4F35E8CE16`
-- Android APK（arm64）：`ChameleonUltraGUI-20261124-02-android-arm64.apk`，SHA-256：`d1138a9e67fa2a6a705293a85f9602d534bb150326828eeb8e9b2b5d78cf03c6`
+- Android APK（arm64）：`ChameleonUltraGUI-20261124-02-android-arm64.apk`，SHA-256：`257003ef6e2a27e4dd6e800eefbba56b5ae9afe1b5c923b04c29ecf2393659c1`
 - 仓库内同一份文件位于 [`prebuilt/`](prebuilt/)。旧版 ble/ble2/ble3/ble4 已归档到 `Downloads\ChameleonUltraGUI-旧版本\`，pin 版暂留原处。
 
 Windows 包解压后直接运行 `chameleonultragui.exe`，不会覆盖已安装的 1.4 版；便携版与原版共用配置和卡片数据。Android APK 使用调试证书签名，可直接侧载。
