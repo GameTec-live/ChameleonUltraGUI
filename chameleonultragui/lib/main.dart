@@ -428,7 +428,13 @@ class _MainPageState extends State<MainPage> {
             if (appState.connector!.isDFU) {
               page = const FlashingPage();
             } else {
-              page = const HomePage();
+              page = HomePage(
+                onOpenSavedCards: () {
+                  setState(() {
+                    selectedIndex = 2;
+                  });
+                },
+              );
             }
           } else {
             page = const ConnectPage();
