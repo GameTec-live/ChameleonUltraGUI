@@ -209,6 +209,7 @@ class SlotSettingsState extends State<SlotSettings> {
                       flex: 1,
                     ),
                     IconButton(
+                      tooltip: localizations.export_slot_data,
                       onPressed: (slotTypes.notMatch())
                           ? () {
                               showDialog<String>(
@@ -234,6 +235,7 @@ class SlotSettingsState extends State<SlotSettings> {
                           Text('${localizations.hf}:'),
                           const Spacer(),
                           IconButton(
+                            tooltip: localizations.edit_slot_data,
                             onPressed: () async {
                               showDialog<String>(
                                   context: context,
@@ -249,6 +251,7 @@ class SlotSettingsState extends State<SlotSettings> {
                             icon: const Icon(Icons.edit),
                           ),
                           IconButton(
+                            tooltip: localizations.dump_editor,
                             onPressed: (isMifareClassic(slotTypes.hf) ||
                                     isMifareUltralight(slotTypes.hf))
                                 ? openHfDumpEditor
@@ -256,6 +259,7 @@ class SlotSettingsState extends State<SlotSettings> {
                             icon: const Icon(Icons.edit_document),
                           ),
                           IconButton(
+                            tooltip: localizations.delete,
                             onPressed: () async {
                               if (appState.sharedPreferencesProvider
                                       .getConfirmDelete() ==
@@ -326,6 +330,7 @@ class SlotSettingsState extends State<SlotSettings> {
                           Text('${localizations.lf}:'),
                           const Spacer(),
                           IconButton(
+                            tooltip: localizations.edit_slot_data,
                             onPressed: () async {
                               showDialog<String>(
                                   context: context,
@@ -341,6 +346,7 @@ class SlotSettingsState extends State<SlotSettings> {
                             icon: const Icon(Icons.edit),
                           ),
                           IconButton(
+                            tooltip: localizations.delete,
                             onPressed: () async {
                               if (appState.sharedPreferencesProvider
                                       .getConfirmDelete() ==

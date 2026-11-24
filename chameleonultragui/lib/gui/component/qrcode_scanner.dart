@@ -61,6 +61,7 @@ class QrCodeScannerState extends State<QrCodeScanner> {
             ),
       actions: <Widget>[
         IconButton(
+          tooltip: AppLocalizations.of(context)!.toggle_flashlight,
           icon: isFlashOn
               ? const Icon(Icons.flash_on)
               : const Icon(Icons.flash_off),

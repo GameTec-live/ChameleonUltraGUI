@@ -93,6 +93,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 ),
               ),
               IconButton(
+                tooltip: localizations.copy_to_clipboard,
                 onPressed: () async {
                   ClipboardData data =
                       ClipboardData(text: currentSavedCard.uid);
@@ -112,6 +113,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 ),
               ),
               IconButton(
+                tooltip: localizations.copy_to_clipboard,
                 onPressed: () async {
                   ClipboardData data = ClipboardData(
                       text: chameleonTagToString(
@@ -131,6 +133,7 @@ class CardViewMenuState extends State<CardViewMenu> {
               Row(children: [
                 Expanded(child: Text('${field.$1}: ${field.$2}')),
                 IconButton(
+                  tooltip: localizations.copy_to_clipboard,
                   onPressed: () => Clipboard.setData(
                       ClipboardData(text: field.$2.toString())),
                   icon: const Icon(Icons.copy),
@@ -148,6 +151,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                   ),
                 ),
                 IconButton(
+                  tooltip: localizations.copy_to_clipboard,
                   onPressed: () async {
                     ClipboardData data = ClipboardData(
                         text: currentSavedCard.sak == 0
@@ -169,6 +173,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                   ),
                 ),
                 IconButton(
+                  tooltip: localizations.copy_to_clipboard,
                   onPressed: () async {
                     ClipboardData data = ClipboardData(
                         text: currentSavedCard.atqa.isNotEmpty
@@ -216,6 +221,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                       ),
                     ),
                     IconButton(
+                      tooltip: localizations.copy_to_clipboard,
                       onPressed: () async {
                         ClipboardData data = ClipboardData(
                             text: currentSavedCard
@@ -239,6 +245,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                       ),
                     ),
                     IconButton(
+                      tooltip: localizations.copy_to_clipboard,
                       onPressed: () async {
                         ClipboardData data = ClipboardData(
                             text: currentSavedCard
@@ -271,6 +278,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 icon: const Icon(Icons.drive_file_move_outline),
               ),
               IconButton(
+                tooltip: localizations.edit_card,
                 onPressed: () async {
                   await showDialog(
                     context: context,
@@ -283,6 +291,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 icon: const Icon(Icons.edit),
               ),
               IconButton(
+                tooltip: localizations.duplicate_card,
                 onPressed: () {
                   var cards = appState.sharedPreferencesProvider.getCards();
                   var duplicate = CardSave.fromJson(currentSavedCard.toJson());
@@ -299,6 +308,7 @@ class CardViewMenuState extends State<CardViewMenu> {
               if (isMifareClassic(currentSavedCard.tag) ||
                   isMifareUltralight(currentSavedCard.tag))
                 IconButton(
+                  tooltip: localizations.dump_editor,
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -342,6 +352,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                   icon: const Icon(Icons.edit_document),
                 ),
               IconButton(
+                tooltip: localizations.export,
                 onPressed: () async {
                   await showDialog(
                     context: context,
@@ -379,6 +390,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 icon: const Icon(Icons.download_rounded),
               ),
               IconButton(
+                tooltip: localizations.delete,
                 onPressed: () async {
                   if (appState.sharedPreferencesProvider.getConfirmDelete() ==
                       true) {

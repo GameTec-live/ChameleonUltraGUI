@@ -888,5 +888,16 @@
   "marketplace_error_listing": "Listings need nonempty id, path and version strings",
   "marketplace_error_duplicate": "Duplicate plugin id",
   "marketplace_error_missing_file": "File not found: {path}",
-  "marketplace_error_too_large": "Repository plugins exceed 64 MiB once decoded"
+  "marketplace_error_too_large": "Repository plugins exceed 64 MiB once decoded",
+  "disconnect": "Disconnect",
+  "import_card": "Import card",
+  "import_dictionary": "Import dictionary",
+  "duplicate_card": "Duplicate card",
+  "merge_dictionaries": "Merge selected dictionaries",
+  "clear_search": "Clear search",
+  "scan_for_devices": "Scan for devices",
+  "toggle_flashlight": "Toggle flashlight",
+  "previous_slot": "Previous slot",
+  "next_slot": "Next slot",
+  "copy_to_clipboard": "Copy to clipboard"
 }

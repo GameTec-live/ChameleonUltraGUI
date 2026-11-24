@@ -284,6 +284,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
                 suffixIcon: _search.text.isEmpty
                     ? null
                     : IconButton(
+                        tooltip: _localizations.clear_search,
                         onPressed: _search.clear,
                         icon: const Icon(Icons.clear),
                       ),

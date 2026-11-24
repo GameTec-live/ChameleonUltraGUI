@@ -1,3 +1,4 @@
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/component/error_page.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:flutter/material.dart';
@@ -84,11 +85,13 @@ class SlotChangerState extends State<SlotChanger> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
+                  tooltip: AppLocalizations.of(context)!.previous_slot,
                   onPressed: () async {},
                   icon: const Icon(Icons.arrow_back),
                 ),
                 ...presold,
                 IconButton(
+                  tooltip: AppLocalizations.of(context)!.next_slot,
                   onPressed: () async {},
                   icon: const Icon(Icons.arrow_forward),
                 ),
@@ -105,6 +108,7 @@ class SlotChangerState extends State<SlotChanger> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
+                  tooltip: AppLocalizations.of(context)!.previous_slot,
                   onPressed: () async {
                     if (selectedSlot > 1) {
                       await appState.communicator!
@@ -117,6 +121,7 @@ class SlotChangerState extends State<SlotChanger> {
                 ),
                 ...slotIcons,
                 IconButton(
+                  tooltip: AppLocalizations.of(context)!.next_slot,
                   onPressed: () async {
                     if (selectedSlot < 8) {
                       await appState.communicator!.activateSlot(selectedSlot);

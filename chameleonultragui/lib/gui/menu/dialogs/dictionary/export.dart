@@ -178,6 +178,7 @@ class DictSearchDelegate extends SearchDelegate<String> {
   List<Widget> buildActions(BuildContext context) {
     return [
       IconButton(
+        tooltip: AppLocalizations.of(context)!.clear_search,
         icon: const Icon(Icons.clear),
         onPressed: () {
           query = '';
@@ -189,6 +190,7 @@ class DictSearchDelegate extends SearchDelegate<String> {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
+      tooltip: AppLocalizations.of(context)!.back,
       icon: const Icon(Icons.arrow_back),
       onPressed: () {
         close(context, '');

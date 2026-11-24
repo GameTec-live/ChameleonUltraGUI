@@ -474,6 +474,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                                           ),
                                         ),
                                         IconButton(
+                                          tooltip: localizations.slot_settings,
                                           onPressed: () {
                                             showDialog(
                                               context: context,

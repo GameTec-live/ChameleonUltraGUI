@@ -1881,6 +1881,7 @@ class DumpEditorState extends State<DumpEditor> {
         appBar: AppBar(
           title: Text(localizations.dump_editor),
           leading: IconButton(
+            tooltip: localizations.back,
             icon: const Icon(Icons.arrow_back),
             onPressed: _cancelEdit,
           ),

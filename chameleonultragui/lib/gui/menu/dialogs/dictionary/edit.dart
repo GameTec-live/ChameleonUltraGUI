@@ -61,6 +61,7 @@ class DictionaryEditMenuState extends State<DictionaryEditMenu> {
                     prefix: Transform(
                       transform: Matrix4.translationValues(0, 7, 0),
                       child: IconButton(
+                        tooltip: localizations.pick_color,
                         icon: Icon(Icons.key, color: currentColor),
                         onPressed: () async {
                           showDialog(

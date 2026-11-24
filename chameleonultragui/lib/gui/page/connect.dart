@@ -443,6 +443,7 @@ class _ConnectPageState extends State<ConnectPage> {
             Align(
               alignment: Alignment.topRight,
               child: IconButton(
+                tooltip: localizations.scan_for_devices,
                 onPressed: () => _scanNow(manual: true),
                 icon: const Icon(Icons.refresh),
               ),
@@ -461,6 +462,7 @@ class _ConnectPageState extends State<ConnectPage> {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: IconButton(
+                        tooltip: localizations.connect_manually,
                         onPressed: () => showDialog<String>(
                           context: context,
                           builder: (BuildContext dialogContext) =>
