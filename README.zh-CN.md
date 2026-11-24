@@ -12,8 +12,8 @@
 
 ## 预编译免安装包
 
-- 文件：[`prebuilt/ChameleonUltraGUI-1.4.0-ble-portable.zip`](prebuilt/ChameleonUltraGUI-1.4.0-ble-portable.zip)
-- 发布页：[Releases · Bluetooth](https://github.com/lyx7725/ChameleonUltraGUI/releases/tag/Bluetooth)（同一份压缩包）
+请到 [Releases](https://github.com/lyx7725/ChameleonUltraGUI/releases) 页面下载 `ChameleonUltraGUI-1.4.0-ble-portable.zip`。
+
 - 内容：包内含全部运行文件（`chameleonultragui.exe`、Flutter 引擎、插件 DLL、`data/` 资源），**无需安装原版**。
 - 用法：解压后运行 `chameleonultragui.exe`。若已安装 1.4 版，请先完全退出；便携版与原版共用配置与卡片数据，不会覆盖原安装目录。
 
