@@ -95,6 +95,10 @@ class BaseMifareClassicWriteHelper extends AbstractWriteHelper {
       CardSave card, Function(int writeProgress) update) async {
     List<Uint8List> data = card.data;
 
+    if (type == MifareClassicType.none) {
+      return false; // no MIFARE Classic card found
+    }
+
     if (await communicator.scan14443aTag() == null) {
       return false;
     }

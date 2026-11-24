@@ -142,6 +142,9 @@ class WriteCardPageState extends State<WriteCardPage> {
     if (helper is BaseMifareClassicWriteHelper) {
       (helper as BaseMifareClassicWriteHelper).vanitySak = vanitySak;
     }
+    // The card may not have been on the reader when the dump was picked, and
+    // a method picked from the dropdown hasn't read it at all
+    await helper!.getCardType();
     if (await helper!.writeData(card!, updateProgress)) {
       snackBar = SnackBar(
         content: Text(localizations.magic_success_write),
@@ -205,7 +208,20 @@ class WriteCardPageState extends State<WriteCardPage> {
       SnackBar snackBar;
       updateProgress(0);
 
-      if (!await helper!.isCompatible(card!)) {
+      // isCompatible is also false when there's no card, so say that instead
+      if (helper is BaseMifareClassicWriteHelper &&
+          await appState.communicator!.scan14443aTag() == null) {
+        snackBar = SnackBar(
+          content: Text(localizations.no_card_found),
+          action: SnackBarAction(
+            label: localizations.close,
+            onPressed: () {},
+          ),
+        );
+
+        scaffoldMessenger.hideCurrentSnackBar();
+        scaffoldMessenger.showSnackBar(snackBar);
+      } else if (!await helper!.isCompatible(card!)) {
         snackBar = SnackBar(
           content: Text(localizations.magic_incompatible_card),
           action: SnackBarAction(
