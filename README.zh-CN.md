@@ -12,9 +12,9 @@
 
 ## 预编译免安装包
 
-请到 [Releases](https://github.com/lyx7725/ChameleonUltraGUI/releases) 页面下载 `ChameleonUltraGUI-1.4.0-ble3-portable.zip`。
+请到 [Releases](https://github.com/lyx7725/ChameleonUltraGUI/releases) 页面下载 `ChameleonUltraGUI-1.4.0-ble4-portable.zip`。
 
-仓库内也提供同一文件：[`prebuilt/ChameleonUltraGUI-1.4.0-ble3-portable.zip`](prebuilt/ChameleonUltraGUI-1.4.0-ble3-portable.zip)，SHA-256：`53eac79cb128fd82407bd71d2e073a36cef8759a086dbed9dd04fa0e2691bbd3`。
+仓库内也提供同一文件：[`prebuilt/ChameleonUltraGUI-1.4.0-ble4-portable.zip`](prebuilt/ChameleonUltraGUI-1.4.0-ble4-portable.zip)，SHA-256：`107c21d017c49009b5d5cc9b0410546df64d9534fea58962d41c9ad8fa80ad2b`。
 
 - 内容：包内含全部运行文件（`chameleonultragui.exe`、Flutter 引擎、插件 DLL、`data/` 资源），**无需安装原版**。
 - 用法：解压后运行 `chameleonultragui.exe`。若已安装 1.4 版，请先完全退出；便携版与原版共用配置与卡片数据，不会覆盖原安装目录。
@@ -24,7 +24,7 @@
 1. **修复连接页 UI 卡顿**：自动扫描改为先读取串口元数据，跳过蓝牙和非 USB 串口，避免打开这些端口时阻塞界面。
 2. **Windows 蓝牙（BLE）自动连接**：应用启动后只要未连接就在后台持续扫描广播；任何时候按下变色龙按键，发现 `ChameleonUltra-*` / `ChameleonLite-*`（名称或 Nordic UART 服务 UUID）后立即自动连接，不需要停留在连接页或点击刷新。插着 USB 时优先使用 USB。
 3. **记住窗口位置 / 大小 / 最大化**：通过 Win32 API 保存并在下次启动时恢复；窗口位置不在任何显示器内时自动回退到默认位置。
-4. **连接稳定 / 保活**：Windows 侧使用固件可接受的 Balanced BLE 连接参数；连接前停止扫描并清理旧状态，连接/发现服务/订阅/握手失败会自动退避重试，手动连接与自动重连串行执行；扫描被系统停掉或出错会自动重启，失败或断链后自动恢复持续扫描。连接期间每秒发送轻量保活指令并保持系统唤醒。每个阶段（扫描/连接/发现服务/订阅/握手）都会写入 `%TEMP%\chameleon_ble.log`（带时间戳、异步写盘，不影响 UI），其中 `watch.timing` 记录从第一次收到广播到握手成功的毫秒数。
+4. **连接稳定 / 保活**：Windows 侧使用固件可接受的 Balanced BLE 连接参数；连接前停止扫描并清理旧状态，连接/发现服务/订阅/握手失败会自动退避重试，手动连接与自动重连串行执行；扫描被系统停掉或出错会自动重启，失败或断链后自动恢复持续扫描。连接期间每秒发送轻量保活指令并保持系统唤醒。每个阶段（扫描/连接/发现服务/订阅/握手）都会写入 `%TEMP%\chameleon_ble.log`（带时间戳、异步写盘，不影响 UI），其中 `watch.timing` 记录从第一次收到广播到握手成功的毫秒数。已记住的上次成功地址会在启动或断链后直接尝试（与扫描并行，先成功者为准），Windows 端启用 `GattSession.MaintainConnection`；自动连接成功会立即创建通信对象，避免首页加载失败导致的立即断开。日志同时记录 `stop_scan_ms` 与 `direct.connect/discover/subscribe/handshake` 的耗时。
 
 ## 限制
 

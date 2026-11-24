@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -6,6 +7,7 @@ import 'package:chameleonultragui/connector/ble_trace.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final Guid _nrfService = Guid("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
 final Guid _uartRx = Guid("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
@@ -39,6 +41,8 @@ class WindowsBLESerial extends AbstractSerial {
   bool Function()? isOtherBusy;
   bool _watchEnabled = false;
   bool _watching = false;
+  bool _directRunning = false;
+  Completer<void>? _activeWatch;
 
   WindowsBLESerial({required super.log}) {
     BleTrace.setMode(mode);
@@ -157,6 +161,7 @@ class WindowsBLESerial extends AbstractSerial {
     }
     _watchEnabled = true;
     unawaited(_watchLoop());
+    unawaited(_startDirectConnect());
   }
 
   Future<void> _watchLoop() async {
@@ -182,6 +187,7 @@ class WindowsBLESerial extends AbstractSerial {
 
   Future<void> _watchOnce() async {
     final completer = Completer<void>();
+    _activeWatch = completer;
     StreamSubscription<List<ScanResult>>? subscription;
     var handled = false;
     DateTime? firstAdvertisement;
@@ -194,6 +200,14 @@ class WindowsBLESerial extends AbstractSerial {
         for (final result in results) {
           if (!_isChameleonResult(result)) {
             continue;
+          }
+          if (connected || _connecting || _reconnecting) {
+            handled = true;
+            unawaited(FlutterBluePlus.stopScan());
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+            return;
           }
           handled = true;
           firstAdvertisement ??= DateTime.now();
@@ -214,9 +228,11 @@ class WindowsBLESerial extends AbstractSerial {
           _trace('watch.found', 'port=$port name=$name');
 
           unawaited(() async {
+            final stopWatch = Stopwatch()..start();
             try {
               await FlutterBluePlus.stopScan();
             } catch (_) {}
+            final stopScanMs = stopWatch.elapsedMilliseconds;
             await subscription?.cancel();
             final ok = await connectSpecificDevice(port);
             final elapsed = DateTime.now()
@@ -224,10 +240,11 @@ class WindowsBLESerial extends AbstractSerial {
                 .inMilliseconds;
             if (ok) {
               _trace('watch.timing',
-                  'first_adv_to_handshake_ms=$elapsed port=$port');
+                  'first_adv_to_handshake_ms=$elapsed stop_scan_ms=$stopScanMs port=$port');
               _trace('watch.connected', 'port=$port');
             } else {
-              _trace('watch.failed', 'ms=$elapsed port=$port');
+              _trace('watch.failed',
+                  'ms=$elapsed stop_scan_ms=$stopScanMs port=$port');
             }
             if (!completer.isCompleted) {
               completer.complete();
@@ -247,12 +264,147 @@ class WindowsBLESerial extends AbstractSerial {
       _trace('watch.error', '${e.runtimeType}: $e');
       await Future<void>.delayed(const Duration(seconds: 2));
     } finally {
+      if (identical(_activeWatch, completer)) {
+        _activeWatch = null;
+      }
       await subscription?.cancel();
       try {
         await FlutterBluePlus.stopScan();
       } catch (_) {}
       _trace('watch.scan.stop', '');
     }
+  }
+
+  Future<void> _startDirectConnect() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('ble_last_device');
+      if (raw == null || raw.isEmpty) {
+        return;
+      }
+      final data = jsonDecode(raw) as Map<String, dynamic>;
+      final address = data['address'] as String?;
+      if (address == null || address.isEmpty) {
+        return;
+      }
+      final info = Chameleon(
+        port: address,
+        device: data['device'] == 'lite'
+            ? ChameleonDevice.lite
+            : ChameleonDevice.ultra,
+        type: ConnectionType.ble,
+        dfu: false,
+      );
+      chameleonMap[address] = info;
+      unawaited(_directLoop(address, info));
+    } catch (_) {}
+  }
+
+  Future<void> _directLoop(String address, Chameleon info) async {
+    if (_directRunning) {
+      return;
+    }
+    _directRunning = true;
+    _trace('direct.loop', 'address=$address');
+    while (_watchEnabled) {
+      if (connected ||
+          _connecting ||
+          _reconnecting ||
+          (isOtherBusy?.call() ?? false)) {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        continue;
+      }
+
+      _connecting = true;
+      pendingConnection = true;
+      notifyConnectionStateChanged();
+      var stage = 'cleanup';
+      final total = Stopwatch()..start();
+      try {
+        await _cleanupDirect();
+        _trace('direct.attempt', 'address=$address');
+
+        stage = 'connect';
+        final device = BluetoothDevice.fromId(address);
+        _device = device;
+        _listenState(device, legacy: false);
+        final connectWatch = Stopwatch()..start();
+        await device
+            .connect(
+              license: License.nonprofit,
+              timeout: const Duration(seconds: 3),
+            )
+            .timeout(const Duration(seconds: 4));
+        _trace('direct.connect.ok', 'ms=${connectWatch.elapsedMilliseconds}');
+
+        stage = 'discover';
+        final discoverWatch = Stopwatch()..start();
+        final uart = await _discover(device, retries: 1);
+        _trace('direct.discover.ok',
+            'ms=${discoverWatch.elapsedMilliseconds}');
+
+        stage = 'subscribe';
+        final subscribeWatch = Stopwatch()..start();
+        await _subscribeService(uart, retries: 1);
+        _trace('direct.subscribe.ok',
+            'ms=${subscribeWatch.elapsedMilliseconds}');
+
+        stage = 'handshake';
+        final handshakeWatch = Stopwatch()..start();
+        await _handshake(_rx!, retries: 1);
+        _trace('direct.handshake.ok',
+            'ms=${handshakeWatch.elapsedMilliseconds}');
+
+        _setConnected(address, info, notify: true);
+        _trace('direct.ok', 'total_ms=${total.elapsedMilliseconds}');
+        try {
+          await FlutterBluePlus.stopScan();
+        } catch (_) {}
+        final watch = _activeWatch;
+        if (watch != null && !watch.isCompleted) {
+          watch.complete();
+        }
+        break;
+      } catch (e) {
+        _trace('direct.fail',
+            'stage=$stage ms=${total.elapsedMilliseconds} error=${e.runtimeType}: $e');
+        await _cleanupDirect();
+        pendingConnection = false;
+        notifyConnectionStateChanged();
+      } finally {
+        _connecting = false;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    }
+    _directRunning = false;
+    _trace('direct.loop', 'stopped');
+  }
+
+  Future<void> _cleanupDirect() async {
+    await _valueSubscription?.cancel();
+    _valueSubscription = null;
+    await _stateSubscription?.cancel();
+    _stateSubscription = null;
+    final device = _device;
+    _device = null;
+    _rx = null;
+    if (device != null) {
+      try {
+        await device.disconnect().timeout(const Duration(seconds: 1));
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveLastDevice(String address, Chameleon info) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          'ble_last_device',
+          jsonEncode({
+            'address': address,
+            'device': info.device == ChameleonDevice.lite ? 'lite' : 'ultra',
+          }));
+    } catch (_) {}
   }
 
   Future<void> _stopScan() async {
@@ -531,6 +683,12 @@ class WindowsBLESerial extends AbstractSerial {
     isDFU = false;
     _activePort = port.toString();
     _activeInfo = info;
+    unawaited(() async {
+      await _saveLastDevice(port.toString(), info);
+      if (!_directRunning && _watchEnabled) {
+        await _startDirectConnect();
+      }
+    }());
     if (notify) {
       notifyConnectionStateChanged();
     }

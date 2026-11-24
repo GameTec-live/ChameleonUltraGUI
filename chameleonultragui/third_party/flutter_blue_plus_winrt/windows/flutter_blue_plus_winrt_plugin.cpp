@@ -979,6 +979,9 @@ winrt::fire_and_forget FlutterBluePlusWinrtPlugin::ConnectAsync(
                 { std::lock_guard<std::mutex> cache_lock(gatt_cache_mutex_); CloseSessionLocked(remote_id); }
                 try { session = co_await GattSession::FromDeviceIdAsync(device.BluetoothDeviceId()); } catch (...) {}
             }
+            if (session) {
+                try { session.MaintainConnection(true); } catch (...) {}
+            }
 
             co_await ui_thread_;
             

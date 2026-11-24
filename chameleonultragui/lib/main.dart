@@ -135,7 +135,11 @@ class ChameleonGUIState extends ChangeNotifier {
   }
 
   void onConnectorStateChanged() {
-    if (connector == null || !connector!.connected) {
+    final current = connector;
+    if (current != null && current.connected && !current.isDFU) {
+      communicator ??= ChameleonCommunicator(log!, port: current);
+    }
+    if (current == null || !current.connected) {
       communicator = null;
       progress = null;
     }

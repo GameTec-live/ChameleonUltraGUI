@@ -1,1 +1,1 @@
-53eac79cb128fd82407bd71d2e073a36cef8759a086dbed9dd04fa0e2691bbd3 *ChameleonUltraGUI-1.4.0-ble3-portable.zip
+107c21d017c49009b5d5cc9b0410546df64d9534fea58962d41c9ad8fa80ad2b *ChameleonUltraGUI-1.4.0-ble4-portable.zip
