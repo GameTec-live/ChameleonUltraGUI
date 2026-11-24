@@ -1,6 +1,6 @@
 # Chameleon Ultra GUI（Windows 修复版）
 
-本仓库是 [GameTec-live/ChameleonUltraGUI](https://github.com/GameTec-live/ChameleonUltraGUI) 的 Fork，针对 Windows 桌面版做了三项修复，并提供与当前已安装 1.4 版完全对应的预编译免安装包。
+本仓库是 [GameTec-live/ChameleonUltraGUI](https://github.com/GameTec-live/ChameleonUltraGUI) 的 Fork，针对 Windows 桌面版做了四项修复，并提供与当前已安装 1.4 版完全对应的预编译免安装包。
 
 ## 版本对应关系
 
