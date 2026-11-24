@@ -440,11 +440,16 @@ class _ConnectPageState extends State<ConnectPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: IconButton(
-                onPressed: () => _scanNow(manual: true),
-                icon: const Icon(Icons.refresh),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                appState.connector!.connected
+                    ? '已连接'
+                    : (appState.connector!.pendingConnection ||
+                            _connectionInProgress)
+                        ? '正在连接…'
+                        : '正在等待设备…',
+                style: const TextStyle(fontSize: 16),
               ),
             ),
             Expanded(

@@ -36,6 +36,10 @@ class WindowsBLESerial extends AbstractSerial {
   String? _activePort;
   Chameleon? _activeInfo;
 
+  bool Function()? isOtherBusy;
+  bool _watchEnabled = false;
+  bool _watching = false;
+
   WindowsBLESerial({required super.log}) {
     BleTrace.setMode(mode);
   }
@@ -55,6 +59,17 @@ class WindowsBLESerial extends AbstractSerial {
   bool _isChameleonName(String name) {
     return name.startsWith('ChameleonUltra') ||
         name.startsWith('ChameleonLite');
+  }
+
+  bool _isChameleonResult(ScanResult result) {
+    var name = result.advertisementData.advName;
+    if (name.isEmpty) {
+      name = result.device.platformName;
+    }
+    if (_isChameleonName(name)) {
+      return true;
+    }
+    return result.advertisementData.serviceUuids.contains(_nrfService);
   }
 
   @override
@@ -87,15 +102,15 @@ class WindowsBLESerial extends AbstractSerial {
         if (name.isEmpty) {
           name = result.device.platformName;
         }
-        if (!_isChameleonName(name)) {
+        if (!_isChameleonResult(result)) {
           continue;
         }
         final port = result.device.remoteId.str;
         found[port] = Chameleon(
           port: port,
-          device: name.startsWith('ChameleonUltra')
-              ? ChameleonDevice.ultra
-              : ChameleonDevice.lite,
+          device: name.startsWith('ChameleonLite')
+              ? ChameleonDevice.lite
+              : ChameleonDevice.ultra,
           type: ConnectionType.ble,
           dfu: false,
         );
@@ -129,6 +144,115 @@ class WindowsBLESerial extends AbstractSerial {
   Future<List<Chameleon>> scanNow() async {
     _lastScanAt = null;
     return availableChameleons(false);
+  }
+
+  /// Continuously watches BLE advertisements while the app is open.
+  ///
+  /// Runs independently of the visible page. When a Chameleon advertisement is
+  /// seen it stops scanning, connects, and resumes watching after a failure or
+  /// disconnect. `isOtherBusy` lets the USB side win when it connects first.
+  void startWatching() {
+    if (_watchEnabled) {
+      return;
+    }
+    _watchEnabled = true;
+    unawaited(_watchLoop());
+  }
+
+  Future<void> _watchLoop() async {
+    if (_watching) {
+      return;
+    }
+    _watching = true;
+    _trace('watch.loop', 'started');
+    while (_watchEnabled) {
+      if (connected ||
+          _connecting ||
+          _reconnecting ||
+          (isOtherBusy?.call() ?? false)) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        continue;
+      }
+      await _watchOnce();
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    }
+    _watching = false;
+    _trace('watch.loop', 'stopped');
+  }
+
+  Future<void> _watchOnce() async {
+    final completer = Completer<void>();
+    StreamSubscription<List<ScanResult>>? subscription;
+    var handled = false;
+    DateTime? firstAdvertisement;
+
+    try {
+      subscription = FlutterBluePlus.onScanResults.listen((results) {
+        if (handled) {
+          return;
+        }
+        for (final result in results) {
+          if (!_isChameleonResult(result)) {
+            continue;
+          }
+          handled = true;
+          firstAdvertisement ??= DateTime.now();
+          var name = result.advertisementData.advName;
+          if (name.isEmpty) {
+            name = result.device.platformName;
+          }
+          final port = result.device.remoteId.str;
+          final info = Chameleon(
+            port: port,
+            device: name.startsWith('ChameleonLite')
+                ? ChameleonDevice.lite
+                : ChameleonDevice.ultra,
+            type: ConnectionType.ble,
+            dfu: false,
+          );
+          chameleonMap[port] = info;
+          _trace('watch.found', 'port=$port name=$name');
+
+          unawaited(() async {
+            try {
+              await FlutterBluePlus.stopScan();
+            } catch (_) {}
+            await subscription?.cancel();
+            final ok = await connectSpecificDevice(port);
+            final elapsed = DateTime.now()
+                .difference(firstAdvertisement!)
+                .inMilliseconds;
+            if (ok) {
+              _trace('watch.timing',
+                  'first_adv_to_handshake_ms=$elapsed port=$port');
+              _trace('watch.connected', 'port=$port');
+            } else {
+              _trace('watch.failed', 'ms=$elapsed port=$port');
+            }
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          }());
+          return;
+        }
+      });
+
+      _trace('watch.scan.start', '');
+      await FlutterBluePlus.startScan(timeout: const Duration(minutes: 5));
+      _trace('watch.scan.started',
+          'isScanning=${FlutterBluePlus.isScanningNow}');
+      await completer.future
+          .timeout(const Duration(minutes: 5), onTimeout: () {});
+    } catch (e) {
+      _trace('watch.error', '${e.runtimeType}: $e');
+      await Future<void>.delayed(const Duration(seconds: 2));
+    } finally {
+      await subscription?.cancel();
+      try {
+        await FlutterBluePlus.stopScan();
+      } catch (_) {}
+      _trace('watch.scan.stop', '');
+    }
   }
 
   Future<void> _stopScan() async {
@@ -202,6 +326,7 @@ class WindowsBLESerial extends AbstractSerial {
     }
     _connecting = true;
     pendingConnection = true;
+    notifyConnectionStateChanged();
     final stopwatch = Stopwatch()..start();
     try {
       final ok = await _robustAttempts(devicePort.toString(), info,

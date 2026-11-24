@@ -13,6 +13,9 @@ class WindowsSerial extends AbstractSerial {
   WindowsSerial({required super.log}) {
     bleSerial.connectionStateCallback = notifyConnectionStateChanged;
     nativeSerial.connectionStateCallback = notifyConnectionStateChanged;
+    bleSerial.isOtherBusy = () =>
+        nativeSerial.connected || nativeSerial.pendingConnection;
+    bleSerial.startWatching();
   }
 
   @override
@@ -29,22 +32,23 @@ class WindowsSerial extends AbstractSerial {
 
   @override
   Future<List<Chameleon>> availableChameleons(bool onlyDFU) async {
-    final nativeDevices = await nativeSerial.availableChameleons(onlyDFU);
-    // Prefer USB and keep the scan instant when a device is already plugged in.
-    if (nativeDevices.isNotEmpty || connected) {
-      return nativeDevices;
-    }
-    return await bleSerial.availableChameleons(onlyDFU);
+    // BLE is handled by the always-on watcher; the page only lists USB devices.
+    return await nativeSerial.availableChameleons(onlyDFU);
   }
 
   @override
   Future<bool> connectSpecificDevice(dynamic devicePort) async {
     final port = devicePort.toString();
     if (RegExp(r'^COM\d+$', caseSensitive: false).hasMatch(port)) {
+      if (bleSerial.connected || bleSerial.pendingConnection) {
+        return false;
+      }
       return await nativeSerial.connectSpecificDevice(devicePort);
-    } else {
-      return await bleSerial.connectSpecificDevice(devicePort);
     }
+    if (nativeSerial.connected || nativeSerial.pendingConnection) {
+      return false;
+    }
+    return await bleSerial.connectSpecificDevice(devicePort);
   }
 
   @override
