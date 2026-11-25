@@ -248,6 +248,7 @@ class CardEditMenuState extends State<CardEditMenu> {
                     prefix: Transform(
                         transform: Matrix4.translationValues(0, 7, 0),
                         child: IconButton(
+                          tooltip: localizations.pick_color,
                           icon: Icon(
                               (chameleonTagToFrequency(widget.tagSave.tag) ==
                                       TagFrequency.hf)

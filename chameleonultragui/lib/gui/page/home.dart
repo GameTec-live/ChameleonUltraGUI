@@ -256,6 +256,7 @@ class HomePageState extends State<HomePage> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 IconButton(
+                                  tooltip: localizations.disconnect,
                                   onPressed: () async {
                                     // Disconnect
                                     await appState.disconnect(manual: true);
@@ -563,6 +564,7 @@ class HomePageState extends State<HomePage> {
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: IconButton(
+                              tooltip: localizations.device_settings,
                               onPressed: () => showDialog<String>(
                                   context: context,
                                   builder: (BuildContext dialogContext) =>

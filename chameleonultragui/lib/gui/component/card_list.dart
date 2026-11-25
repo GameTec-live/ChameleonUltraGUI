@@ -64,6 +64,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
         },
       ),
       IconButton(
+        tooltip: localizations.clear_search,
         icon: const Icon(Icons.clear),
         onPressed: () {
           query = '';
@@ -75,6 +76,7 @@ class CardSearchDelegate extends SearchDelegate<String> {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
+      tooltip: AppLocalizations.of(context)!.back,
       icon: const Icon(Icons.arrow_back),
       onPressed: () {
         close(context, '');

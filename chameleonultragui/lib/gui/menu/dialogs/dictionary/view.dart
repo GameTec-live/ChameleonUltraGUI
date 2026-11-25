@@ -83,6 +83,8 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
                       ),
                     ),
                     IconButton(
+                      tooltip: localizations.copy_field(
+                          localizations.key_count),
                       onPressed: () async {
                         await Clipboard.setData(
                           ClipboardData(
@@ -149,6 +151,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
           icon: const Icon(Icons.drive_file_move_outline),
         ),
         IconButton(
+          tooltip: localizations.edit_dictionary,
           onPressed: () async {
             await showDialog(
               context: context,
@@ -161,6 +164,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
           icon: const Icon(Icons.edit),
         ),
         IconButton(
+          tooltip: localizations.export,
           onPressed: () async {
             await FilePicker.saveFile(
               dialogTitle: '${localizations.output_file}:',
@@ -171,6 +175,7 @@ class DictionaryViewMenuState extends State<DictionaryViewMenu> {
           icon: const Icon(Icons.download),
         ),
         IconButton(
+          tooltip: localizations.delete,
           onPressed: () async {
             if (appState.sharedPreferencesProvider.getConfirmDelete() == true) {
               var confirm = await showDialog(

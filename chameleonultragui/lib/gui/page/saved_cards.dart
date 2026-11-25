@@ -71,10 +71,13 @@ class SavedCardsPageState extends State<SavedCardsPage> {
         }
 
         if (elevated) {
-          return ElevatedButton(
-            onPressed: toggleMenu,
-            style: customCardButtonStyle(appState),
-            child: const Icon(Icons.add),
+          return Tooltip(
+            message: localizations.create,
+            child: ElevatedButton(
+              onPressed: toggleMenu,
+              style: customCardButtonStyle(appState),
+              child: const Icon(Icons.add),
+            ),
           );
         }
         return IconButton(
@@ -383,6 +386,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
             decoration: InputDecoration(
               labelText: localizations.name,
               prefixIcon: IconButton(
+                tooltip: localizations.folder_color,
                 icon: Icon(Icons.folder, color: color),
                 onPressed: () async {
                   var picked = color;
@@ -650,10 +654,13 @@ class SavedCardsPageState extends State<SavedCardsPage> {
         }
 
         if (elevated) {
-          return ElevatedButton(
-            onPressed: toggleMenu,
-            style: customCardButtonStyle(appState),
-            child: const Icon(Icons.add),
+          return Tooltip(
+            message: localizations.create,
+            child: ElevatedButton(
+              onPressed: toggleMenu,
+              style: customCardButtonStyle(appState),
+              child: const Icon(Icons.add),
+            ),
           );
         }
         return IconButton(
@@ -754,6 +761,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                 currentFolder?.name ?? localizations.cards,
                 [
                   IconButton(
+                    tooltip: localizations.import_card,
                     onPressed: () => importCard(),
                     icon: const Icon(Icons.file_upload),
                   ),
@@ -1251,7 +1259,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   }
                                 },
                                 style: customCardButtonStyle(appState),
-                                child: const Icon(Icons.file_upload),
+                                child: Tooltip(
+                                  message: localizations.import_card,
+                                  child: const Icon(Icons.file_upload),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -1351,6 +1362,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       const Icon(Icons.drive_file_move_outline),
                                 ),
                                 IconButton(
+                                  tooltip: localizations.edit_card,
                                   onPressed: () {
                                     showDialog(
                                       context: context,
@@ -1362,6 +1374,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   icon: const Icon(Icons.edit),
                                 ),
                                 IconButton(
+                                  tooltip: localizations.export,
                                   onPressed: () async {
                                     await showDialog(
                                       context: context,
@@ -1400,6 +1413,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   icon: const Icon(Icons.download),
                                 ),
                                 IconButton(
+                                  tooltip: localizations.delete,
                                   onPressed: () async {
                                     if (appState.sharedPreferencesProvider
                                             .getConfirmDelete() ==
@@ -1451,6 +1465,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                       icon: const Icon(Icons.arrow_back),
                     ),
                   IconButton(
+                    tooltip: localizations.import_dictionary,
                     onPressed: () => importDictionary(),
                     icon: const Icon(Icons.upload),
                   ),
@@ -1468,12 +1483,15 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                         child: Row(children: [
                           if (currentDictionaryFolder != null) ...[
                             Expanded(
-                              child: ElevatedButton(
-                                onPressed: () => setState(() =>
-                                    currentDictionaryFolderId =
-                                        currentDictionaryFolder.parentId),
-                                style: customCardButtonStyle(appState),
-                                child: const Icon(Icons.arrow_back),
+                              child: Tooltip(
+                                message: localizations.parent_folder,
+                                child: ElevatedButton(
+                                  onPressed: () => setState(() =>
+                                      currentDictionaryFolderId =
+                                          currentDictionaryFolder.parentId),
+                                  style: customCardButtonStyle(appState),
+                                  child: const Icon(Icons.arrow_back),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -1530,7 +1548,10 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                 }
                               },
                               style: customCardButtonStyle(appState),
-                              child: const Icon(Icons.upload),
+                              child: Tooltip(
+                                message: localizations.import_dictionary,
+                                child: const Icon(Icons.upload),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -1632,6 +1653,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                       const Icon(Icons.drive_file_move_outline),
                                 ),
                                 IconButton(
+                                  tooltip: localizations.edit_dictionary,
                                   onPressed: () {
                                     showDialog(
                                       context: context,
@@ -1644,6 +1666,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   icon: const Icon(Icons.edit),
                                 ),
                                 IconButton(
+                                  tooltip: localizations.export,
                                   onPressed: () async {
                                     await FilePicker.saveFile(
                                       dialogTitle:
@@ -1655,6 +1678,7 @@ class SavedCardsPageState extends State<SavedCardsPage> {
                                   icon: const Icon(Icons.download),
                                 ),
                                 IconButton(
+                                  tooltip: localizations.delete,
                                   onPressed: () async {
                                     if (appState.sharedPreferencesProvider
                                             .getConfirmDelete() ==
@@ -1724,6 +1748,7 @@ class DictMergeDelegate extends SearchDelegate<String> {
     var appState = context.read<ChameleonGUIState>();
     return [
       IconButton(
+        tooltip: AppLocalizations.of(context)!.clear_search,
         icon: const Icon(Icons.clear),
         onPressed: () {
           query = '';
@@ -1731,6 +1756,7 @@ class DictMergeDelegate extends SearchDelegate<String> {
       ),
       const SizedBox(width: 10),
       IconButton(
+        tooltip: AppLocalizations.of(context)!.merge_dictionaries,
         icon: const Icon(Icons.merge),
         onPressed: () {
           List<Dictionary> selectedForMerge = [];
@@ -1772,6 +1798,7 @@ class DictMergeDelegate extends SearchDelegate<String> {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
+      tooltip: AppLocalizations.of(context)!.back,
       icon: const Icon(Icons.arrow_back),
       onPressed: () {
         close(context, '');

@@ -1576,6 +1576,7 @@ class _LfWaveformFullscreenPageState extends State<_LfWaveformFullscreenPage> {
       appBar: AppBar(
         title: Text(localizations.lf_sniff_waveform),
         leading: IconButton(
+          tooltip: localizations.close,
           onPressed: () => Navigator.of(context).pop(_zoom),
           icon: const Icon(Icons.close),
         ),

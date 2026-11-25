@@ -36,6 +36,7 @@ class DebugPage extends StatelessWidget {
               Align(
                 alignment: Alignment.topRight,
                 child: IconButton(
+                  tooltip: localizations.disconnect,
                   onPressed: () async {
                     // Disconnect
                     await appState.disconnect(manual: true);
