@@ -162,9 +162,7 @@
   "status_waiting_for_device": "Venter på enhed…",
   "status_connecting": "Forbinder…",
   "status_connected": "Forbundet",
-  "status_pin_required": "PIN påkrævet",
+  "status_pin_required": "Indtast PIN i systemdialogen",
   "status_pin_error": "Forkert PIN",
-  "status_failed_retrying": "Forbindelsen mislykkedes, prøver igen…",
-  "default_ble_password": "Standard BLE forbindelse adgangskode er 123456",
-  "connection_might_take_some_time": "F\u00f8rste forbindelse kan tage noget tid"
+  "status_failed_retrying": "Forbindelsen mislykkedes, prøver igen…"
 }

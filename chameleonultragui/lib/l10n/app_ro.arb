@@ -163,10 +163,8 @@
   "status_waiting_for_device": "Se așteaptă dispozitivul…",
   "status_connecting": "Se conectează…",
   "status_connected": "Conectat",
-  "status_pin_required": "Este necesar PIN-ul",
+  "status_pin_required": "Introduceți PIN-ul în fereastra sistemului",
   "status_pin_error": "PIN greșit",
   "status_failed_retrying": "Conexiunea a eșuat, se reîncearcă…",
-  "default_ble_password": "Parola de conexiune BLE implicit\u0103 este 123456",
-  "connection_might_take_some_time": "Prima conexiune ar putea dura ceva timp",
   "too_long_name": "Numele este prea lung"
 }

@@ -121,11 +121,6 @@ class FlutterBluePlusWinrtPlugin : public flutter::Plugin {
       std::string remote_id,
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
-  winrt::fire_and_forget CreateBondWithPinAsync(
-      std::string remote_id,
-      std::string pin,
-      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
-
   winrt::fire_and_forget RemoveBondAsync(
       std::string remote_id,
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);

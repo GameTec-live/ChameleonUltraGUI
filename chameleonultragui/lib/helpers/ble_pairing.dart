@@ -2,25 +2,21 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:chameleonultragui/connector/ble_trace.dart';
-import 'package:chameleonultragui/helpers/ble_secure_store.dart';
 import 'package:chameleonultragui/helpers/ble_status.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 const _winrtChannel = MethodChannel('flutter_blue_plus/methods');
 
-/// Coordinates OS-level BLE pairing from the connect path.
-///
-/// The UI registers [promptPin] and [bringToFront] once. The PIN itself never
-/// reaches the log; only stage names are traced.
+/// Triggers the operating system pairing flow when a protected characteristic
+/// rejects the link. Windows and Android own the PIN prompt and the bond.
 class BlePairingService {
   BlePairingService._();
 
   static final BlePairingService instance = BlePairingService._();
 
-  Future<String?> Function(String? error)? promptPin;
-  Future<void> Function()? bringToFront;
+  /// Set by the Windows connector so USB always wins before a system prompt.
+  bool Function()? usbActive;
 
   Future<bool>? _inFlight;
   String? _inFlightPort;
@@ -43,16 +39,20 @@ class BlePairingService {
     if (_inFlight != null && _inFlightPort == port) {
       return _inFlight!;
     }
+    if (usbActive?.call() == true) {
+      BleTrace.instance.log('pair.system.skip', 'reason=usb-active port=$port');
+      return Future<bool>.value(false);
+    }
     final suppressedUntil = _suppressedUntil;
     if (suppressedUntil != null && DateTime.now().isBefore(suppressedUntil)) {
-      BleTrace.instance.log('pin.prompt.suppressed', 'port=$port');
+      BleTrace.instance.log('pair.system.skip', 'reason=cooldown port=$port');
       return Future<bool>.value(false);
     }
     final future = Platform.isWindows
         ? _pairWindows(port)
         : Platform.isAndroid
-        ? _pairAndroid(port)
-        : Future<bool>.value(true);
+            ? _pairAndroid(port)
+            : Future<bool>.value(true);
     _inFlight = future;
     _inFlightPort = port;
     return future.whenComplete(() {
@@ -62,126 +62,72 @@ class BlePairingService {
   }
 
   Future<bool> _pairWindows(String port) async {
-    BleTrace.instance.log('pin.pair.start', 'port=$port');
-    try {
-      await bringToFront?.call();
-    } catch (_) {}
-
+    BleTrace.instance.log('pair.system.start', 'port=$port');
     var bonded = await _isBonded(port);
-    var pin = await BlePinStore.read(port);
-    String? error;
+    if (bonded) {
+      // CCCD failed although a bond exists, so the stored key is stale.
+      try {
+        await _winrtChannel.invokeMethod<bool>('removeBond', port);
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      } catch (_) {}
+      bonded = false;
+    }
+    if (usbActive?.call() == true) {
+      BleTrace.instance.log('pair.system.skip', 'reason=usb-active port=$port');
+      return false;
+    }
 
-    for (var attempt = 0; attempt < 3; attempt++) {
-      if (pin == null) {
-        BleStatus.set(BlePhase.pinRequired);
-        BleTrace.instance.log('pin.prompt.show', 'attempt=${attempt + 1}');
-        final prompt = promptPin;
-        if (prompt == null) {
-          BleTrace.instance.log('pin.prompt.missing', '');
-          BleStatus.set(BlePhase.failedRetrying);
+    BleStatus.set(BlePhase.pinRequired);
+    try {
+      final paired = await _winrtChannel
+          .invokeMethod<bool>('createBond', {'remote_id': port})
+          .timeout(const Duration(seconds: 90));
+      BleTrace.instance.log('pair.system.result', 'ok=${paired == true}');
+      if (paired == true) {
+        if (usbActive?.call() == true) {
+          BleTrace.instance.log('pair.system.skip', 'reason=usb-active');
           return false;
         }
-        pin = await prompt(error);
-        BleTrace.instance.log(
-          'pin.prompt.result',
-          pin == null ? 'cancelled' : 'entered',
-        );
-        if (pin == null) {
-          _suppressedUntil = DateTime.now().add(const Duration(seconds: 60));
-          BleStatus.set(BlePhase.failedRetrying);
-          return false;
-        }
-      } else {
-        BleTrace.instance.log('pin.saved.use', 'attempt=${attempt + 1}');
-      }
-
-      BleStatus.set(BlePhase.connecting);
-      final paired = await _pairWindowsWithPin(
-        port,
-        pin,
-        unpair: bonded || attempt > 0,
-      );
-      BleTrace.instance.log('pin.pair.result', 'ok=$paired');
-
-      if (paired) {
         _suppressedUntil = null;
-        await BlePinStore.save(port, pin);
         BleStatus.set(BlePhase.connecting);
         return true;
       }
-
-      await BlePinStore.clear(port);
-      pin = null;
-      error = 'pin';
-      BleStatus.set(BlePhase.pinError);
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-      bonded = await _isBonded(port);
+    } on TimeoutException {
+      BleTrace.instance.log('pair.system.timeout', 'port=$port');
+    } catch (e) {
+      BleTrace.instance.log(
+        'pair.system.result',
+        'ok=false error=${e.runtimeType}',
+      );
     }
 
     _suppressedUntil = DateTime.now().add(const Duration(seconds: 60));
+    BleStatus.set(BlePhase.pinError);
+    await Future<void>.delayed(const Duration(milliseconds: 900));
     BleStatus.set(BlePhase.failedRetrying);
     return false;
   }
 
   Future<bool> _pairAndroid(String port) async {
-    BleTrace.instance.log('pin.pair.start', 'port=$port');
-    setBlePhaseSafely(BlePhase.connecting);
-    final saved = await BlePinStore.read(port);
+    BleTrace.instance.log('pair.system.start', 'port=$port');
     try {
-      var device = BluetoothDevice.fromId(port);
+      final device = BluetoothDevice.fromId(port);
       if (await _isBonded(port)) {
         return true;
       }
       BleStatus.set(BlePhase.pinRequired);
-      if (saved != null) {
-        await device.createBond(
-          timeout: 30,
-          pin: Uint8List.fromList(saved.codeUnits),
-        );
-        await BlePinStore.save(port, saved);
-      } else {
-        await device.createBond(timeout: 30);
-      }
+      await device.createBond(timeout: 30);
       BleStatus.set(BlePhase.connecting);
-      BleTrace.instance.log('pin.pair.result', 'ok=true');
+      BleTrace.instance.log('pair.system.result', 'ok=true');
       return true;
     } catch (e) {
       BleTrace.instance.log(
-        'pin.pair.result',
+        'pair.system.result',
         'ok=false error=${e.runtimeType}',
       );
-      await BlePinStore.clear(port);
       BleStatus.set(BlePhase.pinError);
       await Future<void>.delayed(const Duration(milliseconds: 900));
       BleStatus.set(BlePhase.failedRetrying);
-      return false;
-    }
-  }
-
-  Future<bool> _pairWindowsWithPin(
-    String port,
-    String pin, {
-    required bool unpair,
-  }) async {
-    if (unpair) {
-      try {
-        await _winrtChannel.invokeMethod<bool>('removeBond', port);
-        await Future<void>.delayed(const Duration(milliseconds: 300));
-      } catch (_) {}
-    }
-
-    try {
-      final result = await _winrtChannel
-          .invokeMethod<bool>('createBondWithPin', {
-            'remote_id': port,
-            'pin': pin,
-          })
-          .timeout(const Duration(seconds: 30));
-      return result == true;
-    } on TimeoutException {
-      BleTrace.instance.log('pin.pair.timeout', 'port=$port');
-      return false;
-    } catch (_) {
       return false;
     }
   }
@@ -208,11 +154,5 @@ class BlePairingService {
       } catch (_) {}
     }
     return false;
-  }
-}
-
-void setBlePhaseSafely(BlePhase phase) {
-  if (!kIsWeb) {
-    BleStatus.set(phase);
   }
 }

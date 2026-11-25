@@ -51,6 +51,7 @@ class WindowsBLESerial extends AbstractSerial {
   bool Function()? isOtherBusy;
   bool _watchEnabled = false;
   bool _watching = false;
+  bool _usbSuspended = false;
   bool _directRunning = false;
   Completer<void>? _activeWatch;
 
@@ -170,8 +171,34 @@ class WindowsBLESerial extends AbstractSerial {
   /// Runs independently of the visible page. When a Chameleon advertisement is
   /// seen it stops scanning, connects, and resumes watching after a failure or
   /// disconnect. `isOtherBusy` lets the USB side win when it connects first.
+  bool get connectingNow => _connecting || _reconnecting || pendingConnection;
+
+  Future<void> suspendForUsb() async {
+    if (_usbSuspended) {
+      return;
+    }
+    _usbSuspended = true;
+    _trace('usb.priority', 'suspending BLE for USB');
+    await _stopScan();
+    pendingConnection = false;
+    if (!connected) {
+      await _cleanupForConnect();
+    }
+    BleStatus.set(BlePhase.waiting);
+    notifyConnectionStateChanged();
+  }
+
+  void resumeAfterUsb() {
+    if (!_usbSuspended) {
+      return;
+    }
+    _usbSuspended = false;
+    _trace('usb.priority', 'resuming BLE after USB removal');
+    startWatching();
+  }
+
   void startWatching() {
-    if (_watchEnabled) {
+    if (_watchEnabled || _usbSuspended) {
       return;
     }
     _watchEnabled = true;
@@ -186,7 +213,10 @@ class WindowsBLESerial extends AbstractSerial {
     _watching = true;
     _trace('watch.loop', 'started');
     while (_watchEnabled) {
-      if (connected || _reconnecting || (isOtherBusy?.call() ?? false)) {
+      if (connected ||
+          _usbSuspended ||
+          _reconnecting ||
+          (isOtherBusy?.call() ?? false)) {
         await Future<void>.delayed(const Duration(milliseconds: 500));
         continue;
       }
@@ -342,6 +372,7 @@ class WindowsBLESerial extends AbstractSerial {
     _trace('direct.loop', 'address=$address');
     while (_watchEnabled) {
       if (connected ||
+          _usbSuspended ||
           _connecting ||
           _reconnecting ||
           (isOtherBusy?.call() ?? false)) {
@@ -368,6 +399,9 @@ class WindowsBLESerial extends AbstractSerial {
             )
             .timeout(const Duration(seconds: 4));
         _trace('direct.connect.ok', 'ms=${connectWatch.elapsedMilliseconds}');
+        if (_usbSuspended) {
+          throw 'usb-priority';
+        }
         // Only a real link turns the page into "connecting"; retrying an
         // absent remembered address must keep showing "waiting".
         pendingConnection = true;
@@ -520,6 +554,9 @@ class WindowsBLESerial extends AbstractSerial {
   }
 
   Future<bool> _connectRobust(dynamic devicePort, Chameleon info) async {
+    if (_usbSuspended) {
+      return false;
+    }
     if (_connecting || _reconnecting) {
       _trace(
         'connect.busy',
@@ -568,6 +605,9 @@ class WindowsBLESerial extends AbstractSerial {
         'attempt=$attempt port=$port reconnect=$reconnect',
       );
 
+      if (_usbSuspended) {
+        return false;
+      }
       try {
         await _cleanupForConnect();
         stage = 'stop_scan';

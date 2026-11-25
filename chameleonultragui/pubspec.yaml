@@ -74,7 +74,6 @@ dependencies:
   cryptography: ^2.9.0
   web_socket_channel: ^3.0.3
   share_plus: ^13.3.1
-  flutter_secure_storage: 11.2.0
 
 dev_dependencies:
   flutter_test:

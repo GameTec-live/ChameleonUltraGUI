@@ -70,18 +70,13 @@ typedef _SetWindowPosNative = Int32 Function(
 typedef _SetWindowPosDart = int Function(int, int, int, int, int, int, int);
 typedef _ShowWindowNative = Int32 Function(IntPtr, Int32);
 typedef _ShowWindowDart = int Function(int, int);
-typedef _SetForegroundWindowNative = Int32 Function(IntPtr);
-typedef _SetForegroundWindowDart = int Function(int);
 typedef _MonitorFromRectNative = IntPtr Function(Pointer<_Rect>, Uint32);
 typedef _MonitorFromRectDart = int Function(Pointer<_Rect>, int);
 typedef _GetCurrentProcessIdNative = Uint32 Function();
 typedef _GetCurrentProcessIdDart = int Function();
 
-const int _swpNoSize = 0x0001;
-const int _swpNoMove = 0x0002;
 const int _swpNoZOrder = 0x0004;
 const int _swpNoActivate = 0x0010;
-const int _swpShowWindow = 0x0040;
 const int _monitorDefaultToNull = 0;
 const int _swShowMaximized = 3;
 
@@ -315,53 +310,6 @@ class WindowStateKeeper {
       calloc.free(placement);
     }
   }
-}
-
-/// Raises the app window above other windows before a pairing prompt.
-void bringApplicationWindowToFront() {
-  if (!Platform.isWindows) {
-    return;
-  }
-  final hwnd = WindowStateKeeper.instance._hwnd != 0
-      ? WindowStateKeeper.instance._hwnd
-      : _findOwnWindow();
-  if (hwnd == 0) {
-    return;
-  }
-  try {
-    _user32.lookupFunction<_ShowWindowNative, _ShowWindowDart>('ShowWindow')(
-      hwnd,
-      9,
-    );
-    // A topmost round-trip makes SetForegroundWindow reliable even when
-    // another application currently owns the foreground.
-    _user32.lookupFunction<_SetWindowPosNative, _SetWindowPosDart>(
-      'SetWindowPos',
-    )(
-      hwnd,
-      -1,
-      0,
-      0,
-      0,
-      0,
-      _swpNoMove | _swpNoSize | _swpNoActivate | _swpShowWindow,
-    );
-    _user32.lookupFunction<_SetWindowPosNative, _SetWindowPosDart>(
-      'SetWindowPos',
-    )(
-      hwnd,
-      -2,
-      0,
-      0,
-      0,
-      0,
-      _swpNoMove | _swpNoSize | _swpNoActivate | _swpShowWindow,
-    );
-    _user32
-        .lookupFunction<_SetForegroundWindowNative, _SetForegroundWindowDart>(
-          'SetForegroundWindow',
-        )(hwnd);
-  } catch (_) {}
 }
 
 /// Hides the runner window. Used by the headless BLE stress harness.
