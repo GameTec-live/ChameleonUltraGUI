@@ -19,3 +19,5 @@ Thumbs.db
 prebuilt/
 *.zip
 *.apk
+screenshots/
+test/goldens/

@@ -54,7 +54,7 @@ List<String> excludedAccounts = ["github-actions[bot]", "ChameleonHelper"];
 Future<List<Map<String, String>>> fetchGitHubContributors() async {
   try {
     final response = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/contributors")))
+            "https://api.github.com/repos/lyx7725/ChameleonUltraGUI/contributors")))
         .body
         .toString());
 
@@ -316,7 +316,7 @@ class ChangelogEntry {
 Future<List<dynamic>?> _fetchReleases() async {
   try {
     final response = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/releases")))
+            "https://api.github.com/repos/lyx7725/ChameleonUltraGUI/releases")))
         .body
         .toString());
 
@@ -389,7 +389,7 @@ Future<ChangelogEntry?> fetchUnreleasedChanges(
 
     // Get commits between the latest release and main branch
     final commitsResponse = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/compare/$latestReleaseCommit...main")))
+            "https://api.github.com/repos/lyx7725/ChameleonUltraGUI/compare/$latestReleaseCommit...main")))
         .body
         .toString());
 
@@ -434,7 +434,7 @@ Future<ChangelogEntry?> fetchUnreleasedChanges(
       tagName: null,
       publishedAt: DateTime.now(),
       url:
-          "https://github.com/GameTec-live/ChameleonUltraGUI/compare/$latestReleaseCommit...main",
+          "https://github.com/lyx7725/ChameleonUltraGUI/compare/$latestReleaseCommit...main",
       changes: changes,
       isPrerelease: false,
       currentVersionCommit: matchedCurrentVersionCommit,
@@ -454,7 +454,7 @@ Future<String?> findCurrentVersionCommit(String buildNumber) async {
   try {
     // Fetch workflow runs
     final response = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/actions/workflows/$workflowName/runs?status=success&per_page=100")))
+            "https://api.github.com/repos/lyx7725/ChameleonUltraGUI/actions/workflows/$workflowName/runs?status=success&per_page=100")))
         .body
         .toString());
 

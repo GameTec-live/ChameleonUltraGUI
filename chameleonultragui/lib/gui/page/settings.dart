@@ -511,10 +511,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                 GestureDetector(
                                     onTap: () async {
                                       await launchUrl(Uri.parse(
-                                          'https://github.com/GameTec-live/ChameleonUltraGUI'));
+                                          'https://github.com/lyx7725/ChameleonUltraGUI'));
                                     },
                                     child: const Text(
-                                        'https://github.com/GameTec-live/ChameleonUltraGUI')),
+                                        'https://github.com/lyx7725/ChameleonUltraGUI')),
                                 const SizedBox(height: 30),
                                 GestureDetector(
                                     onTap: () async {

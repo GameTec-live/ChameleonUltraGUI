@@ -11,8 +11,10 @@ class BleTrace {
   static String _mode = 'robust';
   static int? _cycle;
 
+  static const int _maxBytes = 1024 * 1024;
   IOSink? _sink;
   String? _path;
+  int _bytes = 0;
 
   String get path => _path ??=
       '${Directory.systemTemp.path}${Platform.pathSeparator}chameleon_ble.log';
@@ -29,6 +31,19 @@ class BleTrace {
     try {
       File(path).writeAsStringSync('');
       _sink = File(path).openWrite(mode: FileMode.append);
+      _bytes = 0;
+    } catch (_) {}
+  }
+
+  void _truncate() {
+    try {
+      _sink?.close();
+    } catch (_) {}
+    _sink = null;
+    try {
+      File(path).writeAsStringSync('');
+      _sink = File(path).openWrite(mode: FileMode.append);
+      _bytes = 0;
     } catch (_) {}
   }
 
@@ -38,14 +53,25 @@ class BleTrace {
       try {
         sink = File(path).openWrite(mode: FileMode.append);
         _sink = sink;
+        _bytes = File(path).lengthSync();
       } catch (_) {
         return;
       }
     }
     final cycle = _cycle;
-    sink.writeln('${DateTime.now().toIso8601String()} '
+    final line =
+        '${DateTime.now().toIso8601String()} '
         'mode=$_mode${cycle != null ? ' cycle=$cycle' : ''} '
-        'stage=$stage $message');
+        'stage=$stage $message';
+    if (_bytes + line.length + 1 > _maxBytes) {
+      _truncate();
+      sink = _sink;
+      if (sink == null) {
+        return;
+      }
+    }
+    sink.writeln(line);
+    _bytes += line.length + 1;
   }
 
   Future<void> flush() async {
@@ -60,5 +86,6 @@ class BleTrace {
       await _sink?.close();
     } catch (_) {}
     _sink = null;
+    _bytes = 0;
   }
 }

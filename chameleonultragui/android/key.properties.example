@@ -1,0 +1,5 @@
+# Copy to key.properties and fill in with your release keystore.
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=YOUR_KEY_ALIAS
+storeFile=C:/path/to/your/release.jks
