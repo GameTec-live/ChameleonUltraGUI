@@ -178,7 +178,9 @@ class WindowsBLESerial extends AbstractSerial {
       return;
     }
     _usbSuspended = true;
-    _trace('usb.priority', 'suspending BLE for USB');
+    if (_watchEnabled || connectingNow) {
+      _trace('usb.priority', 'suspending BLE for USB');
+    }
     await _stopScan();
     pendingConnection = false;
     if (!connected) {

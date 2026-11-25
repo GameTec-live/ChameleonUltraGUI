@@ -49,7 +49,7 @@ class WindowsSerial extends AbstractSerial {
     final decision = _route.startup(usbFound: found.isNotEmpty);
     _logRoute(decision);
     if (decision.connectUsb && found.isNotEmpty) {
-      await _connectUsb(found.first);
+      await _connectUsb(found.first, reason: decision.reason);
     } else {
       _startBle();
     }
@@ -130,7 +130,7 @@ class WindowsSerial extends AbstractSerial {
         } else {
           _route.usbPresent = true;
         }
-        await _connectUsb(found.first);
+        await _connectUsb(found.first, reason: 'usb-hotplug');
         return;
       }
 
@@ -144,7 +144,7 @@ class WindowsSerial extends AbstractSerial {
     }
   }
 
-  Future<bool> _connectUsb(Chameleon device) async {
+  Future<bool> _connectUsb(Chameleon device, {required String reason}) async {
     if (_usbConnectInFlight ||
         nativeSerial.connected ||
         nativeSerial.pendingConnection ||
@@ -159,10 +159,7 @@ class WindowsSerial extends AbstractSerial {
       if (ok) {
         _usbConnected = true;
         _usbRetryAfter = null;
-        BleTrace.instance.log(
-          'route',
-          'selected=usb reason=${_route.usbPresent ? 'usb-priority' : 'usb'}',
-        );
+        BleTrace.instance.log('route', 'selected=usb reason=$reason');
         notifyConnectionStateChanged();
         return true;
       }
