@@ -379,7 +379,6 @@ class HomePageState extends State<HomePage> {
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
       appBar: AppBar(title: Text(localizations.home)),
       body: HomeOverview(
         data: _data,

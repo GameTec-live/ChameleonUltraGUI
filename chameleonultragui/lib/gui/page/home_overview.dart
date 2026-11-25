@@ -5,7 +5,6 @@ import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:flutter/material.dart';
 
-const Color _gold = Color(0xFFD8B25A);
 const String _mono = 'RobotoMono';
 
 /// Everything the home overview needs. Loaded once by [HomePage].
@@ -123,33 +122,30 @@ class HomeOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = _HomePalette.of(context);
-    return ColoredBox(
-      color: palette.page,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 900;
-          final medium = constraints.maxWidth >= 600 && !wide;
-          final phone = constraints.maxWidth < 600;
-          final padding = phone ? 16.0 : 24.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 900;
+        final medium = constraints.maxWidth >= 600 && !wide;
+        final phone = constraints.maxWidth < 600;
+        final padding = phone ? 16.0 : 24.0;
 
-          final content = wide
-              ? _desktop(context, palette)
-              : medium
-              ? _medium(context, palette)
-              : _phone(context, palette);
+        final content = wide
+            ? _desktop(context, palette)
+            : medium
+            ? _medium(context, palette)
+            : _phone(context, palette);
 
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(padding),
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1100),
-                child: content,
-              ),
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(padding),
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: content,
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -325,14 +321,6 @@ class HomeOverview extends StatelessWidget {
                         Image.asset(image, fit: BoxFit.contain),
                   ),
                 ),
-                Container(
-                  width: imageHeight * 0.46,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: _gold.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
               ],
             ),
           ),
@@ -392,15 +380,15 @@ class HomeOverview extends StatelessWidget {
                       Container(
                         width: 6,
                         height: 6,
-                        decoration: const BoxDecoration(
-                          color: _gold,
+                        decoration: BoxDecoration(
+                          color: p.accent,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 6),
                       Text(
                         l.update_available,
-                        style: const TextStyle(fontSize: 12, color: _gold),
+                        style: TextStyle(fontSize: 12, color: p.accent),
                       ),
                     ],
                   ),
@@ -537,7 +525,7 @@ class HomeOverview extends StatelessWidget {
               width: compact ? 48 : 56,
               height: compact ? 48 : 56,
               decoration: BoxDecoration(
-                border: Border.all(color: _gold, width: 1.5),
+                border: Border.all(color: p.accent, width: 1.5),
                 borderRadius: BorderRadius.circular(8),
               ),
               alignment: Alignment.center,
@@ -546,7 +534,7 @@ class HomeOverview extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: _mono,
                   fontSize: compact ? 20 : 24,
-                  color: _gold,
+                  color: p.accent,
                 ),
               ),
             ),
@@ -667,7 +655,7 @@ class HomeOverview extends StatelessWidget {
             color: p.panel,
             borderRadius: BorderRadius.circular(8),
             border: selected
-                ? Border.all(color: _gold, width: 1.5)
+                ? Border.all(color: p.accent, width: 1.5)
                 : Border.all(color: p.border),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -682,7 +670,7 @@ class HomeOverview extends StatelessWidget {
                   fontFamily: _mono,
                   fontSize: 13,
                   height: 1.1,
-                  color: selected ? _gold : p.primaryText,
+                  color: selected ? p.accent : p.primaryText,
                 ),
               ),
               const SizedBox(height: 2),
@@ -693,7 +681,7 @@ class HomeOverview extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   height: 1.1,
-                  color: selected ? _gold : p.secondary,
+                  color: selected ? p.accent : p.secondary,
                 ),
               ),
             ],
@@ -904,7 +892,7 @@ class HomeOverview extends StatelessWidget {
             hoverColor: p.hover,
             splashColor: p.hover,
             onTap: onTap,
-            child: Icon(icon, size: 20, color: color ?? p.secondary),
+            child: Icon(icon, size: 20, color: color ?? p.accent),
           ),
         ),
       ),
@@ -966,6 +954,7 @@ class _HomePalette {
     required this.primaryText,
     required this.secondary,
     required this.error,
+    required this.accent,
     required this.hover,
   });
 
@@ -975,27 +964,20 @@ class _HomePalette {
   final Color primaryText;
   final Color secondary;
   final Color error;
+  final Color accent;
   final Color hover;
 
   factory _HomePalette.of(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
-    final page = scheme.primaryContainer;
-    final panel = dark
-        ? Color.alphaBlend(Colors.white.withValues(alpha: 0.05), page)
-        : Color.alphaBlend(Colors.white.withValues(alpha: 0.55), page);
-    final border = dark
-        ? Colors.white.withValues(alpha: 0.14)
-        : Color.alphaBlend(Colors.white.withValues(alpha: 0.85), page);
+    final scheme = Theme.of(context).colorScheme;
     return _HomePalette(
-      page: page,
-      panel: panel,
-      border: border,
+      page: scheme.surface,
+      panel: scheme.surfaceContainerLow,
+      border: scheme.outlineVariant,
       primaryText: scheme.onSurface,
-      secondary: scheme.onSurface.withValues(alpha: 0.65),
+      secondary: scheme.onSurfaceVariant,
       error: scheme.error,
-      hover: Colors.white.withValues(alpha: dark ? 0.08 : 0.35),
+      accent: scheme.primary,
+      hover: scheme.onSurface.withValues(alpha: 0.06),
     );
   }
 }
