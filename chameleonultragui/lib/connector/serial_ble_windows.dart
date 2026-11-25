@@ -199,6 +199,13 @@ class WindowsBLESerial extends AbstractSerial {
     startWatching();
   }
 
+  Future<void> shutdown() async {
+    _watchEnabled = false;
+    _usbSuspended = true;
+    await _stopScan();
+    await performDisconnect();
+  }
+
   void startWatching() {
     if (_watchEnabled || _usbSuspended) {
       return;
@@ -235,6 +242,7 @@ class WindowsBLESerial extends AbstractSerial {
     StreamSubscription<List<ScanResult>>? subscription;
     var handled = false;
     DateTime? firstAdvertisement;
+    DateTime? lastAdvertisement;
 
     try {
       subscription = FlutterBluePlus.onScanResults.listen((results) {
@@ -244,6 +252,12 @@ class WindowsBLESerial extends AbstractSerial {
         for (final result in results) {
           if (!_isChameleonResult(result)) {
             continue;
+          }
+          final advAt = DateTime.now();
+          firstAdvertisement ??= advAt;
+          lastAdvertisement = advAt;
+          if (identical(firstAdvertisement, advAt)) {
+            _trace('watch.adv.first', 'port=${result.device.remoteId.str}');
           }
           if (connected) {
             handled = true;
@@ -259,7 +273,6 @@ class WindowsBLESerial extends AbstractSerial {
             continue;
           }
           handled = true;
-          firstAdvertisement ??= DateTime.now();
           var name = result.advertisementData.advName;
           if (name.isEmpty) {
             name = result.device.platformName;
@@ -338,6 +351,12 @@ class WindowsBLESerial extends AbstractSerial {
         await FlutterBluePlus.stopScan();
       } catch (_) {}
       _trace('watch.scan.stop', '');
+      if (firstAdvertisement != null) {
+        _trace(
+          'watch.adv.window',
+          'first_to_last_ms=${(lastAdvertisement ?? firstAdvertisement!).difference(firstAdvertisement!).inMilliseconds}',
+        );
+      }
     }
   }
 

@@ -18,6 +18,8 @@ class WindowsSerial extends AbstractSerial {
   bool _usbConnectInFlight = false;
   bool _usbProbeBusy = false;
   bool _bleStarted = false;
+  bool _shuttingDown = false;
+  Timer? _usbTimer;
   DateTime? _usbRetryAfter;
   Future<List<Chameleon>>? _usbProbeFuture;
   Future<bool>? _nativeConnectFuture;
@@ -43,9 +45,30 @@ class WindowsSerial extends AbstractSerial {
     unawaited(_bootstrap());
   }
 
+  Future<void> shutdown() async {
+    _shuttingDown = true;
+    _usbTimer?.cancel();
+    await bleSerial.shutdown();
+    await nativeSerial.performDisconnect();
+  }
+
   Future<void> _bootstrap() async {
-    final devices = await _probeUsb();
+    BleTrace.instance.log('startup.begin', '');
+    final probeWatch = Stopwatch()..start();
+    List<Chameleon> devices = const [];
+    try {
+      devices = await _probeUsb().timeout(const Duration(milliseconds: 300));
+    } on TimeoutException {
+      BleTrace.instance.log(
+        'usb.probe.timeout',
+        'ms=${probeWatch.elapsedMilliseconds}',
+      );
+    }
     final found = devices.where((device) => !device.dfu).toList();
+    BleTrace.instance.log(
+      'usb.probe.done',
+      'ms=${probeWatch.elapsedMilliseconds} found=${found.length}',
+    );
     final decision = _route.startup(usbFound: found.isNotEmpty);
     _logRoute(decision);
     if (decision.connectUsb && found.isNotEmpty) {
@@ -53,7 +76,10 @@ class WindowsSerial extends AbstractSerial {
     } else {
       _startBle();
     }
-    Timer.periodic(const Duration(seconds: 1), (_) => unawaited(_pollUsb()));
+    _usbTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => unawaited(_pollUsb()),
+    );
   }
 
   Future<List<Chameleon>> _probeUsb() {
@@ -85,6 +111,9 @@ class WindowsSerial extends AbstractSerial {
   }
 
   Future<void> _pollUsb() async {
+    if (_shuttingDown) {
+      return;
+    }
     if (_usbProbeBusy) {
       return;
     }
@@ -197,7 +226,7 @@ class WindowsSerial extends AbstractSerial {
     final native = await nativeSerial.performDisconnect();
     _usbConnected = false;
     _route.markBleConnected(false);
-    if (!_usbConnectInFlight) {
+    if (!_usbConnectInFlight && !_shuttingDown) {
       _route.usbPresent = false;
       bleSerial.resumeAfterUsb();
       _startBle();

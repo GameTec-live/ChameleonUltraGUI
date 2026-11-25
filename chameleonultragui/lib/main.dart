@@ -194,14 +194,17 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   var selectedIndex = 0;
   Timer? _keepAliveTimer;
   bool _keepAliveInFlight = false;
+  ChameleonGUIState? _appState;
+  bool _shutdownStarted = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => updateNavigationRailWidth(context),
     );
@@ -216,8 +219,31 @@ class _MainPageState extends State<MainPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _keepAliveTimer?.cancel();
+    _shutdown();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached ||
+        state == AppLifecycleState.paused) {
+      _shutdown();
+    }
+  }
+
+  void _shutdown() {
+    if (_shutdownStarted) {
+      return;
+    }
+    _shutdownStarted = true;
+    final connector = _appState?.connector;
+    if (connector is WindowsSerial) {
+      unawaited(connector.shutdown());
+    } else {
+      unawaited(connector?.performDisconnect());
+    }
   }
 
   Future<void> sendKeepAlive() async {
@@ -295,6 +321,7 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
+    _appState = appState;
     appState._sharedPreferencesProvider = widget.sharedPreferencesProvider;
     appState.log ??= getLogger(appState);
     appState.connector ??= getConnector(appState);

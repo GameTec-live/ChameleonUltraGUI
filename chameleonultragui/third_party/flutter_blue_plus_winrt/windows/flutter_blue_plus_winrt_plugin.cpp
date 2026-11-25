@@ -1231,7 +1231,12 @@ winrt::fire_and_forget FlutterBluePlusWinrtPlugin::DiscoverServicesAsync(
         if (!device) { error_msg = "device is disconnected"; }
         else {
             co_await winrt::resume_background();
-            auto servicesResult = co_await device.GetGattServicesAsync(BluetoothCacheMode::Uncached);
+            // Cached discovery is usually ready immediately after a reconnect;
+            // fall back to a full discovery only when the cache is unusable.
+            auto servicesResult = co_await device.GetGattServicesAsync(BluetoothCacheMode::Cached);
+            if (servicesResult.Status() != GattCommunicationStatus::Success) {
+                servicesResult = co_await device.GetGattServicesAsync(BluetoothCacheMode::Uncached);
+            }
             if (servicesResult.Status() != GattCommunicationStatus::Success) {
                  error_msg = "GetGattServicesAsync failed";
             } else {

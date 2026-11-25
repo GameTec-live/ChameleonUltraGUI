@@ -5,6 +5,7 @@ import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/gui/menu/dialogs/chameleon_settings.dart';
 import 'package:chameleonultragui/gui/page/home_overview.dart';
+import 'package:chameleonultragui/helpers/battery_reading.dart';
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
@@ -28,6 +29,8 @@ class HomePageState extends State<HomePage> {
   bool _loading = true;
   bool _busy = false;
   bool _isLegacyFirmware = false;
+  Timer? _batteryRetryTimer;
+  final BatteryRetryPlan _batteryRetryPlan = BatteryRetryPlan();
 
   @override
   void initState() {
@@ -51,7 +54,7 @@ class HomePageState extends State<HomePage> {
       (_) => EnabledSlotInfo(hf: true, lf: true),
     );
     var activeSlot = 0;
-    var batteryPercent = -1;
+    int? batteryPercent;
     var firmware = '—';
     var commit = '';
     var readerMode = false;
@@ -72,7 +75,7 @@ class HomePageState extends State<HomePage> {
       try {
         enabledSlots = await communicator.getEnabledSlots();
       } catch (_) {}
-      batteryPercent = (await _getBatteryPercent(communicator)) ?? -1;
+      batteryPercent = await _getBatteryPercent(communicator);
       try {
         final version = await _readFirmware(communicator, connector);
         firmware = version.$1;
@@ -123,6 +126,10 @@ class HomePageState extends State<HomePage> {
     });
     _busy = false;
 
+    if (batteryPercent == null && communicator != null) {
+      _batteryRetryPlan.reset();
+      _scheduleNextBatteryRetry(communicator);
+    }
     if (commit.isNotEmpty && mounted) {
       unawaited(_checkUpdate(commit));
     }
@@ -130,10 +137,38 @@ class HomePageState extends State<HomePage> {
 
   Future<int?> _getBatteryPercent(ChameleonCommunicator communicator) async {
     try {
-      return (await communicator.getBatteryCharge()).percent;
+      return batteryPercentFromCharge(await communicator.getBatteryCharge());
     } catch (_) {
       return null;
     }
+  }
+
+  void _scheduleNextBatteryRetry(ChameleonCommunicator communicator) {
+    _batteryRetryTimer?.cancel();
+    final delay = _batteryRetryPlan.next();
+    if (delay == null) {
+      return;
+    }
+    _batteryRetryTimer = Timer(delay, () {
+      unawaited(_retryBattery(communicator));
+    });
+  }
+
+  Future<void> _retryBattery(ChameleonCommunicator communicator) async {
+    if (!mounted || _data.batteryPercent != null) {
+      return;
+    }
+    final percent = await _getBatteryPercent(communicator);
+    if (!mounted) {
+      return;
+    }
+    if (percent == null) {
+      _scheduleNextBatteryRetry(communicator);
+      return;
+    }
+    setState(() {
+      _data = _data.copyWith(batteryPercent: percent);
+    });
   }
 
   Future<bool> _capabilitiesSupported(

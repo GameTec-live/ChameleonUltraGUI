@@ -13,7 +13,7 @@ class HomeViewData {
   final ChameleonDevice device;
   final ConnectionType connectionType;
   final String portName;
-  final int batteryPercent;
+  final int? batteryPercent;
   final String firmwareVersion;
   final String firmwareCommit;
   final bool updateAvailable;
@@ -53,7 +53,7 @@ class HomeViewData {
       device: ChameleonDevice.ultra,
       connectionType: ConnectionType.none,
       portName: '—',
-      batteryPercent: -1,
+      batteryPercent: null,
       firmwareVersion: '—',
       firmwareCommit: '',
       updateAvailable: false,
@@ -72,13 +72,17 @@ class HomeViewData {
     );
   }
 
-  HomeViewData copyWith({int? activeSlot, bool? isReaderMode}) {
+  HomeViewData copyWith({
+    int? activeSlot,
+    bool? isReaderMode,
+    int? batteryPercent,
+  }) {
     return HomeViewData(
       deviceName: deviceName,
       device: device,
       connectionType: connectionType,
       portName: portName,
-      batteryPercent: batteryPercent,
+      batteryPercent: batteryPercent ?? this.batteryPercent,
       firmwareVersion: firmwareVersion,
       firmwareCommit: firmwareCommit,
       updateAvailable: updateAvailable,
@@ -501,7 +505,7 @@ class HomeOverview extends StatelessWidget {
   Widget _connectionAndBattery(BuildContext context, _HomePalette p) {
     final l = AppLocalizations.of(context)!;
     final percent = data.batteryPercent;
-    final low = percent >= 0 && percent < 20;
+    final low = percent != null && percent < 20;
     final color = low ? p.error : p.secondary;
     final icon = _batteryIcon(percent);
 
@@ -538,10 +542,10 @@ class HomeOverview extends StatelessWidget {
               Icon(icon, size: 15, color: color),
               const SizedBox(width: 4),
               Text(
-                percent < 0 ? '—' : '$percent%',
+                percent == null ? '—' : '$percent%',
                 style: TextStyle(fontSize: 12, color: color),
               ),
-              if (percent >= 0) ...[
+              if (percent != null) ...[
                 const SizedBox(width: 6),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(2),
@@ -1127,8 +1131,8 @@ class _DashedBorderPainter extends CustomPainter {
   }
 }
 
-IconData _batteryIcon(int percent) {
-  if (percent < 0) return Icons.battery_unknown;
+IconData _batteryIcon(int? percent) {
+  if (percent == null) return Icons.battery_unknown;
   if (percent > 98) return Icons.battery_full;
   if (percent > 87) return Icons.battery_6_bar;
   if (percent > 75) return Icons.battery_5_bar;
