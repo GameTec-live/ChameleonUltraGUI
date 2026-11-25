@@ -5,6 +5,10 @@ Name "Chameleon Ultra GUI"
 ; The file to write
 OutFile "chameleonultragui-setup-win.exe"
 
+; Read the four-part file version from the executable being packaged
+!define RELEASE_DIR "chameleonultragui\build\windows\x64\runner\Release"
+!getdllversion "${RELEASE_DIR}\chameleonultragui.exe" APP_VERSION_
+
 ; Request application privileges for Windows Vista and higher
 RequestExecutionLevel admin
 
@@ -44,7 +48,7 @@ Section "Chameleon Ultra GUI (required)"
   SetOutPath $INSTDIR
   
   ; Put file there
-  File /r "chameleonultragui\build\windows\x64\runner\Release\*.*"
+  File /r "${RELEASE_DIR}\*.*"
   File "LICENSE"
   
   ; Write the installation path into the registry
@@ -52,6 +56,7 @@ Section "Chameleon Ultra GUI (required)"
   
   ; Write the uninstall keys for Windows
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\chameleonultragui" "DisplayName" "Chameleon Ultra GUI"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\chameleonultragui" "DisplayVersion" "${APP_VERSION_1}.${APP_VERSION_2}.${APP_VERSION_3}.${APP_VERSION_4}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\chameleonultragui" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\chameleonultragui" "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\chameleonultragui" "NoRepair" 1
