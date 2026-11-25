@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/ble_trace.dart';
@@ -59,7 +58,7 @@ class WindowsBLESerial extends AbstractSerial {
     BleTrace.setMode(mode);
   }
 
-  String get mode => Platform.environment['CHAMELEON_BLE_MODE'] ?? 'robust';
+  String get mode => 'robust';
 
   Duration get _scanWindow => mode == 'legacy'
       ? const Duration(milliseconds: 2000)
