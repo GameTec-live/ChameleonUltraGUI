@@ -113,6 +113,10 @@ class MifareClassicGen2WriteHelper extends BaseMifareClassicWriteHelper {
     List<bool> cleanSectors = List.generate(40, (index) => false);
     failedBlocks = [];
 
+    if (type == MifareClassicType.none) {
+      return false; // no MIFARE Classic card found
+    }
+
     try {
       await communicator.scan14443aTag();
     } catch (e) {
