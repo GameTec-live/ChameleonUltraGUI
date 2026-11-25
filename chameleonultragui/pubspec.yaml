@@ -36,7 +36,7 @@ dependencies:
 
   flutter_libserialport:
     git:
-      url: https://github.com/ChameleonUltraGUI/flutter_libserialport.git
+      url: https://github.com/iMusynx/flutter_libserialport.git
       ref: main
   provider: ^6.1.5+1
   logger: ^2.8.0
