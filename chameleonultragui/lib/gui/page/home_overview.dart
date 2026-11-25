@@ -214,33 +214,119 @@ class HomeOverview extends StatelessWidget {
     final image = data.device == ChameleonDevice.lite
         ? 'assets/black-lite-standing-front.webp'
         : 'assets/black-ultra-standing-front.webp';
-    return _Panel(
-      palette: p,
-      padding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 96,
-            height: 96,
-            child: Image.asset(
-              image,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) =>
-                  Image.asset(image, fit: BoxFit.contain),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+
+    return KeyedSubtree(
+      key: const ValueKey('home_phone_card'),
+      child: _Panel(
+        palette: p,
+        padding: const EdgeInsets.all(16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
+                  key: const ValueKey('home_phone_top'),
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Spacer(),
+                    SizedBox(
+                      key: const ValueKey('home_phone_image'),
+                      height: 96,
+                      child: Image.asset(
+                        image,
+                        height: 96,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) =>
+                            Image.asset(image, fit: BoxFit.contain),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _PhoneModelText(name: data.deviceName),
+                          const SizedBox(height: 8),
+                          _connectionAndBattery(context, p),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Divider(height: 1, color: p.border),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        data.firmwareVersion,
+                        key: const ValueKey('home_phone_firmware'),
+                        softWrap: true,
+                        style: TextStyle(
+                          fontFamily: _mono,
+                          fontSize: 12,
+                          color: p.secondary,
+                        ),
+                      ),
+                    ),
                     _iconAction(
                       context,
                       p,
+                      widgetKey: const ValueKey('home_phone_refresh'),
+                      icon: Icons.refresh,
+                      tooltip: l.check_updates,
+                      onTap: onUpdate,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Divider(height: 1, color: p.border),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FittedBox(
+                        alignment: Alignment.centerLeft,
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          data.portName.isEmpty ? '—' : data.portName,
+                          key: const ValueKey('home_phone_mac'),
+                          style: TextStyle(
+                            fontFamily: _mono,
+                            fontSize: 12,
+                            color: p.secondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    _iconAction(
+                      context,
+                      p,
+                      widgetKey: const ValueKey('home_phone_copy'),
+                      icon: Icons.copy,
+                      tooltip: l.copy,
+                      onTap: data.portName == '—' || onCopy == null
+                          ? null
+                          : () => onCopy!(data.portName),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Divider(height: 1, color: p.border),
+                const SizedBox(height: 12),
+                Wrap(
+                  alignment: WrapAlignment.spaceEvenly,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _iconAction(
+                      context,
+                      p,
+                      widgetKey: const ValueKey('home_phone_mode'),
                       icon: data.isReaderMode
                           ? Icons.nfc
                           : Icons.barcode_reader,
@@ -252,6 +338,7 @@ class HomeOverview extends StatelessWidget {
                     _iconAction(
                       context,
                       p,
+                      widgetKey: const ValueKey('home_phone_settings'),
                       icon: Icons.settings,
                       tooltip: l.device_settings,
                       onTap: onSettings,
@@ -259,36 +346,17 @@ class HomeOverview extends StatelessWidget {
                     _iconAction(
                       context,
                       p,
+                      widgetKey: const ValueKey('home_phone_disconnect'),
                       icon: Icons.link_off,
                       tooltip: l.disconnect,
                       onTap: onDisconnect,
                     ),
                   ],
                 ),
-                Text(
-                  data.deviceName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _connectionAndBattery(context, p),
-                const SizedBox(height: 8),
-                _monoText(
-                  data.firmwareVersion,
-                  color: p.secondary,
-                  fontSize: 12,
-                  maxLines: 1,
-                ),
-                const SizedBox(height: 2),
-                _copyLine(context, p, data.portName, maxLines: 1, fontSize: 12),
               ],
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -877,12 +945,14 @@ class HomeOverview extends StatelessWidget {
     _HomePalette p, {
     required IconData icon,
     required String tooltip,
+    Key? widgetKey,
     VoidCallback? onTap,
     Color? color,
   }) {
     return Tooltip(
       message: tooltip,
       child: SizedBox(
+        key: widgetKey,
         width: 48,
         height: 48,
         child: Material(
@@ -896,6 +966,48 @@ class HomeOverview extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PhoneModelText extends StatelessWidget {
+  const _PhoneModelText({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scaler = MediaQuery.textScalerOf(context);
+        final direction = Directionality.of(context);
+        var fontSize = 20.0;
+        while (fontSize > 16) {
+          final painter = TextPainter(
+            text: TextSpan(
+              text: name,
+              style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+            ),
+            maxLines: 2,
+            textDirection: direction,
+            textScaler: scaler,
+          )..layout(maxWidth: constraints.maxWidth);
+          final exceeded = painter.didExceedMaxLines;
+          painter.dispose();
+          if (!exceeded) {
+            break;
+          }
+          fontSize -= 1;
+        }
+        return Text(
+          name,
+          key: const ValueKey('home_phone_model'),
+          maxLines: 2,
+          softWrap: true,
+          overflow: TextOverflow.visible,
+          style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+        );
+      },
     );
   }
 }
