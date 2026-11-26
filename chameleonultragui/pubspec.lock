@@ -379,8 +379,8 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: dc2899f2b2139c7cf1352bdb57e51ca8ee833635
-      url: "https://github.com/ChameleonUltraGUI/flutter_libserialport.git"
+      resolved-ref: "5b4705ec02b61b2d267230cd2a2f69435c7fa554"
+      url: "https://github.com/iMusynx/flutter_libserialport.git"
     source: git
     version: "0.5.0"
   flutter_lints:
