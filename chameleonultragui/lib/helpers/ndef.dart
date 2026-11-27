@@ -366,10 +366,17 @@ class NdefContainer {
         ndefSectors.add(sector);
       }
     }
-    if (blocks.length >= 128) {
+    // Only read a MAD2 if the GPB (block 3, byte 9) says there is one: DA set
+    // and ADV = 2 (AN10787). Dumps read by the app are padded to 256 blocks.
+    final gpb = blocks[3].length == 16 ? blocks[3][9] : 0;
+    if ((gpb & 0x80) != 0 &&
+        (gpb & 0x03) == 2 &&
+        blocks.length > 66 &&
+        blocks[64].length == 16 &&
+        blocks[65].length == 16 &&
+        blocks[66].length == 16) {
       final mad2 = <int>[];
       for (int block = 64; block <= 66; block++) {
-        if (blocks[block].length != 16) return null;
         mad2.addAll(blocks[block]);
       }
       for (int sector = 17; sector <= 39; sector++) {

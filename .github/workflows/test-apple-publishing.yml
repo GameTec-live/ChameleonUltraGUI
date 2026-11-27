@@ -6,6 +6,7 @@ on:
       - .github/workflows/publish-app.yml
       - .github/workflows/test-apple-publishing.yml
       - .github/tests/test_apple_publishing.py
+      - .github/scripts/app-store-version.jq
   workflow_dispatch:
 
 permissions:

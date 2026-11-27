@@ -19,11 +19,17 @@ class StaticCardSerial extends Fake implements AbstractSerial {
 }
 
 class StaticCardCommunicator extends ChameleonCommunicator {
-  StaticCardCommunicator(this.sourceKeyType, {this.hasBackdoor = false})
-    : super(Logger(level: Level.off));
+  StaticCardCommunicator(
+    this.sourceKeyType, {
+    this.hasBackdoor = false,
+    this.bFirstClock = 161,
+    this.consistentCapture = true,
+  }) : super(Logger(level: Level.off));
 
   final int sourceKeyType;
   final bool hasBackdoor;
+  final int bFirstClock;
+  final bool consistentCapture;
   final checkedTypes = <int>[];
   int encryptedProbes = 0;
   static final knownKey = hexToBytes('FFFFFFFFFFFF');
@@ -102,11 +108,14 @@ class StaticCardCommunicator extends ChameleonCommunicator {
     expect(level, NTLevel.static);
     expect((block, keyType, targetBlock), (63, sourceKeyType, 3));
     expect(knownKey, StaticCardCommunicator.knownKey);
-    // Synthetic gen-2 captures for the keys above. A uses offsets 160/320;
-    // B uses 161/321, independently of the known key used to collect them.
+    // The extra known-key B authentication advances 161 clocks on this
+    // variant. Target B can use 160 or 161 independently of the source type.
     final encrypted = targetKeyType == 0x60
-        ? [997011713, 499090052]
-        : [3478540890, 3057512422];
+        ? [997011713, sourceKeyType == 0x60 ? 499090052 : 1086998047]
+        : bFirstClock == 160
+        ? [2947702298, sourceKeyType == 0x60 ? 3915911622 : 3057512422]
+        : [3478540890, sourceKeyType == 0x60 ? 3057512422 : 1557951048];
+    if (!consistentCapture) encrypted[1] ^= 1;
     return NestedNonces(
       nonces: [
         for (final ntEnc in encrypted)
@@ -136,18 +145,25 @@ class StaticCardCommunicator extends ChameleonCommunicator {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  for (final (sourceType, hasBackdoor) in [
-    (0x60, false),
-    (0x60, true),
-    (0x61, false),
-    (0x61, true),
+  for (final (sourceType, hasBackdoor, bFirstClock, consistentCapture) in [
+    (0x60, false, 160, true),
+    (0x60, true, 160, true),
+    (0x61, false, 160, true),
+    (0x61, true, 160, true),
+    (0x60, false, 161, true),
+    (0x60, true, 161, true),
+    (0x61, false, 161, true),
+    (0x61, true, 161, true),
+    (0x60, false, 160, false),
   ]) {
     test(
-      'static nested targets A/B using source $sourceType, backdoor $hasBackdoor',
+      'static nested targets A/B using source $sourceType, backdoor $hasBackdoor, B clock $bFirstClock, consistent $consistentCapture',
       () async {
         final communicator = StaticCardCommunicator(
           sourceType,
           hasBackdoor: hasBackdoor,
+          bFirstClock: bFirstClock,
+          consistentCapture: consistentCapture,
         );
         final app = ChameleonGUIState(SharedPreferencesProvider())
           ..communicator = communicator
@@ -181,6 +197,14 @@ void main() {
           hasBackdoor ? isPositive : isZero,
           reason: 'Only backdoor-capable cards need encrypted detection',
         );
+        if (!consistentCapture) {
+          expect(communicator.checkedTypes, isEmpty);
+          expect(subject.getSectorState(0, 0), ChameleonKeyCheckmark.none);
+          expect(subject.getSectorState(0, 1), ChameleonKeyCheckmark.none);
+          expect(subject.allKeysExists, isFalse);
+          expect(subject.state, isEmpty);
+          return;
+        }
         expect(communicator.checkedTypes, [0x60, 0x61]);
         expect(
           subject.getSectorKey(0, 0),

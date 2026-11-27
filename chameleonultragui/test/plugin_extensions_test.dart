@@ -312,7 +312,7 @@ void main() {
   testWidgets('documented examples import and execute with the actual APIs', (
     tester,
   ) async {
-    final directory = Directory('../docs/plugins/examples');
+    final directory = Directory('../docs/plugins/examples/plugins');
     final files = directory
         .listSync()
         .whereType<File>()

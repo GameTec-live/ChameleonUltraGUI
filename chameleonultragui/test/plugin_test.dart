@@ -128,6 +128,57 @@ void main() {
     },
   );
 
+  test('non-ASCII resource text and modules index as bytes', () async {
+    final calls = <List<Object?>>[];
+    await PluginRuntime().run(
+      Plugin(
+        name: 'Test',
+        resources: {'text': 'Café\nABC\tx\n', 'module': "return 'Bürokarte'"},
+        code: r'''
+      local text = chameleon.resources.get('text')
+      local _, last = string.find(text, '\nABC\t', 1, true)
+      assert(string.sub(text, last + 1, last + 1) == 'x', 'find and sub disagree')
+      assert(#text == 12, 'text length is ' .. #text)
+      local name = require('module')
+      assert(#name == 10, 'module length is ' .. #name)
+      chameleon.device.echo(name)
+    ''',
+      ),
+      ['device.echo'],
+      (method, args) async => calls.add([method, ...args]),
+    );
+    expect(calls, [
+      ['device.echo', 'Bürokarte'],
+    ]);
+  });
+
+  test(
+    'non-ASCII host and codec strings index as bytes and round-trip',
+    () async {
+      final calls = <List<Object?>>[];
+      await PluginRuntime().run(
+        Plugin(
+          name: 'Test',
+          code: r'''
+      local name = chameleon.device.card().name
+      assert(#name == 10, 'length is ' .. #name)
+      local start = string.find(name, 'karte', 1, true)
+      assert(string.sub(name, start) == 'karte', 'find and sub disagree')
+      local decoded = chameleon.codec.decompress(chameleon.codec.compress(name))
+      assert(decoded == name and #decoded == 10, 'codec changed the text')
+      chameleon.device.echo(name)
+    ''',
+        ),
+        ['device.card', 'device.echo'],
+        (method, args) async {
+          calls.add([method, ...args]);
+          return method == 'device.card' ? {'name': 'Bürokarte'} : null;
+        },
+      );
+      expect(calls.last, ['device.echo', 'Bürokarte']);
+    },
+  );
+
   test('Lua errors propagate', () async {
     await expectLater(
       PluginRuntime().run(

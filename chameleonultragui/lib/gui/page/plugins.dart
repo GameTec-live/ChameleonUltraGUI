@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
+import 'package:chameleonultragui/gui/page/marketplace.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/plugins/localization.dart';
 import 'package:chameleonultragui/plugins/api.dart';
@@ -191,6 +192,21 @@ class _PluginsPageState extends State<PluginsPage> {
       actionsPadding: const EdgeInsets.only(right: 12),
       actions: [
         IconButton(
+          tooltip: _localizations.marketplace,
+          onPressed: _loading || _loadFailed
+              ? null
+              : () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const MarketplacePage(),
+                    ),
+                  );
+                  await _load();
+                },
+          icon: const Icon(Icons.storefront),
+        ),
+        IconButton(
           tooltip: _localizations.plugin_import,
           onPressed: _loading || _loadFailed ? null : _import,
           icon: const Icon(Icons.file_upload),
@@ -352,6 +368,7 @@ class _PluginEditorState extends State<_PluginEditor> {
           color: _color.toARGB32(),
           code: _code.text,
           resources: resources,
+          source: widget.plugin?.source,
         ),
       );
       Navigator.pop(context, plugin);

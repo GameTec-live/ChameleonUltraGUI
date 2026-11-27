@@ -14,6 +14,46 @@ the GUI. Review imported source and resources before running them.
 For VS Code autocomplete, Lua type declarations and a build task, see
 [Writing plugins in VS Code](plugins/development.md).
 
+## Marketplace
+
+The storefront button on the Plugins page opens the marketplace. It lists the
+plugins of every configured repository; search filters by name, description,
+author, ID and repository. **Install** adds a plugin, **Update** replaces an
+installed one when its repository lists a different version, and **Update all**
+does this for every outdated plugin. Installing or updating never runs code.
+Updates overwrite local edits to that plugin; deleting it works as usual.
+
+Repositories are ordinary Git repositories on any host (GitHub, GitLab,
+Codeberg, Gitea/Forgejo, a self-hosted `git http-backend`, ...). The GUI speaks
+Git's smart HTTP protocol v2 itself and downloads a shallow snapshot of the
+default branch (HEAD); it uses no forge-specific API. The settings button in the
+marketplace adds or removes repository URLs (`https://` only). The default
+repository can be removed and restored there. The repository list syncs like
+other settings.
+
+A repository has `marketplace.json` at its root and the plugin files listed in
+it, in the [portable format](#portable-file-format):
+
+```json
+{
+  "format": "chameleon-ultra-gui-marketplace",
+  "version": 1,
+  "name": "My plugins",
+  "plugins": [
+    {"id": "card-count", "path": "plugins/card-count.plugin.json", "version": "1.0.0", "author": "Me"}
+  ]
+}
+```
+
+`id` identifies a plugin within its repository and must stay stable; `path` is
+relative to the repository root; `version` is any string, and a change means
+"update available". `name` and `author` are optional. Name, description, color,
+code and resources come from the plugin file. Invalid listings are reported in
+the marketplace while the repository's valid listings stay available. Responses
+are limited to 64 MiB per repository. [plugins/examples](plugins/examples/) is a
+repository template that generates this file; see
+[Publishing](plugins/development.md#publish-to-a-marketplace).
+
 ## Execution and values
 
 Each invocation creates a fresh LuaLike runtime in a separate Dart isolate.
@@ -399,3 +439,6 @@ are limited to 8 MiB; input JSON and the complete uncompressed saved envelope
 (including metadata) are limited to 16 MiB. Compressed imports use
 streamed decompression with an expanded-size check. Plugins persist separately
 from cards and dictionaries under the `plugins_v1` preference key.
+Plugins installed from the marketplace also carry
+`"source": {"repository", "id", "version"}`, used to find updates. Imports drop
+it, so an imported copy is a separate local plugin.

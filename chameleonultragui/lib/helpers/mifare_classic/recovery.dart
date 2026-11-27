@@ -683,17 +683,30 @@ class MifareClassicRecovery {
           NTDistance? distance;
           NestedNonces? nonces;
 
-          if (prng != NTLevel.backdoor) {
-            distance = await operation.wait(appState.communicator!
-                .getMf1NTDistance(
-                    validKeyBlock, 0x60 + validKeyType, validKey));
-          }
-
           bool found = false;
-          for (var i = 0; i < tries && !found; i++) {
+          // Weak PRNG detection does not guarantee a stable nonce distance.
+          // Hardnested can recover those cards without a timing prediction.
+          final attacks = [
+            ...List.filled(tries, prng),
+            if (prng == NTLevel.weak) NTLevel.hard,
+          ];
+          for (final attack in attacks) {
+            if (found) break;
             List<int> keys = [];
 
-            if (prng == NTLevel.hard) {
+            if (attack == NTLevel.hard) attackType = 'Hard Nested';
+            state = localizations.collecting_nonces(attackType);
+            update();
+
+            // Retry with a fresh measurement rather than reusing a bad distance.
+            if (attack != NTLevel.backdoor &&
+                (distance == null || attack == NTLevel.weak)) {
+              distance = await operation.wait(appState.communicator!
+                  .getMf1NTDistance(
+                      validKeyBlock, 0x60 + validKeyType, validKey));
+            }
+
+            if (attack == NTLevel.hard) {
               hardnestedProgress = 0;
               update();
 
@@ -711,7 +724,7 @@ class MifareClassicRecovery {
               } else {
                 nonces = result as NestedNonces;
               }
-            } else if (prng != NTLevel.backdoor) {
+            } else if (attack != NTLevel.backdoor) {
               nonces = await operation.wait(appState.communicator!
                   .getMf1NestedNonces(
                       validKeyBlock,
@@ -719,13 +732,13 @@ class MifareClassicRecovery {
                       validKey,
                       mfClassicGetSectorTrailerBlockBySector(sector),
                       0x60 + keyType,
-                      level: prng));
+                      level: attack));
             }
 
             state = localizations.recovering_key(attackType);
             update();
 
-            if (prng == NTLevel.weak) {
+            if (attack == NTLevel.weak) {
               var nested = NestedDart(
                   uid: distance!.uid,
                   distance: distance.distance,
@@ -738,10 +751,10 @@ class MifareClassicRecovery {
 
               keys = await operation
                   .wait(recovery.nested(nested, operation: operation));
-            } else if (prng == NTLevel.static) {
+            } else if (attack == NTLevel.static) {
               var nested = StaticNestedDart(
                 uid: distance!.uid,
-                // Gen-2 nonce timing depends on the target key type.
+                // Native recovery checks both captures against supported timings.
                 keyType: 0x60 + keyType,
                 nt0: nonces!.nonces[0].nt,
                 nt0Enc: nonces.nonces[0].ntEnc,
@@ -751,12 +764,12 @@ class MifareClassicRecovery {
 
               keys = await operation
                   .wait(recovery.staticNested(nested, operation: operation));
-            } else if (prng == NTLevel.hard) {
+            } else if (attack == NTLevel.hard) {
               var nested =
                   HardNestedDart(nonces: nonces!.getHardNested(distance!.uid));
               keys = await operation
                   .wait(recovery.hardNested(nested, operation: operation));
-            } else if (prng == NTLevel.backdoor) {
+            } else if (attack == NTLevel.backdoor) {
               setCheckingSector(sector, 1);
 
               var possibleAKeys = await operation.wait(
@@ -834,6 +847,7 @@ class MifareClassicRecovery {
               appState.log!.e("Can't find keys, retrying...");
             }
           }
+          if (!found) setMissingSector(sector, keyType);
         }
       }
     }
