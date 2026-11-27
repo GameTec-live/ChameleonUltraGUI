@@ -84,6 +84,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
   Future<void> onTap(
       CardSave card, dynamic close, AppLocalizations localizations) async {
+    if (progress != -1) return;
+
+    final selectedSlot = gridPosition;
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
     if (card.nativeClassicCoverage != null) {
@@ -109,6 +112,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     }
     List<Uint8List>? classicImage;
     if (card.sl1Profile != null) {
+      setUploadState(0);
       close(context, card.name);
       bool profileCommitted = false;
       try {
@@ -116,18 +120,18 @@ class SlotManagerPageState extends State<SlotManagerPage> {
         card.validateProfileConsistency();
         final capabilities =
             await appState.communicator!.getDeviceCapabilities();
+        if (!mounted) return;
         if (card.sl1Profile!.json['cardAuth'] == null &&
             !Sl1Uploader.supportsUpload(capabilities)) {
           classicImage = card.sl1Profile!.image();
         } else {
-          setUploadState(0);
           await appState.communicator!.sl1Uploader.upload(
             card.sl1Profile!,
-            gridPosition,
+            selectedSlot,
           );
           profileCommitted = true;
           await appState.communicator!.saveSl1SlotName(
-            gridPosition,
+            selectedSlot,
             card.name.isEmpty ? localizations.no_name : card.name,
           );
           if (mounted) refreshSlot();
@@ -167,9 +171,11 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     }
     if (!mounted) return;
     if (isMifareClassic(card.tag)) {
-      if (classicImage == null) close(context, card.name);
+      if (classicImage == null) {
+        close(context, card.name);
+        setUploadState(0);
+      }
       final data = classicImage ?? card.data;
-      setUploadState(0);
       var isEV1 = chameleonTagSaveCheckForMifareClassicEV1(card);
       if (isEV1) {
         card.tag = TagType.mifare2K;
@@ -177,10 +183,10 @@ class SlotManagerPageState extends State<SlotManagerPage> {
 
       await appState.communicator!.setReaderDeviceMode(false);
       await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.hf, true);
-      await appState.communicator!.activateSlot(gridPosition);
-      await appState.communicator!.setSlotType(gridPosition, card.tag);
-      await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
+          .enableSlot(selectedSlot, TagFrequency.hf, true);
+      await appState.communicator!.activateSlot(selectedSlot);
+      await appState.communicator!.setSlotType(selectedSlot, card.tag);
+      await appState.communicator!.setDefaultDataToSlot(selectedSlot, card.tag);
       var cardData = CardData(
           uid: hexToBytes(card.uid),
           atqa: card.atqa,
@@ -229,7 +235,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       setUploadState(100);
 
       await appState.communicator!.setSlotTagName(
-          gridPosition,
+          selectedSlot,
           (card.name.isEmpty) ? localizations.no_name : card.name,
           TagFrequency.hf);
       await appState.communicator!.saveSlotData();
@@ -435,15 +441,15 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     }
   }
 
-  Future<String?> cardSelectDialog(BuildContext context) {
-    var appState = context.read<ChameleonGUIState>();
-    var tags = appState.sharedPreferencesProvider.getCards();
-
+  Future<String?> cardSelectDialog(BuildContext context, int slot) {
     // Don't allow user to upload more tags while already uploading dump
     if (progress != -1) {
       return Future.value("");
     }
 
+    gridPosition = slot;
+    var appState = context.read<ChameleonGUIState>();
+    var tags = appState.sharedPreferencesProvider.getCards();
     tags.sort((a, b) => a.name.compareTo(b.name));
 
     return showSearch<String>(
@@ -488,12 +494,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                             constraints: const BoxConstraints(
                                 maxHeight: 160, minHeight: 100),
                             child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  gridPosition = index;
-                                });
-                                cardSelectDialog(context);
-                              },
+                              onPressed: () => cardSelectDialog(context, index),
                               style: ButtonStyle(
                                 shape: WidgetStateProperty.all<
                                     RoundedRectangleBorder>(

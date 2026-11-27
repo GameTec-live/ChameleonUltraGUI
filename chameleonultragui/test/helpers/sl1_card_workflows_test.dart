@@ -138,6 +138,28 @@ class MetadataDevice extends ProfileRouteDevice {
   }
 }
 
+class DelayedSlotDevice extends ProfileRouteDevice {
+  final capabilitiesReady = Completer<void>();
+
+  @override
+  Future<List<int>> getDeviceCapabilities() async {
+    await capabilitiesReady.future;
+    return super.getDeviceCapabilities();
+  }
+
+  @override
+  Future<List<SlotTypes>> getSlotTagTypes() async =>
+      List.generate(8, (_) => SlotTypes());
+
+  @override
+  Future<List<EnabledSlotInfo>> getEnabledSlots() async =>
+      List.generate(8, (_) => EnabledSlotInfo());
+
+  @override
+  Future<List<SlotNames>> getSlotTagNames() async =>
+      List.generate(8, (_) => SlotNames());
+}
+
 void main() {
   test(
     'native embedded profiles and incidental marker names import normally',
@@ -363,6 +385,45 @@ void main() {
       original,
     );
   });
+  testWidgets('delayed profile upload keeps the slot selected in the picker', (
+    tester,
+  ) async {
+    final card = sl1ToCard(fixture());
+    final app = await appFor(card);
+    final device = DelayedSlotDevice();
+    app.communicator = device;
+    await tester.pumpWidget(host(app, const SlotManagerPage()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Slot 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(card.name));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final uploadWasBusy =
+        find.byType(LinearProgressIndicator).evaluate().isNotEmpty;
+
+    final otherSlot = find.text('Slot 2').hitTestable();
+    if (otherSlot.evaluate().isNotEmpty) {
+      await tester.tap(otherSlot);
+    }
+    await tester.pump();
+    device.capabilitiesReady.complete();
+    await tester.pumpAndSettle();
+
+    for (final (command, slotOffset) in [
+      (ChameleonCommand.sl1Begin, 1),
+      (ChameleonCommand.sl1Save, 1),
+      (ChameleonCommand.setSlotTagNick, 0),
+    ]) {
+      final request = device.calls.indexOf(command.value);
+      expect(request, isNonNegative, reason: command.name);
+      expect(device.payloads[request][slotOffset], 0, reason: command.name);
+    }
+    expect(uploadWasBusy, isTrue);
+    expect(find.text('Slot 2'), findsOneWidget);
+  });
+
   for (final failure in [false, true]) {
     testWidgets(
       'profile commit nickname persistence failure=$failure is distinct',
