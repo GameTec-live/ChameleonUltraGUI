@@ -13,6 +13,7 @@
       - [Slot manager](#slot-manager)
       - [Saved cards](#saved-cards)
       - [Read cards](#read-cards)
+      - [Classic and CardAuth profiles](#classic-and-cardauth-profiles)
       - [Write cards](#write-cards)
       - [Settings](#settings)
   - [Contributing](#contributing)
@@ -111,6 +112,16 @@ On this screen you can read the cards by bringing them close to the Chameleon.
 ![Chameleon Ultra GUI - Read Cards](assets/read_card_result.png)
 
 You can save it to use it in a slot. You can read HF and LF cards. When you read en HF card, you can use a dictionary to try to crack the keys.
+
+#### Classic and CardAuth profiles
+
+Read the Classic card and choose **Save**. When SL1 CardAuth is detected, the **CardAuth key (0x9004)** field appears automatically; it also appears when editing an already configured saved card. Otherwise, use **Additional settings → Add CardAuth key** if you know the card supports it. Enter the name and supplied key if available, save, then select the card in the desired CU slot. No JSON file is required. The optional key is masked and accepts 32 hexadecimal characters; leaving it empty retains Classic-only use. Cancel leaves the saved card unchanged.
+
+The address `0x9004` identifies the standard optional AES-128 CardAuth key in MIFARE Plus SL1, separate from the Classic sector keys ([NXP AN12706, section 2.3.1](https://www.nxp.com/docs/en/application-note/AN12706.pdf)). Detection checks the initial response without supplying a key; it does not extract or verify the AES secret. This supports that CardAuth role followed by Classic authentication/read, not arbitrary AES key addresses, key derivation or general Plus SL2/SL3.
+
+Upload requires compatible firmware, a complete valid Classic image and an acquired ATS when CardAuth is enabled. Classic reading requests ATS through available firmware capabilities and restores the reader settings afterward. Unknown bytes and keys remain unknown; incomplete reads and 72-block EV1 archives cannot be uploaded through this profile format. A new key enables CardAuth; an unchanged key retains its prior state. Identity or memory changes disable it until explicitly re-enabled.
+
+Slot-name changes preserve CardAuth. To change its key, edit the saved card and upload it again; changing slot identity or type invalidates its CardAuth configuration. Optional **Slot settings → Advanced → CardAuth diagnostics** provides recovery controls after a failed operation. Upload failures are reported without automatic retry. JSON import/export remains available for interchange with the CLI. Exports, saved-card backups and raw debug logs may contain credentials and should remain private.
 
 #### Write cards
 
